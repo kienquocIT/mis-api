@@ -587,6 +587,20 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    @classmethod
+    def validate_then_set_indicators_value(cls, validate_data):
+        if 'quotation_indicators_data' in validate_data:
+            for quotation_indicator in validate_data['quotation_indicators_data']:
+                indicator_code = quotation_indicator.get('indicator', {}).get('code')
+                indicator_value = quotation_indicator.get('indicator_value', 0)
+                if indicator_code == 'IN0001':
+                    validate_data.update({'indicator_revenue': indicator_value})
+                elif indicator_code == 'IN0003':
+                    validate_data.update({'indicator_gross_profit': indicator_value})
+                elif indicator_code == 'IN0006':
+                    validate_data.update({'indicator_net_income': indicator_value})
+        return True
+
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):

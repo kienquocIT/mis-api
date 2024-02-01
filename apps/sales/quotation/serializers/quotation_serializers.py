@@ -24,9 +24,9 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'customer',
             'sale_person',
             'date_created',
-            'total_product',
+            'indicator_revenue',
             'system_status',
-            'opportunity'
+            'opportunity',
         )
 
     @classmethod
@@ -167,20 +167,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'code': obj.payment_term.code,
         } if obj.payment_term else {}
 
-    # @classmethod
-    # def get_quotation_products_data(cls, obj):
-    #     return QuotationProductsListSerializer(
-    #         obj.quotation_product_quotation.all(),
-    #         many=True
-    #     ).data
-    #
-    # @classmethod
-    # def get_quotation_costs_data(cls, obj):
-    #     return QuotationCostsListSerializer(
-    #         obj.quotation_cost_quotation.all(),
-    #         many=True
-    #     ).data
-
 
 class QuotationCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
@@ -288,7 +274,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     def validate_next_node_collab_id(cls, value):
         return QuotationCommonValidate().validate_next_node_collab_id(value=value)
 
-    def validate(self, validate_data):
+    @classmethod
+    def validate_opportunity_rules(cls, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter_current(
@@ -305,6 +292,11 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
                     quotation_all = opportunity.quotation_opportunity.all().count()
                     if quotation_invalid != quotation_all:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
+        return True
+
+    def validate(self, validate_data):
+        self.validate_opportunity_rules(validate_data=validate_data)
+        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -317,13 +309,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         # update field quotation & create activity log for opportunity
         if quotation.opportunity:
             # update field quotation
-
             quotation.opportunity.quotation = None
             quotation.opportunity.save(**{
                 'update_fields': ['quotation'],
-                # 'quotation_confirm': quotation.is_customer_confirm,
             })
-
             # create activity log
             OpportunityActivityLogs.create_opportunity_log_application(
                 tenant_id=quotation.tenant_id,
@@ -448,15 +437,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
 
-    def validate_system_status(self, attrs):
-        if attrs in [0, 1]:  # draft or created
-            if self.instance.system_status <= attrs:
-                return attrs
-        raise serializers.ValidationError({
-            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
-        })
-
-    def validate(self, validate_data):
+    def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter_current(
@@ -467,6 +448,19 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
                 if opportunity:
                     if opportunity.quotation_opportunity.exclude(id=self.instance.id).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+        return True
+
+    def validate_system_status(self, attrs):
+        if attrs in [0, 1]:  # draft or created
+            if self.instance.system_status <= attrs:
+                return attrs
+        raise serializers.ValidationError({
+            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
+        })
+
+    def validate(self, validate_data):
+        self.validate_opportunity_rules(validate_data=validate_data)
+        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

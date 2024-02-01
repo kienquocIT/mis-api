@@ -25,7 +25,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'customer',
             'sale_person',
             'date_created',
-            'total_product',
+            'indicator_revenue',
             'system_status',
             'opportunity',
             'quotation',
@@ -186,20 +186,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'quotation_indicators_data': obj.quotation.quotation_indicators_data,
         } if obj.quotation else {}
 
-    # @classmethod
-    # def get_sale_order_products_data(cls, obj):
-    #     return SaleOrderProductsListSerializer(
-    #         obj.sale_order_product_sale_order.all(),
-    #         many=True
-    #     ).data
-
-    # @classmethod
-    # def get_sale_order_costs_data(cls, obj):
-    #     return SaleOrderCostsListSerializer(
-    #         obj.sale_order_cost_sale_order.all(),
-    #         many=True
-    #     ).data
-
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
@@ -314,7 +300,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
-    def validate(self, validate_data):
+    @classmethod
+    def validate_opportunity_rules(cls, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter_current(
@@ -327,6 +314,11 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return True
+
+    def validate(self, validate_data):
+        self.validate_opportunity_rules(validate_data=validate_data)
+        SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -478,15 +470,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
-    def validate_system_status(self, attrs):
-        if attrs in [0, 1]:  # draft or created
-            if self.instance.system_status <= attrs:
-                return attrs
-        raise serializers.ValidationError({
-            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
-        })
-
-    def validate(self, validate_data):
+    def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter_current(
@@ -497,6 +481,19 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
                 if opportunity:
                     if opportunity.sale_order_opportunity.exclude(id=self.instance.id).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+        return True
+
+    def validate_system_status(self, attrs):
+        if attrs in [0, 1]:  # draft or created
+            if self.instance.system_status <= attrs:
+                return attrs
+        raise serializers.ValidationError({
+            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
+        })
+
+    def validate(self, validate_data):
+        self.validate_opportunity_rules(validate_data=validate_data)
+        SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

@@ -220,6 +220,18 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         default=list,
         help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
     )
+    indicator_revenue = models.FloatField(
+        default=0,
+        help_text="value of indicator revenue (IN0001)",
+    )
+    indicator_gross_profit = models.FloatField(
+        default=0,
+        help_text="value of indicator gross profit (IN0003)",
+    )
+    indicator_net_income = models.FloatField(
+        default=0,
+        help_text="value of indicator net income (IN0006)",
+    )
 
     class Meta:
         verbose_name = 'Quotation'
