@@ -110,6 +110,8 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
             if d_from > d_to:
                 raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
+            if d_from == d_to and (not item['morning_shift_f'] and item['morning_shift_t']):
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
             if available["check_balance"]:
                 crt_time = timezone.now().date()
                 leave_exp = datetime.strptime(available['expiration_date'], '%Y-%m-%d').date()
