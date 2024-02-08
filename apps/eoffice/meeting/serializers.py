@@ -212,12 +212,11 @@ class MeetingScheduleSubFunction:
         try:
             employee = meeting_schedule.employee_inherit
             company_name = meeting_schedule.company.title
-            meeting_topic = response_data.get('topic')
             meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
             email = EmailMessage(
-                subject=meeting_topic,
+                subject=response_data.get('topic'),
                 body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
-                     f"\n\nTopic: {meeting_topic}\nTime: {meeting_time}"
+                     f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
                      f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
                      f"\n\nMeeting ID: {meeting_id}"
                      f"\nPasscode: {response_data.get('password')}",
@@ -228,7 +227,14 @@ class MeetingScheduleSubFunction:
                 reply_to=[],
             )
             for attachment in [
-                cls.create_calendar_ics_file(meeting_id, meeting_topic, employee.email, date, time, duration)
+                cls.create_calendar_ics_file(
+                    meeting_id,
+                    response_data.get('topic'),
+                    employee.email,
+                    date,
+                    time,
+                    duration
+                )
             ]:
                 email.attach_file(attachment)
 
