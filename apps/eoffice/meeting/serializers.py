@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+
+from _pytest.warnings import catch_warnings_for_item
 from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
@@ -213,6 +215,13 @@ class MeetingScheduleSubFunction:
             employee = meeting_schedule.employee_inherit
             company_name = meeting_schedule.company.title
             meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
+            email_to_list = []
+            for item in meeting_schedule.meeting_schedule_mapped.all():
+                if item.internal:
+                    email_to_list.append(item.internal.email)
+                if item.external:
+                    email_to_list.append(item.external.email)
+
             email = EmailMessage(
                 subject=response_data.get('topic'),
                 body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
@@ -221,7 +230,7 @@ class MeetingScheduleSubFunction:
                      f"\n\nMeeting ID: {meeting_id}"
                      f"\nPasscode: {response_data.get('password')}",
                 from_email=meeting_schedule.company.email,
-                to=[item.participant.email for item in meeting_schedule.meeting_schedule_mapped.all()],
+                to=email_to_list,
                 cc=[],
                 bcc=[],
                 reply_to=[],
