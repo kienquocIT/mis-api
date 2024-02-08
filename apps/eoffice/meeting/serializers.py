@@ -1,6 +1,4 @@
 from datetime import datetime, timedelta
-
-from _pytest.warnings import catch_warnings_for_item
 from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
@@ -212,8 +210,6 @@ class MeetingScheduleSubFunction:
     @classmethod
     def send_mail(cls, meeting_schedule, response_data, meeting_time, date, time, duration):
         try:
-            employee = meeting_schedule.employee_inherit
-            company_name = meeting_schedule.company.title
             meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
             email_to_list = []
             for item in meeting_schedule.meeting_schedule_mapped.all():
@@ -224,7 +220,8 @@ class MeetingScheduleSubFunction:
 
             email = EmailMessage(
                 subject=response_data.get('topic'),
-                body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
+                body=f"{meeting_schedule.employee_inherit.get_full_name(2)} from {meeting_schedule.company.title} "
+                     f"has invited you to a scheduled Zoom meeting."
                      f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
                      f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
                      f"\n\nMeeting ID: {meeting_id}"
@@ -239,7 +236,7 @@ class MeetingScheduleSubFunction:
                 cls.create_calendar_ics_file(
                     meeting_id,
                     response_data.get('topic'),
-                    employee.email,
+                    meeting_schedule.employee_inherit.email,
                     date,
                     time,
                     duration
