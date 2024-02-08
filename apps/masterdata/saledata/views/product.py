@@ -264,7 +264,10 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ProductDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-    search_fields = ['title']
+    search_fields = [
+        'code',
+        'title',
+    ]
     filterset_fields = {
         "general_product_types_mapped__id": ['exact']
     }

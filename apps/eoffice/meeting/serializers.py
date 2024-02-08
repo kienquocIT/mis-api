@@ -310,7 +310,6 @@ class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
         fields = (
             'id',
             'title',
-            'meeting_content',
             'meeting_type',
             'meeting_start_date',
             'meeting_start_time',
