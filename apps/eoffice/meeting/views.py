@@ -151,7 +151,7 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code='meetingschedule',
         model_code='meetingschedule',
         perm_code='view'
@@ -190,7 +190,7 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code='meetingschedule',
         model_code='meetingschedule',
         perm_code='view'
