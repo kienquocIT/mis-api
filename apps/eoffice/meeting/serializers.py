@@ -312,17 +312,17 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, validate_data):
-        if validate_data.get('meeting_type') is True:
-            # check room
-            all_offline_meeting = MeetingSchedule.objects.filter_current(
-                fill__company=True,
-                fill__tenant=True,
-                meeting_type=True,
-                meeting_room_mapped=validate_data.get('meeting_room_mapped')
-            )
-            for item in all_offline_meeting:
-                if check_room_overlap(item, validate_data):
-                    raise serializers.ValidationError({'room': MeetingScheduleMsg.ROOM_IS_NOT_AVAILABLE})
+        # if validate_data.get('meeting_type') is True:
+        #     # check room
+        #     all_offline_meeting = MeetingSchedule.objects.filter_current(
+        #         fill__company=True,
+        #         fill__tenant=True,
+        #         meeting_type=True,
+        #         meeting_room_mapped=validate_data.get('meeting_room_mapped')
+        #     )
+        #     for item in all_offline_meeting:
+        #         if check_room_overlap(item, validate_data):
+        #             raise serializers.ValidationError({'room': MeetingScheduleMsg.ROOM_IS_NOT_AVAILABLE})
         return validate_data
 
     def create(self, validated_data):
