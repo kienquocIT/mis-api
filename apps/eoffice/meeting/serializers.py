@@ -152,12 +152,16 @@ class MeetingScheduleSubFunction:
         except Exception as err:
             raise serializers.ValidationError({'Decrypting': f'Error while decrypting ({err})'})
         api_base_url = "https://api.zoom.us/v2"
-        data = {
-            "grant_type": "account_credentials",
-            "account_id": account_id,
-            "client_secret": client_secret
-        }
-        response = requests.post("https://zoom.us/oauth/token", auth=(client_id, client_secret), data=data, timeout=60)
+        response = requests.post(
+            "https://zoom.us/oauth/token",
+            auth=(client_id, client_secret),
+            data={
+                "grant_type": "account_credentials",
+                "account_id": account_id,
+                "client_secret": client_secret
+            },
+            timeout=60
+        )
 
         if response.status_code != 200:
             raise serializers.ValidationError({'Online meeting': 'Unable to get access token'})
@@ -187,13 +191,13 @@ class MeetingScheduleSubFunction:
         dt_start_data = datetime(
             int(start_date[0]), int(start_date[1]), int(start_date[2]), int(start_time[0]), int(start_time[1]), 0
         )
-        dt_start_end = dt_start_data + timedelta(minutes=duration)
+        dt_end_data = dt_start_data + timedelta(minutes=duration)
         calendar = Calendar()
         event = Event()
         event.add('summary', meeting_topic)
         event.add('organizer', meeting_host_email)
         event.add('dtstart', dt_start_data)
-        event.add('dtend', dt_start_end)
+        event.add('dtend', dt_end_data)
         calendar.add_component(event)
         try:
             file_path = f'apps/eoffice/meeting/calendar_ics_file/calendar_{meeting_id}.ics'
