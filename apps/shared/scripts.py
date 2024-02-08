@@ -1349,3 +1349,14 @@ def update_indicators_quotation_so_model():
         so.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
     print('update_indicators_quotation_so_model done.')
 
+
+def update_price_list():
+    bulk_info = []
+    for item in Price.objects.all():
+        for cr_id in item.currency:
+            bulk_info.append(
+                PriceListCurrency(price=item, currency_id=cr_id)
+            )
+    PriceListCurrency.objects.all().delete()
+    PriceListCurrency.objects.bulk_create(bulk_info)
+    print('Done')
