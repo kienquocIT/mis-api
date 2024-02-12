@@ -4,7 +4,7 @@ from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 
 
-class GoodsReturnSubSerializer:
+class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def create_delivery_product_detail_mapped(cls, goods_return, product_detail_list):
         bulk_info = []

@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from apps.sales.delivery.models import OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn
-from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializer
+from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking
 from apps.sales.saleorder.models import SaleOrder
 
 
@@ -72,12 +72,16 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        GoodsReturnSubSerializer.create_delivery_product_detail_mapped(
+        GoodsReturnSubSerializerForNonPicking.create_delivery_product_detail_mapped(
             goods_return,
             self.initial_data.get('product_detail_list', []),
         )
 
-        GoodsReturnSubSerializer.update_delivery(goods_return, self.initial_data.get('product_detail_list', []))
+        config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+        if config.is_picking:
+            pass
+        else:
+            GoodsReturnSubSerializerForNonPicking.update_delivery_for_non_picking(goods_return, self.initial_data.get('product_detail_list', []))
         return goods_return
 
 
@@ -178,7 +182,7 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        GoodsReturnSubSerializer.create_delivery_product_detail_mapped(
+        GoodsReturnSubSerializerForNonPicking.create_delivery_product_detail_mapped(
             instance,
             self.initial_data.get('product_detail_list', []),
         )
