@@ -78,7 +78,7 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
         )
 
         config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-        if config.is_picking:
+        if config.is_picking is True:
             pass
         else:
             GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, self.initial_data.get('product_detail_list', []))
