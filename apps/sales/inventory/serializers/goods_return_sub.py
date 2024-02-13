@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
-from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPicking
+from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 
@@ -211,6 +211,5 @@ class GoodsReturnSubSerializerForPicking:
         if filtered_picking.state is True:
             cls.create_new_picking()
             return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
-        else:
-            cls.update_picking()
-            return True
+        cls.update_picking()
+        return True
