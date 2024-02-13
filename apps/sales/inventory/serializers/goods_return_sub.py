@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
-from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPicking
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 
@@ -87,6 +87,12 @@ class GoodsReturnSubSerializerForNonPicking:
 
     @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_product):
+        """
+        Có 3 TH:
+        1) Nếu product không có phương thức quản lí tồn kho: cập nhập trong ProductWareHouse
+        2) Nếu product quản lí ồn kho = LOT: cập nhập trong ProductWareHouse & ProductWareHouseLot
+        3) Nếu product quản lí ồn kho = SN: cập nhập trong ProductWareHouse & ProductWareHouseSerial
+        """
         for item in product_detail_list:
             type_value = item.get('type')
             if type_value == 0:  # General
@@ -115,6 +121,14 @@ class GoodsReturnSubSerializerForNonPicking:
 
     @classmethod
     def update_delivery(cls, goods_return, product_detail_list):
+        """
+        B1: Lấy phiếu Delivery đã chọn từ phiếu trả hàng
+        B2: Có 2 TH:
+            1) Nếu còn phiếu Delivery chưa Done: UPDATE lại phiếu Delivery hiện có > UPDATE product warehouse
+            2) Nếu Delivery đã Done:
+               + Nếu có giao lại: CREATE phiếu Delivery mới > UPDATE product warehouse
+               + Nếu không giao lại: UPDATE product warehouse
+        """
         sub_delivery = goods_return.delivery
         return_quantity = 0
         redelivery_quantity = 0
@@ -175,3 +189,28 @@ class GoodsReturnSubSerializerForNonPicking:
                 cls.create_prod(new_sub, latest_delivery, return_quantity, redelivery_quantity, goods_return.product)
             cls.update_warehouse_prod(product_detail_list, goods_return.product)
         return True
+
+
+class GoodsReturnSubSerializerForPicking:
+    @classmethod
+    def create_new_picking(cls):
+        pass
+
+    @classmethod
+    def update_picking(cls):
+        pass
+
+    @classmethod
+    def update_delivery(cls, goods_return, product_detail_list):
+        """
+        Có 2 TH:
+        1) Nếu tất cả Picking đều Done: CREATE Picking mới > CREATE/UPDATE Delivery
+        2) Nếu tồn tại Picking chưa Done: UPDATE Picking đó > UPDATE Delivery
+        """
+        filtered_picking = goods_return.sale_order.picking_of_sale_order.first().sub
+        if filtered_picking.state is True:
+            cls.create_new_picking()
+            return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
+        else:
+            cls.update_picking()
+            return True
