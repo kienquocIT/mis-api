@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
-from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub
+from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 
@@ -48,7 +48,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 order=obj.order,
                 delivery_data=obj.delivery_data
             )
-            new_prod.put_backup_data()
+            new_prod.before_save()
             prod_arr.append(new_prod)
         OrderDeliveryProduct.objects.filter(delivery_sub=new_sub).delete()
         OrderDeliveryProduct.objects.bulk_create(prod_arr)
@@ -211,6 +211,24 @@ class GoodsReturnSubSerializerForPicking:
             config_at_that_point=picking_obj.config_at_that_point,
             employee_inherit=picking_obj.employee_inherit
         )
+        bulk_info = []
+        for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj):
+            new_item = OrderPickingProduct(
+                product_data=obj.product_data,
+                uom_data=obj.uom_data,
+                uom_id=obj.uom_id,
+                pickup_quantity=obj.pickup_quantity,
+                picked_quantity_before=obj.picked_quantity_before + obj.picked_quantity,
+                remaining_quantity=obj.pickup_quantity - (obj.picked_quantity_before + obj.picked_quantity),
+                picked_quantity=0,
+                picking_sub=new_sub,
+                product_id=obj.product_id,
+                order=obj.order
+            )
+            new_item.before_save()
+            bulk_info.append(new_item)
+        OrderPickingProduct.objects.filter(picking_sub=new_sub).delete()
+        OrderPickingProduct.objects.bulk_create(bulk_info)
         return new_sub
 
     @classmethod
