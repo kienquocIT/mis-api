@@ -924,4 +924,7 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
             'due_date',
             'is_ar_invoice',
             'order',
+            'is_active',
+            'is_balance',
+            'is_system',
         )

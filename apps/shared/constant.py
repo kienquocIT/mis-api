@@ -295,6 +295,7 @@ PAYMENT_TERM_STAGE = (
     (1, _('Contract')),
     (2, _('Delivery')),
     (3, _('Final acceptance')),
+    (4, _('Invoice')),
 )
 
 # REPORT
