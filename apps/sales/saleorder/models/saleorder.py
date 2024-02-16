@@ -827,21 +827,21 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
         verbose_name="sale order",
         related_name="payment_stage_sale_order",
     )
-    stage = models.SmallIntegerField(
-        default=0,
-        help_text='choices= ' + str(PAYMENT_TERM_STAGE),
-    )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    term = models.ForeignKey(
+        'saledata.Term',
+        on_delete=models.SET_NULL,
+        verbose_name="payment term",
+        related_name="so_payment_stage_term",
+        null=True
+    )
+    term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
-    date_type = models.SmallIntegerField(default=0)
-    number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
-    is_balance = models.BooleanField(default=False)
-    is_system = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Sale Order Payment Stage'

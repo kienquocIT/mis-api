@@ -319,6 +319,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        SaleOrderCommonValidate().validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -494,6 +495,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        SaleOrderCommonValidate().validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

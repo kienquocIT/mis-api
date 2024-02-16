@@ -511,33 +511,33 @@ class Opportunity(DataAbstractModel):
                 records = Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
                 self.code = 'OPP.00' + str(records.count() + 1)
 
-        if any(key in kwargs for key in ('quotation_confirm', 'sale_order_status', 'delivery_status')):
-            if not self.is_close_lost and not self.is_deal_close:
-                if 'quotation_confirm' in kwargs:
-                    if self.check_config_auto_update_stage():
-                        self.win_rate = self.auto_update_stage(
-                            self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
-                            self
-                        )
-                    del kwargs['quotation_confirm']
-                elif 'sale_order_status' in kwargs:
-                    if self.check_config_auto_update_stage():
-                        self.win_rate = self.auto_update_stage(
-                            self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
-                            self
-                        )
-                    del kwargs['sale_order_status']
-                elif 'delivery_status' in kwargs:
-                    if self.check_config_auto_update_stage():
-                        self.win_rate = self.auto_update_stage(
-                            self.check_property_stage_when_saving_delivery(self, kwargs['delivery_status']),
-                            self
-                        )
-                    del kwargs['delivery_status']
-                if 'update_fields' in kwargs:
-                    kwargs['update_fields'].append('win_rate')
-                else:
-                    kwargs.update({'update_fields': ['win_rate']})
+        keys_condition = ('quotation_confirm', 'sale_order_status', 'delivery_status')
+        if any(key in kwargs for key in keys_condition) and not self.is_close_lost and not self.is_deal_close:
+            if 'quotation_confirm' in kwargs:
+                if self.check_config_auto_update_stage():
+                    self.win_rate = self.auto_update_stage(
+                        self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
+                        self
+                    )
+                del kwargs['quotation_confirm']
+            elif 'sale_order_status' in kwargs:
+                if self.check_config_auto_update_stage():
+                    self.win_rate = self.auto_update_stage(
+                        self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
+                        self
+                    )
+                del kwargs['sale_order_status']
+            elif 'delivery_status' in kwargs:
+                if self.check_config_auto_update_stage():
+                    self.win_rate = self.auto_update_stage(
+                        self.check_property_stage_when_saving_delivery(self, kwargs['delivery_status']),
+                        self
+                    )
+                del kwargs['delivery_status']
+            if 'update_fields' in kwargs:
+                kwargs['update_fields'].append('win_rate')
+            else:
+                kwargs.update({'update_fields': ['win_rate']})
         super().save(*args, **kwargs)
 
 

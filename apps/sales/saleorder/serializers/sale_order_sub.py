@@ -4,7 +4,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping, ExpenseItem
 from apps.masterdata.saledata.models.accounts import Account, Contact, AccountShippingAddress, AccountBillingAddress
-from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.config import PaymentTerm, Term
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
@@ -13,7 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg
 from apps.shared.translations.expense import ExpenseMsg
 
 
@@ -552,6 +552,23 @@ class SaleOrderCommonValidate:
                     validate_data.update({'indicator_net_income': indicator_value})
         return True
 
+    @classmethod
+    def validate_term_id(cls, value):
+        try:
+            return str(Term.objects.get(id=value).id)
+        except Term.DoesNotExist:
+            raise serializers.ValidationError({'term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'sale_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['sale_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total < 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
@@ -908,23 +925,30 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
+    term_id = serializers.UUIDField(required=False, allow_null=True)
     date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = SaleOrderPaymentStage
         fields = (
-            'stage',
             'remark',
+            'term_id',
+            'term_data',
             'date',
-            'date_type',
-            'number_of_day',
             'payment_ratio',
             'value_before_tax',
             'due_date',
             'is_ar_invoice',
             'order',
-            'is_active',
-            'is_balance',
-            'is_system',
         )
+
+    @classmethod
+    def validate_remark(cls, value):
+        if not value:
+            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+        return value
+
+    @classmethod
+    def validate_term_id(cls, value):
+        return SaleOrderCommonValidate().validate_term_id(value=value)
