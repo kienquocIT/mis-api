@@ -259,7 +259,7 @@ class GoodsReturnSubSerializerForPicking:
         return new_sub
 
     @classmethod
-    def update_picking(cls):
+    def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity):
         pass
 
     @classmethod
@@ -288,6 +288,6 @@ class GoodsReturnSubSerializerForPicking:
             new_sub = cls.create_new_picking(picking_obj.sub, return_quantity, redelivery_quantity)
             picking_obj.sub = new_sub
             picking_obj.save(update_fields=['sub'])
-            return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
-        cls.update_picking()
-        return True
+        else:
+            cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity)
+        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)

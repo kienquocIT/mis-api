@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn
-from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking
+from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
+    GoodsReturnSubSerializerForPicking
 from apps.sales.saleorder.models import SaleOrder
 
 
@@ -79,7 +80,10 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
 
         config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
         if config.is_picking is True:
-            pass
+            GoodsReturnSubSerializerForPicking.update_delivery(
+                goods_return,
+                self.initial_data.get('product_detail_list', [])
+            )
         else:
             GoodsReturnSubSerializerForNonPicking.update_delivery(
                 goods_return,
