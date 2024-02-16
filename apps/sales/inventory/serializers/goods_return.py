@@ -259,7 +259,6 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
             'product_unit_price': item.product_unit_price,
             'product_subtotal_price': item.product_subtotal_price,
             'product_general_traceability_method': item.product.general_traceability_method,
-
         } for item in obj.delivery_product_delivery_sub.all()]
 
     @classmethod
@@ -291,6 +290,7 @@ class GetDeliveryProductsDeliveredSerializer(serializers.ModelSerializer):
             'serial_id': serial.product_warehouse_serial_id,
             'vendor_serial_number': serial.product_warehouse_serial.vendor_serial_number,
             'serial_number': serial.product_warehouse_serial.serial_number,
+            'is_returned': serial.is_returned
         } for serial in obj.delivery_serial_delivery_sub.all()]
 
     @classmethod
@@ -301,5 +301,6 @@ class GetDeliveryProductsDeliveredSerializer(serializers.ModelSerializer):
             'product_unit_price': lot.delivery_product.product_unit_price,
             'lot_id': lot.product_warehouse_lot_id,
             'lot_number': lot.product_warehouse_lot.lot_number,
-            'quantity_delivery': lot.quantity_delivery
+            'quantity_delivery': lot.quantity_delivery,
+            'returned_quantity': lot.returned_quantity
         } for lot in obj.delivery_lot_delivery_sub.all()]

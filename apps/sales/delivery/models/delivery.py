@@ -561,6 +561,7 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         help_text='quantity in ProductWarehouseLot at the time create this record'
     )
     quantity_delivery = models.FloatField(default=0)
+    returned_quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Order Delivery Lot'
@@ -615,6 +616,7 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="product warehouse serial",
         related_name="delivery_serial_product_warehouse_serial",
     )
+    is_returned = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Order Delivery Serial'
