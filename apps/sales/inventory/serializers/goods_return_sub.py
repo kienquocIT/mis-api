@@ -242,7 +242,7 @@ class GoodsReturnSubSerializerForPicking:
         1) Nếu tất cả Picking đều Done: CREATE Picking mới > CREATE/UPDATE Delivery
         2) Nếu tồn tại Picking chưa Done: UPDATE Picking đó > UPDATE Delivery
         """
-        returned_delivery = goods_return.delivery
+        # returned_delivery = goods_return.delivery
         return_quantity = 0
         redelivery_quantity = 0
         for item in product_detail_list:
