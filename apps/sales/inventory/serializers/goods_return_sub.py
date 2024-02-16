@@ -1,3 +1,4 @@
+from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
@@ -71,6 +72,11 @@ class GoodsReturnSubSerializerForNonPicking:
         for obj in OrderDeliveryProduct.objects.filter(delivery_sub=ready_sub):
             obj_return_quantity = return_quantity if obj.product == gr_product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            if obj_return_quantity > obj.delivery_quantity:
+                raise serializers.ValidationError({
+                    'Return quantity':
+                    f'Return quantity ({obj_return_quantity}) > delivery quantity ({obj.delivery_quantity}).'
+                })
             obj.delivery_quantity = obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity
             obj.delivered_quantity_before -= obj_return_quantity
             obj.remaining_quantity += obj_redelivery_quantity
@@ -122,10 +128,11 @@ class GoodsReturnSubSerializerForNonPicking:
     def update_product_state(cls, returned_delivery, product_detail_list):
         returned_product_by_sn = []
         returned_product_by_lot = []
-        lot_return_number = None
+        lot_return_number = 0
+        default_return_number = 0
         for item in product_detail_list:
             if item.get('type') == 0:
-                pass
+                default_return_number = item.get('default_return_number')
             elif item.get('type') == 1:
                 returned_product_by_lot.append(item.get('lot_no_id'))
                 lot_return_number = item.get('lot_return_number')
@@ -134,13 +141,17 @@ class GoodsReturnSubSerializerForNonPicking:
         if len(returned_product_by_lot) > 0:
             for item in returned_delivery.delivery_lot_delivery_sub.all():
                 if str(item.product_warehouse_lot_id) in returned_product_by_lot:
-                    item.returned_quantity = lot_return_number
+                    item.returned_quantity += lot_return_number
                     item.save(update_fields=['returned_quantity'])
         elif len(returned_product_by_sn) > 0:
             for item in returned_delivery.delivery_serial_delivery_sub.all():
                 if str(item.product_warehouse_serial_id) in returned_product_by_sn:
                     item.is_returned = True
                     item.save(update_fields=['is_returned'])
+        else:
+            for item in returned_delivery.delivery_product_delivery_sub.all():
+                item.returned_quantity_default += default_return_number
+                item.save(update_fields=['returned_quantity_default'])
         return True
 
     @classmethod
@@ -166,6 +177,11 @@ class GoodsReturnSubSerializerForNonPicking:
             elif item.get('type') == 2:
                 return_quantity += item.get('is_return', 0)
                 redelivery_quantity += item.get('is_redelivery', 0)
+        if redelivery_quantity > return_quantity:
+            raise serializers.ValidationError({
+                'Redelivery quantity':
+                f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
+            })
         cls.update_product_state(returned_delivery, product_detail_list)
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = returned_delivery.order_delivery.sub

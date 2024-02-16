@@ -410,6 +410,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    returned_quantity_default = models.FloatField(default=0)
 
     def put_backup_data(self):
         if self.product and not self.product_data:
