@@ -1,6 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
-from apps.sales.delivery.models.delivery import OrderDeliverySerial
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 
