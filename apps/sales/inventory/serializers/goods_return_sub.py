@@ -185,20 +185,16 @@ class GoodsReturnSubSerializerForNonPicking:
         cls.update_product_state(returned_delivery, product_detail_list)
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = returned_delivery.order_delivery.sub
-            if ready_sub:
-                ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
-                ready_sub.delivered_quantity_before -= return_quantity
-                ready_sub.remaining_quantity += redelivery_quantity
-                ready_sub.ready_quantity += redelivery_quantity
-                ready_sub.save(
-                    update_fields=[
-                        'delivery_quantity', 'delivered_quantity_before',
-                        'remaining_quantity', 'ready_quantity'
-                    ],
-                    for_goods_return=True
-                )
-                cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product)
-                cls.update_warehouse_prod(product_detail_list, goods_return.product)
+            ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
+            ready_sub.delivered_quantity_before -= return_quantity
+            ready_sub.remaining_quantity += redelivery_quantity
+            ready_sub.ready_quantity += redelivery_quantity
+            ready_sub.save(update_fields=[
+                'delivery_quantity', 'delivered_quantity_before',
+                'remaining_quantity', 'ready_quantity'
+            ])
+            cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product)
+            cls.update_warehouse_prod(product_detail_list, goods_return.product)
         elif goods_return.sale_order.delivery_status == 3:  # Done delivery
             if redelivery_quantity != 0:
                 delivery_sub_obj = returned_delivery.order_delivery.sub
@@ -276,7 +272,13 @@ class GoodsReturnSubSerializerForPicking:
 
     @classmethod
     def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity):
-        pass
+        picking_obj_sub.pickup_quantity = picking_obj_sub.pickup_quantity - return_quantity + redelivery_quantity
+        picking_obj_sub.picked_quantity_before -= return_quantity
+        picking_obj_sub.remaining_quantity += redelivery_quantity
+        picking_obj_sub.save(update_fields=[
+            'pickup_quantity', 'picked_quantity_before', 'remaining_quantity'
+        ])
+        return True
 
     @classmethod
     def update_delivery(cls, goods_return, product_detail_list):
@@ -299,7 +301,7 @@ class GoodsReturnSubSerializerForPicking:
                 redelivery_quantity += item.get('is_redelivery', 0)
 
         picking_obj = goods_return.sale_order.picking_of_sale_order.first()
-        if picking_obj.sub.state is True:
+        if picking_obj.sub.state == 1:
             new_sub = cls.create_new_picking(picking_obj.sub, return_quantity, redelivery_quantity)
             picking_obj.sub = new_sub
             picking_obj.save(update_fields=['sub'])

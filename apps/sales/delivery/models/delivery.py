@@ -309,11 +309,7 @@ class OrderDeliverySub(DataAbstractModel):
             self.code = code
 
     def save(self, *args, **kwargs):
-        for_goods_return = kwargs.get('for_goods_return')
-        if for_goods_return:
-            del kwargs['for_goods_return']
-        else:
-            self.set_and_check_quantity()
+        self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
                 'times', flat=True
@@ -483,11 +479,11 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         self.put_backup_data()
 
     def save(self, *args, **kwargs):
+        self.before_save()
         for_goods_return = kwargs.get('for_goods_return')
         if for_goods_return:
             del kwargs['for_goods_return']
         if not for_goods_return:
-            self.before_save()
             self.create_lot_serial()
         super().save(*args, **kwargs)
 
