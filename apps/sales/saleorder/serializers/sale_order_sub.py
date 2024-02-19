@@ -559,16 +559,6 @@ class SaleOrderCommonValidate:
         except Term.DoesNotExist:
             raise serializers.ValidationError({'term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
-    @classmethod
-    def validate_total_payment_term(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['sale_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-            if total < 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
-        return True
-
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):

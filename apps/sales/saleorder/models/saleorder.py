@@ -3,8 +3,7 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    PAYMENT_TERM_STAGE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
 # CONFIG
