@@ -57,11 +57,11 @@ def create_files_mapped(gr_obj, file_id_list):
         bulk_data_file = []
         for index, file_id in enumerate(file_id_list):
             bulk_data_file.append(GoodsReturnAttachmentFile(
-                advance_payment=gr_obj,
+                goods_return=gr_obj,
                 attachment_id=file_id,
                 order=index
             ))
-        GoodsReturnAttachmentFile.objects.filter(advance_payment=gr_obj).delete()
+        GoodsReturnAttachmentFile.objects.filter(goods_return=gr_obj).delete()
         GoodsReturnAttachmentFile.objects.bulk_create(bulk_data_file)
         return True
     except Exception as err:
