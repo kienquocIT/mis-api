@@ -42,7 +42,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 product=obj.product,
                 uom=obj.uom,
                 delivery_quantity=obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity,
-                delivered_quantity_before=obj.delivered_quantity_before - obj_return_quantity,
+                delivered_quantity_before=obj.delivered_quantity_before - obj_return_quantity + obj.picked_quantity,
                 remaining_quantity=obj_redelivery_quantity,
                 ready_quantity=obj_redelivery_quantity,
                 picked_quantity=0,
@@ -232,7 +232,7 @@ class GoodsReturnSubSerializerForNonPicking:
 
 class GoodsReturnSubSerializerForPicking:
     @classmethod
-    def create_new_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity):
+    def create_new_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, gr_product):
         new_sub = OrderPickingSub.objects.create(
             tenant_id=picking_obj_sub.tenant_id,
             company_id=picking_obj_sub.company_id,
@@ -240,7 +240,7 @@ class GoodsReturnSubSerializerForPicking:
             date_done=None,
             previous_step=picking_obj_sub,
             times=picking_obj_sub.times + 1,
-            pickup_quantity=picking_obj_sub.pickup_quantity,
+            pickup_quantity=picking_obj_sub.pickup_quantity - return_quantity + redelivery_quantity,
             picked_quantity_before=picking_obj_sub.pickup_quantity - return_quantity,
             remaining_quantity=redelivery_quantity,
             picked_quantity=0,
@@ -252,19 +252,20 @@ class GoodsReturnSubSerializerForPicking:
         )
         bulk_info = []
         for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
+            obj_return_quantity = return_quantity if obj.product == gr_product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
             new_item = OrderPickingProduct(
                 product_data=obj.product_data,
                 uom_data=obj.uom_data,
                 uom_id=obj.uom_id,
-                pickup_quantity=obj.pickup_quantity,
-                picked_quantity_before=obj.picked_quantity_before + obj.picked_quantity,
+                pickup_quantity=obj.pickup_quantity - obj_return_quantity + obj_redelivery_quantity,
+                picked_quantity_before=obj.picked_quantity_before + obj.picked_quantity - obj_return_quantity ,
                 remaining_quantity=obj.pickup_quantity - (obj.picked_quantity_before + obj.picked_quantity),
                 picked_quantity=0,
                 picking_sub=new_sub,
                 product_id=obj.product_id,
                 order=obj.order
             )
-            new_item.before_save()
             bulk_info.append(new_item)
         OrderPickingProduct.objects.filter(picking_sub=new_sub).delete()
         OrderPickingProduct.objects.bulk_create(bulk_info)
@@ -312,7 +313,9 @@ class GoodsReturnSubSerializerForPicking:
 
         picking_obj = goods_return.sale_order.picking_of_sale_order
         if picking_obj.sub.state == 1:
-            new_sub = cls.create_new_picking(picking_obj.sub, return_quantity, redelivery_quantity)
+            new_sub = cls.create_new_picking(
+                picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product
+            )
             picking_obj.sub = new_sub
             picking_obj.save(update_fields=['sub'])
         else:
