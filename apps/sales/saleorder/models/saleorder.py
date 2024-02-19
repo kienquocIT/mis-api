@@ -126,6 +126,10 @@ class SaleOrder(DataAbstractModel):
         related_name="sale_order_payment_term",
         null=True
     )
+    payment_term_data = models.JSONField(
+        default=dict,
+        help_text="read data payment term, use for get list or detail sale order"
+    )
     quotation = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE,

@@ -75,7 +75,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    payment_term = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
 
     class Meta:
@@ -88,7 +87,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
-            'payment_term',
+            'payment_term_id',
+            'payment_term_data',
             'quotation',
             'system_status',
             # sale order tabs
@@ -170,14 +170,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
     @classmethod
-    def get_payment_term(cls, obj):
-        return {
-            'id': obj.payment_term_id,
-            'title': obj.payment_term.title,
-            'code': obj.payment_term.code,
-        } if obj.payment_term else {}
-
-    @classmethod
     def get_quotation(cls, obj):
         return {
             'id': obj.quotation_id,
@@ -237,6 +229,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             'quotation',
             # total amount of products
             'total_product_pretax_amount',
@@ -408,6 +401,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             'quotation',
             # total amount of products
             'total_product_pretax_amount',

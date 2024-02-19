@@ -125,6 +125,10 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         related_name="quotation_payment_term",
         null=True
     )
+    payment_term_data = models.JSONField(
+        default=dict,
+        help_text="read data payment term, use for get list or detail quotation"
+    )
     # quotation tabs
     quotation_products_data = models.JSONField(
         default=list,
