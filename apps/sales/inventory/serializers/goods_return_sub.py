@@ -266,6 +266,7 @@ class GoodsReturnSubSerializerForPicking:
                 product_id=obj.product_id,
                 order=obj.order
             )
+            new_item.before_save()
             bulk_info.append(new_item)
         OrderPickingProduct.objects.filter(picking_sub=new_sub).delete()
         OrderPickingProduct.objects.bulk_create(bulk_info)
