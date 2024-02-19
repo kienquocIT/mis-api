@@ -271,13 +271,23 @@ class GoodsReturnSubSerializerForPicking:
         return new_sub
 
     @classmethod
-    def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity):
+    def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, gr_product):
         picking_obj_sub.pickup_quantity = picking_obj_sub.pickup_quantity - return_quantity + redelivery_quantity
         picking_obj_sub.picked_quantity_before -= return_quantity
         picking_obj_sub.remaining_quantity += redelivery_quantity
         picking_obj_sub.save(update_fields=[
             'pickup_quantity', 'picked_quantity_before', 'remaining_quantity'
         ])
+        for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
+            obj_return_quantity = return_quantity if obj.product == gr_product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+
+            obj.pickup_quantity = obj.pickup_quantity - obj_return_quantity + obj_redelivery_quantity
+            obj.picked_quantity_before -= obj_return_quantity
+            obj.remaining_quantity += obj_redelivery_quantity
+            obj.save(update_fields=[
+                'pickup_quantity', 'picked_quantity_before', 'remaining_quantity'
+            ])
         return True
 
     @classmethod
@@ -300,11 +310,11 @@ class GoodsReturnSubSerializerForPicking:
                 return_quantity += item.get('is_return', 0)
                 redelivery_quantity += item.get('is_redelivery', 0)
 
-        picking_obj = goods_return.sale_order.picking_of_sale_order.first()
+        picking_obj = goods_return.sale_order.picking_of_sale_order
         if picking_obj.sub.state == 1:
             new_sub = cls.create_new_picking(picking_obj.sub, return_quantity, redelivery_quantity)
             picking_obj.sub = new_sub
             picking_obj.save(update_fields=['sub'])
         else:
-            cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity)
+            cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product)
         return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)

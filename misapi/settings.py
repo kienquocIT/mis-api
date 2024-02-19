@@ -646,5 +646,14 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
+
+# EMAIL_HOST = 'mail9257.maychuemail.com'
+# EMAIL_PORT = 465
+# EMAIL_USE_SSL = True
+# EMAIL_USE_TLS = False
+# EMAIL_HOST_USER = 'test@bflow.vn'
+# DEFAULT_FROM_EMAIL = 'test@bflow.vn'
+# EMAIL_HOST_PASSWORD = 'CBVf4ZJP576Gff5c'
+
 EMAIL_CONFIG_PASSWORD = 'email-cfg-pwd+M2fwL5JV~}Y+a4Bp_nv@(c/N$Qs*r;Wj)C3kFD]!=x.`&z:>hq'
 DJANGO_CELERY_BEAT_TZ_AWARE = False
