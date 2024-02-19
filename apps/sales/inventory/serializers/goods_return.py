@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
-from apps.sales.inventory.models import GoodsReturn
+from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnSubSerializerForPicking
 from apps.sales.saleorder.models import SaleOrder
+from apps.shared import SaleMsg
 
 
 class GoodsReturnListSerializer(serializers.ModelSerializer):
@@ -51,6 +52,22 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
         } if obj.delivery_id else {}
 
 
+def create_files_mapped(gr_obj, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(GoodsReturnAttachmentFile(
+                advance_payment=gr_obj,
+                attachment_id=file_id,
+                order=index
+            ))
+        GoodsReturnAttachmentFile.objects.filter(advance_payment=gr_obj).delete()
+        GoodsReturnAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+
 class GoodsReturnCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150, required=True)
 
@@ -89,6 +106,10 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
                 goods_return,
                 self.initial_data.get('product_detail_list', [])
             )
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(goods_return, attachment.strip().split(','))
         return goods_return
 
 
@@ -98,6 +119,7 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     data_detail = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -112,7 +134,8 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
             'uom',
             'system_status',
             'date_created',
-            'data_detail'
+            'data_detail',
+            'attachment'
         )
 
     @classmethod
@@ -169,6 +192,11 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
             'is_redelivery': item.is_redelivery
         } for item in obj.goods_return_product_detail.all()]
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = GoodsReturnAttachmentFile.objects.select_related('attachment').filter(goods_return=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
 
@@ -193,6 +221,9 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
             instance,
             self.initial_data.get('product_detail_list', []),
         )
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(instance, attachment.strip().split(','))
         return instance
 
 
