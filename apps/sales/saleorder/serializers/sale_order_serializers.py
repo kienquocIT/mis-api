@@ -315,7 +315,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['sale_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
-            if total < 100:
+            if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True
 
@@ -481,7 +481,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['sale_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
-            if total < 100:
+            if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True
 

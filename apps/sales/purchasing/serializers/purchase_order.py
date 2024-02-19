@@ -4,7 +4,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
     PurchaseOrderQuotation, PurchaseOrderPaymentStage
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg
 
 
 class PurchaseQuotationSerializer(serializers.ModelSerializer):
@@ -574,6 +574,20 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     def validate_contact(cls, value):
         return PurchasingCommonValidate().validate_contact(value=value)
 
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'purchase_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['purchase_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
+    def validate(self, validate_data):
+        self.validate_total_payment_term(validate_data=validate_data)
+        return validate_data
+
     @decorator_run_workflow
     def create(self, validated_data):
         purchase_order = PurchaseOrder.objects.create(**validated_data)
@@ -600,6 +614,11 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # payment stage tab
+    purchase_order_payment_stage = PurchaseOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = PurchaseOrder
@@ -618,6 +637,8 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+            # payment stage tab
+            'purchase_order_payment_stage',
             # system
             'system_status',
         )
@@ -633,6 +654,20 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_contact(cls, value):
         return PurchasingCommonValidate().validate_contact(value=value)
+
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'purchase_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['purchase_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
+    def validate(self, validate_data):
+        self.validate_total_payment_term(validate_data=validate_data)
+        return validate_data
 
     def update(self, instance, validated_data):
         # update purchase order
