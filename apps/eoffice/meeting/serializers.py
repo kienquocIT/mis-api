@@ -254,7 +254,9 @@ class MeetingScheduleSubFunction:
             email.send()
             return True
         except Exception as error:
-            raise serializers.ValidationError({'Online meeting': f'Cannot send email ({error})'})
+            raise serializers.ValidationError({
+                'Online meeting': f"Cannot send email ({error}) check your company's app password."
+            })
 
     @classmethod
     def after_create_online_meeting(cls, meeting_schedule, online_meeting_data):
