@@ -171,7 +171,7 @@ class PurchaseOrder(DataAbstractModel):
                     'po': str(po_product.purchase_order_id),
                     'quantity': po_product.product_quantity_order_actual,
                 }})
-        po_purchase_requests = instance.purchase_requests.all()
+        po_purchase_requests = instance.purchase_requests.filter(sale_order__isnull=False)
         for purchase_request in po_purchase_requests:
             so_rate = 0
             for pr_product in purchase_request.purchase_request.all():
