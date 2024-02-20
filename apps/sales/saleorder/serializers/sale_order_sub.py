@@ -562,19 +562,11 @@ class SaleOrderCommonValidate:
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False
-    )
-    promotion = serializers.UUIDField(
-        allow_null=True
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    promotion = serializers.UUIDField(allow_null=True)
+    shipping = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = SaleOrderProduct
@@ -601,7 +593,10 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'is_promotion',
             'promotion',
             'is_shipping',
-            'shipping'
+            'shipping',
+            'is_group',
+            'group_title',
+            'group_order',
         )
 
     @classmethod
@@ -708,18 +703,10 @@ class SaleOrderLogisticSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderCostSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField(
-        allow_null=True
-    )
-    tax = serializers.UUIDField(
-        required=False
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    shipping = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = SaleOrderCost
@@ -821,21 +808,11 @@ class SaleOrderCostsListSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
-    expense_item = serializers.UUIDField(
-        allow_null=True,
-    )
-    product = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
+    expense = serializers.UUIDField(allow_null=True, required=False)
+    expense_item = serializers.UUIDField(allow_null=True)
+    product = serializers.UUIDField(allow_null=True, required=False)
     unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False
-    )
+    tax = serializers.UUIDField(required=False)
 
     class Meta:
         model = SaleOrderExpense
