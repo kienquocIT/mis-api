@@ -58,18 +58,9 @@ class PurchaseOrder(DataAbstractModel):
         help_text="read data products, use for get list or detail"
     )
     # total amount of products
-    total_product_pretax_amount = models.FloatField(
-        default=0,
-        help_text="total pretax amount of tab product"
-    )
-    total_product_tax = models.FloatField(
-        default=0,
-        help_text="total tax of tab product"
-    )
-    total_product = models.FloatField(
-        default=0,
-        help_text="total amount of tab product"
-    )
+    total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
+    total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
+    total_product = models.FloatField(default=0, help_text="total amount of tab product")
     total_product_revenue_before_tax = models.FloatField(
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
@@ -261,10 +252,7 @@ class PurchaseOrderQuotation(SimpleAbstractModel):
         verbose_name="purchase quotation",
         related_name="purchase_order_quotation_quotation",
     )
-    is_use = models.BooleanField(
-        default=False,
-        help_text='purchase quotation that used to order',
-    )
+    is_use = models.BooleanField(default=False, help_text='purchase quotation that used to order')
 
     class Meta:
         verbose_name = 'Purchase Order Quotation'
@@ -308,25 +296,11 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         verbose_name="tax",
         null=True
     )
-    stock = models.FloatField(
-        default=0,
-        help_text='quantity of product in stock',
-    )
+    stock = models.FloatField(default=0, help_text='quantity of product in stock')
     # product information
-    product_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_description = models.TextField(
-        blank=True,
-        null=True
-    )
+    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_code = models.CharField(max_length=100, blank=True, null=True)
+    product_description = models.TextField(blank=True, null=True)
     product_quantity_order_request = models.FloatField(
         default=0,
         help_text='quantity of product, UI get default by purchase request',
@@ -339,23 +313,11 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         default=0,
         help_text='price of product, UI get default by supplier price',
     )
-    product_tax_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_tax_amount = models.FloatField(
-        default=0
-    )
-    product_subtotal_price = models.FloatField(
-        default=0
-    )
-    product_subtotal_price_after_tax = models.FloatField(
-        default=0
-    )
-    order = models.IntegerField(
-        default=1
-    )
+    product_tax_title = models.CharField(max_length=100, blank=True, null=True)
+    product_tax_amount = models.FloatField(default=0)
+    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_price_after_tax = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
     # goods receipt information
     gr_completed_quantity = models.FloatField(
         default=0,
