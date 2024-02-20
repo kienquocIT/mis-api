@@ -236,8 +236,8 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if ((not obj.valid_time_start.date() >= datetime.now().date()) and
-                (obj.valid_time_end.date() >= datetime.now().date())):
+        if (obj.valid_time_start.date() <= datetime.now().date()) and (
+                obj.valid_time_end.date() >= datetime.now().date()):
             return 'Valid'
         if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
@@ -250,7 +250,6 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
     valid_time_start = serializers.DateTimeField(required=True)
     valid_time_end = serializers.DateTimeField(required=True)
-    price_list_mapped = serializers.UUIDField(required=False)
 
     class Meta:
         model = Price
@@ -267,44 +266,21 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
         )
 
     @classmethod
-    def validate_price_list_mapped(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Price.objects.get_current(
-                    id=value,
-                    fill__company=True,
-                    fill__tenant=True,
-                )
-                return obj
-        except Price.DoesNotExist:
-            raise serializers.ValidationError({'stage': PriceMsg.PRICE_SOURCE_NOT_EXIST})
-        return None
-
-    @classmethod
     def validate_title(cls, value):
         if Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
+            fill__tenant=True,
+            fill__company=True,
+            title=value
         ).exists():
             raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
         return value
 
     @classmethod
-    def validate_factor(cls, attrs):
-        if attrs is not None:
-            if attrs > 0:
-                return attrs
+    def validate_factor(cls, value):
+        if value is not None:
+            if value > 0:
+                return value
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
-        return None
-
-    @classmethod
-    def validate_price(cls, attrs):
-        attrs = float(attrs)
-        if attrs is not None:
-            if attrs > 0:
-                return attrs
-            raise serializers.ValidationError(PriceMsg.PRICE_MUST_BE_GREATER_THAN_ZERO)
         return None
 
     def validate(self, validate_data):
@@ -465,7 +441,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if (not obj.valid_time_start.date() >= datetime.now().date()) and (
+        if (obj.valid_time_start.date() <= datetime.now().date()) and (
                 obj.valid_time_end.date() >= datetime.now().date()):
             return 'Valid'
         if obj.valid_time_end.date() < datetime.now().date():

@@ -57,6 +57,8 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
     def get_status(cls, obj):
         if obj.period_mapped.start_date.year < datetime.now().year:
             return 'Closed'
+        if obj.period_mapped.start_date.year > datetime.now().year:
+            return 'Waiting'
         return 'Opening'
 
     @classmethod

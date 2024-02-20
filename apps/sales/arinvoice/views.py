@@ -18,6 +18,10 @@ __all__ = [
 
 class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     queryset = ARInvoice.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
     serializer_list = ARInvoiceListSerializer
     serializer_create = ARInvoiceCreateSerializer
     serializer_detail = ARInvoiceDetailSerializer

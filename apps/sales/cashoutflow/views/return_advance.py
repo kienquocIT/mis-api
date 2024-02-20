@@ -10,7 +10,10 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 # Create your views here.
 class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     queryset = ReturnAdvance.objects
-    search_fields = ['title']
+    search_fields = [
+        'title',
+        'code',
+    ]
     serializer_list = ReturnAdvanceListSerializer
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
