@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.report.models import ReportCashflow
 from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, MasterDataAbstractModel
 
@@ -80,6 +81,13 @@ class PurchaseOrder(DataAbstractModel):
     purchase_order_payment_stage = models.JSONField(
         default=list,
         help_text="read data payment stage, use for get list or detail purchase order"
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='PurchaseOrderAttachmentFile',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_purchase_order',
     )
 
     class Meta:
@@ -453,5 +461,25 @@ class PurchaseOrderPaymentStage(MasterDataAbstractModel):
         verbose_name = 'Purchase Order Payment Stage'
         verbose_name_plural = 'Purchase Order Payment Stages'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseOrderAttachmentFile(M2MFilesAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name='purchase order',
+        related_name="po_attachment_file_po"
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'purchase_order'
+
+    class Meta:
+        verbose_name = 'Purchase order attachments'
+        verbose_name_plural = 'Purchase order attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
