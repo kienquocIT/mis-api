@@ -287,7 +287,9 @@ class SaleOrder(DataAbstractModel):
         net_income_rate = 0
         if revenue_obj and net_income_obj:
             net_income_rate = (net_income_obj.indicator_value / revenue_obj.indicator_value) * 100
-        for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
+        for so_product in instance.sale_order_product_sale_order.filter(
+                is_promotion=False, is_shipping=False, is_group=False,
+        ):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
             gross_profit = (revenue * gross_profit_rate) / 100
             net_income = (revenue * net_income_rate) / 100
