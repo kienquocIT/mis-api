@@ -176,7 +176,7 @@ class PurchaseOrder(DataAbstractModel):
             for pr_product in purchase_request.purchase_request.all():
                 if str(pr_product.product_id) in po_products_json:
                     po_product_map = po_products_json[str(pr_product.product_id)]
-                    so_rate += (pr_product.quantity / po_product_map.get('quantity', 0)) * 100
+                    so_rate += (pr_product.quantity / po_product_map.get('quantity', 1)) * 100
             # payment
             bulk_data = [ReportCashflow(
                 tenant_id=purchase_request.sale_order.tenant_id,
