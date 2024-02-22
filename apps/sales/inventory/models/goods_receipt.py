@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import ProductWareHouse
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
 
@@ -275,6 +276,27 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                activities_data = []
+                for item in self.goods_receipt_warehouse_goods_receipt.all():
+                    activities_data.append({
+                        'product': item.goods_receipt_product.product,
+                        'warehouse': item.warehouse,
+                        'system_date': self.date_approved,
+                        'posting_date': None,
+                        'document_date': None,
+                        'stock_type': 1,
+                        'trans_id': str(self.id),
+                        'trans_code': self.code,
+                        'quantity': item.quantity_import,
+                        'cost': item.goods_receipt_product.product_unit_price,
+                        'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
+                    })
+                ReportInventorySub.new_log_when_stock_activities_happened(
+                    self.date_approved,
+                    activities_data
+                )
+
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):

@@ -7,6 +7,7 @@ from apps.masterdata.saledata.models.product import (
     ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.sales.report.models import ReportInventory
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -183,6 +184,22 @@ def update_product_variant_item(product_obj, product_variant_item_update_list):
         else:
             bulk_info.append(ProductVariant(product=product_obj, **item))
     ProductVariant.objects.bulk_create(bulk_info)
+    return True
+
+
+def create_report_inventory_item(product_obj):
+    bulk_info = []
+    for month_order in range(1, 13):
+        report_inventory_item = ReportInventory(
+            tenant_id=product_obj.tenant_id,
+            company_id=product_obj.company_id,
+            employee_created_id=product_obj.employee_created_id,
+            employee_inherit_id=product_obj.employee_inherit_id,
+            product=product_obj,
+            order=month_order
+        )
+        bulk_info.append(report_inventory_item)
+    ReportInventory.objects.bulk_create(bulk_info)
     return True
 
 
@@ -421,6 +438,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
         create_product_variant_attribute(product, self.initial_data.get('product_variant_attribute_list', []))
         create_product_variant_item(product, self.initial_data.get('product_variant_item_list', []))
+
+        create_report_inventory_item(product)
 
         return product
 

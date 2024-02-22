@@ -254,16 +254,12 @@ class MeetingScheduleSubFunction:
             email.send()
             return True
         except Exception as err:
-            if err.smtp_code == 535:
-                company_obj = meeting_schedule.company
-                if company_obj:
-                    company_obj.email_app_password_status = False
-                    company_obj.save(update_fields=['email_app_password_status'])
-                raise serializers.ValidationError({
-                    'Online meeting': "Cannot send email. Renew your company's app password"
-                })
+            company_obj = meeting_schedule.company
+            if company_obj:
+                company_obj.email_app_password_status = False
+                company_obj.save(update_fields=['email_app_password_status'])
             raise serializers.ValidationError({
-                'Online meeting': f"Cannot send email. {err.args[1]}"
+                'Online meeting': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
             })
 
     @classmethod

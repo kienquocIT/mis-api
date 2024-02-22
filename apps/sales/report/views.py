@@ -1,6 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
+    ReportInventory
+from apps.sales.report.serializers import ReportInventoryListSerializer
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer
 from apps.shared import mask_view, BaseListMixin
@@ -169,4 +171,35 @@ class ReportCashflowList(BaseListMixin):
         label_code='report', model_code='reportcashflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT INVENTORY
+class ReportInventoryList(BaseListMixin):
+    queryset = ReportInventory.objects
+    serializer_list = ReportInventoryListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        print(self.request.query_params)
+        try:
+            order_param = self.request.query_params['order']
+            return super().get_queryset().select_related(
+                "product"
+            ).filter(order=order_param)
+        except KeyError:
+            return super().get_queryset().select_related(
+                "product"
+            )
+
+    @swagger_auto_schema(
+        operation_summary="Report inventory List",
+        operation_description="Get report inventory List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportinventory', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)

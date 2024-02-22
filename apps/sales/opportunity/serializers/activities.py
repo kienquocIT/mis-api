@@ -197,16 +197,12 @@ def send_email(email_obj, company_id):
             return True
         raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
-        if err.smtp_code == 535:
-            company_obj = Company.objects.filter(id=company_id).first()
-            if company_obj:
-                company_obj.email_app_password_status = False
-                company_obj.save(update_fields=['email_app_password_status'])
-            raise serializers.ValidationError({
-                'Send email': "Cannot send email. Renew your company's app password"
-            })
+        company_obj = Company.objects.filter(id=company_id).first()
+        if company_obj:
+            company_obj.email_app_password_status = False
+            company_obj.save(update_fields=['email_app_password_status'])
         raise serializers.ValidationError({
-            'Send email': f"Cannot send email. {err.args[1]}"
+            'Send email': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
         })
 
 
