@@ -3,6 +3,8 @@ from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
 from rest_framework import serializers
+
+from apps.core.company.models import Company
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting,
     MeetingScheduleAttachmentFile
@@ -253,10 +255,19 @@ class MeetingScheduleSubFunction:
             email.connection = connection
             email.send()
             return True
-        except Exception as error:
-            raise serializers.ValidationError({
-                'Online meeting': f"Cannot send email ({error}) check your company's app password."
-            })
+        except Exception as err:
+            if err.smtp_code == 535:
+                company_obj = meeting_schedule.company
+                if company_obj:
+                    company_obj.email_app_password_status = False
+                    company_obj.save(update_fields=['email_app_password_status'])
+                raise serializers.ValidationError({
+                    'Online meeting': f"Cannot send email. Renew your company's app password"
+                })
+            else:
+                raise serializers.ValidationError({
+                    'Online meeting': f"Cannot send email. {err.args[1]}"
+                })
 
     @classmethod
     def after_create_online_meeting(cls, meeting_schedule, online_meeting_data):
