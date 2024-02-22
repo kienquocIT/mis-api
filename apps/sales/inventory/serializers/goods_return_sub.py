@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
+from apps.sales.acceptance.models import FinalAcceptanceIndicator
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
+from apps.sales.saleorder.models import SaleOrderCost
 
 
 class GoodsReturnSubSerializerForNonPicking:
@@ -308,3 +310,70 @@ class GoodsReturnSubSerializerForPicking:
         else:
             cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity)
         return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
+
+
+class FinalAcceptanceHandle:
+
+    @classmethod
+    def main_handle(cls, instance):
+        product_data_json = {}
+        for return_product in instance.goods_return_product_detail.all():
+            product_id = None
+            value = 0
+            if return_product.type == 1:  # lot
+                product_id, value = cls.setup_by_lot(instance=instance, return_product=return_product)
+            if return_product.type == 2:  # serial
+                product_id, value = cls.setup_by_serial(instance=instance, return_product=return_product)
+            if product_id:
+                if str(product_id) not in product_data_json:
+                    product_data_json.update({
+                        str(product_id): value
+                    })
+                else:
+                    product_data_json[str(product_id)] += value
+            cls.update_fa_delivery(instance=instance, product_data_json=product_data_json)
+        return True
+
+    @classmethod
+    def update_fa_delivery(cls, instance, product_data_json):
+        for fa_ind_delivery in FinalAcceptanceIndicator.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                sale_order_id=instance.sale_order_id, delivery_sub_id=instance.delivery_id,
+        ):
+            fa_ind_product_id = str(fa_ind_delivery.product_id)
+            if fa_ind_product_id in product_data_json:
+                fa_ind_delivery.actual_value = fa_ind_delivery.actual_value - product_data_json[fa_ind_product_id]
+                fa_ind_delivery.save(update_fields=['actual_value'])
+        return True
+
+    @classmethod
+    def setup_by_lot(cls, instance, return_product):
+        product_id = None
+        value = 0
+        if return_product.type == 1:  # lot
+            if return_product.lot_no:
+                if return_product.lot_no.product_warehouse:
+                    product_id = return_product.lot_no.product_warehouse.product_id
+                    so_product_cost = SaleOrderCost.objects.filter(
+                        sale_order_id=instance.sale_order_id,
+                        product_id=product_id
+                    ).first()
+                    if so_product_cost:
+                        value = so_product_cost.product_cost_price * return_product.lot_return_number
+        return product_id, value
+
+    @classmethod
+    def setup_by_serial(cls, instance, return_product):
+        product_id = None
+        value = 0
+        if return_product.type == 2:  # serial
+            if return_product.serial_no:
+                if return_product.serial_no.product_warehouse:
+                    product_id = return_product.serial_no.product_warehouse.product_id
+                    so_product_cost = SaleOrderCost.objects.filter(
+                        sale_order_id=instance.sale_order_id,
+                        product_id=product_id
+                    ).first()
+                    if so_product_cost:
+                        value = so_product_cost.product_cost_price
+        return product_id, value

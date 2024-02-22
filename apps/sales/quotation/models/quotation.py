@@ -324,6 +324,9 @@ class QuotationProduct(SimpleAbstractModel):
         related_name="quotation_product_shipping",
         null=True
     )
+    is_group = models.BooleanField(default=False, help_text="flag to know product group not product")
+    group_title = models.CharField(max_length=100, blank=True, null=True)
+    group_order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Quotation Product'
