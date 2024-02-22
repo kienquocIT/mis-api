@@ -3,8 +3,6 @@ from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
 from rest_framework import serializers
-
-from apps.core.company.models import Company
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting,
     MeetingScheduleAttachmentFile
@@ -262,12 +260,11 @@ class MeetingScheduleSubFunction:
                     company_obj.email_app_password_status = False
                     company_obj.save(update_fields=['email_app_password_status'])
                 raise serializers.ValidationError({
-                    'Online meeting': f"Cannot send email. Renew your company's app password"
+                    'Online meeting': "Cannot send email. Renew your company's app password"
                 })
-            else:
-                raise serializers.ValidationError({
-                    'Online meeting': f"Cannot send email. {err.args[1]}"
-                })
+            raise serializers.ValidationError({
+                'Online meeting': f"Cannot send email. {err.args[1]}"
+            })
 
     @classmethod
     def after_create_online_meeting(cls, meeting_schedule, online_meeting_data):

@@ -203,12 +203,11 @@ def send_email(email_obj, company_id):
                 company_obj.email_app_password_status = False
                 company_obj.save(update_fields=['email_app_password_status'])
             raise serializers.ValidationError({
-                'Send email': f"Cannot send email. Renew your company's app password"
+                'Send email': "Cannot send email. Renew your company's app password"
             })
-        else:
-            raise serializers.ValidationError({
-                'Send email': f"Cannot send email. {err.args[1]}"
-            })
+        raise serializers.ValidationError({
+            'Send email': f"Cannot send email. {err.args[1]}"
+        })
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
