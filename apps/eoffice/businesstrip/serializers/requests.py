@@ -160,6 +160,7 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
     def validate_total_day(cls, value):
         if value <= 0:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EMPTY_DAY})
+        return value
 
     @classmethod
     def create_expense_items(cls, instance, order_dict):
@@ -349,6 +350,7 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
     def validate_total_day(cls, value):
         if value <= 0:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EMPTY_DAY})
+        return value
 
     @classmethod
     def cover_expense_items(cls, instance, order_dict):
