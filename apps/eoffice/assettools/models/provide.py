@@ -4,14 +4,15 @@ import json
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class AssetToolsProvide(DataAbstractModel):
     remark = models.CharField(
-        verbose_name='descriptions',
+        verbose_name='Descriptions',
         max_length=500,
         null=True,
+        blank=True
     )
     products = models.ManyToManyField(
         'saledata.Product',
@@ -41,6 +42,10 @@ class AssetToolsProvide(DataAbstractModel):
         help_text='',
         null=True,
     )
+    complete_delivered = models.BooleanField(
+        verbose_name='Complete Delivered',
+        help_text='request has complete delivered',
+        default=False, null=True)
 
     def code_generator(self):
         ast_p = AssetToolsProvide.objects.filter_current(
@@ -79,7 +84,7 @@ class AssetToolsProvide(DataAbstractModel):
         permissions = ()
 
 
-class AssetToolsProvideProduct(SimpleAbstractModel):
+class AssetToolsProvideProduct(DataAbstractModel):
     asset_tools_provide = models.ForeignKey(
         'assettools.AssetToolsProvide',
         on_delete=models.CASCADE,
@@ -99,6 +104,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         verbose_name='descriptions',
         max_length=500,
         null=True,
+        blank=True,
     )
     product_data = models.JSONField(
         default=dict,
@@ -124,7 +130,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         )
     )
     quantity = models.FloatField(
-        verbose_name='Quantity need pickup of SaleOrder',
+        verbose_name='Quantity of user request',
     )
     price = models.FloatField(default=0, verbose_name='Price')
     tax = models.ForeignKey(
@@ -143,6 +149,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         )
     )
     subtotal = models.FloatField(default=0, verbose_name='Subtotal price')
+    delivered = models.FloatField(default=0, verbose_name='Product is delivered')
 
     def create_backup_data(self):
         if self.tax and not self.tax_data:
@@ -160,7 +167,9 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         if self.product and not self.product_data:
             self.product_data = {
                 "id": str(self.product_id),
-                "title": str(self.product.title)
+                "title": str(self.product.title),
+                "code": self.product.code,
+                "is_inventory": 1 in self.product.product_choice,
             }
 
     def before_save(self):

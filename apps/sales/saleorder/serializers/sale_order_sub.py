@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
-    SaleOrderIndicatorConfig, SaleOrderIndicator
+    SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
@@ -164,6 +164,18 @@ class SaleOrderCommonCreate:
         return True
 
     @classmethod
+    def create_payment_stage(cls, validated_data, instance):
+        SaleOrderPaymentStage.objects.bulk_create(
+            [SaleOrderPaymentStage(
+                sale_order=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                **sale_order_payment_stage,
+            ) for sale_order_payment_stage in validated_data['sale_order_payment_stage']]
+        )
+        return True
+
+    @classmethod
     def delete_old_product(cls, instance):
         old_product = SaleOrderProduct.objects.filter(sale_order=instance)
         if old_product:
@@ -196,6 +208,13 @@ class SaleOrderCommonCreate:
         old_indicator = SaleOrderIndicator.objects.filter(sale_order=instance)
         if old_indicator:
             old_indicator.delete()
+        return True
+
+    @classmethod
+    def delete_old_payment_stage(cls, instance):
+        old_payment_stage = SaleOrderPaymentStage.objects.filter(sale_order=instance)
+        if old_payment_stage:
+            old_payment_stage.delete()
         return True
 
     @classmethod
@@ -233,6 +252,14 @@ class SaleOrderCommonCreate:
             if is_update is True:
                 cls.delete_old_indicator(instance=instance)
             cls.create_indicator(
+                validated_data=validated_data,
+                instance=instance
+            )
+        # payment stage tab
+        if 'sale_order_payment_stage' in validated_data:
+            if is_update is True:
+                cls.delete_old_payment_stage(instance=instance)
+            cls.create_payment_stage(
                 validated_data=validated_data,
                 instance=instance
             )
@@ -308,12 +335,7 @@ class SaleOrderCommonValidate:
                 fill__company=True,
                 id=value
             )
-            return {
-                'id': str(product.id),
-                'title': product.title,
-                'code': product.code,
-                'product_choice': product.product_choice,
-            }
+            return ProductForSaleListSerializer(product).data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
@@ -428,7 +450,32 @@ class SaleOrderCommonValidate:
             return {
                 'id': str(promotion.id),
                 'title': promotion.title,
-                'code': promotion.code
+                'code': promotion.code,
+                'valid_date_start': promotion.valid_date_start,
+                'valid_date_end': promotion.valid_date_end,
+                'remark': promotion.remark,
+                'currency': {
+                    'id': str(promotion.currency_id),
+                    'title': promotion.currency.title,
+                    'abbreviation': promotion.currency.abbreviation,
+                } if promotion.currency else {},
+                'customer_type': promotion.customer_type,
+                'customer_by_list': promotion.customer_by_list,
+                'customer_by_condition': promotion.customer_by_condition,
+                'customer_remark': promotion.customer_remark,
+                'is_discount': promotion.is_discount,
+                'is_gift': promotion.is_gift,
+                'discount_method': promotion.discount_method,
+                'gift_method': promotion.gift_method,
+                'sale_order_used': [
+                    {
+                        'customer_id': order_used[0],
+                        'date_created': order_used[1],
+                    } for order_used in promotion.sale_order_product_promotion.values_list(
+                        'sale_order__customer_id',
+                        'sale_order__date_created'
+                    )
+                ]
             }
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
@@ -491,27 +538,34 @@ class SaleOrderCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    @classmethod
+    def validate_then_set_indicators_value(cls, validate_data):
+        if 'sale_order_indicators_data' in validate_data:
+            for so_indicator in validate_data['sale_order_indicators_data']:
+                indicator_code = so_indicator.get('quotation_indicator', {}).get('code')
+                indicator_value = so_indicator.get('indicator_value', 0)
+                if indicator_code == 'IN0001':
+                    validate_data.update({'indicator_revenue': indicator_value})
+                elif indicator_code == 'IN0003':
+                    validate_data.update({'indicator_gross_profit': indicator_value})
+                elif indicator_code == 'IN0006':
+                    validate_data.update({'indicator_net_income': indicator_value})
+        return True
+
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
-    promotion = serializers.CharField(
-        max_length=550,
+    promotion = serializers.UUIDField(
         allow_null=True
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -647,20 +701,16 @@ class SaleOrderLogisticSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderCostSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField(
         allow_null=True
     )
-    tax = serializers.CharField(
-        max_length=550,
+    tax = serializers.UUIDField(
         required=False
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -764,25 +814,19 @@ class SaleOrderCostsListSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.CharField(
-        max_length=550,
+    expense = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    expense_item = serializers.CharField(
-        max_length=550,
+    expense_item = serializers.UUIDField(
         allow_null=True,
     )
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
 
@@ -839,9 +883,7 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
     # indicator = serializers.CharField(
     #     max_length=550
     # )
-    quotation_indicator = serializers.CharField(
-        max_length=550
-    )
+    quotation_indicator = serializers.UUIDField()
 
     class Meta:
         model = SaleOrderIndicator
@@ -863,3 +905,23 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation_indicator(cls, value):
         return QuotationCommonValidate().validate_indicator(value=value)
+
+
+class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
+    date = serializers.CharField(required=False, allow_null=True)
+    due_date = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = SaleOrderPaymentStage
+        fields = (
+            'stage',
+            'remark',
+            'date',
+            'date_type',
+            'number_of_day',
+            'payment_ratio',
+            'value_before_tax',
+            'due_date',
+            'is_ar_invoice',
+            'order',
+        )

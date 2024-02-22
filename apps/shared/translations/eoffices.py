@@ -1,6 +1,6 @@
-from django.utils.translation import gettext_lazy as _
+__all__ = ['LeaveMsg', 'BusinessMsg', 'MeetingScheduleMsg', 'AssetToolsMsg']
 
-__all__ = ['LeaveMsg', 'BusinessMsg', 'MeetingScheduleMsg']
+from django.utils.translation import gettext_lazy as _
 
 
 class LeaveMsg:
@@ -36,3 +36,9 @@ class MeetingScheduleMsg:
     DUP_CODE = _('Duplicate meeting room code')
     DES_IS_REQUIRED = _('Meeting room description is required')
     SAVE_FILES_ERROR = _('Can not save files.')
+
+
+class AssetToolsMsg:
+    EMPTY_PROVIDE = _('Provide request not found')
+    ERROR_UPDATE_DELIVERED = _('Error update product delivered')
+    RETURN_PRODUCT_ERROR01 = _('Product used in warehouse less than product return')

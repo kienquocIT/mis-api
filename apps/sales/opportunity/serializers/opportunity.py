@@ -11,6 +11,7 @@ from apps.sales.opportunity.models import (
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
     OpportunityConfigStage, OpportunityStage,
 )
+from apps.sales.report.models import ReportPipeline
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -281,6 +282,14 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             permit_view_this_opp=True,
             permit_add_member=True,
             permission_by_configured=self.get_alias_permit_from_general(employee_obj=employee_inherit)
+        )
+
+        # push to report pipeline
+        ReportPipeline.push_from_opp(
+            tenant_id=opportunity.tenant_id,
+            company_id=opportunity.company_id,
+            opportunity_id=opportunity.id,
+            employee_inherit_id=opportunity.employee_inherit_id,
         )
         return opportunity
 
@@ -716,7 +725,9 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'list_stage',
             'is_close_lost',
-            'is_deal_close'
+            'is_deal_close',
+            'estimated_gross_profit_percent',
+            'estimated_gross_profit_value'
         )
 
     @classmethod
@@ -901,7 +912,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'quotation',
             'is_close_lost',
             'is_deal_close',
-            'members'
+            'members',
+            'estimated_gross_profit_percent',
+            'estimated_gross_profit_value'
         )
 
     @classmethod

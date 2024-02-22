@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
-    PurchaseOrderQuotation
+    PurchaseOrderQuotation, PurchaseOrderPaymentStage
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
 from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS
 
@@ -373,6 +373,27 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
         } if obj.tax else {}
 
 
+class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
+    tax = serializers.UUIDField(required=False, allow_null=True)
+    due_date = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = PurchaseOrderPaymentStage
+        fields = (
+            'remark',
+            'payment_ratio',
+            'value_before_tax',
+            'tax',
+            'value_after_tax',
+            'due_date',
+            'order',
+        )
+
+    @classmethod
+    def validate_tax(cls, value):
+        return PurchasingCommonValidate().validate_tax(value=value)
+
+
 # PURCHASE ORDER BEGIN
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
@@ -428,6 +449,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+            # payment stage tab
+            'purchase_order_payment_stage',
             # system
             'system_status',
             'workflow_runtime_id',
@@ -510,6 +533,11 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # payment stage tab
+    purchase_order_payment_stage = PurchaseOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = PurchaseOrder
@@ -528,6 +556,8 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+            # payment stage tab
+            'purchase_order_payment_stage',
             # system
             'system_status',
         )

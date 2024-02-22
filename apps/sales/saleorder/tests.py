@@ -288,6 +288,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # payment stage tab
+                'sale_order_payment_stage',
                 # system
                 'workflow_runtime_id',
                 'is_active',
@@ -540,6 +542,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # payment stage tab
+                'sale_order_payment_stage',
                 # system
                 'workflow_runtime_id',
                 'is_active',
@@ -572,7 +576,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'customer',
                 'sale_person',
                 'date_created',
-                'total_product',
+                'indicator_revenue',
                 'system_status',
                 'opportunity',
                 'quotation',

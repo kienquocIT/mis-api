@@ -41,19 +41,18 @@ class NotifyListSerializer(serializers.ModelSerializer):
         model = Notifications
         fields = (
             'id',
-            'date_created',
             'title',
             'msg',
             'doc_id',
             'doc_app',
+            'application_id',
             'automated_sending',
             'is_done',
             'user_id',
-            'user_data',
             'employee_id',
-            'employee_data',
-            'employee_sender_id',
             'employee_sender_data',
+            'comment_mentions_id',
+            'date_created',
         )
 
 

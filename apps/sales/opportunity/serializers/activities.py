@@ -197,7 +197,9 @@ def send_email(email_obj, company_id):
             return True
         raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
-        raise serializers.ValidationError({'Send email': f'Cannot send email ({err})'})
+        raise serializers.ValidationError({
+            'Send email': f"Cannot send email ({err}) check your company's app password"
+        })
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):

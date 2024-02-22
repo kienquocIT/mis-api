@@ -156,9 +156,11 @@ class RuntimeStageListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationPropertySubDetailSerializer(serializers.ModelSerializer):
+    code_related = serializers.JSONField()
+
     class Meta:
         model = ApplicationProperty
-        fields = ('id', 'remark', 'code', 'type', 'content_type', 'properties', 'compare_operator')
+        fields = ('id', 'remark', 'code', 'type', 'content_type', 'properties', 'compare_operator', 'code_related')
 
 
 class RuntimeAssigneeListSerializer(serializers.ModelSerializer):

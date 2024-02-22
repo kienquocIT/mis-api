@@ -30,7 +30,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency, Application, PlanApplication
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -179,14 +179,11 @@ class SaleDefaultData:
         ).first()
         if primary_current:
             primary_current_id = str(primary_current.id)
-            objs = [
-                Price(
-                    tenant=self.company_obj.tenant, company=self.company_obj, currency=[primary_current_id],
-                    **p_item
-                )
-                for p_item in self.Price_general_data
-            ]
-            Price.objects.bulk_create(objs)
+            general_pr = Price.objects.create(
+                tenant=self.company_obj.tenant, company=self.company_obj, currency=[primary_current_id],
+                **self.Price_general_data[0]
+            )
+            PriceListCurrency.objects.create(price=general_pr, currency_id=primary_current_id)
             return True
         return False
 

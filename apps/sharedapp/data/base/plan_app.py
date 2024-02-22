@@ -210,6 +210,26 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "d633036a-8937-4f9d-a227-420e061496fc",  # Report Customer
     },
+    "298c8b6f-6a62-493f-b0ac-d549a4541497": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "298c8b6f-6a62-493f-b0ac-d549a4541497",  # Report Pipeline
+    },
+    "e4ae0a2c-2130-4a65-b644-1b79db3d033b": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "e4ae0a2c-2130-4a65-b644-1b79db3d033b",  # Revenue Plan
+    },
+    "1d7291dd-1e59-4917-83a3-1cc07cfc4638": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "1d7291dd-1e59-4917-83a3-1cc07cfc4638",  # AR Invoice
+    },
+    "c05a6cf4-efff-47e0-afcf-072017b8141a": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c05a6cf4-efff-47e0-afcf-072017b8141a",  # AP Invoice
+    },
+    "0242ba77-8b02-4589-8ed9-239788083f2b": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",  # Goods return
+    },
 }
 
 _PlanApplication_eOffice_data = {
@@ -232,6 +252,14 @@ _PlanApplication_eOffice_data = {
     "6078deaa-96b3-4743-97e3-5457454fa7aa": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "6078deaa-96b3-4743-97e3-5457454fa7aa",  # Meeting Schedule
+    },
+    "41abd4e9-da89-450b-a44a-da1d6f8a5cd2": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",  # Asset, Tools Delivery
+    },
+    "08e41084-4379-4778-9e16-c09401f0a66e": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",  # Asset, Tools Return
     }
 }
 

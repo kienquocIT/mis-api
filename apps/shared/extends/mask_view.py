@@ -26,6 +26,8 @@ __all__ = [
     'mask_view',
     'EmployeeAttribute',
     'ViewChecking',
+    'ViewAttribute',
+    'ViewConfigDecorator',
 ]
 
 
@@ -1073,16 +1075,68 @@ class PermissionController:
     def config_data__check_by_opp(self, opp_id: Union[str, uuid4], employee_inherit_id: Union[str, uuid4]) -> bool:
         if opp_id and self.config_data and employee_inherit_id:
             try:
-                data = self.config_data.get('employee', {}).get('opp', {}).get(str(opp_id), {})
-            except Exception as err:
-                return False
+                # check perm on space global
+                data_space_1 = []
+                general_perm = self.config_data.get('employee', {}).get('general', {}).items()
+                if general_perm:
+                    for range_code, value in general_perm:
+                        if value and isinstance(value, dict) and value.get('space', None) == '1':
+                            data_space_1.append(range_code)
+                    if data_space_1:
+                        np_all_key = np.array(list(data_space_1))
+                        if np.array_equal(np_all_key, np.array(['1'])):
+                            if str(employee_inherit_id) == str(self.employee_attr.employee_current_id):
+                                return True
+                        elif np.array_equal(np_all_key, np.array(['2'])):
+                            if str(employee_inherit_id) in self.employee_attr.employee_staff_ids__exclude_me():
+                                return True
+                        elif np.array_equal(np_all_key, np.array(['3'])):
+                            if str(employee_inherit_id) in self.employee_attr.employee_same_group_ids__exclude_me():
+                                return True
+                        elif np.array_equal(np_all_key, np.array(['1', '2'])):
+                            if str(employee_inherit_id) in self.employee_attr.employee_staff_ids__append_me():
+                                return True
+                        elif np.array_equal(np_all_key, np.array(['1', '3'])):
+                            if str(employee_inherit_id) in self.employee_attr.employee_same_group_ids__append_me():
+                                return True
+                        elif (
+                                np.array_equal(np_all_key, np.array(['1', '4']))
+                                or np.array_equal(np_all_key, np.array(['1', '2', '4']))
+                                or np.array_equal(np_all_key, np.array(['1', '3', '4']))
+                                or np.array_equal(np_all_key, np.array(['1', '2', '3', '4']))
+                        ):
+                            return True
+                        elif np.array_equal(np_all_key, np.array(['2', '3'])):
+                            if str(employee_inherit_id) in (
+                                    self.employee_attr.employee_staff_ids__exclude_me() +
+                                    self.employee_attr.employee_same_group_ids__exclude_me()
+                            ):
+                                return True
+                        elif (
+                                np.array_equal(np_all_key, np.array(['4']))
+                                or np.array_equal(np_all_key, np.array(['2', '4']))
+                                or np.array_equal(np_all_key, np.array(['3', '4']))
+                                or np.array_equal(np_all_key, np.array(['2', '3', '4']))
+                        ):
+                            if str(employee_inherit_id) != str(self.employee_attr.employee_current_id):
+                                return True
+                        elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
+                            if str(employee_inherit_id) in (
+                                    self.employee_attr.employee_staff_ids__append_me() +
+                                    self.employee_attr.employee_same_group_ids__exclude_me()
+                            ):
+                                return True
 
-            return self.compare_special_permit_with_range_allowed(
-                data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
-                employee_inherit_id=employee_inherit_id,
-                compare_main_id=opp_id,
-                has_from='opp',
-            )
+                data = self.config_data.get('employee', {}).get('opp', {}).get(str(opp_id), {})
+                if data:
+                    return self.compare_special_permit_with_range_allowed(
+                        data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
+                        employee_inherit_id=employee_inherit_id,
+                        compare_main_id=opp_id,
+                        has_from='opp',
+                    )
+            except Exception as err:
+                print('[config_data__check_by_opp]', err)
         return False
 
     def config_data__check_by_prj(self, prj_id: Union[str, uuid4], employee_inherit_id: Union[str, uuid4]) -> bool:

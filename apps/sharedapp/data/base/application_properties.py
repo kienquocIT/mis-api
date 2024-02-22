@@ -284,6 +284,10 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab detail',
         'code': 'quotation_products_data',
         'remark': 'Tab line detail of quotation',
+        'code_related': [
+            'quotation_costs_data', 'quotation_indicators_data',
+            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
+        ],
         'type': 1,
     },
     'fda17a32-9f16-4e7c-b7db-53f007f6467b': {
@@ -298,6 +302,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab cost',
         'code': 'quotation_costs_data',
         'remark': 'Tab cost of quotation',
+        'code_related': ['quotation_indicators_data'],
         'type': 1,
     },
     '10946df3-1e9d-4538-9173-7f75861ab7ed': {
@@ -305,6 +310,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab expense',
         'code': 'quotation_expenses_data',
         'remark': 'Tab expense of quotation',
+        'code_related': ['quotation_indicators_data'],
         'type': 1,
     },
     'd846692b-9d65-4dcb-a667-4318cae17a18': {
@@ -950,6 +956,10 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab detail',
         'code': 'sale_order_products_data',
         'remark': 'Tab line detail of sale order',
+        'code_related': [
+            'sale_order_costs_data', 'sale_order_indicators_data',
+            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
+        ],
         'type': 1,
     },
     'd13549a8-a1c1-450e-818a-613cde814d6a': {
@@ -964,6 +974,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab cost',
         'code': 'sale_order_costs_data',
         'remark': 'Tab cost of sale order',
+        'code_related': ['sale_order_indicators_data'],
         'type': 1,
     },
     '4ac8ebc5-adfd-4078-9834-51de58c064d1': {
@@ -971,6 +982,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab expense',
         'code': 'sale_order_expenses_data',
         'remark': 'Tab expense of sale order',
+        'code_related': ['sale_order_indicators_data'],
         'type': 1,
     },
     'c12b9e32-1043-492c-ac33-78e838c43aac': {
@@ -1543,6 +1555,72 @@ AppProp_AssetTools_Provide_data = {
     }
 }
 
+AppProp_AssetTools_Delivery_data = {
+    "6569747b-66d6-4e77-b760-5ee4289ef207": {
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "1a09a053-72a8-449c-99f5-c7db1b0115af": {
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
+        "title": "Date Delivery",
+        "code": "date_created",
+        "type": 5,
+    },
+    "14132e53-bc2e-4387-a40b-a315a7d29e4a": {
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
+        "title": "Note",
+        "code": "remark",
+        "type": 1,
+    },
+    "a41f4519-498f-415f-94ee-a56e55a0837b": {
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
+        "title": "Tab delivery",
+        "code": "products",
+        "type": 5,
+    },
+    "fff91a0f-f277-42ba-bb17-5edd71c63352": {
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
+        "title": "Tab Attachment",
+        "code": "attachments",
+        "type": 5,
+    }
+}
+
+AppProp_AssetTools_Return_data = {
+    "faa260ce-2a44-4270-84c3-6934153817d3": {
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "2809193b-cd88-4fa2-9c27-85c54cdbc022": {
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
+        "title": "Date Return",
+        "code": "date_return",
+        "type": 5,
+    },
+    "8f8ce65d-b758-4fd1-8359-fcf935f19f0f": {
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
+        "title": "Note",
+        "code": "remark",
+        "type": 1,
+    },
+    "3ec4ba83-8ae4-457a-9801-82578649f529": {
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
+        "title": "Tab return",
+        "code": "products",
+        "type": 5,
+    },
+    "28340e18-d2f0-4e36-98ea-9b809eb31ac7": {
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
+        "title": "Tab Attachment",
+        "code": "attachments",
+        "type": 5,
+    }
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
@@ -1555,4 +1633,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Payment_data,
     **AppProp_SaleData_Return_Payment_data,
     **AppProp_AssetTools_Provide_data,
+    **AppProp_AssetTools_Delivery_data,
+    **AppProp_AssetTools_Return_data,
 }

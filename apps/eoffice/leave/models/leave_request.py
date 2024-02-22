@@ -100,15 +100,18 @@ class LeaveRequest(DataAbstractModel):
 
     def create_code(self):
         # auto create code (temporary)
-        task = LeaveRequest.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
         if not self.code:
+            task = LeaveRequest.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_delete=False,
+                system_status__gte=2
+            ).count()
             char = "L"
-            temper = task + 1
-            code = f"{char}{temper:03d}"
+            num_quotient, num_remainder = divmod(task, 1000)
+            code = f"{char}{num_remainder + 1:03d}"
+            if num_quotient > 0:
+                code += f".{num_quotient}"
             self.code = code
 
     def minus_available(self):
@@ -138,6 +141,7 @@ class LeaveRequest(DataAbstractModel):
                         tenant=available.tenant,
                         company=available.company,
                         leave_available=available,
+                        open_year=available.open_year,
                         total=available.total - item['subtotal'],
                         action=2,
                         quantity=item['subtotal'],
@@ -218,6 +222,12 @@ class LeaveAvailableHistory(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name="leave_available_map_history",
         help_text='foreign key to leave history'
+    )
+    open_year = models.IntegerField(
+        verbose_name='Opening year',
+        null=True,
+        default=0,
+        help_text='year of annual created'
     )
     total = models.FloatField(
         verbose_name='Total annual can user in this year',

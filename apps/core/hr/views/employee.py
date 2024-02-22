@@ -22,7 +22,7 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
-    EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer,
+    EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer, EmployeeListAllSerializer,
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
@@ -49,6 +49,24 @@ class EmployeeUploadAvatar(BaseUpdateMixin):
     )
     def post(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class EmployeeListAll(BaseListMixin):
+    queryset = Employee.objects
+    search_fields = ["email", "search_content"]
+    serializer_list = EmployeeListAllSerializer
+    list_hidden_field = ('tenant_id', 'company_id')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('group')
+
+    def error_auth_require(self):
+        return self.list_empty()
+
+    @swagger_auto_schema(operation_summary="Employee list all (skip auth)")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class EmployeeList(BaseListMixin, BaseCreateMixin):
@@ -345,6 +363,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     queryset = Employee.objects
+    search_fields = ["search_content"]
     filterset_fields = {
         'company_id': ['exact'],
         'role__id': ['exact'],

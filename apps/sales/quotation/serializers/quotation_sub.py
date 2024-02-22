@@ -325,6 +325,25 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    # @classmethod
+    # def validate_product(cls, value):
+    #     try:
+    #         if value is None:
+    #             return {}
+    #         product = Product.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(product.id),
+    #             'title': product.title,
+    #             'code': product.code,
+    #             'product_choice': product.product_choice,
+    #         }
+    #     except Product.DoesNotExist:
+    #         raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
     @classmethod
     def validate_product(cls, value):
         try:
@@ -335,12 +354,7 @@ class QuotationCommonValidate:
                 fill__company=True,
                 id=value
             )
-            return {
-                'id': str(product.id),
-                'title': product.title,
-                'code': product.code,
-                'product_choice': product.product_choice,
-            }
+            return ProductForSaleListSerializer(product).data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
@@ -442,6 +456,24 @@ class QuotationCommonValidate:
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
+    # @classmethod
+    # def validate_promotion(cls, value):
+    #     try:
+    #         if value is None:
+    #             return {}
+    #         promotion = Promotion.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(promotion.id),
+    #             'title': promotion.title,
+    #             'code': promotion.code
+    #         }
+    #     except Promotion.DoesNotExist:
+    #         raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
+
     @classmethod
     def validate_promotion(cls, value):
         try:
@@ -455,7 +487,32 @@ class QuotationCommonValidate:
             return {
                 'id': str(promotion.id),
                 'title': promotion.title,
-                'code': promotion.code
+                'code': promotion.code,
+                'valid_date_start': promotion.valid_date_start,
+                'valid_date_end': promotion.valid_date_end,
+                'remark': promotion.remark,
+                'currency': {
+                    'id': str(promotion.currency_id),
+                    'title': promotion.currency.title,
+                    'abbreviation': promotion.currency.abbreviation,
+                } if promotion.currency else {},
+                'customer_type': promotion.customer_type,
+                'customer_by_list': promotion.customer_by_list,
+                'customer_by_condition': promotion.customer_by_condition,
+                'customer_remark': promotion.customer_remark,
+                'is_discount': promotion.is_discount,
+                'is_gift': promotion.is_gift,
+                'discount_method': promotion.discount_method,
+                'gift_method': promotion.gift_method,
+                'sale_order_used': [
+                    {
+                        'customer_id': order_used[0],
+                        'date_created': order_used[1],
+                    } for order_used in promotion.sale_order_product_promotion.values_list(
+                        'sale_order__customer_id',
+                        'sale_order__date_created'
+                    )
+                ]
             }
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
@@ -530,27 +587,34 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    @classmethod
+    def validate_then_set_indicators_value(cls, validate_data):
+        if 'quotation_indicators_data' in validate_data:
+            for quotation_indicator in validate_data['quotation_indicators_data']:
+                indicator_code = quotation_indicator.get('indicator', {}).get('code')
+                indicator_value = quotation_indicator.get('indicator_value', 0)
+                if indicator_code == 'IN0001':
+                    validate_data.update({'indicator_revenue': indicator_value})
+                elif indicator_code == 'IN0003':
+                    validate_data.update({'indicator_gross_profit': indicator_value})
+                elif indicator_code == 'IN0006':
+                    validate_data.update({'indicator_net_income': indicator_value})
+        return True
+
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
-    promotion = serializers.CharField(
-        max_length=550,
+    promotion = serializers.UUIDField(
         allow_null=True
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -738,20 +802,16 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
 
 
 class QuotationCostSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField(
         allow_null=True
     )
-    tax = serializers.CharField(
-        max_length=550,
+    tax = serializers.UUIDField(
         required=False
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -855,25 +915,19 @@ class QuotationCostsListSerializer(serializers.ModelSerializer):
 
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.CharField(
-        max_length=550,
+    expense = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    expense_item = serializers.CharField(
-        max_length=550,
+    expense_item = serializers.UUIDField(
         allow_null=True,
     )
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False,
     )
 
@@ -927,9 +981,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
 
 
 class QuotationIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
-        max_length=550
-    )
+    indicator = serializers.UUIDField()
 
     class Meta:
         model = QuotationIndicator

@@ -1,5 +1,5 @@
 __all__ = ['AssetToolsProvideCreateSerializer', 'AssetToolsProvideListSerializer', 'AssetToolsProvideDetailSerializer',
-           'AssetToolsProvideUpdateSerializer']
+           'AssetToolsProvideUpdateSerializer', 'AssetToolsProductListByProvideIDSerializer']
 
 from rest_framework import serializers
 
@@ -13,7 +13,7 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField()
     product = serializers.UUIDField()
-    product_remark = serializers.CharField()
+    product_remark = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     uom = serializers.UUIDField()
     tax = serializers.UUIDField(allow_null=True, required=False)
     quantity = serializers.FloatField(allow_null=True, required=False)
@@ -26,6 +26,9 @@ def create_products(instance, prod_list):
     create_lst = []
     for item in prod_list:
         temp = AssetToolsProvideProduct(
+            company=instance.company,
+            tenant=instance.tenant,
+            employee_inherit=instance.employee_inherit,
             asset_tools_provide=instance,
             order=item['order'],
             product_id=item['product'],
@@ -145,7 +148,9 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
                   'pretax_amount',
                   'taxes',
                   'total_amount',
-                  'system_status')
+                  'system_status',
+
+                  )
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -236,3 +241,44 @@ class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
             handle_attach_file(instance, attachments)
 
         return instance
+
+
+class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
+    product_available = serializers.SerializerMethodField()
+    product_warehouse = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_product_available(cls, obj):
+        if obj.product:
+            prod_warehouse = obj.product.product_warehouse_product.first()
+            return prod_warehouse.stock_amount - prod_warehouse.used_amount if prod_warehouse else 0
+        return 0
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        if obj.product:
+            prod_warehouse = obj.product.product_warehouse_product.first()
+            return {
+                "id": str(prod_warehouse.warehouse.id),
+                "title": prod_warehouse.warehouse.title
+            } if hasattr(prod_warehouse, 'warehouse') else {}
+        return {}
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product_data:
+            return obj.product_data
+        return {}
+
+    class Meta:
+        model = AssetToolsProvideProduct
+        fields = (
+            'product',
+            'uom_data',
+            'product_available',
+            'product_warehouse',
+            'order',
+            'quantity',
+            'delivered',
+        )

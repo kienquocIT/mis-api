@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.core.hr.models.private_extends import PermissionAbstractModel
@@ -225,9 +226,12 @@ class Employee(TenantAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    def get_search_content(self):
+        return f'{self.code},{slugify(self.first_name)},{slugify(self.last_name)},{slugify(self.get_full_name())}'
+
     def save(self, *args, **kwargs):
         # setup full name for search engine
-        self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
+        self.search_content = self.get_search_content()
 
         # auto create code (temporary)
 

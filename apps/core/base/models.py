@@ -318,6 +318,10 @@ class ApplicationProperty(CoreAbstractModel):
         verbose_name="parent property",
         null=True,
     )
+    code_related = models.JSONField(
+        default=list,
+        verbose_name='code of other properties that relate to this property by business rule',
+    )
 
     class Meta:
         verbose_name = 'Application property'

@@ -45,6 +45,7 @@ class WareHouse(MasterDataAbstractModel):
     full_address = models.CharField(
         max_length=1000,
         default='',
+        blank=True
     )
 
     agency = models.ForeignKey(
@@ -67,6 +68,7 @@ class WareHouse(MasterDataAbstractModel):
         blank=True,
         related_name='products_of_warehouse',
     )
+    is_dropship = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'WareHouse storage'

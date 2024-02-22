@@ -14,6 +14,7 @@ __all__ = [
     'WareHouseListSerializerForInventoryAdjustment',
     'ProductWarehouseLotListSerializer',
     'ProductWarehouseSerialListSerializer',
+    'ProductWarehouseAssetToolsListSerializer'
 ]
 
 from apps.shared import TypeCheck, WarehouseMsg
@@ -48,6 +49,7 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'agency',
             'full_address',
             'warehouse_type',
+            'is_dropship'
         )
 
     @classmethod
@@ -81,6 +83,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'district',
             'warehouse_type',
             'agency',
+            'is_dropship'
         )
 
     @classmethod
@@ -121,15 +124,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
 
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=100, required=False)
-    remarks = serializers.CharField(required=False)
-    is_active = serializers.BooleanField(required=False)
     agency = serializers.UUIDField(required=False, allow_null=True)
-    # city = serializers.UUIDField(required=False)
-    # district = serializers.UUIDField(required=False)
-    # ward = serializers.UUIDField(required=False)
-    address = serializers.CharField(required=False)
-    full_address = serializers.CharField(required=False)
 
     class Meta:
         model = WareHouse
@@ -144,6 +139,7 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'agency',
             'full_address',
             'warehouse_type',
+            'is_dropship'
         )
 
     @classmethod
@@ -314,12 +310,14 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
         results = []
         products = ProductWareHouse.objects.filter(warehouse=obj)
         for item in products:
-            results.append({
-                'id': str(item.id),
-                'product': item.product_data,
-                'available_amount': item.stock_amount,
-                'inventory_uom': item.uom_data,
-            })
+            results.append(
+                {
+                    'id': str(item.id),
+                    'product': item.product_data,
+                    'available_amount': item.stock_amount,
+                    'inventory_uom': item.uom_data,
+                }
+            )
         return results
 
 
@@ -397,3 +395,34 @@ class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
                 'code': obj.product_warehouse.warehouse.code,
             } if obj.product_warehouse.warehouse else {},
         }
+
+
+class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'uom',
+            'stock_amount',
+            'used_amount',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+        } if obj.uom else {}

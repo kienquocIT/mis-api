@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
@@ -45,9 +46,10 @@ from ..sales.opportunity.models import (
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue
+from ..sales.report.models import ReportRevenue, ReportPipeline
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 
 
 def update_sale_default_data_old_company():
@@ -769,10 +771,25 @@ def update_admin_not_have_available():
 
 
 def re_init_available():
+    # delete all leave available and for loop in company, get all employee and create new available via function
+    # leave_available_map_employee
     LeaveAvailable.objects.all().delete()
     for obj in Company.objects.all():
         for employee in Employee.objects.all():
             leave_available_map_employee(employee, obj)
+
+
+def update_special_leave():
+    list_leave = LeaveAvailable.objects.filter(leave_type__code__in=['FF', 'MY', 'MC'])
+    for item in list_leave:
+        if item.leave_type.code == 'MC':
+            item.total = 1
+        else:
+            item.total = 3
+        item.used = 0
+        item.available = 0
+    LeaveAvailable.objects.bulk_update(list_leave, fields=['total', 'used', 'available'])
+    print('Done re-init all leave available!')
 
 
 def make_sure_function_purchase_request_config():
@@ -887,7 +904,6 @@ def update_backup_data_purchase_request():
         pr.purchase_request_product_datas = data
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
-
 
 
 def update_title_opportunity_document():
@@ -1208,3 +1224,139 @@ def make_sure_asset_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).asset_tools_config()
     print('Asset tools config is done!')
+
+
+def create_report_pipeline_by_opp():
+    for opp in Opportunity.objects.all():
+        ReportPipeline.push_from_opp(
+            tenant_id=opp.tenant_id,
+            company_id=opp.company_id,
+            opportunity_id=opp.id,
+            employee_inherit_id=opp.employee_inherit_id,
+        )
+    print('create_report_pipeline_by_opp done.')
+    return True
+
+
+def fool_data_for_revenue_dashboard():
+    a = ReportRevenue.objects.get(sale_order_id='93d99efb0a774f9eb6bf65cc336b3719')
+    a.date_approved = datetime(2023, 1, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='872e13cef5bb45bb926bf12f02f71c59')
+    a.date_approved = datetime(2023, 2, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='a67b2165945c4b688a96deb723fe987d')
+    a.date_approved = datetime(2023, 3, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='3cd1d6923a2b4ee88926c4ed1e989f53')
+    a.date_approved = datetime(2023, 4, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='8fcdde7909294d0d8da9f2e9831da35a')
+    a.date_approved = datetime(2023, 5, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='7255f876b3ba4a2286ad794a15f81529')
+    a.date_approved = datetime(2023, 6, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='a2e1a7e6063845878395d155a5f9a46b')
+    a.date_approved = datetime(2023, 7, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='0411b2d39e144b4d8857d2cff1f89421')
+    a.date_approved = datetime(2023, 8, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='d2d1accca98148aa8b84749339b29eda')
+    a.date_approved = datetime(2023, 12, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='bc5588ef0e0d4d50b638050ec1ac8d1c')
+    a.date_approved = datetime(2023, 9, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='dec3a0d5ff70442094653fec759e40c5')
+    a.date_approved = datetime(2023, 10, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='fe8ac8c8cd1e4b0c84501d4b14e6ed92')
+    a.date_approved = datetime(2023, 12, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='235b1253d41d4a6085366980ddd3cdf5')
+    a.date_approved = datetime(2023, 11, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='fa79eff12e154085969cf92a06a3c5be')
+    a.date_approved = datetime(2023, 9, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='c8c47118ab1a41d6a3b94cef88b818af')
+    a.date_approved = datetime(2023, 12, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='5f59d221a2754970bccd1e2eee739180')
+    a.date_approved = datetime(2023, 10, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='1837ed70ebe94ace818299e80a77674f')
+    a.date_approved = datetime(2023, 7, 1)
+    a.save()
+    a = ReportRevenue.objects.get(sale_order_id='26d3ea7512ad439b8e1216f614ae24e2')
+    a.date_approved = datetime(1900, 5, 1)
+    a.save()
+    print('Update report data done!')
+    b = Periods.objects.filter(code='P2023')
+    if b.exists():
+        obj = b.first()
+        obj.start_date = datetime(2023, 1, 1)
+        obj.fiscal_year = 2023
+        obj.save()
+        print('Update period data done!')
+
+
+def update_date_approved():
+    for item in ReportRevenue.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    for item in ReportCustomer.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    for item in ReportProduct.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    print('Done!')
+
+
+def reset_and_run_reports_sale():
+    ReportRevenue.objects.all().delete()
+    ReportCustomer.objects.all().delete()
+    ReportProduct.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.push_to_report_revenue(sale_order)
+        SaleOrder.push_to_report_product(sale_order)
+        SaleOrder.push_to_report_customer(sale_order)
+    print('reset_and_run_reports_sale done.')
+
+
+def update_indicators_quotation_so_model():
+    for quotation in Quotation.objects.all():
+        revenue_obj = quotation.quotation_indicator_quotation.filter(code='IN0001').first()
+        gross_profit_obj = quotation.quotation_indicator_quotation.filter(code='IN0003').first()
+        net_income_obj = quotation.quotation_indicator_quotation.filter(code='IN0006').first()
+        quotation.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
+        quotation.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
+        quotation.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
+        quotation.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    for so in SaleOrder.objects.all():
+        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        so.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
+        so.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
+        so.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
+        so.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    print('update_indicators_quotation_so_model done.')
+
+
+def update_price_list():
+    bulk_info = []
+    for item in Price.objects.all():
+        for cr_id in item.currency:
+            bulk_info.append(
+                PriceListCurrency(price=item, currency_id=cr_id)
+            )
+    PriceListCurrency.objects.all().delete()
+    PriceListCurrency.objects.bulk_create(bulk_info)
+    print('Done')
