@@ -319,15 +319,18 @@ class GReturnProductInformationHandle:
         for return_product in instance.goods_return_product_detail.all():
             product = None
             value = 0
+            update_fields = ['wait_delivery_amount', 'stock_amount', 'available_amount']
             if return_product.type == 1:  # lot
                 product, value = cls.setup_by_lot(return_product=return_product)
             if return_product.type == 2:  # serial
                 product, value = cls.setup_by_serial(return_product=return_product)
+            if return_product.is_redelivery is False:
+                update_fields = ['stock_amount', 'available_amount']
             if product:
                 product.save(**{
                     'update_transaction_info': True,
                     'quantity_return': value,
-                    'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
+                    'update_fields': update_fields
                 })
         return True
 
