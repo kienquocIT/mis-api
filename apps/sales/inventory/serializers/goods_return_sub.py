@@ -77,7 +77,7 @@ class GoodsReturnSubSerializerForNonPicking:
             if obj_return_quantity > obj.delivery_quantity:
                 raise serializers.ValidationError({
                     'Return quantity':
-                    f'Return quantity ({obj_return_quantity}) > delivery quantity ({obj.delivery_quantity}).'
+                        f'Return quantity ({obj_return_quantity}) > delivery quantity ({obj.delivery_quantity}).'
                 })
             obj.delivery_quantity = obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity
             obj.delivered_quantity_before -= obj_return_quantity
@@ -182,7 +182,7 @@ class GoodsReturnSubSerializerForNonPicking:
         if redelivery_quantity > return_quantity:
             raise serializers.ValidationError({
                 'Redelivery quantity':
-                f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
+                    f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
             })
         cls.update_product_state(returned_delivery, product_detail_list)
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
@@ -312,7 +312,49 @@ class GoodsReturnSubSerializerForPicking:
         return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
 
 
-class FinalAcceptanceHandle:
+class GReturnProductInformationHandle:
+
+    @classmethod
+    def main_handle(cls, instance):
+        for return_product in instance.goods_return_product_detail.all():
+            product = None
+            value = 0
+            if return_product.type == 1:  # lot
+                product, value = cls.setup_by_lot(return_product=return_product)
+            if return_product.type == 2:  # serial
+                product, value = cls.setup_by_serial(return_product=return_product)
+            if product:
+                product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_return': value,
+                    'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
+                })
+        return True
+
+    @classmethod
+    def setup_by_lot(cls, return_product):
+        product = None
+        value = 0
+        if return_product.type == 1:  # lot
+            if return_product.lot_no:
+                if return_product.lot_no.product_warehouse:
+                    product = return_product.lot_no.product_warehouse.product
+                    value = return_product.lot_return_number
+        return product, value
+
+    @classmethod
+    def setup_by_serial(cls, return_product):
+        product = None
+        value = 0
+        if return_product.type == 2:  # serial
+            if return_product.serial_no:
+                if return_product.serial_no.product_warehouse:
+                    product = return_product.serial_no.product_warehouse.product
+                    value = 1
+        return product, value
+
+
+class GReturnFinalAcceptanceHandle:
 
     @classmethod
     def main_handle(cls, instance):

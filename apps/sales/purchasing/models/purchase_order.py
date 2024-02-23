@@ -149,7 +149,7 @@ class PurchaseOrder(DataAbstractModel):
             final_ratio = 1
             if uom_product_inventory and uom_product_po:
                 final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
-            product_quantity_order_request_final = product_purchase.product_quantity_order_actual* final_ratio
+            product_quantity_order_request_final = product_purchase.product_quantity_order_actual * final_ratio
             if instance.purchase_requests.exists():
                 product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
             stock_final = product_purchase.stock * final_ratio

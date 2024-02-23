@@ -36,9 +36,11 @@ from ..core.hr.models import (
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.serializers.delivery import DeliProductInformationHandle
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse
+    GoodsReceiptWarehouse, GoodsReturn
+from ..sales.inventory.serializers import GReturnProductInformationHandle
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
@@ -1360,3 +1362,27 @@ def update_price_list():
     PriceListCurrency.objects.all().delete()
     PriceListCurrency.objects.bulk_create(bulk_info)
     print('Done')
+
+
+def reset_set_product_transaction_information():
+    # reset
+    for product in Product.objects.all():
+        product.stock_amount = 0
+        product.wait_delivery_amount = 0
+        product.wait_receipt_amount = 0
+        product.available_amount = 0
+        product.save(update_fields=['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount'])
+    # set input, output
+    # input
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
+    # output
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.update_product_wait_delivery_amount(instance=so)
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductInformationHandle.main_handle(instance=deli_sub)
+    for return_obj in GoodsReturn.objects.all():
+        GReturnProductInformationHandle.main_handle(instance=return_obj)
+    print('reset_set_product_transaction_information done.')

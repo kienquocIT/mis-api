@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnSubSerializerForPicking, FinalAcceptanceHandle
+    GoodsReturnSubSerializerForPicking, GReturnFinalAcceptanceHandle, GReturnProductInformationHandle
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import SaleMsg
 
@@ -111,8 +111,10 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(goods_return, attachment.strip().split(','))
 
+        # handle product information
+        GReturnProductInformationHandle.main_handle(instance=goods_return)
         # handle final acceptance
-        FinalAcceptanceHandle.main_handle(instance=goods_return)
+        GReturnFinalAcceptanceHandle.main_handle(instance=goods_return)
         return goods_return
 
 

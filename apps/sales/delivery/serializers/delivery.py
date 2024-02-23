@@ -6,14 +6,14 @@ from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, Product
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import CommonFunc
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
-           'OrderDeliverySubUpdateSerializer']
+           'OrderDeliverySubUpdateSerializer', 'DeliProductInformationHandle']
 
 from ...acceptance.models import FinalAcceptance
 from ...saleorder.models import SaleOrderCost
@@ -81,6 +81,94 @@ class WarehouseQuantityHandle:
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
+        return True
+
+
+class DeliProductInformationHandle:
+
+    # @classmethod
+    # def main_handle(cls, validated_product):
+    #     for data in validated_product:
+    #         product_obj = Product.objects.filter(id=data.get('product_id', None))
+    #         value = data.get('done', 0)
+    #         if product_obj:
+    #             product_obj.save(**{
+    #                 'update_transaction_info': True,
+    #                 'quantity_delivery': value,
+    #                 'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+    #             })
+    #     return True
+
+    @classmethod
+    def main_handle(cls, instance):
+        for deli_product in instance.delivery_product_delivery_sub.all():
+            if deli_product.product:
+                deli_product.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_delivery': deli_product.picked_quantity,
+                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                })
+        return True
+
+
+class DeliSODeliveryStatusHandle:
+
+    @classmethod
+    def main_handle(cls, instance):
+        if instance.order_delivery.sale_order:
+            # update sale order delivery_status (Partially delivered)
+            if instance.order_delivery.sale_order.delivery_status in [0, 1]:
+                instance.order_delivery.sale_order.delivery_status = 2
+                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+            # update sale order delivery_status (Delivered)
+            if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
+                instance.order_delivery.sale_order.delivery_status = 3
+                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+        return True
+
+
+class DeliOpportunityStageHandle:
+
+    @classmethod
+    def main_handle(cls, instance):
+        if instance.order_delivery.sale_order and instance.order_delivery.state == 2:
+            if instance.order_delivery.sale_order.opportunity:
+                instance.order_delivery.sale_order.opportunity.save(**{
+                    'delivery_status': instance.order_delivery.state,
+                })
+        return True
+
+
+class DeliFinalAcceptanceHandle:
+
+    @classmethod
+    def main_handle(cls, instance, validated_product):
+        list_data_indicator = []
+        for item in validated_product:
+            # config final acceptance
+            so_product_cost = SaleOrderCost.objects.filter(
+                sale_order_id=instance.order_delivery.sale_order_id,
+                product_id=item.get('product_id', None)
+            ).first()
+            if so_product_cost:
+                list_data_indicator.append({
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'sale_order_id': instance.order_delivery.sale_order_id,
+                    'delivery_sub_id': instance.id,
+                    'product_id': item.get('product_id', None),
+                    'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
+                    'is_delivery': True,
+                })
+        FinalAcceptance.create_final_acceptance_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.order_delivery.sale_order_id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
+            list_data_indicator=list_data_indicator
+        )
         return True
 
 
@@ -536,58 +624,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
         order_delivery.save(update_fields=['sub', 'state'])
 
-    @classmethod
-    def create_final_acceptance(cls, instance, validated_product):
-        list_data_indicator = []
-        for item in validated_product:
-            # config final acceptance
-            so_product_cost = SaleOrderCost.objects.filter(
-                sale_order_id=instance.order_delivery.sale_order_id,
-                product_id=item.get('product_id', None)
-            ).first()
-            if so_product_cost:
-                list_data_indicator.append({
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'sale_order_id': instance.order_delivery.sale_order_id,
-                    'delivery_sub_id': instance.id,
-                    'product_id': item.get('product_id', None),
-                    'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
-                    'is_delivery': True,
-                })
-        FinalAcceptance.create_final_acceptance_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.order_delivery.sale_order_id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
-            list_data_indicator=list_data_indicator
-        )
-        return True
-
-    @classmethod
-    def update_so_delivery_status(cls, instance):
-        if instance.order_delivery.sale_order:
-            # update sale order delivery_status (Partially delivered)
-            if instance.order_delivery.sale_order.delivery_status in [0, 1]:
-                instance.order_delivery.sale_order.delivery_status = 2
-                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-            # update sale order delivery_status (Delivered)
-            if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
-                instance.order_delivery.sale_order.delivery_status = 3
-                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-        return True
-
-    @classmethod
-    def update_opportunity_stage_by_delivery(cls, instance):
-        if instance.order_delivery.sale_order and instance.order_delivery.state == 2:
-            if instance.order_delivery.sale_order.opportunity:
-                instance.order_delivery.sale_order.opportunity.save(**{
-                    'delivery_status': instance.order_delivery.state,
-                })
-        return True
-
     def update(self, instance, validated_data):
         # declare default object
         CommonFunc.check_update_prod_and_emp(instance, validated_data)
@@ -610,9 +646,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
-
-        # create final acceptance
-        self.create_final_acceptance(instance=instance, validated_product=validated_product)
 
         if len(product_done) > 0:
             # update instance info
@@ -644,8 +677,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.save()
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
-        # update sale order and opportunity by delivery
-        self.update_so_delivery_status(instance)
-        self.update_opportunity_stage_by_delivery(instance)
 
+        # update sale order and opportunity by delivery
+        DeliSODeliveryStatusHandle.main_handle(instance=instance)
+        DeliOpportunityStageHandle.main_handle(instance=instance)
+        # create final acceptance
+        DeliFinalAcceptanceHandle.main_handle(instance=instance, validated_product=validated_product)
         return instance
