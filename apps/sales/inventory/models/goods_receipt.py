@@ -292,7 +292,7 @@ class GoodsReceipt(DataAbstractModel):
                         'cost': item.goods_receipt_product.product_unit_price,
                         'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
                     })
-                ReportInventorySub.new_log_when_stock_activities_happened(
+                ReportInventorySub.logging_when_stock_activities_happened(
                     self.date_approved,
                     activities_data
                 )

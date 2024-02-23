@@ -181,12 +181,11 @@ class ReportInventoryList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        print(self.request.query_params)
         try:
-            order_param = self.request.query_params['order']
+            sub_period_order_param = self.request.query_params['sub_period_order']
             return super().get_queryset().select_related(
                 "product"
-            ).filter(order=order_param)
+            ).filter(sub_period_order=sub_period_order_param)
         except KeyError:
             return super().get_queryset().select_related(
                 "product"

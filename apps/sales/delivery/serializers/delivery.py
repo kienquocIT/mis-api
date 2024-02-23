@@ -652,22 +652,24 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             for item in instance.delivery_product_delivery_sub.all():
                 delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
                 if len(delivery_data) > 0:
-                    warehouse = delivery_data[0]['delivery_data'][0]['warehouse']
-                    quantity = delivery_data[0]['delivery_data'][0]['stock']
-                    activities_data.append({
-                        'product': item.product,
-                        'warehouse': WareHouse.objects.get(id=warehouse),
-                        'system_date': instance.date_done,
-                        'posting_date': None,
-                        'document_date': None,
-                        'stock_type': -1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'quantity': quantity,
-                        'cost': None,
-                        'value': None,
-                    })
-            ReportInventorySub.new_log_when_stock_activities_happened(
+                    for child in delivery_data[0]['delivery_data']:
+                        warehouse = child['warehouse']
+                        quantity = child['stock']
+
+                        activities_data.append({
+                            'product': item.product,
+                            'warehouse': WareHouse.objects.get(id=warehouse),
+                            'system_date': instance.date_done,
+                            'posting_date': None,
+                            'document_date': None,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'quantity': quantity,
+                            'cost': item.product_unit_price,
+                            'value': item.product_unit_price * quantity,
+                        })
+            ReportInventorySub.logging_when_stock_activities_happened(
                 instance.date_done,
                 activities_data
             )
