@@ -7,7 +7,6 @@ from apps.masterdata.saledata.models.product import (
     ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
-from apps.sales.report.models import ReportInventory
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -406,7 +405,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
 
         product = Product.objects.create(**validated_data)
-
         create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
 
         if 'volume' in validated_data and 'weight' in validated_data:
@@ -422,7 +420,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
         create_product_variant_attribute(product, self.initial_data.get('product_variant_attribute_list', []))
         create_product_variant_item(product, self.initial_data.get('product_variant_item_list', []))
-
         return product
 
 

@@ -2,10 +2,12 @@ import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
-from rest_framework import serializers
 from django.core.mail import get_connection
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
+from rest_framework import serializers
 from apps.core.account.models import User
+from apps.core.company.models import (
+    Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
+)
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor

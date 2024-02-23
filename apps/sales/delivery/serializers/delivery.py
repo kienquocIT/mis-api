@@ -259,6 +259,35 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField(min_value=1)
 
 
+def prepare_data_for_logging(instance, validated_product):
+    activities_data = []
+    for item in instance.delivery_product_delivery_sub.all():
+        delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
+        if len(delivery_data) > 0:
+            for child in delivery_data[0]['delivery_data']:
+                warehouse = child['warehouse']
+                quantity = child['stock']
+
+                activities_data.append({
+                    'product': item.product,
+                    'warehouse': WareHouse.objects.get(id=warehouse),
+                    'system_date': instance.date_done,
+                    'posting_date': None,
+                    'document_date': None,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'quantity': quantity,
+                    'cost': item.product_unit_price,
+                    'value': item.product_unit_price * quantity,
+                })
+    ReportInventorySub.logging_when_stock_activities_happened(
+        instance.date_done,
+        activities_data
+    )
+    return True
+
+
 class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     products = ProductDeliveryUpdateSerializer(many=True)
     employee_inherit_id = serializers.UUIDField()
@@ -648,30 +677,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         self.update_opportunity_stage_by_delivery(instance)
 
         if instance.state == 2:
-            activities_data = []
-            for item in instance.delivery_product_delivery_sub.all():
-                delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
-                if len(delivery_data) > 0:
-                    for child in delivery_data[0]['delivery_data']:
-                        warehouse = child['warehouse']
-                        quantity = child['stock']
-
-                        activities_data.append({
-                            'product': item.product,
-                            'warehouse': WareHouse.objects.get(id=warehouse),
-                            'system_date': instance.date_done,
-                            'posting_date': None,
-                            'document_date': None,
-                            'stock_type': -1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'quantity': quantity,
-                            'cost': item.product_unit_price,
-                            'value': item.product_unit_price * quantity,
-                        })
-            ReportInventorySub.logging_when_stock_activities_happened(
-                instance.date_done,
-                activities_data
-            )
+            prepare_data_for_logging(instance, validated_product)
 
         return instance
