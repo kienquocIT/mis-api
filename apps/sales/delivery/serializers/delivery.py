@@ -549,6 +549,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 list_data_indicator.append({
                     'tenant_id': instance.tenant_id,
                     'company_id': instance.company_id,
+                    'sale_order_id': instance.order_delivery.sale_order_id,
                     'delivery_sub_id': instance.id,
                     'product_id': item.get('product_id', None),
                     'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
