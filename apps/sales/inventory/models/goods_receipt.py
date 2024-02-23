@@ -265,6 +265,29 @@ class GoodsReceipt(DataAbstractModel):
                 })
         return True
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        activities_data = []
+        for item in instance.goods_receipt_warehouse_goods_receipt.all():
+            activities_data.append({
+                'product': item.goods_receipt_product.product,
+                'warehouse': item.warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': None,
+                'document_date': None,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'quantity': item.quantity_import,
+                'cost': item.goods_receipt_product.product_unit_price,
+                'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
+            })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance.date_approved,
+            activities_data
+        )
+        return True
+
     def save(self, *args, **kwargs):
         # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
@@ -277,25 +300,7 @@ class GoodsReceipt(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                activities_data = []
-                for item in self.goods_receipt_warehouse_goods_receipt.all():
-                    activities_data.append({
-                        'product': item.goods_receipt_product.product,
-                        'warehouse': item.warehouse,
-                        'system_date': self.date_approved,
-                        'posting_date': None,
-                        'document_date': None,
-                        'stock_type': 1,
-                        'trans_id': str(self.id),
-                        'trans_code': self.code,
-                        'quantity': item.quantity_import,
-                        'cost': item.goods_receipt_product.product_unit_price,
-                        'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
-                    })
-                ReportInventorySub.logging_when_stock_activities_happened(
-                    self.date_approved,
-                    activities_data
-                )
+                self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
