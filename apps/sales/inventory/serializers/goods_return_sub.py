@@ -44,7 +44,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 product=obj.product,
                 uom=obj.uom,
                 delivery_quantity=obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity,
-                delivered_quantity_before=obj.delivered_quantity_before - obj_return_quantity,
+                delivered_quantity_before=obj.delivery_quantity - obj_return_quantity,
                 remaining_quantity=obj_redelivery_quantity,
                 ready_quantity=obj_redelivery_quantity,
                 picked_quantity=0,

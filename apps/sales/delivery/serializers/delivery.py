@@ -86,19 +86,6 @@ class WarehouseQuantityHandle:
 
 class DeliProductInformationHandle:
 
-    # @classmethod
-    # def main_handle(cls, validated_product):
-    #     for data in validated_product:
-    #         product_obj = Product.objects.filter(id=data.get('product_id', None))
-    #         value = data.get('done', 0)
-    #         if product_obj:
-    #             product_obj.save(**{
-    #                 'update_transaction_info': True,
-    #                 'quantity_delivery': value,
-    #                 'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-    #             })
-    #     return True
-
     @classmethod
     def main_handle(cls, instance):
         for deli_product in instance.delivery_product_delivery_sub.all():
