@@ -26,6 +26,8 @@ __all__ = [
     'mask_view',
     'EmployeeAttribute',
     'ViewChecking',
+    'ViewAttribute',
+    'ViewConfigDecorator',
 ]
 
 

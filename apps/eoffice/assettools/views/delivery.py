@@ -96,7 +96,7 @@ class AssetToolsDeliveryRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='assetTools', model_code='AssetToolsProvide', perm_code="edit",
+        label_code='assetTools', model_code='AssetToolsDelivery', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}

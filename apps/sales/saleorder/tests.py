@@ -576,7 +576,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'customer',
                 'sale_person',
                 'date_created',
-                'total_product',
+                'indicator_revenue',
                 'system_status',
                 'opportunity',
                 'quotation',

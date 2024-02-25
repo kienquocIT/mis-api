@@ -406,6 +406,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    returned_quantity_default = models.FloatField(default=0)
 
     def put_backup_data(self):
         if self.product and not self.product_data:
@@ -478,8 +479,12 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         self.put_backup_data()
 
     def save(self, *args, **kwargs):
-        self.before_save()
-        self.create_lot_serial()
+        for_goods_return = kwargs.get('for_goods_return')
+        if for_goods_return:
+            del kwargs['for_goods_return']
+        if not for_goods_return:
+            self.before_save()
+            self.create_lot_serial()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -553,6 +558,7 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         help_text='quantity in ProductWarehouseLot at the time create this record'
     )
     quantity_delivery = models.FloatField(default=0)
+    returned_quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Order Delivery Lot'
@@ -607,6 +613,7 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="product warehouse serial",
         related_name="delivery_serial_product_warehouse_serial",
     )
+    is_returned = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Order Delivery Serial'

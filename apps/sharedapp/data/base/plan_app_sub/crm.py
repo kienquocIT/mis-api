@@ -1447,6 +1447,50 @@ AP_INVOICE_APP_CONFIG = {
     },
 }
 
+GOODS_RETURN_APP_CONFIG = {
+    "id": "0242ba77-8b02-4589-8ed9-239788083f2b",
+    "title": "Goods Return",
+    "code": "goodsreturn",
+    "model_code": "goodsreturn",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1639,6 +1683,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c05a6cf4-efff-47e0-afcf-072017b8141a": ApplicationConfigFrame(**AP_INVOICE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "0242ba77-8b02-4589-8ed9-239788083f2b": ApplicationConfigFrame(**GOODS_RETURN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )

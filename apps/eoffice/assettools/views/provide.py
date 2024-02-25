@@ -96,8 +96,11 @@ class AssetToolsProvideRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class AssetToolsProductListByProvideIDList(BaseListMixin):
     queryset = AssetToolsProvideProduct.objects
     serializer_list = AssetToolsProductListByProvideIDSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        "asset_tools_provide_id": ["exact"]
+        "asset_tools_provide_id": ["exact"],
+        "employee_inherit_id": ["exact"],
+        "delivered": ["gte"]
     }
 
     def get_queryset(self):
@@ -108,7 +111,8 @@ class AssetToolsProductListByProvideIDList(BaseListMixin):
         operation_description="get provide request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='assetTools', model_code='AssetToolsProvide', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -140,7 +140,7 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
     queryset = MeetingSchedule.objects
     serializer_list = MeetingScheduleListSerializer
     serializer_create = MeetingScheduleCreateSerializer
-
+    search_fields = ['title', 'meeting_duration', 'meeting_start_date', 'meeting_start_time', 'meeting_duration']
     serializer_detail = MeetingScheduleDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
@@ -151,7 +151,7 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code='meetingschedule',
         model_code='meetingschedule',
         perm_code='view'
@@ -190,7 +190,7 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code='meetingschedule',
         model_code='meetingschedule',
         perm_code='view'

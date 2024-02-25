@@ -26,6 +26,9 @@ def create_products(instance, prod_list):
     create_lst = []
     for item in prod_list:
         temp = AssetToolsProvideProduct(
+            company=instance.company,
+            tenant=instance.tenant,
+            employee_inherit=instance.employee_inherit,
             asset_tools_provide=instance,
             order=item['order'],
             product_id=item['product'],
@@ -242,6 +245,7 @@ class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
 
 class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
     product_available = serializers.SerializerMethodField()
+    product_warehouse = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
 
     @classmethod
@@ -250,6 +254,16 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
             prod_warehouse = obj.product.product_warehouse_product.first()
             return prod_warehouse.stock_amount - prod_warehouse.used_amount if prod_warehouse else 0
         return 0
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        if obj.product:
+            prod_warehouse = obj.product.product_warehouse_product.first()
+            return {
+                "id": str(prod_warehouse.warehouse.id),
+                "title": prod_warehouse.warehouse.title
+            } if hasattr(prod_warehouse, 'warehouse') else {}
+        return {}
 
     @classmethod
     def get_product(cls, obj):
@@ -263,6 +277,7 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
             'product',
             'uom_data',
             'product_available',
+            'product_warehouse',
             'order',
             'quantity',
             'delivered',

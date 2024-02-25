@@ -229,6 +229,19 @@ class SaleOrder(DataAbstractModel):
         default=list,
         help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
     )
+    indicator_revenue = models.FloatField(
+        default=0,
+        help_text="value of indicator revenue (IN0001)",
+    )
+    indicator_gross_profit = models.FloatField(
+        default=0,
+        help_text="value of indicator gross profit (IN0003)",
+    )
+    indicator_net_income = models.FloatField(
+        default=0,
+        help_text="value of indicator net income (IN0006)",
+    )
+    # delivery status
     delivery_status = models.SmallIntegerField(
         choices=SALE_ORDER_DELIVERY_STATUS,
         default=0
@@ -396,6 +409,14 @@ class SaleOrder(DataAbstractModel):
         )
         return True
 
+    @classmethod
+    def update_opportunity_stage_by_so(cls, instance):
+        if instance.opportunity:
+            instance.opportunity.save(**{
+                'sale_order_status': instance.system_status,
+            })
+        return True
+
     def save(self, *args, **kwargs):
         # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
@@ -416,6 +437,8 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         self.update_product_wait_delivery_amount(self)
+                        # opportunity
+                        self.update_opportunity_stage_by_so(self)
                         # reports
                         self.push_to_report_revenue(self)
                         self.push_to_report_product(self)

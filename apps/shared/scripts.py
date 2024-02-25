@@ -906,7 +906,6 @@ def update_backup_data_purchase_request():
     print('Update Done !')
 
 
-
 def update_title_opportunity_document():
     for item in OpportunityDocument.objects.all():
         item.title = item.subject
@@ -1329,3 +1328,35 @@ def reset_and_run_reports_sale():
         SaleOrder.push_to_report_product(sale_order)
         SaleOrder.push_to_report_customer(sale_order)
     print('reset_and_run_reports_sale done.')
+
+
+def update_indicators_quotation_so_model():
+    for quotation in Quotation.objects.all():
+        revenue_obj = quotation.quotation_indicator_quotation.filter(code='IN0001').first()
+        gross_profit_obj = quotation.quotation_indicator_quotation.filter(code='IN0003').first()
+        net_income_obj = quotation.quotation_indicator_quotation.filter(code='IN0006').first()
+        quotation.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
+        quotation.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
+        quotation.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
+        quotation.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    for so in SaleOrder.objects.all():
+        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        so.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
+        so.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
+        so.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
+        so.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    print('update_indicators_quotation_so_model done.')
+
+
+def update_price_list():
+    bulk_info = []
+    for item in Price.objects.all():
+        for cr_id in item.currency:
+            bulk_info.append(
+                PriceListCurrency(price=item, currency_id=cr_id)
+            )
+    PriceListCurrency.objects.all().delete()
+    PriceListCurrency.objects.bulk_create(bulk_info)
+    print('Done')

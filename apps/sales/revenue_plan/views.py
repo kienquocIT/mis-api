@@ -11,9 +11,14 @@ from apps.shared import (
 
 class RevenuePlanList(BaseListMixin, BaseCreateMixin):
     queryset = RevenuePlan.objects
+    search_fields = [
+        'code',
+        'title',
+        'date_created'
+    ]
     serializer_list = RevenuePlanListSerializer
     serializer_create = RevenuePlanCreateSerializer
-    serializer_detail = RevenuePlanListSerializer
+    serializer_detail = RevenuePlanDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 

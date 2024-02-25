@@ -220,6 +220,18 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         default=list,
         help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
     )
+    indicator_revenue = models.FloatField(
+        default=0,
+        help_text="value of indicator revenue (IN0001)",
+    )
+    indicator_gross_profit = models.FloatField(
+        default=0,
+        help_text="value of indicator gross profit (IN0003)",
+    )
+    indicator_net_income = models.FloatField(
+        default=0,
+        help_text="value of indicator net income (IN0006)",
+    )
 
     class Meta:
         verbose_name = 'Quotation'
@@ -258,7 +270,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         return code
 
     @classmethod
-    def update_quotation_field_for_opportunity(cls, instance):
+    def update_opportunity_stage_by_quotation(cls, instance):
         if instance.opportunity:
             # update field quotation
             instance.opportunity.quotation = instance
@@ -282,7 +294,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_quotation_field_for_opportunity(self)
+                self.update_opportunity_stage_by_quotation(self)
 
         # hit DB
         super().save(*args, **kwargs)

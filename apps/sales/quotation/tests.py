@@ -330,9 +330,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'customer',
                 'sale_person',
                 'date_created',
-                'total_product',
+                'indicator_revenue',
                 'system_status',
-                'opportunity'
+                'opportunity',
             ],
             check_sum_second=True,
         )
@@ -552,9 +552,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'customer',
                 'sale_person',
                 'date_created',
-                'total_product',
+                'indicator_revenue',
                 'system_status',
-                'opportunity'
+                'opportunity',
             ],
             check_sum_second=True,
         )
@@ -584,9 +584,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'customer',
                 'sale_person',
                 'date_created',
-                'total_product',
+                'indicator_revenue',
                 'system_status',
-                'opportunity'
+                'opportunity',
             ],
             check_sum_second=True,
         )

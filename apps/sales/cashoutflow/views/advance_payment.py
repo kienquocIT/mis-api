@@ -11,6 +11,10 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 # Create your views here.
 class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     queryset = AdvancePayment.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
     serializer_list = AdvancePaymentListSerializer
     serializer_create = AdvancePaymentCreateSerializer
     serializer_detail = AdvancePaymentDetailSerializer
