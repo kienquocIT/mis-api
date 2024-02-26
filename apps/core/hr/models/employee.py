@@ -266,6 +266,7 @@ class Employee(TenantAbstractModel):
             'is_delete': self.is_delete,
             'avatar_img': self.avatar_img.url if self.avatar_img else None,
             'group': self.group_id,
+            'is_admin_company': self.is_admin_company,
         }
 
     def get_full_name(self, order_arrange=2):

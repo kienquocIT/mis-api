@@ -12,7 +12,7 @@ from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    BaseItemUnitListSerializer, IndicatorParamListSerializer
+    BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
 )
 
 
@@ -86,23 +86,35 @@ class ApplicationPropertyList(BaseListMixin):
     queryset = ApplicationProperty.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'application': ['exact'],
+        'application': ['exact', 'in'],
         'type': ['exact'],
         'id': ['in'],
         'application__code': ['exact'],
         'is_sale_indicator': ['exact'],
         'parent_n': ['exact', 'isnull'],
+        'is_print': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
-    @swagger_auto_schema(
-        operation_summary="Application Property list",
-        operation_description="Get application property list",
-    )
-    @mask_view(
-        login_require=True,
-        auth_require=False,
-    )
+    @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyForPrintList(BaseListMixin):
+    queryset = ApplicationProperty.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'application': ['exact', 'in'],
+    }
+    serializer_list = ApplicationPropertyForPrintListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_print=True)
+
+    @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
