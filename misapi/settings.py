@@ -77,6 +77,7 @@ INSTALLED_APPS = \
         'apps.core.provisioning',  # config receive request from PROVISIONING server
         'apps.core.log',  # all logged data, except Workflow Log
         'apps.core.attachments',  # all files data | link to file media
+        'apps.core.printer',  # print templates & rules
     ] + [  # application
         'apps.core.base',
         'apps.core.account',

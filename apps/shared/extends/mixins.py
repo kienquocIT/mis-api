@@ -971,13 +971,15 @@ class BaseRetrieveMixin(BaseMixin):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        state_check = self.manual_check_obj_retrieve(instance=instance)
-        if state_check is None:
-            state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
-        if state_check is True:
-            serializer = self.get_serializer_detail(instance)
-            return ResponseController.success_200(data=serializer.data, key_data='result')
-        return ResponseController.forbidden_403()
+        if instance:
+            state_check = self.manual_check_obj_retrieve(instance=instance)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
+            if state_check is True:
+                serializer = self.get_serializer_detail(instance)
+                return ResponseController.success_200(data=serializer.data, key_data='result')
+            return ResponseController.forbidden_403()
+        return ResponseController.notfound_404()
 
 
 class BaseUpdateMixin(BaseMixin):
