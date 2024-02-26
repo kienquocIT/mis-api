@@ -323,6 +323,8 @@ class ApplicationProperty(CoreAbstractModel):
         verbose_name='code of other properties that relate to this property by business rule',
     )
 
+    is_print = models.BooleanField(default=False, verbose_name='Access using for print')
+
     class Meta:
         verbose_name = 'Application property'
         ordering = ('-date_created',)
