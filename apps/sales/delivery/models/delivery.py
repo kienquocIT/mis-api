@@ -479,11 +479,11 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         self.put_backup_data()
 
     def save(self, *args, **kwargs):
-        self.before_save()
         for_goods_return = kwargs.get('for_goods_return')
         if for_goods_return:
             del kwargs['for_goods_return']
         if not for_goods_return:
+            self.before_save()
             self.create_lot_serial()
         super().save(*args, **kwargs)
 

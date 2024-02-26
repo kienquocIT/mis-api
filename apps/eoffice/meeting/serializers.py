@@ -253,8 +253,13 @@ class MeetingScheduleSubFunction:
             email.connection = connection
             email.send()
             return True
-        except Exception as error:
-            raise serializers.ValidationError({'Online meeting': f'Cannot send email ({error})'})
+        except Exception as err:
+            if meeting_schedule.company:
+                meeting_schedule.company.email_app_password_status = False
+                meeting_schedule.company.save(update_fields=['email_app_password_status'])
+            raise serializers.ValidationError({
+                'Online meeting': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
+            })
 
     @classmethod
     def after_create_online_meeting(cls, meeting_schedule, online_meeting_data):

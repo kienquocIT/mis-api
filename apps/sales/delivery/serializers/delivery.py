@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -16,6 +16,7 @@ __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'Ord
            'OrderDeliverySubUpdateSerializer', 'DeliProductInformationHandle']
 
 from ...acceptance.models import FinalAcceptance
+from ...report.models import ReportInventorySub
 from ...saleorder.models import SaleOrderCost
 
 
@@ -611,6 +612,35 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
         order_delivery.save(update_fields=['sub', 'state'])
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance, validated_product):
+        activities_data = []
+        for item in instance.delivery_product_delivery_sub.all():
+            delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
+            if len(delivery_data) > 0:
+                for child in delivery_data[0]['delivery_data']:
+                    warehouse = child['warehouse']
+                    quantity = child['stock']
+
+                    activities_data.append({
+                        'product': item.product,
+                        'warehouse': WareHouse.objects.get(id=warehouse),
+                        'system_date': instance.date_done,
+                        'posting_date': None,
+                        'document_date': None,
+                        'stock_type': -1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'quantity': quantity,
+                        'cost': item.product_unit_price,
+                        'value': item.product_unit_price * quantity,
+                    })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance.date_done,
+            activities_data
+        )
+        return True
+
     def update(self, instance, validated_data):
         # declare default object
         CommonFunc.check_update_prod_and_emp(instance, validated_data)
@@ -670,4 +700,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         DeliOpportunityStageHandle.main_handle(instance=instance)
         # create final acceptance
         DeliFinalAcceptanceHandle.main_handle(instance=instance, validated_product=validated_product)
+        if instance.state == 2:
+            self.prepare_data_for_logging(instance, validated_product)
+
         return instance

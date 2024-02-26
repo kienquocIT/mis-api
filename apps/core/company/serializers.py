@@ -2,10 +2,12 @@ import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
+from django.core.mail import get_connection
 from rest_framework import serializers
-
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
+from apps.core.company.models import (
+    Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
+)
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
@@ -299,6 +301,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        print(0, validate_data.get('email_app_password'))
         if validate_data.get('email_app_password'):
             password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
             cryptor = SimpleEncryptor(key=password)
@@ -312,6 +315,18 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        if validated_data.get('email_app_password'):
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            connection = get_connection(
+                username=instance.email,
+                password=SimpleEncryptor(key=password).decrypt(instance.email_app_password),
+                fail_silently=False,
+            )
+            if not connection.open():
+                instance.email_app_password_status = False
+                instance.save(update_fields=['email_app_password_status'])
+
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance
 
