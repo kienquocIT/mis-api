@@ -15,6 +15,10 @@ __all__ = [
 
 class APInvoiceList(BaseListMixin, BaseCreateMixin):
     queryset = APInvoice.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
     serializer_list = APInvoiceListSerializer
     serializer_create = APInvoiceCreateSerializer
     serializer_detail = APInvoiceDetailSerializer

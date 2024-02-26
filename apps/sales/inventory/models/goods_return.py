@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.shared import DataAbstractModel
 
 
@@ -35,6 +37,21 @@ class GoodsReturnProductDetail(DataAbstractModel):
     class Meta:
         verbose_name = 'Goods Return Product Detail'
         verbose_name_plural = 'Goods Returns Products Detail'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsReturnAttachmentFile(M2MFilesAbstractModel):
+    goods_return = models.ForeignKey(
+        GoodsReturn,
+        on_delete=models.CASCADE,
+        related_name='goods_return_attachments'
+    )
+
+    class Meta:
+        verbose_name = 'Goods Return attachment'
+        verbose_name_plural = 'Goods Return attachments'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

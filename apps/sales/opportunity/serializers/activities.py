@@ -197,7 +197,13 @@ def send_email(email_obj, company_id):
             return True
         raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
-        raise serializers.ValidationError({'Send email': f'Cannot send email ({err})'})
+        company_obj = Company.objects.filter(id=company_id).first()
+        if company_obj:
+            company_obj.email_app_password_status = False
+            company_obj.save(update_fields=['email_app_password_status'])
+        raise serializers.ValidationError({
+            'Send email': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
+        })
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
@@ -213,7 +219,9 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email_to_list(cls, value):
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({'Email to list': 'Missing to list'})
 
     @classmethod
     def validate_email_cc_list(cls, value):
