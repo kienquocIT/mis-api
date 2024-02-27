@@ -104,7 +104,7 @@ class ApplicationPropertyList(BaseListMixin):
 
 class ApplicationPropertyForPrintList(BaseListMixin):
     queryset = ApplicationProperty.objects
-    search_fields = ['title', 'code']
+    search_fields = ['code', 'title_slug']
     filterset_fields = {
         'application': ['exact', 'in'],
     }

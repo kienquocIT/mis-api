@@ -68,23 +68,39 @@ Quotation_data__print_params = {
     },
     'c6ed86ba-dbcb-4b87-93f8-92b9c7db2360': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product title',
+        'title': 'Product - title',
         'code': 'quotation_products_data___product_title',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product - description',
+        'code': 'quotation_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     'd009e1de-a98c-4b06-a648-ccf53a8d9248': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product code',
+        'title': 'Product - code',
         'code': 'quotation_products_data___product_code',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    'ecd6a778-1819-48c3-95ac-eddd846abf12': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product - Unit Price',
+        'code': 'quotation_products_data___product_unit_price',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     '79a2ff62-19bd-42f5-a7b9-77312380265c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Subtotal Price',
+        'title': 'Product - Subtotal Price',
         'code': 'quotation_products_data___product_subtotal_price',
         'remark': '',
         'type': 1,
@@ -92,7 +108,7 @@ Quotation_data__print_params = {
     },
     '1415f68a-c353-40c1-9b27-f6ed6cc25422': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Tax title',
+        'title': 'Product - Tax title',
         'code': 'quotation_products_data___product_tax_title',
         'remark': '',
         'type': 1,
@@ -100,7 +116,7 @@ Quotation_data__print_params = {
     },
     '4da956e4-3ea3-47af-a021-62b3529fa648': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product order',
+        'title': 'Product - Order Number',
         'code': 'quotation_products_data___order',
         'remark': '',
         'type': 1,
@@ -108,7 +124,7 @@ Quotation_data__print_params = {
     },
     'f5bdb810-44c3-405b-9714-faa68b2034b1': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Tax value',
+        'title': 'Product - Tax value',
         'code': 'quotation_products_data___product_tax_value',
         'remark': '',
         'type': 1,
@@ -116,7 +132,7 @@ Quotation_data__print_params = {
     },
     'e1fdb14b-865d-4510-aaaf-d77d0d7c3cb6': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Tax amount',
+        'title': 'Product - Tax amount',
         'code': 'quotation_products_data___product_tax_amount',
         'remark': '',
         'type': 1,
@@ -124,7 +140,7 @@ Quotation_data__print_params = {
     },
     'aec2d952-9a2b-404f-a313-9198e29501cf': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Subtotal Price After Tax',
+        'title': 'Product - Subtotal Price After Tax',
         'code': 'quotation_products_data___product_subtotal_price_after_tax',
         'remark': '',
         'type': 1,
@@ -132,7 +148,7 @@ Quotation_data__print_params = {
     },
     '71b016a3-5211-4649-a129-85a10bbcfc6b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product UOM',
+        'title': 'Product - UOM',
         'code': 'quotation_products_data___product_uom_title',
         'remark': '',
         'type': 1,
@@ -140,7 +156,7 @@ Quotation_data__print_params = {
     },
     'af340227-2a35-4561-8806-806adf6bd51f': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product quantity',
+        'title': 'Product - Quantity',
         'code': 'quotation_products_data___product_quantity',
         'remark': '',
         'type': 1,
@@ -148,7 +164,7 @@ Quotation_data__print_params = {
     },
     '03d93b32-2cf1-4f2e-a9e2-881748f2ac4e': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product discount amount',
+        'title': 'Product - Discount amount',
         'code': 'quotation_products_data___product_discount_amount',
         'remark': '',
         'type': 1,
@@ -156,7 +172,7 @@ Quotation_data__print_params = {
     },
     'e16c6f13-0c34-4152-a7c3-d2264ab757e6': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product discount value',
+        'title': 'Product - Discount value',
         'code': 'quotation_products_data___product_discount_value',
         'remark': '',
         'type': 1,
