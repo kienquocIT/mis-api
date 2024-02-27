@@ -830,6 +830,6 @@ class OpportunityStage(SimpleAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if self.opportunity.company_id != self.stage.company_id:
-            raise ValueError('Can not update opp stage because of different companies between opp & stage config')
+        # if self.opportunity.company_id != self.stage.company_id:
+        #     raise ValueError('Can not update opp stage because of different companies between opp & stage config')
         super().save(*args, **kwargs)
