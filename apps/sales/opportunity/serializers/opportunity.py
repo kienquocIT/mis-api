@@ -393,9 +393,9 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-def get_opp_config_stage():
+def get_opp_config_stage(instance):
     opp_config_stage = []
-    for item in OpportunityConfigStage.objects.filter_current(fill__company=True):
+    for item in OpportunityConfigStage.objects.filter_current(company=instance.company):
         condition_datas = []
         for data in item.condition_datas:
             condition_datas.append(
@@ -583,7 +583,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
 
     @classmethod
     def update_opportunity_stage_for_list(cls, instance):
-        opp_config_stage = get_opp_config_stage()
+        opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
         instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage)
 

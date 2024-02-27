@@ -45,6 +45,7 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
 )
+from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
@@ -1408,3 +1409,9 @@ def reset_set_product_warehouse_stock():
     for deli_sub in OrderDeliverySub.objects.all():
         DeliProductWarehouseHandle.main_handle(instance=deli_sub)
     print('reset_set_product_warehouse_stock done.')
+
+
+def reset_opportunity_stage():
+    for opp in Opportunity.objects.all():
+        CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
+    print('Done')
