@@ -46,6 +46,7 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
 )
+from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
@@ -1429,3 +1430,9 @@ def update_quotation_so_json_data():
         if len(update_fields) > 0:
             so.save(update_fields=update_fields)
     print('update_so_json_data done.')
+
+
+def reset_opportunity_stage():
+    for opp in Opportunity.objects.all():
+        CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
+    print('Done')
