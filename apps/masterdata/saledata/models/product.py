@@ -192,7 +192,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
-    # Transaction information
+    # Stock information
     stock_amount = models.FloatField(
         default=0,
         verbose_name="Stock Amount",

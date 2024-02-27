@@ -53,7 +53,7 @@ class WarehouseQuantityHandle:
                 # số lượng trong kho đã quy đổi
                 in_stock_unit = item.stock_amount * target_ratio
                 calc = in_stock_unit - mediate_number
-                item_sold = 0
+                # item_sold = 0
                 if calc >= 0:
                     # đủ hàng
                     is_done = True
@@ -69,18 +69,18 @@ class WarehouseQuantityHandle:
                     # trừ kho tất cả của record này
                     mediate_number = abs(calc)
                     item.sold_amount += in_stock_unit
-                    item_sold = in_stock_unit
+                    # item_sold = in_stock_unit
                     item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - in_stock_unit
                     list_update.append(item)
 
-                # update product wait_delivery_amount
-                item.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_delivery': item_sold,
-                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                })
+                # # update product wait_delivery_amount
+                # item.product.save(**{
+                #     'update_transaction_info': True,
+                #     'quantity_delivery': item_sold,
+                #     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                # })
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
         return True
 
@@ -96,6 +96,36 @@ class DeliProductInformationHandle:
                     'quantity_delivery': deli_product.picked_quantity,
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
+        return True
+
+
+class DeliProductWarehouseHandle:
+
+    @classmethod
+    def main_handle(cls, instance):
+        config = instance.config_at_that_point
+        if not config:
+            get_config = DeliveryConfig.objects.filter(company_id=instance.company_id).first()
+            if get_config:
+                config = {
+                    "is_picking": get_config.is_picking,
+                    "is_partial_ship": get_config.is_partial_ship
+                }
+        for deli_product in instance.delivery_product_delivery_sub.all():
+            if deli_product.product and deli_product.delivery_data:
+                for data in deli_product.delivery_data:
+                    if 'warehouse' in data and 'uom' in data and 'stock' in data:
+                        product_warehouse = ProductWareHouse.objects.filter(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_id=deli_product.product_id,
+                            warehouse_id=data['warehouse'],
+                        )
+                        source = {
+                            "uom": data['uom'],
+                            "quantity": data['stock']
+                        }
+                        WarehouseQuantityHandle.minus_tock(source, product_warehouse, config)
         return True
 
 
@@ -379,7 +409,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'User': HrMsg.EMPLOYEE_WAS_LINKED})
 
             # check files
-            state, att_objs = Files.check_media_file(file_ids=attachments,employee_id=employee_id, doc_id=instance.id)
+            state, att_objs = Files.check_media_file(file_ids=attachments, employee_id=employee_id, doc_id=instance.id)
             if state:
                 # register file
                 file_objs = Files.regis_media_file(
@@ -695,9 +725,12 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
 
-        # update sale order and opportunity by delivery
+        # update sale order
         DeliSODeliveryStatusHandle.main_handle(instance=instance)
+        # update opportunity
         DeliOpportunityStageHandle.main_handle(instance=instance)
+        # update product
+        DeliProductInformationHandle.main_handle(instance=instance)
         # create final acceptance
         DeliFinalAcceptanceHandle.main_handle(instance=instance, validated_product=validated_product)
         if instance.state == 2:
