@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sales.opportunity.models import OpportunityConfigStage
+# from apps.sales.opportunity.models import OpportunityConfigStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
 
 
