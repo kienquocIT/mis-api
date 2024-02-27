@@ -86,6 +86,9 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
                     company_id=user_obj.company_current_id,
                 )
                 product_type = str(asset_config.first().product_type.id)
+                warehouses = asset_config.first().asset_config_warehouse_map_asset_config.all()
+                product_warehouse = [str(warehouse.warehouse.id) for warehouse in warehouses]
+                # check admin list
                 asset_admin_list = asset_config.first().asset_config_employee_map_asset_config.all()
                 is_authen = False
                 if user_obj.employee_current and asset_admin_list:
@@ -95,8 +98,9 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
                             break
                 if not is_authen:
                     raise exceptions.PermissionDenied
-                filter_kwargs &= Q(**{
-                    'product__general_product_types_mapped__id': product_type})
+                filter_kwargs &= (Q(product__general_product_types_mapped__id=product_type) & Q(
+                    warehouse__id__in=product_warehouse
+                ))
             if filter_kwargs is not None:
                 return queryset.filter(filter_kwargs)
             return queryset

@@ -53,7 +53,7 @@ class AssetToolsProductUsedList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ('code', 'title')
     filterset_fields = {
-        'employee_inherit': ['exact'],
+        'employee_inherit': ['exact']
     }
 
     def get_queryset(self):
