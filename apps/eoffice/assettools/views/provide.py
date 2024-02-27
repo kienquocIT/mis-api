@@ -100,7 +100,7 @@ class AssetToolsProductListByProvideIDList(BaseListMixin):
     filterset_fields = {
         "asset_tools_provide_id": ["exact"],
         "employee_inherit_id": ["exact"],
-        "delivered": ["gte"]
+        "delivered": ["exact", "gt"]
     }
 
     def get_queryset(self):

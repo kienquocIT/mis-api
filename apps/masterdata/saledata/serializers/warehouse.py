@@ -400,6 +400,7 @@ class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
 class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -407,6 +408,7 @@ class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
             'id',
             'product',
             'uom',
+            'warehouse',
             'stock_amount',
             'used_amount',
         )
@@ -426,3 +428,10 @@ class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
             'title': obj.uom.title,
             'code': obj.uom.code,
         } if obj.uom else {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+        } if obj.warehouse else {}
