@@ -35,6 +35,7 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
 from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
@@ -1408,3 +1409,23 @@ def reset_set_product_warehouse_stock():
     for deli_sub in OrderDeliverySub.objects.all():
         DeliProductWarehouseHandle.main_handle(instance=deli_sub)
     print('reset_set_product_warehouse_stock done.')
+
+
+def update_quotation_so_json_data():
+    # quotation
+    for quotation in Quotation.objects.all():
+        update_fields = []
+        if quotation.payment_term and not quotation.payment_term_data:
+            quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            quotation.save(update_fields=update_fields)
+    # sale order
+    for so in SaleOrder.objects.all():
+        update_fields = []
+        if so.payment_term and not so.payment_term_data:
+            so.payment_term_data = PaymentTermListSerializer(so.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            so.save(update_fields=update_fields)
+    print('update_so_json_data done.')
