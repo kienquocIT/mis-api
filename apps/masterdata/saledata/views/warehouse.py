@@ -109,7 +109,7 @@ class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    filterset_class = ProductWareHouseListFilter
+    # filterset_class = ProductWareHouseListFilter
 
     filterset_fields = {
         "product_id": ["exact"],
