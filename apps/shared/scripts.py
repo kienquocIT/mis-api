@@ -36,9 +36,11 @@ from ..core.hr.models import (
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse
+    GoodsReceiptWarehouse, GoodsReturn
+from ..sales.inventory.serializers import GReturnProductInformationHandle
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
@@ -1360,3 +1362,49 @@ def update_price_list():
     PriceListCurrency.objects.all().delete()
     PriceListCurrency.objects.bulk_create(bulk_info)
     print('Done')
+
+
+def reset_set_product_transaction_information():
+    # reset
+    update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
+    for product in Product.objects.all():
+        product.stock_amount = 0
+        product.wait_delivery_amount = 0
+        product.wait_receipt_amount = 0
+        product.available_amount = 0
+        product.save(update_fields=update_fields)
+    # set input, output, return
+    # input
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
+    # output
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.update_product_wait_delivery_amount(instance=so)
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductInformationHandle.main_handle(instance=deli_sub)
+    # return
+    for return_obj in GoodsReturn.objects.all():
+        GReturnProductInformationHandle.main_handle(instance=return_obj)
+    print('reset_set_product_transaction_information done.')
+
+
+def reset_set_product_warehouse_stock():
+    # reset
+    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
+    for product_wh in ProductWareHouse.objects.all():
+        product_wh.stock_amount = 0
+        product_wh.receipt_amount = 0
+        product_wh.sold_amount = 0
+        product_wh.picked_ready = 0
+        product_wh.used_amount = 0
+        product_wh.save(update_fields=update_fields)
+    # input, output, provide
+    # input
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.push_to_product_warehouse(instance=gr)
+    # output
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
+    print('reset_set_product_warehouse_stock done.')

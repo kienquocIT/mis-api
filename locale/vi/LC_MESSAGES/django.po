@@ -18,6 +18,211 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+# 4e48c863-861b-475a-aa5e-97a4ed26f294
+msgid "Account"
+msgstr "Tài khoản"
+
+# 57725469-8b04-428a-a4b0-578091d0e4f5
+msgid "Advance Payment"
+msgstr "Tạm ứng"
+
+# c05a6cf4-efff-47e0-afcf-072017b8141a
+msgid "AP Invoice"
+msgstr "AP Invoice"
+
+# 1d7291dd-1e59-4917-83a3-1cc07cfc4638
+msgid "AR Invoice"
+msgstr "AR Invoice"
+
+# 41abd4e9-da89-450b-a44a-da1d6f8a5cd2
+msgid "Asset, Tools Delivery"
+msgstr "Yêu cầu bàn giao"
+
+# 55ba3005-6ccc-4807-af27-7cc45e99e3f6
+msgid "Asset, Tools Provide"
+msgstr "Yêu cầu cấp phát"
+
+# 87ce1662-ca9d-403f-a32e-9553714ebc6d
+msgid "Business trip"
+msgstr "Công tác"
+
+# 14dbc606-1453-4023-a2cf-35b1cd9e3efd
+msgid "Call"
+msgstr "Cuộc gọi"
+
+# 269f4421-04d8-4528-bc95-148ffd807235
+msgid "Company"
+msgstr "Công ty"
+
+# 828b785a-8f57-4a03-9f90-e0edf96560d7
+msgid "Contact"
+msgstr "Liên hệ"
+
+# 31c9c5b0-717d-4134-b3d0-cc4ca174b168
+msgid "Contract"
+msgstr "Hợp đồng"
+
+# 1373e903-909c-4b77-9957-8bcf97e8d6d3
+msgid "Delivery"
+msgstr "Giao hàng"
+
+# 319356b4-f16c-4ba4-bdcb-e1b0c2a2c124
+msgid "Document For Customer"
+msgstr "Tài liệu cho khách hàng"
+
+# dec012bf-b931-48ba-a746-38b7fd7ca73b
+msgid "Email"
+msgstr "Email"
+
+# 50348927-2c4f-4023-b638-445469c66953
+msgid "Employee"
+msgstr "Nhân viên"
+
+# 245e9f47-df59-4d4a-b355-7eff2859247f
+msgid "Expense Item"
+msgstr "Chi phí"
+
+# f26d7ce4-e990-420a-8ec6-2dc307467f2c
+msgid "Goods Issue"
+msgstr "Goods Issue"
+
+# dd16a86c-4aef-46ec-9302-19f30b101cf5
+msgid "Goods Receipt"
+msgstr "Nhập kho"
+
+# 866f163d-b724-404d-942f-4bc44dc2e2ed
+msgid "Goods Transfer"
+msgstr "Goods Transfer"
+
+# e17b9123-8002-4c9b-921b-7722c3c9e3a5
+msgid "Group"
+msgstr "Nhóm"
+
+# 022375ce-c99c-4f11-8841-0a26c85f2fc2
+msgid "Internal labor item"
+msgstr "Internal labor item"
+
+# c5de0a7d-bea3-4f39-922f-06a40a060aba
+msgid "Inventory Adjustment"
+msgstr "Điều chỉnh tồn kho"
+
+# baff033a-c416-47e1-89af-b6653534f06e
+msgid "Leave"
+msgstr "Nghỉ phép"
+
+# 7738935a-0442-4fd4-a7ff-d06a22aaeccf
+msgid "Leave available"
+msgstr "Leave available"
+
+# 6078deaa-96b3-4743-97e3-5457454fa7aa
+msgid "Meeting Schedule"
+msgstr "Meeting Schedule"
+
+# 2fe959e3-9628-4f47-96a1-a2ef03e867e3
+msgid "Meetting With Customer"
+msgstr "Meetting With Customer"
+
+# 296a1410-8d72-46a8-a0a1-1821f196e66c
+msgid "Opportunity"
+msgstr "Cơ hội kinh doanh"
+
+# 3407d35d-27ce-407e-8260-264574a216e3
+msgid "Payment Term"
+msgstr "Điều khoản thanh toán"
+
+# 1010563f-7c94-42f9-ba99-63d5d26a1aca
+msgid "Payments"
+msgstr "Thanh toán"
+
+# 3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a
+msgid "Picking"
+msgstr "Lấy hàng"
+
+# 10a5e913-fa51-4127-a632-a8347a55c4bb
+msgid "Prices"
+msgstr "Prices"
+
+# a8badb2e-54ff-4654-b3fd-0d2d3c777538
+msgid "Product"
+msgstr "Sản phẩm"
+
+# f57b9e92-cb01-42e3-b7fe-6166ecd18e9c
+msgid "Promotions"
+msgstr "Promotions"
+
+# 81a111ef-9c32-4cbd-8601-a3cce884badb
+msgid "Purchase Order"
+msgstr "Đơn mua hàng"
+
+# f52a966a-2eb2-4851-852d-eff61efeb896
+msgid "Purchase Quotation"
+msgstr "Báo giá mua hàng"
+
+# d78bd5f3-8a8d-48a3-ad62-b50d576ce173
+msgid "Purchase Quotation Request"
+msgstr "Yêu cầu báo giá mua hàng"
+
+# fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf
+msgid "Purchase Request"
+msgstr "Yêu cầu mua hàng"
+
+# b9650500-aba7-44e3-b6e0-2542622702a3
+msgid "Quotation"
+msgstr "Báo giá"
+
+# d633036a-8937-4f9d-a227-420e061496fc
+msgid "Report Customer"
+msgstr "Report Customer"
+
+# 298c8b6f-6a62-493f-b0ac-d549a4541497
+msgid "Report Pipeline"
+msgstr "Report Pipeline"
+
+# 2a709d75-35a7-49c8-84bf-c350164405bc
+msgid "Report Product"
+msgstr "Report Product"
+
+# c3260940-21ff-4929-94fe-43bc4199d38b
+msgid "Report Revenue"
+msgstr "Report Revenue"
+
+# 65d36757-557e-4534-87ea-5579709457d7
+msgid "Return Advance"
+msgstr "Hoàn ứng"
+
+# e4ae0a2c-2130-4a65-b644-1b79db3d033b
+msgid "Revenue Plan"
+msgstr "Revenue Plan"
+
+# 4cdaabcc-09ae-4c13-bb4e-c606eb335b11
+msgid "Role"
+msgstr "Vai Trò"
+
+# a870e392-9ad2-4fe2-9baa-298a38691cf2
+msgid "Sale Order"
+msgstr "Đơn hàng"
+
+# e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a
+msgid "Shipping"
+msgstr "Vận chuyển"
+
+# e66cfb5a-b3ce-4694-a4da-47618f53de4c
+msgid "Task"
+msgstr "Giao việc"
+
+# af9c6fd3-1815-4d5a-aa24-fca9d095cb7a
+msgid "User"
+msgstr "Người dùng"
+
+# 80b8cd4f-cfba-4f33-9642-a4dd6ee31efd
+msgid "Warehouse"
+msgstr "Kho hàng"
+
+# 71393401-e6e7-4a00-b481-6097154efa64
+msgid "Workflow"
+msgstr "Quy trình làm việc"
+
+
 #: .\apps\shared\translations\account.py:5
 msgid "User does not exist."
 msgstr "Người dùng không tồn tại."

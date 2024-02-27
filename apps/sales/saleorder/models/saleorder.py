@@ -3,8 +3,7 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    PAYMENT_TERM_STAGE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
 # CONFIG
@@ -126,6 +125,10 @@ class SaleOrder(DataAbstractModel):
         related_name="sale_order_payment_term",
         null=True
     )
+    payment_term_data = models.JSONField(
+        default=dict,
+        help_text="read data payment term, use for get list or detail sale order"
+    )
     quotation = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE,
@@ -169,56 +172,23 @@ class SaleOrder(DataAbstractModel):
         help_text="read data payment stage, use for get list or detail sale order"
     )
     # total amount of products
-    total_product_pretax_amount = models.FloatField(
-        default=0,
-        help_text="total pretax amount of tab product"
-    )
-    total_product_discount_rate = models.FloatField(
-        default=0,
-        help_text="total discount rate (%) of tab product"
-    )
-    total_product_discount = models.FloatField(
-        default=0,
-        help_text="total discount of tab product"
-    )
-    total_product_tax = models.FloatField(
-        default=0,
-        help_text="total tax of tab product"
-    )
-    total_product = models.FloatField(
-        default=0,
-        help_text="total amount of tab product"
-    )
+    total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
+    total_product_discount_rate = models.FloatField(default=0, help_text="total discount rate (%) of tab product")
+    total_product_discount = models.FloatField(default=0, help_text="total discount of tab product")
+    total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
+    total_product = models.FloatField(default=0, help_text="total amount of tab product")
     total_product_revenue_before_tax = models.FloatField(
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
     )
     # total amount of costs
-    total_cost_pretax_amount = models.FloatField(
-        default=0,
-        help_text="total pretax amount of tab cost"
-    )
-    total_cost_tax = models.FloatField(
-        default=0,
-        help_text="total tax of tab cost"
-    )
-    total_cost = models.FloatField(
-        default=0,
-        help_text="total amount of tab cost"
-    )
+    total_cost_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab cost")
+    total_cost_tax = models.FloatField(default=0, help_text="total tax of tab cost")
+    total_cost = models.FloatField(default=0, help_text="total amount of tab cost")
     # total amount of expenses
-    total_expense_pretax_amount = models.FloatField(
-        default=0,
-        help_text="total pretax amount of tab expense"
-    )
-    total_expense_tax = models.FloatField(
-        default=0,
-        help_text="total tax of tab expense"
-    )
-    total_expense = models.FloatField(
-        default=0,
-        help_text="total amount of tab expense"
-    )
+    total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
+    total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
+    total_expense = models.FloatField(default=0, help_text="total amount of tab expense")
     delivery_call = models.BooleanField(
         default=False,
         verbose_name='Called delivery',
@@ -229,23 +199,11 @@ class SaleOrder(DataAbstractModel):
         default=list,
         help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
     )
-    indicator_revenue = models.FloatField(
-        default=0,
-        help_text="value of indicator revenue (IN0001)",
-    )
-    indicator_gross_profit = models.FloatField(
-        default=0,
-        help_text="value of indicator gross profit (IN0003)",
-    )
-    indicator_net_income = models.FloatField(
-        default=0,
-        help_text="value of indicator net income (IN0006)",
-    )
+    indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
+    indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
+    indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
     # delivery status
-    delivery_status = models.SmallIntegerField(
-        choices=SALE_ORDER_DELIVERY_STATUS,
-        default=0
-    )
+    delivery_status = models.SmallIntegerField(choices=SALE_ORDER_DELIVERY_STATUS, default=0)
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -329,7 +287,9 @@ class SaleOrder(DataAbstractModel):
         net_income_rate = 0
         if revenue_obj and net_income_obj:
             net_income_rate = (net_income_obj.indicator_value / revenue_obj.indicator_value) * 100
-        for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
+        for so_product in instance.sale_order_product_sale_order.filter(
+                is_promotion=False, is_shipping=False, is_group=False,
+        ):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
             gross_profit = (revenue * gross_profit_rate) / 100
             net_income = (revenue * net_income_rate) / 100
@@ -482,62 +442,21 @@ class SaleOrderProduct(SimpleAbstractModel):
         null=True
     )
     # product information
-    product_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_description = models.TextField(
-        blank=True,
-        null=True
-    )
-    product_uom_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_uom_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_quantity = models.FloatField(
-        default=0
-    )
-    product_unit_price = models.FloatField(
-        default=0
-    )
-    product_discount_value = models.FloatField(
-        default=0
-    )
-    product_discount_amount = models.FloatField(
-        default=0
-    )
-    product_tax_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_tax_value = models.FloatField(
-        default=0
-    )
-    product_tax_amount = models.FloatField(
-        default=0
-    )
-    product_subtotal_price = models.FloatField(
-        default=0
-    )
-    product_subtotal_price_after_tax = models.FloatField(
-        default=0
-    )
-    order = models.IntegerField(
-        default=1
-    )
+    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_code = models.CharField(max_length=100, blank=True, null=True)
+    product_description = models.TextField(blank=True, null=True)
+    product_uom_title = models.CharField(max_length=100, blank=True, null=True)
+    product_uom_code = models.CharField(max_length=100, blank=True, null=True)
+    product_quantity = models.FloatField(default=0)
+    product_unit_price = models.FloatField(default=0)
+    product_discount_value = models.FloatField(default=0)
+    product_discount_amount = models.FloatField(default=0)
+    product_tax_title = models.CharField(max_length=100, blank=True, null=True)
+    product_tax_value = models.FloatField(default=0)
+    product_tax_amount = models.FloatField(default=0)
+    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_price_after_tax = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
     is_promotion = models.BooleanField(
         default=False,
         help_text="flag to know this product is for promotion (discount, gift,...)"
@@ -549,10 +468,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_promotion",
         null=True
     )
-    is_shipping = models.BooleanField(
-        default=False,
-        help_text="flag to know this product is for shipping fee"
-    )
+    is_shipping = models.BooleanField(default=False, help_text="flag to know this product is for shipping fee")
     shipping = models.ForeignKey(
         'saledata.Shipping',
         on_delete=models.CASCADE,
@@ -560,14 +476,14 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_shipping",
         null=True
     )
-
-    remain_for_purchase_request = models.FloatField(
-        default=0,
-    )
+    remain_for_purchase_request = models.FloatField(default=0)
     remain_for_purchase_order = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not purchased order yet, update when PO finish"
     )
+    is_group = models.BooleanField(default=False, help_text="flag to know product group not product")
+    group_title = models.CharField(max_length=100, blank=True, null=True)
+    group_order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Sale Order Product'
@@ -583,14 +499,8 @@ class SaleOrderLogistic(SimpleAbstractModel):
         SaleOrder,
         on_delete=models.CASCADE,
     )
-    shipping_address = models.TextField(
-        blank=True,
-        null=True
-    )
-    billing_address = models.TextField(
-        blank=True,
-        null=True
-    )
+    shipping_address = models.TextField(blank=True, null=True)
+    billing_address = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Sale Order Logistic'
@@ -630,56 +540,19 @@ class SaleOrderCost(SimpleAbstractModel):
         null=True
     )
     # cost information
-    product_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_uom_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_uom_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_quantity = models.FloatField(
-        default=0
-    )
-    product_cost_price = models.FloatField(
-        default=0
-    )
-    product_tax_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_tax_value = models.FloatField(
-        default=0
-    )
-    product_tax_amount = models.FloatField(
-        default=0
-    )
-    product_subtotal_price = models.FloatField(
-        default=0
-    )
-    product_subtotal_price_after_tax = models.FloatField(
-        default=0
-    )
-    order = models.IntegerField(
-        default=1
-    )
-    is_shipping = models.BooleanField(
-        default=False,
-        help_text="flag to know this cost is for shipping fee"
-    )
+    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_code = models.CharField(max_length=100, blank=True, null=True)
+    product_uom_title = models.CharField(max_length=100, blank=True, null=True)
+    product_uom_code = models.CharField(max_length=100, blank=True, null=True)
+    product_quantity = models.FloatField(default=0)
+    product_cost_price = models.FloatField(default=0)
+    product_tax_title = models.CharField(max_length=100, blank=True, null=True)
+    product_tax_value = models.FloatField(default=0)
+    product_tax_amount = models.FloatField(default=0)
+    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_price_after_tax = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
+    is_shipping = models.BooleanField(default=False, help_text="flag to know this cost is for shipping fee")
     shipping = models.ForeignKey(
         'saledata.Shipping',
         on_delete=models.CASCADE,
@@ -741,67 +614,21 @@ class SaleOrderExpense(MasterDataAbstractModel):
         null=True
     )
     # expense information
-    expense_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_type_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_uom_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_uom_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_quantity = models.FloatField(
-        default=0
-    )
-    expense_price = models.FloatField(
-        default=0
-    )
-    expense_tax_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    expense_tax_value = models.FloatField(
-        default=0
-    )
-    expense_tax_amount = models.FloatField(
-        default=0
-    )
-    expense_subtotal_price = models.FloatField(
-        default=0
-    )
-    expense_subtotal_price_after_tax = models.FloatField(
-        default=0
-    )
-    order = models.IntegerField(
-        default=1
-    )
+    expense_title = models.CharField(max_length=100, blank=True, null=True)
+    expense_code = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_code = models.CharField(max_length=100, blank=True, null=True)
+    expense_type_title = models.CharField(max_length=100, blank=True, null=True)
+    expense_uom_title = models.CharField(max_length=100, blank=True, null=True)
+    expense_uom_code = models.CharField(max_length=100, blank=True, null=True)
+    expense_quantity = models.FloatField(default=0)
+    expense_price = models.FloatField(default=0)
+    expense_tax_title = models.CharField(max_length=100, blank=True, null=True)
+    expense_tax_value = models.FloatField(default=0)
+    expense_tax_amount = models.FloatField(default=0)
+    expense_subtotal_price = models.FloatField(default=0)
+    expense_subtotal_price_after_tax = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
     is_product = models.BooleanField(
         default=False,
         help_text='flag to check if record is MasterData Expense or Product, if True is Product'
@@ -827,14 +654,16 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
         verbose_name="sale order",
         related_name="payment_stage_sale_order",
     )
-    stage = models.SmallIntegerField(
-        default=0,
-        help_text='choices= ' + str(PAYMENT_TERM_STAGE),
-    )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    term = models.ForeignKey(
+        'saledata.Term',
+        on_delete=models.SET_NULL,
+        verbose_name="payment term",
+        related_name="so_payment_stage_term",
+        null=True
+    )
+    term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
-    date_type = models.SmallIntegerField(default=0)
-    number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)

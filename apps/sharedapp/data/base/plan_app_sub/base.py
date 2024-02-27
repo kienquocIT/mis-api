@@ -4,6 +4,19 @@ __all__ = [
     'Application_base_data',
 ]
 
+BASTION_APP_CONFIG = {
+    "id": "ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68",
+    "title": "Bastion",
+    "code": "bastion",
+    "model_code": "system",
+    "app_label": "system",
+    "is_workflow": False,
+    "option_permission": 1,
+    "option_allowed": [],
+    "app_depend_on": [],
+    "permit_mapping": {},
+}
+
 WORKFLOW_APP_CONFIG = {
     "id": "71393401-e6e7-4a00-b481-6097154efa64",
     "title": "Workflow",
@@ -281,6 +294,7 @@ GROUP_APP_CONFIG = {
 }
 
 Application_base_data = {
+    "ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68": ApplicationConfigFrame(**BASTION_APP_CONFIG).data(),
     "269f4421-04d8-4528-bc95-148ffd807235": ApplicationConfigFrame(**COMPANY_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
