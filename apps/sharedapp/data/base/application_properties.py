@@ -1,3 +1,6 @@
+from .application_properties_print_params import Quotation_data__print_params, Bastion_data__print_params
+
+
 __all__ = ["ApplicationProperty_data"]
 
 AppProp_SaleData_Contact_data = {
@@ -230,6 +233,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Title',
         'code': 'title',
         'type': 1,
+        'is_print': True,
     },
     'd59eea03-2eb8-4d1a-ac9d-dc3993545b67': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -590,6 +594,8 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
     },
+    #
+    **Quotation_data__print_params,
 }
 
 AppProp_SaleData_Opportunity_data = {
@@ -1622,6 +1628,7 @@ AppProp_AssetTools_Return_data = {
 }
 
 ApplicationProperty_data = {
+    **Bastion_data__print_params,
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,

@@ -84,7 +84,6 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "opportunity__customer",
             "customer",
             "contact",
-            "payment_term",
             "quotation",
             "customer__payment_term_customer_mapped",
             "employee_inherit",

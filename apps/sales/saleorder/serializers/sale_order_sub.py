@@ -4,7 +4,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping, ExpenseItem
 from apps.masterdata.saledata.models.accounts import Account, Contact, AccountShippingAddress, AccountBillingAddress
-from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.config import PaymentTerm, Term
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
@@ -13,7 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg
 from apps.shared.translations.expense import ExpenseMsg
 
 
@@ -552,22 +552,21 @@ class SaleOrderCommonValidate:
                     validate_data.update({'indicator_net_income': indicator_value})
         return True
 
+    @classmethod
+    def validate_term_id(cls, value):
+        try:
+            return str(Term.objects.get(id=value).id)
+        except Term.DoesNotExist:
+            raise serializers.ValidationError({'term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False
-    )
-    promotion = serializers.UUIDField(
-        allow_null=True
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    promotion = serializers.UUIDField(allow_null=True)
+    shipping = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = SaleOrderProduct
@@ -594,7 +593,10 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'is_promotion',
             'promotion',
             'is_shipping',
-            'shipping'
+            'shipping',
+            'is_group',
+            'group_title',
+            'group_order',
         )
 
     @classmethod
@@ -701,18 +703,10 @@ class SaleOrderLogisticSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderCostSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField(
-        allow_null=True
-    )
-    tax = serializers.UUIDField(
-        required=False
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    shipping = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = SaleOrderCost
@@ -814,21 +808,11 @@ class SaleOrderCostsListSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
-    expense_item = serializers.UUIDField(
-        allow_null=True,
-    )
-    product = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
+    expense = serializers.UUIDField(allow_null=True, required=False)
+    expense_item = serializers.UUIDField(allow_null=True)
+    product = serializers.UUIDField(allow_null=True, required=False)
     unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False
-    )
+    tax = serializers.UUIDField(required=False)
 
     class Meta:
         model = SaleOrderExpense
@@ -908,20 +892,30 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
+    term_id = serializers.UUIDField(required=False, allow_null=True)
     date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = SaleOrderPaymentStage
         fields = (
-            'stage',
             'remark',
+            'term_id',
+            'term_data',
             'date',
-            'date_type',
-            'number_of_day',
             'payment_ratio',
             'value_before_tax',
             'due_date',
             'is_ar_invoice',
             'order',
         )
+
+    @classmethod
+    def validate_remark(cls, value):
+        if not value:
+            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+        return value
+
+    @classmethod
+    def validate_term_id(cls, value):
+        return SaleOrderCommonValidate().validate_term_id(value=value)

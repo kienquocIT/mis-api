@@ -719,6 +719,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'is_active',
+                'attachment',
             ],
             check_sum_second=True,
         )

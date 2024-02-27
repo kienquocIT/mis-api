@@ -63,7 +63,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    payment_term = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -75,7 +74,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
-            'payment_term',
+            'payment_term_id',
+            'payment_term_data',
             'system_status',
             # quotation tabs
             'quotation_products_data',
@@ -159,14 +159,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
-    @classmethod
-    def get_payment_term(cls, obj):
-        return {
-            'id': obj.payment_term_id,
-            'title': obj.payment_term.title,
-            'code': obj.payment_term.code,
-        } if obj.payment_term else {}
-
 
 class QuotationCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
@@ -211,6 +203,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             'next_node_collab_id',
             # total amount of products
             'total_product_pretax_amount',
@@ -379,6 +372,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
