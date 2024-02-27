@@ -213,6 +213,7 @@ class ProductWareHouseAssetToolsList(BaseListMixin):
         return super().get_queryset().select_related(
             'product',
             'uom',
+            'warehouse',
         )
 
     @swagger_auto_schema(operation_summary='Product Asset list')
