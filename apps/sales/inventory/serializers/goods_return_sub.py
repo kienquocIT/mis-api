@@ -155,7 +155,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def update_delivery(cls, goods_return, product_detail_list):
+    def update_delivery(cls, goods_return, product_detail_list, for_picking=False):
         """
         B1: Lấy phiếu Delivery đã chọn từ phiếu trả hàng
         B2: Có 2 TH:
@@ -188,7 +188,8 @@ class GoodsReturnSubSerializerForNonPicking:
             ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
             ready_sub.delivered_quantity_before -= return_quantity
             ready_sub.remaining_quantity += redelivery_quantity
-            ready_sub.ready_quantity += redelivery_quantity
+            if not for_picking:
+                ready_sub.ready_quantity += redelivery_quantity
             ready_sub.save(update_fields=[
                 'delivery_quantity', 'delivered_quantity_before',
                 'remaining_quantity', 'ready_quantity'
@@ -321,4 +322,4 @@ class GoodsReturnSubSerializerForPicking:
             picking_obj.save(update_fields=['sub'])
         else:
             cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product)
-        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
+        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list, True)

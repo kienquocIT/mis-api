@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.sales.opportunity.models import OpportunityConfigStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
 
 
@@ -142,6 +143,9 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
                 'indicator': stage.stage.indicator,
                 'win_rate': stage.stage.win_rate
             }
+            # for x in obj.opportunity.opportunity_stage_opportunity.select_related('stage'):
+            #     print('---', x.stage.indicator, x.stage.company.code, x.is_current)
+            # print(obj.opportunity.code, obj.opportunity.company.code, stage.stage.company.code)
         return {
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
