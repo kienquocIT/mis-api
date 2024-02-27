@@ -109,6 +109,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_delivery_sub",
         null=True,
     )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="fa_indicator_product",
+        null=True
+    )
     indicator_value = models.FloatField(default=0)
     actual_value = models.FloatField(default=0)
     actual_value_after_tax = models.FloatField(default=0)

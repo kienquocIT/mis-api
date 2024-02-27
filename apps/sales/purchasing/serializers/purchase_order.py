@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
-    PurchaseOrderQuotation, PurchaseOrderPaymentStage
+    PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
+from apps.shared.translations.base import AttachmentMsg
 
 
 class PurchaseQuotationSerializer(serializers.ModelSerializer):
@@ -395,6 +397,29 @@ class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
 
 
 # PURCHASE ORDER BEGIN
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first()
+        state = PurchaseOrderAttachmentFile.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
+        if state:
+            return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
+
+
+def validate_attachment(instance, value):
+    if instance.employee_created_id:
+        state, result = PurchaseOrderAttachmentFile.valid_change(
+            current_ids=value, employee_id=instance.employee_created_id, doc_id=None
+        )
+        if state is True:
+            return result
+        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
 
@@ -427,6 +452,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
     purchase_order_products_data = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -455,6 +481,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'system_status',
             'workflow_runtime_id',
             'is_active',
+            'attachment',
         )
 
     @classmethod
@@ -515,6 +542,10 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             return dict(RECEIPT_STATUS).get(obj.receipt_status)
         return None
 
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
 
 class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
@@ -528,6 +559,95 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     )
     supplier = serializers.UUIDField()
     contact = serializers.UUIDField()
+    # purchase order tabs
+    purchase_order_products_data = PurchaseOrderProductSerializer(
+        many=True,
+        required=False
+    )
+    # payment stage tab
+    purchase_order_payment_stage = PurchaseOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
+    attachment = serializers.ListSerializer(child=serializers.UUIDField(), required=False)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = (
+            'title',
+            'purchase_requests_data',
+            'purchase_quotations_data',
+            'supplier',
+            'contact',
+            'delivered_date',
+            'status_delivered',
+            # purchase order tabs
+            'purchase_order_products_data',
+            # total amount
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
+            # payment stage tab
+            'purchase_order_payment_stage',
+            # system
+            'system_status',
+            'attachment',
+        )
+
+    @classmethod
+    def validate_purchase_requests_data(cls, value):
+        return PurchasingCommonValidate().validate_purchase_requests_data(value=value)
+
+    @classmethod
+    def validate_supplier(cls, value):
+        return PurchasingCommonValidate().validate_supplier(value=value)
+
+    @classmethod
+    def validate_contact(cls, value):
+        return PurchasingCommonValidate().validate_contact(value=value)
+
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'purchase_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['purchase_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
+    def validate(self, validate_data):
+        self.validate_total_payment_term(validate_data=validate_data)
+        return validate_data
+
+    @decorator_run_workflow
+    def create(self, validated_data):
+        attachment = []
+        if 'attachment' in validated_data:
+            attachment = validated_data['attachment']
+            del validated_data['attachment']
+        purchase_order = PurchaseOrder.objects.create(**validated_data)
+        PurchaseOrderCommonCreate().create_purchase_order_sub_models(
+            validated_data=validated_data,
+            instance=purchase_order
+        )
+        validated_attachment = validate_attachment(purchase_order, attachment)
+        handle_attach_file(purchase_order, validated_attachment)
+        return purchase_order
+
+
+class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
+    purchase_requests_data = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
+    purchase_quotations_data = PurchaseQuotationSerializer(
+        many=True,
+        required=False
+    )
+    supplier = serializers.UUIDField(required=False)
+    contact = serializers.UUIDField(required=False)
     # purchase order tabs
     purchase_order_products_data = PurchaseOrderProductSerializer(
         many=True,
@@ -574,65 +694,19 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     def validate_contact(cls, value):
         return PurchasingCommonValidate().validate_contact(value=value)
 
-    @decorator_run_workflow
-    def create(self, validated_data):
-        purchase_order = PurchaseOrder.objects.create(**validated_data)
-        PurchaseOrderCommonCreate().create_purchase_order_sub_models(
-            validated_data=validated_data,
-            instance=purchase_order
-        )
-        return purchase_order
-
-
-class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
-    purchase_requests_data = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False
-    )
-    purchase_quotations_data = PurchaseQuotationSerializer(
-        many=True,
-        required=False
-    )
-    supplier = serializers.UUIDField(required=False)
-    contact = serializers.UUIDField(required=False)
-    # purchase order tabs
-    purchase_order_products_data = PurchaseOrderProductSerializer(
-        many=True,
-        required=False
-    )
-
-    class Meta:
-        model = PurchaseOrder
-        fields = (
-            'title',
-            'purchase_requests_data',
-            'purchase_quotations_data',
-            'supplier',
-            'contact',
-            'delivered_date',
-            'status_delivered',
-            # purchase order tabs
-            'purchase_order_products_data',
-            # total amount
-            'total_product_pretax_amount',
-            'total_product_tax',
-            'total_product',
-            'total_product_revenue_before_tax',
-            # system
-            'system_status',
-        )
-
     @classmethod
-    def validate_purchase_requests_data(cls, value):
-        return PurchasingCommonValidate().validate_purchase_requests_data(value=value)
+    def validate_total_payment_term(cls, validate_data):
+        if 'purchase_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['purchase_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
 
-    @classmethod
-    def validate_supplier(cls, value):
-        return PurchasingCommonValidate().validate_supplier(value=value)
-
-    @classmethod
-    def validate_contact(cls, value):
-        return PurchasingCommonValidate().validate_contact(value=value)
+    def validate(self, validate_data):
+        self.validate_total_payment_term(validate_data=validate_data)
+        return validate_data
 
     def update(self, instance, validated_data):
         # update purchase order
