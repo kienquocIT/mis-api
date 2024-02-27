@@ -35,6 +35,7 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
 from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
@@ -1412,11 +1413,8 @@ def reset_set_product_warehouse_stock():
 
 
 def update_quotation_so_json_data():
-    for opp in Opportunity.objects.all():
     # quotation
-        CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
     for quotation in Quotation.objects.all():
-    print('Done')
         update_fields = []
         if quotation.payment_term and not quotation.payment_term_data:
             quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
