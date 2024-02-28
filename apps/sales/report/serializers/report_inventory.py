@@ -1,7 +1,4 @@
 from rest_framework import serializers
-
-from apps.core.company.models import Company
-from apps.masterdata.saledata.models import Periods
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse
 
 
