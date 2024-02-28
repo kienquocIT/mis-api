@@ -42,14 +42,6 @@ Bastion_data__print_params = {
 }
 
 Quotation_data__print_params = {
-    'b8d67363-402f-4636-bcd9-00ba6d661224': {
-        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Title',
-        'code': 'title',
-        'remark': '',
-        'type': 1,
-        'is_print': True,
-    },
     '74aecf48-ed61-4b96-a293-105837a0f6ae': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Code',
