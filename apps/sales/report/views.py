@@ -1,11 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
-    ReportInventory
-from apps.sales.report.serializers import ReportInventoryListSerializer
+    ReportInventory, ReportInventoryProductWarehouse
+from apps.sales.report.serializers import ReportInventoryListSerializer, BalanceInitializationListSerializer
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer
-from apps.shared import mask_view, BaseListMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
 # REPORT REVENUE
@@ -183,9 +183,11 @@ class ReportInventoryList(BaseListMixin):
     def get_queryset(self):
         try:
             sub_period_order_param = self.request.query_params['sub_period_order']
+            period_mapped_param = self.request.query_params['period_mapped']
             return super().get_queryset().select_related(
-                "product"
-            ).filter(sub_period_order=sub_period_order_param)
+                "product",
+                "period_mapped"
+            ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
         except KeyError:
             return super().get_queryset().select_related(
                 "product"
@@ -201,4 +203,26 @@ class ReportInventoryList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
+    queryset = ReportInventoryProductWarehouse.objects
+    serializer_list = BalanceInitializationListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product',
+            'warehouse',
+            'period_mapped'
+        ).prefetch_related().filter(for_balance=True)
+
+    @swagger_auto_schema(
+        operation_summary="Balance Initialization list",
+        operation_description="Balance Initialization list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
