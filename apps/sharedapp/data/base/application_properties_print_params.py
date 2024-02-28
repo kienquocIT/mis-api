@@ -68,7 +68,7 @@ Quotation_data__print_params = {
     },
     'c6ed86ba-dbcb-4b87-93f8-92b9c7db2360': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product - title',
+        'title': 'Product - Title',
         'code': 'quotation_products_data___product_title',
         'remark': '',
         'type': 1,
@@ -76,7 +76,7 @@ Quotation_data__print_params = {
     },
     '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product - description',
+        'title': 'Product - Description',
         'code': 'quotation_products_data___product_description',
         'remark': '',
         'type': 1,
@@ -84,7 +84,7 @@ Quotation_data__print_params = {
     },
     'd009e1de-a98c-4b06-a648-ccf53a8d9248': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product - code',
+        'title': 'Product - Code',
         'code': 'quotation_products_data___product_code',
         'remark': '',
         'type': 1,
@@ -172,7 +172,7 @@ Quotation_data__print_params = {
     },
     'e16c6f13-0c34-4152-a7c3-d2264ab757e6': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product - Discount value',
+        'title': 'Product - Discount rate',
         'code': 'quotation_products_data___product_discount_value',
         'remark': '',
         'type': 1,
@@ -210,7 +210,6 @@ Quotation_data__print_params = {
         'type': 1,
         'is_print': True,
     },
-
     'fe9189cf-c62a-4fc3-bb2f-13c190fee25d': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Total Pretax Amount',
