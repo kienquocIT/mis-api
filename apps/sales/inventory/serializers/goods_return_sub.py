@@ -328,6 +328,7 @@ class GoodsReturnSubSerializerForPicking:
         return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list, True)
 
 
+# FUNCTIONS AFTER INSTANCE CREATED
 class GReturnProductInformationHandle:
 
     @classmethod
@@ -338,10 +339,12 @@ class GReturnProductInformationHandle:
             update_fields = ['wait_delivery_amount', 'stock_amount', 'available_amount']
             if return_product.type == 1:  # lot
                 product, value = cls.setup_by_lot(return_product=return_product)
+                if return_product.lot_redelivery_number <= 0:  # not redelivery
+                    update_fields = ['stock_amount', 'available_amount']
             if return_product.type == 2:  # serial
                 product, value = cls.setup_by_serial(return_product=return_product)
-            if return_product.is_redelivery is False:
-                update_fields = ['stock_amount', 'available_amount']
+                if return_product.is_redelivery is False:  # not redelivery
+                    update_fields = ['stock_amount', 'available_amount']
             if product:
                 product.save(**{
                     'update_transaction_info': True,
