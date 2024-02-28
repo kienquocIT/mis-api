@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse, Product
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -88,14 +88,27 @@ class WarehouseQuantityHandle:
 class DeliProductInformationHandle:
 
     @classmethod
-    def main_handle(cls, instance):
-        for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product:
-                deli_product.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_delivery': deli_product.picked_quantity,
-                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                })
+    def main_handle(cls, instance, validated_product=None):
+        if not validated_product:
+            for deli_product in instance.delivery_product_delivery_sub.all():
+                if deli_product.product:
+                    deli_product.product.save(**{
+                        'update_transaction_info': True,
+                        'quantity_delivery': deli_product.picked_quantity,
+                        'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                    })
+        else:
+            for product_data in validated_product:
+                if 'product_id' in product_data and 'done' in product_data:
+                    product_obj = Product.objects.filter(
+                        tenant_id=instance.tenant_id, company_id=instance.company_id, id=product_data['product_id']
+                    ).first()
+                    if product_obj:
+                        product_obj.save(**{
+                            'update_transaction_info': True,
+                            'quantity_delivery': product_data['done'],
+                            'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                        })
         return True
 
 
@@ -730,7 +743,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         # update opportunity
         DeliOpportunityStageHandle.main_handle(instance=instance)
         # update product
-        DeliProductInformationHandle.main_handle(instance=instance)
+        DeliProductInformationHandle.main_handle(instance=instance, validated_product=validated_product)
         # create final acceptance
         DeliFinalAcceptanceHandle.main_handle(instance=instance, validated_product=validated_product)
         if instance.state == 2:
