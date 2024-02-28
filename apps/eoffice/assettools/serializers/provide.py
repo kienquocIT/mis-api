@@ -251,19 +251,24 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_available(cls, obj):
         if obj.product:
-            prod_warehouse = obj.product.product_warehouse_product.first()
-            return prod_warehouse.stock_amount - prod_warehouse.used_amount if prod_warehouse else 0
+            prod_warehouse = obj.product.product_warehouse_product.all()
+            temp = {}
+            for warehouse in prod_warehouse:
+                temp[str(warehouse.warehouse.id)] = warehouse.stock_amount - warehouse.used_amount if warehouse else 0
+            return temp
+
         return 0
 
     @classmethod
     def get_product_warehouse(cls, obj):
         if obj.product:
-            prod_warehouse = obj.product.product_warehouse_product.first()
-            return {
-                "id": str(prod_warehouse.warehouse.id),
-                "title": prod_warehouse.warehouse.title
-            } if hasattr(prod_warehouse, 'warehouse') else {}
-        return {}
+            prod_warehouse = obj.product.product_warehouse_product.all()
+            return [{
+                "id": str(warehouse.warehouse.id),
+                "title": warehouse.warehouse.title
+            } for warehouse in prod_warehouse
+            ]
+        return []
 
     @classmethod
     def get_product(cls, obj):

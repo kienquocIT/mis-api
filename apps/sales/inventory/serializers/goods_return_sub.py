@@ -58,7 +58,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def update_prod(cls, ready_sub, return_quantity, redelivery_quantity, gr_product):
+    def update_prod(cls, ready_sub, return_quantity, redelivery_quantity, gr_product, for_picking):
         """
         (TH còn phiếu delivery chưa DONE)
         B0: 'ready_sub' là phiếu delivery hiện tại đang Ready
@@ -82,7 +82,8 @@ class GoodsReturnSubSerializerForNonPicking:
             obj.delivery_quantity = obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity
             obj.delivered_quantity_before -= obj_return_quantity
             obj.remaining_quantity += obj_redelivery_quantity
-            obj.ready_quantity += obj_redelivery_quantity
+            if not for_picking:
+                obj.ready_quantity += obj_redelivery_quantity
             obj.save(
                 update_fields=[
                     'delivery_quantity', 'delivered_quantity_before',
@@ -196,7 +197,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 'delivery_quantity', 'delivered_quantity_before',
                 'remaining_quantity', 'ready_quantity'
             ])
-            cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product)
+            cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product, for_picking)
             cls.update_warehouse_prod(product_detail_list, goods_return.product)
         elif goods_return.sale_order.delivery_status == 3:  # Done delivery
             if redelivery_quantity != 0:
