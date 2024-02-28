@@ -12,3 +12,11 @@ class AuthMsg:
     TENANT_RETURN_MULTIPLE = _('The tenant "{}" was found return more than one records.')
 
     LANGUAGE_NOT_SUPPORT = _('The language is not support')
+
+    PASSWORD_IS_INCORRECT = _('The password is incorrect.')
+    PASSWORD_REQUIRED_CHARACTERS = _(
+        'Password must have more than 6 characters and include 2 of the following conditions: contain uppercase '
+        'letters, contain numbers, contain special characters.'
+    )
+    PASSWORD_NOT_SAME_PASSWORD_AGAIN = _('The new password does not match')
+    PASSWORD_NEW_NOT_SAME_CURRENT_PASSWORD = _('The new password does not same current password')

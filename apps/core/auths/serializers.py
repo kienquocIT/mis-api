@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
 from slugify import slugify
@@ -117,7 +119,7 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
         raise serializers.ValidationError({"detail": AccountMsg.USER_NOT_EXIST})
 
 
-class AuthValidAccessCodeSerializer(serializers.Serializer): # noqa
+class AuthValidAccessCodeSerializer(serializers.Serializer):  # noqa
     company_id = serializers.UUIDField()
     access_id = serializers.UUIDField()
     user_agent = serializers.CharField()
@@ -129,9 +131,11 @@ class MyLanguageUpdateSerializer(serializers.ModelSerializer):
     def validate_language(cls, attrs):
         if attrs and attrs in dict(settings.LANGUAGE_CHOICE):
             return attrs
-        raise serializers.ValidationError({
-            'language': AuthMsg.LANGUAGE_NOT_SUPPORT,
-        })
+        raise serializers.ValidationError(
+            {
+                'language': AuthMsg.LANGUAGE_NOT_SUPPORT,
+            }
+        )
 
     def update(self, instance, validated_data):
         language = validated_data['language']
@@ -142,3 +146,80 @@ class MyLanguageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('language',)
+
+
+class ChangePasswordSerializer(serializers.Serializer):  # noqa
+    current_password = serializers.CharField(min_length=6)
+    new_password = serializers.CharField(min_length=6)
+    new_password_again = serializers.CharField(min_length=6)
+
+    def validate_current_password(self, attrs):
+        if self.instance and hasattr(self.instance, 'check_password'):
+            if self.instance.check_password(attrs):
+                return attrs
+        raise serializers.ValidationError(
+            {
+                'current_password': AuthMsg.PASSWORD_IS_INCORRECT
+            }
+        )
+
+    @staticmethod
+    def check_new_password(data) -> bool:
+        if data:
+            if len(data) >= 6:
+                has_digit = re.search(r"\d", data)
+                has_uppercase = re.search(r"[A-Z]", data)
+                has_special_char = re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?~]', data)
+
+                true_counter = 0
+                for item in [has_digit, has_uppercase, has_special_char]:
+                    if item:
+                        true_counter += 1
+
+                if true_counter >= 2:
+                    return True
+        return False
+
+    @classmethod
+    def validate_new_password(cls, attrs):
+        if cls.check_new_password(attrs):
+            return attrs
+        raise serializers.ValidationError(
+            {
+                'new_password': AuthMsg.PASSWORD_REQUIRED_CHARACTERS
+            }
+        )
+
+    @classmethod
+    def validate_new_password_again(cls, attrs):
+        if cls.check_new_password(attrs):
+            return attrs
+        raise serializers.ValidationError(
+            {
+                'new_password_again': AuthMsg.PASSWORD_REQUIRED_CHARACTERS
+            }
+        )
+
+    def validate(self, attrs):
+        old_pass = attrs['current_password']
+        new_pass = attrs['new_password']
+        new_pass_again = attrs['new_password_again']
+        if new_pass == new_pass_again:
+            if old_pass != new_pass:
+                return attrs
+            raise serializers.ValidationError(
+                {
+                    'new_password': AuthMsg.PASSWORD_NEW_NOT_SAME_CURRENT_PASSWORD,
+                }
+            )
+        raise serializers.ValidationError(
+            {
+                'new_password_again': AuthMsg.PASSWORD_NOT_SAME_PASSWORD_AGAIN
+            }
+        )
+
+    def update(self, instance, validated_data):
+        new_password = validated_data['new_password']
+        instance.set_password(new_password)
+        instance.save()
+        return instance

@@ -291,6 +291,22 @@ msgstr "Tên đăng nhập hoặc mật khẩu không chính xác."
 msgid "A user with that username already exists."
 msgstr "Tên người dùng đã tồn tại."
 
+#
+msgid "The password is incorrect."
+msgstr "Mật khẩu không chính xác."
+
+#
+msgid "Password must have more than 6 characters and include 2 of the following conditions: contain uppercase letters, contain numbers, contain special characters."
+msgstr "Mật khẩu phải có trên 6 ký tự và bao gồm 2 trong các điều kiện sau: chứa chữ in hoa, chứa số, chứa ký tự đặc biệt."
+
+#
+msgid "The new password does not match"
+msgstr "Mật khẩu mới không khớp"
+
+#
+msgid "The new password does not same current password"
+msgstr "Mật khẩu mới không thể trùng với mật khẩu hiện tại"
+
 #: .\apps\shared\translations\auth.py:7
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Yêu cầu có dữ liệu, tối đa 150 ký tự chỉ bao gồm chữ cái, số."

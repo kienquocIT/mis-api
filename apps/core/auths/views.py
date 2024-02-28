@@ -13,7 +13,7 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee
 from apps.core.auths.serializers import (
     AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer,
-    AuthValidAccessCodeSerializer, MyLanguageUpdateSerializer,
+    AuthValidAccessCodeSerializer, MyLanguageUpdateSerializer, ChangePasswordSerializer,
 )
 from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, MediaForceAPI, TypeCheck
 
@@ -214,5 +214,18 @@ class MyLanguageView(APIView):
 
             user_obj.language = language
             user_obj.save()
+            return ResponseController.success_200({'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        return ResponseController.unauthorized_401()
+
+
+class ChangePasswordView(APIView):
+    @swagger_auto_schema(request_body=ChangePasswordSerializer)
+    @mask_view(login_require=True)
+    def put(self, request, *args, **kwargs):
+        user_obj = request.user
+        if user_obj and hasattr(user_obj, 'id') and not isinstance(user_obj, AnonymousUser):
+            ser = ChangePasswordSerializer(instance=user_obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
             return ResponseController.success_200({'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
         return ResponseController.unauthorized_401()
