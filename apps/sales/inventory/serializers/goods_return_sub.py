@@ -5,7 +5,6 @@ from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, O
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 from apps.sales.report.models import ReportInventorySub
-from apps.sales.saleorder.models import SaleOrderCost
 
 
 class GoodsReturnSubSerializerForNonPicking:
@@ -418,14 +417,15 @@ class GReturnFinalAcceptanceHandle:
         if return_product.type == 1:  # lot
             if return_product.lot_no:
                 if return_product.lot_no.product_warehouse:
+                    product_id = return_product.lot_no.product_warehouse.product_id
+                    warehouse_id = return_product.lot_no.product_warehouse.warehouse_id
                     pw_inventory = ReportInventorySub.objects.filter(
                         report_inventory__tenant_id=instance.tenant_id,
                         report_inventory__company_id=instance.company_id,
-                        product_id=return_product.lot_no.product_warehouse.product_id,
-                        warehouse_id=return_product.lot_no.product_warehouse.warehouse_id,
+                        product_id=product_id,
+                        warehouse_id=warehouse_id,
                     ).first()
-                    if pw_inventory:
-                        value = pw_inventory.current_cost * return_product.lot_return_number
+                    value = pw_inventory.current_cost * return_product.lot_return_number if pw_inventory else 0
         return product_id, value
 
     @classmethod
@@ -435,12 +435,13 @@ class GReturnFinalAcceptanceHandle:
         if return_product.type == 2:  # serial
             if return_product.serial_no:
                 if return_product.serial_no.product_warehouse:
+                    product_id = return_product.serial_no.product_warehouse.product_id
+                    warehouse_id = return_product.serial_no.product_warehouse.warehouse_id
                     pw_inventory = ReportInventorySub.objects.filter(
                         report_inventory__tenant_id=instance.tenant_id,
                         report_inventory__company_id=instance.company_id,
-                        product_id=return_product.serial_no.product_warehouse.product_id,
-                        warehouse_id=return_product.serial_no.product_warehouse.warehouse_id,
+                        product_id=product_id,
+                        warehouse_id=warehouse_id,
                     ).first()
-                    if pw_inventory:
-                        value = pw_inventory.current_cost
+                    value = pw_inventory.current_cost if pw_inventory else 0
         return product_id, value
