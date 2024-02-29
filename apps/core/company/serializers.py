@@ -301,7 +301,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        print(0, validate_data.get('email_app_password'))
         if validate_data.get('email_app_password'):
             password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
             cryptor = SimpleEncryptor(key=password)

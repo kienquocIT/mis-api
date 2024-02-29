@@ -699,10 +699,14 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
     def get_default_doc_app(self) -> str:
         if not self.log_doc_app:
-            if self.queryset:
-                cls_queryset = self.queryset.__class__
-                if hasattr(cls_queryset, 'get_model_code'):
-                    return cls_queryset.get_model_code()
+            try:
+                queryset_check = self.get_queryset()
+                if queryset_check:
+                    cls_queryset = self.queryset.__class__
+                    if hasattr(cls_queryset, 'get_model_code'):
+                        return cls_queryset.get_model_code()
+            except RuntimeError:
+                pass
             return ''
         return self.log_doc_app
 
