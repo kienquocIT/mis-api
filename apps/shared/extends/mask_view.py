@@ -11,6 +11,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
 from django.http import HttpResponse
+from django.utils import translation
 
 from rest_framework import status, serializers
 from rest_framework.response import Response
@@ -1891,6 +1892,10 @@ def mask_view(**parent_kwargs):
                 # check & get * fill some data to self for MIXINS working
                 permit_check = cls_check.permit_check()
                 if permit_check is True:
+                    # active translate if request.user is anonymous
+                    if self.request.user is AnonymousUser or self.request.user.is_authenticated is False:
+                        translation.activate(self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE))
+
                     # call view when access login and auth permission | Data returned is three case:
                     #   1. ValidateError from valid --> convert to HTTP 400
                     #   2. Exception another: Return 500 with msg is errors

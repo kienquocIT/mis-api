@@ -1,3 +1,5 @@
+import random
+from datetime import timedelta
 from uuid import uuid4
 from jsonfield import JSONField
 
@@ -9,7 +11,10 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.account.manager import AccountManager
-from apps.shared import AuthMsg, FORMATTING, DisperseModel, CoreSignalRegisterMetaClass
+from apps.shared import (
+    AuthMsg, StringHandler, FORMATTING, DisperseModel, CoreSignalRegisterMetaClass,
+    OTP_TYPE, TeleBotPushNotify
+)
 
 
 class AuthUser(AbstractBaseUser, PermissionsMixin, metaclass=CoreSignalRegisterMetaClass):
@@ -81,7 +86,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin, metaclass=CoreSignalRegisterM
         permissions = ()
 
 
-class User(AuthUser):   # pylint: disable=R0902
+class User(AuthUser):  # pylint: disable=R0902
     REQUIRED_FIELDS = ["phone", "email"]
 
     is_delete = models.BooleanField(verbose_name='delete', default=False)
@@ -174,6 +179,21 @@ class User(AuthUser):   # pylint: disable=R0902
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def random_password(cls):
+        str_lower = StringHandler.random_str(8, 1)
+        str_upper = StringHandler.random_str(8, 2)
+        str_number = StringHandler.random_number(4)
+        passwd = [*(str_lower + str_upper + str_number)]
+        random.shuffle(passwd)
+        return "".join(passwd)
+
+    def generate_new_password(self):
+        new_passwd = self.random_password()
+        self.set_password(new_passwd)
+        super().save()
+        return new_passwd
+
     def get_detail(self, is_full=True):
         data = {
             'id': self.id,
@@ -229,3 +249,80 @@ class VerifyContact(models.Model):
 
     def __str__(self):
         return f'{self.email_or_phone} | is_email: {self.is_email} | is_phone: {self.is_phone}'
+
+
+class ValidateUser(models.Model):
+    id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=10)
+    otp_type = models.SmallIntegerField(choices=OTP_TYPE, default=0)
+    is_valid = models.BooleanField(default=False)
+    date_created = models.DateTimeField(default=timezone.now, editable=False)
+    date_expires = models.DateTimeField()
+    date_modified = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def generate_otp(cls, length=6):
+        return StringHandler.random_number(length=length, to_type=str)
+
+    @classmethod
+    def generate_expire(cls, days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0):
+        if not (days and seconds and milliseconds and milliseconds and minutes and hours and weeks):
+            # default if all zero
+            minutes = 2
+        return timezone.now() + timedelta(
+            days=days, seconds=seconds, microseconds=microseconds,
+            milliseconds=milliseconds, minutes=minutes, hours=hours, weeks=weeks
+        )
+
+    def send_otp_to_telegram(self):
+        def get_tenant_data():
+            if self.user.tenant_current:
+                return f'[{self.user.tenant_current.code}] {self.user.tenant_current.title}'
+            return '_'
+
+        def get_user_data():
+            return f'[{self.user.username}][{self.user.email if self.user.email else ""}] {self.user.get_full_name()}'
+
+        def get_otp_type_data():
+            data = {o_type[0]: o_type[1] for o_type in OTP_TYPE}
+            if self.otp_type in data:
+                return data[self.otp_type]
+            return self.otp_type
+
+        def push_notify_data():
+            state, name_service, destination_data = self.push_notify_data()
+            return f'{state} | {name_service} | {destination_data}'
+
+        msg = f"""
+        Site: {TeleBotPushNotify.get_site_name()}
+        Tenant: {get_tenant_data()}
+        User: {get_user_data()}
+        ID Validate OTP: {str(self.id)}
+        OTP: {str(self.otp)}
+        OTP Type: {get_otp_type_data()}
+        Push Notify: {push_notify_data()}
+        Created: {str(self.date_created.strftime("%d/%m/%Y, %H:%M:%S"))}
+        Expires: {str(self.date_expires.strftime("%d/%m/%Y, %H:%M:%S"))}
+        """
+        return TeleBotPushNotify().send_msg(msg=msg)
+
+    def push_notify_data(self) -> (bool, str, str):
+        """
+        Returns:
+            State: True / False
+            Type Name:
+            Destination:
+        """
+        if self.otp_type == 0:
+            return True, "E-Mail", self.user.email
+        if self.otp_type == 1:
+            return True, "SMS", self.user.phone
+        return False, 'NULL', 'Service are not available'
+
+    class Meta:
+        verbose_name = 'Validate User'
+        verbose_name_plural = 'Validate User'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

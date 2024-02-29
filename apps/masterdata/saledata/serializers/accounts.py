@@ -739,6 +739,7 @@ class TermSubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term
         fields = (
+            'id',
             'value',
             'unit_type',
             'day_type',

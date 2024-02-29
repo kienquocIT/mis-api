@@ -482,20 +482,26 @@ class GReturnProductInformationHandle:
         for return_product in instance.goods_return_product_detail.all():
             product = None
             value = 0
-            update_fields = ['wait_delivery_amount', 'stock_amount', 'available_amount']
+            is_redelivery = False
             if return_product.type == 1:  # lot
                 product, value = cls.setup_by_lot(return_product=return_product)
-                if return_product.lot_redelivery_number <= 0:  # not redelivery
-                    update_fields = ['stock_amount', 'available_amount']
+                if return_product.lot_redelivery_number > 0:  # redelivery
+                    is_redelivery = True
             if return_product.type == 2:  # serial
                 product, value = cls.setup_by_serial(return_product=return_product)
-                if return_product.is_redelivery is False:  # not redelivery
-                    update_fields = ['stock_amount', 'available_amount']
-            if product:
+                if return_product.is_redelivery is True:  # redelivery
+                    is_redelivery = True
+            if product and is_redelivery is False:  # update product no redelivery
                 product.save(**{
                     'update_transaction_info': True,
                     'quantity_return': value,
-                    'update_fields': update_fields
+                    'update_fields': ['stock_amount', 'available_amount']
+                })
+            if product and is_redelivery is True:  # update product with redelivery
+                product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_return_redelivery': value,
+                    'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
                 })
         return True
 
@@ -564,12 +570,14 @@ class GReturnFinalAcceptanceHandle:
             if return_product.lot_no:
                 if return_product.lot_no.product_warehouse:
                     product_id = return_product.lot_no.product_warehouse.product_id
-                    so_product_cost = SaleOrderCost.objects.filter(
-                        sale_order_id=instance.sale_order_id,
-                        product_id=product_id
+                    warehouse_id = return_product.lot_no.product_warehouse.warehouse_id
+                    pw_inventory = ReportInventorySub.objects.filter(
+                        report_inventory__tenant_id=instance.tenant_id,
+                        report_inventory__company_id=instance.company_id,
+                        product_id=product_id,
+                        warehouse_id=warehouse_id,
                     ).first()
-                    if so_product_cost:
-                        value = so_product_cost.product_cost_price * return_product.lot_return_number
+                    value = pw_inventory.current_cost * return_product.lot_return_number if pw_inventory else 0
         return product_id, value
 
     @classmethod
@@ -580,10 +588,12 @@ class GReturnFinalAcceptanceHandle:
             if return_product.serial_no:
                 if return_product.serial_no.product_warehouse:
                     product_id = return_product.serial_no.product_warehouse.product_id
-                    so_product_cost = SaleOrderCost.objects.filter(
-                        sale_order_id=instance.sale_order_id,
-                        product_id=product_id
+                    warehouse_id = return_product.serial_no.product_warehouse.warehouse_id
+                    pw_inventory = ReportInventorySub.objects.filter(
+                        report_inventory__tenant_id=instance.tenant_id,
+                        report_inventory__company_id=instance.company_id,
+                        product_id=product_id,
+                        warehouse_id=warehouse_id,
                     ).first()
-                    if so_product_cost:
-                        value = so_product_cost.product_cost_price
+                    value = pw_inventory.current_cost if pw_inventory else 0
         return product_id, value

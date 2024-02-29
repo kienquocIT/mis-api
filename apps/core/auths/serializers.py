@@ -1,7 +1,9 @@
 import re
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
+from django.utils import timezone
 from slugify import slugify
 from rest_framework import serializers
 from rest_framework.serializers import Serializer
@@ -10,7 +12,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from apps.core.tenant.models import Tenant
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.shared import ServerMsg, AccountMsg
-from apps.core.account.models import User
+from apps.core.account.models import User, ValidateUser
 from apps.shared.translations import AuthMsg
 
 
@@ -223,3 +225,142 @@ class ChangePasswordSerializer(serializers.Serializer):  # noqa
         instance.set_password(new_password)
         instance.save()
         return instance
+
+
+class ValidateUserDetailSerializer(serializers.ModelSerializer):
+    push_notify_data = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_push_notify_data(cls, obj):
+        state, name_service, destination_data = obj.push_notify_data()
+
+        def mask_destination():
+            def mask_name(_name):
+                if len(_name) > 5:
+                    return _name[:3] + "*" * (len(_name) - 4) + _name[-1]
+                if len(_name) > 3:
+                    return _name[:3] + "*" * (len(_name) - 3)
+                if len(_name) > 0:
+                    return _name[:1] + "*" * (len(_name) - 3)
+                return ''
+
+            if name_service == 'E-Mail':
+                name_email, *remainder = destination_data.split("@")
+
+                def mask_mail_host(_host_name):
+                    return "@".join([mask_name(item) for item in _host_name])
+                return f'{mask_name(name_email)}@{mask_mail_host(remainder)}'
+
+            if name_service == 'SMS':
+                return mask_name(destination_data)
+
+            return ''
+
+        if state:
+            return {
+                'name_service': name_service if name_service else '',
+                'destination': mask_destination(),
+            }
+        return {}
+
+    user_data = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_user_data(cls, obj):
+        def get_avatar():
+            if obj.user.employee_current:
+                emp_obj = obj.user.employee_current
+                if hasattr(emp_obj, 'avatar_img') and emp_obj.avatar_img:
+                    return emp_obj.avatar_img.url if emp_obj.avatar_img else None
+            return None
+
+        if obj.user:
+            return {
+                'full_name': obj.user.get_full_name(),
+                'avatar': get_avatar(),
+            }
+        return {}
+
+    class Meta:
+        model = ValidateUser
+        fields = ('id', 'date_expires', 'user_data', 'push_notify_data')
+
+
+class ForgotPasswordGetOTPSerializer(serializers.ModelSerializer):
+    tenant_code = serializers.CharField()
+    username = serializers.CharField()
+
+    @classmethod
+    def validate_tenant_code(cls, attrs):
+        try:
+            return Tenant.objects.get(code=attrs)
+        except Tenant.DoesNotExist:
+            pass
+        raise serializers.ValidationError(
+            {
+                'tenant_code': AuthMsg.TENANT_NOT_FOUND.format(str(attrs))
+            }
+        )
+
+    def validate(self, attrs):
+        username = attrs['username']
+        tenant_obj = attrs['tenant_code']
+        if username and tenant_obj:
+            try:
+                user_obj = User.objects.get(tenant_current=tenant_obj, username=username)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    {
+                        'username': AuthMsg.USER_DOES_NOT_EXIST
+                    }
+                )
+            last_call = ValidateUser.objects.filter(
+                user=user_obj, date_created__gte=timezone.now() - timedelta(hours=1)
+            ).count()
+            if last_call > 3:
+                raise serializers.ValidationError(
+                    {
+                        'detail': AuthMsg.MAX_REQUEST_FORGOT.format('3', '1')
+                    }
+                )
+            return {
+                **attrs,
+                'user_obj': user_obj
+            }
+        raise serializers.ValidationError(
+            {
+                'username': AuthMsg.USERNAME_REQUIRE
+            }
+        )
+
+    class Meta:
+        model = ValidateUser
+        fields = ('tenant_code', 'username')
+
+    def create(self, validated_data):
+        user_obj = validated_data['user_obj']
+        otp = ValidateUser.generate_otp()
+
+        return ValidateUser.objects.create(
+            user=user_obj,
+            otp=otp,
+            date_expires=ValidateUser.generate_expire(minutes=2)
+        )
+
+
+class SubmitOTPSerializer(serializers.ModelSerializer):
+    otp = serializers.CharField()
+
+    def validate_otp(self, attrs):
+        if self.instance.otp == attrs:
+            return attrs
+        raise serializers.ValidationError({'otp': AuthMsg.OTP_NOT_MATCH})
+
+    def update(self, instance, validated_data):
+        instance.is_valid = True
+        instance.save(update_fields=['is_valid'])
+        return instance
+
+    class Meta:
+        model = ValidateUser
+        fields = ('otp',)
