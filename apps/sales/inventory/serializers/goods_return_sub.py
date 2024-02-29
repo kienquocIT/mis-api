@@ -5,7 +5,6 @@ from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, O
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 from apps.sales.inventory.models import GoodsReturnProductDetail
 from apps.sales.report.models import ReportInventorySub
-from apps.sales.saleorder.models import SaleOrderCost
 
 
 class GoodsReturnSubSerializerForNonPicking:
@@ -202,6 +201,58 @@ class GoodsReturnSubSerializerForNonPicking:
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
 
     @classmethod
+    def update_warehouse_prod_type_general(cls, product_wh, item, gr_obj, return_quantity):
+        if product_wh:
+            product_wh.stock_amount += item.get('default_return_number')
+            product_wh.sold_amount -= item.get('default_return_number')
+            product_wh.save(update_fields=['stock_amount', 'sold_amount'])
+        else:
+            cls.create_product_warehouse_for_general(gr_obj, return_quantity)
+
+    @classmethod
+    def update_warehouse_prod_type_lot(cls, product_wh, item, gr_obj, return_quantity):
+        lot = ProductWareHouseLot.objects.filter(id=item.get('lot_no_id'))
+        if product_wh:
+            lot_wh = lot.filter(product_warehouse=product_wh).first()
+            if lot_wh:
+                lot_wh.product_warehouse.stock_amount += item.get('lot_return_number')
+                lot_wh.product_warehouse.sold_amount -= item.get('lot_return_number')
+                lot_wh.quantity_import += item.get('lot_return_number')
+                lot_wh.save(update_fields=['quantity_import'])
+                lot_wh.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+            else:
+                if lot.first():
+                    ProductWareHouseLot.objects.create(
+                        tenant_id=gr_obj.tenant_id,
+                        company_id=gr_obj.company_id,
+                        product_warehouse=product_wh,
+                        lot_number=lot.first().lot_number,
+                        quantity_import=item.get('lot_return_number'),
+                        expire_date=lot.first().expire_date,
+                        manufacture_date=lot.first().manufacture_date
+                    )
+                    product_wh.stock_amount += item.get('lot_return_number')
+                    product_wh.sold_amount -= item.get('lot_return_number')
+                    product_wh.save(update_fields=['stock_amount', 'sold_amount'])
+                else:
+                    raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
+        else:
+            if lot.first():
+                cls.create_product_warehouse_for_lot(gr_obj, return_quantity, lot.first())
+            else:
+                raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
+
+    @classmethod
+    def update_warehouse_prod_type_sn(cls, item):
+        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
+        if serial:  # update warehouse
+            serial.product_warehouse.stock_amount += 1
+            serial.product_warehouse.sold_amount -= 1
+            serial.is_delete = 0
+            serial.save(update_fields=['is_delete'])
+            serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+
+    @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):
         """
         Có 3 TH:
@@ -217,59 +268,11 @@ class GoodsReturnSubSerializerForNonPicking:
         for item in product_detail_list:
             type_value = item.get('type')
             if type_value == 0:  # General
-                """
-                Nếu kho trả về đã tồn tại liên kết prd-wh: cập nhập kho cũ:
-                    + sl tồn: cộng thêm sl trả về
-                    + sl đã đẩy đi: trừ đi sl trả về
-                Nếu kho trả về KO tồn tại liên kết prd-wh: tạo product_warehouse:
-                    + sl tồn: sl trả về
-                    + sl đã đẩy đi: 0
-                """
-                if product_wh:
-                    product_wh.stock_amount += item.get('default_return_number')
-                    product_wh.sold_amount -= item.get('default_return_number')
-                    product_wh.save(update_fields=['stock_amount', 'sold_amount'])
-                else:
-                    cls.create_product_warehouse_for_general(gr_obj, return_quantity)
+                cls.update_warehouse_prod_type_general(product_wh, item, gr_obj, return_quantity)
             elif type_value == 1:  # LOT
-                lot = ProductWareHouseLot.objects.filter(id=item.get('lot_no_id'))
-                if product_wh:
-                    lot_wh = lot.filter(product_warehouse=product_wh).first()
-                    if lot_wh:
-                        lot_wh.product_warehouse.stock_amount += item.get('lot_return_number')
-                        lot_wh.product_warehouse.sold_amount -= item.get('lot_return_number')
-                        lot_wh.quantity_import += item.get('lot_return_number')
-                        lot_wh.save(update_fields=['quantity_import'])
-                        lot_wh.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
-                    else:
-                        if lot.first():
-                            ProductWareHouseLot.objects.create(
-                                tenant_id=gr_obj.tenant_id,
-                                company_id=gr_obj.company_id,
-                                product_warehouse=product_wh,
-                                lot_number=lot.first().lot_number,
-                                quantity_import=item.get('lot_return_number'),
-                                expire_date=lot.first().expire_date,
-                                manufacture_date=lot.first().manufacture_date
-                            )
-                            product_wh.stock_amount += item.get('lot_return_number')
-                            product_wh.sold_amount -= item.get('lot_return_number')
-                            product_wh.save(update_fields=['stock_amount', 'sold_amount'])
-                        else:
-                            raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
-                else:
-                    if lot.first():
-                        cls.create_product_warehouse_for_lot(gr_obj, return_quantity, lot.first())
-                    else:
-                        raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
+                cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
-                serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
-                if serial:  # update warehouse
-                    serial.product_warehouse.stock_amount += 1
-                    serial.product_warehouse.sold_amount -= 1
-                    serial.is_delete = 0
-                    serial.save(update_fields=['is_delete'])
-                    serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+                cls.update_warehouse_prod_type_sn(item)
         cls.prepare_data_for_logging(gr_obj, return_quantity)
         return True
 

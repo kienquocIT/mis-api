@@ -1,6 +1,4 @@
 from rest_framework import serializers
-
-from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
