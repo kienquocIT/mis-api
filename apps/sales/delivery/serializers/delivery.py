@@ -99,7 +99,7 @@ class DeliProductInformationHandle:
                     })
         else:
             for product_data in validated_product:
-                if 'product_id' in product_data and 'done' in product_data:
+                if all(key in product_data for key in ('product_id', 'done')):
                     product_obj = Product.objects.filter(
                         tenant_id=instance.tenant_id, company_id=instance.company_id, id=product_data['product_id']
                     ).first()
@@ -127,7 +127,7 @@ class DeliProductWarehouseHandle:
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.delivery_data:
                 for data in deli_product.delivery_data:
-                    if 'warehouse' in data and 'uom' in data and 'stock' in data:
+                    if all(key in data for key in ('warehouse', 'uom', 'stock')):
                         product_warehouse = ProductWareHouse.objects.filter(
                             tenant_id=instance.tenant_id,
                             company_id=instance.company_id,
@@ -177,18 +177,25 @@ class DeliFinalAcceptanceHandle:
         list_data_indicator = []
         for item in validated_product:
             # config final acceptance
-            so_product_cost = SaleOrderCost.objects.filter(
-                sale_order_id=instance.order_delivery.sale_order_id,
-                product_id=item.get('product_id', None)
-            ).first()
-            if so_product_cost:
+            actual_value = 0
+            if all(key in item for key in ('product_id', 'delivery_data')):
+                for data_deli in item['delivery_data']:
+                    if all(key in data_deli for key in ('warehouse_id', 'stock')):
+                        pw_inventory = ReportInventorySub.objects.filter(
+                            report_inventory__tenant_id=instance.tenant_id,
+                            report_inventory__company_id=instance.company_id,
+                            product_id=item['product_id'],
+                            warehouse_id=data_deli['warehouse_id'],
+                        ).first()
+                        if pw_inventory:
+                            actual_value += pw_inventory.current_cost * data_deli['stock']
                 list_data_indicator.append({
                     'tenant_id': instance.tenant_id,
                     'company_id': instance.company_id,
                     'sale_order_id': instance.order_delivery.sale_order_id,
                     'delivery_sub_id': instance.id,
                     'product_id': item.get('product_id', None),
-                    'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
+                    'actual_value': actual_value,
                     'is_delivery': True,
                 })
         FinalAcceptance.create_final_acceptance_from_so(
