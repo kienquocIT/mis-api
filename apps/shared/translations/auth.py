@@ -24,3 +24,6 @@ class AuthMsg:
     PASSWORD_NEW_NOT_SAME_CURRENT_PASSWORD = _('The new password does not same current password')
 
     VALIDATE_OTP_EXPIRED = _('The session was expired')
+    OTP_NOT_MATCH = _("OTP isn't match")
+
+    MAX_REQUEST_FORGOT = _('Maximum {0} requests in {1} hour')

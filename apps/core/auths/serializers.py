@@ -1,7 +1,9 @@
 import re
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
+from django.utils import timezone
 from slugify import slugify
 from rest_framework import serializers
 from rest_framework.serializers import Serializer
@@ -306,17 +308,25 @@ class ForgotPasswordGetOTPSerializer(serializers.ModelSerializer):
         if username and tenant_obj:
             try:
                 user_obj = User.objects.get(tenant_current=tenant_obj, username=username)
-                return {
-                    **attrs,
-                    'user_obj': user_obj
-                }
             except User.DoesNotExist:
-                pass
-            raise serializers.ValidationError(
-                {
-                    'username': AuthMsg.USER_DOES_NOT_EXIST
-                }
-            )
+                raise serializers.ValidationError(
+                    {
+                        'username': AuthMsg.USER_DOES_NOT_EXIST
+                    }
+                )
+            last_call = ValidateUser.objects.filter(
+                user=user_obj, date_created__gte=timezone.now() - timedelta(hours=1)
+            ).count()
+            if last_call > 3:
+                raise serializers.ValidationError(
+                    {
+                        'detail': AuthMsg.MAX_REQUEST_FORGOT.format('3', '1')
+                    }
+                )
+            return {
+                **attrs,
+                'user_obj': user_obj
+            }
         raise serializers.ValidationError(
             {
                 'username': AuthMsg.USERNAME_REQUIRE
@@ -342,9 +352,14 @@ class SubmitOTPSerializer(serializers.ModelSerializer):
     otp = serializers.CharField()
 
     def validate_otp(self, attrs):
-        # if self.instance.otp == attrs:
-        #     return attrs
-        raise serializers.ValidationError({'otp': "OTP isn't match."})
+        if self.instance.otp == attrs:
+            return attrs
+        raise serializers.ValidationError({'otp': AuthMsg.OTP_NOT_MATCH})
+
+    def update(self, instance, validated_data):
+        instance.is_valid = True
+        instance.save(update_fields=['is_valid'])
+        return instance
 
     class Meta:
         model = ValidateUser

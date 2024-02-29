@@ -250,10 +250,13 @@ class ForgotPasswordDetailView(APIView):
         if pk and TypeCheck.check_uuid(pk):
             try:
                 obj = ValidateUser.objects.get(pk=pk)
-                if obj:
-                    return ResponseController.success_200(data={})
             except ValidateUser.DoesNotExist:
-                pass
+                return ResponseController.notfound_404()
+
+            obj.otp = ValidateUser.generate_otp()
+            obj.save(update_fields=['otp'])
+            obj.send_otp_to_telegram()
+            return ResponseController.success_200(data={'': 'Ok'})
         return ResponseController.notfound_404()
 
     @swagger_auto_schema(request_body=SubmitOTPSerializer)
@@ -261,13 +264,15 @@ class ForgotPasswordDetailView(APIView):
     def put(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             try:
-                obj = ValidateUser.objects.get(pk=pk)
+                obj = ValidateUser.objects.get(pk=pk, is_valid=False)
             except ValidateUser.DoesNotExist:
                 return ResponseController.notfound_404()
 
-            if obj.date_expires <= timezone.now():
+            if obj.date_expires >= timezone.now():
                 ser = SubmitOTPSerializer(instance=obj, data=request.data)
                 ser.is_valid(raise_exception=True)
-                return ResponseController.success_200(data={})
+                ser.save()
+                new_password = obj.user.generate_new_password()
+                return ResponseController.success_200(data={'new_password': new_password})
             raise serializers.ValidationError({'': AuthMsg.VALIDATE_OTP_EXPIRED})
         return ResponseController.notfound_404()

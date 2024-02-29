@@ -288,6 +288,14 @@ msgid "The session was expired"
 msgstr "Phiên làm việc đã hết hạn"
 
 #
+msgid "OTP isn't match"
+msgstr "OTP không chính xác"
+
+#
+msgid "Maximum {0} requests in {1} hour"
+msgstr "Tối đa {0} lần yêu cầu trong {1} giờ"
+
+#
 msgid "The user does not exist"
 msgstr "Người dùng không tồn tại"
 

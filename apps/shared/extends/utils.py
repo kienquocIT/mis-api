@@ -41,8 +41,14 @@ class LinkListHandler:
 
 class StringHandler:
     @staticmethod
-    def random_str(length):
-        return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
+    def random_str(length, upper_lower=2):
+        if upper_lower == 1:
+            store = string.ascii_lowercase
+        elif upper_lower == 2:
+            store = string.ascii_uppercase
+        else:
+            store = string.ascii_letters
+        return ''.join([random.choice(store) for _ in range(length)])
 
     @staticmethod
     def random_number(length, to_type: Type = str):

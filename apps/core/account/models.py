@@ -1,3 +1,4 @@
+import random
 from datetime import timedelta
 from uuid import uuid4
 from jsonfield import JSONField
@@ -177,6 +178,21 @@ class User(AuthUser):  # pylint: disable=R0902
         ordering = ("username",)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def random_password(cls):
+        str_lower = StringHandler.random_str(8, 1)
+        str_upper = StringHandler.random_str(8, 2)
+        str_number = StringHandler.random_number(4)
+        passwd = [*(str_lower + str_upper + str_number)]
+        random.shuffle(passwd)
+        return "".join(passwd)
+
+    def generate_new_password(self):
+        new_passwd = self.random_password()
+        self.set_password(new_passwd)
+        super().save()
+        return new_passwd
 
     def get_detail(self, is_full=True):
         data = {
