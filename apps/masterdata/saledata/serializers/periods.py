@@ -43,11 +43,13 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_fiscal_year(cls, value):
         if value < datetime.now().year:
-            raise serializers.ValidationError({"fiscal_year": 'Passed fiscal year'})
-        if value < Periods.objects.filter_current(
-                fill__tenant=True, fill__company=True, fiscal_year=value
+            raise serializers.ValidationError({"Fiscal year": 'Passed fiscal year'})
+        if Periods.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            fiscal_year=value
         ).exists():
-            raise serializers.ValidationError({"Period": 'This fiscal year has period already'})
+            raise serializers.ValidationError({"Period": 'This fiscal year has created already'})
         return value
 
     def validate(self, validate_data):
