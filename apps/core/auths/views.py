@@ -2,18 +2,19 @@ from typing import Union
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import models
-from django.utils import translation
+from django.utils import translation, timezone
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
-from apps.core.account.models import User
+from apps.core.account.models import User, ValidateUser
 from apps.core.company.models import CompanyUserEmployee
 from apps.core.auths.serializers import (
     AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer,
-    AuthValidAccessCodeSerializer, MyLanguageUpdateSerializer, ChangePasswordSerializer,
+    AuthValidAccessCodeSerializer, MyLanguageUpdateSerializer, ChangePasswordSerializer, ForgotPasswordGetOTPSerializer,
+    ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
 from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, MediaForceAPI, TypeCheck
 
@@ -229,3 +230,44 @@ class ChangePasswordView(APIView):
             ser.save()
             return ResponseController.success_200({'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
         return ResponseController.unauthorized_401()
+
+
+class ForgotPasswordView(APIView):
+    @swagger_auto_schema(request_body=ForgotPasswordGetOTPSerializer)
+    @mask_view(login_require=False)
+    def post(self, request, *args, **kwargs):
+        ser = ForgotPasswordGetOTPSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        obj.send_otp_to_telegram()
+        return ResponseController.success_200(data=ValidateUserDetailSerializer(instance=obj).data)
+
+
+class ForgotPasswordDetailView(APIView):
+    @swagger_auto_schema(operation_summary='Call re-sent OTP')
+    @mask_view(login_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            try:
+                obj = ValidateUser.objects.get(pk=pk)
+                if obj:
+                    return ResponseController.success_200(data={})
+            except ValidateUser.DoesNotExist:
+                pass
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(request_body=SubmitOTPSerializer)
+    @mask_view(login_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            try:
+                obj = ValidateUser.objects.get(pk=pk)
+            except ValidateUser.DoesNotExist:
+                return ResponseController.notfound_404()
+
+            if obj.date_expires <= timezone.now():
+                ser = SubmitOTPSerializer(instance=obj, data=request.data)
+                ser.is_valid(raise_exception=True)
+                return ResponseController.success_200(data={})
+            raise serializers.ValidationError({'': AuthMsg.VALIDATE_OTP_EXPIRED})
+        return ResponseController.notfound_404()

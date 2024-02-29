@@ -16,7 +16,6 @@ from apps.core.hr.views.role import (
 )
 
 urlpatterns = [
-
     path("employee/media-token", EmployeeMediaToken.as_view(), name="EmployeeMediaToken"),
     path("employee/tenant", EmployeeTenantList.as_view(), name="EmployeeTenantList"),
     # path("employee/company/<str:company_id>", EmployeeCompanyList.as_view(), name="EmployeeCompanyList"),

@@ -3,7 +3,7 @@ import random
 import re
 import string
 from datetime import datetime, date
-from typing import Union
+from typing import Union, Type
 from uuid import UUID
 
 from django.core.serializers.json import DjangoJSONEncoder
@@ -43,6 +43,16 @@ class StringHandler:
     @staticmethod
     def random_str(length):
         return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
+
+    @staticmethod
+    def random_number(length, to_type: Type = str):
+        if to_type is str:
+            return ''.join([random.choice(string.digits) for _ in range(length)])
+        if to_type is int:
+            first_item = random.choice('123456789')
+            remainder_item = ''.join([random.choice(string.digits) for _ in range(length - 1)])
+            return int(first_item + remainder_item)
+        return StringHandler.random_str(length=length)
 
     @staticmethod
     def remove_special_characters_regex(text):

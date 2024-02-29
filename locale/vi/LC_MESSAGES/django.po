@@ -283,6 +283,14 @@ msgstr "Email đã tồn tại."
 msgid "This field is required"
 msgstr "Trường này là bắt buộc"
 
+#
+msgid "The session was expired"
+msgstr "Phiên làm việc đã hết hạn"
+
+#
+msgid "The user does not exist"
+msgstr "Người dùng không tồn tại"
+
 #: .\apps\shared\translations\auth.py:5
 msgid "Username and password are incorrect."
 msgstr "Tên đăng nhập hoặc mật khẩu không chính xác."
