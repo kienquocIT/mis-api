@@ -50,7 +50,7 @@ from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
@@ -1435,4 +1435,15 @@ def update_quotation_so_json_data():
 def reset_opportunity_stage():
     for opp in Opportunity.objects.all():
         CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
+    print('Done')
+
+
+def update_report_inventory_sub_trans_title():
+    for item in ReportInventorySub.objects.all():
+        if item.trans_code.startswith('D'):
+            item.trans_title = 'Delivery'
+            item.save(update_fields=['trans_title'])
+        elif item.trans_code.startswith('GR'):
+            item.trans_title = 'Goods receipt'
+            item.save(update_fields=['trans_title'])
     print('Done')
