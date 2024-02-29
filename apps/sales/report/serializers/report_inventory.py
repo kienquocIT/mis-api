@@ -59,6 +59,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                         'document_date': item.document_date,
                         'stock_type': item.stock_type,
                         'trans_code': item.trans_code,
+                        'trans_title': item.trans_title,
                         'quantity': item.quantity,
                         'cost': item.cost,
                         'value': item.value,

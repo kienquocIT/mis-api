@@ -10,6 +10,7 @@ class GoodsReturn(DataAbstractModel):
     delivery = models.ForeignKey('delivery.OrderDeliverySub', on_delete=models.CASCADE, null=True)
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Goods Return'

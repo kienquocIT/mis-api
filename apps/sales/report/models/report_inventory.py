@@ -65,6 +65,7 @@ class ReportInventorySub(DataAbstractModel):
     stock_type = models.SmallIntegerField(choices=[(1, 'In'), (-1, 'Out')])
     trans_id = models.CharField(blank=True, max_length=100, null=True)
     trans_code = models.CharField(blank=True, max_length=100, null=True)
+    trans_title = models.CharField(blank=True, max_length=100, null=True)
 
     quantity = models.FloatField(default=0)
     cost = models.FloatField(default=0)
@@ -108,6 +109,7 @@ class ReportInventorySub(DataAbstractModel):
                 stock_type=item['stock_type'],
                 trans_id=item['trans_id'],
                 trans_code=item['trans_code'],
+                trans_title=item['trans_title'],
                 quantity=item['quantity'],
                 cost=item['cost'],
                 value=item['value']

@@ -674,6 +674,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         'stock_type': -1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
+                        'trans_title': 'Delivery',
                         'quantity': quantity,
                         'cost': item.product_unit_price,
                         'value': item.product_unit_price * quantity,

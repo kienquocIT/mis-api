@@ -21,7 +21,7 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery'
+            'sale_order', 'delivery', 'return_to_warehouse'
         )
 
     @swagger_auto_schema(
