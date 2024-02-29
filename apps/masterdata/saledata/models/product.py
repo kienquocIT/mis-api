@@ -260,8 +260,8 @@ class Product(DataAbstractModel):
             instance.stock_amount += kwargs['quantity_return']
             del kwargs['quantity_return']
         if 'quantity_return_redelivery' in kwargs:
-            instance.wait_delivery_amount += kwargs['quantity_return']
-            instance.stock_amount += kwargs['quantity_return']
+            instance.wait_delivery_amount += kwargs['quantity_return_redelivery']
+            instance.stock_amount += kwargs['quantity_return_redelivery']
             del kwargs['quantity_return_redelivery']
         instance.available_amount = (
                 instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount

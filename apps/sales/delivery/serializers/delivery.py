@@ -178,24 +178,25 @@ class DeliFinalAcceptanceHandle:
             # config final acceptance
             actual_value = 0
             if all(key in item for key in ('product_id', 'delivery_data')):
-                for data_deli in item['delivery_data']:
-                    if all(key in data_deli for key in ('warehouse', 'stock')):
-                        pw_inventory = ReportInventorySub.objects.filter(
-                            report_inventory__tenant_id=instance.tenant_id,
-                            report_inventory__company_id=instance.company_id,
-                            product_id=item['product_id'],
-                            warehouse_id=data_deli['warehouse'],
-                        ).first()
-                        actual_value += pw_inventory.current_cost * data_deli['stock'] if pw_inventory else 0
-                list_data_indicator.append({
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'sale_order_id': instance.order_delivery.sale_order_id,
-                    'delivery_sub_id': instance.id,
-                    'product_id': item['product_id'],
-                    'actual_value': actual_value,
-                    'is_delivery': True,
-                })
+                if Product.objects.filter(id=item['product_id']).exists():
+                    for data_deli in item['delivery_data']:
+                        if all(key in data_deli for key in ('warehouse', 'stock')):
+                            pw_inventory = ReportInventorySub.objects.filter(
+                                report_inventory__tenant_id=instance.tenant_id,
+                                report_inventory__company_id=instance.company_id,
+                                product_id=item['product_id'],
+                                warehouse_id=data_deli['warehouse'],
+                            ).first()
+                            actual_value += pw_inventory.current_cost * data_deli['stock'] if pw_inventory else 0
+                    list_data_indicator.append({
+                        'tenant_id': instance.tenant_id,
+                        'company_id': instance.company_id,
+                        'sale_order_id': instance.order_delivery.sale_order_id,
+                        'delivery_sub_id': instance.id,
+                        'product_id': item['product_id'],
+                        'actual_value': actual_value,
+                        'is_delivery': True,
+                    })
         FinalAcceptance.create_final_acceptance_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
