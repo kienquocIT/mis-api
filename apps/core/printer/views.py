@@ -102,7 +102,7 @@ class PrintTemplateUsingDetail(BaseRetrieveMixin):
     application_id: UUID = None
 
     def get_object(self):
-        return super().get_queryset().filter(is_using=True, application=self.application_id).first()
+        return super().get_queryset().filter(is_default=True, application=self.application_id).first()
 
     @swagger_auto_schema()
     @mask_view(login_require=True, auth_require=False)

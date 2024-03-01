@@ -9,13 +9,13 @@ from apps.shared import MasterDataAbstractModel
 class PrintTemplates(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE)
     contents = models.TextField()
-    is_using = models.BooleanField(default=False)
+    is_default = models.BooleanField(default=False)  # mean change from using to default
     remarks = models.TextField(blank=True)
 
     @classmethod
     def check_using_unique(cls, tenant_id: UUID, company_id: UUID) -> (bool, list[str]):
         app_not_unique = []
-        kw_arg = {'tenant_id': tenant_id, 'company_id': company_id, 'is_using': True}
+        kw_arg = {'tenant_id': tenant_id, 'company_id': company_id, 'is_default': True}
         for data in PrintTemplates.objects.filter(**kw_arg).values('application').annotate(total=Count('id')):
             if data['total'] > 1:
                 app_not_unique.append(data['application'])
@@ -26,15 +26,15 @@ class PrintTemplates(MasterDataAbstractModel):
 
     def confirm_unique_using(self):
         obj_running_using = PrintTemplates.objects.filter(
-            tenant=self.tenant, company=self.company, application=self.application, is_using=True
+            tenant=self.tenant, company=self.company, application=self.application, is_default=True
         ).exclude(id=self.id)
         for obj in obj_running_using:
-            obj.is_using = False
-            obj.save(update_fields=['is_using'])
+            obj.is_default = False
+            obj.save(update_fields=['is_default'])
         return True
 
     def save(self, *args, **kwargs):
-        if self.is_using is True:
+        if self.is_default is True:
             self.confirm_unique_using()
         super().save(*args, **kwargs)
 

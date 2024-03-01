@@ -6,7 +6,7 @@ from apps.core.printer.models import PrintTemplates
 class PrintTemplateListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrintTemplates
-        fields = ('id', 'title', 'contents', 'application', 'is_using', 'remarks')
+        fields = ('id', 'title', 'contents', 'application', 'is_default', 'is_active', 'remarks')
 
 
 class PrintTemplateDetailSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class PrintTemplateDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PrintTemplates
-        fields = ('id', 'title', 'contents', 'application', 'is_using', 'remarks')
+        fields = ('id', 'title', 'contents', 'application', 'is_default', 'is_active', 'remarks')
 
 
 class PrintTemplateCreateSerializer(serializers.ModelSerializer):
@@ -33,4 +33,4 @@ class PrintTemplateCreateSerializer(serializers.ModelSerializer):
 class PrintTemplateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrintTemplates
-        fields = ('contents', 'title', 'is_using', 'remarks')
+        fields = ('contents', 'title', 'is_default', 'is_active', 'remarks')
