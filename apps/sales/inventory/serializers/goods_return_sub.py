@@ -248,7 +248,10 @@ class GoodsReturnSubSerializerForNonPicking:
                 product_warehouse=new_prd_wh,
                 vendor_serial_number=sample_sn.vendor_serial_number,
                 serial_number=sample_sn.serial_number,
-                quantity_import=return_quantity
+                expire_date=sample_sn.expire_date,
+                manufacture_date=sample_sn.manufacture_date,
+                warranty_start=sample_sn.warranty_start,
+                warranty_end=sample_sn.warranty_end
             )
             return True
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
@@ -301,11 +304,11 @@ class GoodsReturnSubSerializerForNonPicking:
         if product_wh:
             serial_wh = serial.filter(product_warehouse=product_wh).first()
             if serial_wh:
-                serial.product_warehouse.stock_amount += 1
-                serial.product_warehouse.sold_amount -= 1
-                serial.is_delete = 0
-                serial.save(update_fields=['is_delete'])
-                serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+                serial_wh.product_warehouse.stock_amount += 1
+                serial_wh.product_warehouse.sold_amount -= 1
+                serial_wh.is_delete = 0
+                serial_wh.save(update_fields=['is_delete'])
+                serial_wh.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
             else:
                 if serial.first():
                     ProductWareHouseSerial.objects.create(
@@ -314,7 +317,10 @@ class GoodsReturnSubSerializerForNonPicking:
                         product_warehouse=product_wh,
                         vendor_serial_number=serial.first().vendor_serial_number,
                         serial_number=serial.first().serial_number,
-                        quantity_import=item.get('lot_return_number')
+                        expire_date=serial.first().expire_date,
+                        manufacture_date=serial.first().manufacture_date,
+                        warranty_start=serial.first().warranty_start,
+                        warranty_end=serial.first().warranty_end
                     )
                     product_wh.stock_amount += item.get('lot_return_number')
                     product_wh.sold_amount -= item.get('lot_return_number')
