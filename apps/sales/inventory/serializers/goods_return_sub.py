@@ -348,7 +348,7 @@ class GoodsReturnSubSerializerForNonPicking:
             elif type_value == 1:  # LOT
                 cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
-                cls.update_warehouse_prod_type_sn(item)
+                cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
         cls.prepare_data_for_logging(gr_obj, return_quantity)
         return True
 
