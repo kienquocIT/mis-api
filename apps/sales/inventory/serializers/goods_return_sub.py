@@ -154,40 +154,51 @@ class GoodsReturnSubSerializerForNonPicking:
             product=gr_obj.product
         ).first()
         if delivery_product:
-            new_prd_wh = ProductWareHouse.objects.create(
+            new_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
                 product=gr_obj.product,
-                uom=gr_obj.uom,
-                warehouse=gr_obj.return_to_warehouse,
-                tax=delivery_product.product.sale_tax,
-                unit_price=delivery_product.product_unit_price,
-                stock_amount=return_quantity,
-                receipt_amount=return_quantity,
-                sold_amount=0,
-                picked_ready=0,
-                product_data={
-                    'id': gr_obj.product_id,
-                    'code': gr_obj.product.code,
-                    'title': gr_obj.product.title
-                },
-                warehouse_data={
-                    'id': gr_obj.return_to_warehouse_id,
-                    'code': gr_obj.return_to_warehouse.code,
-                    'title': gr_obj.return_to_warehouse.title
-                },
-                uom_data={
-                    'id': gr_obj.uom_id,
-                    'code': gr_obj.uom.code,
-                    'title': gr_obj.uom.title
-                },
-                tax_data={
-                    'id': delivery_product.product.sale_tax_id,
-                    'code': delivery_product.product.sale_tax.code,
-                    'title': delivery_product.product.sale_tax.title,
-                    'rate': delivery_product.product.sale_tax.rate
-                }
-            )
+                warehouse=gr_obj.return_to_warehouse
+            ).first()
+            if not new_prd_wh:
+                new_prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product=gr_obj.product,
+                    uom=gr_obj.uom,
+                    warehouse=gr_obj.return_to_warehouse,
+                    tax=delivery_product.product.sale_tax,
+                    unit_price=delivery_product.product_unit_price,
+                    stock_amount=return_quantity,
+                    receipt_amount=return_quantity,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': gr_obj.product_id,
+                        'code': gr_obj.product.code,
+                        'title': gr_obj.product.title
+                    },
+                    warehouse_data={
+                        'id': gr_obj.return_to_warehouse_id,
+                        'code': gr_obj.return_to_warehouse.code,
+                        'title': gr_obj.return_to_warehouse.title
+                    },
+                    uom_data={
+                        'id': gr_obj.uom_id,
+                        'code': gr_obj.uom.code,
+                        'title': gr_obj.uom.title
+                    },
+                    tax_data={
+                        'id': delivery_product.product.sale_tax_id,
+                        'code': delivery_product.product.sale_tax.code,
+                        'title': delivery_product.product.sale_tax.title,
+                        'rate': delivery_product.product.sale_tax.rate
+                    }
+                )
+            else:
+                new_prd_wh.stock_amount += return_quantity
+                new_prd_wh.sold_amount += return_quantity
+                new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
             ProductWareHouseLot.objects.create(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
@@ -208,40 +219,51 @@ class GoodsReturnSubSerializerForNonPicking:
             product=gr_obj.product
         ).first()
         if delivery_product:
-            new_prd_wh = ProductWareHouse.objects.create(
+            new_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
                 product=gr_obj.product,
-                uom=gr_obj.uom,
-                warehouse=gr_obj.return_to_warehouse,
-                tax=delivery_product.product.sale_tax,
-                unit_price=delivery_product.product_unit_price,
-                stock_amount=return_quantity,
-                receipt_amount=return_quantity,
-                sold_amount=0,
-                picked_ready=0,
-                product_data={
-                    'id': gr_obj.product_id,
-                    'code': gr_obj.product.code,
-                    'title': gr_obj.product.title
-                },
-                warehouse_data={
-                    'id': gr_obj.return_to_warehouse_id,
-                    'code': gr_obj.return_to_warehouse.code,
-                    'title': gr_obj.return_to_warehouse.title
-                },
-                uom_data={
-                    'id': gr_obj.uom_id,
-                    'code': gr_obj.uom.code,
-                    'title': gr_obj.uom.title
-                },
-                tax_data={
-                    'id': delivery_product.product.sale_tax_id,
-                    'code': delivery_product.product.sale_tax.code,
-                    'title': delivery_product.product.sale_tax.title,
-                    'rate': delivery_product.product.sale_tax.rate
-                }
-            )
+                warehouse=gr_obj.return_to_warehouse
+            ).first()
+            if not new_prd_wh:
+                new_prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product=gr_obj.product,
+                    uom=gr_obj.uom,
+                    warehouse=gr_obj.return_to_warehouse,
+                    tax=delivery_product.product.sale_tax,
+                    unit_price=delivery_product.product_unit_price,
+                    stock_amount=return_quantity,
+                    receipt_amount=return_quantity,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': gr_obj.product_id,
+                        'code': gr_obj.product.code,
+                        'title': gr_obj.product.title
+                    },
+                    warehouse_data={
+                        'id': gr_obj.return_to_warehouse_id,
+                        'code': gr_obj.return_to_warehouse.code,
+                        'title': gr_obj.return_to_warehouse.title
+                    },
+                    uom_data={
+                        'id': gr_obj.uom_id,
+                        'code': gr_obj.uom.code,
+                        'title': gr_obj.uom.title
+                    },
+                    tax_data={
+                        'id': delivery_product.product.sale_tax_id,
+                        'code': delivery_product.product.sale_tax.code,
+                        'title': delivery_product.product.sale_tax.title,
+                        'rate': delivery_product.product.sale_tax.rate
+                    }
+                )
+            else:
+                new_prd_wh.stock_amount += 1
+                new_prd_wh.sold_amount += 1
+                new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
             ProductWareHouseSerial.objects.create(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
@@ -344,6 +366,8 @@ class GoodsReturnSubSerializerForNonPicking:
         """
         gr_product = gr_obj.product
         product_wh = ProductWareHouse.objects.filter(
+            tenant_id=gr_obj.tenant_id,
+            company_id=gr_obj.company_id,
             product=gr_product,
             warehouse=gr_obj.return_to_warehouse
         ).first()
