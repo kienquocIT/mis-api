@@ -154,40 +154,51 @@ class GoodsReturnSubSerializerForNonPicking:
             product=gr_obj.product
         ).first()
         if delivery_product:
-            new_prd_wh = ProductWareHouse.objects.create(
+            new_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
                 product=gr_obj.product,
-                uom=gr_obj.uom,
-                warehouse=gr_obj.return_to_warehouse,
-                tax=delivery_product.product.sale_tax,
-                unit_price=delivery_product.product_unit_price,
-                stock_amount=return_quantity,
-                receipt_amount=return_quantity,
-                sold_amount=0,
-                picked_ready=0,
-                product_data={
-                    'id': gr_obj.product_id,
-                    'code': gr_obj.product.code,
-                    'title': gr_obj.product.title
-                },
-                warehouse_data={
-                    'id': gr_obj.return_to_warehouse_id,
-                    'code': gr_obj.return_to_warehouse.code,
-                    'title': gr_obj.return_to_warehouse.title
-                },
-                uom_data={
-                    'id': gr_obj.uom_id,
-                    'code': gr_obj.uom.code,
-                    'title': gr_obj.uom.title
-                },
-                tax_data={
-                    'id': delivery_product.product.sale_tax_id,
-                    'code': delivery_product.product.sale_tax.code,
-                    'title': delivery_product.product.sale_tax.title,
-                    'rate': delivery_product.product.sale_tax.rate
-                }
-            )
+                warehouse=gr_obj.return_to_warehouse
+            ).first()
+            if not new_prd_wh:
+                new_prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product=gr_obj.product,
+                    uom=gr_obj.uom,
+                    warehouse=gr_obj.return_to_warehouse,
+                    tax=delivery_product.product.sale_tax,
+                    unit_price=delivery_product.product_unit_price,
+                    stock_amount=return_quantity,
+                    receipt_amount=return_quantity,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': gr_obj.product_id,
+                        'code': gr_obj.product.code,
+                        'title': gr_obj.product.title
+                    },
+                    warehouse_data={
+                        'id': gr_obj.return_to_warehouse_id,
+                        'code': gr_obj.return_to_warehouse.code,
+                        'title': gr_obj.return_to_warehouse.title
+                    },
+                    uom_data={
+                        'id': gr_obj.uom_id,
+                        'code': gr_obj.uom.code,
+                        'title': gr_obj.uom.title
+                    },
+                    tax_data={
+                        'id': delivery_product.product.sale_tax_id,
+                        'code': delivery_product.product.sale_tax.code,
+                        'title': delivery_product.product.sale_tax.title,
+                        'rate': delivery_product.product.sale_tax.rate
+                    }
+                )
+            else:
+                new_prd_wh.stock_amount += return_quantity
+                new_prd_wh.sold_amount += return_quantity
+                new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
             ProductWareHouseLot.objects.create(
                 tenant_id=gr_obj.tenant_id,
                 company_id=gr_obj.company_id,
@@ -196,6 +207,73 @@ class GoodsReturnSubSerializerForNonPicking:
                 quantity_import=return_quantity,
                 expire_date=sample_lot.expire_date,
                 manufacture_date=sample_lot.manufacture_date
+            )
+            return True
+        raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+
+    @classmethod
+    def create_product_warehouse_for_sn(cls, gr_obj, return_quantity, sample_sn):
+        # get delivery product
+        delivery_product = OrderDeliveryProduct.objects.filter(
+            delivery_sub=gr_obj.delivery,
+            product=gr_obj.product
+        ).first()
+        if delivery_product:
+            new_prd_wh = ProductWareHouse.objects.filter(
+                tenant_id=gr_obj.tenant_id,
+                company_id=gr_obj.company_id,
+                product=gr_obj.product,
+                warehouse=gr_obj.return_to_warehouse
+            ).first()
+            if not new_prd_wh:
+                new_prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product=gr_obj.product,
+                    uom=gr_obj.uom,
+                    warehouse=gr_obj.return_to_warehouse,
+                    tax=delivery_product.product.sale_tax,
+                    unit_price=delivery_product.product_unit_price,
+                    stock_amount=return_quantity,
+                    receipt_amount=return_quantity,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': gr_obj.product_id,
+                        'code': gr_obj.product.code,
+                        'title': gr_obj.product.title
+                    },
+                    warehouse_data={
+                        'id': gr_obj.return_to_warehouse_id,
+                        'code': gr_obj.return_to_warehouse.code,
+                        'title': gr_obj.return_to_warehouse.title
+                    },
+                    uom_data={
+                        'id': gr_obj.uom_id,
+                        'code': gr_obj.uom.code,
+                        'title': gr_obj.uom.title
+                    },
+                    tax_data={
+                        'id': delivery_product.product.sale_tax_id,
+                        'code': delivery_product.product.sale_tax.code,
+                        'title': delivery_product.product.sale_tax.title,
+                        'rate': delivery_product.product.sale_tax.rate
+                    }
+                )
+            else:
+                new_prd_wh.stock_amount += 1
+                new_prd_wh.sold_amount += 1
+                new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
+            ProductWareHouseSerial.objects.create(
+                tenant_id=gr_obj.tenant_id,
+                company_id=gr_obj.company_id,
+                product_warehouse=new_prd_wh,
+                vendor_serial_number=sample_sn.vendor_serial_number,
+                serial_number=sample_sn.serial_number,
+                expire_date=sample_sn.expire_date,
+                manufacture_date=sample_sn.manufacture_date,
+                warranty_start=sample_sn.warranty_start,
+                warranty_end=sample_sn.warranty_end
             )
             return True
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
@@ -243,14 +321,40 @@ class GoodsReturnSubSerializerForNonPicking:
                 raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
 
     @classmethod
-    def update_warehouse_prod_type_sn(cls, item):
-        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
-        if serial:  # update warehouse
-            serial.product_warehouse.stock_amount += 1
-            serial.product_warehouse.sold_amount -= 1
-            serial.is_delete = 0
-            serial.save(update_fields=['is_delete'])
-            serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+    def update_warehouse_prod_type_sn(cls, product_wh, item, gr_obj, return_quantity):
+        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id'))
+        if product_wh:
+            serial_wh = serial.filter(product_warehouse=product_wh).first()
+            if serial_wh:
+                serial_wh.product_warehouse.stock_amount += 1
+                serial_wh.product_warehouse.sold_amount -= 1
+                serial_wh.is_delete = 0
+                serial_wh.save(update_fields=['is_delete'])
+                serial_wh.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+            else:
+                if serial.first():
+                    ProductWareHouseSerial.objects.create(
+                        tenant_id=gr_obj.tenant_id,
+                        company_id=gr_obj.company_id,
+                        product_warehouse=product_wh,
+                        vendor_serial_number=serial.first().vendor_serial_number,
+                        serial_number=serial.first().serial_number,
+                        expire_date=serial.first().expire_date,
+                        manufacture_date=serial.first().manufacture_date,
+                        warranty_start=serial.first().warranty_start,
+                        warranty_end=serial.first().warranty_end
+                    )
+                    product_wh.stock_amount += item.get('lot_return_number')
+                    product_wh.sold_amount -= item.get('lot_return_number')
+                    product_wh.save(update_fields=['stock_amount', 'sold_amount'])
+                else:
+                    raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
+        else:
+            if serial.first():
+                cls.create_product_warehouse_for_sn(gr_obj, return_quantity, serial.first())
+            else:
+                raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
+
 
     @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):
@@ -262,6 +366,8 @@ class GoodsReturnSubSerializerForNonPicking:
         """
         gr_product = gr_obj.product
         product_wh = ProductWareHouse.objects.filter(
+            tenant_id=gr_obj.tenant_id,
+            company_id=gr_obj.company_id,
             product=gr_product,
             warehouse=gr_obj.return_to_warehouse
         ).first()
@@ -272,7 +378,7 @@ class GoodsReturnSubSerializerForNonPicking:
             elif type_value == 1:  # LOT
                 cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
-                cls.update_warehouse_prod_type_sn(item)
+                cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
         cls.prepare_data_for_logging(gr_obj, return_quantity)
         return True
 
