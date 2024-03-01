@@ -278,6 +278,7 @@ class GoodsReceipt(DataAbstractModel):
                 'stock_type': 1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
+                'trans_title': 'Goods receipt',
                 'quantity': item.quantity_import,
                 'cost': item.goods_receipt_product.product_unit_price,
                 'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
