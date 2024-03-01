@@ -35,6 +35,7 @@ class PrintTemplates(MasterDataAbstractModel):
 
     def save(self, *args, **kwargs):
         if self.is_default is True:
+            self.is_active = True
             self.confirm_unique_using()
         super().save(*args, **kwargs)
 

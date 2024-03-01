@@ -25,9 +25,11 @@ class PrintTemplateDetailSerializer(serializers.ModelSerializer):
 
 
 class PrintTemplateCreateSerializer(serializers.ModelSerializer):
+    is_active = serializers.BooleanField(default=False)
+
     class Meta:
         model = PrintTemplates
-        fields = ('contents', 'application', 'title', 'remarks')
+        fields = ('contents', 'application', 'title', 'remarks', 'is_active')
 
 
 class PrintTemplateUpdateSerializer(serializers.ModelSerializer):
