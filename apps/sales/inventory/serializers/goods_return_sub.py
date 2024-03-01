@@ -201,6 +201,59 @@ class GoodsReturnSubSerializerForNonPicking:
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
 
     @classmethod
+    def create_product_warehouse_for_sn(cls, gr_obj, return_quantity, sample_sn):
+        # get delivery product
+        delivery_product = OrderDeliveryProduct.objects.filter(
+            delivery_sub=gr_obj.delivery,
+            product=gr_obj.product
+        ).first()
+        if delivery_product:
+            new_prd_wh = ProductWareHouse.objects.create(
+                tenant_id=gr_obj.tenant_id,
+                company_id=gr_obj.company_id,
+                product=gr_obj.product,
+                uom=gr_obj.uom,
+                warehouse=gr_obj.return_to_warehouse,
+                tax=delivery_product.product.sale_tax,
+                unit_price=delivery_product.product_unit_price,
+                stock_amount=return_quantity,
+                receipt_amount=return_quantity,
+                sold_amount=0,
+                picked_ready=0,
+                product_data={
+                    'id': gr_obj.product_id,
+                    'code': gr_obj.product.code,
+                    'title': gr_obj.product.title
+                },
+                warehouse_data={
+                    'id': gr_obj.return_to_warehouse_id,
+                    'code': gr_obj.return_to_warehouse.code,
+                    'title': gr_obj.return_to_warehouse.title
+                },
+                uom_data={
+                    'id': gr_obj.uom_id,
+                    'code': gr_obj.uom.code,
+                    'title': gr_obj.uom.title
+                },
+                tax_data={
+                    'id': delivery_product.product.sale_tax_id,
+                    'code': delivery_product.product.sale_tax.code,
+                    'title': delivery_product.product.sale_tax.title,
+                    'rate': delivery_product.product.sale_tax.rate
+                }
+            )
+            ProductWareHouseSerial.objects.create(
+                tenant_id=gr_obj.tenant_id,
+                company_id=gr_obj.company_id,
+                product_warehouse=new_prd_wh,
+                vendor_serial_number=sample_sn.vendor_serial_number,
+                serial_number=sample_sn.serial_number,
+                quantity_import=return_quantity
+            )
+            return True
+        raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+
+    @classmethod
     def update_warehouse_prod_type_general(cls, product_wh, item, gr_obj, return_quantity):
         if product_wh:
             product_wh.stock_amount += item.get('default_return_number')
@@ -243,14 +296,37 @@ class GoodsReturnSubSerializerForNonPicking:
                 raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
 
     @classmethod
-    def update_warehouse_prod_type_sn(cls, item):
-        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
-        if serial:  # update warehouse
-            serial.product_warehouse.stock_amount += 1
-            serial.product_warehouse.sold_amount -= 1
-            serial.is_delete = 0
-            serial.save(update_fields=['is_delete'])
-            serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+    def update_warehouse_prod_type_sn(cls, product_wh, item, gr_obj, return_quantity):
+        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id'))
+        if product_wh:
+            serial_wh = serial.filter(product_warehouse=product_wh).first()
+            if serial_wh:
+                serial.product_warehouse.stock_amount += 1
+                serial.product_warehouse.sold_amount -= 1
+                serial.is_delete = 0
+                serial.save(update_fields=['is_delete'])
+                serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+            else:
+                if serial.first():
+                    ProductWareHouseSerial.objects.create(
+                        tenant_id=gr_obj.tenant_id,
+                        company_id=gr_obj.company_id,
+                        product_warehouse=product_wh,
+                        vendor_serial_number=serial.first().vendor_serial_number,
+                        serial_number=serial.first().serial_number,
+                        quantity_import=item.get('lot_return_number')
+                    )
+                    product_wh.stock_amount += item.get('lot_return_number')
+                    product_wh.sold_amount -= item.get('lot_return_number')
+                    product_wh.save(update_fields=['stock_amount', 'sold_amount'])
+                else:
+                    raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
+        else:
+            if serial.first():
+                cls.create_product_warehouse_for_sn(gr_obj, return_quantity, serial.first())
+            else:
+                raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
+
 
     @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):
