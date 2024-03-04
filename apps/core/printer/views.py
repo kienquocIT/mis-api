@@ -1,7 +1,6 @@
-from uuid import UUID
-
 from drf_yasg.utils import swagger_auto_schema
 from django.utils.translation import gettext_lazy as _
+from rest_framework.views import APIView
 
 from apps.core.printer.serializers import (
     PrintTemplateListSerializer, PrintTemplateCreateSerializer,
@@ -9,7 +8,7 @@ from apps.core.printer.serializers import (
 )
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
-    ResponseController,
+    ResponseController, TypeCheck,
 )
 
 from apps.core.printer.models import PrintTemplates
@@ -95,20 +94,56 @@ class PrintTemplateDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return self.destroy(request, *args, pk, **kwargs)
 
 
-class PrintTemplateUsingDetail(BaseRetrieveMixin):
-    queryset = PrintTemplates.objects
-    serializer_detail = PrintTemplateDetailSerializer
-    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    application_id: UUID = None
-
-    def get_object(self):
-        return super().get_queryset().filter(is_default=True, application=self.application_id).first()
-
+class PrintTemplateUsingDetail(APIView):
     @swagger_auto_schema()
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        if 'application_id' in self.kwargs:
-            self.application_id = self.kwargs['application_id']
-            del self.kwargs['application_id']
-            return self.retrieve(request, *args, **kwargs)
+        if 'application_id' in self.kwargs and TypeCheck.check_uuid(self.kwargs['application_id']):
+            template_objs = PrintTemplates.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                is_active=True,
+                application=self.kwargs['application_id'],
+            )
+            if template_objs:
+                default_data = {}
+                result = []
+                for obj in template_objs:
+                    temp_data = {
+                        'id': str(obj.id),
+                        'title': str(obj.title),
+                        'remarks': str(obj.remarks),
+                    }
+                    if obj.is_default is True:
+                        default_data = {
+                            **temp_data,
+                            'contents': obj.contents,
+                        }
+                    result.append(temp_data)
+                return ResponseController.success_200(
+                    data={
+                        'default': default_data,
+                        'template_list': result,
+                    },
+                    key_data='result'
+                )
+        return ResponseController.notfound_404()
+
+
+class PrintTemplateDetailUsing(APIView):
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            obj = PrintTemplates.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                is_active=True, id=pk
+            ).first()
+            if obj:
+                ctx = {
+                    'id': str(obj.id),
+                    'title': str(obj.title),
+                    'remarks': str(obj.remarks),
+                    'contents': obj.contents,
+                }
+                return ResponseController.success_200(data=ctx)
         return ResponseController.notfound_404()
