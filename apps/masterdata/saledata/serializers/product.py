@@ -571,14 +571,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_product_warehouse_detail(cls, obj):
         result = []
         product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+        cost_data = obj.report_inventory_product_warehouse_product.all().values_list(
+            'warehouse_id', 'ending_balance_cost'
+        )
         for item in product_warehouse:
             uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
             uom_ratio_des = item.uom.ratio if item.uom else 0
             if uom_ratio_src and uom_ratio_des:
                 ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                cost_data = obj.report_inventory_product_warehouse_product.filter(
-                    warehouse_id=item.warehouse_id
-                ).first()
+                cost_value = 0
+                for child in cost_data:
+                    if child[0] == item.warehouse_id:
+                        cost_value = child[1]
                 result.append({
                     'id': item.id,
                     'warehouse': {
@@ -587,7 +591,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': ratio_convert * item.stock_amount,
-                    'cost': cost_data.ending_balance_cost if cost_data else 0
+                    'cost': cost_value
                 })
         return result
 
