@@ -396,6 +396,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'code', 'user', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob',
             'group', 'role', 'is_admin_company',
             'plan_app', 'permission_by_configured',
+            'is_active',
         )
 
     @classmethod
