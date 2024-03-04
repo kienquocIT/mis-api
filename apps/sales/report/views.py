@@ -237,13 +237,18 @@ class ReportInventoryList(BaseListMixin):
 
     def get_queryset(self):
         try:
-            sub_period_order_param = self.request.query_params['sub_period_order']
-            period_mapped_param = self.request.query_params['period_mapped']
+            sub_period_order = self.request.query_params['sub_period_order']
+            period_mapped_id = self.request.query_params['period_mapped']
+            product_id_list = self.request.query_params['product_id_list'].split(',')
             return super().get_queryset().select_related(
                 "product",
                 "warehouse",
                 "period_mapped"
-            ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
+            ).filter(
+                sub_period_order=sub_period_order,
+                period_mapped_id=period_mapped_id,
+                product_id__in=product_id_list
+            )
         except KeyError:
             return super().get_queryset().select_related(
                 "product",
