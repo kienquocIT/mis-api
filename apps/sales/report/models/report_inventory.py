@@ -121,9 +121,9 @@ class ReportInventorySub(DataAbstractModel):
 
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj_date, activities_data):
-        period_mapped = Periods.objects.filter_current(
-            fill__company=True,
-            fill__tenant=True,
+        period_mapped = Periods.objects.filter(
+            company=cls.company,
+            tenant=cls.tenant,
             fiscal_year=activities_obj_date.year
         ).first()
         if period_mapped:
