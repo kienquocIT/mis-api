@@ -576,6 +576,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             uom_ratio_des = item.uom.ratio if item.uom else 0
             if uom_ratio_src and uom_ratio_des:
                 ratio_convert = float(uom_ratio_src / uom_ratio_des)
+                cost_data = obj.report_inventory_product_warehouse_product.filter(
+                    warehouse_id=item.warehouse_id
+                ).first()
                 result.append({
                     'id': item.id,
                     'warehouse': {
@@ -584,6 +587,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': ratio_convert * item.stock_amount,
+                    'cost': cost_data.ending_balance_cost if cost_data else 0
                 })
         return result
 
