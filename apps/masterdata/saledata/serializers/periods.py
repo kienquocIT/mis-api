@@ -57,7 +57,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        period = Periods(**validated_data)
+        period = Periods.objects.create(**validated_data)
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
             period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')

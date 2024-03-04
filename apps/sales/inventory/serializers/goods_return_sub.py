@@ -355,7 +355,6 @@ class GoodsReturnSubSerializerForNonPicking:
             else:
                 raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
 
-
     @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):
         """

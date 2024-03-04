@@ -1,3 +1,5 @@
+import datetime
+
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Periods
 from apps.masterdata.saledata.serializers import PeriodsListSerializer, PeriodsCreateSerializer, \
@@ -26,6 +28,8 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        if 'get_current' in request.query_params:
+            self.kwargs['fiscal_year'] = datetime.datetime.now().year
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
