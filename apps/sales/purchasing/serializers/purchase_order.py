@@ -4,7 +4,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
     PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile
-from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
+from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
+    PurchaseOrderCommonGet
 from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -206,49 +207,11 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom_order_request(cls, obj):
-        return {
-            'id': obj.uom_order_request_id,
-            'title': obj.uom_order_request.title,
-            'code': obj.uom_order_request.code,
-            'uom_group': {
-                'id': obj.uom_order_request.group_id,
-                'title': obj.uom_order_request.group.title,
-                'code': obj.uom_order_request.group.code,
-                'uom_reference': {
-                    'id': obj.uom_order_request.group.uom_reference_id,
-                    'title': obj.uom_order_request.group.uom_reference.title,
-                    'code': obj.uom_order_request.group.uom_reference.code,
-                    'ratio': obj.uom_order_request.group.uom_reference.ratio,
-                    'rounding': obj.uom_order_request.group.uom_reference.rounding,
-                } if obj.uom_order_request.group.uom_reference else {},
-            } if obj.uom_order_request.group else {},
-            'ratio': obj.uom_order_request.ratio,
-            'rounding': obj.uom_order_request.rounding,
-            'is_referenced_unit': obj.uom_order_request.is_referenced_unit,
-        } if obj.uom_order_request else {}
+        return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_request, uom_id=obj.uom_order_request_id)
 
     @classmethod
     def get_uom_order_actual(cls, obj):
-        return {
-            'id': obj.uom_order_actual_id,
-            'title': obj.uom_order_actual.title,
-            'code': obj.uom_order_actual.code,
-            'uom_group': {
-                'id': obj.uom_order_actual.group_id,
-                'title': obj.uom_order_actual.group.title,
-                'code': obj.uom_order_actual.group.code,
-                'uom_reference': {
-                    'id': obj.uom_order_actual.group.uom_reference_id,
-                    'title': obj.uom_order_actual.group.uom_reference.title,
-                    'code': obj.uom_order_actual.group.uom_reference.code,
-                    'ratio': obj.uom_order_actual.group.uom_reference.ratio,
-                    'rounding': obj.uom_order_actual.group.uom_reference.rounding,
-                } if obj.uom_order_actual.group.uom_reference else {},
-            } if obj.uom_order_actual.group else {},
-            'ratio': obj.uom_order_actual.ratio,
-            'rounding': obj.uom_order_actual.rounding,
-            'is_referenced_unit': obj.uom_order_actual.is_referenced_unit,
-        } if obj.uom_order_actual else {}
+        return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_actual, uom_id=obj.uom_order_actual_id)
 
     @classmethod
     def get_tax(cls, obj):
@@ -321,49 +284,11 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom_order_request(cls, obj):
-        return {
-            'id': obj.uom_order_request_id,
-            'title': obj.uom_order_request.title,
-            'code': obj.uom_order_request.code,
-            'uom_group': {
-                'id': obj.uom_order_request.group_id,
-                'title': obj.uom_order_request.group.title,
-                'code': obj.uom_order_request.group.code,
-                'uom_reference': {
-                    'id': obj.uom_order_request.group.uom_reference_id,
-                    'title': obj.uom_order_request.group.uom_reference.title,
-                    'code': obj.uom_order_request.group.uom_reference.code,
-                    'ratio': obj.uom_order_request.group.uom_reference.ratio,
-                    'rounding': obj.uom_order_request.group.uom_reference.rounding,
-                } if obj.uom_order_request.group.uom_reference else {},
-            } if obj.uom_order_request.group else {},
-            'ratio': obj.uom_order_request.ratio,
-            'rounding': obj.uom_order_request.rounding,
-            'is_referenced_unit': obj.uom_order_request.is_referenced_unit,
-        } if obj.uom_order_request else {}
+        return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_request, uom_id=obj.uom_order_request_id)
 
     @classmethod
     def get_uom_order_actual(cls, obj):
-        return {
-            'id': obj.uom_order_actual_id,
-            'title': obj.uom_order_actual.title,
-            'code': obj.uom_order_actual.code,
-            'uom_group': {
-                'id': obj.uom_order_actual.group_id,
-                'title': obj.uom_order_actual.group.title,
-                'code': obj.uom_order_actual.group.code,
-                'uom_reference': {
-                    'id': obj.uom_order_actual.group.uom_reference_id,
-                    'title': obj.uom_order_actual.group.uom_reference.title,
-                    'code': obj.uom_order_actual.group.uom_reference.code,
-                    'ratio': obj.uom_order_actual.group.uom_reference.ratio,
-                    'rounding': obj.uom_order_actual.group.uom_reference.rounding,
-                } if obj.uom_order_actual.group.uom_reference else {},
-            } if obj.uom_order_actual.group else {},
-            'ratio': obj.uom_order_actual.ratio,
-            'rounding': obj.uom_order_actual.rounding,
-            'is_referenced_unit': obj.uom_order_actual.is_referenced_unit,
-        } if obj.uom_order_actual else {}
+        return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_actual, uom_id=obj.uom_order_actual_id)
 
     @classmethod
     def get_tax(cls, obj):

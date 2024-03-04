@@ -166,6 +166,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'email': obj.employee_inherit.email,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
