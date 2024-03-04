@@ -47,6 +47,7 @@ class GoodsReturnSubSerializerForNonPicking:
         else:
             raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
             instance.date_created,
             activities_data
         )
