@@ -459,9 +459,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         result = {
             'general_product_types_mapped': [{
-                'id': str(product_type.id),
-                'title': product_type.title,
-                'code': product_type.code
+                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': obj.general_product_category_id,
@@ -475,9 +473,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             },
             'traceability_method': obj.general_traceability_method,
             'product_size': {
-                "width": obj.width,
-                "height": obj.height,
-                "length": obj.length,
+                "width": obj.width, "height": obj.height, "length": obj.length,
                 "volume": {
                     "id": str(obj.volume['id']),
                     "title": obj.volume['title'],
@@ -542,9 +538,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_inventory_information(cls, obj):
         result = {
             'uom': {
-                'id': obj.inventory_uom_id,
-                'title': obj.inventory_uom.title,
-                'code': obj.inventory_uom.code
+                'id': obj.inventory_uom_id, 'title': obj.inventory_uom.title, 'code': obj.inventory_uom.code
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
@@ -560,9 +554,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_default_uom.code
             } if obj.purchase_default_uom else {},
             'tax': {
-                'id': obj.purchase_tax_id,
-                'title': obj.purchase_tax.title,
-                'code': obj.purchase_tax.code
+                'id': obj.purchase_tax_id, 'title': obj.purchase_tax.title, 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
         }
         return result
@@ -586,9 +578,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 result.append({
                     'id': item.id,
                     'warehouse': {
-                        'id': item.warehouse_id,
-                        'title': item.warehouse.title,
-                        'code': item.warehouse.code,
+                        'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': ratio_convert * item.stock_amount,
                     'cost': cost_value
