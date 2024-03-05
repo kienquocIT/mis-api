@@ -259,9 +259,6 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def push_to_report_revenue(cls, instance):
-        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
         ReportRevenue.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
@@ -270,23 +267,19 @@ class SaleOrder(DataAbstractModel):
             employee_inherit_id=instance.employee_inherit_id,
             group_inherit_id=instance.employee_inherit.group_id,
             date_approved=instance.date_approved,
-            revenue=revenue_obj.indicator_value if revenue_obj else 0,
-            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
-            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+            revenue=instance.indicator_revenue,
+            gross_profit=instance.indicator_gross_profit,
+            net_income=instance.indicator_net_income,
         )
         return True
 
     @classmethod
     def push_to_report_product(cls, instance):
-        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
         gross_profit_rate = 0
-        if revenue_obj and gross_profit_obj:
-            gross_profit_rate = (gross_profit_obj.indicator_value / revenue_obj.indicator_value) * 100
         net_income_rate = 0
-        if revenue_obj and net_income_obj:
-            net_income_rate = (net_income_obj.indicator_value / revenue_obj.indicator_value) * 100
+        if instance.indicator_revenue > 0:
+            gross_profit_rate = (instance.indicator_gross_profit / instance.indicator_revenue) * 100
+            net_income_rate = (instance.indicator_net_income / instance.indicator_revenue) * 100
         for so_product in instance.sale_order_product_sale_order.filter(
                 is_promotion=False, is_shipping=False, is_group=False,
         ):
@@ -309,9 +302,6 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def push_to_report_customer(cls, instance):
-        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
         ReportCustomer.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
@@ -320,9 +310,9 @@ class SaleOrder(DataAbstractModel):
             employee_inherit_id=instance.employee_inherit_id,
             group_inherit_id=instance.employee_inherit.group_id,
             date_approved=instance.date_approved,
-            revenue=revenue_obj.indicator_value if revenue_obj else 0,
-            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
-            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+            revenue=instance.indicator_revenue,
+            gross_profit=instance.indicator_gross_profit,
+            net_income=instance.indicator_net_income,
         )
         return True
 
