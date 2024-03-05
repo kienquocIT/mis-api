@@ -686,6 +686,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         'value': item.product_unit_price * quantity,
                     })
         ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
             instance.date_done,
             activities_data
         )

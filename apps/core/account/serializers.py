@@ -52,6 +52,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'phone',
+            'is_admin_tenant',
         )
 
     @classmethod
@@ -70,7 +71,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
-            'company_current'
+            'company_current',
+            'is_admin_tenant',
         )
 
     @classmethod
@@ -227,6 +229,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'phone',
             'tenant_current',
             'is_active',
+            'is_admin_tenant',
         )
 
     @classmethod

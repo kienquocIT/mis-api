@@ -18,7 +18,6 @@ class AssetToolsProvideRequestList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
-        'employee_inherit_id',
     ]
     search_fields = ('code', 'title')
     filterset_fields = {

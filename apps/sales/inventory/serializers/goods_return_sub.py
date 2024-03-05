@@ -47,6 +47,7 @@ class GoodsReturnSubSerializerForNonPicking:
         else:
             raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
             instance.date_created,
             activities_data
         )
@@ -354,7 +355,6 @@ class GoodsReturnSubSerializerForNonPicking:
                 cls.create_product_warehouse_for_sn(gr_obj, return_quantity, serial.first())
             else:
                 raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
-
 
     @classmethod
     def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):

@@ -100,6 +100,8 @@ class ReportInventorySub(DataAbstractModel):
                 )
 
             new_log = cls(
+                tenant=period_mapped.tenant,
+                company=period_mapped.company,
                 report_inventory=report_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
@@ -120,10 +122,10 @@ class ReportInventorySub(DataAbstractModel):
         return new_logs
 
     @classmethod
-    def logging_when_stock_activities_happened(cls, activities_obj_date, activities_data):
-        period_mapped = Periods.objects.filter_current(
-            fill__company=True,
-            fill__tenant=True,
+    def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
+        period_mapped = Periods.objects.filter(
+            company=activities_obj.company,
+            tenant=activities_obj.tenant,
             fiscal_year=activities_obj_date.year
         ).first()
         if period_mapped:

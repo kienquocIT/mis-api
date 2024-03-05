@@ -85,7 +85,7 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
                 asset_config = DisperseModel(app_model='assettools.AssetToolsConfig').get_model().objects.filter(
                     company_id=user_obj.company_current_id,
                 )
-                product_type = str(asset_config.first().product_type.id)
+                product_type = [str(asset_config.first().product_type.id)]
                 warehouses = asset_config.first().asset_config_warehouse_map_asset_config.all()
                 product_warehouse = [str(warehouse.warehouse.id) for warehouse in warehouses]
                 # check admin list
@@ -98,7 +98,7 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
                             break
                 if not is_authen:
                     raise exceptions.PermissionDenied
-                filter_kwargs &= (Q(product__general_product_types_mapped__id=product_type) & Q(
+                filter_kwargs &= Q(Q(product__general_product_types_mapped__id__in=product_type) & Q(
                     warehouse__id__in=product_warehouse
                 ))
             if filter_kwargs is not None:
