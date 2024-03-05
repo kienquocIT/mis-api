@@ -192,13 +192,12 @@ class ReportInventoryDetailList(BaseListMixin):
                     period_mapped_id=self.request.query_params['period_mapped'],
                     product_id__in=self.request.query_params['product_id_list'].split(',')
                 )
-            else:
-                return super().get_queryset().select_related(
-                    "product", "period_mapped"
-                ).filter(
-                    sub_period_order=self.request.query_params['sub_period_order'],
-                    period_mapped_id=self.request.query_params['period_mapped'],
-                )
+            return super().get_queryset().select_related(
+                "product", "period_mapped"
+            ).filter(
+                sub_period_order=self.request.query_params['sub_period_order'],
+                period_mapped_id=self.request.query_params['period_mapped'],
+            )
         except KeyError:
             return super().get_queryset().select_related(
                 "product",
@@ -254,13 +253,12 @@ class ReportInventoryList(BaseListMixin):
                     period_mapped_id=self.request.query_params['period_mapped'],
                     product_id__in=self.request.query_params['product_id_list'].split(',')
                 )
-            else:
-                return super().get_queryset().select_related(
-                    "product", "warehouse", "period_mapped"
-                ).filter(
-                    sub_period_order=self.request.query_params['sub_period_order'],
-                    period_mapped_id=self.request.query_params['period_mapped'],
-                )
+            return super().get_queryset().select_related(
+                "product", "warehouse", "period_mapped"
+            ).filter(
+                sub_period_order=self.request.query_params['sub_period_order'],
+                period_mapped_id=self.request.query_params['period_mapped'],
+            )
         except KeyError:
             return super().get_queryset().select_related(
                 "product", "warehouse", "period_mapped"
