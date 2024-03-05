@@ -47,6 +47,8 @@ class TenantApplicationList(BaseListMixin):
         'code': ['exact'],
         'title': ['exact'],
         'is_workflow': ['exact'],
+        'allow_import': ['exact'],
+        'allow_print': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
