@@ -100,6 +100,11 @@ def update_opening_balance_after():
 
 
 def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_time):
+    """
+    B1: Check các hđ nhập xuất trong cùng kì
+    B2: Check các hđ nhập xuất trong kì sau đó
+    Nếu cộng lại > 0 => sai cost
+    """
     same_period = ReportInventoryProductWarehouse.objects.filter(
         product_id=product_id,
         warehouse_id=warehouse_id,
@@ -182,7 +187,6 @@ def update_balance_data(balance_data, instance):
                 )
     ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_1)
     ReportInventory.objects.bulk_create(bulk_info_2)
-    # update_opening_balance_after()
     return True
 
 

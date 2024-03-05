@@ -2,7 +2,9 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
     ReportInventory, ReportInventoryProductWarehouse
-from apps.sales.report.serializers import ReportInventoryListSerializer, BalanceInitializationListSerializer
+from apps.sales.report.serializers import (
+    ReportInventoryDetailListSerializer, BalanceInitializationListSerializer, ReportInventoryListSerializer
+)
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
@@ -175,9 +177,9 @@ class ReportCashflowList(BaseListMixin):
 
 
 # REPORT INVENTORY
-class ReportInventoryList(BaseListMixin):
+class ReportInventoryDetailList(BaseListMixin):
     queryset = ReportInventory.objects
-    serializer_list = ReportInventoryListSerializer
+    serializer_list = ReportInventoryDetailListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -190,12 +192,13 @@ class ReportInventoryList(BaseListMixin):
             ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
         except KeyError:
             return super().get_queryset().select_related(
-                "product"
+                "product",
+                "period_mapped"
             )
 
     @swagger_auto_schema(
-        operation_summary="Report inventory List",
-        operation_description="Get report inventory List",
+        operation_summary="Report inventory Detail",
+        operation_description="Get report inventory Detail",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -225,4 +228,37 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ReportInventoryList(BaseListMixin):
+    queryset = ReportInventoryProductWarehouse.objects
+    serializer_list = ReportInventoryListSerializer
+
+    def get_queryset(self):
+        try:
+            sub_period_order_param = self.request.query_params['sub_period_order']
+            period_mapped_param = self.request.query_params['period_mapped']
+            return super().get_queryset().select_related(
+                "product",
+                "warehouse",
+                "period_mapped"
+            ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
+        except KeyError:
+            return super().get_queryset().select_related(
+                "product",
+                "warehouse",
+                "period_mapped"
+            )
+
+    @swagger_auto_schema(
+        operation_summary="Report inventory List",
+        operation_description="Get report inventory List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportinventory', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)

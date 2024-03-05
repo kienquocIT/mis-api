@@ -156,7 +156,7 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
     def get_employee_inherit(cls, obj):
         if obj.employee_inherit:
             return {
-                "id": obj.employee_inherit_id,
+                "id": str(obj.employee_inherit_id),
                 "full_name": obj.employee_inherit.get_full_name()
             }
         return {}
