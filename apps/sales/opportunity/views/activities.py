@@ -41,6 +41,9 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_id': request.user.employee_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -161,6 +164,9 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_id': request.user.employee_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 

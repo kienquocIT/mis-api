@@ -1,4 +1,8 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import WareHouse
+from apps.sales.delivery.models.delivery import OrderDeliveryLot
+from apps.sales.inventory.models import GoodsReceiptLot, GoodsReturnProductDetail
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
 
 
@@ -36,12 +40,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        report_inventory_by_month = obj.report_inventory_by_month.all()
-        set_warehouse = set(
-            report_inventory_by_month.values_list(
-                'warehouse__id', 'warehouse__code', 'warehouse__title'
-            )
-        )
+        set_warehouse = set(WareHouse.objects.all().values_list('id', 'code', 'title'))
         result = []
         for warehouse_item in set_warehouse:
             wh_id, wh_code, wh_title = warehouse_item
@@ -152,10 +151,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'sub_period_order',
             'stock_activities',
             'opening_balance_quantity',
-            'opening_balance_cost',
             'opening_balance_value',
             'ending_balance_quantity',
-            'ending_balance_cost',
             'ending_balance_value',
             'for_balance',
         )
@@ -167,6 +164,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'description': obj.product.description,
+            'uom': {
+                "id": obj.product.inventory_uom_id,
+                "code": obj.product.inventory_uom.code,
+                "title": obj.product.inventory_uom.title
+            } if obj.product.inventory_uom else {}
         } if obj.product else {}
 
     @classmethod
@@ -187,61 +189,69 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        import_activities = []
-        export_activities = []
-        sum_quantity_import = 0
-        sum_quantity_export = 0
-        sum_value_import = 0
-        sum_value_export = 0
-        for activity in ReportInventorySub.objects.select_related(
-            'report_inventory'
-        ).filter(
-            product=obj.product, warehouse=obj.warehouse,
+        in_out_data = []
+        sum_in_quantity = 0
+        sum_out_quantity = 0
+        sum_in_value = 0
+        sum_out_value = 0
+        for item in ReportInventorySub.objects.filter(
+            product=obj.product,
+            warehouse=obj.warehouse,
             report_inventory__period_mapped=obj.period_mapped,
-            report_inventory__sub_period_order=obj.sub_period_order,
+            report_inventory__sub_period_order=obj.sub_period_order
         ):
-            if activity.stock_type == 1:
-                sum_quantity_import += activity.quantity
-                sum_value_import += activity.value
-                import_activities.append({
-                    'id': activity.id,
-                    'system_date': activity.system_date,
-                    'posting_date': activity.posting_date,
-                    'document_date': activity.document_date,
-                    'trans_id': activity.trans_id,
-                    'trans_code': activity.trans_code,
-                    'trans_title': activity.trans_title,
-                    'quantity': activity.quantity,
-                    'cost': activity.cost,
-                    'value': activity.value,
-                    'current_quantity': activity.current_quantity,
-                    'current_cost': activity.current_cost,
-                    'current_value': activity.current_value
-                })
-            else:
-                sum_quantity_export += activity.quantity
-                sum_value_export += activity.value
-                export_activities.append({
-                    'id': activity.id,
-                    'system_date': activity.system_date,
-                    'posting_date': activity.posting_date,
-                    'document_date': activity.document_date,
-                    'trans_id': activity.trans_id,
-                    'trans_code': activity.trans_code,
-                    'trans_title': activity.trans_title,
-                    'quantity': activity.quantity,
-                    'cost': activity.cost,
-                    'value': activity.value,
-                    'current_quantity': activity.current_quantity,
-                    'current_cost': activity.current_cost,
-                    'current_value': activity.current_value
-                })
-        stock_activities = {
-            'import_activities': import_activities,
-            'export_activities': export_activities,
-            'sum_quantity_import': sum_quantity_import,
-            'sum_quantity_export': sum_quantity_export,
-            'sum_value_import': sum_value_import,
-            'sum_value_export': sum_value_export,
+
+            sum_in_quantity += item.quantity
+            sum_in_value += item.value
+            lot_number = ''
+            expire_date = ''
+            if item.trans_title == 'Goods receipt':
+                lot = GoodsReceiptLot.objects.filter(
+                    goods_receipt_id=item.trans_id,
+                    goods_receipt_warehouse__goods_receipt_product__product=item.product,
+                    goods_receipt_warehouse__warehouse=item.warehouse
+                ).first()
+                if lot:
+                    lot_number = lot.lot_number
+                    expire_date = lot.expire_date
+            elif item.trans_title == 'Goods return':
+                lot = GoodsReturnProductDetail.objects.filter(
+                    goods_return_id=item.trans_id,
+                    goods_return__product=item.product,
+                    goods_return__return_to_warehouse=item.warehouse,
+                ).first()
+                if lot:
+                    if lot.lot_no:
+                        lot_number = lot.lot_no.lot_number
+                        expire_date = lot.lot_no.expire_date
+            elif item.trans_title == 'Delivery':
+                lot = OrderDeliveryLot.objects.filter(
+                    delivery_sub_id=item.trans_id,
+                    delivery_product__product=item.product,
+                    product_warehouse_lot__product_warehouse__warehouse=item.warehouse
+                ).first()
+                if lot:
+                    if lot.product_warehouse_lot:
+                        lot_number = lot.product_warehouse_lot.lot_number
+                        expire_date = lot.product_warehouse_lot.expire_date
+            in_out_data.append({
+                'trans_id': item.trans_id,
+                'trans_code': item.trans_code,
+                'trans_title': item.trans_title,
+                'in_quantity': item.quantity if item.stock_type == 1 else '',
+                'in_value': item.value if item.stock_type == 1 else '',
+                'out_quantity': item.quantity if item.stock_type == -1 else '',
+                'out_value': item.value if item.stock_type == -1 else '',
+                'system_date': item.system_date,
+                'lot_number': lot_number,
+                'expire_date': expire_date
+            })
+
+        result = {
+            'sum_in_quantity': sum_in_quantity,
+            'sum_out_quantity': sum_out_quantity,
+            'sum_in_value': sum_in_value,
+            'sum_out_value': sum_out_value,
+            'in_out_data': sorted(in_out_data, key=lambda key: key['system_date'])
         }
-        return stock_activities
+        return result
