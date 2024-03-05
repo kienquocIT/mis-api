@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import WareHouse
+from apps.sales.delivery.models import OrderDeliveryProduct
+from apps.sales.delivery.models.delivery import OrderDeliveryLot
+from apps.sales.inventory.models import GoodsReceiptLot, GoodsReceiptWarehouse, GoodsReceiptProduct, \
+    GoodsReturnProductDetail
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
 
 
@@ -187,8 +191,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        in_data = []
-        out_data = []
+        in_out_data = []
         sum_in_quantity = 0
         sum_out_quantity = 0
         sum_in_value = 0
@@ -199,29 +202,58 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             report_inventory__period_mapped=obj.period_mapped,
             report_inventory__sub_period_order=obj.sub_period_order
         ):
-            if item.stock_type == 1:
-                sum_in_quantity += item.quantity
-                sum_in_value += item.value
-                in_data.append({
-                    'trans_id': item.trans_id,
-                    'trans_code': item.trans_code,
-                    'trans_title': item.trans_title,
-                })
-            else:
-                sum_out_quantity += item.quantity
-                sum_out_value += item.value
-                out_data.append({
-                    'trans_id': item.trans_id,
-                    'trans_code': item.trans_code,
-                    'trans_title': item.trans_title,
-                })
+
+            sum_in_quantity += item.quantity
+            sum_in_value += item.value
+            lot_number = ''
+            expire_date = ''
+            if item.trans_title == 'Goods receipt':
+                lot = GoodsReceiptLot.objects.filter(
+                    goods_receipt_id=item.trans_id,
+                    goods_receipt_warehouse__goods_receipt_product__product=item.product,
+                    goods_receipt_warehouse__warehouse=item.warehouse
+                ).first()
+                if lot:
+                    lot_number = lot.lot_number
+                    expire_date = lot.expire_date
+            elif item.trans_title == 'Goods return':
+                lot = GoodsReturnProductDetail.objects.filter(
+                    goods_return_id=item.trans_id,
+                    goods_return__product=item.product,
+                    goods_return__return_to_warehouse=item.warehouse,
+                ).first()
+                if lot:
+                    if lot.lot_no:
+                        lot_number = lot.lot_no.lot_number
+                        expire_date = lot.lot_no.expire_date
+            elif item.trans_title == 'Delivery':
+                lot = OrderDeliveryLot.objects.filter(
+                    delivery_sub_id=item.trans_id,
+                    delivery_product__product=item.product,
+                    product_warehouse_lot__product_warehouse__warehouse=item.warehouse
+                ).first()
+                if lot:
+                    if lot.product_warehouse_lot:
+                        lot_number = lot.product_warehouse_lot.lot_number
+                        expire_date = lot.product_warehouse_lot.expire_date
+            in_out_data.append({
+                'trans_id': item.trans_id,
+                'trans_code': item.trans_code,
+                'trans_title': item.trans_title,
+                'in_quantity': item.quantity if item.stock_type == 1 else '',
+                'in_value': item.value if item.stock_type == 1 else '',
+                'out_quantity': item.quantity if item.stock_type == -1 else '',
+                'out_value': item.value if item.stock_type == -1 else '',
+                'system_date': item.system_date,
+                'lot_number': lot_number,
+                'expire_date': expire_date
+            })
 
         result = {
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
             'sum_in_value': sum_in_value,
             'sum_out_value': sum_out_value,
-            'in_data': in_data,
-            'out_data': out_data
+            'in_out_data': sorted(in_out_data, key=lambda key: key['system_date'])
         }
         return result
