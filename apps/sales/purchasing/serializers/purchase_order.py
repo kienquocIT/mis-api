@@ -151,8 +151,12 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_tax(value=value)
 
     @classmethod
+    def validate_product_unit_price(cls, value):
+        return PurchasingCommonValidate().validate_price(value=value)
+
+    @classmethod
     def validate_product_quantity_order_actual(cls, value):
-        return PurchasingCommonValidate().validate_product_quantity_order_actual(value=value)
+        return PurchasingCommonValidate().validate_quantity(value=value)
 
 
 class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
