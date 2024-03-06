@@ -240,7 +240,21 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_plan(cls, obj):
+        result = {}
         if obj.employee_inherit:
-            # for employee_plan in obj.employee_inherit.rp_group_employee_employee.all():
-            return []
-        return []
+            for employee_plan in obj.employee_inherit.rp_group_employee_employee.all():
+                if employee_plan.revenue_plan_mapped:
+                    if employee_plan.revenue_plan_mapped.period_mapped:
+                        year = employee_plan.revenue_plan_mapped.period_mapped.fiscal_year
+                        if year not in result:
+                            result.update({
+                                str(year): {
+                                    'revenue_year': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'revenue_quarter': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'revenue_month': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'profit_year': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'profit_quarter': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'profit_month': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                }
+                            })
+        return result
