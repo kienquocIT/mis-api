@@ -249,12 +249,12 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
                         if year not in result:
                             result.update({
                                 str(year): {
-                                    'revenue_year': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
-                                    'revenue_quarter': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
-                                    'revenue_month': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
-                                    'profit_year': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
-                                    'profit_quarter': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
-                                    'profit_month': employee_plan.revenue_plan_mapped.period_mapped.fiscal_year,
+                                    'revenue_year': employee_plan.emp_year_target,
+                                    'revenue_quarter': employee_plan.emp_quarter_target,
+                                    'revenue_month': employee_plan.emp_month_target,
+                                    'profit_year': employee_plan.emp_year_profit_target,
+                                    'profit_quarter': employee_plan.emp_quarter_profit_target,
+                                    'profit_month': employee_plan.emp_month_profit_target,
                                 }
                             })
         return result
