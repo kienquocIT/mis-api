@@ -241,6 +241,6 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan(cls, obj):
         if obj.employee_inherit:
-            for employee_plan in obj.employee_inherit.rp_group_employee_employee.all():
-                return []
+            # for employee_plan in obj.employee_inherit.rp_group_employee_employee.all():
+            return []
         return []
