@@ -199,6 +199,9 @@ class Application(CoreAbstractModel):
         help_text='0: General, 1: All space (not filter opp, prj,... isnull)',
     )
 
+    allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
+    allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
+
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
 

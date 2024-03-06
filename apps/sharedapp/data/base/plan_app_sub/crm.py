@@ -277,6 +277,7 @@ QUOTATION_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_print": True,
 }
 
 SALEORDER_APP_CONFIG = {

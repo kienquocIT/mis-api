@@ -191,6 +191,7 @@ USER_APP_CONFIG = {
             },
         },
     },
+    "allow_import": True,
 }
 
 ROLE_APP_CONFIG = {

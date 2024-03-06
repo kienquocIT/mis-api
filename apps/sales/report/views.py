@@ -185,12 +185,20 @@ class ReportInventoryDetailList(BaseListMixin):
 
     def get_queryset(self):
         try:
-            sub_period_order_param = self.request.query_params['sub_period_order']
-            period_mapped_param = self.request.query_params['period_mapped']
+            if self.request.query_params['product_id_list'] != '':
+                return super().get_queryset().select_related(
+                    "product", "period_mapped"
+                ).filter(
+                    sub_period_order=self.request.query_params['sub_period_order'],
+                    period_mapped_id=self.request.query_params['period_mapped'],
+                    product_id__in=self.request.query_params['product_id_list'].split(',')
+                )
             return super().get_queryset().select_related(
-                "product",
-                "period_mapped"
-            ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
+                "product", "period_mapped"
+            ).filter(
+                sub_period_order=self.request.query_params['sub_period_order'],
+                period_mapped_id=self.request.query_params['period_mapped'],
+            )
         except KeyError:
             return super().get_queryset().select_related(
                 "product",
@@ -238,18 +246,23 @@ class ReportInventoryList(BaseListMixin):
 
     def get_queryset(self):
         try:
-            sub_period_order_param = self.request.query_params['sub_period_order']
-            period_mapped_param = self.request.query_params['period_mapped']
+            if self.request.query_params['product_id_list'] != '':
+                return super().get_queryset().select_related(
+                    "product", "warehouse", "period_mapped"
+                ).filter(
+                    sub_period_order=self.request.query_params['sub_period_order'],
+                    period_mapped_id=self.request.query_params['period_mapped'],
+                    product_id__in=self.request.query_params['product_id_list'].split(',')
+                )
             return super().get_queryset().select_related(
-                "product",
-                "warehouse",
-                "period_mapped"
-            ).filter(sub_period_order=sub_period_order_param, period_mapped_id=period_mapped_param)
+                "product", "warehouse", "period_mapped"
+            ).filter(
+                sub_period_order=self.request.query_params['sub_period_order'],
+                period_mapped_id=self.request.query_params['period_mapped'],
+            )
         except KeyError:
             return super().get_queryset().select_related(
-                "product",
-                "warehouse",
-                "period_mapped"
+                "product", "warehouse", "period_mapped"
             )
 
     @swagger_auto_schema(
