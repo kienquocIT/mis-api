@@ -200,7 +200,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             report_inventory__period_mapped=obj.period_mapped,
             report_inventory__sub_period_order=obj.sub_period_order
         ):
-            print(item.product.code, item.warehouse.code)
 
             if item.stock_type == 1:
                 sum_in_quantity += item.quantity
