@@ -200,9 +200,14 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             report_inventory__period_mapped=obj.period_mapped,
             report_inventory__sub_period_order=obj.sub_period_order
         ):
+            print(item.product.code, item.warehouse.code)
 
-            sum_in_quantity += item.quantity
-            sum_in_value += item.value
+            if item.stock_type == 1:
+                sum_in_quantity += item.quantity
+                sum_in_value += item.value
+            else:
+                sum_out_quantity += item.quantity
+                sum_out_value += item.value
             lot_number = ''
             expire_date = ''
             if item.trans_title == 'Goods receipt':
