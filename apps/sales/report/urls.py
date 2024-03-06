@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
-    ReportInventoryDetailList, BalanceInitializationList, ReportInventoryList
+    ReportInventoryDetailList, BalanceInitializationList, ReportInventoryList, ReportGeneralList
 )
 
 urlpatterns = [
@@ -14,4 +14,5 @@ urlpatterns = [
     path('inventory-detail/list', ReportInventoryDetailList.as_view(), name='ReportInventoryDetailList'),
     path('balance-init/list', BalanceInitializationList.as_view(), name='BalanceInitializationList'),
     path('inventory/list', ReportInventoryList.as_view(), name='ReportInventoryList'),
+    path('general/list', ReportGeneralList.as_view(), name='ReportGeneralList'),
 ]

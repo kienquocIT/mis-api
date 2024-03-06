@@ -6,7 +6,8 @@ from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer, ReportInventoryListSerializer
 )
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
-    ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer
+    ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer, \
+    ReportGeneralListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
@@ -261,4 +262,34 @@ class ReportInventoryList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT REVENUE
+class ReportGeneralList(BaseListMixin):
+    queryset = ReportRevenue.objects
+    search_fields = ['group_inherit__title', 'employee_inherit__search_content']
+    filterset_fields = {
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
+        'date_approved': ['lte', 'gte'],
+    }
+    serializer_list = ReportGeneralListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+            "group_inherit",
+        ).prefetch_related('employee_inherit__rp_group_employee_employee')
+
+    @swagger_auto_schema(
+        operation_summary="Report general List",
+        operation_description="Get report general List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportrevenue', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

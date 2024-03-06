@@ -7,9 +7,9 @@ from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustome
 class ReportCommonGet:
 
     @classmethod
-    def get_employee(cls, employee_obj, employee_id):
+    def get_employee(cls, employee_obj):
         return {
-            'id': employee_id,
+            'id': getattr(employee_obj, 'id', None),
             'first_name': employee_obj.first_name,
             'last_name': employee_obj.last_name,
             'email': employee_obj.email,
@@ -20,9 +20,9 @@ class ReportCommonGet:
         } if employee_obj else {}
 
     @classmethod
-    def get_group(cls, group_obj, group_id):
+    def get_group(cls, group_obj):
         return {
-            'id': group_id,
+            'id': getattr(group_obj, 'id', None),
             'title': group_obj.title,
             'code': group_obj.code,
             'is_active': group_obj.is_active,
@@ -131,7 +131,7 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit, employee_id=obj.employee_inherit_id)
+        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit)
 
 
 # REPORT PIPELINE
@@ -184,15 +184,12 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit, employee_id=obj.employee_inherit_id)
+        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit)
 
     @classmethod
     def get_group(cls, obj):
         if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title
-            } if obj.employee_inherit.group else {}
+            return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group)
         return {}
 
 
@@ -220,6 +217,7 @@ class ReportCashflowListSerializer(serializers.ModelSerializer):
 class ReportGeneralListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     group_inherit = serializers.SerializerMethodField()
+    plan = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportRevenue
@@ -229,13 +227,20 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
             'group_inherit',
             'revenue',
             'gross_profit',
-            # 'plan',
+            'plan',
         )
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit, employee_id=obj.employee_inherit_id)
+        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit)
 
     @classmethod
     def get_group_inherit(cls, obj):
-        return ReportCommonGet.get_group(group_obj=obj.group_inherit, group_id=obj.group_inherit_id)
+        return ReportCommonGet.get_group(group_obj=obj.group_inherit)
+
+    @classmethod
+    def get_plan(cls, obj):
+        if obj.employee_inherit:
+            for employee_plan in obj.employee_inherit.rp_group_employee_employee.all():
+                return []
+        return []
