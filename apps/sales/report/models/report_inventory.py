@@ -212,9 +212,51 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
     for_balance = models.BooleanField(default=False)
     wrong_cost = models.BooleanField(default=False)
 
+    is_close = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'Report Inventory Product Warehouse'
         verbose_name_plural = 'Report Inventories Product Warehouse'
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+    def get_last_sub_period(self):
+        if self.sub_period_order > 1:
+            last_item = ReportInventoryProductWarehouse.objects.filter(
+                product=self.product,
+                warehouse=self.warehouse,
+                period_mapped=self.period_mapped,
+                sub_period_order=self.sub_period_order - 1
+            ).first()
+        else:
+            last_item = ReportInventoryProductWarehouse.objects.filter(
+                product=self.product,
+                warehouse=self.warehouse,
+                period_mapped__fiscal_year=self.period_mapped.fiscal_year - 1,
+                sub_period_order=12
+            ).first()
+        return last_item if last_item else None
+
+    def get_value_this_sub_period(self, data_stock_activity):
+        last_sub_period = self.get_last_sub_period()
+        opening_quantity = self.opening_balance_quantity
+        opening_value = self.opening_balance_value
+        opening_cost = self.opening_balance_cost
+        flag = True
+        if last_sub_period:
+            flag = last_sub_period.is_close
+            if flag:
+                opening_quantity += last_sub_period.ending_balance_quantity
+                opening_value += last_sub_period.ending_balance_value
+                opening_cost += last_sub_period.ending_balance_cost
+
+        data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
+        ending_quantity = opening_quantity
+        ending_value = opening_value
+        ending_cost = opening_cost
+        if len(data_stock_activity) > 0:
+            ending_quantity += data_stock_activity[-1]['current_quantity']
+            ending_value += data_stock_activity[-1]['current_value']
+            ending_cost += data_stock_activity[-1]['current_cost']
+        return flag, opening_quantity, opening_value, opening_cost, ending_quantity, ending_value, ending_cost
