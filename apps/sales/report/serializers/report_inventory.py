@@ -40,9 +40,8 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        set_warehouse = set(WareHouse.objects.all().values_list('id', 'code', 'title'))
         result = []
-        for warehouse_item in set_warehouse:
+        for warehouse_item in set(WareHouse.objects.all().values_list('id', 'code', 'title')):
             wh_id, wh_code, wh_title = warehouse_item
             data_stock_activity = []
             prd_wh = ReportInventoryProductWarehouse.objects.filter(
@@ -69,27 +68,18 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     })
 
                 data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
-                (
-                    flag,
-                    opening_quantity,
-                    opening_value,
-                    opening_cost,
-                    ending_quantity,
-                    ending_value,
-                    ending_cost
-                ) = prd_wh.get_value_this_sub_period(data_stock_activity)
-
+                value_this_sub_period = prd_wh.get_value_this_sub_period(data_stock_activity)
                 result.append({
-                    'is_close': flag,
+                    'is_close': value_this_sub_period.get('is_close'),
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
                     'warehouse_title': wh_title,
-                    'opening_balance_quantity': opening_quantity,
-                    'opening_balance_cost': opening_cost,
-                    'opening_balance_value': opening_value,
-                    'ending_balance_quantity': ending_quantity,
-                    'ending_balance_cost': ending_cost,
-                    'ending_balance_value': ending_value,
+                    'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
+                    'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
+                    'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
+                    'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
+                    'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
+                    'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
                     'data_stock_activity': data_stock_activity
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
@@ -265,28 +255,20 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             })
 
         data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
-        (
-            flag,
-            opening_quantity,
-            opening_value,
-            opening_cost,
-            ending_quantity,
-            ending_value,
-            ending_cost
-        ) = obj.get_value_this_sub_period(data_stock_activity)
+        value_this_sub_period = obj.get_value_this_sub_period(data_stock_activity)
 
         result = {
-            'is_close': flag,
+            'is_close': value_this_sub_period.get('is_close'),
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
             'sum_in_value': sum_in_value,
             'sum_out_value': sum_out_value,
-            'opening_balance_quantity': opening_quantity,
-            'opening_balance_value': opening_value,
-            'opening_balance_cost': opening_cost,
-            'ending_balance_quantity': ending_quantity,
-            'ending_balance_value': ending_value,
-            'ending_balance_cost': ending_cost,
+            'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
+            'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
+            'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
+            'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
+            'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
+            'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
             'data_stock_activity': data_stock_activity
         }
         return result

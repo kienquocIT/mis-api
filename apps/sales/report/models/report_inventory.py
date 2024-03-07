@@ -259,4 +259,12 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
             ending_quantity += data_stock_activity[-1]['current_quantity']
             ending_value += data_stock_activity[-1]['current_value']
             ending_cost += data_stock_activity[-1]['current_cost']
-        return flag, opening_quantity, opening_value, opening_cost, ending_quantity, ending_value, ending_cost
+        return {
+            'is_close': flag,
+            'opening_balance_quantity': opening_quantity,
+            'opening_balance_value': opening_value,
+            'opening_balance_cost': opening_cost,
+            'ending_balance_quantity': ending_quantity,
+            'ending_balance_value': ending_value,
+            'ending_balance_cost': ending_cost
+        }
