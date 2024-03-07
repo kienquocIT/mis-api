@@ -160,11 +160,6 @@ class ReportCashflowList(BaseListMixin):
     serializer_list = ReportCashflowListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    # def get_queryset(self):
-    #     return super().get_queryset().select_related(
-    #         "employee_inherit",
-    #     )
-
     @swagger_auto_schema(
         operation_summary="Report cashflow list",
         operation_description="Get report cashflow list",

@@ -151,15 +151,16 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        stage = obj.opportunity.opportunity_stage_opportunity.select_related('stage').filter(is_current=True).first()
         stage_current = {}
-        if stage:
-            stage_current = {
-                'id': stage.stage_id,
-                'is_current': stage.is_current,
-                'indicator': stage.stage.indicator,
-                'win_rate': stage.stage.win_rate
-            }
+        for stage in obj.opportunity.opportunity_stage_opportunity.all():
+            if stage.is_current is True:
+                stage_current = {
+                    'id': stage.stage_id,
+                    'is_current': True,
+                    'indicator': stage.stage.indicator if stage.stage else '',
+                    'win_rate': stage.stage.win_rate if stage.stage else 0,
+                }
+            break
         return {
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
@@ -255,6 +256,7 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
                                     'profit_year': employee_plan.emp_year_profit_target,
                                     'profit_quarter': employee_plan.emp_quarter_profit_target,
                                     'profit_month': employee_plan.emp_month_profit_target,
-                                }
+                                },
+                                'group_id': obj.employee_inherit.group_id,
                             })
         return result
