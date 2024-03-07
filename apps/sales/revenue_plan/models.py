@@ -71,7 +71,11 @@ class RevenuePlanGroupEmployee(SimpleAbstractModel):
     emp_month_profit_target = models.JSONField(default=list)  # [number * 12]
     emp_quarter_profit_target = models.JSONField(default=list)  # [number * 4]
     emp_year_profit_target = models.FloatField(default=0)
-    employee_mapped = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+    employee_mapped = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        related_name='rp_group_employee_employee',
+    )
 
     class Meta:
         verbose_name = 'Revenue Plan Group Employee'
