@@ -239,6 +239,14 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
         return last_item if last_item else None
 
     def get_value_this_sub_period(self, data_stock_activity):
+        """
+        Opening tháng:
+            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
+            Nếu có sub tháng trước (đã khoá sổ): thì lấy ending của tháng trước
+        Ending của tháng:
+            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
+            Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
+        """
         last_sub_period = self.get_last_sub_period()
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
@@ -247,18 +255,18 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
         if last_sub_period:
             flag = last_sub_period.is_close
             if flag:
-                opening_quantity += last_sub_period.ending_balance_quantity
-                opening_value += last_sub_period.ending_balance_value
-                opening_cost += last_sub_period.ending_balance_cost
+                opening_quantity = last_sub_period.ending_balance_quantity
+                opening_value = last_sub_period.ending_balance_value
+                opening_cost = last_sub_period.ending_balance_cost
 
         data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
         ending_quantity = opening_quantity
         ending_value = opening_value
         ending_cost = opening_cost
         if len(data_stock_activity) > 0:
-            ending_quantity += data_stock_activity[-1]['current_quantity']
-            ending_value += data_stock_activity[-1]['current_value']
-            ending_cost += data_stock_activity[-1]['current_cost']
+            ending_quantity = data_stock_activity[-1]['current_quantity']
+            ending_value = data_stock_activity[-1]['current_value']
+            ending_cost = data_stock_activity[-1]['current_cost']
         return {
             'is_close': flag,
             'opening_balance_quantity': opening_quantity,
