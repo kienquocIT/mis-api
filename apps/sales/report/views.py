@@ -1,5 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
     ReportInventory, ReportInventoryProductWarehouse
 from apps.sales.report.serializers import (
@@ -8,6 +10,7 @@ from apps.sales.report.serializers import (
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer, \
     ReportGeneralListSerializer
+from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
@@ -131,7 +134,10 @@ class ReportPipelineList(BaseListMixin):
             'opportunity__opportunity_send_email',
             'opportunity__opportunity_meeting',
             'opportunity__opportunity_document',
-            'opportunity__opportunity_stage_opportunity',
+            Prefetch(
+                'opportunity__opportunity_stage_opportunity',
+                queryset=OpportunityStage.objects.select_related('stage'),
+            ),
         )
 
     @swagger_auto_schema(
@@ -289,7 +295,15 @@ class ReportGeneralList(BaseListMixin):
         return super().get_queryset().select_related(
             "employee_inherit",
             "group_inherit",
-        ).prefetch_related('employee_inherit__rp_group_employee_employee')
+        ).prefetch_related(
+            Prefetch(
+                'employee_inherit__rp_group_employee_employee',
+                queryset=RevenuePlanGroupEmployee.objects.select_related(
+                    'revenue_plan_mapped',
+                    'revenue_plan_mapped__period_mapped',
+                ),
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary="Report general List",
