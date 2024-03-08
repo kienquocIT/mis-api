@@ -871,7 +871,7 @@ class BaseListMixin(BaseMixin):
     @staticmethod
     def convert_sql_str(data):
         pattern = r"[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}"
-        return re.sub(pattern, lambda m: f'"{m.group(0)}"', data)
+        return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
     def list(self, request, *args, **kwargs):
         """
