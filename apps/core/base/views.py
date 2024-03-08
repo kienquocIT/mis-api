@@ -47,6 +47,8 @@ class TenantApplicationList(BaseListMixin):
         'code': ['exact'],
         'title': ['exact'],
         'is_workflow': ['exact'],
+        'allow_import': ['exact'],
+        'allow_print': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -104,7 +106,7 @@ class ApplicationPropertyList(BaseListMixin):
 
 class ApplicationPropertyForPrintList(BaseListMixin):
     queryset = ApplicationProperty.objects
-    search_fields = ['title', 'code']
+    search_fields = ['code', 'title_slug']
     filterset_fields = {
         'application': ['exact', 'in'],
     }

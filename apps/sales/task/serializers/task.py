@@ -68,6 +68,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     task_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
+    child_task_count = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -126,6 +127,15 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_child_task_count(cls, obj):
+        task_list = OpportunityTask.objects.filter_current(
+            fill__company=True,
+            fill__tenant=True,
+            parent_n=obj
+        )
+        return task_list.count() if task_list else 0
+
     class Meta:
         model = OpportunityTask
         fields = (
@@ -141,7 +151,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'checklist',
             'parent_n',
             'employee_created',
-            'date_created'
+            'date_created',
+            'child_task_count'
         )
 
 
@@ -245,6 +256,8 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
     task_log_work = serializers.SerializerMethodField()
     attach = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    sub_task_list = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -254,7 +267,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_inherit.avatar,
                 'first_name': obj.employee_inherit.first_name,
                 'last_name': obj.employee_inherit.last_name,
-                'full_name': f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                'full_name': obj.employee_inherit.get_full_name(),
             }
         return {}
 
@@ -280,7 +293,8 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.employee_created.id,
                 'first_name': obj.employee_created.first_name,
-                'last_name': obj.employee_created.last_name
+                'last_name': obj.employee_created.last_name,
+                'full_name': obj.employee_created.get_full_name(),
             }
         return {}
 
@@ -354,11 +368,32 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
                 return attachments
         return []
 
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': str(obj.opportunity_data['id']),
+            'title': obj.opportunity_data['title'],
+            'code': obj.opportunity_data['code']
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_sub_task_list(cls, obj):
+        task_list = OpportunityTask.objects.filter_current(
+            fill__company=True,
+            fill__tenant=True,
+            parent_n=obj
+        ).select_related('employee_inherit')
+        return [{
+            "id": str(sub.id),
+            "title": sub.title,
+            "employee_inherit": sub.employee_inherit.get_full_name()
+        } for sub in task_list] if task_list else []
+
     class Meta:
         model = OpportunityTask
-        fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
+        fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
                   'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach')
+                  'task_log_work', 'attach', 'sub_task_list')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):

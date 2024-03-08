@@ -334,7 +334,41 @@ class PurchasingCommonValidate:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_product_quantity_order_actual(cls, value):
-        if value <= 0:
-            raise serializers.ValidationError({'quantity_order': PurchasingMsg.PURCHASE_ORDER_QUANTITY})
+    def validate_quantity(cls, value):
+        if isinstance(value, float):
+            if value <= 0:
+                raise serializers.ValidationError({'quantity': SaleMsg.QUANTITY_VALID})
         return value
+
+    @classmethod
+    def validate_price(cls, value):
+        if isinstance(value, float):
+            if value <= 0:
+                raise serializers.ValidationError({'price': SaleMsg.PRICE_VALID})
+        return value
+
+
+class PurchaseOrderCommonGet:
+
+    @classmethod
+    def get_uom(cls, uom_obj, uom_id):
+        return {
+            'id': uom_id,
+            'title': uom_obj.title,
+            'code': uom_obj.code,
+            'uom_group': {
+                'id': uom_obj.group_id,
+                'title': uom_obj.group.title,
+                'code': uom_obj.group.code,
+                'uom_reference': {
+                    'id': uom_obj.group.uom_reference_id,
+                    'title': uom_obj.group.uom_reference.title,
+                    'code': uom_obj.group.uom_reference.code,
+                    'ratio': uom_obj.group.uom_reference.ratio,
+                    'rounding': uom_obj.group.uom_reference.rounding,
+                } if uom_obj.group.uom_reference else {},
+            } if uom_obj.group else {},
+            'ratio': uom_obj.ratio,
+            'rounding': uom_obj.rounding,
+            'is_referenced_unit': uom_obj.is_referenced_unit,
+        } if uom_obj else {}

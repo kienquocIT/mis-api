@@ -35,18 +35,22 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse
+    GoodsReceiptWarehouse, GoodsReturn
+from ..sales.inventory.serializers import GReturnProductInformationHandle
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
 )
+from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
@@ -1359,4 +1363,87 @@ def update_price_list():
             )
     PriceListCurrency.objects.all().delete()
     PriceListCurrency.objects.bulk_create(bulk_info)
+    print('Done')
+
+
+def reset_set_product_transaction_information():
+    # reset
+    update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
+    for product in Product.objects.all():
+        product.stock_amount = 0
+        product.wait_delivery_amount = 0
+        product.wait_receipt_amount = 0
+        product.available_amount = 0
+        product.save(update_fields=update_fields)
+    # set input, output, return
+    # input
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
+    # output
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.update_product_wait_delivery_amount(instance=so)
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductInformationHandle.main_handle(instance=deli_sub)
+    # return
+    for return_obj in GoodsReturn.objects.all():
+        GReturnProductInformationHandle.main_handle(instance=return_obj)
+    print('reset_set_product_transaction_information done.')
+
+
+def reset_set_product_warehouse_stock():
+    # reset
+    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
+    for product_wh in ProductWareHouse.objects.all():
+        product_wh.stock_amount = 0
+        product_wh.receipt_amount = 0
+        product_wh.sold_amount = 0
+        product_wh.picked_ready = 0
+        product_wh.used_amount = 0
+        product_wh.save(update_fields=update_fields)
+    # input, output, provide
+    # input
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.push_to_product_warehouse(instance=gr)
+    # output
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
+    print('reset_set_product_warehouse_stock done.')
+
+
+def update_quotation_so_json_data():
+    # quotation
+    for quotation in Quotation.objects.all():
+        update_fields = []
+        if quotation.payment_term and not quotation.payment_term_data:
+            quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            quotation.save(update_fields=update_fields)
+    # sale order
+    for so in SaleOrder.objects.all():
+        update_fields = []
+        if so.payment_term and not so.payment_term_data:
+            so.payment_term_data = PaymentTermListSerializer(so.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            so.save(update_fields=update_fields)
+    print('update_so_json_data done.')
+
+
+def reset_opportunity_stage():
+    for opp in Opportunity.objects.all():
+        CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
+    print('Done')
+
+
+def update_report_inventory_sub_trans_title():
+    for item in ReportInventorySub.objects.all():
+        if item.trans_code.startswith('D'):
+            item.trans_title = 'Delivery'
+            item.save(update_fields=['trans_title'])
+        elif item.trans_code.startswith('GR'):
+            item.trans_title = 'Goods receipt'
+            item.save(update_fields=['trans_title'])
     print('Done')

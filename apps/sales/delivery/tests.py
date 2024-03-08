@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
 
+from apps.masterdata.saledata.models import Periods
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
 from apps.sales.delivery.models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, \
@@ -294,7 +295,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs
@@ -640,8 +642,16 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'order': 1,
                 }
             ],
+            "date_done": timezone.now(),
             "employee_inherit_id": self.get_employee().data['result'][0]['id']
         }
+        Periods.objects.create(
+            company_id=self.company_id,
+            tenant_id=self.tenant_id,
+            fiscal_year=timezone.now().year,
+            space_month=1,
+            start_date=timezone.now()
+        )
         response_delivery = self.client.put(url_update, data_delivery_update, format='json')
         self.assertEqual(response_delivery.status_code, 200)
         return response_picking, response_delivery

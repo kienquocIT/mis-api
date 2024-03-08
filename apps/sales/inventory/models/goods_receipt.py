@@ -268,21 +268,27 @@ class GoodsReceipt(DataAbstractModel):
     @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
-        for item in instance.goods_receipt_warehouse_goods_receipt.all():
-            activities_data.append({
-                'product': item.goods_receipt_product.product,
-                'warehouse': item.warehouse,
-                'system_date': instance.date_approved,
-                'posting_date': None,
-                'document_date': None,
-                'stock_type': 1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'quantity': item.quantity_import,
-                'cost': item.goods_receipt_product.product_unit_price,
-                'value': item.goods_receipt_product.product_unit_price * item.quantity_import,
-            })
+        for item in instance.goods_receipt_product_goods_receipt.all():
+            warehouse_filter = GoodsReceiptWarehouse.objects.filter(goods_receipt_product=item.id).first()
+            if warehouse_filter:
+                activities_data.append({
+                    'product': item.product,
+                    'warehouse': warehouse_filter.warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': None,
+                    'document_date': None,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods receipt',
+                    'quantity': item.quantity_import,
+                    'cost': item.product_unit_price,
+                    'value': item.product_unit_price * item.quantity_import,
+                })
+            else:
+                raise ValueError('No warehouse record.')
         ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
             instance.date_approved,
             activities_data
         )

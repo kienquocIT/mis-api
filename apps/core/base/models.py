@@ -199,6 +199,9 @@ class Application(CoreAbstractModel):
         help_text='0: General, 1: All space (not filter opp, prj,... isnull)',
     )
 
+    allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
+    allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
+
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
 
@@ -324,6 +327,7 @@ class ApplicationProperty(CoreAbstractModel):
     )
 
     is_print = models.BooleanField(default=False, verbose_name='Access using for print')
+    title_slug = models.SlugField(blank=True)
 
     class Meta:
         verbose_name = 'Application property'
@@ -332,6 +336,7 @@ class ApplicationProperty(CoreAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
+        self.title_slug = slugify(self.title)
         super().save(*args, **kwargs)
         clear_cache_base_group()
 

@@ -18,7 +18,8 @@ class AssetToolsConfigDetailSerializers(serializers.ModelSerializer):
             for item in list(obj.warehouse.all()):
                 warehouse_list.append({
                     'id': item.id,
-                    'title': item.title
+                    'title': item.title,
+                    'code': item.code
                 })
             return warehouse_list
         return []

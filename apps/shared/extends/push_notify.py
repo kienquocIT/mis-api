@@ -23,6 +23,10 @@ class TeleBotPushNotify:
         return ''
 
     @classmethod
+    def get_site_name(cls, default='_'):
+        return os.environ.get('SITE_NAME', default).upper()
+
+    @classmethod
     def generate_msg(cls, idx, status, group_name, **kwargs):
         site_name = os.environ.get('SITE_NAME', 'XXX').upper()
         msg = f'[{site_name}][{group_name}][{str(idx)}] {str(status)}'

@@ -72,6 +72,8 @@ class AssetToolsReturn(DataAbstractModel):
                 code += f".{num_quotient}"
             self.code = code
 
+    # def update_prod
+
     def return_product_used(self):
         return_info_list = []
         if not self.code:

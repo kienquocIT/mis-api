@@ -45,9 +45,9 @@ class VerifyPermit:
         _cls_decor = ViewConfigDecorator(parent_kwargs=decor_check)
         cls_check = ViewChecking(cls_attr=_cls_attr, cls_decor=_cls_decor)
 
-        opportunity_id = getattr(obj, 'opportunity', None)
-        project_id = getattr(obj, 'project', None)
-        employee_inherit_id = getattr(obj, 'employee_inherit', None)
+        opportunity_id = getattr(obj, 'opportunity_id', None)
+        project_id = getattr(obj, 'project_id', None)
+        employee_inherit_id = getattr(obj, 'employee_inherit_id', None)
 
         if project_id and opportunity_id:
             return False

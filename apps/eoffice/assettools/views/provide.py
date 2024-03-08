@@ -18,7 +18,6 @@ class AssetToolsProvideRequestList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
-        'employee_inherit_id',
     ]
     search_fields = ('code', 'title')
     filterset_fields = {
@@ -100,7 +99,7 @@ class AssetToolsProductListByProvideIDList(BaseListMixin):
     filterset_fields = {
         "asset_tools_provide_id": ["exact"],
         "employee_inherit_id": ["exact"],
-        "delivered": ["gte"]
+        "delivered": ["exact", "gt"]
     }
 
     def get_queryset(self):

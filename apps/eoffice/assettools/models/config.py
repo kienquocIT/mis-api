@@ -42,6 +42,7 @@ class AssetToolsConfigWarehouse(SimpleAbstractModel):
         'AssetToolsConfig',
         on_delete=models.CASCADE,
         verbose_name='WareHouse of product',
+        related_name='asset_config_warehouse_map_asset_config'
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',

@@ -345,7 +345,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs

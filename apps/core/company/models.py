@@ -97,6 +97,7 @@ class Company(CoreAbstractModel):
         null=True,
     )
     email_app_password_status = models.BooleanField(default=False)
+    software_start_using_time = models.DateTimeField(null=True)
     phone = models.CharField(
         verbose_name='phone',
         blank=True,

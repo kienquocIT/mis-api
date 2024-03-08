@@ -12,6 +12,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseQuotation.objects
     filterset_fields = {
         'purchase_quotation_request_mapped__purchase_request_mapped__id': ['in', 'exact'],
+        'supplier_mapped_id': ['exact'],
     }
     serializer_list = PurchaseQuotationListSerializer
     serializer_create = PurchaseQuotationCreateSerializer

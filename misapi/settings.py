@@ -78,6 +78,7 @@ INSTALLED_APPS = \
         'apps.core.log',  # all logged data, except Workflow Log
         'apps.core.attachments',  # all files data | link to file media
         'apps.core.printer',  # print templates & rules
+        'apps.core.mailer',  # mail templates & rules
     ] + [  # application
         'apps.core.base',
         'apps.core.account',

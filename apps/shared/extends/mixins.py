@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from typing import Union
 
@@ -699,10 +700,14 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
     def get_default_doc_app(self) -> str:
         if not self.log_doc_app:
-            if self.queryset:
-                cls_queryset = self.queryset.__class__
-                if hasattr(cls_queryset, 'get_model_code'):
-                    return cls_queryset.get_model_code()
+            try:
+                queryset_check = self.get_queryset()
+                if queryset_check:
+                    cls_queryset = self.queryset.__class__
+                    if hasattr(cls_queryset, 'get_model_code'):
+                        return cls_queryset.get_model_code()
+            except RuntimeError:
+                pass
             return ''
         return self.log_doc_app
 
@@ -863,6 +868,11 @@ class BaseListMixin(BaseMixin):
                 )
         return queryset
 
+    @staticmethod
+    def convert_sql_str(data):
+        pattern = r"[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}"
+        return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
+
     def list(self, request, *args, **kwargs):
         """
         Support call get list data.
@@ -893,7 +903,7 @@ class BaseListMixin(BaseMixin):
         if settings.DEBUG_PERMIT:
             try:
                 if str(queryset.query):
-                    print('#  - SQL                   :', queryset.query)
+                    print('#  - SQL                   :', self.convert_sql_str(queryset.query))
             except EmptyResultSet:
                 print('#  - SQL                   :', 'EMPTY')
 
