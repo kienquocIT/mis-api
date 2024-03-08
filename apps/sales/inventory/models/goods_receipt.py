@@ -269,11 +269,11 @@ class GoodsReceipt(DataAbstractModel):
     def prepare_data_for_logging(cls, instance):
         activities_data = []
         for item in instance.goods_receipt_product_goods_receipt.all():
-            wh = GoodsReceiptWarehouse.objects.filter(goods_receipt_product=item.id).first()
-            if wh:
+            warehouse_filter = GoodsReceiptWarehouse.objects.filter(goods_receipt_product=item.id).first()
+            if warehouse_filter:
                 activities_data.append({
                     'product': item.product,
-                    'warehouse': wh.warehouse,
+                    'warehouse': warehouse_filter.warehouse,
                     'system_date': instance.date_approved,
                     'posting_date': None,
                     'document_date': None,
