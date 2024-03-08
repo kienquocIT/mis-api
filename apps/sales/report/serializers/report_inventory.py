@@ -40,17 +40,17 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        set_warehouse = set(WareHouse.objects.all().values_list('id', 'code', 'title'))
         result = []
-        for warehouse_item in set_warehouse:
+        for warehouse_item in set(WareHouse.objects.all().values_list('id', 'code', 'title')):
             wh_id, wh_code, wh_title = warehouse_item
             data_stock_activity = []
-            obj_by_warehouse = ReportInventoryProductWarehouse.objects.filter(
+            prd_wh = ReportInventoryProductWarehouse.objects.filter(
                 product=obj.product,
                 warehouse_id=wh_id,
+                period_mapped=obj.period_mapped,
                 sub_period_order=obj.sub_period_order
             ).first()
-            if obj_by_warehouse:
+            if prd_wh:
                 for item in obj.report_inventory_by_month.all().filter(warehouse_id=wh_id):
                     data_stock_activity.append({
                         'system_date': item.system_date,
@@ -66,17 +66,21 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                         'current_cost': item.current_cost,
                         'current_value': item.current_value,
                     })
+
+                data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
+                value_this_sub_period = prd_wh.get_value_this_sub_period(data_stock_activity)
                 result.append({
+                    'is_close': value_this_sub_period.get('is_close'),
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
                     'warehouse_title': wh_title,
-                    'opening_balance_quantity': obj_by_warehouse.opening_balance_quantity,
-                    'opening_balance_cost': obj_by_warehouse.opening_balance_cost,
-                    'opening_balance_value': obj_by_warehouse.opening_balance_value,
-                    'ending_balance_quantity': obj_by_warehouse.ending_balance_quantity,
-                    'ending_balance_cost': obj_by_warehouse.ending_balance_cost,
-                    'ending_balance_value': obj_by_warehouse.ending_balance_value,
-                    'data_stock_activity': sorted(data_stock_activity, key=lambda key: key['system_date'])
+                    'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
+                    'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
+                    'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
+                    'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
+                    'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
+                    'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
+                    'data_stock_activity': data_stock_activity
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
 
@@ -150,10 +154,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'period_mapped',
             'sub_period_order',
             'stock_activities',
-            'opening_balance_quantity',
-            'opening_balance_value',
-            'ending_balance_quantity',
-            'ending_balance_value',
             'for_balance',
         )
 
@@ -189,7 +189,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_activities(cls, obj):
-        in_out_data = []
+        data_stock_activity = []
         sum_in_quantity = 0
         sum_out_quantity = 0
         sum_in_value = 0
@@ -238,7 +238,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     if lot.product_warehouse_lot:
                         lot_number = lot.product_warehouse_lot.lot_number
                         expire_date = lot.product_warehouse_lot.expire_date
-            in_out_data.append({
+            data_stock_activity.append({
                 'trans_id': item.trans_id,
                 'trans_code': item.trans_code,
                 'trans_title': item.trans_title,
@@ -246,16 +246,29 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'in_value': item.value if item.stock_type == 1 else '',
                 'out_quantity': item.quantity if item.stock_type == -1 else '',
                 'out_value': item.value if item.stock_type == -1 else '',
+                'current_quantity': item.current_quantity,
+                'current_cost': item.current_cost,
+                'current_value': item.current_value,
                 'system_date': item.system_date,
                 'lot_number': lot_number,
                 'expire_date': expire_date
             })
 
+        data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
+        value_this_sub_period = obj.get_value_this_sub_period(data_stock_activity)
+
         result = {
+            'is_close': value_this_sub_period.get('is_close'),
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
             'sum_in_value': sum_in_value,
             'sum_out_value': sum_out_value,
-            'in_out_data': sorted(in_out_data, key=lambda key: key['system_date'])
+            'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
+            'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
+            'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
+            'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
+            'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
+            'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
+            'data_stock_activity': data_stock_activity
         }
         return result

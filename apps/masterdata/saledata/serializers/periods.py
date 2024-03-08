@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models.periods import (
     Periods
 )
-from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory
+from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory, ReportInventorySub
 
 
 # Product Type
@@ -127,6 +127,14 @@ def update_balance_data(balance_data, instance):
     bulk_info_2 = []
     for item in balance_data:
         if item.get('product_id') and item.get('warehouse_id'):
+            has_trans = ReportInventorySub.objects.filter(
+                product_id=item.get('product_id'),
+                warehouse_id=item.get('warehouse_id')
+            ).exists()
+            if has_trans:
+                raise serializers.ValidationError(
+                    {"Has trans": 'Can not create Balance initialization because of existed transactions'}
+                )
             prd_wh_obj = ReportInventoryProductWarehouse.objects.filter(
                 product_id=item.get('product_id'),
                 warehouse_id=item.get('warehouse_id'),
