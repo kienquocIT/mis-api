@@ -148,8 +148,7 @@ def create_data_when_product_manege_is_serial(item, instance):
                 )
             )
         return bulk_info_prd_wh, bulk_info_sn
-    else:
-        raise serializers.ValidationError({"Not valid": 'Can not create data for warehouse management.'})
+    raise serializers.ValidationError({"Not valid": 'Can not create data for warehouse management.'})
 
 
 def update_balance_data(balance_data, instance):
