@@ -102,6 +102,56 @@ def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_tim
     return False
 
 
+def create_data_when_product_manege_is_serial(item, instance):
+    bulk_info_prd_wh = []
+    bulk_info_sn = []
+    prd_obj = Product.objects.filter(id=item.get('product_id')).first()
+    wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+    if prd_obj and wh_obj and float(item.get('quantity')) == len(item.get('data_sn', [])):
+        bulk_info_prd_wh.append(
+            ProductWareHouse(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product=prd_obj,
+                warehouse=wh_obj,
+                uom=prd_obj.inventory_uom,
+                unit_price=float(item.get('value')) / float(item.get('quantity')),
+                tax=prd_obj.purchase_tax,
+                stock_amount=float(item.get('quantity')),
+                receipt_amount=float(item.get('quantity')),
+                sold_amount=0,
+                picked_ready=0,
+                used_amount=0,
+                # backup data
+                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                uom_data={
+                    "id": str(prd_obj.inventory_uom_id),
+                    "code": prd_obj.inventory_uom.code,
+                    "title": prd_obj.inventory_uom.title
+                },
+                tax_data={
+                    "id": str(prd_obj.purchase_tax_id),
+                    "code": prd_obj.purchase_tax.code,
+                    "rate": prd_obj.purchase_tax.rate,
+                    "title": prd_obj.purchase_tax.title
+                }
+            )
+        )
+        for serial in item.get('data_sn', []):
+            bulk_info_sn.append(
+                ProductWareHouseSerial(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    product_warehouse=bulk_info_prd_wh[-1],
+                    **serial
+                )
+            )
+        return bulk_info_prd_wh, bulk_info_sn
+    else:
+        raise serializers.ValidationError({"Not valid": 'Can not create data for warehouse management.'})
+
+
 def update_balance_data(balance_data, instance):
     software_using_time = instance.company.software_start_using_time
     bulk_info_rp_prd_wh = []
@@ -177,50 +227,11 @@ def update_balance_data(balance_data, instance):
                     )
                 )
 
-            prd_obj = Product.objects.filter(id=item.get('product_id')).first()
-            wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-            if prd_obj and wh_obj and float(item.get('quantity')) == len(item.get('data_sn', [])):
-                bulk_info_prd_wh.append(
-                    ProductWareHouse(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product=prd_obj,
-                        warehouse=wh_obj,
-                        uom=prd_obj.inventory_uom,
-                        unit_price=float(item.get('value')) / float(item.get('quantity')),
-                        tax=prd_obj.purchase_tax,
-                        stock_amount=float(item.get('quantity')),
-                        receipt_amount=float(item.get('quantity')),
-                        sold_amount=0,
-                        picked_ready=0,
-                        used_amount=0,
-                        # backup data
-                        product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                        warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
-                        uom_data={
-                            "id": str(prd_obj.inventory_uom_id),
-                            "code": prd_obj.inventory_uom.code,
-                            "title": prd_obj.inventory_uom.title
-                        },
-                        tax_data={
-                            "id": str(prd_obj.purchase_tax_id),
-                            "code": prd_obj.purchase_tax.code,
-                            "rate": prd_obj.purchase_tax.rate,
-                            "title": prd_obj.purchase_tax.title
-                        }
-                    )
-                )
-                for serial in item.get('data_sn', []):
-                    bulk_info_sn.append(
-                        ProductWareHouseSerial(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product_warehouse=bulk_info_prd_wh[-1],
-                            **serial
-                        )
-                    )
+            bulk_info_prd_wh_item, bulk_info_sn_item = create_data_when_product_manege_is_serial(item, instance)
+            bulk_info_prd_wh += bulk_info_prd_wh_item
+            bulk_info_sn += bulk_info_sn_item
         else:
-            raise serializers.ValidationError({"Not valid": 'Can not create data for warehouse management.'})
+            raise serializers.ValidationError({"Not exist": 'Product/Warehouse is not exist.'})
 
     ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
     ReportInventory.objects.bulk_create(bulk_info_inventory)

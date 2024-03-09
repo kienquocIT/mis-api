@@ -61,6 +61,9 @@ class UserList(AccountListMixin, AccountCreateMixin):
         label_code='account', model_code='user', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_obj': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
     @staticmethod

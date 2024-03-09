@@ -1,4 +1,3 @@
-from crum import get_current_user
 from rest_framework import serializers
 
 from apps.core.account.models import User
@@ -159,6 +158,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, allow_blank=True)
     email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)
     username = serializers.CharField(max_length=150)
+    company_current = serializers.UUIDField(required=False)
 
     class Meta:
         model = User
@@ -195,21 +195,46 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"phone": AccountMsg.PHONE_CONTAIN_CHARACTER})
         return attrs
 
-    def create(self, validated_data):
-        user_obj = get_current_user()
-        if user_obj and getattr(user_obj, 'tenant_current_id', None):
-            validated_data['tenant_current_id'] = user_obj.tenant_current_id
-        obj = User.objects.create(**validated_data)
-        company = validated_data['company_current']
-        company.total_user = CompanyUserEmployee.objects.filter(
-            company_id=validated_data['company_current']
-        ).count() + 1
-        company.save()
-        password = validated_data.pop("password")
-        obj.set_password(password)
-        obj.save()
-        return obj
+    def validate(self, attrs):
+        user_obj = self.context.get('user_obj', None)
+        if user_obj and hasattr(user_obj, 'company_current_id'):
+            company_current_obj = user_obj.company_current
+            if company_current_obj and hasattr(company_current_obj, 'id'):
+                company_current = attrs.get('company_current', None)
+                if not company_current or (company_current and str(company_current) == str(company_current_obj.id)):
+                    attrs['company_current'] = company_current_obj
+                    return attrs
+        raise serializers.ValidationError({
+            'company_current': AccountMsg.COMPANY_NOT_EXIST
+        })
 
+    def create(self, validated_data):
+        company = validated_data.get('company_current', None)
+        user_obj = self.context.get('user_obj', None)
+        if (
+                company and hasattr(company, 'id')
+                and user_obj and hasattr(user_obj, 'id') and hasattr(user_obj, 'tenant_current_id')
+        ):
+            tenant_current_id = getattr(user_obj, 'tenant_current_id', None)
+            if tenant_current_id:
+                # fill tenant current to data new
+                validated_data['tenant_current_id'] = user_obj.tenant_current_id
+                # create new user
+                obj = User.objects.create(**validated_data)
+                # create linked between user and employee
+                CompanyUserEmployee.create_new(company_id=company.id, user_id=obj.id)
+                # refresh total user of company
+                company.total_user = Company.refresh_total_user(ids=[company.id])
+                # update password and re-save
+                password = validated_data.pop("password")
+                obj.set_password(password)
+                obj.save()
+                return obj
+        raise serializers.ValidationError(
+            {
+                'company_current': AccountMsg.COMPANY_NOT_EXIST
+            }
+        )
 
 class UserDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()

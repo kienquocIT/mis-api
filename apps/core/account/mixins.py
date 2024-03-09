@@ -49,7 +49,7 @@ class AccountCreateMixin(BaseCreateMixin):
                 return ResponseController.created_201(self.get_serializer_detail(instance).data)
             if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
-            return ResponseController.bad_request_400(instance.args[1])
+            return ResponseController.bad_request_400(instance.args[1] if len(instance.args) > 1 else 'Server Errors')
         return ResponseController.internal_server_error_500()
 
     @classmethod

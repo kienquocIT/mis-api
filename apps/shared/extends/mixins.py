@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from typing import Union
 
@@ -867,6 +868,11 @@ class BaseListMixin(BaseMixin):
                 )
         return queryset
 
+    @staticmethod
+    def convert_sql_str(data):
+        pattern = r"[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}"
+        return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
+
     def list(self, request, *args, **kwargs):
         """
         Support call get list data.
@@ -897,7 +903,7 @@ class BaseListMixin(BaseMixin):
         if settings.DEBUG_PERMIT:
             try:
                 if str(queryset.query):
-                    print('#  - SQL                   :', queryset.query)
+                    print('#  - SQL                   :', self.convert_sql_str(queryset.query))
             except EmptyResultSet:
                 print('#  - SQL                   :', 'EMPTY')
 
