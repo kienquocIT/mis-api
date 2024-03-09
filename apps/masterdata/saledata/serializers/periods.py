@@ -210,13 +210,13 @@ def update_balance_data(balance_data, instance):
                         }
                     )
                 )
-                for sn in item.get('data_sn', []):
+                for serial in item.get('data_sn', []):
                     bulk_info_sn.append(
                         ProductWareHouseSerial(
                             tenant_id=instance.tenant_id,
                             company_id=instance.company_id,
                             product_warehouse=bulk_info_prd_wh[-1],
-                            **sn
+                            **serial
                         )
                     )
         else:
