@@ -228,7 +228,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
             'product',
             'warehouse',
             'period_mapped'
-        ).prefetch_related().filter(for_balance=True)
+        ).prefetch_related().filter(for_balance=True).order_by('warehouse')
 
     @swagger_auto_schema(
         operation_summary="Balance Initialization list",

@@ -108,46 +108,54 @@ def create_data_when_product_manege_is_serial(item, instance):
     prd_obj = Product.objects.filter(id=item.get('product_id')).first()
     wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
     if prd_obj and wh_obj and float(item.get('quantity')) == len(item.get('data_sn', [])):
-        bulk_info_prd_wh.append(
-            ProductWareHouse(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                product=prd_obj,
-                warehouse=wh_obj,
-                uom=prd_obj.inventory_uom,
-                unit_price=float(item.get('value')) / float(item.get('quantity')),
-                tax=prd_obj.purchase_tax,
-                stock_amount=float(item.get('quantity')),
-                receipt_amount=float(item.get('quantity')),
-                sold_amount=0,
-                picked_ready=0,
-                used_amount=0,
-                # backup data
-                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
-                uom_data={
-                    "id": str(prd_obj.inventory_uom_id),
-                    "code": prd_obj.inventory_uom.code,
-                    "title": prd_obj.inventory_uom.title
-                },
-                tax_data={
-                    "id": str(prd_obj.purchase_tax_id),
-                    "code": prd_obj.purchase_tax.code,
-                    "rate": prd_obj.purchase_tax.rate,
-                    "title": prd_obj.purchase_tax.title
-                }
-            )
+        check_prd_wh = ProductWareHouse.objects.filter(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            product=prd_obj,
+            warehouse=wh_obj
         )
-        for serial in item.get('data_sn', []):
-            bulk_info_sn.append(
-                ProductWareHouseSerial(
+        if not check_prd_wh.exists():
+            bulk_info_prd_wh.append(
+                ProductWareHouse(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    product_warehouse=bulk_info_prd_wh[-1],
-                    **serial
+                    product=prd_obj,
+                    warehouse=wh_obj,
+                    uom=prd_obj.inventory_uom,
+                    unit_price=float(item.get('value')) / float(item.get('quantity')),
+                    tax=prd_obj.purchase_tax,
+                    stock_amount=float(item.get('quantity')),
+                    receipt_amount=float(item.get('quantity')),
+                    sold_amount=0,
+                    picked_ready=0,
+                    used_amount=0,
+                    # backup data
+                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                    uom_data={
+                        "id": str(prd_obj.inventory_uom_id),
+                        "code": prd_obj.inventory_uom.code,
+                        "title": prd_obj.inventory_uom.title
+                    },
+                    tax_data={
+                        "id": str(prd_obj.purchase_tax_id),
+                        "code": prd_obj.purchase_tax.code,
+                        "rate": prd_obj.purchase_tax.rate,
+                        "title": prd_obj.purchase_tax.title
+                    }
                 )
             )
-        return bulk_info_prd_wh, bulk_info_sn
+            for serial in item.get('data_sn', []):
+                bulk_info_sn.append(
+                    ProductWareHouseSerial(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product_warehouse=bulk_info_prd_wh[-1],
+                        **serial
+                    )
+                )
+            return bulk_info_prd_wh, bulk_info_sn
+        raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
     raise serializers.ValidationError({"Not valid": 'Can not create data for warehouse management.'})
 
 
@@ -173,32 +181,13 @@ def update_balance_data(balance_data, instance):
                 period_mapped=instance,
                 sub_period_order=software_using_time.month - instance.space_month
             ).first()
-            if rp_prd_wh_obj:
-                rp_prd_wh_obj.opening_balance_quantity = float(item.get('quantity'))
-                rp_prd_wh_obj.opening_balance_value = float(item.get('value'))
-                rp_prd_wh_obj.opening_balance_cost = float(item.get('value')) / float(item.get('quantity'))
-                if rp_prd_wh_obj.ending_balance_quantity == 0:
-                    rp_prd_wh_obj.ending_balance_quantity = float(item.get('quantity'))
-                    rp_prd_wh_obj.ending_balance_value = float(item.get('value'))
-                    rp_prd_wh_obj.ending_balance_cost = float(item.get('value')) / float(item.get('quantity'))
-                rp_prd_wh_obj.wrong_cost = check_wrong_cost(
-                    instance,
-                    item.get('product_id'),
-                    item.get('warehouse_id'),
-                    software_using_time
-                )
-                rp_prd_wh_obj.for_balance = True
-                rp_prd_wh_obj.save(update_fields=[
-                    'opening_balance_quantity',
-                    'opening_balance_value',
-                    'opening_balance_cost',
-                    'ending_balance_quantity',
-                    'ending_balance_value',
-                    'ending_balance_cost',
-                    'wrong_cost',
-                    'for_balance'
-                ])
-            else:
+            if not rp_prd_wh_obj:
+                new_product = Product.objects.filter(id=item.get('product_id')).first()
+                if new_product:
+                    new_product.stock_amount += float(item.get('quantity'))
+                    new_product.available_amount += float(item.get('quantity'))
+                    new_product.save(update_fields=['stock_amount', 'available_amount'])
+
                 bulk_info_rp_prd_wh.append(
                     ReportInventoryProductWarehouse(
                         product_id=item.get('product_id'),
@@ -208,9 +197,9 @@ def update_balance_data(balance_data, instance):
                         opening_balance_quantity=float(item.get('quantity')),
                         opening_balance_value=float(item.get('value')),
                         opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                        ending_balance_quantity=float(item.get('quantity')),
-                        ending_balance_value=float(item.get('value')),
-                        ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                        ending_balance_quantity=0,
+                        ending_balance_value=0,
+                        ending_balance_cost=0,
                         for_balance=True
                     )
                 )
@@ -225,13 +214,16 @@ def update_balance_data(balance_data, instance):
                         sub_period_order=software_using_time.month - instance.space_month,
                     )
                 )
+            else:
+                raise serializers.ValidationError(
+                    {"Existed": 'This Product-Warehouse opening balance have been created.'}
+                )
 
             bulk_info_prd_wh_item, bulk_info_sn_item = create_data_when_product_manege_is_serial(item, instance)
             bulk_info_prd_wh += bulk_info_prd_wh_item
             bulk_info_sn += bulk_info_sn_item
         else:
             raise serializers.ValidationError({"Not exist": 'Product/Warehouse is not exist.'})
-
     ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
     ReportInventory.objects.bulk_create(bulk_info_inventory)
     ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
