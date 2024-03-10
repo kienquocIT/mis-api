@@ -23,7 +23,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
-        'parent_n': ['exact'],
+        'parent_n': ['exact', 'isnull'],
         'opportunity': ['exact'],
         'employee_inherit': ['exact'],
         'task_status': ['exact'],
