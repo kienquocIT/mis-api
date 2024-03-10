@@ -365,6 +365,7 @@ class ProductTestCase(AdvanceTestCase):
                 'general_product_types_mapped',
                 'general_product_category',
                 'general_uom_group',
+                'general_traceability_method',
                 'sale_tax',
                 'sale_default_uom',
                 'product_choice',

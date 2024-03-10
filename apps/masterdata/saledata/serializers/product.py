@@ -35,6 +35,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'description',
             'general_product_types_mapped',
             'general_product_category',
+            'general_traceability_method',
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',

@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import ProductWareHouse, Product, WareHouse, ProductWareHouseSerial
 from apps.masterdata.saledata.models.periods import (
     Periods
 )
@@ -78,27 +80,6 @@ class PeriodsDetailSerializer(serializers.ModelSerializer):
         )
 
 
-def update_opening_balance_after():
-    for item in ReportInventoryProductWarehouse.objects.filter(for_balance=True):
-        for child in ReportInventoryProductWarehouse.objects.filter(product=item.product, warehouse=item.warehouse):
-            if child.period_mapped.fiscal_year == item.period_mapped.fiscal_year:
-                if child.sub_period_order > item.sub_period_order:
-                    child.opening_balance_quantity = item.opening_balance_quantity
-                    child.opening_balance_cost = item.opening_balance_cost
-                    child.opening_balance_value = item.opening_balance_value
-                    child.save(update_fields=[
-                        'opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value'
-                    ])
-            elif child.period_mapped.fiscal_year > item.period_mapped.fiscal_year:
-                child.opening_balance_quantity = item.opening_balance_quantity
-                child.opening_balance_cost = item.opening_balance_cost
-                child.opening_balance_value = item.opening_balance_value
-                child.save(update_fields=[
-                    'opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value'
-                ])
-    return True
-
-
 def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_time):
     """
     B1: Check các hđ nhập xuất trong cùng kì
@@ -121,58 +102,126 @@ def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_tim
     return False
 
 
+def create_data_when_product_manage_is_serial(item, instance, prd_obj, wh_obj):
+    """
+    Nếu Số lượng = len(data_sn):
+        Kiểm tra thử Product P đã có trong Warehouse W chưa ?
+        Nếu chưa:
+            Tạo ProductWareHouse mới
+            Tạo các record ProductWareHouseSerial mới
+        Else: raise lỗi
+    Else: raise lỗi
+    """
+    bulk_info_prd_wh = []
+    bulk_info_sn = []
+    if float(item.get('quantity')) == len(item.get('data_sn', [])):
+        check_prd_wh = ProductWareHouse.objects.filter(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            product=prd_obj,
+            warehouse=wh_obj
+        )
+        if not check_prd_wh.exists():
+            bulk_info_prd_wh.append(
+                ProductWareHouse(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    product=prd_obj,
+                    warehouse=wh_obj,
+                    uom=prd_obj.inventory_uom,
+                    unit_price=float(item.get('value')) / float(item.get('quantity')),
+                    tax=prd_obj.purchase_tax,
+                    stock_amount=float(item.get('quantity')),
+                    receipt_amount=float(item.get('quantity')),
+                    sold_amount=0,
+                    picked_ready=0,
+                    used_amount=0,
+                    # backup data
+                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                    uom_data={
+                        "id": str(prd_obj.inventory_uom_id),
+                        "code": prd_obj.inventory_uom.code,
+                        "title": prd_obj.inventory_uom.title
+                    },
+                    tax_data={
+                        "id": str(prd_obj.purchase_tax_id),
+                        "code": prd_obj.purchase_tax.code,
+                        "rate": prd_obj.purchase_tax.rate,
+                        "title": prd_obj.purchase_tax.title
+                    }
+                )
+            )
+            for serial in item.get('data_sn', []):
+                bulk_info_sn.append(
+                    ProductWareHouseSerial(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product_warehouse=bulk_info_prd_wh[-1],
+                        **serial
+                    )
+                )
+            return bulk_info_prd_wh, bulk_info_sn
+        raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
+    raise serializers.ValidationError({"Invalid": 'Quantity is != num serial data.'})
+
+
 def update_balance_data(balance_data, instance):
+    """
+    Lấy thời gian sử dụng phần mềm
+    Lặp từng row trong balance table:
+        Nếu có product_id + warehouse_id:
+            Lấy product_obj, warehouse_obj (check valid - else: raise lỗi)
+            Kiểm tra thử có hđ nhập-xuất nào chưa ?
+            Nếu có: raise lỗi
+            Else:
+                Lấy record ReportInventoryProductWarehouse (theo period và sub)
+                Nếu có: raise lỗi
+                Else:
+                    Cập nhập 'stock_amount' và 'available_amount' cho Product (cộng lên)
+                    Tạo ReportInventoryProductWarehouse mới (lưu opening_balance_quantity-value-cost)
+                    Tạo ReportInventory mới (lưu prd-wh theo period và sub)
+                    Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
+        Else: raise lỗi
+    """
     software_using_time = instance.company.software_start_using_time
-    bulk_info_1 = []
-    bulk_info_2 = []
+    sub_period_order_value = software_using_time.month - instance.space_month
+    bulk_info_rp_prd_wh = []
+    bulk_info_inventory = []
+    bulk_info_prd_wh = []
+    bulk_info_sn = []
     for item in balance_data:
         if item.get('product_id') and item.get('warehouse_id'):
-            has_trans = ReportInventorySub.objects.filter(
-                product_id=item.get('product_id'),
-                warehouse_id=item.get('warehouse_id')
-            ).exists()
-            if has_trans:
-                raise serializers.ValidationError(
-                    {"Has trans": 'Can not create Balance initialization because of existed transactions'}
-                )
-            prd_wh_obj = ReportInventoryProductWarehouse.objects.filter(
-                product_id=item.get('product_id'),
-                warehouse_id=item.get('warehouse_id'),
-                period_mapped=instance,
-                sub_period_order=software_using_time.month - instance.space_month
-            ).first()
-            if prd_wh_obj:
-                prd_wh_obj.opening_balance_quantity = float(item.get('quantity'))
-                prd_wh_obj.opening_balance_value = float(item.get('value'))
-                prd_wh_obj.opening_balance_cost = float(item.get('value')) / float(item.get('quantity'))
-                if prd_wh_obj.ending_balance_quantity == 0:
-                    prd_wh_obj.ending_balance_quantity = float(item.get('quantity'))
-                    prd_wh_obj.ending_balance_value = float(item.get('value'))
-                    prd_wh_obj.ending_balance_cost = float(item.get('value')) / float(item.get('quantity'))
-                prd_wh_obj.wrong_cost = check_wrong_cost(
-                    instance,
-                    item.get('product_id'),
-                    item.get('warehouse_id'),
-                    software_using_time
-                )
-                prd_wh_obj.for_balance = True
-                prd_wh_obj.save(update_fields=[
-                    'opening_balance_quantity',
-                    'opening_balance_value',
-                    'opening_balance_cost',
-                    'ending_balance_quantity',
-                    'ending_balance_value',
-                    'ending_balance_cost',
-                    'wrong_cost',
-                    'for_balance'
-                ])
-            else:
-                bulk_info_1.append(
+            prd_obj = Product.objects.filter(id=item.get('product_id')).first()
+            wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+
+            if prd_obj and wh_obj:
+                has_trans = ReportInventorySub.objects.filter(product=prd_obj, warehouse=wh_obj).exists()
+                if has_trans:
+                    raise serializers.ValidationError(
+                        {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+                    )
+
+                rp_prd_wh_obj = ReportInventoryProductWarehouse.objects.filter(
+                    product=prd_obj,
+                    warehouse=wh_obj,
+                    period_mapped=instance,
+                    sub_period_order=sub_period_order_value
+                ).first()
+                if rp_prd_wh_obj:
+                    raise serializers.ValidationError(
+                        {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
+                    )
+
+                prd_obj.stock_amount += float(item.get('quantity'))
+                prd_obj.available_amount += float(item.get('quantity'))
+                prd_obj.save(update_fields=['stock_amount', 'available_amount'])
+                bulk_info_rp_prd_wh.append(
                     ReportInventoryProductWarehouse(
-                        product_id=item.get('product_id'),
-                        warehouse_id=item.get('warehouse_id'),
+                        product=prd_obj,
+                        warehouse=wh_obj,
                         period_mapped=instance,
-                        sub_period_order=software_using_time.month - instance.space_month,
+                        sub_period_order=sub_period_order_value,
                         opening_balance_quantity=float(item.get('quantity')),
                         opening_balance_value=float(item.get('value')),
                         opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
@@ -182,19 +231,29 @@ def update_balance_data(balance_data, instance):
                         for_balance=True
                     )
                 )
-                bulk_info_2.append(
+                bulk_info_inventory.append(
                     ReportInventory(
                         tenant_id=instance.tenant_id,
                         company_id=instance.company_id,
                         employee_inherit=instance.employee_created,
                         employee_created=instance.employee_created,
-                        product_id=item.get('product_id'),
+                        product=prd_obj,
                         period_mapped=instance,
-                        sub_period_order=software_using_time.month - instance.space_month,
+                        sub_period_order=sub_period_order_value,
                     )
                 )
-    ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_1)
-    ReportInventory.objects.bulk_create(bulk_info_2)
+
+                bulk_info_prd_wh_item, bulk_info_sn_item = create_data_when_product_manage_is_serial(
+                    item, instance, prd_obj, wh_obj
+                )
+                bulk_info_prd_wh += bulk_info_prd_wh_item
+                bulk_info_sn += bulk_info_sn_item
+            else:
+                raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+        ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
+        ReportInventory.objects.bulk_create(bulk_info_inventory)
+        ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
+        ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
     return True
 
 
