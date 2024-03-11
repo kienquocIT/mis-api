@@ -665,12 +665,12 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     def prepare_data_for_logging(cls, instance, validated_product):
         activities_data = []
         for item in instance.delivery_product_delivery_sub.all():
-            delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
-            if len(delivery_data) > 0:
-                for child in delivery_data[0]['delivery_data']:
-                    warehouse = child['warehouse']
-                    quantity = child['stock']
-
+            delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product_id]
+            for child in delivery_data:
+                child_delivery_data = child['delivery_data']
+                for child_item in child_delivery_data:
+                    warehouse = child_item['warehouse']
+                    quantity = child_item['stock']
                     activities_data.append({
                         'product': item.product,
                         'warehouse': WareHouse.objects.get(id=warehouse),

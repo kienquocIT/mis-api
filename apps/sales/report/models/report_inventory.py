@@ -35,7 +35,7 @@ class ReportInventory(DataAbstractModel):
     class Meta:
         verbose_name = 'Report Inventory'
         verbose_name_plural = 'Report Inventories'
-        ordering = ('sub_period_order',)
+        ordering = ('product__code',)
         default_permissions = ()
         permissions = ()
 
@@ -221,24 +221,34 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_last_sub_period(self):
-        if self.sub_period_order > 1:
-            last_item = ReportInventoryProductWarehouse.objects.filter(
-                product=self.product,
-                warehouse=self.warehouse,
-                period_mapped=self.period_mapped,
-                sub_period_order=self.sub_period_order - 1
-            ).first()
+    @classmethod
+    def get_last_sub_period(cls, rp_prd_wh, warehouse_id, period_mapped_id, sub_period_order):
+        if sub_period_order > 1:
+            for last_item in rp_prd_wh:
+                if all([
+                    last_item.warehouse_id == warehouse_id,
+                    last_item.period_mapped_id == period_mapped_id,
+                    last_item.sub_period_order == sub_period_order - 1
+                ]):
+                    return last_item
         else:
-            last_item = ReportInventoryProductWarehouse.objects.filter(
-                product=self.product,
-                warehouse=self.warehouse,
-                period_mapped__fiscal_year=self.period_mapped.fiscal_year - 1,
-                sub_period_order=12
-            ).first()
-        return last_item if last_item else None
+            for last_item in rp_prd_wh:
+                period_obj = Periods.objects.filter(id=period_mapped_id).first()
+                if period_obj and all([
+                    last_item.warehouse_id == warehouse_id,
+                    last_item.period_mapped.fiscal_year == Periods.objects.get(id=period_mapped_id).fiscal_year - 1,
+                    last_item.sub_period_order == 12
+                ]):
+                    return last_item
 
-    def get_value_this_sub_period(self, data_stock_activity):
+    def get_value_this_sub_period(
+            self,
+            data_stock_activity,
+            rp_prd_wh,
+            warehouse_id,
+            period_mapped_id,
+            sub_period_order
+    ):
         """
         Opening tháng:
             Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
@@ -247,7 +257,13 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
             Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
-        last_sub_period = self.get_last_sub_period()
+        # Begin get Opening
+        last_sub_period = self.get_last_sub_period(
+            rp_prd_wh,
+            warehouse_id,
+            period_mapped_id,
+            sub_period_order
+        )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
@@ -258,7 +274,9 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
                 opening_quantity = last_sub_period.ending_balance_quantity
                 opening_value = last_sub_period.ending_balance_value
                 opening_cost = last_sub_period.ending_balance_cost
+        # End
 
+        # Begin get Ending
         data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
         ending_quantity = opening_quantity
         ending_value = opening_value
@@ -267,6 +285,8 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
             ending_quantity = data_stock_activity[-1]['current_quantity']
             ending_value = data_stock_activity[-1]['current_value']
             ending_cost = data_stock_activity[-1]['current_cost']
+        # End
+
         return {
             'is_close': flag,
             'opening_balance_quantity': opening_quantity,

@@ -2,10 +2,10 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import ProductWareHouse, Product, WareHouse, ProductWareHouseSerial
-from apps.masterdata.saledata.models.periods import (
-    Periods
+from apps.masterdata.saledata.models import (
+    ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
+from apps.masterdata.saledata.models.periods import Periods
 from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory, ReportInventorySub
 
 
@@ -102,7 +102,7 @@ def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_tim
     return False
 
 
-def create_data_when_product_manage_is_serial(item, instance, prd_obj, wh_obj):
+def create_data_warehouse_product(item, instance, prd_obj, wh_obj):
     """
     Nếu Số lượng = len(data_sn):
         Kiểm tra thử Product P đã có trong Warehouse W chưa ?
@@ -114,56 +114,111 @@ def create_data_when_product_manage_is_serial(item, instance, prd_obj, wh_obj):
     """
     bulk_info_prd_wh = []
     bulk_info_sn = []
-    if float(item.get('quantity')) == len(item.get('data_sn', [])):
-        check_prd_wh = ProductWareHouse.objects.filter(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            product=prd_obj,
-            warehouse=wh_obj
-        )
-        if not check_prd_wh.exists():
-            bulk_info_prd_wh.append(
-                ProductWareHouse(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product=prd_obj,
-                    warehouse=wh_obj,
-                    uom=prd_obj.inventory_uom,
-                    unit_price=float(item.get('value')) / float(item.get('quantity')),
-                    tax=prd_obj.purchase_tax,
-                    stock_amount=float(item.get('quantity')),
-                    receipt_amount=float(item.get('quantity')),
-                    sold_amount=0,
-                    picked_ready=0,
-                    used_amount=0,
-                    # backup data
-                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
-                    uom_data={
-                        "id": str(prd_obj.inventory_uom_id),
-                        "code": prd_obj.inventory_uom.code,
-                        "title": prd_obj.inventory_uom.title
-                    },
-                    tax_data={
-                        "id": str(prd_obj.purchase_tax_id),
-                        "code": prd_obj.purchase_tax.code,
-                        "rate": prd_obj.purchase_tax.rate,
-                        "title": prd_obj.purchase_tax.title
-                    }
-                )
+    bulk_info_lot = []
+    if len(item.get('data_sn', [])) > 0:
+        if float(item.get('quantity')) == len(item.get('data_sn', [])):
+            check_prd_wh = ProductWareHouse.objects.filter(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product=prd_obj,
+                warehouse=wh_obj
             )
-            for serial in item.get('data_sn', []):
-                bulk_info_sn.append(
-                    ProductWareHouseSerial(
+            if not check_prd_wh.exists():
+                bulk_info_prd_wh.append(
+                    ProductWareHouse(
                         tenant_id=instance.tenant_id,
                         company_id=instance.company_id,
-                        product_warehouse=bulk_info_prd_wh[-1],
-                        **serial
+                        product=prd_obj,
+                        warehouse=wh_obj,
+                        uom=prd_obj.inventory_uom,
+                        unit_price=float(item.get('value')) / float(item.get('quantity')),
+                        tax=prd_obj.purchase_tax,
+                        stock_amount=float(item.get('quantity')),
+                        receipt_amount=float(item.get('quantity')),
+                        sold_amount=0,
+                        picked_ready=0,
+                        used_amount=0,
+                        # backup data
+                        product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                        warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                        uom_data={
+                            "id": str(prd_obj.inventory_uom_id),
+                            "code": prd_obj.inventory_uom.code,
+                            "title": prd_obj.inventory_uom.title
+                        },
+                        tax_data={
+                            "id": str(prd_obj.purchase_tax_id),
+                            "code": prd_obj.purchase_tax.code,
+                            "rate": prd_obj.purchase_tax.rate,
+                            "title": prd_obj.purchase_tax.title
+                        }
                     )
                 )
-            return bulk_info_prd_wh, bulk_info_sn
-        raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
-    raise serializers.ValidationError({"Invalid": 'Quantity is != num serial data.'})
+                for serial in item.get('data_sn', []):
+                    bulk_info_sn.append(
+                        ProductWareHouseSerial(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_warehouse=bulk_info_prd_wh[-1],
+                            **serial
+                        )
+                    )
+                return bulk_info_prd_wh, bulk_info_sn, []
+            raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
+        raise serializers.ValidationError({"Invalid": 'Quantity is != num serial data.'})
+    elif len(item.get('data_lot', [])) > 0:
+        if float(item.get('quantity')) == sum(float(lot.get('quantity_import', 0)) for lot in item.get('data_lot', [])):
+            check_prd_wh = ProductWareHouse.objects.filter(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product=prd_obj,
+                warehouse=wh_obj
+            )
+            if not check_prd_wh.exists():
+                bulk_info_prd_wh.append(
+                    ProductWareHouse(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product=prd_obj,
+                        warehouse=wh_obj,
+                        uom=prd_obj.inventory_uom,
+                        unit_price=float(item.get('value')) / float(item.get('quantity')),
+                        tax=prd_obj.purchase_tax,
+                        stock_amount=float(item.get('quantity')),
+                        receipt_amount=float(item.get('quantity')),
+                        sold_amount=0,
+                        picked_ready=0,
+                        used_amount=0,
+                        # backup data
+                        product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                        warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                        uom_data={
+                            "id": str(prd_obj.inventory_uom_id),
+                            "code": prd_obj.inventory_uom.code,
+                            "title": prd_obj.inventory_uom.title
+                        },
+                        tax_data={
+                            "id": str(prd_obj.purchase_tax_id),
+                            "code": prd_obj.purchase_tax.code,
+                            "rate": prd_obj.purchase_tax.rate,
+                            "title": prd_obj.purchase_tax.title
+                        }
+                    )
+                )
+                for lot in item.get('data_lot', []):
+                    bulk_info_lot.append(
+                        ProductWareHouseLot(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_warehouse=bulk_info_prd_wh[-1],
+                            **lot
+                        )
+                    )
+                return bulk_info_prd_wh, [], bulk_info_lot
+            raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
+        raise serializers.ValidationError({"Invalid": 'Quantity is != num lot data.'})
+    else:
+        raise serializers.ValidationError({"Invalid": 'Else'})
 
 
 def update_balance_data(balance_data, instance):
@@ -231,19 +286,27 @@ def update_balance_data(balance_data, instance):
                         for_balance=True
                     )
                 )
-                bulk_info_inventory.append(
-                    ReportInventory(
+
+                if not ReportInventory.objects.filter(
                         tenant_id=instance.tenant_id,
                         company_id=instance.company_id,
-                        employee_inherit=instance.employee_created,
-                        employee_created=instance.employee_created,
                         product=prd_obj,
                         period_mapped=instance,
                         sub_period_order=sub_period_order_value,
+                ).exists():
+                    bulk_info_inventory.append(
+                        ReportInventory(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            employee_inherit=instance.employee_created,
+                            employee_created=instance.employee_created,
+                            product=prd_obj,
+                            period_mapped=instance,
+                            sub_period_order=sub_period_order_value,
+                        )
                     )
-                )
 
-                bulk_info_prd_wh_item, bulk_info_sn_item = create_data_when_product_manage_is_serial(
+                bulk_info_prd_wh_item, bulk_info_sn_item, bulk_info_lot_item = create_data_warehouse_product(
                     item, instance, prd_obj, wh_obj
                 )
                 bulk_info_prd_wh += bulk_info_prd_wh_item
