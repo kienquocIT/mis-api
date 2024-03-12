@@ -314,6 +314,7 @@ def update_balance_data(balance_data, instance):
         ReportInventory.objects.bulk_create(bulk_info_inventory)
         ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
         ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
+        ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
     return True
 
 
