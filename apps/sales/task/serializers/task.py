@@ -156,13 +156,17 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
         if task_list.exists():
             for value in task_list:
                 time_spent = value.time_spent
-                if time_spent[-1] == "h":
-                    temp += int(time_spent[:-1])
-                elif time_spent[-1] == "d":
-                    temp += int(time_spent[:-1]/rate_list["d"])
+                tp_unit = time_spent[-1]
+                tp_num = int(time_spent[:-1])
+                if tp_num < 0:
+                    continue
+                if tp_unit == "h":
+                    temp += tp_num
+                elif tp_unit == "d":
+                    temp += tp_num / rate_list["d"]
                 else:
-                    temp += int(time_spent[:-1]/rate_list["w"])
-            total = temp/rate_list[current_unit] / int(obj.estimate[:-1]) * 100
+                    temp += tp_num / rate_list["w"]
+            total = temp / rate_list[current_unit] / int(obj.estimate[:-1]) * 100
         return math.floor(total)
 
     class Meta:
