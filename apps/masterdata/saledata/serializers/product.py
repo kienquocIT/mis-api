@@ -404,10 +404,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
         validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
         validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-
         product = Product.objects.create(**validated_data)
         create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
-
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
@@ -418,7 +416,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-
         create_product_variant_attribute(product, self.initial_data.get('product_variant_attribute_list', []))
         create_product_variant_item(product, self.initial_data.get('product_variant_item_list', []))
         return product
@@ -826,19 +823,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
         validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
         validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-
         instance.product_measure.all().delete()
         CommonCreateUpdateProduct.delete_price_list(
             instance,
             [i.get('price_list_id', None) for i in instance.sale_product_price_list]
         )
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
         create_product_types_mapped(instance, self.initial_data.get('product_types_mapped_list', []))
-
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
@@ -849,10 +842,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-
         create_product_variant_attribute(instance, self.initial_data.get('product_variant_attribute_list', []))
         update_product_variant_item(instance, self.initial_data.get('product_variant_item_list', []))
-
         return instance
 
 
@@ -969,26 +960,20 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'is_referenced_unit': obj.purchase_default_uom.is_referenced_unit,
             } if obj.purchase_default_uom else {},
             'tax': {
-                'id': str(obj.purchase_tax_id),
-                'title': obj.purchase_tax.title,
-                'code': obj.purchase_tax.code,
-                'rate': obj.purchase_tax.rate
+                'id': str(obj.purchase_tax_id), 'title': obj.purchase_tax.title,
+                'code': obj.purchase_tax.code, 'rate': obj.purchase_tax.rate,
             } if obj.purchase_tax else {},
         }
 
     @classmethod
     def get_cost_list(cls, obj):
-        return [
-            {
-                'warehouse': {
-                    'id': str(product_inventory.warehouse_id),
-                    'title': product_inventory.warehouse.title,
-                    'code': product_inventory.warehouse.code
-                } if product_inventory.warehouse else {},
-                'cost': product_inventory.ending_balance_cost
-            }
-            for product_inventory in obj.report_inventory_product_warehouse_product.all()
-        ]
+        return [{
+            'warehouse': {
+                'id': str(product_inventory.warehouse_id), 'title': product_inventory.warehouse.title,
+                'code': product_inventory.warehouse.code
+            } if product_inventory.warehouse else {},
+            'cost': product_inventory.ending_balance_cost
+        } for product_inventory in obj.report_inventory_product_warehouse_product.all()]
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):

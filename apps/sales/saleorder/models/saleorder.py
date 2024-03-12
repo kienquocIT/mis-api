@@ -278,14 +278,14 @@ class SaleOrder(DataAbstractModel):
         gross_profit_rate = 0
         net_income_rate = 0
         if instance.indicator_revenue > 0:
-            gross_profit_rate = (instance.indicator_gross_profit / instance.indicator_revenue) * 100
-            net_income_rate = (instance.indicator_net_income / instance.indicator_revenue) * 100
+            gross_profit_rate = (instance.indicator_gross_profit / instance.indicator_revenue)
+            net_income_rate = (instance.indicator_net_income / instance.indicator_revenue)
         for so_product in instance.sale_order_product_sale_order.filter(
                 is_promotion=False, is_shipping=False, is_group=False,
         ):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
-            gross_profit = (revenue * gross_profit_rate) / 100
-            net_income = (revenue * net_income_rate) / 100
+            gross_profit = (revenue * gross_profit_rate)
+            net_income = (revenue * net_income_rate)
             ReportProduct.push_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
