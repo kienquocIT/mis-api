@@ -166,7 +166,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                     temp += tp_num / rate_list["d"]
                 else:
                     temp += tp_num / rate_list["w"]
-            total = temp / rate_list[current_unit] / int(obj.estimate[:-1]) * 100
+            if temp > 0:
+                total = temp / rate_list[current_unit] / int(obj.estimate[:-1]) * 100
         return math.floor(total)
 
     class Meta:
