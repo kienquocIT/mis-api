@@ -376,6 +376,7 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),
             ),
+            'report_inventory_product_warehouse_product',
         )
 
     @swagger_auto_schema(

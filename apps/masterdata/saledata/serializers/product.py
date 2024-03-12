@@ -862,6 +862,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     general_information = serializers.SerializerMethodField()
     sale_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
+    cost_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -878,6 +879,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'price_list',
             'product_choice',
             'sale_cost',
+            'cost_list',
         )
 
     @classmethod
@@ -973,6 +975,20 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'rate': obj.purchase_tax.rate
             } if obj.purchase_tax else {},
         }
+
+    @classmethod
+    def get_cost_list(cls, obj):
+        return [
+            {
+                'warehouse': {
+                    'id': str(product_inventory.warehouse_id),
+                    'title': product_inventory.warehouse.title,
+                    'code': product_inventory.warehouse.code
+                } if product_inventory.warehouse else {},
+                'cost': product_inventory.ending_balance_cost
+            }
+            for product_inventory in obj.report_inventory_product_warehouse_product.all()
+        ]
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
