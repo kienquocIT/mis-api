@@ -231,15 +231,17 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
                     last_item.sub_period_order == sub_period_order - 1
                 ]):
                     return last_item
+            return None
         else:
             for last_item in rp_prd_wh:
                 period_obj = Periods.objects.filter(id=period_mapped_id).first()
                 if period_obj and all([
                     last_item.warehouse_id == warehouse_id,
-                    last_item.period_mapped.fiscal_year == Periods.objects.get(id=period_mapped_id).fiscal_year - 1,
+                    last_item.period_mapped.fiscal_year == period_obj.fiscal_year - 1,
                     last_item.sub_period_order == 12
                 ]):
                     return last_item
+            return None
 
     def get_value_this_sub_period(
             self,

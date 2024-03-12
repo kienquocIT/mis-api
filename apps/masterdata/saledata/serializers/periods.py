@@ -166,7 +166,7 @@ def create_data_warehouse_product(item, instance, prd_obj, wh_obj):
                 return bulk_info_prd_wh, bulk_info_sn, []
             raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
         raise serializers.ValidationError({"Invalid": 'Quantity is != num serial data.'})
-    elif len(item.get('data_lot', [])) > 0:
+    if len(item.get('data_lot', [])) > 0:
         if float(item.get('quantity')) == sum(float(lot.get('quantity_import', 0)) for lot in item.get('data_lot', [])):
             check_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=instance.tenant_id,
@@ -217,8 +217,6 @@ def create_data_warehouse_product(item, instance, prd_obj, wh_obj):
                 return bulk_info_prd_wh, [], bulk_info_lot
             raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
         raise serializers.ValidationError({"Invalid": 'Quantity is != num lot data.'})
-    else:
-        raise serializers.ValidationError({"Invalid": 'Else'})
 
 
 def update_balance_data(balance_data, instance):
@@ -239,31 +237,29 @@ def update_balance_data(balance_data, instance):
                     Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
         Else: raise lỗi
     """
-    software_using_time = instance.company.software_start_using_time
-    sub_period_order_value = software_using_time.month - instance.space_month
+    sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
     bulk_info_rp_prd_wh = []
     bulk_info_inventory = []
     bulk_info_prd_wh = []
     bulk_info_sn = []
+    bulk_info_lot = []
     for item in balance_data:
         if item.get('product_id') and item.get('warehouse_id'):
             prd_obj = Product.objects.filter(id=item.get('product_id')).first()
             wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
 
             if prd_obj and wh_obj:
-                has_trans = ReportInventorySub.objects.filter(product=prd_obj, warehouse=wh_obj).exists()
-                if has_trans:
+                if ReportInventorySub.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
                     raise serializers.ValidationError(
                         {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
                     )
 
-                rp_prd_wh_obj = ReportInventoryProductWarehouse.objects.filter(
+                if ReportInventoryProductWarehouse.objects.filter(
                     product=prd_obj,
                     warehouse=wh_obj,
                     period_mapped=instance,
                     sub_period_order=sub_period_order_value
-                ).first()
-                if rp_prd_wh_obj:
+                ).first():
                     raise serializers.ValidationError(
                         {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
                     )
@@ -311,6 +307,7 @@ def update_balance_data(balance_data, instance):
                 )
                 bulk_info_prd_wh += bulk_info_prd_wh_item
                 bulk_info_sn += bulk_info_sn_item
+                bulk_info_lot += bulk_info_lot_item
             else:
                 raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
         ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
