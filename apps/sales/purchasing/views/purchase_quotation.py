@@ -10,6 +10,13 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseQuotation.objects
+    search_fields = [
+        'title',
+        'code',
+        'supplier_mapped__name',
+        'purchase_quotation_request_mapped__title',
+        'purchase_quotation_request_mapped__code',
+    ]
     filterset_fields = {
         'purchase_quotation_request_mapped__purchase_request_mapped__id': ['in', 'exact'],
         'supplier_mapped_id': ['exact'],
