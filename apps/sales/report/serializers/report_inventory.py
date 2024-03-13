@@ -303,8 +303,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             })
         return data_stock_activity
 
-    @classmethod
-    def get_stock_activities(cls, obj):
+    def get_stock_activities(self, obj):
+        date_range = self.context.get('date_range', [])
         rp_prd_wh_list = obj.product.report_inventory_product_warehouse_product.all()
         data_stock_activity = []
         sum_in_quantity = 0
@@ -315,7 +315,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             if all([
                 item.warehouse_id == obj.warehouse_id,
                 item.report_inventory.period_mapped_id == obj.period_mapped_id,
-                item.report_inventory.sub_period_order == obj.sub_period_order
+                item.report_inventory.sub_period_order == obj.sub_period_order,
+                item.date_created.day in list(range(date_range[0], date_range[1] + 1))
             ]):
                 if item.stock_type == 1:
                     sum_in_quantity += item.quantity
@@ -325,11 +326,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_value += item.value
 
                 if item.trans_title == 'Goods receipt':
-                    data_stock_activity = cls.for_goods_receipt(item, data_stock_activity)
+                    data_stock_activity = self.for_goods_receipt(item, data_stock_activity)
                 elif item.trans_title == 'Goods return':
-                    data_stock_activity = cls.for_goods_return(item, data_stock_activity)
+                    data_stock_activity = self.for_goods_return(item, data_stock_activity)
                 elif item.trans_title == 'Delivery':
-                    data_stock_activity = cls.for_delivery(item, data_stock_activity)
+                    data_stock_activity = self.for_delivery(item, data_stock_activity)
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])

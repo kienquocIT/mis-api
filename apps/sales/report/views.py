@@ -297,6 +297,10 @@ class ReportInventoryList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        if 'date_range' in request.query_params:
+            self.ser_context = {
+                'date_range': [int(num) for num in request.query_params['date_range'].split('-')],
+            }
         return self.list(request, *args, **kwargs)
 
 
