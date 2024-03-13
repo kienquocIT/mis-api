@@ -192,6 +192,118 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
+    def for_goods_receipt(cls, item, data_stock_activity):
+        if len(item.lot_data) > 0:
+            for lot in item.lot_data:
+                data_stock_activity.append({
+                    'trans_id': item.trans_id,
+                    'trans_code': item.trans_code,
+                    'trans_title': item.trans_title,
+                    'in_quantity': lot.get('lot_quantity'),
+                    'in_value': lot.get('lot_value'),
+                    'out_quantity': '',
+                    'out_value': '',
+                    'current_quantity': item.current_quantity,
+                    'current_cost': item.current_cost,
+                    'current_value': item.current_value,
+                    'system_date': item.system_date,
+                    'lot_number': lot.get('lot_number'),
+                    'expire_date': lot.get('lot_expire_date')
+                })
+        else:
+            data_stock_activity.append({
+                'trans_id': item.trans_id,
+                'trans_code': item.trans_code,
+                'trans_title': item.trans_title,
+                'in_quantity': item.quantity,
+                'in_value': item.cost * item.quantity,
+                'out_quantity': '',
+                'out_value': '',
+                'current_quantity': item.current_quantity,
+                'current_cost': item.current_cost,
+                'current_value': item.current_value,
+                'system_date': item.system_date,
+                'lot_id': '',
+                'lot_number': '',
+                'expire_date': ''
+            })
+        return data_stock_activity
+
+    @classmethod
+    def for_goods_return(cls, item, data_stock_activity):
+        if len(item.lot_data) > 0:
+            for lot in item.lot_data:
+                data_stock_activity.append({
+                    'trans_id': item.trans_id,
+                    'trans_code': item.trans_code,
+                    'trans_title': item.trans_title,
+                    'in_quantity': lot.get('lot_quantity'),
+                    'in_value': lot.get('lot_value'),
+                    'out_quantity': '',
+                    'out_value': '',
+                    'current_quantity': item.current_quantity,
+                    'current_cost': item.current_cost,
+                    'current_value': item.current_value,
+                    'system_date': item.system_date,
+                    'lot_number': lot.get('lot_number'),
+                    'expire_date': lot.get('lot_expire_date')
+                })
+        else:
+            data_stock_activity.append({
+                'trans_id': item.trans_id,
+                'trans_code': item.trans_code,
+                'trans_title': item.trans_title,
+                'in_quantity': item.quantity,
+                'in_value': item.cost * item.quantity,
+                'out_quantity': '',
+                'out_value': '',
+                'current_quantity': item.current_quantity,
+                'current_cost': item.current_cost,
+                'current_value': item.current_value,
+                'system_date': item.system_date,
+                'lot_number': '',
+                'expire_date': ''
+            })
+        return data_stock_activity
+
+    @classmethod
+    def for_delivery(cls, item, data_stock_activity):
+        if len(item.lot_data) > 0:
+            for lot in item.lot_data:
+                data_stock_activity.append({
+                    'trans_id': item.trans_id,
+                    'trans_code': item.trans_code,
+                    'trans_title': item.trans_title,
+                    'in_quantity': '',
+                    'in_value': '',
+                    'out_quantity': lot.get('lot_quantity'),
+                    'out_value': lot.get('lot_value'),
+                    'current_quantity': item.current_quantity,
+                    'current_cost': item.current_cost,
+                    'current_value': item.current_value,
+                    'system_date': item.system_date,
+                    'lot_number': lot.get('lot_number'),
+                    'expire_date': lot.get('lot_expire_date')
+                })
+        else:
+            data_stock_activity.append({
+                'trans_id': item.trans_id,
+                'trans_code': item.trans_code,
+                'trans_title': item.trans_title,
+                'in_quantity': '',
+                'in_value': '',
+                'out_quantity': item.quantity,
+                'out_value': item.cost * item.quantity,
+                'current_quantity': item.current_quantity,
+                'current_cost': item.current_cost,
+                'current_value': item.current_value,
+                'system_date': item.system_date,
+                'lot_number': '',
+                'expire_date': ''
+            })
+        return data_stock_activity
+
+    @classmethod
     def get_stock_activities(cls, obj):
         rp_prd_wh_list = obj.product.report_inventory_product_warehouse_product.all()
         data_stock_activity = []
@@ -205,103 +317,17 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 item.report_inventory.period_mapped_id == obj.period_mapped_id,
                 item.report_inventory.sub_period_order == obj.sub_period_order
             ]):
-
                 sum_in_quantity += item.quantity if item.stock_type == 1 else 0
                 sum_in_value += item.value if item.stock_type == 1 else 0
                 sum_out_quantity += item.quantity if item.stock_type == -1 else 0
                 sum_out_value += item.value if item.stock_type == -1 else 0
 
                 if item.trans_title == 'Goods receipt':
-                    data_stock_activity = [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': lot.get('lot_quantity'),
-                        'in_value': lot.get('lot_value'),
-                        'out_quantity': '',
-                        'out_value': '',
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_number': lot.get('lot_number'),
-                        'expire_date': lot.get('lot_expire_date')
-                    } for lot in item.lot_data] if len(item.lot_data) > 0 else [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': item.quantity,
-                        'in_value': item.cost * item.quantity,
-                        'out_quantity': '',
-                        'out_value': '',
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_id': '',
-                        'lot_number': '',
-                        'expire_date': ''
-                    }]
+                    data_stock_activity = cls.for_goods_receipt(item, data_stock_activity)
                 elif item.trans_title == 'Goods return':
-                    data_stock_activity = [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': lot.get('lot_quantity'),
-                        'in_value': lot.get('lot_value'),
-                        'out_quantity': '',
-                        'out_value': '',
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_number': lot.get('lot_number'),
-                        'expire_date': lot.get('lot_expire_date')
-                    } for lot in item.lot_data] if len(item.lot_data) > 0 else [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': item.quantity,
-                        'in_value': item.cost * item.quantity,
-                        'out_quantity': '',
-                        'out_value': '',
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_number': '',
-                        'expire_date': ''
-                    }]
+                    data_stock_activity = cls.for_goods_return(item, data_stock_activity)
                 elif item.trans_title == 'Delivery':
-                    data_stock_activity = [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': '',
-                        'in_value': '',
-                        'out_quantity': lot.get('lot_quantity'),
-                        'out_value': lot.get('lot_value'),
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_number': lot.get('lot_number'),
-                        'expire_date': lot.get('lot_expire_date')
-                    } for lot in item.lot_data] if len(item.lot_data) > 0 else [{
-                        'trans_id': item.trans_id,
-                        'trans_code': item.trans_code,
-                        'trans_title': item.trans_title,
-                        'in_quantity': '',
-                        'in_value': '',
-                        'out_quantity': item.quantity,
-                        'out_value': item.cost * item.quantity,
-                        'current_quantity': item.current_quantity,
-                        'current_cost': item.current_cost,
-                        'current_value': item.current_value,
-                        'system_date': item.system_date,
-                        'lot_number': '',
-                        'expire_date': ''
-                    }]
+                    data_stock_activity = cls.for_delivery(item, data_stock_activity)
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
