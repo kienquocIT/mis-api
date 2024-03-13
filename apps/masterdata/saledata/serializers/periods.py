@@ -335,15 +335,13 @@ def update_balance_data(balance_data, instance):
                         )
                     )
 
-                """
-                Nếu Số lượng = len(data_sn):
-                    Kiểm tra thử Product P đã có trong Warehouse W chưa ?
-                    Nếu chưa:
-                        Tạo ProductWareHouse mới
-                        Tạo các record ProductWareHouseSerial mới
-                    Else: raise lỗi
-                Else: raise lỗi
-                """
+                # Nếu Số lượng = len(data_sn):
+                #     Kiểm tra thử Product P đã có trong Warehouse W chưa ?
+                #     Nếu chưa:
+                #         Tạo ProductWareHouse mới
+                #         Tạo các record ProductWareHouseSerial mới
+                #     Else: raise lỗi
+                # Else: raise lỗi
                 if len(item.get('data_sn', [])) > 0:
                     sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
                 elif len(item.get('data_lot', [])) > 0:

@@ -1,7 +1,4 @@
 from rest_framework import serializers
-from apps.sales.delivery.models.delivery import OrderDeliveryLot
-from apps.sales.inventory.models import GoodsReceiptLot, GoodsReturnProductDetail, GoodsReceiptProduct, \
-    GoodsReceiptWarehouse
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse
 
 

@@ -667,38 +667,37 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for item in instance.delivery_product_delivery_sub.all():
             for child in validated_product:
                 if child['order'] == item.order:
-                    for delivery_item in child['delivery_data']:
-                        lot_data = []
-                        for lot in delivery_item['lot_data']:
-                            prd_wh_lot = ProductWareHouseLot.objects.filter(
-                                id=lot['product_warehouse_lot_id']
-                            ).first()
-                            if prd_wh_lot:
-                                lot_data.append({
-                                    'lot_id': str(prd_wh_lot.id),
-                                    'lot_number': prd_wh_lot.lot_number,
-                                    'lot_quantity': lot['quantity_delivery'],
-                                    'lot_value': item.product_unit_price * lot['quantity_delivery'],
-                                    'lot_expire_date': str(prd_wh_lot.expire_date)
-                                })
-                        warehouse = WareHouse.objects.filter(id=delivery_item['warehouse']).first()
-                        if warehouse:
-                            activities_data.append({
-                                'product': item.product,
-                                'warehouse': warehouse,
-                                'system_date': instance.date_done,
-                                'posting_date': None,
-                                'document_date': None,
-                                'stock_type': -1,
-                                'trans_id': str(instance.id),
-                                'trans_code': instance.code,
-                                'trans_title': 'Delivery',
-                                'quantity': delivery_item['stock'],
-                                'cost': item.product_unit_price,
-                                'value': item.product_unit_price * delivery_item['stock'],
-                                'lot_data': lot_data
+                    delivery_item = child['delivery_data'][0]
+                    lot_data = []
+                    for lot in delivery_item['lot_data']:
+                        prd_wh_lot = ProductWareHouseLot.objects.filter(
+                            id=lot['product_warehouse_lot_id']
+                        ).first()
+                        if prd_wh_lot:
+                            lot_data.append({
+                                'lot_id': str(prd_wh_lot.id),
+                                'lot_number': prd_wh_lot.lot_number,
+                                'lot_quantity': lot['quantity_delivery'],
+                                'lot_value': item.product_unit_price * lot['quantity_delivery'],
+                                'lot_expire_date': str(prd_wh_lot.expire_date)
                             })
-                    break
+                    warehouse = WareHouse.objects.filter(id=delivery_item['warehouse']).first()
+                    if warehouse:
+                        activities_data.append({
+                            'product': item.product,
+                            'warehouse': warehouse,
+                            'system_date': instance.date_done,
+                            'posting_date': None,
+                            'document_date': None,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Delivery',
+                            'quantity': delivery_item['stock'],
+                            'cost': item.product_unit_price,
+                            'value': item.product_unit_price * delivery_item['stock'],
+                            'lot_data': lot_data
+                        })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,
