@@ -31,6 +31,12 @@ class PlanListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.get_title_i18n()
+
     class Meta:
         model = Application
         fields = (

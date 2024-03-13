@@ -2,6 +2,7 @@ import json
 
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy
 from jsonfield import JSONField
 
 from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
@@ -207,6 +208,12 @@ class Application(CoreAbstractModel):
 
     def __str__(self):
         return f'{self.app_label} - {self.model_code}'
+
+    def get_title_i18n(self):
+        title = gettext_lazy('APP_' + self.title)
+        if title.startswith('APP_'):
+            return self.title
+        return title
 
     class Meta:
         verbose_name = 'Application'

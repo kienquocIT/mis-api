@@ -129,7 +129,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         if obj.application:
             return {
                 'id': obj.application_id,
-                'title': obj.application.title
+                'title': obj.application.get_title_i18n(),
             }
         return {}
 
