@@ -1,3 +1,4 @@
+import math
 import re
 from datetime import datetime
 from django.conf import settings
@@ -69,6 +70,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     child_task_count = serializers.SerializerMethodField()
+    percent_completed = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -136,6 +138,38 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
         )
         return task_list.count() if task_list else 0
 
+    @classmethod
+    def get_percent_completed(cls, obj):
+        current_unit = obj.estimate[-1]
+        rate_list = {
+            "h": 1,
+            "d": 8,
+            "w": 56
+        }
+        total = 0
+        task_list = OpportunityLogWork.objects.filter_current(
+            fill__company=True,
+            fill__tenant=True,
+            task=obj
+        )
+        temp = 0
+        if task_list.exists():
+            for value in task_list:
+                time_spent = value.time_spent
+                tp_unit = time_spent[-1]
+                tp_num = int(time_spent[:-1])
+                if tp_num < 0:
+                    continue
+                if tp_unit == "h":
+                    temp += tp_num
+                elif tp_unit == "d":
+                    temp += tp_num / rate_list["d"]
+                else:
+                    temp += tp_num / rate_list["w"]
+            if temp > 0:
+                total = temp / rate_list[current_unit] / int(obj.estimate[:-1]) * 100
+        return math.floor(total)
+
     class Meta:
         model = OpportunityTask
         fields = (
@@ -152,7 +186,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'parent_n',
             'employee_created',
             'date_created',
-            'child_task_count'
+            'child_task_count',
+            'percent_completed'
         )
 
 
