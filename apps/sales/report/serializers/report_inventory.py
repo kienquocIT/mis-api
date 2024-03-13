@@ -317,10 +317,12 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 item.report_inventory.period_mapped_id == obj.period_mapped_id,
                 item.report_inventory.sub_period_order == obj.sub_period_order
             ]):
-                sum_in_quantity += item.quantity if item.stock_type == 1 else 0
-                sum_in_value += item.value if item.stock_type == 1 else 0
-                sum_out_quantity += item.quantity if item.stock_type == -1 else 0
-                sum_out_value += item.value if item.stock_type == -1 else 0
+                if item.stock_type == 1:
+                    sum_in_quantity += item.quantity
+                    sum_in_value += item.value
+                else:
+                    sum_out_quantity += item.quantity
+                    sum_out_value += item.value
 
                 if item.trans_title == 'Goods receipt':
                     data_stock_activity = cls.for_goods_receipt(item, data_stock_activity)
