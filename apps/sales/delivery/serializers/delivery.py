@@ -667,7 +667,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for item in instance.delivery_product_delivery_sub.all():
             for child in validated_product:
                 if child['order'] == item.order:
-                    delivery_item = child['delivery_data'][0]
+                    delivery_item = child['delivery_data'][0] if len(child['delivery_data']) > 0 else {}
                     lot_data = []
                     for lot in delivery_item['lot_data']:
                         prd_wh_lot = ProductWareHouseLot.objects.filter(
