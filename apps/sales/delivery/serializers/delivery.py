@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse, Product
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse, Product, ProductWareHouseLot
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -665,26 +665,40 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     def prepare_data_for_logging(cls, instance, validated_product):
         activities_data = []
         for item in instance.delivery_product_delivery_sub.all():
-            delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product_id]
-            for child in delivery_data:
-                child_delivery_data = child['delivery_data']
-                for child_item in child_delivery_data:
-                    warehouse = child_item['warehouse']
-                    quantity = child_item['stock']
-                    activities_data.append({
-                        'product': item.product,
-                        'warehouse': WareHouse.objects.get(id=warehouse),
-                        'system_date': instance.date_done,
-                        'posting_date': None,
-                        'document_date': None,
-                        'stock_type': -1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Delivery',
-                        'quantity': quantity,
-                        'cost': item.product_unit_price,
-                        'value': item.product_unit_price * quantity,
-                    })
+            for child in validated_product:
+                if child['order'] == item.order:
+                    for delivery_item in child['delivery_data']:
+                        lot_data = []
+                        for lot in delivery_item['lot_data']:
+                            prd_wh_lot = ProductWareHouseLot.objects.filter(
+                                id=lot['product_warehouse_lot_id']
+                            ).first()
+                            if prd_wh_lot:
+                                lot_data.append({
+                                    'lot_id': str(prd_wh_lot.id),
+                                    'lot_number': prd_wh_lot.lot_number,
+                                    'lot_quantity': lot['quantity_delivery'],
+                                    'lot_value': item.product_unit_price * lot['quantity_delivery'],
+                                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                                })
+                        warehouse = WareHouse.objects.filter(id=delivery_item['warehouse']).first()
+                        if warehouse:
+                            activities_data.append({
+                                'product': item.product,
+                                'warehouse': warehouse,
+                                'system_date': instance.date_done,
+                                'posting_date': None,
+                                'document_date': None,
+                                'stock_type': -1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Delivery',
+                                'quantity': delivery_item['stock'],
+                                'cost': item.product_unit_price,
+                                'value': item.product_unit_price * delivery_item['stock'],
+                                'lot_data': lot_data
+                            })
+                    break
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,

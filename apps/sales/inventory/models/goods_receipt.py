@@ -271,6 +271,14 @@ class GoodsReceipt(DataAbstractModel):
         for item in instance.goods_receipt_product_goods_receipt.all():
             warehouse_filter = item.goods_receipt_warehouse_gr_product.all()
             for child in warehouse_filter:
+                lot_data = [{
+                    'lot_id': str(lot.id),
+                    'lot_number': lot.lot_number,
+                    'lot_quantity': lot.quantity_import,
+                    'lot_value': item.product_subtotal_price,
+                    'lot_expire_date': str(lot.expire_date)
+                } for lot in child.goods_receipt_lot_gr_warehouse.all()]
+
                 activities_data.append({
                     'product': item.product,
                     'warehouse': child.warehouse,
@@ -284,6 +292,7 @@ class GoodsReceipt(DataAbstractModel):
                     'quantity': child.quantity_import,
                     'cost': item.product_unit_price,
                     'value': item.product_unit_price * child.quantity_import,
+                    'lot_data': lot_data
                 })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,

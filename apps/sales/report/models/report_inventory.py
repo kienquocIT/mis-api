@@ -75,6 +75,8 @@ class ReportInventorySub(DataAbstractModel):
     current_cost = models.FloatField(default=0)
     current_value = models.FloatField(default=0)
 
+    lot_data = models.JSONField(default=list)
+
     @classmethod
     def create_new_log(cls, activities_data, period_mapped, sub_period_order):
         """
@@ -114,7 +116,8 @@ class ReportInventorySub(DataAbstractModel):
                 trans_title=item['trans_title'],
                 quantity=item['quantity'],
                 cost=item['cost'],
-                value=item['value']
+                value=item['value'],
+                lot_data=item.get('lot_data', [])
             )
             bulk_info.append(new_log)
         new_logs = cls.objects.bulk_create(bulk_info)
