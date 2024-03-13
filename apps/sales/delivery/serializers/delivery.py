@@ -669,7 +669,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 if child.get('order') == item.order:
                     delivery_item = child.get('delivery_data')[0] if len(child.get('delivery_data')) > 0 else {}
                     lot_data = []
-                    for lot in delivery_item.get('lot_data'):
+                    for lot in delivery_item.get('lot_data', []):
                         prd_wh_lot = ProductWareHouseLot.objects.filter(
                             id=lot.get('product_warehouse_lot_id')
                         ).first()
