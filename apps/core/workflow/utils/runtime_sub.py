@@ -1,5 +1,6 @@
 from typing import Union
 from django.utils import timezone
+from django.apps import apps
 from apps.core.log.tasks import (
     force_log_activity,
     force_new_notify_many
@@ -175,3 +176,24 @@ class WFSupportFunctionsHandler:
             msg=msg,
             is_system=True,
         )
+
+
+class WFValidateHandler:
+
+    @classmethod
+    def is_object_referenced(cls, obj):
+        # Get all models in your Django app
+        models = apps.get_models()
+        # Iterate over each model
+        for model in models:
+            # Get all ForeignKey fields in the model
+            foreign_keys = [field for field in model._meta.get_fields() if field.is_relation and field.many_to_one]
+            # Iterate over ForeignKey fields
+            for field in foreign_keys:
+                # Check if the object is referenced by any ForeignKey field
+                if field.related_model == obj.__class__:
+                    # Check if there are any instances of the model referencing the object
+                    if model.objects.filter(**{f"{field.name}": obj}).exists():
+                        return True
+        # Object is not referenced by any ForeignKey fields
+        return False

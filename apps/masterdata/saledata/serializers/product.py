@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
@@ -9,6 +10,7 @@ from apps.masterdata.saledata.models.product import (
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
+from ..models import Periods
 
 PRODUCT_OPTION = [
     (0, _('Sale')),
@@ -53,9 +55,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_product_types_mapped(cls, obj):
         return [{
-           'id': str(item.id),
-           'title': item.title,
-           'code': item.code
+            'id': str(item.id),
+            'title': item.title,
+            'code': item.code
         } for item in obj.general_product_types_mapped.all()]
 
     @classmethod
@@ -925,22 +927,17 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_sale_information(cls, obj):
         return {
             'default_uom': {
-                'id': str(obj.sale_default_uom_id),
-                'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code,
-                'ratio': obj.sale_default_uom.ratio,
+                'id': str(obj.sale_default_uom_id), 'title': obj.sale_default_uom.title,
+                'code': obj.sale_default_uom.code, 'ratio': obj.sale_default_uom.ratio,
                 'rounding': obj.sale_default_uom.rounding,
                 'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
             } if obj.sale_default_uom else {},
             'tax_code': {
-                'id': str(obj.sale_tax_id),
-                'title': obj.sale_tax.title,
-                'code': obj.sale_tax.code,
-                'rate': obj.sale_tax.rate
+                'id': str(obj.sale_tax_id), 'title': obj.sale_tax.title,
+                'code': obj.sale_tax.code, 'rate': obj.sale_tax.rate
             } if obj.sale_tax else {},
             'currency_using': {
-                'id': str(obj.sale_currency_using_id),
-                'title': obj.sale_currency_using.title,
+                'id': str(obj.sale_currency_using_id), 'title': obj.sale_currency_using.title,
                 'code': obj.sale_currency_using.code,
             } if obj.sale_currency_using else {},
             'length': obj.length,
@@ -952,10 +949,8 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         return {
             'uom': {
-                'id': str(obj.purchase_default_uom_id),
-                'title': obj.purchase_default_uom.title,
-                'code': obj.purchase_default_uom.code,
-                'ratio': obj.purchase_default_uom.ratio,
+                'id': str(obj.purchase_default_uom_id), 'title': obj.purchase_default_uom.title,
+                'code': obj.purchase_default_uom.code, 'ratio': obj.purchase_default_uom.ratio,
                 'rounding': obj.purchase_default_uom.rounding,
                 'is_referenced_unit': obj.purchase_default_uom.is_referenced_unit,
             } if obj.purchase_default_uom else {},
@@ -967,13 +962,18 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
+        current_date = timezone.now()
+        period = Periods.objects.filter(fiscal_year=current_date.year).first()
         return [{
             'warehouse': {
                 'id': str(product_inventory.warehouse_id), 'title': product_inventory.warehouse.title,
                 'code': product_inventory.warehouse.code
             } if product_inventory.warehouse else {},
             'cost': product_inventory.ending_balance_cost
-        } for product_inventory in obj.report_inventory_product_warehouse_product.all()]
+        } for product_inventory in obj.report_inventory_product_warehouse_product.filter(
+            period_mapped__fiscal_year=period.fiscal_year,
+            sub_period_order=(current_date.month - period.space_month)
+        )]
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
