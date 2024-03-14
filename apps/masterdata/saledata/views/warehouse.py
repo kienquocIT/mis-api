@@ -33,6 +33,9 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         "is_active": ['exact'],
     }
 
+    def get_queryset(self):
+        return super().get_queryset().filter(is_dropship=False)
+
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
         login_require=True, auth_require=False,

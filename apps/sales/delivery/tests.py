@@ -634,11 +634,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 {
                     'product_id': delivery_prod.id,
                     'done': 1,
-                    'delivery_data': {
+                    'delivery_data': [{
                         'warehouse': self.warehouse.data['result']['id'],
                         'uom': delivery_prod.uom.id,
                         'stock': 1
-                    },
+                    }],
                     'order': 1,
                 }
             ],
