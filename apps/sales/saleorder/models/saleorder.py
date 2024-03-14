@@ -277,13 +277,15 @@ class SaleOrder(DataAbstractModel):
     def push_to_report_product(cls, instance):
         gross_profit_rate = 0
         net_income_rate = 0
+        discount_total_rate = instance.total_product_discount_rate
         if instance.indicator_revenue > 0:
             gross_profit_rate = instance.indicator_gross_profit / instance.indicator_revenue
             net_income_rate = instance.indicator_net_income / instance.indicator_revenue
         for so_product in instance.sale_order_product_sale_order.filter(
                 is_promotion=False, is_shipping=False, is_group=False,
         ):
-            revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
+            price_discount = so_product.product_unit_price * discount_total_rate / 100
+            revenue = (so_product.product_unit_price - price_discount) * so_product.product_quantity
             gross_profit = revenue * gross_profit_rate
             net_income = revenue * net_income_rate
             ReportProduct.push_from_so(
