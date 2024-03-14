@@ -23,6 +23,8 @@ class ReportRevenueList(BaseListMixin):
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
+        'sale_order__id': ['exact', 'in'],
+        'sale_order__customer_id': ['exact', 'in'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

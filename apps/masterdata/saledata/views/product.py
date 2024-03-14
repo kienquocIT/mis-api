@@ -2,6 +2,7 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
+from apps.sales.report.models import ReportInventoryProductWarehouse
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
@@ -376,7 +377,11 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),
             ),
-            'report_inventory_product_warehouse_product',
+            Prefetch(
+                'report_inventory_product_warehouse_product',
+                queryset=ReportInventoryProductWarehouse.objects.select_related('warehouse', 'period_mapped')
+            ),
+            'company__saledata_periods_belong_to_company',
         )
 
     @swagger_auto_schema(

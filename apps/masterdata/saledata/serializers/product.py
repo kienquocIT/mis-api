@@ -10,7 +10,6 @@ from apps.masterdata.saledata.models.product import (
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
-from ..models import Periods
 
 PRODUCT_OPTION = [
     (0, _('Sale')),
@@ -890,15 +889,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_price_list(cls, obj):
         return [
             {
-                'id': str(price.price_list_id),
-                'title': price.price_list.title,
-                'value': price.price,
-                'is_default': price.price_list.is_default,
+                'id': str(price.price_list_id), 'title': price.price_list.title,
+                'value': price.price, 'is_default': price.price_list.is_default,
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start,
                     price.price_list.valid_time_end
-                ),
-                'price_type': price.price_list.price_list_type,
+                ), 'price_type': price.price_list.price_list_type,
             }
             for price in obj.product_price_product.all()
         ]
@@ -907,18 +903,15 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': str(product_type.id),
-                'title': product_type.title,
+                'id': str(product_type.id), 'title': product_type.title,
                 'code': product_type.code
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
-                'id': str(obj.general_product_category_id),
-                'title': obj.general_product_category.title,
+                'id': str(obj.general_product_category_id), 'title': obj.general_product_category.title,
                 'code': obj.general_product_category.code
             } if obj.general_product_category else {},
             'uom_group': {
-                'id': str(obj.general_uom_group_id),
-                'title': obj.general_uom_group.title,
+                'id': str(obj.general_uom_group_id), 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
             } if obj.general_uom_group else {},
         }
@@ -962,18 +955,24 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
+        result = []
         current_date = timezone.now()
-        period = Periods.objects.filter(fiscal_year=current_date.year).first()
-        return [{
-            'warehouse': {
-                'id': str(product_inventory.warehouse_id), 'title': product_inventory.warehouse.title,
-                'code': product_inventory.warehouse.code
-            } if product_inventory.warehouse else {},
-            'cost': product_inventory.ending_balance_cost
-        } for product_inventory in obj.report_inventory_product_warehouse_product.filter(
-            period_mapped__fiscal_year=period.fiscal_year,
-            sub_period_order=(current_date.month - period.space_month)
-        )] if period else []
+        for period in obj.company.saledata_periods_belong_to_company.all():
+            if period.fiscal_year == current_date.year:
+                for product_inventory in obj.report_inventory_product_warehouse_product.all():
+                    if product_inventory.period_mapped:
+                        if product_inventory.period_mapped.fiscal_year == period.fiscal_year \
+                                and product_inventory.sub_period_order == (current_date.month - period.space_month):
+                            result.append({
+                                'warehouse': {
+                                    'id': str(product_inventory.warehouse_id),
+                                    'title': product_inventory.warehouse.title,
+                                    'code': product_inventory.warehouse.code
+                                } if product_inventory.warehouse else {},
+                                'cost': product_inventory.ending_balance_cost
+                            })
+                break
+        return result
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
