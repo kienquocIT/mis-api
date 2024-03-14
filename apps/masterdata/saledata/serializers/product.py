@@ -973,7 +973,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
         } for product_inventory in obj.report_inventory_product_warehouse_product.filter(
             period_mapped__fiscal_year=period.fiscal_year,
             sub_period_order=(current_date.month - period.space_month)
-        )]
+        )] if period else []
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
