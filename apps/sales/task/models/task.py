@@ -30,6 +30,10 @@ class OpportunityTaskStatus(MasterDataAbstractModel):
         default=0,
     )
     task_color = models.CharField(verbose_name='Status color', max_length=100, default=None, null=True)
+    is_finish = models.BooleanField(
+        default=False,
+        verbose_name='This is task finish',
+    )
 
     class Meta:
         verbose_name = 'Task Status'
@@ -113,6 +117,10 @@ class OpportunityTask(DataAbstractModel):
             ["uuid4", "uuid4"]
         )
     )
+    percent_completed = models.SmallIntegerField(
+        verbose_name='percent completed',
+        default=0, null=True,
+    )
 
     def create_code_task(self):
         # auto create code (temporary)
@@ -129,8 +137,13 @@ class OpportunityTask(DataAbstractModel):
                 code = f"{char}{temper:03d}"
                 self.code = code
 
+    def update_percent(self):
+        if self.task_status.is_finish:
+            self.percent_completed = 100
+
     def before_save(self):
         self.create_code_task()
+        self.update_percent()
         if self.opportunity and not self.opportunity_data:
             self.opportunity_data = {
                 "id": str(self.opportunity_id),

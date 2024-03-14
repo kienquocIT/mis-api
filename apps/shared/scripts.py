@@ -54,6 +54,7 @@ from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventory
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from ..sales.task.models import OpportunityTaskStatus
 
 
 def update_sale_default_data_old_company():
@@ -1447,3 +1448,8 @@ def update_report_inventory_sub_trans_title():
             item.trans_title = 'Goods receipt'
             item.save(update_fields=['trans_title'])
     print('Done')
+
+
+def update_task_config():
+    OpportunityTaskStatus.objects.filter(task_kind=2, order=3).update(is_finish=True)
+    print('Update Completed task status is done!')

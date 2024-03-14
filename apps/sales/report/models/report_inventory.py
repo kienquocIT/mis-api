@@ -35,7 +35,7 @@ class ReportInventory(DataAbstractModel):
     class Meta:
         verbose_name = 'Report Inventory'
         verbose_name_plural = 'Report Inventories'
-        ordering = ('sub_period_order',)
+        ordering = ('product__code',)
         default_permissions = ()
         permissions = ()
 
@@ -74,6 +74,8 @@ class ReportInventorySub(DataAbstractModel):
     current_quantity = models.FloatField(default=0)
     current_cost = models.FloatField(default=0)
     current_value = models.FloatField(default=0)
+
+    lot_data = models.JSONField(default=list)
 
     @classmethod
     def create_new_log(cls, activities_data, period_mapped, sub_period_order):
@@ -114,7 +116,8 @@ class ReportInventorySub(DataAbstractModel):
                 trans_title=item['trans_title'],
                 quantity=item['quantity'],
                 cost=item['cost'],
-                value=item['value']
+                value=item['value'],
+                lot_data=item.get('lot_data', [])
             )
             bulk_info.append(new_log)
         new_logs = cls.objects.bulk_create(bulk_info)
@@ -221,24 +224,35 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_last_sub_period(self):
-        if self.sub_period_order > 1:
-            last_item = ReportInventoryProductWarehouse.objects.filter(
-                product=self.product,
-                warehouse=self.warehouse,
-                period_mapped=self.period_mapped,
-                sub_period_order=self.sub_period_order - 1
-            ).first()
-        else:
-            last_item = ReportInventoryProductWarehouse.objects.filter(
-                product=self.product,
-                warehouse=self.warehouse,
-                period_mapped__fiscal_year=self.period_mapped.fiscal_year - 1,
-                sub_period_order=12
-            ).first()
-        return last_item if last_item else None
+    @classmethod
+    def get_last_sub_period(cls, rp_prd_wh, warehouse_id, period_mapped_id, sub_period_order):
+        if sub_period_order > 1:
+            for last_item in rp_prd_wh:
+                if all([
+                    last_item.warehouse_id == warehouse_id,
+                    last_item.period_mapped_id == period_mapped_id,
+                    last_item.sub_period_order == sub_period_order - 1
+                ]):
+                    return last_item
+            return None
+        for last_item in rp_prd_wh:
+            period_obj = Periods.objects.filter(id=period_mapped_id).first()
+            if period_obj and all([
+                last_item.warehouse_id == warehouse_id,
+                last_item.period_mapped.fiscal_year == period_obj.fiscal_year - 1,
+                last_item.sub_period_order == 12
+            ]):
+                return last_item
+        return None
 
-    def get_value_this_sub_period(self, data_stock_activity):
+    def get_value_this_sub_period(
+            self,
+            data_stock_activity,
+            rp_prd_wh,
+            warehouse_id,
+            period_mapped_id,
+            sub_period_order
+    ):
         """
         Opening tháng:
             Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
@@ -247,7 +261,13 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
             Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
-        last_sub_period = self.get_last_sub_period()
+        # Begin get Opening
+        last_sub_period = self.get_last_sub_period(
+            rp_prd_wh,
+            warehouse_id,
+            period_mapped_id,
+            sub_period_order
+        )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
@@ -258,7 +278,9 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
                 opening_quantity = last_sub_period.ending_balance_quantity
                 opening_value = last_sub_period.ending_balance_value
                 opening_cost = last_sub_period.ending_balance_cost
+        # End
 
+        # Begin get Ending
         data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
         ending_quantity = opening_quantity
         ending_value = opening_value
@@ -267,6 +289,8 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
             ending_quantity = data_stock_activity[-1]['current_quantity']
             ending_value = data_stock_activity[-1]['current_value']
             ending_cost = data_stock_activity[-1]['current_cost']
+        # End
+
         return {
             'is_close': flag,
             'opening_balance_quantity': opening_quantity,

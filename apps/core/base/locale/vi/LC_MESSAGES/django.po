@@ -1,0 +1,110 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-05 00:08+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#
+msgid "APP_Account"
+msgstr "Tài khoản"
+
+#
+msgid "APP_Advance Payment"
+msgstr "Tạm ứng"
+
+#
+msgid "APP_Asset, Tools Delivery"
+msgstr "Yêu cầu bàn giao"
+
+#
+msgid "APP_Asset, Tools Provide"
+msgstr "Yêu cầu cấp phát"
+
+#
+msgid "APP_Asset, Tools Return"
+msgstr "Danh sách thu hồi tài sản"
+
+#
+msgid "APP_Business trip"
+msgstr "Công tác"
+
+#
+msgid "APP_Contact"
+msgstr "Liên hệ"
+
+#
+msgid "APP_Delivery"
+msgstr "Giao hàng"
+
+#
+msgid "APP_Goods Issue"
+msgstr "Xuất hàng"
+
+#
+msgid "APP_Goods Receipt"
+msgstr "Nhập kho"
+
+#
+msgid "APP_Goods Return"
+msgstr "Trả hàng"
+
+#
+msgid "APP_Goods Transfer"
+msgstr "Điều chuyển hàng"
+
+#
+msgid "APP_Inventory Adjustment"
+msgstr "Điều chỉnh tồn kho"
+
+#
+msgid "APP_Leave"
+msgstr "Nghỉ phép"
+
+#
+msgid "APP_Meeting Schedule"
+msgstr "Lịch họp"
+
+#
+msgid "APP_Opportunity"
+msgstr "Cơ hội kinh doanh"
+
+#
+msgid "APP_Payments"
+msgstr "Thanh toán"
+
+#
+msgid "APP_Purchase Order"
+msgstr "Mua hàng"
+
+#
+msgid "APP_Purchase Quotation"
+msgstr "Báo giá mua hàng"
+
+#
+msgid "APP_Purchase Quotation Request"
+msgstr "Yêu cầu báo giá mua hàng"
+
+#
+msgid "APP_Quotation"
+msgstr "Báo giá"
+
+#
+msgid "APP_Return Advance"
+msgstr "Hoàn ứng"
+
+#
+msgid "APP_Sale Order"
+msgstr "Đơn hàng"

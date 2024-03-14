@@ -1,6 +1,6 @@
 # docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
 
-image: localhost:5000/ci-api
+image: localhost:5000/gitlab-ci-api
 
 variables:
   MYSQL_DATABASE: $MYSQL_DB

@@ -82,7 +82,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
                 member_id=self.context.get('employee_id', None)
             ).exists()
             is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if not is_team_members or not is_inherit:
+            if is_team_members + is_inherit == 0:
                 raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
 
         return validate_data
@@ -241,7 +241,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
                 member_id=self.context.get('employee_id', None)
             ).exists()
             is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if not is_team_members or not is_inherit:
+            if is_team_members + is_inherit == 0:
                 raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
 
         return validate_data
@@ -406,7 +406,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
                 member_id=self.context.get('employee_id', None)
             ).exists()
             is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if not is_team_members or not is_inherit:
+            if is_team_members + is_inherit == 0:
                 raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
 
         if validate_data.get('meeting_from_time', None) and validate_data.get('meeting_to_time', None):
@@ -608,7 +608,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
                 member_id=self.context.get('employee_id', None)
             ).exists()
             is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if not is_team_members or not is_inherit:
+            if is_team_members + is_inherit == 0:
                 raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
 
         return validate_data
