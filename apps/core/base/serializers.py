@@ -73,6 +73,17 @@ class ApplicationPropertyForPrintListSerializer(serializers.ModelSerializer):
         )
 
 
+class ApplicationPropertyForMailListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationProperty
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remark',
+        )
+
+
 class PermissionApplicationListSerializer(serializers.ModelSerializer):
     extras = serializers.JSONField()
     app = serializers.SerializerMethodField()

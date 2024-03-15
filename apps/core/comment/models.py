@@ -3,6 +3,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 from apps.core.log.tasks import force_new_notify_many
+from apps.core.mailer.handle_html import HTMLController
 from apps.shared import MasterDataAbstractModel, call_task_background, CommentMSg, DisperseModel
 
 
@@ -57,6 +58,7 @@ class Comments(MasterDataAbstractModel):
         if self.parent_n:
             if self.parent_n.parent_n:
                 raise ValueError('Comments support only up to 1 level of replies')
+        self.contents = HTMLController(html_str=self.contents).clean()
         super().save(*args, **kwargs)
 
     class Meta:

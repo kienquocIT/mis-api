@@ -9,6 +9,8 @@ class BaseMsg:
     USER_NOT_MAP_EMPLOYEE = _('User still not map with The employee please contact your Admin')
     UPLOAD_FILE_ERROR = _('Upload file is failure. Please refresh and try again.')
     SYSTEM_STATUS_INCORRECT = _('The document status is incorrect')
+    NOT_IS_HTML = _('The content is not HTML')
+    BLOCK_PHISHING_CODE = _('The content has been blocked because contains phishing code')
 
 
 class PermissionMsg:

@@ -1447,3 +1447,23 @@ def update_report_inventory_sub_trans_title():
             item.trans_title = 'Goods receipt'
             item.save(update_fields=['trans_title'])
     print('Done')
+
+
+def update_params_in_template():
+    from apps.core.printer.models import PrintTemplates
+    from apps.core.mailer.models import MailTemplate, MailTemplateSystem
+
+    def contents_resolver(obje):
+        obje.contents = obje.contents.replace("data-code=", "data=")
+        obj.save()
+
+    for obj in PrintTemplates.objects.all():
+        contents_resolver(obj)
+
+    for obj in MailTemplate.objects.all():
+        contents_resolver(obj)
+
+    for obj in MailTemplateSystem.objects.all():
+        contents_resolver(obj)
+
+    return True

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.comment.models import Comments
+from apps.core.mailer.handle_html import HTMLController
 from apps.shared import DisperseModel, HrMsg
 
 
@@ -12,6 +13,12 @@ class CommentListSerializer(serializers.ModelSerializer):
         if obj.employee_created and hasattr(obj.employee_created, 'get_detail_minimal'):
             return obj.employee_created.get_detail_minimal()
         return {}
+
+    contents = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_contents(cls, obj):
+        return HTMLController.unescape(obj.contents)
 
     class Meta:
         model = Comments

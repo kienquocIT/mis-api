@@ -202,6 +202,7 @@ class Application(CoreAbstractModel):
 
     allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
     allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
+    allow_mail = models.BooleanField(default=False, verbose_name='Allow mail template')
 
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
@@ -334,6 +335,7 @@ class ApplicationProperty(CoreAbstractModel):
     )
 
     is_print = models.BooleanField(default=False, verbose_name='Access using for print')
+    is_mail = models.BooleanField(default=False, verbose_name='Access using for mail')
     title_slug = models.SlugField(blank=True)
 
     class Meta:

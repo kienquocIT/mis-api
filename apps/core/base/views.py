@@ -15,6 +15,7 @@ from apps.core.base.serializers import (
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
     BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
+    ApplicationPropertyForMailListSerializer,
 )
 
 
@@ -51,6 +52,7 @@ class TenantApplicationList(BaseListMixin):
         'is_workflow': ['exact'],
         'allow_import': ['exact'],
         'allow_print': ['exact'],
+        'allow_mail': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -157,7 +159,24 @@ class ApplicationPropertyForPrintList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(is_print=True)
 
-    @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
+    @swagger_auto_schema(operation_summary="Application Property list for Print", operation_description="")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyForMailList(BaseListMixin):
+    queryset = ApplicationProperty.objects
+    search_fields = ['code', 'title_slug']
+    filterset_fields = {
+        'application': ['exact', 'in'],
+    }
+    serializer_list = ApplicationPropertyForMailListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_mail=True)
+
+    @swagger_auto_schema(operation_summary="Application Property list for Mail", operation_description="")
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
