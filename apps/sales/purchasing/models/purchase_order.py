@@ -163,30 +163,31 @@ class PurchaseOrder(DataAbstractModel):
     @classmethod
     def push_to_report_cashflow(cls, instance):
         po_products_json = {}
-        po_products = instance.purchase_order_product_order.all()
-        for po_product in po_products:
-            if str(po_product.product_id) not in po_products_json:
-                po_products_json.update({str(po_product.product_id): {
-                    'po': str(po_product.purchase_order_id),
-                    'quantity': po_product.product_quantity_order_actual,
-                }})
-        po_purchase_requests = instance.purchase_requests.filter(sale_order__isnull=False)
-        for purchase_request in po_purchase_requests:
-            so_rate = 0
-            for pr_product in purchase_request.purchase_request.all():
-                if str(pr_product.product_id) in po_products_json:
-                    po_product_map = po_products_json[str(pr_product.product_id)]
-                    so_rate += (po_product_map.get('quantity', 0) / pr_product.quantity) * 100
-            so_rate = min(so_rate, 100)
+        if instance.tenant and instance.company and instance.employee_inherit:
+            po_products = instance.purchase_order_product_order.all()
+            for po_product in po_products:
+                if str(po_product.product_id) not in po_products_json:
+                    po_products_json.update({str(po_product.product_id): {
+                        'po': str(po_product.purchase_order_id),
+                        'quantity': po_product.product_quantity_order_actual,
+                    }})
+            po_purchase_requests = instance.purchase_requests.filter(sale_order__isnull=False)
+            for purchase_request in po_purchase_requests:
+                so_rate = 0
+                for pr_product in purchase_request.purchase_request.all():
+                    if str(pr_product.product_id) in po_products_json:
+                        po_product_map = po_products_json[str(pr_product.product_id)]
+                        so_rate += (po_product_map.get('quantity', 0) / pr_product.quantity) * 100
+                so_rate = min(so_rate, 100)
             # payment
             bulk_data = [ReportCashflow(
-                tenant_id=purchase_request.sale_order.tenant_id,
-                company_id=purchase_request.sale_order.company_id,
-                sale_order_id=purchase_request.sale_order_id,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                sale_order_id=None,
                 purchase_order_id=instance.id,
                 cashflow_type=3,
-                employee_inherit_id=purchase_request.sale_order.employee_inherit_id,
-                group_inherit_id=purchase_request.sale_order.employee_inherit.group_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                group_inherit_id=instance.employee_inherit.group_id,
                 due_date=payment_stage.due_date,
                 # value_estimate_cost=payment_stage.value_before_tax * so_rate / 100,
                 value_estimate_cost=payment_stage.value_before_tax,

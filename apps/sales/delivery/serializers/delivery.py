@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse, Product
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure, WareHouse, Product, ProductWareHouseLot
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -664,27 +664,43 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def prepare_data_for_logging(cls, instance, validated_product):
         activities_data = []
+        so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
         for item in instance.delivery_product_delivery_sub.all():
-            delivery_data = [temp for temp in validated_product if temp['product_id'] == item.product.id]
-            if len(delivery_data) > 0:
-                for child in delivery_data[0]['delivery_data']:
-                    warehouse = child['warehouse']
-                    quantity = child['stock']
-
-                    activities_data.append({
-                        'product': item.product,
-                        'warehouse': WareHouse.objects.get(id=warehouse),
-                        'system_date': instance.date_done,
-                        'posting_date': None,
-                        'document_date': None,
-                        'stock_type': -1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Delivery',
-                        'quantity': quantity,
-                        'cost': item.product_unit_price,
-                        'value': item.product_unit_price * quantity,
-                    })
+            main_item = so_products.filter(order=item.order).first()
+            main_product_unit_price = main_item.product_unit_price if main_item else 0
+            for child in validated_product:
+                if child.get('order') == item.order:
+                    delivery_item = child.get('delivery_data')[0] if len(child.get('delivery_data')) > 0 else {}
+                    lot_data = []
+                    for lot in delivery_item.get('lot_data', []):
+                        prd_wh_lot = ProductWareHouseLot.objects.filter(
+                            id=lot.get('product_warehouse_lot_id')
+                        ).first()
+                        if prd_wh_lot:
+                            lot_data.append({
+                                'lot_id': str(prd_wh_lot.id),
+                                'lot_number': prd_wh_lot.lot_number,
+                                'lot_quantity': lot.get('quantity_delivery'),
+                                'lot_value': main_product_unit_price * lot.get('quantity_delivery'),
+                                'lot_expire_date': str(prd_wh_lot.expire_date)
+                            })
+                    warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
+                    if warehouse:
+                        activities_data.append({
+                            'product': item.product,
+                            'warehouse': warehouse,
+                            'system_date': instance.date_done,
+                            'posting_date': None,
+                            'document_date': None,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Delivery',
+                            'quantity': delivery_item.get('stock'),
+                            'cost': main_product_unit_price,
+                            'value': main_product_unit_price * delivery_item.get('stock'),
+                            'lot_data': lot_data
+                        })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,

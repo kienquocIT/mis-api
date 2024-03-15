@@ -451,8 +451,8 @@ class SaleOrderCommonValidate:
                 'id': str(promotion.id),
                 'title': promotion.title,
                 'code': promotion.code,
-                'valid_date_start': promotion.valid_date_start,
-                'valid_date_end': promotion.valid_date_end,
+                'valid_date_start': str(promotion.valid_date_start),
+                'valid_date_end': str(promotion.valid_date_end),
                 'remark': promotion.remark,
                 'currency': {
                     'id': str(promotion.currency_id),

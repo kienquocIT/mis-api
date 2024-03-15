@@ -1,4 +1,3 @@
-import math
 import re
 from datetime import datetime
 from django.conf import settings
@@ -70,7 +69,6 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     child_task_count = serializers.SerializerMethodField()
-    percent_completed = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -79,7 +77,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_created.avatar,
                 'first_name': obj.employee_created.first_name,
                 'last_name': obj.employee_created.last_name,
-                'full_name': f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
+                'full_name': obj.employee_created.get_full_name()
             }
         return {}
 
@@ -90,15 +88,13 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_inherit.avatar,
                 'first_name': obj.employee_inherit.first_name,
                 'last_name': obj.employee_inherit.last_name,
-                'full_name': f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+                'full_name': obj.employee_inherit.get_full_name()
             }
         return {}
 
     @classmethod
     def get_checklist(cls, obj):
-        if obj.checklist:
-            return obj.checklist
-        return 0
+        return obj.checklist if obj.checklist else 0
 
     @classmethod
     def get_parent_n(cls, obj):
@@ -138,38 +134,6 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
         )
         return task_list.count() if task_list else 0
 
-    @classmethod
-    def get_percent_completed(cls, obj):
-        current_unit = obj.estimate[-1]
-        rate_list = {
-            "h": 1,
-            "d": 8,
-            "w": 56
-        }
-        total = 0
-        task_list = OpportunityLogWork.objects.filter_current(
-            fill__company=True,
-            fill__tenant=True,
-            task=obj
-        )
-        temp = 0
-        if task_list.exists():
-            for value in task_list:
-                time_spent = value.time_spent
-                tp_unit = time_spent[-1]
-                tp_num = int(time_spent[:-1])
-                if tp_num < 0:
-                    continue
-                if tp_unit == "h":
-                    temp += tp_num
-                elif tp_unit == "d":
-                    temp += tp_num / rate_list["d"]
-                else:
-                    temp += tp_num / rate_list["w"]
-            if temp > 0:
-                total = temp / rate_list[current_unit] / int(obj.estimate[:-1]) * 100
-        return math.floor(total)
-
     class Meta:
         model = OpportunityTask
         fields = (
@@ -199,7 +163,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach')
+                  'log_time', 'attach', 'percent_completed')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -428,7 +392,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
                   'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach', 'sub_task_list')
+                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
@@ -438,7 +402,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity')
+                  'attach', 'opportunity', 'percent_completed')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -567,7 +531,7 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
             self.check_task_complete(instance)
 
         instance.task_status = task_status
-        instance.save(update_fields=['task_status'])
+        instance.save(update_fields=['task_status', 'percent_completed'])
         return instance
 
 

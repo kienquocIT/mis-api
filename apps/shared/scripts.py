@@ -50,10 +50,11 @@ from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from ..sales.task.models import OpportunityTaskStatus
 
 
 def update_sale_default_data_old_company():
@@ -1323,14 +1324,21 @@ def update_date_approved():
     print('Done!')
 
 
-def reset_and_run_reports_sale():
-    ReportRevenue.objects.all().delete()
-    ReportCustomer.objects.all().delete()
-    ReportProduct.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SaleOrder.push_to_report_revenue(sale_order)
-        SaleOrder.push_to_report_product(sale_order)
-        SaleOrder.push_to_report_customer(sale_order)
+def reset_and_run_reports_sale(run_type=0):
+    if run_type == 0:  # run report revenue, customer, product
+        ReportRevenue.objects.all().delete()
+        ReportCustomer.objects.all().delete()
+        ReportProduct.objects.all().delete()
+        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+            SaleOrder.push_to_report_revenue(sale_order)
+            SaleOrder.push_to_report_product(sale_order)
+            SaleOrder.push_to_report_customer(sale_order)
+    if run_type == 1:  # run report cashflow
+        ReportCashflow.objects.all().delete()
+        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+            SaleOrder.push_to_report_cashflow(sale_order)
+        for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+            PurchaseOrder.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
 
 
@@ -1449,21 +1457,6 @@ def update_report_inventory_sub_trans_title():
     print('Done')
 
 
-def update_params_in_template():
-    from apps.core.printer.models import PrintTemplates
-    from apps.core.mailer.models import MailTemplate, MailTemplateSystem
-
-    def contents_resolver(obje):
-        obje.contents = obje.contents.replace("data-code=", "data=")
-        obj.save()
-
-    for obj in PrintTemplates.objects.all():
-        contents_resolver(obj)
-
-    for obj in MailTemplate.objects.all():
-        contents_resolver(obj)
-
-    for obj in MailTemplateSystem.objects.all():
-        contents_resolver(obj)
-
-    return True
+def update_task_config():
+    OpportunityTaskStatus.objects.filter(task_kind=2, order=3).update(is_finish=True)
+    print('Update Completed task status is done!')

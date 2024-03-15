@@ -23,13 +23,28 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def prepare_data_for_logging(cls, instance, return_quantity):
+    def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
         activities_data = []
         delivery_product = OrderDeliveryProduct.objects.filter(
             delivery_sub=instance.delivery,
             product=instance.product
         ).first()
         if delivery_product:
+            lot_data = []
+            for lot in product_detail_list:
+                type_value = lot.get('type')
+                if type_value == 1:  # is LOT
+                    prd_wh_lot = ProductWareHouseLot.objects.filter(
+                        id=lot['lot_no_id']
+                    ).first()
+                    if prd_wh_lot:
+                        lot_data.append({
+                            'lot_id': str(prd_wh_lot.id),
+                            'lot_number': prd_wh_lot.lot_number,
+                            'lot_quantity': lot['lot_return_number'],
+                            'lot_value': delivery_product.product_unit_price * lot['lot_return_number'],
+                            'lot_expire_date': str(prd_wh_lot.expire_date)
+                        })
             activities_data.append({
                 'product': instance.product,
                 'warehouse': instance.return_to_warehouse,
@@ -43,6 +58,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 'quantity': return_quantity,
                 'cost': delivery_product.product_unit_price,
                 'value': delivery_product.product_unit_price * return_quantity,
+                'lot_data': lot_data
             })
         else:
             raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
@@ -379,7 +395,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
                 cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
-        cls.prepare_data_for_logging(gr_obj, return_quantity)
+        cls.prepare_data_for_logging(gr_obj, return_quantity, product_detail_list)
         return True
 
     @classmethod
