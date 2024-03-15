@@ -201,6 +201,7 @@ class ReportCashflow(DataAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name='report_cashflow_sale_order',
+        null=True,
     )
     purchase_order = models.ForeignKey(
         'purchasing.PurchaseOrder',
