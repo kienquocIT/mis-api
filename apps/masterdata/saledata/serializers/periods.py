@@ -5,7 +5,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
-from apps.masterdata.saledata.models.periods import Periods
+from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory, ReportInventorySub
 
 
@@ -40,7 +40,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Periods
-        fields = ('code', 'title', 'fiscal_year', 'start_date')
+        fields = ('code', 'title', 'fiscal_year', 'start_date', 'sub_periods_type')
 
     @classmethod
     def validate_fiscal_year(cls, value):
@@ -64,6 +64,12 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         if software_start_using_time:
             period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
             period.company.save(update_fields=['software_start_using_time'])
+
+        sub_period_data = self.initial_data.get('sub_period_data')
+        bulk_info = []
+        for item in sub_period_data:
+            bulk_info.append(SubPeriods(period_mapped=period, **item))
+        SubPeriods.objects.bulk_create(bulk_info)
         return period
 
 
@@ -76,7 +82,8 @@ class PeriodsDetailSerializer(serializers.ModelSerializer):
             'title',
             'fiscal_year',
             'space_month',
-            'start_date'
+            'start_date',
+            'sub_periods_type'
         )
 
 
