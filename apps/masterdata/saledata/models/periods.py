@@ -33,6 +33,6 @@ class SubPeriods(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Subs Period'
         verbose_name_plural = 'Subs Periods'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

@@ -18,7 +18,7 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('company').prefetch_related()
+        return super().get_queryset().select_related('company').prefetch_related('sub_periods_period_mapped')
 
     @swagger_auto_schema(
         operation_summary="Periods list",
