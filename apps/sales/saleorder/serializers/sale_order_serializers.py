@@ -76,6 +76,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -122,6 +123,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             # system
             'workflow_runtime_id',
             'is_active',
+            'employee_inherit',
         )
 
     @classmethod
@@ -178,6 +180,19 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'code': obj.quotation.code,
             'quotation_indicators_data': obj.quotation.quotation_indicators_data,
         } if obj.quotation else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):

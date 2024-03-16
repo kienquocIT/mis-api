@@ -657,20 +657,19 @@ class ConfigDefaultData:
                 'list_status': [
                     {
                         'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1,
-                        'task_color': '#abe3e5'
+                        'task_color': '#abe3e5', 'is_finish': False
                     },
                     {
                         'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True,
-                        'task_kind': 0,
-                        'task_color': '#f9aab7'
+                        'task_kind': 0, 'task_color': '#f9aab7', 'is_finish': False
                     },
                     {
                         'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
-                        'task_kind': 2, 'task_color': '#f7e368'
+                        'task_kind': 2, 'task_color': '#f7e368', 'is_finish': True
                     },
                     {
                         'name': 'Pending', 'translate_name': 'Tạm ngưng', 'order': 4, 'is_edit': False, 'task_kind': 3,
-                        'task_color': '#ff686d',
+                        'task_color': '#ff686d', 'is_finish': False
                     },
                 ],
                 'is_edit_date': False,
@@ -691,6 +690,7 @@ class ConfigDefaultData:
                         is_edit=item['is_edit'],
                         task_kind=item['task_kind'],
                         task_color=item['task_color'],
+                        is_finish=False if item['task_kind'] != 2 else True
                     )
                 )
             OpportunityTaskStatus.objects.bulk_create(temp_stt)

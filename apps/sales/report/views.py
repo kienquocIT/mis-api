@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import WareHouse
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
     ReportInventory, ReportInventoryProductWarehouse
@@ -22,6 +23,8 @@ class ReportRevenueList(BaseListMixin):
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
+        'sale_order_id': ['exact', 'in'],
+        'sale_order__customer_id': ['exact', 'in'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -189,6 +192,9 @@ class ReportInventoryDetailList(BaseListMixin):
             if self.request.query_params['product_id_list'] != '':
                 return super().get_queryset().select_related(
                     "product", "period_mapped"
+                ).prefetch_related(
+                    'report_inventory_by_month',
+                    'product__report_inventory_product_warehouse_product__period_mapped',
                 ).filter(
                     sub_period_order=self.request.query_params['sub_period_order'],
                     period_mapped_id=self.request.query_params['period_mapped'],
@@ -196,14 +202,19 @@ class ReportInventoryDetailList(BaseListMixin):
                 )
             return super().get_queryset().select_related(
                 "product", "period_mapped"
+            ).prefetch_related(
+                'report_inventory_by_month',
+                'product__report_inventory_product_warehouse_product__period_mapped',
             ).filter(
                 sub_period_order=self.request.query_params['sub_period_order'],
                 period_mapped_id=self.request.query_params['period_mapped'],
             )
         except KeyError:
             return super().get_queryset().select_related(
-                "product",
-                "period_mapped"
+                "product", "period_mapped",
+            ).prefetch_related(
+                'report_inventory_by_month',
+                'product__report_inventory_product_warehouse_product__period_mapped',
             )
 
     @swagger_auto_schema(
@@ -216,6 +227,9 @@ class ReportInventoryDetailList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        self.ser_context = {
+            'wh_list': set(WareHouse.objects.all().values_list('id', 'code', 'title'))
+        }
         return self.list(request, *args, **kwargs)
 
 
@@ -249,21 +263,30 @@ class ReportInventoryList(BaseListMixin):
         try:
             if self.request.query_params['product_id_list'] != '':
                 return super().get_queryset().select_related(
-                    "product", "warehouse", "period_mapped"
+                    "product__inventory_uom", "warehouse", "period_mapped"
+                ).prefetch_related(
+                    'product__report_inventory_product_warehouse_product',
+                    'product__report_inventory_by_month_product'
                 ).filter(
                     sub_period_order=self.request.query_params['sub_period_order'],
                     period_mapped_id=self.request.query_params['period_mapped'],
                     product_id__in=self.request.query_params['product_id_list'].split(',')
                 )
             return super().get_queryset().select_related(
-                "product", "warehouse", "period_mapped"
+                "product__inventory_uom", "warehouse", "period_mapped"
+            ).prefetch_related(
+                'product__report_inventory_product_warehouse_product',
+                'product__report_inventory_by_month_product'
             ).filter(
                 sub_period_order=self.request.query_params['sub_period_order'],
                 period_mapped_id=self.request.query_params['period_mapped'],
             )
         except KeyError:
             return super().get_queryset().select_related(
-                "product", "warehouse", "period_mapped"
+                "product__inventory_uom", "warehouse", "period_mapped"
+            ).prefetch_related(
+                'product__report_inventory_product_warehouse_product',
+                'product__report_inventory_by_month_product__report_inventory'
             )
 
     @swagger_auto_schema(
@@ -276,6 +299,10 @@ class ReportInventoryList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        if 'date_range' in request.query_params:
+            self.ser_context = {
+                'date_range': [int(num) for num in request.query_params['date_range'].split('-')],
+            }
         return self.list(request, *args, **kwargs)
 
 

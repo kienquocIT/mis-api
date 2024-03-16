@@ -293,7 +293,7 @@ class AccountForSaleList(BaseListMixin):
         ).prefetch_related(
             'account_mapped_shipping_address',
             'account_mapped_billing_address',
-            'payment_term_supplier_mapped__term_payment_term',
+            'payment_term_customer_mapped__term_payment_term',
         )
 
     @swagger_auto_schema(

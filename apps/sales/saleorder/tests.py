@@ -294,6 +294,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )
@@ -549,6 +550,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )

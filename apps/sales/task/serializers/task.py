@@ -77,7 +77,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_created.avatar,
                 'first_name': obj.employee_created.first_name,
                 'last_name': obj.employee_created.last_name,
-                'full_name': f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
+                'full_name': obj.employee_created.get_full_name()
             }
         return {}
 
@@ -88,15 +88,13 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_inherit.avatar,
                 'first_name': obj.employee_inherit.first_name,
                 'last_name': obj.employee_inherit.last_name,
-                'full_name': f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+                'full_name': obj.employee_inherit.get_full_name()
             }
         return {}
 
     @classmethod
     def get_checklist(cls, obj):
-        if obj.checklist:
-            return obj.checklist
-        return 0
+        return obj.checklist if obj.checklist else 0
 
     @classmethod
     def get_parent_n(cls, obj):
@@ -152,7 +150,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'parent_n',
             'employee_created',
             'date_created',
-            'child_task_count'
+            'child_task_count',
+            'percent_completed'
         )
 
 
@@ -164,7 +163,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach')
+                  'log_time', 'attach', 'percent_completed')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -393,7 +392,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
                   'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach', 'sub_task_list')
+                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
@@ -403,7 +402,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity')
+                  'attach', 'opportunity', 'percent_completed')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -532,7 +531,7 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
             self.check_task_complete(instance)
 
         instance.task_status = task_status
-        instance.save(update_fields=['task_status'])
+        instance.save(update_fields=['task_status', 'percent_completed'])
         return instance
 
 

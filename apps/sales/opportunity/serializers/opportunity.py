@@ -54,29 +54,11 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
-                'shipping_address': [
-                    {'id': shipping.id, 'full_address': shipping.full_address}
-                    for shipping in obj.customer.account_mapped_shipping_address.all()
-                ],
-                'billing_address': [
-                    {'id': billing.id, 'full_address': billing.full_address}
-                    for billing in obj.customer.account_mapped_billing_address.all()
-                ],
                 'contact_mapped': [{
                     'id': str(item.id),
                     'fullname': item.fullname,
                     'email': item.email
                 } for item in obj.customer.contact_account_name.all()],
-                'payment_term_customer_mapped': {
-                    'id': obj.customer.payment_term_customer_mapped_id,
-                    'title': obj.customer.payment_term_customer_mapped.title,
-                    'code': obj.customer.payment_term_customer_mapped.code
-                } if obj.customer.payment_term_customer_mapped else {},
-                'price_list_mapped': {
-                    'id': obj.customer.price_list_mapped_id,
-                    'title': obj.customer.price_list_mapped.title,
-                    'code': obj.customer.price_list_mapped.code
-                } if obj.customer.price_list_mapped else {},
             }
         return {}
 

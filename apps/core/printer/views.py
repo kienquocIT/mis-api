@@ -2,6 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from django.utils.translation import gettext_lazy as _
 from rest_framework.views import APIView
 
+from apps.core.mailer.handle_html import HTMLController
 from apps.core.printer.serializers import (
     PrintTemplateListSerializer, PrintTemplateCreateSerializer,
     PrintTemplateUpdateSerializer, PrintTemplateDetailSerializer,
@@ -116,7 +117,7 @@ class PrintTemplateUsingDetail(APIView):
                     if obj.is_default is True:
                         default_data = {
                             **temp_data,
-                            'contents': obj.contents,
+                            'contents': HTMLController.unescape(obj.contents),
                         }
                     result.append(temp_data)
                 return ResponseController.success_200(
@@ -143,7 +144,7 @@ class PrintTemplateDetailUsing(APIView):
                     'id': str(obj.id),
                     'title': str(obj.title),
                     'remarks': str(obj.remarks),
-                    'contents': obj.contents,
+                    'contents': HTMLController.unescape(obj.contents),
                 }
                 return ResponseController.success_200(data=ctx)
         return ResponseController.notfound_404()
