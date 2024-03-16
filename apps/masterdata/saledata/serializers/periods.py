@@ -12,6 +12,8 @@ from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInve
 # Product Type
 class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
+    state = serializers.SerializerMethodField()
+    subs = serializers.SerializerMethodField()
 
     class Meta:
         model = Periods
@@ -22,7 +24,9 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'fiscal_year',
             'space_month',
             'start_date',
-            'software_start_using_time'
+            'software_start_using_time',
+            'state',
+            'subs'
         )
 
     @classmethod
@@ -33,6 +37,24 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
                 return f'{str(software_start_using_time.month).zfill(2)}/{str(software_start_using_time.year)}'
             return False
         return False
+
+    @classmethod
+    def get_state(cls, obj):
+        if obj.fiscal_year == datetime.now().year:
+            return 0
+        return 1
+
+    @classmethod
+    def get_subs(cls, obj):
+        return [{
+            'id': sub.id,
+            'order': sub.order,
+            'code': sub.code,
+            'name': sub.name,
+            'start_date': sub.start_date,
+            'end_date': sub.end_date,
+            'state': sub.state
+        } for sub in obj.sub_periods_period_mapped.all()]
 
 
 class PeriodsCreateSerializer(serializers.ModelSerializer):
@@ -62,8 +84,11 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         period = Periods.objects.create(**validated_data)
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
-            period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
-            period.company.save(update_fields=['software_start_using_time'])
+            if not period.company.software_start_using_time:
+                period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
+                period.company.save(update_fields=['software_start_using_time'])
+            else:
+                raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
 
         sub_period_data = self.initial_data.get('sub_period_data')
         bulk_info = []
@@ -383,10 +408,19 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
-            instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
-            instance.company.save(update_fields=['software_start_using_time'])
+            if not instance.company.software_start_using_time:
+                instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
+                instance.company.save(update_fields=['software_start_using_time'])
+            else:
+                raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
 
         if 'balance_data' in self.initial_data:
             update_balance_data(self.initial_data.get('balance_data', []), instance)
+
+        if 'sub_id' in self.initial_data and 'state' in self.initial_data:
+            sub = SubPeriods.objects.filter(id=self.initial_data['sub_id']).first()
+            if sub:
+                sub.state = self.initial_data.get('state', 0)
+                sub.save(update_fields=['state'])
 
         return instance
