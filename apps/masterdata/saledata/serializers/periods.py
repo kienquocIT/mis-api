@@ -499,25 +499,24 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
             )
-        else:
-            next_sub = this_period.sub_periods_period_mapped.filter(order=sub.order + 1).first()
-            if next_sub:
-                next_sub.opening_balance_quantity = item.ending_balance_quantity
-                next_sub.opening_balance_cost = item.opening_balance_cost
-                next_sub.opening_balance_value = item.ending_balance_value
-                next_sub.wrong_cost = cls.check_has_trans(next_sub)
-                next_sub.save(
-                    update_fields=[
-                        'opening_balance_quantity',
-                        'opening_balance_cost',
-                        'opening_balance_value'
-                        'wrong_cost'
-                    ]
-                )
-                return next_sub
-            raise serializers.ValidationError(
-                {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
+        next_sub = this_period.sub_periods_period_mapped.filter(order=sub.order + 1).first()
+        if next_sub:
+            next_sub.opening_balance_quantity = item.ending_balance_quantity
+            next_sub.opening_balance_cost = item.opening_balance_cost
+            next_sub.opening_balance_value = item.ending_balance_value
+            next_sub.wrong_cost = cls.check_has_trans(next_sub)
+            next_sub.save(
+                update_fields=[
+                    'opening_balance_quantity',
+                    'opening_balance_cost',
+                    'opening_balance_value'
+                    'wrong_cost'
+                ]
             )
+            return next_sub
+        raise serializers.ValidationError(
+            {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
+        )
 
     @classmethod
     def for_sub_state_is_close(cls, sub):
