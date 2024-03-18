@@ -488,7 +488,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             if cls.check_past_sub(sub):
                 cls.for_sub_state_is_close(sub)
             raise serializers.ValidationError({"Error": 'Can not Close this Sub. Only Close sub(s) in the past.'})
-        elif sub.state == '0':
+        if sub.state == '0':
             cls.for_sub_state_is_open(sub)
         return True
 
