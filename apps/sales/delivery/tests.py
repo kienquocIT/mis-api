@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
-
+import calendar
 from apps.masterdata.saledata.models import Periods, SubPeriods
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
@@ -599,7 +599,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     code=f'P2024-M{letter}-2024',
                     name=f'P2024-M{letter}-2024',
                     start_date=f'2024-{letter}-01',
-                    end_date=f'2024-{letter}-30',
+                    end_date=calendar.monthrange(2024, i)[1],
                     state=0
                 )
             )
