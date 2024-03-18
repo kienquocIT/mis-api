@@ -599,7 +599,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     code=f'P2024-M{letter}-2024',
                     name=f'P2024-M{letter}-2024',
                     start_date=f'2024-{letter}-01',
-                    end_date=calendar.monthrange(2024, i)[1],
+                    end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
                     state=0
                 )
             )
