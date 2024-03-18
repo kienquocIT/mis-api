@@ -649,9 +649,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         Periods.objects.create(
             company_id=self.company_id,
             tenant_id=self.tenant_id,
-            fiscal_year=timezone.now().year,
+            fiscal_year=2023,
             space_month=1,
-            start_date=timezone.now()
+            start_date='2023-02-01'
         )
         response_delivery = self.client.put(url_update, data_delivery_update, format='json')
         self.assertEqual(response_delivery.status_code, 200)
