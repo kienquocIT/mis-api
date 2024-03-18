@@ -1,5 +1,4 @@
 from django.db import models
-from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, SubPeriods
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE

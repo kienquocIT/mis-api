@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods, SubPeriods
+from apps.masterdata.saledata.models import Periods
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 

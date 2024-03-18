@@ -409,14 +409,14 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         existed_prd = []
         existed_wh = []
         for item in sub.report_inventory_product_warehouse_sub_period.all():
-            prd = item.product
-            wh = item.warehouse
-            existed_prd.append(str(prd.id))
-            existed_wh.append(str(wh.id))
-            existed_wh.append(str(wh.id))
+            product_obj = item.product
+            warehouse_obj = item.warehouse
+            existed_prd.append(str(product_obj.id))
+            existed_wh.append(str(warehouse_obj.id))
+            existed_wh.append(str(warehouse_obj.id))
             last_trans = ReportInventorySub.objects.filter(
-                product=prd,
-                warehouse=wh,
+                product=product_obj,
+                warehouse=warehouse_obj,
                 report_inventory__sub_period=sub
             ).order_by('-system_date').first()
             if last_trans:

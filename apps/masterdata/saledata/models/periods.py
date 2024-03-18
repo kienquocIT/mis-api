@@ -43,7 +43,7 @@ class SubPeriods(SimpleAbstractModel):
             if this_sub:
                 if this_sub.state == 0:
                     return True
-                elif this_sub.state == 1:
+                if this_sub.state == 1:
                     raise serializers.ValidationError(
                         {"Error": 'Can not create inventory activity now. This sub period has been Closed.'}
                     )
