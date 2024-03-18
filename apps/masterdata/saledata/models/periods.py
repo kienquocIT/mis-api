@@ -51,7 +51,8 @@ class SubPeriods(SimpleAbstractModel):
                     raise serializers.ValidationError(
                         {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
                     )
-        raise serializers.ValidationError({"Error": 'Can not create inventory activity now.'})
+            raise serializers.ValidationError({"Error": 'This sub is not found.'})
+        raise serializers.ValidationError({"Error": 'This period is not found.'})
 
     class Meta:
         verbose_name = 'Subs Period'
