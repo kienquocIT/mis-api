@@ -1,6 +1,6 @@
 from django.db import models
-
-from apps.masterdata.saledata.models import ProductWareHouse
+from rest_framework import serializers
+from apps.masterdata.saledata.models import ProductWareHouse, SubPeriods
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
@@ -302,6 +302,8 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+
         # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
