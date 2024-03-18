@@ -9,6 +9,7 @@ from apps.shared import MasterDataAbstractModel
 MAIL_TEMPLATE_SYSTEM_CODE = (
     (1, 'Welcome'),
     (2, 'Calendar'),
+    (3, 'OTP Validation'),
 )
 
 

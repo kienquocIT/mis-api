@@ -89,7 +89,6 @@ class HTMLController(ManualNH3, ManualBleach):
             _covert = (result.text, result.string)
             txt_replace = StringHandler.random_str(12)
             result.string = txt_replace
-            print(_covert, (result.text, result.string))
         return self
 
     def clean(self):
@@ -101,7 +100,6 @@ class HTMLController(ManualNH3, ManualBleach):
     @staticmethod
     def unescape(data):
         result = unescape(data)
-        print('unescape:', data, result)
         return result
 
     def to_string(self):

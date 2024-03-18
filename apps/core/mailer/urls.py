@@ -1,6 +1,8 @@
 from django.urls import path
 
-from apps.core.mailer.views import MailerConfigList, MailerConfigDetail, MailerSystemGetByCode, MailerSystemDetail
+from apps.core.mailer.views import (
+    MailerConfigList, MailerConfigDetail, MailerSystemGetByCode, MailerSystemDetail,
+)
 
 urlpatterns = [
     path('list', MailerConfigList.as_view(), name='MailerConfigList'),
