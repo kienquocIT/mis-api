@@ -378,6 +378,61 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title')
 
     @classmethod
+    def update_for_each_sub(cls, previous_sub, item, sub_item):
+        previous_sub_value = previous_sub.report_inventory_product_warehouse_sub_period.filter(
+            product=item.product,
+            warehouse=item.warehouse
+        ).first()
+        if previous_sub_value:
+            item.opening_balance_quantity = previous_sub_value.ending_balance_quantity
+            item.opening_balance_cost = previous_sub_value.ending_balance_cost
+            item.opening_balance_value = previous_sub_value.ending_balance_value
+            item.save(
+                update_fields=['opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value']
+            )
+
+            all_trans = ReportInventorySub.objects.filter(
+                report_inventory__sub_period=sub_item,
+                product=item.product,
+                warehouse=item.warehouse
+            ).order_by('system_date')
+
+            for index in range(all_trans.count()):
+                if index == 0:
+                    if all_trans[index].stock_type == 1:
+                        new_quantity = item.opening_balance_quantity + all_trans[index].quantity
+                        sum_value = item.opening_balance_value + all_trans[index].value
+                        new_cost = sum_value / new_quantity
+                        new_value = sum_value
+                    else:
+                        new_quantity = item.opening_balance_quantity - all_trans[index].quantity
+                        new_cost = item.opening_balance_cost
+                        new_value = new_cost * new_quantity
+                else:
+                    if all_trans[index].stock_type == 1:
+                        new_quantity = all_trans[index - 1].current_quantity + all_trans[index].quantity
+                        sum_value = all_trans[index - 1].current_value + all_trans[index].value
+                        new_cost = sum_value / new_quantity
+                        new_value = sum_value
+                    else:
+                        new_quantity = all_trans[index - 1].current_quantity - all_trans[index].quantity
+                        new_cost = all_trans[index - 1].current_cost
+                        new_value = new_cost * new_quantity
+                all_trans[index].current_quantity = new_quantity
+                all_trans[index].current_cost = new_cost
+                all_trans[index].current_value = new_value
+                all_trans[index].save(
+                    update_fields=['current_quantity', 'current_cost', 'current_value']
+                )
+            item.ending_balance_quantity = all_trans.last().current_quantity
+            item.ending_balance_cost = all_trans.last().current_cost
+            item.ending_balance_value = all_trans.last().current_value
+            item.save(
+                update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value']
+            )
+        return True
+
+    @classmethod
     def get_previous_sub_period(cls, period_mapped, sub):
         return SubPeriods.objects.filter(
             period_mapped=period_mapped, order=sub.order - 1
@@ -410,57 +465,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             previous_sub = cls.get_previous_sub_period(sub_item.period_mapped, sub_item)
             if previous_sub:
                 for item in sub_item.report_inventory_product_warehouse_sub_period.all():
-                    previous_sub_value = previous_sub.report_inventory_product_warehouse_sub_period.filter(
-                        product=item.product,
-                        warehouse=item.warehouse
-                    ).first()
-                    if previous_sub_value:
-                        item.opening_balance_quantity = previous_sub_value.ending_balance_quantity
-                        item.opening_balance_cost = previous_sub_value.ending_balance_cost
-                        item.opening_balance_value = previous_sub_value.ending_balance_value
-                        item.save(
-                            update_fields=['opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value']
-                        )
-
-                        all_trans = ReportInventorySub.objects.filter(
-                            report_inventory__sub_period=sub_item,
-                            product=item.product,
-                            warehouse=item.warehouse
-                        ).order_by('system_date')
-
-                        for index in range(len(all_trans)):
-                            if index == 0:
-                                if all_trans[index].stock_type == 1:
-                                    new_quantity = item.opening_balance_quantity + all_trans[index].quantity
-                                    sum_value = item.opening_balance_value + all_trans[index].value
-                                    new_cost = sum_value / new_quantity
-                                    new_value = sum_value
-                                else:
-                                    new_quantity = item.opening_balance_quantity - all_trans[index].quantity
-                                    new_cost = item.opening_balance_cost
-                                    new_value = new_cost * new_quantity
-                            else:
-                                if all_trans[index].stock_type == 1:
-                                    new_quantity = all_trans[index-1].current_quantity + all_trans[index].quantity
-                                    sum_value = all_trans[index-1].current_value + all_trans[index].value
-                                    new_cost = sum_value / new_quantity
-                                    new_value = sum_value
-                                else:
-                                    new_quantity = all_trans[index-1].current_quantity - all_trans[index].quantity
-                                    new_cost = all_trans[index-1].current_cost
-                                    new_value = new_cost * new_quantity
-                            all_trans[index].current_quantity = new_quantity
-                            all_trans[index].current_cost = new_cost
-                            all_trans[index].current_value = new_value
-                            all_trans[index].save(
-                                update_fields=['current_quantity', 'current_cost', 'current_value']
-                            )
-                        item.ending_balance_quantity = all_trans.last().current_quantity
-                        item.ending_balance_cost = all_trans.last().current_cost
-                        item.ending_balance_value = all_trans.last().current_value
-                        item.save(
-                            update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value']
-                        )
+                    cls.update_for_each_sub(previous_sub, item, sub_item)
         return True
 
     @classmethod
