@@ -160,7 +160,7 @@ class ReportInventorySub(DataAbstractModel):
             new_quantity = now_ending_balance_quantity + log.quantity
             sum_value = now_ending_balance_value + log.value
             new_cost = sum_value / new_quantity
-            new_value = new_cost * new_quantity
+            new_value = sum_value
         else:
             new_quantity = now_ending_balance_quantity - log.quantity
             new_cost = now_ending_balance_cost

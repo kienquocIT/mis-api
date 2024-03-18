@@ -1,7 +1,5 @@
 from datetime import datetime
-
 from rest_framework import serializers
-
 from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
@@ -110,28 +108,6 @@ class PeriodsDetailSerializer(serializers.ModelSerializer):
             'start_date',
             'sub_periods_type'
         )
-
-
-def check_wrong_cost(period_mapped, product_id, warehouse_id, software_using_time):
-    """
-    B1: Check các hđ nhập xuất trong cùng kì
-    B2: Check các hđ nhập xuất trong kì sau đó
-    Nếu cộng lại > 0 => sai cost
-    """
-    same_period = ReportInventoryProductWarehouse.objects.filter(
-        product_id=product_id,
-        warehouse_id=warehouse_id,
-        period_mapped=period_mapped,
-        sub_period_order__gte=software_using_time.month - period_mapped.space_month
-    )
-    later_period = ReportInventoryProductWarehouse.objects.filter(
-        product_id=product_id,
-        warehouse_id=warehouse_id,
-        period_mapped__fiscal_year__gt=period_mapped.fiscal_year,
-    )
-    if same_period.count() + later_period.count() > 0:
-        return True
-    return False
 
 
 def for_serial(item, instance, prd_obj, wh_obj):
@@ -402,7 +378,145 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title')
 
     @classmethod
+    def get_previous_sub_period(cls, period_mapped, sub):
+        return SubPeriods.objects.filter(
+            period_mapped=period_mapped, order=sub.order - 1
+        ).first() if sub.order > 1 else SubPeriods.objects.filter(
+            period_mapped__fiscal_year=period_mapped.fiscal_year - 1
+        ).order_by('order').last()
+
+    @classmethod
+    def get_all_sub_periods(cls, sub):
+        all_sub_periods = []
+        tenant_id = sub.period_mapped.tenant_id
+        company_id = sub.period_mapped.company_id
+
+        all_sub_periods += sub.period_mapped.sub_periods_period_mapped.filter(order__gt=sub.order)
+        all_sub_periods += SubPeriods.objects.filter(
+            period_mapped__fiscal_year__in=range(sub.period_mapped.fiscal_year + 1, datetime.now().year)
+        )
+        current_period = Periods.objects.filter(
+            tenant_id=tenant_id, company_id=company_id, fiscal_year=datetime.now().year
+        ).first()
+        if current_period:
+            all_sub_periods += current_period.sub_periods_period_mapped.filter(
+                order__lte=datetime.now().month - current_period.space_month
+            )
+        return all_sub_periods
+
+    @classmethod
+    def auto_update_cost_for_subs_after(cls, sub):
+        for sub_item in cls.get_all_sub_periods(sub):
+            previous_sub = cls.get_previous_sub_period(sub_item.period_mapped, sub_item)
+            if previous_sub:
+                for item in sub_item.report_inventory_product_warehouse_sub_period.all():
+                    previous_sub_value = previous_sub.report_inventory_product_warehouse_sub_period.filter(
+                        product=item.product,
+                        warehouse=item.warehouse
+                    ).first()
+                    if previous_sub_value:
+                        item.opening_balance_quantity = previous_sub_value.ending_balance_quantity
+                        item.opening_balance_cost = previous_sub_value.ending_balance_cost
+                        item.opening_balance_value = previous_sub_value.ending_balance_value
+                        item.save(
+                            update_fields=['opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value']
+                        )
+
+                        all_trans = ReportInventorySub.objects.filter(
+                            report_inventory__sub_period=sub_item,
+                            product=item.product,
+                            warehouse=item.warehouse
+                        ).order_by('system_date')
+
+                        for index in range(len(all_trans)):
+                            if index == 0:
+                                if all_trans[index].stock_type == 1:
+                                    new_quantity = item.opening_balance_quantity + all_trans[index].quantity
+                                    sum_value = item.opening_balance_value + all_trans[index].value
+                                    new_cost = sum_value / new_quantity
+                                    new_value = sum_value
+                                else:
+                                    new_quantity = item.opening_balance_quantity - all_trans[index].quantity
+                                    new_cost = item.opening_balance_cost
+                                    new_value = new_cost * new_quantity
+                            else:
+                                if all_trans[index].stock_type == 1:
+                                    new_quantity = all_trans[index-1].current_quantity + all_trans[index].quantity
+                                    sum_value = all_trans[index-1].current_value + all_trans[index].value
+                                    new_cost = sum_value / new_quantity
+                                    new_value = sum_value
+                                else:
+                                    new_quantity = all_trans[index-1].current_quantity - all_trans[index].quantity
+                                    new_cost = all_trans[index-1].current_cost
+                                    new_value = new_cost * new_quantity
+                            all_trans[index].current_quantity = new_quantity
+                            all_trans[index].current_cost = new_cost
+                            all_trans[index].current_value = new_value
+                            all_trans[index].save(
+                                update_fields=['current_quantity', 'current_cost', 'current_value']
+                            )
+                        item.ending_balance_quantity = all_trans.last().current_quantity
+                        item.ending_balance_cost = all_trans.last().current_cost
+                        item.ending_balance_value = all_trans.last().current_value
+                        item.save(
+                            update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value']
+                        )
+        return True
+
+    @classmethod
+    def check_has_trans(cls, sub):
+        if ReportInventorySub.objects.filter(report_inventory__sub_period=sub).count() > 0:
+            return True
+        return False
+
+    @classmethod
+    def get_next_sub_and_push_opening(cls, sub, item):
+        this_period = sub.period_mapped
+        last_sub_order_this_period = this_period.sub_periods_period_mapped.count()
+        if sub.order == last_sub_order_this_period:
+            next_period = Periods.objects.filter(fiscal_year=this_period.fiscal_year + 1).first()
+            if next_period:
+                next_sub = this_period.sub_periods_period_mappep.first()
+                if next_sub:
+                    next_sub.opening_balance_quantity = item.ending_balance_quantity
+                    next_sub.opening_balance_cost = item.opening_balance_cost
+                    next_sub.opening_balance_value = item.ending_balance_value
+                    next_sub.wrong_cost = cls.check_has_trans(next_sub)
+                    next_sub.save(
+                        update_fields=[
+                            'opening_balance_quantity',
+                            'opening_balance_cost',
+                            'opening_balance_value',
+                            'wrong_cost'
+                        ]
+                    )
+                    return next_sub
+            raise serializers.ValidationError(
+                {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
+            )
+        else:
+            next_sub = this_period.sub_periods_period_mapped.filter(order=sub.order + 1).first()
+            if next_sub:
+                next_sub.opening_balance_quantity = item.ending_balance_quantity
+                next_sub.opening_balance_cost = item.opening_balance_cost
+                next_sub.opening_balance_value = item.ending_balance_value
+                next_sub.wrong_cost = cls.check_has_trans(next_sub)
+                next_sub.save(
+                    update_fields=[
+                        'opening_balance_quantity',
+                        'opening_balance_cost',
+                        'opening_balance_value'
+                        'wrong_cost'
+                    ]
+                )
+                return next_sub
+            raise serializers.ValidationError(
+                {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
+            )
+
+    @classmethod
     def for_sub_state_is_close(cls, sub):
+        current_period = Periods.objects.filter(fiscal_year=datetime.now().year).first()
         period_mapped = sub.period_mapped
         # step 1: get all product-warehouse has transaction in this period-sub
         # step 2: close the sub-period of each prd-wh (has trans)
@@ -427,14 +541,17 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 item.ending_balance_cost = item.opening_balance_cost
                 item.ending_balance_value = item.opening_balance_value
             item.save(update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'])
+            # step 2.a: push this sub ending as next sub opening
+            if current_period:
+                if str(period_mapped.id) == str(current_period.id):
+                    cls.get_next_sub_and_push_opening(sub, item)
+                else:
+                    cls.auto_update_cost_for_subs_after(sub)
+            else:
+                raise serializers.ValidationError({"Error": "Current period is not exist."})
 
         # step 3: get product of previous sub-period that don't have trans in this sub-period (update open = end)
-        previous_sub = SubPeriods.objects.filter(
-            period_mapped=period_mapped, order=sub.order - 1
-        ).first() if sub.order > 1 else SubPeriods.objects.filter(
-            period_mapped__fiscal_year=period_mapped.fiscal_year - 1
-        ).order_by('order').last()
-
+        previous_sub = cls.get_previous_sub_period(period_mapped, sub)
         if previous_sub:
             bulk_info = []
             for item in previous_sub.report_inventory_product_warehouse_sub_period.all():
@@ -448,9 +565,9 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                             period_mapped=period_mapped,
                             sub_period_order=sub.order,
                             sub_period=sub,
-                            opening_balance_quantity=item.opening_balance_quantity,
-                            opening_balance_cost=item.opening_balance_cost,
-                            opening_balance_value=item.opening_balance_value,
+                            opening_balance_quantity=item.ending_balance_quantity,
+                            opening_balance_cost=item.ending_balance_cost,
+                            opening_balance_value=item.ending_balance_value,
                             ending_balance_quantity=item.ending_balance_quantity,
                             ending_balance_cost=item.ending_balance_cost,
                             ending_balance_value=item.ending_balance_value,
@@ -487,7 +604,8 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         if sub.state == '1':
             if cls.check_past_sub(sub):
                 cls.for_sub_state_is_close(sub)
-            raise serializers.ValidationError({"Error": 'Can not Close this Sub. Only Close sub(s) in the past.'})
+            else:
+                raise serializers.ValidationError({"Error": 'Can not Close this Sub. Only Close sub(s) in the past.'})
         if sub.state == '0':
             cls.for_sub_state_is_open(sub)
         return True
