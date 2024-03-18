@@ -338,6 +338,8 @@ class ApplicationProperty(CoreAbstractModel):
     is_mail = models.BooleanField(default=False, verbose_name='Access using for mail')
     title_slug = models.SlugField(blank=True)
 
+    system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
+
     class Meta:
         verbose_name = 'Application property'
         ordering = ('-date_created',)
