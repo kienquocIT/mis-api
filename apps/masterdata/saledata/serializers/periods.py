@@ -413,7 +413,6 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             warehouse_obj = item.warehouse
             existed_prd.append(str(product_obj.id))
             existed_wh.append(str(warehouse_obj.id))
-            existed_wh.append(str(warehouse_obj.id))
             last_trans = ReportInventorySub.objects.filter(
                 product=product_obj,
                 warehouse=warehouse_obj,
