@@ -520,7 +520,11 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_sub_state_is_close(cls, sub):
-        current_period = Periods.objects.filter(fiscal_year=datetime.now().year).first()
+        current_period = Periods.objects.filter(
+            tenant_id=sub.period_mapped.tenant_id,
+            company_id=sub.period_mapped.company_id,
+            fiscal_year=datetime.now().year
+        ).first()
         period_mapped = sub.period_mapped
         # step 1: get all product-warehouse has transaction in this period-sub
         # step 2: close the sub-period of each prd-wh (has trans)
@@ -606,10 +610,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def recalculate_cost_value(cls, sub):
         if sub.state == '1':
-            if cls.check_past_sub(sub):
+            # if cls.check_past_sub(sub):
                 cls.for_sub_state_is_close(sub)
-            else:
-                raise serializers.ValidationError({"Error": 'Can not Close this Sub. Only Close sub(s) in the past.'})
+            # else:
+            #     raise serializers.ValidationError({"Error": 'Can not Close this Sub. Only Close sub(s) in the past.'})
         if sub.state == '0':
             cls.for_sub_state_is_open(sub)
         return True
