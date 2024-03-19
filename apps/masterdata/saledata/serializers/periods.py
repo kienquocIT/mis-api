@@ -537,9 +537,9 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 report_inventory__sub_period=sub
             ).order_by('-system_date').first()
             if last_trans:
-                item.ending_balance_quantity = last_trans.current_quantity
-                item.ending_balance_cost = last_trans.current_cost
-                item.ending_balance_value = last_trans.current_value
+                item.ending_balance_quantity = item.opening_balance_quantity + last_trans.current_quantity
+                item.ending_balance_cost = item.opening_balance_cost + last_trans.current_cost
+                item.ending_balance_value = item.opening_balance_value + last_trans.current_value
             else:
                 item.ending_balance_quantity = item.opening_balance_quantity
                 item.ending_balance_cost = item.opening_balance_cost
