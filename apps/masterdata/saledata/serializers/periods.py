@@ -502,18 +502,17 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                             ]
                         )
                         return next_prd_wh_obj
-                    else:
-                        next_prd_wh_obj = ReportInventoryProductWarehouse.objects.create(
-                            product=item.product,
-                            warehouse=item.warehouse,
-                            period_mapped=this_period,
-                            sub_period_order=next_sub.order,
-                            sub_period=next_sub,
-                            opening_balance_quantity=item.ending_balance_quantity,
-                            opening_balance_cost=item.ending_balance_cost,
-                            opening_balance_value=item.ending_balance_value,
-                        )
-                        return next_prd_wh_obj
+                    next_prd_wh_obj = ReportInventoryProductWarehouse.objects.create(
+                        product=item.product,
+                        warehouse=item.warehouse,
+                        period_mapped=this_period,
+                        sub_period_order=next_sub.order,
+                        sub_period=next_sub,
+                        opening_balance_quantity=item.ending_balance_quantity,
+                        opening_balance_cost=item.ending_balance_cost,
+                        opening_balance_value=item.ending_balance_value,
+                    )
+                    return next_prd_wh_obj
             raise serializers.ValidationError(
                 {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
             )
@@ -538,18 +537,17 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                     ]
                 )
                 return next_prd_wh_obj
-            else:
-                next_prd_wh_obj = ReportInventoryProductWarehouse.objects.create(
-                    product=item.product,
-                    warehouse=item.warehouse,
-                    period_mapped=this_period,
-                    sub_period_order=next_sub.order,
-                    sub_period=next_sub,
-                    opening_balance_quantity=item.ending_balance_quantity,
-                    opening_balance_cost=item.ending_balance_cost,
-                    opening_balance_value=item.ending_balance_value,
-                )
-                return next_prd_wh_obj
+            next_prd_wh_obj = ReportInventoryProductWarehouse.objects.create(
+                product=item.product,
+                warehouse=item.warehouse,
+                period_mapped=this_period,
+                sub_period_order=next_sub.order,
+                sub_period=next_sub,
+                opening_balance_quantity=item.ending_balance_quantity,
+                opening_balance_cost=item.ending_balance_cost,
+                opening_balance_value=item.ending_balance_value,
+            )
+            return next_prd_wh_obj
         raise serializers.ValidationError(
             {"Error": "Can't push this sub-period ending as next sub-period opening. Please create next period."}
         )
