@@ -189,9 +189,11 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry', 'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
+            'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
         ).prefetch_related(
-            'contact_account_name', 'account_banks_mapped'
+            'contact_account_name', 'account_banks_mapped',
+            'company__saledata_periods_belong_to_company',
+            'report_customer_customer',
         )
 
     @swagger_auto_schema(
