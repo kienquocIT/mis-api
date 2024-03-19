@@ -228,7 +228,11 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('industry', 'owner', 'payment_term_supplier_mapped')
+        return super().get_queryset().select_related(
+            'industry', 'owner', 'payment_term_supplier_mapped',
+        ).prefetch_related(
+            'account_activity_account',
+        )
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(

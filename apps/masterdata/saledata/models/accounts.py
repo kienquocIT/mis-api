@@ -391,3 +391,50 @@ class AccountBillingAddress(SimpleAbstractModel):
         verbose_name_plural = 'Account Billing Addresses'
         default_permissions = ()
         permissions = ()
+
+
+# Account activity
+class AccountActivity(MasterDataAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_activity_account")
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}',
+        null=True,
+    )
+    document_id = models.UUIDField(verbose_name='Document that has foreign key to customer', null=True)
+    date_activity = models.DateTimeField(null=True, help_text='date of activity (date_created, date_approved,...)')
+    revenue = models.FloatField(null=True)
+
+    @classmethod
+    def push_activity(
+            cls,
+            tenant_id,
+            company_id,
+            account_id,
+            app_code,
+            document_id,
+            title,
+            code,
+            date_activity,
+            revenue,
+    ):
+        cls.objects.create(
+            tenant_id=tenant_id,
+            company_id=company_id,
+            account_id=account_id,
+            app_code=app_code,
+            document_id=document_id,
+            title=title,
+            code=code,
+            date_activity=date_activity,
+            revenue=revenue,
+        )
+        return True
+
+    class Meta:
+        verbose_name = 'Account Activity'
+        verbose_name_plural = 'Account Activities'
+        ordering = ('-date_activity',)
+        default_permissions = ()
+        permissions = ()
