@@ -160,7 +160,7 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
                     'indicator': opp_stage.stage.indicator if opp_stage.stage else '',
                     'win_rate': opp_stage.stage.win_rate if opp_stage.stage else 0,
                 }
-            break
+                break
         return {
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
