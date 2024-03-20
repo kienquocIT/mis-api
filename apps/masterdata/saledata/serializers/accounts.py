@@ -344,6 +344,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
     payment_term_supplier_mapped = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
     credit_cards_mapped = serializers.SerializerMethodField()
+    activity = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -375,6 +376,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'contact_mapped',
             'account_type_selection',
             'workflow_runtime_id',
+            "activity",
         )
 
     @classmethod
@@ -551,6 +553,19 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                 }
             )
         return credit_cards_mapped_list
+
+    @classmethod
+    def get_activity(cls, obj):
+        return [
+            {
+                'app_code': activity.app_code,
+                'document_id': activity.document_id,
+                'title': activity.title,
+                'code': activity.code,
+                'date_activity': activity.date_activity,
+                'revenue': activity.revenue,
+            } for activity in obj.account_activity_account.all()
+        ]
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
