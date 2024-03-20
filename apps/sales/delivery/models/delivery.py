@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models import SubPeriods
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -309,6 +310,8 @@ class OrderDeliverySub(DataAbstractModel):
             self.code = code
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(

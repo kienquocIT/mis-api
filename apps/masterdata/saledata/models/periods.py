@@ -1,4 +1,5 @@
 from django.db import models
+from rest_framework import serializers
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 
@@ -29,6 +30,29 @@ class SubPeriods(SimpleAbstractModel):
         help_text='Sub period end date',
     )
     state = models.SmallIntegerField(choices=[(0, 'Open'), (1, 'Close'), (2, 'Lock')], default=0)
+
+    @classmethod
+    def check_open(cls, company_id, tenant_id, date):
+        this_period = Periods.objects.filter(
+            company_id=company_id, tenant_id=tenant_id, fiscal_year=date.year
+        ).first()
+        if this_period:
+            this_sub = this_period.sub_periods_period_mapped.filter(
+                order=date.month - this_period.space_month
+            ).first()
+            if this_sub:
+                if this_sub.state == 0:
+                    return True
+                if this_sub.state == 1:
+                    raise serializers.ValidationError(
+                        {"Error": 'Can not create inventory activity now. This sub period has been Closed.'}
+                    )
+                if this_sub.state == 2:
+                    raise serializers.ValidationError(
+                        {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
+                    )
+            raise serializers.ValidationError({"Error": 'This sub is not found.'})
+        raise serializers.ValidationError({"Error": 'This period is not found.'})
 
     class Meta:
         verbose_name = 'Subs Period'

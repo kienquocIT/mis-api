@@ -18,6 +18,12 @@ class ReportInventory(DataAbstractModel):
         null=True,
     )
     sub_period_order = models.IntegerField()
+    sub_period = models.ForeignKey(
+        'saledata.SubPeriods',
+        on_delete=models.CASCADE,
+        related_name='report_inventory_product_sub_period',
+        null=True,
+    )
 
     @classmethod
     def create_report_inventory_item(cls, product_obj, period_mapped, sub_period_order):
@@ -28,7 +34,8 @@ class ReportInventory(DataAbstractModel):
             employee_inherit_id=product_obj.employee_inherit_id,
             product=product_obj,
             period_mapped=period_mapped,
-            sub_period_order=sub_period_order
+            sub_period_order=sub_period_order,
+            sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         )
         return obj
 
@@ -125,52 +132,60 @@ class ReportInventorySub(DataAbstractModel):
         return new_logs
 
     @classmethod
+    def process_in_each_log(cls, log, period_mapped, sub_period_order):
+        sub_list = ReportInventorySub.objects.filter(
+            product=log.product,
+            warehouse=log.warehouse,
+            report_inventory__period_mapped=period_mapped,
+            report_inventory__sub_period_order=sub_period_order
+        ).exclude(id=log.id)
+        latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
+        if not latest_trans:
+            ReportInventoryProductWarehouse.objects.create(
+                product=log.product,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+            )
+            now_ending_balance_quantity = 0
+            now_ending_balance_cost = 0
+            now_ending_balance_value = 0
+        else:
+            now_ending_balance_quantity = latest_trans.current_quantity
+            now_ending_balance_cost = latest_trans.current_cost
+            now_ending_balance_value = latest_trans.current_value
+
+        if log.stock_type == 1:
+            new_quantity = now_ending_balance_quantity + log.quantity
+            sum_value = now_ending_balance_value + log.value
+            new_cost = sum_value / new_quantity
+            new_value = sum_value
+        else:
+            new_quantity = now_ending_balance_quantity - log.quantity
+            new_cost = now_ending_balance_cost
+            new_value = new_cost * new_quantity
+
+        log.current_quantity = new_quantity
+        log.current_cost = new_cost
+        log.current_value = new_value
+        log.save(
+            update_fields=['current_quantity', 'current_cost', 'current_value']
+        )
+        return log
+
+    @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
         period_mapped = Periods.objects.filter(
             company=activities_obj.company,
             tenant=activities_obj.tenant,
             fiscal_year=activities_obj_date.year
         ).first()
+        sub_period_order = activities_obj_date.month - period_mapped.space_month
         if period_mapped:
             new_logs = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
             for log in new_logs:
-                obj_by_warehouse = ReportInventoryProductWarehouse.objects.filter(
-                    product=log.product,
-                    warehouse=log.warehouse,
-                    period_mapped=period_mapped,
-                    sub_period_order=activities_obj_date.month - period_mapped.space_month
-                ).first()
-                if not obj_by_warehouse:
-                    obj_by_warehouse = ReportInventoryProductWarehouse.objects.create(
-                        product=log.product,
-                        warehouse=log.warehouse,
-                        period_mapped=period_mapped,
-                        sub_period_order=activities_obj_date.month - period_mapped.space_month
-                    )
-
-                if log.stock_type == 1:
-                    new_quantity = obj_by_warehouse.ending_balance_quantity + log.quantity
-                    sum_value = obj_by_warehouse.ending_balance_value + log.value
-                    new_cost = sum_value / new_quantity
-                    new_value = new_cost * new_quantity
-                else:
-                    new_quantity = obj_by_warehouse.ending_balance_quantity - log.quantity
-                    new_cost = obj_by_warehouse.ending_balance_cost
-                    new_value = new_cost * new_quantity
-
-                log.current_quantity = new_quantity
-                log.current_cost = new_cost
-                log.current_value = new_value
-                log.save(
-                    update_fields=['current_quantity', 'current_cost', 'current_value']
-                )
-
-                obj_by_warehouse.ending_balance_quantity = new_quantity
-                obj_by_warehouse.ending_balance_cost = new_cost
-                obj_by_warehouse.ending_balance_value = new_value
-                obj_by_warehouse.save(
-                    update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value']
-                )
+                cls.process_in_each_log(log, period_mapped, sub_period_order)
             return True
         raise serializers.ValidationError(
             {'Period missing': f'Period of fiscal year {activities_obj_date.year} does not exist.'}
@@ -203,6 +218,12 @@ class ReportInventoryProductWarehouse(SimpleAbstractModel):
         null=True,
     )
     sub_period_order = models.IntegerField()
+    sub_period = models.ForeignKey(
+        'saledata.SubPeriods',
+        on_delete=models.CASCADE,
+        related_name='report_inventory_product_warehouse_sub_period',
+        null=True,
+    )
 
     opening_balance_quantity = models.FloatField(default=0)
     opening_balance_cost = models.FloatField(default=0)

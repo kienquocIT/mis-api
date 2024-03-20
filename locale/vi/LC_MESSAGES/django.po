@@ -178,21 +178,25 @@ msgstr "Yêu cầu mua hàng"
 msgid "Quotation"
 msgstr "Báo giá"
 
+# 69e84b95-b347-4f49-abdf-0ec80d6eb5bd
+msgid "Report Cashflow"
+msgstr "Báo cáo dòng tiền"
+
 # d633036a-8937-4f9d-a227-420e061496fc
 msgid "Report Customer"
-msgstr "Report Customer"
+msgstr "Báo cáo khách hàng"
 
 # 298c8b6f-6a62-493f-b0ac-d549a4541497
 msgid "Report Pipeline"
-msgstr "Report Pipeline"
+msgstr "Báo cáo pipeline"
 
 # 2a709d75-35a7-49c8-84bf-c350164405bc
 msgid "Report Product"
-msgstr "Report Product"
+msgstr "Báo cáo sản phẩm"
 
 # c3260940-21ff-4929-94fe-43bc4199d38b
 msgid "Report Revenue"
-msgstr "Report Revenue"
+msgstr "Báo cáo doanh thu"
 
 # 65d36757-557e-4534-87ea-5579709457d7
 msgid "Return Advance"
