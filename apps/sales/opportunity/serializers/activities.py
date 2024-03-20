@@ -3,6 +3,7 @@ from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.company.models import Company
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
@@ -424,6 +425,20 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             date_created=validated_data['meeting_date'],
             log_type=4,
         )
+        # push to customer acticity
+        if meeting_obj.opportunity:
+            if meeting_obj.opportunity.customer:
+                AccountActivity.push_activity(
+                    tenant_id=meeting_obj.opportunity.tenant_id,
+                    company_id=meeting_obj.opportunity.company_id,
+                    account_id=meeting_obj.opportunity.customer_id,
+                    app_code=meeting_obj._meta.label_lower,
+                    document_id=meeting_obj.id,
+                    title=meeting_obj.subject,
+                    code='',
+                    date_activity=meeting_obj.meeting_date,
+                    revenue=None,
+                )
         return meeting_obj
 
 
