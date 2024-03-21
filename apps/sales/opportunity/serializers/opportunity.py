@@ -5,6 +5,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee, DistributionApplication
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
@@ -273,6 +274,19 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             opportunity_id=opportunity.id,
             employee_inherit_id=opportunity.employee_inherit_id,
         )
+        # push to customer activity
+        if opportunity.customer:
+            AccountActivity.push_activity(
+                tenant_id=opportunity.tenant_id,
+                company_id=opportunity.company_id,
+                account_id=opportunity.customer_id,
+                app_code=opportunity._meta.label_lower,
+                document_id=opportunity.id,
+                title=opportunity.title,
+                code=opportunity.code,
+                date_activity=opportunity.date_created,
+                revenue=None,
+            )
         return opportunity
 
 

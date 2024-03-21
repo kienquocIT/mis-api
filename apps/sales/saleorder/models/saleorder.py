@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
@@ -373,8 +374,23 @@ class SaleOrder(DataAbstractModel):
             })
         return True
 
+    @classmethod
+    def push_to_customer_activity(cls, instance):
+        if instance.customer:
+            AccountActivity.push_activity(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                account_id=instance.customer_id,
+                app_code=instance._meta.label_lower,
+                document_id=instance.id,
+                title=instance.title,
+                code=instance.code,
+                date_activity=instance.date_approved,
+                revenue=instance.indicator_revenue,
+            )
+        return True
+
     def save(self, *args, **kwargs):
-        # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
             if not self.code:
@@ -392,9 +408,12 @@ class SaleOrder(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
+                        # product
                         self.update_product_wait_delivery_amount(self)
                         # opportunity
                         self.update_opportunity_stage_by_so(self)
+                        # customer
+                        self.push_to_customer_activity(self)
                         # reports
                         self.push_to_report_revenue(self)
                         self.push_to_report_product(self)

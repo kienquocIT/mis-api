@@ -12,6 +12,7 @@ from apps.core.workflow.models import (
 from apps.core.workflow.utils.runtime import (
     RuntimeStageHandler, RuntimeHandler,
 )
+from apps.core.workflow.utils.runtime_after_finish import RuntimeAfterFinishHandler
 from apps.shared import DisperseModel, DataAbstractModel, call_task_background
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ __all__ = [
     'call_next_stage',
     'call_approval_task',
     'decorator_run_workflow',
+    'call_action_workflow_after_finish',
 ]
 
 
@@ -91,4 +93,14 @@ def call_approval_task(
         action_code=action_code,
         remark=remark,  # use for action return
         next_node_collab_id=next_node_collab_id,  # use for action approve if next node is OUT FORM node
+    )
+
+
+@shared_task
+def call_action_workflow_after_finish(
+        runtime_obj: Runtime, action_code: int,
+):
+    return RuntimeAfterFinishHandler().action_perform(
+        runtime_obj=runtime_obj,
+        action_code=action_code,
     )

@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 )
@@ -239,21 +240,44 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
             })
         return True
 
+    @classmethod
+    def push_to_customer_activity(cls, instance):
+        if instance.customer:
+            AccountActivity.push_activity(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                account_id=instance.customer_id,
+                app_code=instance._meta.label_lower,
+                document_id=instance.id,
+                title=instance.title,
+                code=instance.code,
+                date_activity=instance.date_approved,
+                revenue=instance.indicator_revenue,
+            )
+        return True
+
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        if self.system_status in [2, 3]:  # added, finish
+            # check if not code then generate code
             if not self.code:
                 code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=1)
                 if code_generated:
                     self.code = code_generated
                 else:
                     self.code = self.generate_code(self.company_id)
-
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_opportunity_stage_by_quotation(self)
+            # check if date_approved then call related functions
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    if 'date_approved' in kwargs['update_fields']:
+                        # opportunity
+                        self.update_opportunity_stage_by_quotation(self)
+                        # customer
+                        self.push_to_customer_activity(self)
 
         # hit DB
         super().save(*args, **kwargs)
