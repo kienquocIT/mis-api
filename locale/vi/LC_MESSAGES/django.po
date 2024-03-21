@@ -18,6 +18,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+#
+msgid "The content is not HTML"
+msgstr "Nội dung không phải là HTML"
+
+#
+msgid "The content has been blocked because contains phishing code"
+msgstr "Nội dung đã bị chặn vì chứa mã lừa đảo"
+
 # 4e48c863-861b-475a-aa5e-97a4ed26f294
 msgid "Account"
 msgstr "Tài khoản"

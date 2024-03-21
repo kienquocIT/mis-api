@@ -664,7 +664,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def prepare_data_for_logging(cls, instance, validated_product):
         activities_data = []
+        so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
         for item in instance.delivery_product_delivery_sub.all():
+            main_item = so_products.filter(order=item.order).first()
+            main_product_unit_price = main_item.product_unit_price if main_item else 0
             for child in validated_product:
                 if child.get('order') == item.order:
                     delivery_item = child.get('delivery_data')[0] if len(child.get('delivery_data')) > 0 else {}
@@ -678,7 +681,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                                 'lot_id': str(prd_wh_lot.id),
                                 'lot_number': prd_wh_lot.lot_number,
                                 'lot_quantity': lot.get('quantity_delivery'),
-                                'lot_value': item.product_unit_price * lot.get('quantity_delivery'),
+                                'lot_value': main_product_unit_price * lot.get('quantity_delivery'),
                                 'lot_expire_date': str(prd_wh_lot.expire_date)
                             })
                     warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
@@ -694,8 +697,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                             'trans_code': instance.code,
                             'trans_title': 'Delivery',
                             'quantity': delivery_item.get('stock'),
-                            'cost': item.product_unit_price,
-                            'value': item.product_unit_price * delivery_item.get('stock'),
+                            'cost': main_product_unit_price,
+                            'value': main_product_unit_price * delivery_item.get('stock'),
                             'lot_data': lot_data
                         })
         ReportInventorySub.logging_when_stock_activities_happened(

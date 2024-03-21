@@ -1,4 +1,4 @@
-from .application_properties_print_params import Quotation_data__print_params, Bastion_data__print_params
+from .application_properties_params import Quotation_data__params, Bastion_data_params
 
 
 __all__ = ["ApplicationProperty_data"]
@@ -595,7 +595,7 @@ AppProp_SaleData_Quotation_data = {
         'is_sale_indicator': True,
     },
     #
-    **Quotation_data__print_params,
+    **Quotation_data__params,
 }
 
 AppProp_SaleData_Opportunity_data = {
@@ -1628,7 +1628,7 @@ AppProp_AssetTools_Return_data = {
 }
 
 ApplicationProperty_data = {
-    **Bastion_data__print_params,
+    **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,

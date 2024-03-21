@@ -3,6 +3,7 @@ from uuid import UUID
 from django.db import models
 from django.db.models import Count
 
+from apps.core.mailer.handle_html import HTMLController
 from apps.shared import MasterDataAbstractModel
 
 
@@ -37,6 +38,7 @@ class PrintTemplates(MasterDataAbstractModel):
         if self.is_default is True:
             self.is_active = True
             self.confirm_unique_using()
+        self.contents = HTMLController(html_str=self.contents).clean()
         super().save(*args, **kwargs)
 
     class Meta:

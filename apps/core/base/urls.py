@@ -5,6 +5,7 @@ from apps.core.base.views import (
     TenantApplicationList,
     CountryList, CityList, DistrictList, WardList, BaseCurrencyList, BaseItemUnitList, IndicatorParamList,
     ApplicationPropertyOpportunityList, ApplicationDetail, ApplicationPropertyForPrintList,
+    ApplicationPropertyForMailList,
 )
 
 urlpatterns = [
@@ -21,6 +22,10 @@ urlpatterns = [
     path(
         'tenant-applications-property/print',
         ApplicationPropertyForPrintList.as_view(), name='ApplicationPropertyForPrintList'
+    ),
+    path(
+        'tenant-applications-property/mail',
+        ApplicationPropertyForMailList.as_view(), name='ApplicationPropertyForMailList'
     ),
     path(
         'applications-property-employee',
