@@ -4,7 +4,7 @@ from apps.core.workflow.views import (
     WorkflowOfAppList, WorkflowOfAppDetail, WorkflowList, WorkflowDetail,
     RuntimeDiagramDetail,
     RuntimeListView, RuntimeMeListView, RuntimeDetail,
-    RuntimeAssigneeList, RuntimeAssigneeDetail, WorkflowCurrentOfAppList,
+    RuntimeAssigneeList, RuntimeAssigneeDetail, WorkflowCurrentOfAppList, RuntimeAfterFinishDetail,
 )
 
 urlpatterns = [
@@ -15,6 +15,7 @@ urlpatterns = [
     path('runtime/<str:pk>', RuntimeDetail.as_view(), name='RuntimeDetail'),
     path('tasks', RuntimeAssigneeList.as_view(), name='RuntimeAssigneeList'),
     path('task/<str:pk>', RuntimeAssigneeDetail.as_view(), name='RuntimeAssigneeDetail'),
+    path('runtime-after/<str:pk>', RuntimeAfterFinishDetail.as_view(), name='RuntimeAfterFinishDetail'),
 
     # config
     path('apps', WorkflowOfAppList.as_view(), name='WorkflowOfAppList'),

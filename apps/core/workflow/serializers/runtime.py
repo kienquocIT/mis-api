@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee, CollaborationOutForm
-from apps.core.workflow.tasks import call_approval_task
+from apps.core.workflow.tasks import call_approval_task, call_action_workflow_after_finish
 from apps.shared import call_task_background
 
 __all__ = [
@@ -365,3 +365,25 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = RuntimeAssignee
         fields = ('action', 'remark', 'next_node_collab_id')
+
+
+class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
+    action = serializers.IntegerField(
+        help_text='Action code submit'
+    )
+
+    def update(self, instance, validated_data):
+        action_code = int(validated_data['action'])
+        call_task_background(
+            call_action_workflow_after_finish,
+            *[
+                instance,
+                action_code,
+            ]
+        )
+
+        return instance
+
+    class Meta:
+        model = Runtime
+        fields = ('action',)

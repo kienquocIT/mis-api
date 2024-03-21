@@ -218,6 +218,14 @@ Quotation_data__print_params = {
         'type': 1,
         'is_print': True,
     },
+    '9352e974-3ecb-4248-b210-2f6cd3b5cb8c': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Sale person phone',
+        'code': 'sale_person__phone',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
     'fe9189cf-c62a-4fc3-bb2f-13c190fee25d': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Total Pretax Amount',
