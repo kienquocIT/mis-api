@@ -2,7 +2,7 @@ import hashlib
 import uuid
 import time
 import base64
-import requests
+# import requests
 from rest_framework import serializers
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
@@ -257,20 +257,20 @@ class APInvoiceUpdateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        if 'publish_invoice' in self.initial_data:
-            http_method = "POST"
-            username = "API"
-            password = "Api@0317493763"
-            token = generate_token(http_method, username, password)
-            response = requests.post(
-                "http://0317493763.softdreams.vn/api/publish/importInvoice",
-                data={
-                    "XmlData": "",
-                    "Pattern": "1C24TMT",
-                    "Serial": ""
-                },
-                timeout=60
-            )
+        # if 'publish_invoice' in self.initial_data:
+        #     http_method = "POST"
+        #     username = "API"
+        #     password = "Api@0317493763"
+        #     token = generate_token(http_method, username, password)
+        #     response = requests.post(
+        #         "http://0317493763.softdreams.vn/api/publish/importInvoice",
+        #         data={
+        #             "XmlData": "",
+        #             "Pattern": "1C24TMT",
+        #             "Serial": ""
+        #         },
+        #         timeout=60
+        #     )
 
         return instance
 

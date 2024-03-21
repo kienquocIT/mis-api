@@ -2,10 +2,11 @@ import hashlib
 import uuid
 import time
 import base64
-import requests
+# import requests
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile
+from apps.shared import SaleMsg
 
 __all__ = [
     'DeliveryListSerializerForARInvoice',
@@ -14,10 +15,6 @@ __all__ = [
     'ARInvoiceCreateSerializer',
     'ARInvoiceUpdateSerializer'
 ]
-
-from apps.sales.saleorder.models import SaleOrderProduct
-
-from apps.shared import SaleMsg
 
 
 class ARInvoiceListSerializer(serializers.ModelSerializer):
@@ -265,66 +262,66 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        if 'publish_invoice' in self.initial_data:
-            http_method = "POST"
-            username = "API"
-            password = "Api@0317493763"
-            token = generate_token(http_method, username, password)
-            response = requests.post(
-                "http://0317493763.softdreams.vn/api/publish/importInvoice",
-                data={
-                    "XmlData": "<Invoices>"
-                               "<Inv>"
-                               "<Invoice>"
-                               "<Ikey>7a61aaf7-a766-4d4a-b710-2fa6e1aa4a1f</Ikey>"
-                               "<CusCode>TEST1</CusCode>"
-                               "<Buyer>System Admin</Buyer>"
-                               "<CusName>Công ty Test 1</CusName>"
-                               "<Email>nguyenduonghai07@gmail.com</Email>"
-                               "<EmailCC></EmailCC>"
-                               "<CusAddress>TPHCM, số 20 đường 22, xã Bình Chánh</CusAddress>"
-                               "<CusBankName>MB Bank</CusBankName>"
-                               "<CusBankNo>8608603112001</CusBankNo>"
-                               "<CusPhone>0359610773</CusPhone>"
-                               "<CusTaxCode>8807436399</CusTaxCode>"
-                               "<PaymentMethod>Chuyển khoản</PaymentMethod>"
-                               "<ArisingDate></ArisingDate>"
-                               "<ExchangeRate></ExchangeRate>"
-                               "<CurrencyUnit>VND</CurrencyUnit>"
-                               "<Extra></Extra>"
-                               "<Products>"
-                               "<Product>"
-                               "<Code>CANON EF 24-70MM</Code>"
-                               "<No>1</No>"
-                               "<Feature>1</Feature>"
-                               "<ProdName>Ống kính Canon EF 24-70mm f/2.8L II USM</ProdName>"
-                               "<ProdUnit>Cái</ProdUnit>"
-                               "<ProdQuantity>3</ProdQuantity>"
-                               "<ProdPrice>32000000</ProdPrice>"
-                               "<Discount></Discount>"
-                               "<DiscountAmount></DiscountAmount>"
-                               "<Total>96000000</Total>"
-                               "<VATRate>10</VATRate>"
-                               "<VATRateOther/>"
-                               "<VATAmount>9600000</VATAmount>"
-                               "<Amount>105600000</Amount>"
-                               "<Extra></Extra>"
-                               "</Product>"
-                               "</Products>"
-                               "<Total>96000000</Total>"
-                               "<VATRate>10</VATRate>"
-                               "<VATRateOther/>"
-                               "<VATAmount>9600000</VATAmount>"
-                               "<Amount>105600000</Amount>"
-                               "<AmountInWords>Một trăm lẻ năm triệu sáu trăm ngàn đồng</AmountInWords>"
-                               "</Invoice>"
-                               "</Inv>"
-                               "</Invoices>",
-                    "Pattern": "1C24TMT",
-                    "Serial": ""
-                },
-                timeout=60
-            )
+        # if 'publish_invoice' in self.initial_data:
+        #     http_method = "POST"
+        #     username = "API"
+        #     password = "Api@0317493763"
+        #     token = generate_token(http_method, username, password)
+        #     response = requests.post(
+        #         "http://0317493763.softdreams.vn/api/publish/importInvoice",
+        #         data={
+        #             "XmlData": "<Invoices>"
+        #                        "<Inv>"
+        #                        "<Invoice>"
+        #                        "<Ikey>7a61aaf7-a766-4d4a-b710-2fa6e1aa4a1f</Ikey>"
+        #                        "<CusCode>TEST1</CusCode>"
+        #                        "<Buyer>System Admin</Buyer>"
+        #                        "<CusName>Công ty Test 1</CusName>"
+        #                        "<Email>nguyenduonghai07@gmail.com</Email>"
+        #                        "<EmailCC></EmailCC>"
+        #                        "<CusAddress>TPHCM, số 20 đường 22, xã Bình Chánh</CusAddress>"
+        #                        "<CusBankName>MB Bank</CusBankName>"
+        #                        "<CusBankNo>8608603112001</CusBankNo>"
+        #                        "<CusPhone>0359610773</CusPhone>"
+        #                        "<CusTaxCode>8807436399</CusTaxCode>"
+        #                        "<PaymentMethod>Chuyển khoản</PaymentMethod>"
+        #                        "<ArisingDate></ArisingDate>"
+        #                        "<ExchangeRate></ExchangeRate>"
+        #                        "<CurrencyUnit>VND</CurrencyUnit>"
+        #                        "<Extra></Extra>"
+        #                        "<Products>"
+        #                        "<Product>"
+        #                        "<Code>CANON EF 24-70MM</Code>"
+        #                        "<No>1</No>"
+        #                        "<Feature>1</Feature>"
+        #                        "<ProdName>Ống kính Canon EF 24-70mm f/2.8L II USM</ProdName>"
+        #                        "<ProdUnit>Cái</ProdUnit>"
+        #                        "<ProdQuantity>3</ProdQuantity>"
+        #                        "<ProdPrice>32000000</ProdPrice>"
+        #                        "<Discount></Discount>"
+        #                        "<DiscountAmount></DiscountAmount>"
+        #                        "<Total>96000000</Total>"
+        #                        "<VATRate>10</VATRate>"
+        #                        "<VATRateOther/>"
+        #                        "<VATAmount>9600000</VATAmount>"
+        #                        "<Amount>105600000</Amount>"
+        #                        "<Extra></Extra>"
+        #                        "</Product>"
+        #                        "</Products>"
+        #                        "<Total>96000000</Total>"
+        #                        "<VATRate>10</VATRate>"
+        #                        "<VATRateOther/>"
+        #                        "<VATAmount>9600000</VATAmount>"
+        #                        "<Amount>105600000</Amount>"
+        #                        "<AmountInWords>Một trăm lẻ năm triệu sáu trăm ngàn đồng</AmountInWords>"
+        #                        "</Invoice>"
+        #                        "</Inv>"
+        #                        "</Invoices>",
+        #             "Pattern": "1C24TMT",
+        #             "Serial": ""
+        #         },
+        #         timeout=60
+        #     )
 
         return instance
 
