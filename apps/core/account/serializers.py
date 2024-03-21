@@ -236,6 +236,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             }
         )
 
+
 class UserDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()

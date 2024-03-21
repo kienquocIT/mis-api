@@ -221,6 +221,27 @@ USE_TZ = False
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+EMAIL_CONFIG_PASSWORD = 'email-cfg-pwd+M2fwL5JV~}Y+a4Bp_nv@(c/N$Qs*r;Wj)C3kFD]!=x.`&z:>hq'
+
+EMAIL_CONFIG_ENCRYPTOR_PASSWORD = 'email-config-Gd5$(RJ3*M3Ubm3m9g$RPeYwtPF95yNV*V%dT8LFucVbtNPuUJ&a#'
+
+EMAIL_CONFIG_SSL_KEY_MAX_SIZE = int(
+    os.getenv('EMAIL_CONFIG_SSL_KEY_MAX_SIZE', 20 * 1024)  # 20KB
+)
+EMAIL_CONFIG_SSL_CERT_MAX_SIZE = int(
+    os.getenv('EMAIL_CONFIG_SSL_KEY_MAX_SIZE', 10 * 1024)  # 10KB
+)
+
+# option account user create
+ENABLE_TURN_ON_IS_EMAIL = False
+# -- option account user create
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
@@ -464,14 +485,14 @@ CACHE_KEY_PREFIX = 'MiS'
 CACHE_EXPIRES_DEFAULT = 15 * 60  # 15 minutes
 # -- Cache
 
-# option account user create
-ENABLE_TURN_ON_IS_EMAIL = False
-# -- option account user create
-
 # CELERY + RABBITMQ CONFIG
 CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
 CELERY_RESULT_EXTENDED = True
+
+# CELEY BEAT
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+
 # -- CELERY + RABBITMQ CONFIG
 
 # import local_settings
@@ -641,13 +662,3 @@ if DEBUG is True:
     print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-
-EMAIL_CONFIG_PASSWORD = 'email-cfg-pwd+M2fwL5JV~}Y+a4Bp_nv@(c/N$Qs*r;Wj)C3kFD]!=x.`&z:>hq'
-DJANGO_CELERY_BEAT_TZ_AWARE = False

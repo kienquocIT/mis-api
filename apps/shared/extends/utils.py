@@ -70,6 +70,25 @@ class StringHandler:
         """Fast with string too long"""
         return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
 
+    @staticmethod
+    def mask(data, percent_mask=70):
+        """Mask for data"""
+        if percent_mask == 100:
+            return '*' * len(data)
+
+        max_len = len(data)
+        len_mask = max_len * percent_mask / 100
+        if len_mask - round(len_mask) < 0.5:
+            len_mask += 0.5
+        len_mask = round(len_mask)
+
+        data_copy = data.split("")
+        arr_hide = random.sample(range(max_len), len_mask)
+        for idx in arr_hide:
+            data_copy[idx] = '*'
+
+        return "".join(data_copy)
+
 
 class ListHandler:
     @staticmethod

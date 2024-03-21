@@ -82,7 +82,8 @@ class HTMLController(ManualNH3, ManualBleach):
         self.html_str = html_str
         self.soup = BeautifulSoup(html_str, "html.parser")
 
-    def handle_params(self):
+    def handle_params(self, data):
+        print('data:', data)
         # span.params-data[data-code]
         params = self.soup.select("span.params-data[data-code]")
         for result in params:
