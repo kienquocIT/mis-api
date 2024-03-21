@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
 )
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
+from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards, AccountActivity
 
 from apps.core.base.models import (
     PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City, Currency as BaseCurrency
@@ -35,21 +35,26 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse
+    GoodsReceiptWarehouse, GoodsReturn
+from ..sales.inventory.serializers import GReturnProductInformationHandle
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityDocument,
+    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
 )
+from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from ..sales.task.models import OpportunityTaskStatus
 
 
 def update_sale_default_data_old_company():
@@ -1319,14 +1324,21 @@ def update_date_approved():
     print('Done!')
 
 
-def reset_and_run_reports_sale():
-    ReportRevenue.objects.all().delete()
-    ReportCustomer.objects.all().delete()
-    ReportProduct.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SaleOrder.push_to_report_revenue(sale_order)
-        SaleOrder.push_to_report_product(sale_order)
-        SaleOrder.push_to_report_customer(sale_order)
+def reset_and_run_reports_sale(run_type=0):
+    if run_type == 0:  # run report revenue, customer, product
+        ReportRevenue.objects.all().delete()
+        ReportCustomer.objects.all().delete()
+        ReportProduct.objects.all().delete()
+        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+            SaleOrder.push_to_report_revenue(sale_order)
+            SaleOrder.push_to_report_product(sale_order)
+            SaleOrder.push_to_report_customer(sale_order)
+    if run_type == 1:  # run report cashflow
+        ReportCashflow.objects.all().delete()
+        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+            SaleOrder.push_to_report_cashflow(sale_order)
+        for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+            PurchaseOrder.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
 
 
@@ -1360,3 +1372,149 @@ def update_price_list():
     PriceListCurrency.objects.all().delete()
     PriceListCurrency.objects.bulk_create(bulk_info)
     print('Done')
+
+
+def reset_set_product_transaction_information():
+    # reset
+    update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
+    for product in Product.objects.all():
+        product.stock_amount = 0
+        product.wait_delivery_amount = 0
+        product.wait_receipt_amount = 0
+        product.available_amount = 0
+        product.save(update_fields=update_fields)
+    # set input, output, return
+    # input
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
+    # output
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.update_product_wait_delivery_amount(instance=so)
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductInformationHandle.main_handle(instance=deli_sub)
+    # return
+    for return_obj in GoodsReturn.objects.all():
+        GReturnProductInformationHandle.main_handle(instance=return_obj)
+    print('reset_set_product_transaction_information done.')
+
+
+def reset_set_product_warehouse_stock():
+    # reset
+    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
+    for product_wh in ProductWareHouse.objects.all():
+        product_wh.stock_amount = 0
+        product_wh.receipt_amount = 0
+        product_wh.sold_amount = 0
+        product_wh.picked_ready = 0
+        product_wh.used_amount = 0
+        product_wh.save(update_fields=update_fields)
+    # input, output, provide
+    # input
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        GoodsReceipt.push_to_product_warehouse(instance=gr)
+    # output
+    for deli_sub in OrderDeliverySub.objects.all():
+        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
+    print('reset_set_product_warehouse_stock done.')
+
+
+def update_quotation_so_json_data():
+    # quotation
+    for quotation in Quotation.objects.all():
+        update_fields = []
+        if quotation.payment_term and not quotation.payment_term_data:
+            quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            quotation.save(update_fields=update_fields)
+    # sale order
+    for so in SaleOrder.objects.all():
+        update_fields = []
+        if so.payment_term and not so.payment_term_data:
+            so.payment_term_data = PaymentTermListSerializer(so.payment_term).data
+            update_fields.append('payment_term_data')
+        if len(update_fields) > 0:
+            so.save(update_fields=update_fields)
+    print('update_so_json_data done.')
+
+
+def reset_opportunity_stage():
+    for opp in Opportunity.objects.all():
+        CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
+    print('Done')
+
+
+def update_report_inventory_sub_trans_title():
+    for item in ReportInventorySub.objects.all():
+        if item.trans_code.startswith('D'):
+            item.trans_title = 'Delivery'
+            item.save(update_fields=['trans_title'])
+        elif item.trans_code.startswith('GR'):
+            item.trans_title = 'Goods receipt'
+            item.save(update_fields=['trans_title'])
+    print('Done')
+
+
+def update_task_config():
+    OpportunityTaskStatus.objects.filter(task_kind=2, order=3).update(is_finish=True)
+    print('Update Completed task status is done!')
+
+
+def reset_run_customer_activity():
+    AccountActivity.objects.all().delete()
+    for opportunity in Opportunity.objects.all():
+        if opportunity.customer:
+            AccountActivity.push_activity(
+                tenant_id=opportunity.tenant_id,
+                company_id=opportunity.company_id,
+                account_id=opportunity.customer_id,
+                app_code=opportunity._meta.label_lower,
+                document_id=opportunity.id,
+                title=opportunity.title,
+                code=opportunity.code,
+                date_activity=opportunity.date_created,
+                revenue=None,
+            )
+    for meeting in OpportunityMeeting.objects.all():
+        if meeting.opportunity:
+            if meeting.opportunity.customer:
+                AccountActivity.push_activity(
+                    tenant_id=meeting.opportunity.tenant_id,
+                    company_id=meeting.opportunity.company_id,
+                    account_id=meeting.opportunity.customer_id,
+                    app_code=meeting._meta.label_lower,
+                    document_id=meeting.id,
+                    title=meeting.subject,
+                    code='',
+                    date_activity=meeting.meeting_date,
+                    revenue=None,
+                )
+    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
+        if quotation.customer:
+            AccountActivity.push_activity(
+                tenant_id=quotation.tenant_id,
+                company_id=quotation.company_id,
+                account_id=quotation.customer_id,
+                app_code=quotation._meta.label_lower,
+                document_id=quotation.id,
+                title=quotation.title,
+                code=quotation.code,
+                date_activity=quotation.date_approved,
+                revenue=quotation.indicator_revenue,
+            )
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        if so.customer:
+            AccountActivity.push_activity(
+                tenant_id=so.tenant_id,
+                company_id=so.company_id,
+                account_id=so.customer_id,
+                app_code=so._meta.label_lower,
+                document_id=so.id,
+                title=so.title,
+                code=so.code,
+                date_activity=so.date_approved,
+                revenue=so.indicator_revenue,
+            )
+    print('reset_run_customer_activity done.')

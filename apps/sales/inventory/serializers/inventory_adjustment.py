@@ -274,6 +274,7 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
                 'title': ia_product.warehouse_mapped.title,
                 'code': ia_product.warehouse_mapped.code,
             } if ia_product.warehouse_mapped else {},
+            'quantity_ia': (ia_product.count - ia_product.book_quantity),
             'quantity_import': (ia_product.count - ia_product.book_quantity),
             'select_for_action': ia_product.select_for_action,
             'action_status': ia_product.action_status,

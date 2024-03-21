@@ -19,6 +19,9 @@ class SaleMsg:
     CAN_NOT_REACTIVE = _('Can not reactive cancelled activity.')
     PERIOD_HAS_PLAN = _('This period had been planned.')
     PERIOD_FINISHED = _('This period had been finished.')
+    TOTAL_PAYMENT = _('Total payment must be 100%.')
+    PRICE_VALID = _('Price must be larger than 0.')
+    QUANTITY_VALID = _('Quantity must be larger than 0.')
 
 
 class SaleTask:

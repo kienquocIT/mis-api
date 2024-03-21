@@ -5,6 +5,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee, DistributionApplication
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
@@ -54,29 +55,11 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
-                'shipping_address': [
-                    {'id': shipping.id, 'full_address': shipping.full_address}
-                    for shipping in obj.customer.account_mapped_shipping_address.all()
-                ],
-                'billing_address': [
-                    {'id': billing.id, 'full_address': billing.full_address}
-                    for billing in obj.customer.account_mapped_billing_address.all()
-                ],
                 'contact_mapped': [{
                     'id': str(item.id),
                     'fullname': item.fullname,
                     'email': item.email
                 } for item in obj.customer.contact_account_name.all()],
-                'payment_term_customer_mapped': {
-                    'id': obj.customer.payment_term_customer_mapped_id,
-                    'title': obj.customer.payment_term_customer_mapped.title,
-                    'code': obj.customer.payment_term_customer_mapped.code
-                } if obj.customer.payment_term_customer_mapped else {},
-                'price_list_mapped': {
-                    'id': obj.customer.price_list_mapped_id,
-                    'title': obj.customer.price_list_mapped.title,
-                    'code': obj.customer.price_list_mapped.code
-                } if obj.customer.price_list_mapped else {},
             }
         return {}
 
@@ -291,6 +274,19 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             opportunity_id=opportunity.id,
             employee_inherit_id=opportunity.employee_inherit_id,
         )
+        # push to customer activity
+        if opportunity.customer:
+            AccountActivity.push_activity(
+                tenant_id=opportunity.tenant_id,
+                company_id=opportunity.company_id,
+                account_id=opportunity.customer_id,
+                app_code=opportunity._meta.label_lower,
+                document_id=opportunity.id,
+                title=opportunity.title,
+                code=opportunity.code,
+                date_activity=opportunity.date_created,
+                revenue=None,
+            )
         return opportunity
 
 
@@ -393,9 +389,9 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-def get_opp_config_stage():
+def get_opp_config_stage(instance):
     opp_config_stage = []
-    for item in OpportunityConfigStage.objects.filter_current(fill__company=True):
+    for item in OpportunityConfigStage.objects.filter_current(company=instance.company):
         condition_datas = []
         for data in item.condition_datas:
             condition_datas.append(
@@ -583,7 +579,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
 
     @classmethod
     def update_opportunity_stage_for_list(cls, instance):
-        opp_config_stage = get_opp_config_stage()
+        opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
         instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage)
 

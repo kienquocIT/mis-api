@@ -230,6 +230,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",  # Goods return
     },
+    "69e84b95-b347-4f49-abdf-0ec80d6eb5bd": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "69e84b95-b347-4f49-abdf-0ec80d6eb5bd",  # Report Cashflow
+    },
 }
 
 _PlanApplication_eOffice_data = {

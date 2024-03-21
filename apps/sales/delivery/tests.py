@@ -4,7 +4,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
-
+import calendar
+from apps.masterdata.saledata.models import Periods, SubPeriods
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
 from apps.sales.delivery.models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, \
@@ -294,7 +295,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs
@@ -328,6 +330,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )
@@ -576,6 +579,32 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         return obj_picking, obj_sub
 
     def test_2_complete_picking_delivery(self):
+        new_period = Periods.objects.create(
+            company_id=self.company_id,
+            tenant_id=self.tenant_id,
+            fiscal_year=2024,
+            space_month=0,
+            start_date='2024-01-01'
+        )
+        bulk_info = []
+        for i in range(1, 13):
+            if i < 10:
+                letter = f'0{i}'
+            else:
+                letter = str(i)
+            bulk_info.append(
+                SubPeriods(
+                    period_mapped=new_period,
+                    order=i,
+                    code=f'P2024-M{letter}-2024',
+                    name=f'P2024-M{letter}-2024',
+                    start_date=f'2024-{letter}-01',
+                    end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
+                    state=0
+                )
+            )
+        SubPeriods.objects.bulk_create(bulk_info)
+
         self.update_config_picking()
         delivery, delivery_sub = self.create_delivery()
         picking, picking_sub = self.create_picking()
@@ -632,16 +661,18 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 {
                     'product_id': delivery_prod.id,
                     'done': 1,
-                    'delivery_data': {
+                    'delivery_data': [{
                         'warehouse': self.warehouse.data['result']['id'],
                         'uom': delivery_prod.uom.id,
                         'stock': 1
-                    },
+                    }],
                     'order': 1,
                 }
             ],
+            "date_done": timezone.now(),
             "employee_inherit_id": self.get_employee().data['result'][0]['id']
         }
+
         response_delivery = self.client.put(url_update, data_delivery_update, format='json')
         self.assertEqual(response_delivery.status_code, 200)
         return response_picking, response_delivery

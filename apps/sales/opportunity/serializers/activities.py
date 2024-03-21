@@ -3,11 +3,12 @@ from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.company.models import Company
+from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
-    OpportunityActivityLogs
+    OpportunityActivityLogs, OpportunitySaleTeamMember
 )
 from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -76,6 +77,15 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+            is_team_members = OpportunitySaleTeamMember.objects.filter(
+                opportunity_id=validate_data['opportunity'],
+                member_id=self.context.get('employee_id', None)
+            ).exists()
+            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
+            if is_team_members + is_inherit == 0:
+                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
+
         return validate_data
 
     def create(self, validated_data):
@@ -172,9 +182,8 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
 def send_email(email_obj, company_id):
     try:
-        company_obj = Company.objects.filter(id=company_id)
-        if company_obj.exists():
-            company_obj = company_obj[0]
+        company_obj = Company.objects.filter(id=company_id).first()
+        if company_obj:
             html_content = email_obj.content
             email = EmailMultiAlternatives(
                 subject=email_obj.subject,
@@ -198,7 +207,7 @@ def send_email(email_obj, company_id):
         raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
         raise serializers.ValidationError({
-            'Send email': f"Cannot send email ({err}) check your company's app password"
+            'Send email': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
         })
 
 
@@ -215,7 +224,9 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email_to_list(cls, value):
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({'Email to list': 'Missing to list'})
 
     @classmethod
     def validate_email_cc_list(cls, value):
@@ -225,6 +236,15 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+            is_team_members = OpportunitySaleTeamMember.objects.filter(
+                opportunity_id=validate_data['opportunity'],
+                member_id=self.context.get('employee_id', None)
+            ).exists()
+            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
+            if is_team_members + is_inherit == 0:
+                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
+
         return validate_data
 
     def create(self, validated_data):
@@ -381,6 +401,15 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+            is_team_members = OpportunitySaleTeamMember.objects.filter(
+                opportunity_id=validate_data['opportunity'],
+                member_id=self.context.get('employee_id', None)
+            ).exists()
+            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
+            if is_team_members + is_inherit == 0:
+                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
+
         if validate_data.get('meeting_from_time', None) and validate_data.get('meeting_to_time', None):
             if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
@@ -396,6 +425,20 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             date_created=validated_data['meeting_date'],
             log_type=4,
         )
+        # push to customer acticity
+        if meeting_obj.opportunity:
+            if meeting_obj.opportunity.customer:
+                AccountActivity.push_activity(
+                    tenant_id=meeting_obj.opportunity.tenant_id,
+                    company_id=meeting_obj.opportunity.company_id,
+                    account_id=meeting_obj.opportunity.customer_id,
+                    app_code=meeting_obj._meta.label_lower,
+                    document_id=meeting_obj.id,
+                    title=meeting_obj.subject,
+                    code='',
+                    date_activity=meeting_obj.meeting_date,
+                    revenue=None,
+                )
         return meeting_obj
 
 
@@ -574,6 +617,15 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+            is_team_members = OpportunitySaleTeamMember.objects.filter(
+                opportunity_id=validate_data['opportunity'],
+                member_id=self.context.get('employee_id', None)
+            ).exists()
+            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
+            if is_team_members + is_inherit == 0:
+                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
+
         return validate_data
 
     def create(self, validated_data):

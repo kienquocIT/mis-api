@@ -2,10 +2,12 @@ import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
+from django.core.mail import get_connection
 from rest_framework import serializers
-
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
+from apps.core.company.models import (
+    Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
+)
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
@@ -174,6 +176,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
+    email_app_password_status = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -195,6 +198,23 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'sub_domain',
             'logo'
         )
+
+    @classmethod
+    def get_email_app_password_status(cls, obj):
+        if obj.email_app_password:
+            try:
+                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+                connection = get_connection(
+                    username=obj.email,
+                    password=SimpleEncryptor(key=password).decrypt(obj.email_app_password),
+                    fail_silently=False,
+                )
+                if connection.open():
+                    return True
+            except Exception as err:
+                print(err)
+                return False
+        return False
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -312,6 +332,23 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        if validated_data.get('email_app_password') is not None:
+            try:
+                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+                connection = get_connection(
+                    username=instance.email,
+                    password=SimpleEncryptor(key=password).decrypt(instance.email_app_password),
+                    fail_silently=False,
+                )
+                if not connection.open():
+                    instance.email_app_password_status = False
+                    instance.save(update_fields=['email_app_password_status'])
+            except Exception as err:
+                print(err)
+                instance.email_app_password_status = False
+                instance.save(update_fields=['email_app_password_status'])
+
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance
 

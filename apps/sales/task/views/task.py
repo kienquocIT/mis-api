@@ -23,14 +23,16 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
-        'parent_n': ['exact'],
+        'parent_n': ['exact', 'isnull'],
         'opportunity': ['exact'],
         'employee_inherit': ['exact'],
         'task_status': ['exact'],
     }
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'employee_inherit', 'opportunity', 'employee_created')
+        return self.queryset.select_related(
+            'parent_n', 'employee_inherit', 'opportunity', 'employee_created', 'task_status'
+        )
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task List",
@@ -38,7 +40,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='opportunityTask', perm_code='view')
+        label_code='task', model_code='opportunityTask', perm_code='view',
+        opp_enabled=True, prj_enabled=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -49,7 +53,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='opportunityTask', perm_code='create', )
+        label_code='task', model_code='opportunityTask', perm_code='create',
+        opp_enabled=True, prj_enabled=False,
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -73,7 +79,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='opportunityTask', perm_code='view', )
+        label_code='task', model_code='opportunityTask', perm_code='view',
+        opp_enabled=True, prj_enabled=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -83,7 +91,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='edit', )
+        label_code='task', model_code='OpportunityTask', perm_code='edit',
+        opp_enabled=True, prj_enabled=False,
+    )
     def put(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -95,7 +105,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='delete', )
+        label_code='task', model_code='OpportunityTask', perm_code='delete',
+        opp_enabled=True, prj_enabled=False,
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 

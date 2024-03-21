@@ -31,6 +31,12 @@ class PlanListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.get_title_i18n()
+
     class Meta:
         model = Application
         fields = (
@@ -53,6 +59,28 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'properties',
             'opp_stage_operator',
             'stage_compare_data'
+        )
+
+
+class ApplicationPropertyForPrintListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationProperty
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remark',
+        )
+
+
+class ApplicationPropertyForMailListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationProperty
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remark',
         )
 
 

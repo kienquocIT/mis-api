@@ -33,4 +33,6 @@ urlpatterns = [
     path('site/config/', include('apps.core.web_builder.urls.config')),
     path('attachment/', include('apps.core.attachments.urls')),
     path('comment/', include('apps.core.comment.urls')),
+    path('printer/', include('apps.core.printer.urls')),
+    path('mailer/', include('apps.core.mailer.urls')),
 ]

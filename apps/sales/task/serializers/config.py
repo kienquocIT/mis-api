@@ -13,9 +13,7 @@ class TaskConfigDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_list_status(cls, obj):
         task_list = []
-        tasks_stt = OpportunityTaskStatus.objects.filter(
-            task_config=obj
-        )
+        tasks_stt = OpportunityTaskStatus.objects.filter(task_config=obj)
         if tasks_stt.exists():
             for status in tasks_stt:
                 count = OpportunityTask.objects.filter(task_status=status, is_delete=False).count()
@@ -27,7 +25,8 @@ class TaskConfigDetailSerializer(serializers.ModelSerializer):
                         'order': status.order,
                         'is_edit': status.is_edit,
                         'count': count,
-                        'task_color': status.task_color
+                        'task_color': status.task_color,
+                        'is_finish': status.is_finish
                     }
                 )
         return task_list
@@ -64,6 +63,7 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def update_task_status(cls, lst_status, instance):
         if lst_status and isinstance(lst_status, list):
+            # lọc ra các stt cũ và mới
             has_status = []
             new_status = []
             dict_status = {}
@@ -76,6 +76,7 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                             translate_name=item['translate_name'],
                             order=item['order'],
                             task_color=item['task_color'],
+                            is_finish=item['is_finish'],
                         )
                     )
                     dict_status[item['id']] = item
@@ -89,7 +90,8 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                             task_config=instance,
                             task_color=item['task_color'],
                             tenant_id=instance.tenant_id,
-                            company_id=instance.company_id
+                            company_id=instance.company_id,
+                            is_finish=item['is_finish'],
                         )
                     )
 
@@ -103,12 +105,16 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
             if check_stt_list.count():
                 for stt in check_stt_list:
                     stt_id = str(stt.id)
+                    # lấy stt dc phép edit so sánh vs ds stt mới
                     if stt_id not in dict_status:
+                        # nếu bị xoá thì đưa các task có stt này về lại to-do
                         cls.handle_task_before(stt, instance)
+                        # sau khi đưa về to-do xoá stt ko nằm trong DS
                         stt.delete()
             OpportunityTaskStatus.objects.bulk_update(has_status, fields=['title', 'translate_name', 'order',
-                                                                          'task_color'])
-            OpportunityTaskStatus.objects.bulk_create(new_status)
+                                                                          'task_color', 'is_finish'])
+            if new_status:
+                OpportunityTaskStatus.objects.bulk_create(new_status)
 
     def update(self, instance, validated_data):
         status_lst = validated_data['list_status']

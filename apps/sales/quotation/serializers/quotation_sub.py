@@ -604,19 +604,11 @@ class QuotationCommonValidate:
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False
-    )
-    promotion = serializers.UUIDField(
-        allow_null=True
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    promotion = serializers.UUIDField(allow_null=True)
+    shipping = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = QuotationProduct
@@ -643,7 +635,10 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'is_promotion',
             'promotion',
             'is_shipping',
-            'shipping'
+            'shipping',
+            'is_group',
+            'group_title',
+            'group_order',
         )
 
     @classmethod

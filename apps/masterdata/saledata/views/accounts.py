@@ -189,9 +189,11 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry', 'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
+            'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
         ).prefetch_related(
-            'contact_account_name', 'account_banks_mapped'
+            'contact_account_name', 'account_banks_mapped',
+            'company__saledata_periods_belong_to_company',
+            'report_customer_customer',
         )
 
     @swagger_auto_schema(
@@ -226,7 +228,11 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('industry', 'owner', 'payment_term_supplier_mapped')
+        return super().get_queryset().select_related(
+            'industry', 'owner', 'payment_term_supplier_mapped',
+        ).prefetch_related(
+            'account_activity_account',
+        )
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(
@@ -293,7 +299,7 @@ class AccountForSaleList(BaseListMixin):
         ).prefetch_related(
             'account_mapped_shipping_address',
             'account_mapped_billing_address',
-            'payment_term_supplier_mapped__term_payment_term',
+            'payment_term_customer_mapped__term_payment_term',
         )
 
     @swagger_auto_schema(

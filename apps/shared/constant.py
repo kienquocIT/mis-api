@@ -295,6 +295,7 @@ PAYMENT_TERM_STAGE = (
     (1, _('Contract')),
     (2, _('Delivery')),
     (3, _('Final acceptance')),
+    (4, _('Invoice')),
 )
 
 # REPORT
@@ -305,4 +306,18 @@ REPORT_CASHFLOW_TYPE = (
     (3, _('Product/ service costs')),
     (4, _('Net cash flow')),
     (5, _('Ending balance')),
+)
+
+# Notify Push
+PUSH_NOTIFY_TYPE = (
+    (0, 'E-Mail'),
+    (1, 'SMS'),
+)
+
+OTP_TYPE = (
+    (0, 'E-Mail'),
+    (1, 'SMS'),
+    (2, 'Call'),
+    (2, 'Application'),
+    (4, 'Other'),
 )

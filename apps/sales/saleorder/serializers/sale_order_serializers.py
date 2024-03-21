@@ -75,8 +75,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    payment_term = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -88,7 +88,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
-            'payment_term',
+            'payment_term_id',
+            'payment_term_data',
             'quotation',
             'system_status',
             # sale order tabs
@@ -122,6 +123,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             # system
             'workflow_runtime_id',
             'is_active',
+            'employee_inherit',
         )
 
     @classmethod
@@ -166,16 +168,9 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'email': obj.employee_inherit.email,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
-
-    @classmethod
-    def get_payment_term(cls, obj):
-        return {
-            'id': obj.payment_term_id,
-            'title': obj.payment_term.title,
-            'code': obj.payment_term.code,
-        } if obj.payment_term else {}
 
     @classmethod
     def get_quotation(cls, obj):
@@ -185,6 +180,19 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'code': obj.quotation.code,
             'quotation_indicators_data': obj.quotation.quotation_indicators_data,
         } if obj.quotation else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):
@@ -237,6 +245,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             'quotation',
             # total amount of products
             'total_product_pretax_amount',
@@ -316,9 +325,20 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return True
 
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'sale_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['sale_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
     def validate(self, validate_data):
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -407,6 +427,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'payment_term_data',
             'quotation',
             # total amount of products
             'total_product_pretax_amount',
@@ -470,6 +491,16 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
+    @classmethod
+    def validate_total_payment_term(cls, validate_data):
+        if 'sale_order_payment_stage' in validate_data:
+            total = 0
+            for payment_stage in validate_data['sale_order_payment_stage']:
+                total += payment_stage.get('payment_ratio', 0)
+            if total != 100:
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        return True
+
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
@@ -494,6 +525,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

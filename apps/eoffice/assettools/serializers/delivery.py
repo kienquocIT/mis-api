@@ -12,7 +12,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.assettools.models import AssetToolsDeliveryAttachmentFile, AssetToolsDelivery, \
     ProductDeliveredMapProvide
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, DisperseModel
 from apps.shared.translations import AssetToolsMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -138,10 +138,18 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
         if obj.products:
             products_list = []
             for item in list(obj.provide_map_delivery.all()):
+                product_available = 0
+                if item.warehouse_data:
+                    prod_warehouse = item.product.product_warehouse_product.filter(
+                        warehouse_id=item.warehouse_data['id']
+                    )
+                    warehouse = prod_warehouse.first()
+                    product_available = warehouse.stock_amount - warehouse.used_amount if warehouse else 0
+
                 products_list.append(
                     {
                         'order': item.order,
-                        'product_available': item.product.stock_amount,
+                        'product_available': product_available,
                         'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
                         'warehouse': item.warehouse_data if hasattr(item, 'warehouse_data') else {},
                         'request_number': item.request_number,
@@ -206,17 +214,30 @@ class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
 
 
 class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
-    # employee_inherit = serializers.SerializerMethodField()
+    done = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
         return obj.employee_inherit_data if obj.employee_inherit else {}
 
+    @classmethod
+    def get_done(cls, obj):
+        done = obj.done
+        list_return_model = DisperseModel(app_model='assettools.AssetToolsReturnMapProduct').get_model()
+        list_return = list_return_model.objects.filter(
+            asset_return__system_status__gte=2, employee_inherit=obj.employee_inherit, product=obj.product
+        )
+        if list_return.exists():
+            list_total = sum(item.return_number for item in list_return)
+            if obj.done > 0 and list_total > 0:
+                done -= list_total
+        return done
+
     class Meta:
         model = ProductDeliveredMapProvide
         fields = (
             'product_data',
-            'done'
+            'done',
         )
 
 

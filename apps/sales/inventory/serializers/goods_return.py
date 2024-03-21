@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnSubSerializerForPicking
+    GoodsReturnSubSerializerForPicking, GReturnFinalAcceptanceHandle, GReturnProductInformationHandle
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import SaleMsg
 
@@ -81,6 +81,7 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'delivery',
             'product',
             'uom',
+            'return_to_warehouse',
             'system_status',
         )
 
@@ -90,26 +91,28 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
+        product_detail_list = self.initial_data.get('product_detail_list', [])
+
         GoodsReturnSubSerializerForNonPicking.create_delivery_product_detail_mapped(
             goods_return,
-            self.initial_data.get('product_detail_list', []),
+            product_detail_list
         )
 
         config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
         if config.is_picking is True:
-            GoodsReturnSubSerializerForPicking.update_delivery(
-                goods_return,
-                self.initial_data.get('product_detail_list', [])
-            )
+            GoodsReturnSubSerializerForPicking.update_delivery(goods_return, product_detail_list)
         else:
-            GoodsReturnSubSerializerForNonPicking.update_delivery(
-                goods_return,
-                self.initial_data.get('product_detail_list', [])
-            )
+            GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list)
 
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(goods_return, attachment.strip().split(','))
+
+        # handle product information
+        GReturnProductInformationHandle.main_handle(instance=goods_return)
+        # handle final acceptance
+        GReturnFinalAcceptanceHandle.main_handle(instance=goods_return)
+
         return goods_return
 
 
@@ -120,6 +123,7 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     data_detail = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    return_to_warehouse = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -132,6 +136,7 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
             'delivery',
             'product',
             'uom',
+            'return_to_warehouse',
             'system_status',
             'date_created',
             'data_detail',
@@ -146,6 +151,14 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
             'title': obj.sale_order.title,
             'customer_name': obj.sale_order.customer.name if obj.sale_order.customer else ''
         } if obj.sale_order else {}
+
+    @classmethod
+    def get_return_to_warehouse(cls, obj):
+        return {
+            'id': obj.return_to_warehouse_id,
+            'code': obj.return_to_warehouse.code,
+            'title': obj.return_to_warehouse.title,
+        } if obj.return_to_warehouse else {}
 
     @classmethod
     def get_delivery(cls, obj):
@@ -295,7 +308,7 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
             'product_subtotal_price': item.product_subtotal_price,
             'product_general_traceability_method': item.product.general_traceability_method,
             'returned_quantity_default': item.returned_quantity_default,
-        } for item in obj.delivery_product_delivery_sub.all()]
+        } for item in obj.delivery_product_delivery_sub.all().select_related('product')]
 
     @classmethod
     def get_date(cls, obj):

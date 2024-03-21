@@ -306,6 +306,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_tenant=True,
         label_code='hr', model_code='employee', perm_code='create',
     )
     def post(self, request, *args, **kwargs):

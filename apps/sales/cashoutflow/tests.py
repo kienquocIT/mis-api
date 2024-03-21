@@ -227,7 +227,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status'
+                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status', 'activity',
             ],
             check_sum_second=True,
         )
@@ -345,7 +345,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs
@@ -379,6 +380,7 @@ class PaymentTestCase(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )

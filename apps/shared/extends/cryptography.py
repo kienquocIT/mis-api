@@ -8,7 +8,7 @@ import os
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken, InvalidSignature
 
 from django.conf import settings
 
@@ -60,8 +60,15 @@ class SimpleEncryptor:
         cipher_text = self.cipher_suite.encrypt(data.encode('utf-8'))
         return cipher_text.decode('utf-8') if to_string else cipher_text
 
-    def decrypt(self, cipher_text):
-        if not isinstance(cipher_text, (bytes, bytearray)):
-            cipher_text = str(cipher_text).encode('utf-8')
-        plain_text = self.cipher_suite.decrypt(cipher_text)
-        return plain_text.decode()
+    def decrypt(self, cipher_text, invalid_token_return=None, invalid_signature_return=None):
+        try:
+            if not isinstance(cipher_text, (bytes, bytearray)):
+                cipher_text = str(cipher_text).encode('utf-8')
+            plain_text = self.cipher_suite.decrypt(cipher_text)
+            return plain_text.decode()
+        except InvalidToken:
+            return invalid_token_return
+        except InvalidSignature:
+            return invalid_signature_return
+        except Exception as err:
+            raise err

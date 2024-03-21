@@ -259,7 +259,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs
@@ -293,6 +294,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )
@@ -513,7 +515,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'customer',
                 'contact',
                 'sale_person',
-                'payment_term',
+                'payment_term_id',
+                'payment_term_data',
                 'quotation',
                 'system_status',
                 # sale order tabs
@@ -547,6 +550,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # system
                 'workflow_runtime_id',
                 'is_active',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )

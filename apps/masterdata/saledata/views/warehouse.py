@@ -31,6 +31,7 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     search_fields = ("title", "code",)
     filterset_fields = {
         "is_active": ['exact'],
+        "is_dropship": ['exact'],
     }
 
     @swagger_auto_schema(operation_summary='WareHouse List')
@@ -213,6 +214,7 @@ class ProductWareHouseAssetToolsList(BaseListMixin):
         return super().get_queryset().select_related(
             'product',
             'uom',
+            'warehouse',
         )
 
     @swagger_auto_schema(operation_summary='Product Asset list')

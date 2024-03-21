@@ -2,6 +2,7 @@ import json
 
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy
 from jsonfield import JSONField
 
 from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
@@ -199,11 +200,21 @@ class Application(CoreAbstractModel):
         help_text='0: General, 1: All space (not filter opp, prj,... isnull)',
     )
 
+    allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
+    allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
+    allow_mail = models.BooleanField(default=False, verbose_name='Allow mail template')
+
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
 
     def __str__(self):
         return f'{self.app_label} - {self.model_code}'
+
+    def get_title_i18n(self):
+        title = gettext_lazy('APP_' + self.title)
+        if title.startswith('APP_'):
+            return self.title
+        return title
 
     class Meta:
         verbose_name = 'Application'
@@ -323,6 +334,12 @@ class ApplicationProperty(CoreAbstractModel):
         verbose_name='code of other properties that relate to this property by business rule',
     )
 
+    is_print = models.BooleanField(default=False, verbose_name='Access using for print')
+    is_mail = models.BooleanField(default=False, verbose_name='Access using for mail')
+    title_slug = models.SlugField(blank=True)
+
+    system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
+
     class Meta:
         verbose_name = 'Application property'
         ordering = ('-date_created',)
@@ -330,6 +347,7 @@ class ApplicationProperty(CoreAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
+        self.title_slug = slugify(self.title)
         super().save(*args, **kwargs)
         clear_cache_base_group()
 

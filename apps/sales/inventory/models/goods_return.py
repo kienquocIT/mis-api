@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.masterdata.saledata.models import SubPeriods
 from apps.shared import DataAbstractModel
 
 
@@ -10,6 +11,7 @@ class GoodsReturn(DataAbstractModel):
     delivery = models.ForeignKey('delivery.OrderDeliverySub', on_delete=models.CASCADE, null=True)
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Goods Return'
@@ -17,6 +19,11 @@ class GoodsReturn(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+
+        super().save(*args, **kwargs)
 
 
 class GoodsReturnProductDetail(DataAbstractModel):

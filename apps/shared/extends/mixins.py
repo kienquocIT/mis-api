@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from typing import Union
 
@@ -268,6 +269,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         if tmp and callable(tmp):
             return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer list attribute in view must be implement.')
+
+    def get_serializer_list_data(self, ser_data):
+        return ser_data
 
     # --- // Serializer Class for GET LIST | has minimal
 
@@ -699,10 +703,14 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
     def get_default_doc_app(self) -> str:
         if not self.log_doc_app:
-            if self.queryset:
-                cls_queryset = self.queryset.__class__
-                if hasattr(cls_queryset, 'get_model_code'):
-                    return cls_queryset.get_model_code()
+            try:
+                queryset_check = self.get_queryset()
+                if queryset_check:
+                    cls_queryset = self.queryset.__class__
+                    if hasattr(cls_queryset, 'get_model_code'):
+                        return cls_queryset.get_model_code()
+            except RuntimeError:
+                pass
             return ''
         return self.log_doc_app
 
@@ -863,6 +871,11 @@ class BaseListMixin(BaseMixin):
                 )
         return queryset
 
+    @staticmethod
+    def convert_sql_str(data):
+        pattern = r"[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}"
+        return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
+
     def list(self, request, *args, **kwargs):
         """
         Support call get list data.
@@ -893,17 +906,17 @@ class BaseListMixin(BaseMixin):
         if settings.DEBUG_PERMIT:
             try:
                 if str(queryset.query):
-                    print('#  - SQL                   :', queryset.query)
+                    print('#  - SQL                   :', self.convert_sql_str(queryset.query))
             except EmptyResultSet:
                 print('#  - SQL                   :', 'EMPTY')
 
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True, is_minimal=is_minimal)
-            return self.get_paginated_response(serializer.data)
+            return self.get_paginated_response(self.get_serializer_list_data(serializer.data))
 
         serializer = self.get_serializer_list(queryset, many=True, is_minimal=is_minimal)
-        return ResponseController.success_200(data=serializer.data, key_data='result')
+        return ResponseController.success_200(data=self.get_serializer_list_data(serializer.data), key_data='result')
 
 
 class BaseCreateMixin(BaseMixin):
@@ -971,13 +984,15 @@ class BaseRetrieveMixin(BaseMixin):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        state_check = self.manual_check_obj_retrieve(instance=instance)
-        if state_check is None:
-            state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
-        if state_check is True:
-            serializer = self.get_serializer_detail(instance)
-            return ResponseController.success_200(data=serializer.data, key_data='result')
-        return ResponseController.forbidden_403()
+        if instance:
+            state_check = self.manual_check_obj_retrieve(instance=instance)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
+            if state_check is True:
+                serializer = self.get_serializer_detail(instance)
+                return ResponseController.success_200(data=serializer.data, key_data='result')
+            return ResponseController.forbidden_403()
+        return ResponseController.notfound_404()
 
 
 class BaseUpdateMixin(BaseMixin):

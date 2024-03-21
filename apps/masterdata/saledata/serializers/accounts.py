@@ -1,4 +1,7 @@
+import datetime
+
 from rest_framework import serializers
+from django.utils import timezone
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term
 # from apps.core.workflow.tasks import decorator_run_workflow
@@ -16,9 +19,9 @@ class AccountListSerializer(serializers.ModelSerializer):
     contact_mapped = serializers.SerializerMethodField()
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
-    industry = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
+    revenue_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -30,13 +33,13 @@ class AccountListSerializer(serializers.ModelSerializer):
             "code",
             "tax_code",
             "account_type",
-            "industry",
             "manager",
             "owner",
             "phone",
             'annual_revenue',
             'contact_mapped',
-            'bank_accounts_mapped'
+            'bank_accounts_mapped',
+            'revenue_information',
         )
 
     @classmethod
@@ -56,12 +59,6 @@ class AccountListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         if obj.owner:
             return {'id': obj.owner_id, 'fullname': obj.owner.fullname}
-        return {}
-
-    @classmethod
-    def get_industry(cls, obj):
-        if obj.industry:
-            return {'id': obj.industry_id, 'title': obj.industry.title}
         return {}
 
     @classmethod
@@ -90,6 +87,26 @@ class AccountListSerializer(serializers.ModelSerializer):
                 }
             )
         return bank_accounts_mapped_list
+
+    @classmethod
+    def get_revenue_information(cls, obj):
+        current_date = timezone.now()
+        revenue_ytd = 0
+        order_number = 0
+        for period in obj.company.saledata_periods_belong_to_company.all():
+            if period.fiscal_year == current_date.year:
+                start_date_str = str(period.start_date) + ' 00:00:00'
+                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
+                for customer_revenue in obj.report_customer_customer.all():
+                    if customer_revenue.date_approved:
+                        if start_date <= customer_revenue.date_approved <= current_date:
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
+        return {
+            'revenue_ytd': revenue_ytd,
+            'order_number': order_number,
+            'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
+        }
 
 
 def create_employee_map_account(account):
@@ -327,6 +344,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
     payment_term_supplier_mapped = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
     credit_cards_mapped = serializers.SerializerMethodField()
+    activity = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -358,6 +376,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'contact_mapped',
             'account_type_selection',
             'workflow_runtime_id',
+            "activity",
         )
 
     @classmethod
@@ -534,6 +553,19 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                 }
             )
         return credit_cards_mapped_list
+
+    @classmethod
+    def get_activity(cls, obj):
+        return [
+            {
+                'app_code': activity.app_code,
+                'document_id': activity.document_id,
+                'title': activity.title,
+                'code': activity.code,
+                'date_activity': activity.date_activity,
+                'revenue': activity.revenue,
+            } for activity in obj.account_activity_account.all()
+        ]
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
@@ -739,6 +771,7 @@ class TermSubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term
         fields = (
+            'id',
             'value',
             'unit_type',
             'day_type',

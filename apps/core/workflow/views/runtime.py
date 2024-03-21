@@ -6,7 +6,7 @@ from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee
 from apps.core.workflow.serializers.runtime import (
     RuntimeListSerializer,
     RuntimeStageListSerializer, RuntimeDetailSerializer, RuntimeAssigneeUpdateSerializer, RuntimeAssigneeListSerializer,
-    RuntimeMeListSerializer,
+    RuntimeMeListSerializer, RuntimeAfterFinishUpdateSerializer,
 )
 from apps.shared import ResponseController, mask_view, BaseListMixin, TypeCheck, HttpMsg
 
@@ -17,6 +17,7 @@ __all__ = [
     'RuntimeDetail',
     'RuntimeAssigneeList',
     'RuntimeAssigneeDetail',
+    'RuntimeAfterFinishDetail',
 ]
 
 
@@ -148,6 +149,23 @@ class RuntimeAssigneeDetail(APIView):
                 return ResponseController.notfound_404()
 
             ser = RuntimeAssigneeUpdateSerializer(instance=runtime_assignee_obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        return ResponseController.notfound_404()
+
+
+class RuntimeAfterFinishDetail(APIView):
+    @swagger_auto_schema(operation_summary='Runtime After Finish')
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        if TypeCheck.check_uuid(pk):
+            try:
+                runtime_obj = Runtime.objects.get(id=pk)
+            except Runtime.DoesNotExist:
+                return ResponseController.notfound_404()
+
+            ser = RuntimeAfterFinishUpdateSerializer(instance=runtime_obj, data=request.data)
             ser.is_valid(raise_exception=True)
             ser.save()
             return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

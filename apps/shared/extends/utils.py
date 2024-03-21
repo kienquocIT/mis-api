@@ -3,7 +3,7 @@ import random
 import re
 import string
 from datetime import datetime, date
-from typing import Union
+from typing import Union, Type
 from uuid import UUID
 
 from django.core.serializers.json import DjangoJSONEncoder
@@ -41,8 +41,24 @@ class LinkListHandler:
 
 class StringHandler:
     @staticmethod
-    def random_str(length):
-        return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
+    def random_str(length, upper_lower=2):
+        if upper_lower == 1:
+            store = string.ascii_lowercase
+        elif upper_lower == 2:
+            store = string.ascii_uppercase
+        else:
+            store = string.ascii_letters
+        return ''.join([random.choice(store) for _ in range(length)])
+
+    @staticmethod
+    def random_number(length, to_type: Type = str):
+        if to_type is str:
+            return ''.join([random.choice(string.digits) for _ in range(length)])
+        if to_type is int:
+            first_item = random.choice('123456789')
+            remainder_item = ''.join([random.choice(string.digits) for _ in range(length - 1)])
+            return int(first_item + remainder_item)
+        return StringHandler.random_str(length=length)
 
     @staticmethod
     def remove_special_characters_regex(text):
@@ -53,6 +69,25 @@ class StringHandler:
     def remove_special_characters_translate(text):
         """Fast with string too long"""
         return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
+
+    @staticmethod
+    def mask(data, percent_mask=70):
+        """Mask for data"""
+        if percent_mask == 100:
+            return '*' * len(data)
+
+        max_len = len(data)
+        len_mask = max_len * percent_mask / 100
+        if len_mask - round(len_mask) < 0.5:
+            len_mask += 0.5
+        len_mask = round(len_mask)
+
+        data_copy = data.split("")
+        arr_hide = random.sample(range(max_len), len_mask)
+        for idx in arr_hide:
+            data_copy[idx] = '*'
+
+        return "".join(data_copy)
 
 
 class ListHandler:

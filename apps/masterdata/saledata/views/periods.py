@@ -1,3 +1,5 @@
+import datetime
+
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Periods
 from apps.masterdata.saledata.serializers import PeriodsListSerializer, PeriodsCreateSerializer, \
@@ -15,6 +17,9 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('company').prefetch_related('sub_periods_period_mapped')
+
     @swagger_auto_schema(
         operation_summary="Periods list",
         operation_description="Periods list",
@@ -23,6 +28,8 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        if 'get_current' in request.query_params:
+            self.kwargs['fiscal_year'] = datetime.datetime.now().year
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
