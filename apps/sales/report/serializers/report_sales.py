@@ -17,6 +17,7 @@ class ReportCommonGet:
             'code': employee_obj.code,
             'is_active': employee_obj.is_active,
             'group_id': employee_obj.group_id,
+            'is_delete': employee_obj.is_delete,
         } if employee_obj else {}
 
     @classmethod
@@ -26,6 +27,7 @@ class ReportCommonGet:
             'title': group_obj.title,
             'code': group_obj.code,
             'is_active': group_obj.is_active,
+            'is_delete': group_obj.is_delete,
         } if group_obj else {}
 
 

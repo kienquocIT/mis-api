@@ -317,6 +317,7 @@ class ReportGeneralList(BaseListMixin):
         'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'is_initial': ['exact'],
+        'group_inherit__is_delete': ['exact'],
     }
     serializer_list = ReportGeneralListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
