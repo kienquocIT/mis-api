@@ -1492,6 +1492,44 @@ GOODS_RETURN_APP_CONFIG = {
     },
 }
 
+REPORT_CASHFLOW_APP_CONFIG = {
+    "id": "69e84b95-b347-4f49-abdf-0ec80d6eb5bd",
+    "title": "Report Cashflow",
+    "code": "reportcashflow",
+    "model_code": "reportcashflow",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1690,5 +1728,9 @@ Application_crm_data = {
     "0242ba77-8b02-4589-8ed9-239788083f2b": ApplicationConfigFrame(**GOODS_RETURN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
-    )
+    ),
+    "69e84b95-b347-4f49-abdf-0ec80d6eb5bd": ApplicationConfigFrame(**REPORT_CASHFLOW_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
 }

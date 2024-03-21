@@ -31,10 +31,8 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     search_fields = ("title", "code",)
     filterset_fields = {
         "is_active": ['exact'],
+        "is_dropship": ['exact'],
     }
-
-    def get_queryset(self):
-        return super().get_queryset().filter(is_dropship=False)
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
