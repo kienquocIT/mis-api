@@ -45,14 +45,14 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
-    product_tax_value = models.FloatField(default=0)
     product_subtotal = models.FloatField(default=0)
+    product_discount_rate = models.FloatField(default=0)
+    product_discount_value = models.FloatField(default=0)
+    product_tax_rate = models.FloatField(default=0)
+    product_tax_title = models.CharField(max_length=100, blank=True)
+    product_tax_value = models.FloatField(default=0)
 
-    discount_name = models.CharField(max_length=250, null=True)
-    discount_uom = models.CharField(max_length=250, null=True)
-    discount_quantity = models.FloatField(default=0)
-    discount_unit_price = models.FloatField(default=0)
-    discount_subtotal = models.FloatField(default=0)
+    product_subtotal_final = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'AR Invoice Item'
