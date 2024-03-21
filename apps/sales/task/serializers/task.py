@@ -528,7 +528,7 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
         task_status = validated_data['task_status']
         if task_status.task_kind == 2:
             self.check_sub_task(instance, task_status)
-            self.check_task_complete(instance)
+            # self.check_task_complete(instance)
 
         instance.task_status = task_status
         instance.save(update_fields=['task_status', 'percent_completed'])
@@ -589,4 +589,4 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
 class OpportunityTaskStatusListSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTaskStatus
-        fields = ('id', 'title', 'translate_name', 'order', 'task_color')
+        fields = ('id', 'title', 'translate_name', 'order', 'task_color', 'is_finish')
