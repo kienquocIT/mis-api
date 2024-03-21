@@ -9,6 +9,7 @@ class ReportRevenue(DataAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name='report_revenue_sale_order',
+        null=True,
     )
     group_inherit = models.ForeignKey(
         'hr.Group',
@@ -19,6 +20,7 @@ class ReportRevenue(DataAbstractModel):
     revenue = models.FloatField(default=0)
     gross_profit = models.FloatField(default=0)
     net_income = models.FloatField(default=0)
+    is_initial = models.BooleanField(default=False, help_text="flag to know this is record created by revenue plan")
 
     @classmethod
     def push_from_so(
@@ -46,6 +48,32 @@ class ReportRevenue(DataAbstractModel):
                 revenue=revenue,
                 gross_profit=gross_profit,
                 net_income=net_income,
+            )
+        return True
+
+    @classmethod
+    def push_from_plan(
+            cls,
+            tenant_id,
+            company_id,
+            employee_created_id,
+            employee_inherit_id,
+            group_inherit_id,
+    ):
+        if not cls.objects.filter(
+                tenant_id=tenant_id,
+                company_id=company_id,
+                employee_inherit_id=employee_inherit_id,
+                group_inherit_id=group_inherit_id,
+                is_initial=True
+        ).exists():
+            cls.objects.create(
+                tenant_id=tenant_id,
+                company_id=company_id,
+                employee_created_id=employee_created_id,
+                employee_inherit_id=employee_inherit_id,
+                group_inherit_id=group_inherit_id,
+                is_initial=True,
             )
         return True
 
