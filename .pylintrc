@@ -14,7 +14,7 @@ ignore=
     .pylintrc,tests.py,tests,admin.py,
     mockup_data.py,crawl_vietnam_address.py,vietnam_info,
     mail.py,scripts.py,signals.py,sharedapp,mask_view.py,mixins.py,
-    setup.py,
+    setup.py,templates.py
 ignore-patterns=z_testing_.*?py
 disable=
     C0114, # missing-module-docstring

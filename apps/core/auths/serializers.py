@@ -317,10 +317,10 @@ class ForgotPasswordGetOTPSerializer(serializers.ModelSerializer):
             last_call = ValidateUser.objects.filter(
                 user=user_obj, date_created__gte=timezone.now() - timedelta(hours=1)
             ).count()
-            if last_call > 3:
+            if last_call > 5:
                 raise serializers.ValidationError(
                     {
-                        'detail': AuthMsg.MAX_REQUEST_FORGOT.format('3', '1')
+                        'detail': AuthMsg.MAX_REQUEST_FORGOT.format('5', '1')
                     }
                 )
             return {

@@ -308,6 +308,10 @@ msgid "The session was expired"
 msgstr "Phiên làm việc đã hết hạn"
 
 #
+msgid "The OTP session was expired"
+msgstr "Phiên xác thực OTP đã hết hạn"
+
+#
 msgid "OTP isn't match"
 msgstr "OTP không chính xác"
 

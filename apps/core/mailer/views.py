@@ -1,8 +1,8 @@
-from django.core.mail import get_connection
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 
+from apps.core.mailer.mail_control import SendMailController
 from apps.shared import (
     mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
     TypeCheck, ResponseController, MailMsg,
@@ -69,7 +69,7 @@ class MailerSystemGetByCode(BaseRetrieveMixin):
     def get_object(self):
         user_obj = self.request.user
         if user_obj and hasattr(user_obj, 'tenant_current_id') and hasattr(user_obj, 'company_current_id'):
-            return MailTemplateSystem.template_get_or_create(
+            return MailTemplateSystem.get_config(
                 tenant_id=user_obj.tenant_current_id,
                 company_id=user_obj.company_current_id,
                 system_code=self.kwargs['system_code'],
@@ -111,11 +111,7 @@ class MailerServerConfigGet(BaseRetrieveMixin):
     def get_object(self):
         user_obj = self.request.user
         if user_obj and hasattr(user_obj, 'tenant_current_id') and hasattr(user_obj, 'company_current_id'):
-            obj, _create = MailConfig.objects.get_or_create(
-                tenant_id=user_obj.tenant_current_id,
-                company_id=user_obj.company_current_id,
-            )
-            return obj
+            return MailConfig.get_config(tenant_id=user_obj.tenant_current_id, company_id=user_obj.company_current_id)
         raise exceptions.NotFound
 
     @swagger_auto_schema()
@@ -160,22 +156,18 @@ class MailServerTestConnectAPI(BaseRetrieveMixin):
             cls, host, port, username, password, use_tls=False, use_ssl=False, ssl_keyfile=None, ssl_cert_file=None
     ):
         if host and port and username and password:
-            connection = get_connection(
-                host=host,
-                port=port,
-                username=username,
-                password=password,
-                use_tls=use_tls,
-                use_ssl=use_ssl,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_cert_file,
-                timeout=1,
+            mail_cls = SendMailController(
+                is_active=True,
+                host=host, port=port,
+                username=username, password=password,
+                use_tls=use_tls, use_ssl=use_ssl,
+                ssl_keyfile=ssl_keyfile, ssl_certfile=ssl_cert_file,
             )
             try:
-                if connection.open():
+                if mail_cls.connection.open():
                     return ResponseController.success_200(
                         data={
-                            'detail': 'Connect to your mail server is successfully',
+                            'detail': 'successfully',
                         }
                     )
                 return ResponseController.bad_request_400(
@@ -210,7 +202,7 @@ class MailServerTestConnectAPI(BaseRetrieveMixin):
             if instance.use_our_server is True:
                 return ResponseController.success_200(
                     data={
-                        'detail': 'Use our server is enabled',
+                        'detail': MailMsg.USE_OUR_SERVER,
                     }
                 )
 

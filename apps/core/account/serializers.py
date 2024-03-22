@@ -52,6 +52,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'is_admin_tenant',
+            'is_mail_welcome',
         )
 
     @classmethod

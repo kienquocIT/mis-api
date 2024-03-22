@@ -72,7 +72,7 @@ class MailTemplateSystemDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MailTemplateSystem
-        fields = ('id', 'system_code', 'contents', 'is_active')
+        fields = ('id', 'system_code', 'subject', 'contents', 'is_active')
 
 
 class MailTemplateSystemUpdateSerializer(serializers.ModelSerializer):
@@ -88,7 +88,7 @@ class MailTemplateSystemUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MailTemplateSystem
-        fields = ('contents', 'is_active')
+        fields = ('subject', 'contents', 'is_active')
 
 
 class MailConfigDetailSerializer(serializers.ModelSerializer):
@@ -181,7 +181,18 @@ class MailConfigUpdateSerializer(serializers.ModelSerializer):
             instance.ssl_cert = ssl_cert_file
         return instance
 
-    def update(self, instance, validated_data):
+    from_email = serializers.EmailField(required=False)
+    reply_email = serializers.EmailField(required=False)
+    cc_email = serializers.ListSerializer(
+        child=serializers.EmailField(required=False),
+        required=False, allow_null=True
+    )
+    bcc_email = serializers.ListSerializer(
+        child=serializers.EmailField(required=False),
+        required=False, allow_null=True
+    )
+
+    def update(self, instance, validated_data):  # pylint: disable=R0914
         # get data simple and update data simple
         use_our_server = validated_data.get('use_our_server', instance.use_our_server)
         use_tls = validated_data.get('use_tls', instance.use_tls)
@@ -192,17 +203,26 @@ class MailConfigUpdateSerializer(serializers.ModelSerializer):
         instance.use_ssl = use_ssl
         instance.is_active = is_active
 
+        # ssl file
+        ssl_key_file = validated_data.get('ssl_key', None)
+        ssl_cert_file = validated_data.get('ssl_cert', None)
+        self.force_ssl(instance=instance, ssl_key_file=ssl_key_file, ssl_cert_file=ssl_cert_file)
+
         # get data must encrypt and call push data encrypt
         host = validated_data.get('host', None)
         port = validated_data.get('port', None)
         username = validated_data.get('username', None)
         password = validated_data.get('password', None)
-        instance.encrypt_and_collect(host=host, port=port, username=username, password=password)
-
-        # ssl file
-        ssl_key_file = validated_data.get('ssl_key', None)
-        ssl_cert_file = validated_data.get('ssl_cert', None)
-        self.force_ssl(instance=instance, ssl_key_file=ssl_key_file, ssl_cert_file=ssl_cert_file)
+        from_email = validated_data.get('from_email', None)
+        reply_email = validated_data.get('from_email', None)
+        cc_email = validated_data.get('from_email', None)
+        bcc_email = validated_data.get('from_email', None)
+        instance.encrypt_and_collect(
+            host=host, port=port, username=username, password=password,
+            from_email=from_email, reply_email=reply_email, cc_email=cc_email, bcc_email=bcc_email,
+            ssl_key_file=bool(ssl_key_file),
+            ssl_cert_file=bool(ssl_cert_file),
+        )
 
         # force save
         instance.save()
@@ -212,6 +232,7 @@ class MailConfigUpdateSerializer(serializers.ModelSerializer):
         model = MailConfig
         fields = (
             'use_our_server', 'host', 'port', 'username', 'password', 'use_tls', 'use_ssl', 'is_active',
+            'from_email', 'reply_email', 'cc_email', 'bcc_email',
             'ssl_key', 'ssl_cert'
         )
 
