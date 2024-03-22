@@ -239,7 +239,7 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group_inherit(cls, obj):
-        return ReportCommonGet.get_group(group_obj=obj.group_inherit)
+        return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group)
 
     @classmethod
     def get_plan(cls, obj):
