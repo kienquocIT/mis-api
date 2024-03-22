@@ -1,11 +1,11 @@
 import hashlib
 import uuid
 import time
+import json
 import base64
 from datetime import datetime
-
 import requests
-import json
+
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile
@@ -106,22 +106,22 @@ def generate_token(http_method, username, password):
     return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
 
 
-def read_money_vnd(n):
-    e1 = ' mươi'
-    e2 = ' trăm'
+def read_money_vnd(num):
+    text1 = ' mươi'
+    text2 = ' trăm'
 
     xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
-    xe1 = ['', 'mười'] + [f'{pre}{e1}' for pre in xe0[2:]]
-    xe2 = [''] + [f'{pre}{e2}' for pre in xe0[1:]]
+    xe1 = ['', 'mười'] + [f'{pre}{text1}' for pre in xe0[2:]]
+    xe2 = [''] + [f'{pre}{text2}' for pre in xe0[1:]]
 
     result = ""
-    str_n = str(n)
+    str_n = str(num)
     len_n = len(str_n)
 
     if len_n == 1:
-        result = xe0[n]
+        result = xe0[num]
     elif len_n == 2:
-        if n == 10:
+        if num == 10:
             result = "mười"
         else:
             result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
