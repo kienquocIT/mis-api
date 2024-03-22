@@ -2,7 +2,10 @@ import hashlib
 import uuid
 import time
 import base64
-# import requests
+from datetime import datetime
+
+import requests
+import json
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile
@@ -65,15 +68,13 @@ def create_delivery_mapped(ar_invoice, delivery_mapped_list):
     return True
 
 
-def create_item_mapped(ar_invoice, data_item_list, data_discount_list):
+def create_item_mapped(ar_invoice, data_item_list):
     bulk_data = []
     for item in data_item_list:
         bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
-    for item in data_discount_list:
-        bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
     ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
-    ARInvoiceItems.objects.bulk_create(bulk_data)
-    return True
+    item_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
+    return item_mapped
 
 
 def create_files_mapped(ar_invoice, file_id_list):
@@ -103,6 +104,37 @@ def generate_token(http_method, username, password):
     signature = base64.b64encode(md5.digest()).decode('utf-8')
 
     return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
+
+
+def read_money_vnd(n):
+    e1 = ' mươi'
+    e2 = ' trăm'
+
+    xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
+    xe1 = ['', 'mười'] + [f'{pre}{e1}' for pre in xe0[2:]]
+    xe2 = [''] + [f'{pre}{e2}' for pre in xe0[1:]]
+
+    result = ""
+    str_n = str(n)
+    len_n = len(str_n)
+
+    if len_n == 1:
+        result = xe0[n]
+    elif len_n == 2:
+        if n == 10:
+            result = "mười"
+        else:
+            result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
+    elif len_n == 3:
+        result = xe2[int(str_n[0])] + " " + read_money_vnd(int(str_n[1:]))
+    elif len_n <= 6:
+        result = read_money_vnd(int(str_n[:-3])) + " nghìn, " + read_money_vnd(int(str_n[-3:]))
+    elif len_n <= 9:
+        result = read_money_vnd(int(str_n[:-6])) + " triệu, " + read_money_vnd(int(str_n[-6:]))
+    elif len_n <= 12:
+        result = read_money_vnd(int(str_n[:-9])) + " tỷ, " + read_money_vnd(int(str_n[-9:]))
+
+    return result.strip().capitalize()
 
 
 class ARInvoiceCreateSerializer(serializers.ModelSerializer):
@@ -137,8 +169,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
         create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))
         create_item_mapped(
             ar_invoice,
-            self.initial_data.get('data_item_list', []),
-            self.initial_data.get('data_discount_list', [])
+            self.initial_data.get('data_item_list', [])
         )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
@@ -170,6 +201,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'invoice_number',
             'invoice_example',
             'system_status',
+            'easy_invoice_type',
             'delivery_mapped',
             'item_mapped',
             'attachment'
@@ -244,6 +276,130 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             'system_status'
         )
 
+    @classmethod
+    def create_update_invoice(cls, instance, item_mapped):
+        count = 1
+        product_xml = ''
+        total = 0
+        vat = 0
+        amount = 0
+        discount = 0
+        vat_len = []
+        for item in item_mapped:
+            if float(item.product_quantity) > 0:
+                total += float(item.product_subtotal)
+                vat += float(item.product_tax_value)
+                amount += float(item.product_subtotal_final)
+                vat_len.append(item.product_tax_rate)
+                product_xml += (
+                    "<Product>"
+                    f"<Code>{item.product.code}</Code>"
+                    f"<No>{count}</No>"
+                    f"<Feature>1</Feature>"
+                    f"<ProdName>{item.product.title}</ProdName>"
+                    f"<ProdUnit>{item.product_uom.title}</ProdUnit>"
+                    f"<ProdQuantity>{item.product_quantity}</ProdQuantity>"
+                    f"<ProdPrice>{item.product_unit_price}</ProdPrice>"
+                    f"<Discount>{item.product_discount_rate}</Discount>"
+                    f"<DiscountAmount>{item.product_discount_value}</DiscountAmount>"
+                    f"<Total>{item.product_subtotal}</Total>"
+                    f"<VATRate>{item.product_tax_rate}</VATRate>"
+                    f"<VATAmount>{item.product_tax_value}</VATAmount>"
+                    "<VATRateOther/>"
+                    f"<Amount>{item.product_subtotal_final}</Amount>"
+                    "<Extra></Extra>"
+                    "</Product>"
+                )
+                if float(item.product_discount_rate) > 0:
+                    discount += item.product_discount_value
+                    product_xml += (
+                        "<Product>"
+                        "<Code></Code>"
+                        "<No></No>"
+                        "<Feature>3</Feature>"
+                        f"<ProdName>Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})</ProdName>"
+                        "<ProdUnit></ProdUnit>"
+                        "<ProdQuantity></ProdQuantity>"
+                        "<ProdPrice></ProdPrice>"
+                        "<Discount></Discount>"
+                        "<DiscountAmount></DiscountAmount>"
+                        f"<Total>{item.product_discount_value}</Total>"
+                        "<VATRate></VATRate>"
+                        "<VATAmount></VATAmount>"
+                        "<VATRateOther/>"
+                        f"<Amount>{item.product_discount_value}</Amount>"
+                        "<Extra></Extra>"
+                        "</Product>"
+                    )
+                count += 1
+
+        pattern = '1C24TMT'
+        if len(set(vat_len)) > 1:
+            pattern = '1C24TTT'
+
+        instance.easy_invoice_type = pattern
+        instance.save(update_fields=['easy_invoice_type'])
+
+        document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
+        billing_address = instance.customer_mapped.account_mapped_billing_address.filter(is_default=True).first()
+        bank_account = instance.customer_mapped.account_banks_mapped.filter(is_default=True).first()
+        money_text = read_money_vnd(int(amount))
+        money_text = money_text[:-1] if money_text[-1] == ',' else money_text
+
+        http_method = "POST"
+        username = "API"
+        password = "Api@0317493763"
+        token = generate_token(http_method, username, password)
+        headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+
+        response = requests.post(
+            "http://0317493763.softdreams.vn/api/publish/importInvoice",
+            headers=headers,
+            json={
+                "XmlData":
+                    "<Invoices>"
+                    "<Inv>"
+                    "<Invoice>"
+                    f"<Ikey>{instance.id}</Ikey>"
+                    f"<InvNo>{instance.invoice_number}</InvNo>"
+                    f"<CusCode>{instance.customer_mapped.code}</CusCode>"
+                    f"<Buyer>{instance.customer_mapped.name}</Buyer>"
+                    f"<CusName>{instance.customer_mapped.name}</CusName>"
+                    f"<Email>{instance.customer_mapped.email}</Email>"
+                    "<EmailCC></EmailCC>"
+                    f"<CusAddress>{billing_address.full_address}</CusAddress>"
+                    f"<CusBankName>{bank_account.bank_name}</CusBankName>"
+                    f"<CusBankNo>{bank_account.bank_account_number}</CusBankNo>"
+                    f"<CusPhone>{instance.customer_mapped.phone}</CusPhone>"
+                    f"<CusTaxCode>{instance.customer_mapped.tax_code}</CusTaxCode>"
+                    "<PaymentMethod>Chuyển khoản</PaymentMethod>"
+                    f"<ArisingDate>{document_date}</ArisingDate>"
+                    "<ExchangeRate></ExchangeRate>"
+                    f"<CurrencyUnit>{instance.customer_mapped.currency.abbreviation}</CurrencyUnit>"
+                    "<Extra></Extra>"
+
+                    f"<Products>{product_xml}</Products>"
+
+                    f"<Total>{total - discount}</Total>"
+                    f"<VATRate>{vat / (total - discount)}</VATRate>"
+                    f"<VATAmount>{vat}</VATAmount>"
+                    "<VATRateOther/>"
+                    f"<Amount>{amount}</Amount>"
+                    f"<AmountInWords>{money_text} đồng</AmountInWords>"
+                    "</Invoice>"
+                    "</Inv>"
+                    "</Invoices>",
+                "Pattern": pattern,
+                "Serial": ""
+            },
+            timeout=60
+        )
+        if response.status_code != 200:
+            raise serializers.ValidationError(
+                {'Error': f"Create/Update Invoice Failed. {json.loads(response.text).get('Message', '')}"}
+            )
+        return response.status_code
+
     def validate(self, validate_data):
         return validate_data
 
@@ -253,75 +409,16 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         create_delivery_mapped(instance, self.initial_data.get('delivery_mapped_list', []))
-        create_item_mapped(
+        item_mapped = create_item_mapped(
             instance,
-            self.initial_data.get('data_item_list', []),
-            self.initial_data.get('data_discount_list', [])
+            self.initial_data.get('data_item_list', [])
         )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        # if 'publish_invoice' in self.initial_data:
-        #     http_method = "POST"
-        #     username = "API"
-        #     password = "Api@0317493763"
-        #     token = generate_token(http_method, username, password)
-        #     response = requests.post(
-        #         "http://0317493763.softdreams.vn/api/publish/importInvoice",
-        #         data={
-        #             "XmlData": "<Invoices>"
-        #                        "<Inv>"
-        #                        "<Invoice>"
-        #                        "<Ikey>7a61aaf7-a766-4d4a-b710-2fa6e1aa4a1f</Ikey>"
-        #                        "<CusCode>TEST1</CusCode>"
-        #                        "<Buyer>System Admin</Buyer>"
-        #                        "<CusName>Công ty Test 1</CusName>"
-        #                        "<Email>nguyenduonghai07@gmail.com</Email>"
-        #                        "<EmailCC></EmailCC>"
-        #                        "<CusAddress>TPHCM, số 20 đường 22, xã Bình Chánh</CusAddress>"
-        #                        "<CusBankName>MB Bank</CusBankName>"
-        #                        "<CusBankNo>8608603112001</CusBankNo>"
-        #                        "<CusPhone>0359610773</CusPhone>"
-        #                        "<CusTaxCode>8807436399</CusTaxCode>"
-        #                        "<PaymentMethod>Chuyển khoản</PaymentMethod>"
-        #                        "<ArisingDate></ArisingDate>"
-        #                        "<ExchangeRate></ExchangeRate>"
-        #                        "<CurrencyUnit>VND</CurrencyUnit>"
-        #                        "<Extra></Extra>"
-        #                        "<Products>"
-        #                        "<Product>"
-        #                        "<Code>CANON EF 24-70MM</Code>"
-        #                        "<No>1</No>"
-        #                        "<Feature>1</Feature>"
-        #                        "<ProdName>Ống kính Canon EF 24-70mm f/2.8L II USM</ProdName>"
-        #                        "<ProdUnit>Cái</ProdUnit>"
-        #                        "<ProdQuantity>3</ProdQuantity>"
-        #                        "<ProdPrice>32000000</ProdPrice>"
-        #                        "<Discount></Discount>"
-        #                        "<DiscountAmount></DiscountAmount>"
-        #                        "<Total>96000000</Total>"
-        #                        "<VATRate>10</VATRate>"
-        #                        "<VATRateOther/>"
-        #                        "<VATAmount>9600000</VATAmount>"
-        #                        "<Amount>105600000</Amount>"
-        #                        "<Extra></Extra>"
-        #                        "</Product>"
-        #                        "</Products>"
-        #                        "<Total>96000000</Total>"
-        #                        "<VATRate>10</VATRate>"
-        #                        "<VATRateOther/>"
-        #                        "<VATAmount>9600000</VATAmount>"
-        #                        "<Amount>105600000</Amount>"
-        #                        "<AmountInWords>Một trăm lẻ năm triệu sáu trăm ngàn đồng</AmountInWords>"
-        #                        "</Invoice>"
-        #                        "</Inv>"
-        #                        "</Invoices>",
-        #             "Pattern": "1C24TMT",
-        #             "Serial": ""
-        #         },
-        #         timeout=60
-        #     )
+        if 'create_invoice' in self.initial_data:
+            self.create_update_invoice(instance, item_mapped)
 
         return instance
 

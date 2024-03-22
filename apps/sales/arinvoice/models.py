@@ -22,12 +22,14 @@ class ARInvoice(DataAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
     customer_name = models.CharField(max_length=250, null=True, blank=True)
     sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE)
-    posting_date = models.DateTimeField()
-    document_date = models.DateTimeField()
-    invoice_date = models.DateTimeField()
-    invoice_sign = models.CharField(max_length=250)
-    invoice_number = models.CharField(max_length=250)
+    posting_date = models.DateTimeField(null=True)
+    document_date = models.DateTimeField(null=True)
+    invoice_date = models.DateTimeField(null=True)
+    invoice_sign = models.CharField(max_length=250, null=True)
+    invoice_number = models.CharField(max_length=250, null=True)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
+
+    easy_invoice_type = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = 'AR Invoice'
