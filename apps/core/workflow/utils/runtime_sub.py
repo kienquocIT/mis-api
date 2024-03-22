@@ -196,7 +196,6 @@ class WFValidateHandler:
         model_current = obj._meta.label_lower
         # Get all models
         models = apps.get_models()
-        # Iterate over each model
         for model in models:
             # Check if model in list check by WFValidateHandler.APP_CHECK_REFERENCED
             model_check = model._meta.label_lower
@@ -206,9 +205,8 @@ class WFValidateHandler:
                     field for field in model._meta.get_fields()
                     if field.is_relation and (field.one_to_one or field.many_to_one)
                 ]
-                # Iterate over ForeignKey fields
                 for field in related_fields:
-                    # Check if the object is referenced by any ForeignKey field
+                    # Check if the object is referenced by any ForeignKey and OneToOneField field
                     if field.related_model == obj.__class__:
                         # Check if there are any instances of the model referencing the object
                         if model.objects.filter(**{f"{field.name}": obj}).exists():

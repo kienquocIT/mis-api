@@ -23,6 +23,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'delivery_call': ['exact'],
         'system_status': ['in'],
         'quotation_id': ['exact'],
+        'customer_id': ['exact'],
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],

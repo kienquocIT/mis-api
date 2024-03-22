@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from django.db import models
 from django.utils import timezone
@@ -122,6 +123,7 @@ class LeaveRequest(DataAbstractModel):
             # nếu ko có quản lý số dư thì ko trừ available
             if leave_available.exists():
                 available = leave_available.first()
+                is_total = deepcopy(available.available)
                 if available.check_balance:
                     # các leave có quản lý số dư dc phép trừ stock
                     # nếu số dư ko đủ raise lỗi
@@ -142,7 +144,7 @@ class LeaveRequest(DataAbstractModel):
                         company=available.company,
                         leave_available=available,
                         open_year=available.open_year,
-                        total=available.total - item['subtotal'],
+                        total=is_total,
                         action=2,
                         quantity=item['subtotal'],
                         adjusted_total=item['subtotal'],

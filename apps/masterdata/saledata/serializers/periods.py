@@ -83,7 +83,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
             if not period.company.software_start_using_time:
-                period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
+                period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
                 period.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
@@ -378,35 +378,35 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title')
 
     @classmethod
-    def update_for_each_sub(cls, previous_sub, item, sub_item):
+    def update_for_each_sub(cls, previous_sub, prd_wh, sub_item):
         previous_sub_value = previous_sub.report_inventory_product_warehouse_sub_period.filter(
-            product=item.product,
-            warehouse=item.warehouse
+            product=prd_wh.product,
+            warehouse=prd_wh.warehouse
         ).first()
         if previous_sub_value:
-            item.opening_balance_quantity = previous_sub_value.ending_balance_quantity
-            item.opening_balance_cost = previous_sub_value.ending_balance_cost
-            item.opening_balance_value = previous_sub_value.ending_balance_value
-            item.save(
+            prd_wh.opening_balance_quantity = previous_sub_value.ending_balance_quantity
+            prd_wh.opening_balance_cost = previous_sub_value.ending_balance_cost
+            prd_wh.opening_balance_value = previous_sub_value.ending_balance_value
+            prd_wh.save(
                 update_fields=['opening_balance_quantity', 'opening_balance_cost', 'opening_balance_value']
             )
 
             all_trans = ReportInventorySub.objects.filter(
                 report_inventory__sub_period=sub_item,
-                product=item.product,
-                warehouse=item.warehouse
+                product=prd_wh.product,
+                warehouse=prd_wh.warehouse
             ).order_by('system_date')
 
             for index in range(all_trans.count()):
                 if index == 0:
                     if all_trans[index].stock_type == 1:
-                        new_quantity = item.opening_balance_quantity + all_trans[index].quantity
-                        sum_value = item.opening_balance_value + all_trans[index].value
+                        new_quantity = prd_wh.opening_balance_quantity + all_trans[index].quantity
+                        sum_value = prd_wh.opening_balance_value + all_trans[index].value
                         new_cost = sum_value / new_quantity
                         new_value = sum_value
                     else:
-                        new_quantity = item.opening_balance_quantity - all_trans[index].quantity
-                        new_cost = item.opening_balance_cost
+                        new_quantity = prd_wh.opening_balance_quantity - all_trans[index].quantity
+                        new_cost = prd_wh.opening_balance_cost
                         new_value = new_cost * new_quantity
                 else:
                     if all_trans[index].stock_type == 1:
@@ -424,10 +424,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 all_trans[index].save(
                     update_fields=['current_quantity', 'current_cost', 'current_value']
                 )
-            item.ending_balance_quantity = all_trans.last().current_quantity
-            item.ending_balance_cost = all_trans.last().current_cost
-            item.ending_balance_value = all_trans.last().current_value
-            item.save(
+            prd_wh.ending_balance_quantity = all_trans.last().current_quantity
+            prd_wh.ending_balance_cost = all_trans.last().current_cost
+            prd_wh.ending_balance_value = all_trans.last().current_value
+            prd_wh.save(
                 update_fields=['ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value']
             )
         return True
@@ -464,8 +464,8 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         for sub_item in cls.get_all_sub_periods(sub):
             previous_sub = cls.get_previous_sub_period(sub_item.period_mapped, sub_item)
             if previous_sub:
-                for item in sub_item.report_inventory_product_warehouse_sub_period.all():
-                    cls.update_for_each_sub(previous_sub, item, sub_item)
+                for prd_wh in sub_item.report_inventory_product_warehouse_sub_period.all():
+                    cls.update_for_each_sub(previous_sub, prd_wh, sub_item)
         return True
 
     @classmethod
@@ -664,7 +664,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
             if not instance.company.software_start_using_time:
-                instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m/%Y')
+                instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
                 instance.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
