@@ -2,7 +2,6 @@ import hashlib
 import uuid
 import time
 import base64
-import requests
 from rest_framework import serializers
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
