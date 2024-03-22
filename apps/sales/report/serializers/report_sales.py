@@ -191,9 +191,7 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group(cls, obj):
-        if obj.employee_inherit:
-            return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group)
-        return {}
+        return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group) if obj.employee_inherit else {}
 
 
 # REPORT CASHFLOW
@@ -239,9 +237,7 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group_inherit(cls, obj):
-        if obj.employee_inherit:
-            return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group)
-        return {}
+        return ReportCommonGet.get_group(group_obj=obj.employee_inherit.group) if obj.employee_inherit else {}
 
     @classmethod
     def get_plan(cls, obj):
