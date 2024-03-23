@@ -4,6 +4,7 @@ from unidecode import unidecode
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.core.base.filters import ApplicationPropertiesListFilter
 from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
@@ -139,6 +140,7 @@ class ApplicationPropertyList(BaseListMixin):
         'is_sale_indicator': ['exact'],
         'parent_n': ['exact', 'isnull'],
         'is_print': ['exact'],
+        'is_mail': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
@@ -151,9 +153,7 @@ class ApplicationPropertyList(BaseListMixin):
 class ApplicationPropertyForPrintList(BaseListMixin):
     queryset = ApplicationProperty.objects
     search_fields = ['code', 'title_slug']
-    filterset_fields = {
-        'application': ['exact', 'in'],
-    }
+    filterset_class = ApplicationPropertiesListFilter
     serializer_list = ApplicationPropertyForPrintListSerializer
 
     def get_queryset(self):
@@ -168,9 +168,7 @@ class ApplicationPropertyForPrintList(BaseListMixin):
 class ApplicationPropertyForMailList(BaseListMixin):
     queryset = ApplicationProperty.objects
     search_fields = ['code', 'title_slug']
-    filterset_fields = {
-        'application': ['exact', 'in'],
-    }
+    filterset_class = ApplicationPropertiesListFilter
     serializer_list = ApplicationPropertyForMailListSerializer
 
     def get_queryset(self):

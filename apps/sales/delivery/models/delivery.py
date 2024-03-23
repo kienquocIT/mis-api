@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models import SubPeriods
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -151,8 +152,8 @@ class OrderDelivery(DataAbstractModel):
             if code_generated:
                 self.code = code_generated
             else:
-                delivery = OrderDeliverySub.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
+                delivery = OrderDeliverySub.objects.filter(
+                    tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
                 ).count()
                 char = "D"
                 temper = delivery + 1
@@ -297,10 +298,8 @@ class OrderDeliverySub(DataAbstractModel):
 
     def create_code_delivery(self):
         # auto create code (temporary)
-        delivery = OrderDeliverySub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
+        delivery = OrderDeliverySub.objects.filter(
+            tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
         ).count()
         if not self.code:
             char = "D"
@@ -309,6 +308,8 @@ class OrderDeliverySub(DataAbstractModel):
             self.code = code
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(

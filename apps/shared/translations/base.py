@@ -22,3 +22,11 @@ class PermissionMsg:
 class AttachmentMsg:
     ERROR_VERIFY = _('Attachment can not verify please try again or contact your admin')
     SOME_FILES_NOT_CORRECT = _('Some attachments are being used by another document or do not exist')
+
+
+class MailMsg:
+    USE_OUR_SERVER = _('Use our server is enabled')
+    CONNECT_ERROR = _('Connection errors')
+    CONNECT_FAILURE = _('Connect to your mail server is failure')
+    CONNECT_DATA_NOT_ENOUGH = _('Config must be fill enough value')
+    MAIL_DEACTIVATE_OT_NOT_FOUND = _('The mail server config is deactivate or not found')

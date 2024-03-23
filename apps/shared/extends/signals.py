@@ -30,7 +30,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency, Application, PlanApplication
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -43,10 +43,12 @@ from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from ..media_cloud_apis import MediaForceAPI
-from ...core.tenant.models import TenantPlan, Tenant
-from ...eoffice.assettools.models import AssetToolsConfig
-from ...eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
-from ...eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
+from apps.core.tenant.models import TenantPlan, Tenant
+from apps.eoffice.assettools.models import AssetToolsConfig
+from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
+from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
+from apps.core.mailer.tasks import send_mail_otp
+from ...core.account.models import ValidateUser
 
 logger = logging.getLogger(__name__)
 
@@ -1070,3 +1072,16 @@ def task_new_consumer(sender, instance, created, **kwargs):
             }
         )
         TeleBotPushNotify().send_msg(msg=msg)
+
+
+@receiver(post_save, sender=ValidateUser)
+def task_validate_user_otp(sender, instance, created, **kwargs):
+    if created is True:
+        call_task_background(
+            my_task=send_mail_otp,
+            tenant_id=instance.user.tenant_current_id,
+            company_id=instance.user.company_current_id,
+            user_id=instance.user_id,
+            otp_id=instance.id,
+            otp=instance.otp,
+        )

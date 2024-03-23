@@ -1,4 +1,4 @@
-Bastion_data__print_params = {
+Bastion_data_params = {
     '93846206-e393-4cd9-a586-ea6e05543029': {
         'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
         'title': 'Current Currency Title',
@@ -30,6 +30,16 @@ Bastion_data__print_params = {
         'remark': 'DD/MM/YYYY',
         'type': 1,
         'is_print': True,
+        'is_mail': True,
+    },
+    '9856772d-c049-4d89-ade5-794fe263faca': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'Current date time',
+        'code': '_current_date_time',
+        'remark': 'DD/MM/YYYY %H:%M:%S',
+        'type': 1,
+        'is_print': True,
+        'is_mail': True,
     },
     '7f13748a-6035-461c-b2e3-c9b4d7b42e85': {
         'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
@@ -38,10 +48,42 @@ Bastion_data__print_params = {
         'remark': 'ngày 1 tháng 1 năm 2000',
         'type': 1,
         'is_print': True,
+        'is_mail': True,
+    },
+
+    # system_code: 1 : welcome
+    '331f406e-6ed3-4cd5-a0a4-678f75639264': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'User - Full name',
+        'code': '_user__full_name',
+        'remark': 'Full name of user',
+        'type': 1,
+        'system_code': '1',
+        'is_mail': True,
+    },
+    '334b2fdf-c5b6-47da-adb1-45e5e7f535dc': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'User - User name',
+        'code': '_user__user_name',
+        'remark': 'Username for login',
+        'type': 1,
+        'system_code': '1',
+        'is_mail': True,
+    },
+
+    # system_code: 2: calendar
+    'a72ba69a-22d0-43d5-b1d7-38a29ef1d02a': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'OTP',
+        'code': '_otp',
+        'remark': 'OTP code for validation',
+        'type': 1,
+        'system_code': '3',
+        'is_mail': True,
     },
 }
 
-Quotation_data__print_params = {
+Quotation_data__params = {
     '74aecf48-ed61-4b96-a293-105837a0f6ae': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Code',
@@ -214,6 +256,14 @@ Quotation_data__print_params = {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Sale person email',
         'code': 'sale_person__email',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '9352e974-3ecb-4248-b210-2f6cd3b5cb8c': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Sale person phone',
+        'code': 'sale_person__phone',
         'remark': '',
         'type': 1,
         'is_print': True,

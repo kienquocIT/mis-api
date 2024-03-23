@@ -1,3 +1,8 @@
+import hashlib
+import uuid
+import time
+import base64
+# import requests
 from rest_framework import serializers
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
@@ -63,6 +68,8 @@ def create_goods_receipt_mapped(ap_invoice, gr_mapped_list):
 def create_item_mapped(ap_invoice, data_item_list):
     bulk_data = []
     for item in data_item_list:
+        del item['product_title']
+        del item['product_uom_title']
         bulk_data.append(APInvoiceItems(ap_invoice=ap_invoice, **item))
     APInvoiceItems.objects.filter(ap_invoice=ap_invoice).delete()
     APInvoiceItems.objects.bulk_create(bulk_data)
@@ -112,7 +119,10 @@ class APInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        ap_invoice = APInvoice.objects.create(**validated_data, code=f'AP-00{APInvoice.objects.all().count()+1}')
+        ap_invoice = APInvoice.objects.create(
+            **validated_data,
+            code=f'AP-00{APInvoice.objects.all().count()+1}'
+        )
 
         create_goods_receipt_mapped(ap_invoice, self.initial_data.get('goods_receipt_mapped_list', []))
         create_item_mapped(
@@ -203,6 +213,19 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
         return [item.attachment.get_detail() for item in att_objs]
 
 
+def generate_token(http_method, username, password):
+    epoch_start = 0
+    timestamp = str(int(time.time() - epoch_start))
+    nonce = uuid.uuid4().hex
+    signature_raw_data = http_method.upper() + timestamp + nonce
+
+    md5 = hashlib.md5()
+    md5.update(signature_raw_data.encode('utf-8'))
+    signature = base64.b64encode(md5.digest()).decode('utf-8')
+
+    return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
+
+
 class APInvoiceUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = APInvoice
@@ -233,6 +256,21 @@ class APInvoiceUpdateSerializer(serializers.ModelSerializer):
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
+
+        # if 'publish_invoice' in self.initial_data:
+        #     http_method = "POST"
+        #     username = "API"
+        #     password = "Api@0317493763"
+        #     token = generate_token(http_method, username, password)
+        #     response = requests.post(
+        #         "http://0317493763.softdreams.vn/api/publish/importInvoice",
+        #         data={
+        #             "XmlData": "",
+        #             "Pattern": "1C24TMT",
+        #             "Serial": ""
+        #         },
+        #         timeout=60
+        #     )
 
         return instance
 

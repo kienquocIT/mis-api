@@ -1,6 +1,7 @@
 from datetime import datetime
 from rest_framework import serializers
 
+from apps.sales.report.models import ReportRevenue
 # from apps.masterdata.saledata.models import Periods
 from apps.sales.revenue_plan.models import (
     RevenuePlanGroup, RevenuePlanGroupEmployee, RevenuePlan
@@ -88,7 +89,18 @@ def create_revenue_plan_group_employee(revenue_plan, revenue_plan_group_employee
             **data
         ))
     RevenuePlanGroupEmployee.objects.filter(revenue_plan_mapped=revenue_plan).delete()
-    RevenuePlanGroupEmployee.objects.bulk_create(bulk_data)
+    created_list = RevenuePlanGroupEmployee.objects.bulk_create(bulk_data)
+    # create initial record ReportRevenue
+    if created_list:
+        for obj_created in created_list:
+            if obj_created.revenue_plan_mapped:
+                ReportRevenue.push_from_plan(
+                    tenant_id=obj_created.revenue_plan_mapped.tenant_id,
+                    company_id=obj_created.revenue_plan_mapped.company_id,
+                    employee_created_id=obj_created.employee_mapped_id,
+                    employee_inherit_id=obj_created.employee_mapped_id,
+                    group_inherit_id=obj_created.employee_mapped.group_id if obj_created.employee_mapped else None,
+                )
     return True
 
 

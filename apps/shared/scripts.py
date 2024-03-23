@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
 )
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
+from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards, AccountActivity
 
 from apps.core.base.models import (
     PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City, Currency as BaseCurrency
@@ -44,13 +44,14 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
 from ..sales.inventory.serializers import GReturnProductInformationHandle
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityDocument,
+    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
+from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
@@ -1329,6 +1330,15 @@ def reset_and_run_reports_sale(run_type=0):
         ReportRevenue.objects.all().delete()
         ReportCustomer.objects.all().delete()
         ReportProduct.objects.all().delete()
+        for plan in RevenuePlanGroupEmployee.objects.all():
+            if plan.revenue_plan_mapped:
+                ReportRevenue.push_from_plan(
+                    tenant_id=plan.revenue_plan_mapped.tenant_id,
+                    company_id=plan.revenue_plan_mapped.company_id,
+                    employee_created_id=plan.employee_mapped_id,
+                    employee_inherit_id=plan.employee_mapped_id,
+                    group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
+                )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
             SaleOrder.push_to_report_revenue(sale_order)
             SaleOrder.push_to_report_product(sale_order)
@@ -1460,3 +1470,61 @@ def update_report_inventory_sub_trans_title():
 def update_task_config():
     OpportunityTaskStatus.objects.filter(task_kind=2, order=3).update(is_finish=True)
     print('Update Completed task status is done!')
+
+
+def reset_run_customer_activity():
+    AccountActivity.objects.all().delete()
+    for opportunity in Opportunity.objects.all():
+        if opportunity.customer:
+            AccountActivity.push_activity(
+                tenant_id=opportunity.tenant_id,
+                company_id=opportunity.company_id,
+                account_id=opportunity.customer_id,
+                app_code=opportunity._meta.label_lower,
+                document_id=opportunity.id,
+                title=opportunity.title,
+                code=opportunity.code,
+                date_activity=opportunity.date_created,
+                revenue=None,
+            )
+    for meeting in OpportunityMeeting.objects.all():
+        if meeting.opportunity:
+            if meeting.opportunity.customer:
+                AccountActivity.push_activity(
+                    tenant_id=meeting.opportunity.tenant_id,
+                    company_id=meeting.opportunity.company_id,
+                    account_id=meeting.opportunity.customer_id,
+                    app_code=meeting._meta.label_lower,
+                    document_id=meeting.id,
+                    title=meeting.subject,
+                    code='',
+                    date_activity=meeting.meeting_date,
+                    revenue=None,
+                )
+    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
+        if quotation.customer:
+            AccountActivity.push_activity(
+                tenant_id=quotation.tenant_id,
+                company_id=quotation.company_id,
+                account_id=quotation.customer_id,
+                app_code=quotation._meta.label_lower,
+                document_id=quotation.id,
+                title=quotation.title,
+                code=quotation.code,
+                date_activity=quotation.date_approved,
+                revenue=quotation.indicator_revenue,
+            )
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        if so.customer:
+            AccountActivity.push_activity(
+                tenant_id=so.tenant_id,
+                company_id=so.company_id,
+                account_id=so.customer_id,
+                app_code=so._meta.label_lower,
+                document_id=so.id,
+                title=so.title,
+                code=so.code,
+                date_activity=so.date_approved,
+                revenue=so.indicator_revenue,
+            )
+    print('reset_run_customer_activity done.')

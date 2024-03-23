@@ -52,6 +52,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'is_admin_tenant',
+            'is_mail_welcome',
         )
 
     @classmethod
@@ -235,6 +236,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 'company_current': AccountMsg.COMPANY_NOT_EXIST
             }
         )
+
 
 class UserDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()

@@ -3,7 +3,10 @@ from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import exceptions
 
-from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more
+from apps.shared import (
+    mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more, ResponseController,
+    call_task_background, DisperseModel, MailMsg,
+)
 from apps.core.company.models import CompanyUserEmployee
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
@@ -13,6 +16,7 @@ from .serializers import (
     CompanyUserEmployeeUpdateSerializer, UserResetPasswordSerializer,
 )
 from .models import User
+from ..mailer.tasks import send_mail_welcome
 
 
 class UserList(AccountListMixin, AccountCreateMixin):
@@ -111,6 +115,45 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class UserSendWelcome(BaseRetrieveMixin):
+    queryset = User.objects
+    serializer_class = UserUpdateSerializer
+    serializer_detail = UserDetailSerializer
+    serializer_update = UserUpdateSerializer
+
+    def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
+        if self.request.user.company_current_id:
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        raise exceptions.NotFound
+
+    @swagger_auto_schema()
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='put',
+    )
+    def put(self, request, *args, **kwargs):
+        user_obj = self.get_object()
+        if user_obj:
+            mail_config_cls = DisperseModel(app_model='mailer.MailConfig').get_model()
+            if mail_config_cls and hasattr(mail_config_cls, 'get_config'):
+                tenant_id = request.user.tenant_current_id
+                company_id = request.user.company_current_id
+                config_obj = mail_config_cls.get_config(tenant_id=tenant_id, company_id=company_id)
+                if config_obj and config_obj.is_active:
+                    call_task_background(
+                        my_task=send_mail_welcome,
+                        **{
+                            'tenant_id': tenant_id,
+                            'company_id': company_id,
+                            'user_id': user_obj.id,
+                        }
+                    )
+                    return ResponseController.success_200(data={})
+            return ResponseController.bad_request_400(msg=MailMsg.MAIL_DEACTIVATE_OT_NOT_FOUND)
+        return ResponseController.notfound_404()
 
 
 class UserDetailResetPassword(BaseUpdateMixin):
