@@ -8,28 +8,43 @@ from apps.shared import (
 
 
 INVOICE_EXP = (
-    (0, '01GTKT0/001'),
-    (1, '01GTKT3/001'),
-    (2, '02GTTT0/001'),
-    (3, '02GTTT3/001'),
-    (4, '03XKNB3/001'),
-    (5, '04HGDL3/001'),
-    (6, '07KPTQ3/001'),
+    (0, '01GTKT0'),
+    (1, '01GTKT3'),
+    (2, '02GTTT0'),
+    (3, '02GTTT3'),
+    (4, '03XKNB3'),
+    (5, '04HGDL3'),
+    (6, '07KPTQ3'),
+)
+
+INVOICE_METHOD = (
+    (1, 'TM'),
+    (2, 'CK'),
+    (3, 'TM/CK'),
 )
 
 
 class ARInvoice(DataAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
-    customer_name = models.CharField(max_length=250, null=True, blank=True)
-    sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE)
+    sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
     posting_date = models.DateTimeField(null=True)
     document_date = models.DateTimeField(null=True)
     invoice_date = models.DateTimeField(null=True)
-    invoice_sign = models.CharField(max_length=250, null=True)
-    invoice_number = models.CharField(max_length=250, null=True)
+    invoice_sign = models.CharField(max_length=250, null=True, blank=True)
+    invoice_number = models.CharField(max_length=250, null=True, blank=True)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
+    invoice_method = models.SmallIntegerField(choices=INVOICE_METHOD, default=3)
 
-    easy_invoice_type = models.CharField(max_length=50, null=True, blank=True)
+    is_free_input = models.BooleanField(default=False)
+    # for free input
+    customer_code = models.CharField(max_length=50, null=True, blank=True)
+    customer_name = models.CharField(max_length=250, null=True, blank=True)
+    customer_tax_number = models.CharField(max_length=250, null=True, blank=True)
+    customer_billing_address = models.CharField(max_length=250, null=True, blank=True)
+    customer_bank_code = models.CharField(max_length=50, null=True, blank=True)
+    customer_bank_number = models.CharField(max_length=250, null=True, blank=True)
+
+    is_created_einvoice = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'AR Invoice'
@@ -83,5 +98,20 @@ class ARInvoiceAttachmentFile(M2MFilesAbstractModel):
         verbose_name = 'AR Invoice attachment'
         verbose_name_plural = 'AR Invoice attachments'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ARInvoiceSign(SimpleAbstractModel):
+    tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
+    company = models.OneToOneField('company.Company', on_delete=models.CASCADE)
+    type = models.SmallIntegerField(choices=((0, 'VAT invoice'),), default=0)
+    one_vat_sign = models.CharField(max_length=50, null=True, blank=True)
+    many_vat_sign = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'AR Invoice Sign'
+        verbose_name_plural = 'AR Invoice Signs'
+        ordering = ()
         default_permissions = ()
         permissions = ()

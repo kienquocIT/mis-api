@@ -8,7 +8,8 @@ import requests
 
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile
+from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, \
+    ARInvoiceSign
 from apps.shared import SaleMsg
 
 __all__ = [
@@ -143,7 +144,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'customer_mapped',
-            'customer_name',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -151,21 +151,24 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status'
+            'system_status',
+
+            'customer_code',
+            'customer_name',
+            'customer_tax_number',
+            'customer_billing_address',
+            'customer_bank_code',
+            'customer_bank_number',
         )
 
     def validate(self, validate_data):
-        if validate_data.get('customer_mapped'):
-            if validate_data['customer_mapped'].name == validate_data['customer_name']:
-                validate_data['customer_name'] = None
-            else:
-                validate_data['customer_mapped'] = None
         return validate_data
 
     # @decorator_run_workflow
     def create(self, validated_data):
         ar_invoice = ARInvoice.objects.create(**validated_data, code=f'AR-00{ARInvoice.objects.all().count()+1}')
 
+        print(self.initial_data.get('data_item_list', []))
         create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))
         create_item_mapped(
             ar_invoice,
@@ -181,7 +184,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
 class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     delivery_mapped = serializers.SerializerMethodField()
     item_mapped = serializers.SerializerMethodField()
-    customer_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
@@ -201,10 +203,18 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'invoice_number',
             'invoice_example',
             'system_status',
-            'easy_invoice_type',
+            'is_created_einvoice',
             'delivery_mapped',
             'item_mapped',
-            'attachment'
+            'attachment',
+
+            'is_free_input',
+            'customer_code',
+            'customer_name',
+            'customer_tax_number',
+            'customer_billing_address',
+            'customer_bank_code',
+            'customer_bank_number',
         )
 
     @classmethod
@@ -212,7 +222,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         return [{
             'id': item.delivery_mapped_id,
             'title': item.delivery_mapped.title,
-        } for item in obj.ar_invoice_deliveries.all()]
+        } if item.delivery_mapped else {} for item in obj.ar_invoice_deliveries.all()]
 
     @classmethod
     def get_item_mapped(cls, obj):
@@ -241,14 +251,6 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         } for item in obj.ar_invoice_items.all()]
 
     @classmethod
-    def get_customer_mapped(cls, obj):
-        return {
-            'id': obj.customer_mapped_id,
-            'code': obj.customer_mapped.code,
-            'name': obj.customer_mapped.name,
-        } if obj.customer_mapped else {}
-
-    @classmethod
     def get_sale_order_mapped(cls, obj):
         return {
             'id': obj.sale_order_mapped_id,
@@ -273,7 +275,14 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status'
+            'system_status',
+
+            'customer_code',
+            'customer_name',
+            'customer_tax_number',
+            'customer_billing_address',
+            'customer_bank_code',
+            'customer_bank_number',
         )
 
     @classmethod
@@ -284,13 +293,11 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         vat = 0
         amount = 0
         discount = 0
-        vat_len = []
         for item in item_mapped:
             if float(item.product_quantity) > 0:
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
-                vat_len.append(item.product_tax_rate)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -334,12 +341,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     )
                 count += 1
 
-        pattern = '1C24TMT'
-        if len(set(vat_len)) > 1:
-            pattern = '1C24TTT'
-
-        instance.easy_invoice_type = pattern
-        instance.save(update_fields=['easy_invoice_type'])
+        pattern = instance.invoice_sign
 
         document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
         billing_address = instance.customer_mapped.account_mapped_billing_address.filter(is_default=True).first()
@@ -399,6 +401,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'Error': f"Create/Update Invoice Failed. {json.loads(response.text).get('Message', '')}"}
             )
+
+        instance.is_created_einvoice = True
+        instance.save(update_fields=['is_created_einvoice'])
         return response.status_code
 
     def validate(self, validate_data):
@@ -485,3 +490,56 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
     @classmethod
     def get_already(cls, obj):
         return ARInvoiceDelivery.objects.filter(delivery_mapped=obj).exists()
+
+
+class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ARInvoiceSign
+        fields = (
+            'type',
+            'one_vat_sign',
+            'many_vat_sign',
+        )
+
+    def validate(self, validate_data):
+        len_one_vat = len(validate_data.get('one_vat_sign'))
+        len_many_vat = len(validate_data.get('many_vat_sign'))
+        if (len_one_vat != 2 and len_one_vat != 0) or (len_many_vat != 2 and len_many_vat != 0):
+            raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
+        if len(validate_data.get('one_vat_sign')) == 2:
+            validate_data['one_vat_sign'] = '1C24T' + validate_data.get('one_vat_sign')
+        if len(validate_data.get('many_vat_sign')) == 2:
+            validate_data['many_vat_sign'] = '1C24T' + validate_data.get('many_vat_sign')
+        return validate_data
+
+    def create(self, validated_data):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        ARInvoiceSign.objects.filter(tenant_id=tenant_id, company_id=company_id).delete()
+        sign = ARInvoiceSign.objects.create(**validated_data)
+
+        return sign
+
+
+class ARInvoiceSignListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ARInvoiceSign
+        fields = (
+            'type',
+            'one_vat_sign',
+            'many_vat_sign',
+            'tenant',
+            'company'
+        )
+
+
+class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ARInvoiceSign
+        fields = (
+            'type',
+            'one_vat_sign',
+            'many_vat_sign',
+            'tenant',
+            'company'
+        )

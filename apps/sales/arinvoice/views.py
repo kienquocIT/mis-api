@@ -2,17 +2,19 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.arinvoice.models import ARInvoice
+from apps.sales.arinvoice.models import ARInvoice, ARInvoiceSign
 from apps.sales.arinvoice.serializers import (
     DeliveryListSerializerForARInvoice,
     ARInvoiceListSerializer, ARInvoiceDetailSerializer,
-    ARInvoiceCreateSerializer, ARInvoiceUpdateSerializer
+    ARInvoiceCreateSerializer, ARInvoiceUpdateSerializer, ARInvoiceSignListSerializer, ARInvoiceSignCreateSerializer,
+    ARInvoiceSignDetailSerializer
 )
 
 __all__ = [
     'DeliveryListForARInvoice',
     'ARInvoiceList',
-    'ARInvoiceDetail'
+    'ARInvoiceDetail',
+    'ARInvoiceSignList'
 ]
 
 
@@ -123,3 +125,40 @@ class DeliveryListForARInvoice(BaseListMixin):
         self.kwargs['sale_order_data__id'] = request.GET.get('sale_order_id')
         self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
+
+
+class ARInvoiceSignList(BaseListMixin, BaseCreateMixin):
+    queryset = ARInvoiceSign.objects
+    serializer_list = ARInvoiceSignListSerializer
+    serializer_create = ARInvoiceSignCreateSerializer
+    serializer_detail = ARInvoiceSignDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="ARInvoiceSign list",
+        operation_description="ARInvoiceSign list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create ARInvoiceSign",
+        operation_description="Create new ARInvoiceSign",
+        request_body=ARInvoiceSignCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_id': request.user.tenant_current_id,
+            'company_id': request.user.company_current_id,
+        }
+        return self.create(request, *args, **kwargs)

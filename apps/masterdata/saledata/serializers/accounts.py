@@ -22,6 +22,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
     revenue_information = serializers.SerializerMethodField()
+    billing_address = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -40,6 +41,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             'contact_mapped',
             'bank_accounts_mapped',
             'revenue_information',
+            'billing_address'
         )
 
     @classmethod
@@ -107,6 +109,21 @@ class AccountListSerializer(serializers.ModelSerializer):
             'order_number': order_number,
             'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
         }
+
+    @classmethod
+    def get_billing_address(cls, obj):
+        billing_address_list = []
+        for item in obj.account_mapped_billing_address.all():
+            billing_address_list.append({
+                'id': item.id,
+                'account_name': item.account_name,
+                'email': item.email,
+                'tax_code': item.tax_code,
+                'account_address': item.account_address,
+                'full_address': item.full_address,
+                'is_default': item.is_default
+            })
+        return billing_address_list
 
 
 def create_employee_map_account(account):
