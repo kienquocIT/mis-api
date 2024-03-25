@@ -22,6 +22,8 @@ class SaleMsg:
     TOTAL_PAYMENT = _('Total payment must be 100%.')
     PRICE_VALID = _('Price must be larger than 0.')
     QUANTITY_VALID = _('Quantity must be larger than 0.')
+    DATE_REQUIRED = _('Date is required.')
+    DUE_DATE_REQUIRED = _('Due date is required.')
 
 
 class SaleTask:
