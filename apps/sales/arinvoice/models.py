@@ -39,6 +39,7 @@ class ARInvoice(DataAbstractModel):
     # for free input
     customer_code = models.CharField(max_length=50, null=True, blank=True)
     customer_name = models.CharField(max_length=250, null=True, blank=True)
+    buyer_name = models.CharField(max_length=250, null=True, blank=True)
     customer_tax_number = models.CharField(max_length=250, null=True, blank=True)
     customer_billing_address = models.CharField(max_length=250, null=True, blank=True)
     customer_bank_code = models.CharField(max_length=50, null=True, blank=True)

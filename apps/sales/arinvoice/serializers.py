@@ -155,6 +155,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
 
             'customer_code',
             'customer_name',
+            'buyer_name',
             'customer_tax_number',
             'customer_billing_address',
             'customer_bank_code',
@@ -211,6 +212,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'is_free_input',
             'customer_code',
             'customer_name',
+            'buyer_name',
             'customer_tax_number',
             'customer_billing_address',
             'customer_bank_code',
@@ -279,6 +281,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
 
             'customer_code',
             'customer_name',
+            'buyer_name',
             'customer_tax_number',
             'customer_billing_address',
             'customer_bank_code',
@@ -286,7 +289,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def create_update_invoice(cls, instance, item_mapped):
+    def create_xml(cls, instance, item_mapped):
         count = 1
         product_xml = ''
         total = 0
@@ -341,58 +344,62 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     )
                 count += 1
 
-        pattern = instance.invoice_sign
-
         document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
         billing_address = instance.customer_mapped.account_mapped_billing_address.filter(is_default=True).first()
         bank_account = instance.customer_mapped.account_banks_mapped.filter(is_default=True).first()
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        http_method = "POST"
-        username = "API"
-        password = "Api@0317493763"
-        token = generate_token(http_method, username, password)
+        xml_data = (
+            "<Invoices>"
+            "<Inv>"
+            "<Invoice>"
+            f"<Ikey>{instance.id}</Ikey>"
+            f"<InvNo>{instance.invoice_number}</InvNo>"
+            f"<CusCode>{instance.customer_mapped.code}</CusCode>"
+            f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
+            f"<CusName>{instance.customer_mapped.name}</CusName>"
+            f"<Email>{instance.customer_mapped.email}</Email>"
+            "<EmailCC></EmailCC>"
+            f"<CusAddress>{billing_address.account_name}, {billing_address.account_address}</CusAddress>"
+            f"<CusBankName>{bank_account.bank_name}</CusBankName>"
+            f"<CusBankNo>{bank_account.bank_account_number}</CusBankNo>"
+            f"<CusPhone>{instance.customer_mapped.phone}</CusPhone>"
+            f"<CusTaxCode>{instance.customer_mapped.tax_code}</CusTaxCode>"
+            "<PaymentMethod>Tiền mặt/Chuyển khoản</PaymentMethod>"
+            f"<ArisingDate>{document_date}</ArisingDate>"
+            "<ExchangeRate></ExchangeRate>"
+            f"<CurrencyUnit>{instance.customer_mapped.currency.abbreviation}</CurrencyUnit>"
+            "<Extra></Extra>"
+
+            f"<Products>{product_xml}</Products>"
+
+            f"<Total>{total - discount}</Total>"
+            f"<VATRate>{vat / (total - discount)}</VATRate>"
+            f"<VATAmount>{vat}</VATAmount>"
+            "<VATRateOther/>"
+            f"<Amount>{amount}</Amount>"
+            f"<AmountInWords>{money_text} đồng</AmountInWords>"
+            "</Invoice>"
+            "</Inv>"
+            "</Invoices>"
+        )
+
+        return xml_data
+
+    @classmethod
+    def create_update_invoice(cls, instance, item_mapped):
+        xml_data = cls.create_xml(instance, item_mapped)
+
+        token = generate_token("POST", "API", "Api@0317493763")
         headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
 
         response = requests.post(
             "http://0317493763.softdreams.vn/api/publish/importInvoice",
             headers=headers,
             json={
-                "XmlData":
-                    "<Invoices>"
-                    "<Inv>"
-                    "<Invoice>"
-                    f"<Ikey>{instance.id}</Ikey>"
-                    f"<InvNo>{instance.invoice_number}</InvNo>"
-                    f"<CusCode>{instance.customer_mapped.code}</CusCode>"
-                    f"<Buyer>{instance.customer_mapped.name}</Buyer>"
-                    f"<CusName>{instance.customer_mapped.name}</CusName>"
-                    f"<Email>{instance.customer_mapped.email}</Email>"
-                    "<EmailCC></EmailCC>"
-                    f"<CusAddress>{billing_address.full_address}</CusAddress>"
-                    f"<CusBankName>{bank_account.bank_name}</CusBankName>"
-                    f"<CusBankNo>{bank_account.bank_account_number}</CusBankNo>"
-                    f"<CusPhone>{instance.customer_mapped.phone}</CusPhone>"
-                    f"<CusTaxCode>{instance.customer_mapped.tax_code}</CusTaxCode>"
-                    "<PaymentMethod>Chuyển khoản</PaymentMethod>"
-                    f"<ArisingDate>{document_date}</ArisingDate>"
-                    "<ExchangeRate></ExchangeRate>"
-                    f"<CurrencyUnit>{instance.customer_mapped.currency.abbreviation}</CurrencyUnit>"
-                    "<Extra></Extra>"
-
-                    f"<Products>{product_xml}</Products>"
-
-                    f"<Total>{total - discount}</Total>"
-                    f"<VATRate>{vat / (total - discount)}</VATRate>"
-                    f"<VATAmount>{vat}</VATAmount>"
-                    "<VATRateOther/>"
-                    f"<Amount>{amount}</Amount>"
-                    f"<AmountInWords>{money_text} đồng</AmountInWords>"
-                    "</Invoice>"
-                    "</Inv>"
-                    "</Invoices>",
-                "Pattern": pattern,
+                "XmlData": xml_data,
+                "Pattern": instance.invoice_sign,
                 "Serial": ""
             },
             timeout=60
@@ -403,7 +410,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             )
 
         instance.is_created_einvoice = True
-        instance.save(update_fields=['is_created_einvoice'])
+        if not instance.buyer_name:
+            instance.buyer_name = instance.customer_mapped.name
+        instance.save(update_fields=['is_created_einvoice', 'buyer_name'])
         return response.status_code
 
     def validate(self, validate_data):
