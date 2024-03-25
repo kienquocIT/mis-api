@@ -22,9 +22,11 @@ class ReportRevenueList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'sale_order_id': ['exact', 'in'],
         'sale_order__customer_id': ['exact', 'in'],
+        'is_initial': ['exact'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -56,6 +58,7 @@ class ReportProductList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'product_id': ['exact', 'in'],
         'product__general_product_category_id': ['exact', 'in'],
@@ -89,6 +92,7 @@ class ReportCustomerList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'customer_id': ['exact', 'in'],
     }
@@ -164,6 +168,7 @@ class ReportCashflowList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'sale_order_id': ['exact', 'in'],
         'due_date': ['exact', 'gte', 'lte'],
     }
@@ -314,7 +319,10 @@ class ReportGeneralList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
+        'is_initial': ['exact'],
+        'group_inherit__is_delete': ['exact'],
     }
     serializer_list = ReportGeneralListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

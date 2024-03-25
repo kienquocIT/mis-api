@@ -9,7 +9,11 @@ from uuid import UUID
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
-__all__ = ['LinkListHandler', 'StringHandler', 'ListHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
+__all__ = [
+    'LinkListHandler', 'StringHandler', 'ListHandler',
+    'CustomizeEncoder', 'TypeCheck', 'FORMATTING',
+    'DictHandler',
+]
 
 
 class LinkListHandler:
@@ -69,6 +73,25 @@ class StringHandler:
     def remove_special_characters_translate(text):
         """Fast with string too long"""
         return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
+
+    @staticmethod
+    def mask(data, percent_mask=70):
+        """Mask for data"""
+        if percent_mask == 100:
+            return '*' * len(data)
+
+        max_len = len(data)
+        len_mask = max_len * percent_mask / 100
+        if len_mask - round(len_mask) < 0.5:
+            len_mask += 0.5
+        len_mask = round(len_mask)
+
+        data_copy = [*data]
+        arr_hide = random.sample(range(max_len), len_mask)
+        for idx in arr_hide:
+            data_copy[idx] = '*'
+
+        return "".join(data_copy)
 
 
 class ListHandler:
@@ -171,9 +194,9 @@ class FORMATTING:
     PAGE_SIZE = settings.REST_FRAMEWORK['PAGE_SIZE']
 
     @classmethod
-    def parse_datetime(cls, value):
+    def parse_datetime(cls, value, format_str=None):
         if isinstance(value, datetime):
-            return datetime.strftime(value, cls.DATETIME) if value else None
+            return datetime.strftime(value, format_str if format_str else cls.DATETIME) if value else None
         return str(value)
 
     @classmethod
@@ -186,9 +209,9 @@ class FORMATTING:
         return None
 
     @classmethod
-    def parse_date(cls, value):
+    def parse_date(cls, value, format_str=None):
         if isinstance(value, date):
-            return datetime.strftime(value, cls.DATE) if value else None
+            return datetime.strftime(value, format_str if format_str else cls.DATE) if value else None
         return str(value)
 
     @classmethod
@@ -220,3 +243,89 @@ class FORMATTING:
     def size_to_text(cls, value, ext_code='B', rounded=2) -> str:
         data = cls.bytes_to_large(value=value, ext_code=ext_code)
         return f'{round(data[0], rounded)} {data[1]}'
+
+    @classmethod
+    def number_with_commas(cls, data):
+        data = str(data)
+        pattern = re.compile(r"(-?\d+)(\d{3})")
+        while pattern.search(data):
+            data = pattern.sub(r"\1,\2", data)
+        return data
+
+
+class DictHandler:
+    current_data: dict or list
+    current_key: str
+    split_type: int
+
+    def __init__(self, split_type=2):
+        self.split_type = split_type
+
+    @classmethod
+    def simple_return(cls, data):
+        if isinstance(data, (int, float)):
+            return FORMATTING.number_with_commas(data)
+        if isinstance(data, (str, bool)):
+            return data
+        return ''
+
+    def get_data_of_key(self):
+        if self.current_key and self.current_data:
+            if isinstance(self.current_data, list):
+                arr_data = []
+                for item in self.current_data:
+                    if isinstance(item, dict) and self.current_key in item:
+                        arr_data.append(item[self.current_data])
+                    else:
+                        return None
+                return arr_data
+            if isinstance(self.current_data, dict):
+                if self.current_key in self.current_data:
+                    return self.current_data[self.current_key]
+        return None
+
+    def point_data(self, split_reset):
+        if self.split_type == 2:
+            self.current_data = self.get_data_of_key()
+        elif self.split_type == 3:
+            self.current_data = self.get_data_of_key()
+        self.current_key = ''
+        self.split_type = split_reset
+
+    def get(self, key: str, data: dict, get_fail_return=None):  # pylint: disable=R0912
+        if not data:
+            return ''
+
+        if key and data:  # pylint: disable=R1702
+            self.current_key = key
+            self.current_data = data
+            self.current_key = ''
+
+            for index, char in enumerate(key):
+                if not self.current_data:
+                    return ''
+
+                if index == 0:
+                    self.current_key += char
+                elif index == len(key) - 1:
+                    self.current_key += char
+                    self.point_data(split_reset=2)
+                else:
+                    if char == '_':
+                        if index + 1 < len(key) and key[index + 1] != '_':
+                            # skip to last "_"
+                            if index >= 2 and key[index - 1] and key[index - 2] == '_':
+                                self.point_data(split_reset=3)
+                            elif index >= 1 and key[index - 1] == '_':
+                                self.point_data(split_reset=2)
+                            else:
+                                self.current_key += char
+                    else:
+                        self.current_key += char
+
+            if isinstance(self.current_data, list):
+                return [
+                    self.simple_return(item) for item in self.current_data
+                ]
+            return self.simple_return(self.current_data)
+        return get_fail_return

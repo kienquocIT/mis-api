@@ -51,6 +51,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
+from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
@@ -1329,6 +1330,15 @@ def reset_and_run_reports_sale(run_type=0):
         ReportRevenue.objects.all().delete()
         ReportCustomer.objects.all().delete()
         ReportProduct.objects.all().delete()
+        for plan in RevenuePlanGroupEmployee.objects.all():
+            if plan.revenue_plan_mapped:
+                ReportRevenue.push_from_plan(
+                    tenant_id=plan.revenue_plan_mapped.tenant_id,
+                    company_id=plan.revenue_plan_mapped.company_id,
+                    employee_created_id=plan.employee_mapped_id,
+                    employee_inherit_id=plan.employee_mapped_id,
+                    group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
+                )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
             SaleOrder.push_to_report_revenue(sale_order)
             SaleOrder.push_to_report_product(sale_order)

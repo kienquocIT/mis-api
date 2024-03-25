@@ -19,6 +19,14 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #
+msgid "Internal Server Error"
+msgstr "Lỗi máy chủ"
+
+#
+msgid "Service unavailable"
+msgstr "Dịch vụ không khả dụng"
+
+#
 msgid "The content is not HTML"
 msgstr "Nội dung không phải là HTML"
 
@@ -300,6 +308,10 @@ msgid "The session was expired"
 msgstr "Phiên làm việc đã hết hạn"
 
 #
+msgid "The OTP session was expired"
+msgstr "Phiên xác thực OTP đã hết hạn"
+
+#
 msgid "OTP isn't match"
 msgstr "OTP không chính xác"
 
@@ -501,10 +513,6 @@ msgstr "Quản trị viên Tenant đã tồn tại."
 #: .\apps\shared\translations\server.py:5
 msgid "Undefined error raises."
 msgstr "Một số lỗi không xác định."
-
-#: .\apps\shared\translations\server.py:6
-msgid "Internal Server Error"
-msgstr "Lỗi Máy Chủ"
 
 #: .\apps\shared\translations\server.py:7
 msgid "key_data == '' must be require data is dictionary."

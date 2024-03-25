@@ -7,7 +7,7 @@ from html import unescape
 import nh3
 from bs4 import BeautifulSoup
 
-from apps.shared import StringHandler
+from apps.shared.extends.utils import DictHandler
 
 
 class ManualBleach:
@@ -78,17 +78,19 @@ class ManualNH3:
 
 
 class HTMLController(ManualNH3, ManualBleach):
-    def __init__(self, html_str):
-        self.html_str = html_str
-        self.soup = BeautifulSoup(html_str, "html.parser")
+    def __init__(self, html_str: str, is_unescape: bool = False):
+        self.html_str = HTMLController.unescape(html_str) if is_unescape is True else html_str
+        self.soup = BeautifulSoup(self.html_str, "html.parser")
 
-    def handle_params(self):
-        # span.params-data[data-code]
+    def handle_params(self, data: dict):
         params = self.soup.select("span.params-data[data-code]")
         for result in params:
-            _covert = (result.text, result.string)
-            txt_replace = StringHandler.random_str(12)
-            result.string = txt_replace
+            key_code = result.attrs['data-code']
+            if key_code:
+                data_code = DictHandler().get(key=key_code, data=data)
+                result.string = data_code
+            else:
+                result.string = ''
         return self
 
     def clean(self):

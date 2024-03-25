@@ -117,6 +117,7 @@ class User(AuthUser):  # pylint: disable=R0902
         blank=True,
         related_name='all_company_of_user'
     )
+    is_mail_welcome = models.SmallIntegerField(default=0, verbose_name='Mail Welcome counter')
 
     def update_username_field_data(self):
         setattr(self, self.USERNAME_FIELD, self.convert_username_field_data(self.username, self.tenant_current))
@@ -260,6 +261,8 @@ class ValidateUser(models.Model):
     date_created = models.DateTimeField(default=timezone.now, editable=False)
     date_expires = models.DateTimeField()
     date_modified = models.DateTimeField(auto_now_add=True)
+    is_sent = models.BooleanField(default=False, verbose_name='Status sent notify')
+    date_sent = models.DateField(null=True, verbose_name='Date sent notify')
 
     @classmethod
     def generate_otp(cls, length=6):

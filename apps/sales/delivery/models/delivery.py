@@ -152,8 +152,8 @@ class OrderDelivery(DataAbstractModel):
             if code_generated:
                 self.code = code_generated
             else:
-                delivery = OrderDeliverySub.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
+                delivery = OrderDeliverySub.objects.filter(
+                    tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
                 ).count()
                 char = "D"
                 temper = delivery + 1
@@ -298,10 +298,8 @@ class OrderDeliverySub(DataAbstractModel):
 
     def create_code_delivery(self):
         # auto create code (temporary)
-        delivery = OrderDeliverySub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
+        delivery = OrderDeliverySub.objects.filter(
+            tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
         ).count()
         if not self.code:
             char = "D"
