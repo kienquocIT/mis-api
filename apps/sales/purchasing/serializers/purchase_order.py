@@ -433,6 +433,13 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
                     'id': purchase_order_quotation.purchase_quotation.supplier_mapped_id,
                     'name': purchase_order_quotation.purchase_quotation.supplier_mapped.name,
                     'code': purchase_order_quotation.purchase_quotation.supplier_mapped.code,
+                    'owner': {
+                        'id': purchase_order_quotation.purchase_quotation.supplier_mapped.owner_id,
+                        'fullname': purchase_order_quotation.purchase_quotation.supplier_mapped.owner.fullname,
+                        'email': purchase_order_quotation.purchase_quotation.supplier_mapped.owner.email,
+                        'mobile': purchase_order_quotation.purchase_quotation.supplier_mapped.owner.mobile,
+                        'job_title': purchase_order_quotation.purchase_quotation.supplier_mapped.owner.job_title,
+                    } if purchase_order_quotation.purchase_quotation.supplier_mapped.owner else {},
                 } if purchase_order_quotation.purchase_quotation.supplier_mapped else {}
             } if purchase_order_quotation.purchase_quotation else {},
             'is_use': purchase_order_quotation.is_use,
@@ -542,6 +549,10 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['purchase_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
+                # check required field
+                due_date = payment_stage.get('due_date', '')
+                if not due_date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True
@@ -629,6 +640,10 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['purchase_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
+                # check required field
+                due_date = payment_stage.get('due_date', '')
+                if not due_date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True

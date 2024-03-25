@@ -1,4 +1,7 @@
 from datetime import date, datetime
+
+from django.utils import timezone
+
 from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
@@ -48,12 +51,12 @@ from ..sales.opportunity.models import (
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
-    PurchaseOrderRequestProduct, PurchaseOrder
+    PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
-    SaleOrderAppConfig
+    SaleOrderAppConfig, SaleOrderPaymentStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.task.models import OpportunityTaskStatus
 
@@ -1528,3 +1531,19 @@ def reset_run_customer_activity():
                 revenue=so.indicator_revenue,
             )
     print('reset_run_customer_activity done.')
+
+
+def update_date_due_date_payment():
+    current_date = timezone.now()
+    for so_payment in SaleOrderPaymentStage.objects.all():
+        if not so_payment.date:
+            so_payment.date = current_date
+            so_payment.save(update_fields=['date'])
+        if not so_payment.due_date:
+            so_payment.due_date = current_date
+            so_payment.save(update_fields=['due_date'])
+    for po_payment in PurchaseOrderPaymentStage.objects.all():
+        if not po_payment.due_date:
+            po_payment.due_date = current_date
+            po_payment.save(update_fields=['due_date'])
+    print('update_date_due_date_payment done.')

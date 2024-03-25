@@ -331,6 +331,13 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['sale_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
+                # check required field
+                date = payment_stage.get('date', '')
+                due_date = payment_stage.get('due_date', '')
+                if not date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
+                if not due_date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True
@@ -497,6 +504,13 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             total = 0
             for payment_stage in validate_data['sale_order_payment_stage']:
                 total += payment_stage.get('payment_ratio', 0)
+                # check required field
+                date = payment_stage.get('date', '')
+                due_date = payment_stage.get('due_date', '')
+                if not date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
+                if not due_date:
+                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         return True
