@@ -51,6 +51,17 @@ Bastion_data_params = {
         'is_mail': True,
     },
 
+    # # mail general
+    # 'ffd171c8-aeda-4595-9de3-6b3e32e4afd9': {
+    #     'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+    #     'title': 'Status',
+    #     'code': '_status',
+    #     'remark': 'Status of document',
+    #     'type': 1,
+    #     'system_code': None,
+    #     'is_mail': True,
+    # },
+
     # system_code: 1 : welcome
     '331f406e-6ed3-4cd5-a0a4-678f75639264': {
         'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app

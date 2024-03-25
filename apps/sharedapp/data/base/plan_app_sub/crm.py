@@ -278,6 +278,7 @@ QUOTATION_APP_CONFIG = {
         },
     },
     "allow_print": True,
+    "allow_mail": True,
 }
 
 SALEORDER_APP_CONFIG = {

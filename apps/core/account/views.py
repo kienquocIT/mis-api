@@ -2,6 +2,7 @@ from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import exceptions
+from rest_framework.views import APIView
 
 from apps.shared import (
     mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more, ResponseController,
@@ -119,9 +120,7 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
 class UserSendWelcome(BaseRetrieveMixin):
     queryset = User.objects
-    serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
-    serializer_update = UserUpdateSerializer
 
     def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
         if self.request.user.company_current_id:
@@ -228,9 +227,10 @@ class UserOfTenantList(AccountListMixin):
 
     @property
     def filter_kwargs(self) -> dict[str, any]:
-        if self.request.user.company_current_id:
-            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
-        raise exceptions_more.Empty200
+        # if self.request.user.company_current_id:
+        #     return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        # raise exceptions_more.Empty200
+        return {'tenant_current_id': self.request.user.tenant_current_id}
 
     @swagger_auto_schema()
     @mask_view(
@@ -239,3 +239,19 @@ class UserOfTenantList(AccountListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class UserAdminTenant(APIView):
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        if request.user and request.user.is_authenticated and request.user.tenant_current_id:
+            objs = User.objects.filter(tenant_current_id=request.user.tenant_current_id, is_admin_tenant=True)
+            result = [
+                {
+                    'full_name': obj.get_full_name(),
+                    'email': obj.email,
+                } for obj in objs[:3]
+            ]
+            print('result:', result)
+            return ResponseController.success_200(data=result)
+        return ResponseController.success_200(data=[])

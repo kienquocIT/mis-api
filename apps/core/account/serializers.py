@@ -71,7 +71,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
-            'company_current',
+            'company_current',  # The user belong to company list!
             'is_admin_tenant',
         )
 

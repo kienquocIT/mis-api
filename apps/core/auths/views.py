@@ -38,30 +38,39 @@ class AuthLogin(generics.GenericAPIView):
 
     @classmethod
     def force_company_currently(cls, user_obj: User) -> tuple[User, Union[None, models.Model], bool, list[str]]:
+        model_cls = DisperseModel(app_model='company.companyuseremployee').get_model()
         if not user_obj.company_current_id:
-            if user_obj.employee_current_id:
-                company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
-                    user_id=user_obj.id,
-                    employee_id=user_obj.employee_current_id,
+            company_user_emp = model_cls.objects.filter(
+                **
+                (
+                    {
+                        'user_id': user_obj.id,
+                        'employee_id': user_obj.employee_current_id,
+                    }
+                    if user_obj.employee_current_id
+                    else {
+                        'user_id': user_obj.id,
+                    }
                 )
-            else:
-                company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
-                    user_id=user_obj.id,
-                )
+            )
+
             if company_user_emp.count() > 0:
                 obj_first = company_user_emp.first()
                 user_obj.company_current_id = obj_first.company_id
                 return user_obj, obj_first, True, ['company_current_id']
+
         if user_obj.company_current_id:
-            company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
-                user_id=user_obj.id,
-                company_id=user_obj.company_current_id,
-            )
+            company_user_emp = model_cls.objects.filter(user_id=user_obj.id, company_id=user_obj.company_current_id)
             if company_user_emp.count() > 0:
                 obj_first = company_user_emp.first()
                 return user_obj, obj_first, True, ['company_current_id']
-            return user_obj, None, True, ['company_current_id']
-        return user_obj, None, False, ['company_current_id']
+            user_obj.company_current_id = None
+            user_obj.employee_current_id = None
+            return user_obj, None, True, ['company_current_id', 'employee_current_id']
+
+        user_obj.company_current_id = None
+        user_obj.employee_current_id = None
+        return user_obj, None, True, ['company_current_id', 'employee_current_id']
 
     @classmethod
     def force_employee_currently(cls, user_obj: User, company_user_emp_obj: models.Model = None) -> list[str]:
@@ -69,15 +78,17 @@ class AuthLogin(generics.GenericAPIView):
             if hasattr(company_user_emp_obj, 'employee_id'):
                 user_obj.employee_current_id = company_user_emp_obj.employee_id
                 return ['employee_current_id']
-        else:
-            emp_objs = DisperseModel(app_model='hr.employee').get_model().objects.filter(
-                company_id=user_obj.company_current_id,
-                user_id=user_obj.id,
-            )
-            if emp_objs.count() > 0:
-                user_obj.employee_current_id = emp_objs.first().id
-                return ['employee_current_id']
-        return []
+            user_obj.employee_current_id = None
+            return ['employee_current_id']
+        emp_objs = DisperseModel(app_model='hr.employee').get_model().objects.filter(
+            company_id=user_obj.company_current_id,
+            user_id=user_obj.id,
+        )
+        if emp_objs.count() > 0:
+            user_obj.employee_current_id = emp_objs.first().id
+            return ['employee_current_id']
+        user_obj.employee_current_id = None
+        return ['employee_current_id']
 
     @classmethod
     def check_and_update_globe(cls, user_obj: User):
@@ -208,9 +219,11 @@ class MyLanguageView(APIView):
         user_obj = request.user
         if user_obj and hasattr(user_obj, 'id') and not isinstance(user_obj, AnonymousUser):
             language = request.data.get('language', None)
-            ser = MyLanguageUpdateSerializer(data={
-                'language': language
-            }, partial=True)
+            ser = MyLanguageUpdateSerializer(
+                data={
+                    'language': language
+                }, partial=True
+            )
             ser.is_valid(raise_exception=True)
 
             user_obj.language = language
