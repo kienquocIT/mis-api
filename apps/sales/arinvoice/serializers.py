@@ -353,7 +353,6 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 count += 1
 
         number_vat = list(set(number_vat))
-        document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
         billing_address = instance.customer_mapped.account_mapped_billing_address.filter(
             is_default=True
         ).first() if instance.customer_mapped else None
@@ -369,7 +368,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        xml_data = (
+        return (
             "<Invoices>"
             "<Inv>"
             "<Invoice>"
@@ -392,7 +391,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
             "</CusTaxCode>"
             "<PaymentMethod>Tiền mặt/Chuyển khoản</PaymentMethod>"
-            f"<ArisingDate>{document_date}</ArisingDate>"
+            "<ArisingDate>"
+            f"{datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')}"
+            "</ArisingDate>"
             "<ExchangeRate></ExchangeRate>"
             "<CurrencyUnit>"
             f"{instance.customer_mapped.currency.abbreviation if instance.customer_mapped else 'VND'}"
@@ -411,8 +412,6 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "</Inv>"
             "</Invoices>"
         )
-
-        return xml_data
 
     @classmethod
     def create_update_invoice(cls, instance, item_mapped):
@@ -539,9 +538,10 @@ class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        valid_lengths = (2, 0)
         len_one_vat = len(validate_data.get('one_vat_sign'))
         len_many_vat = len(validate_data.get('many_vat_sign'))
-        if (len_one_vat != 2 and len_one_vat != 0) or (len_many_vat != 2 and len_many_vat != 0):
+        if len_one_vat not in valid_lengths or len_many_vat not in valid_lengths:
             raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
         if len(validate_data.get('one_vat_sign')) == 2:
             validate_data['one_vat_sign'] = '1C24T' + validate_data.get('one_vat_sign')
