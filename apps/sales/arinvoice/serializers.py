@@ -311,7 +311,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        return billing_address, cus_address, bank_code, bank_number, money_text
+        return cus_address, [bank_code, bank_number], money_text
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -372,7 +372,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 count += 1
         number_vat = list(set(number_vat))
 
-        billing_address, cus_address, bank_code, bank_number, money_text = cls.process_value_xml(instance, amount)
+        cus_address, bank_data, money_text = cls.process_value_xml(instance, amount)
 
         return (
             "<Invoices>"
@@ -390,8 +390,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
             f"<CusAddress>{cus_address}</CusAddress>"
-            f"<CusBankName>{bank_code}</CusBankName>"
-            f"<CusBankNo>{bank_number}</CusBankNo>"
+            f"<CusBankName>{bank_data[0]}</CusBankName>"
+            f"<CusBankNo>{bank_data[1]}</CusBankNo>"
             f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
             "<CusTaxCode>"
             f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
