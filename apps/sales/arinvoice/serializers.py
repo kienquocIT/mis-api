@@ -295,6 +295,25 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def process_value_xml(cls, instance, amount):
+        billing_address = instance.customer_mapped.account_mapped_billing_address.filter(
+            is_default=True
+        ).first() if instance.customer_mapped else None
+        cus_address = (
+            f"{billing_address.account_name}, {billing_address.account_address}"
+        ) if billing_address else instance.customer_billing_address
+        bank_code = instance.customer_mapped.account_banks_mapped.filter(
+            is_default=True
+        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
+        bank_number = instance.customer_mapped.account_banks_mapped.filter(
+            is_default=True
+        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
+        money_text = read_money_vnd(int(amount))
+        money_text = money_text[:-1] if money_text[-1] == ',' else money_text
+
+        return billing_address, cus_address, bank_code, bank_number, money_text
+
+    @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
         count = 1
         product_xml = ''
@@ -351,22 +370,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                         "</Product>"
                     )
                 count += 1
-
         number_vat = list(set(number_vat))
-        billing_address = instance.customer_mapped.account_mapped_billing_address.filter(
-            is_default=True
-        ).first() if instance.customer_mapped else None
-        cus_address = (
-            f"{billing_address.account_name}, {billing_address.account_address}"
-        ) if billing_address else instance.customer_billing_address
-        bank_code = instance.customer_mapped.account_banks_mapped.filter(
-            is_default=True
-        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
-        bank_number = instance.customer_mapped.account_banks_mapped.filter(
-            is_default=True
-        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
-        money_text = read_money_vnd(int(amount))
-        money_text = money_text[:-1] if money_text[-1] == ',' else money_text
+
+        billing_address, cus_address, bank_code, bank_number, money_text = cls.process_value_xml(instance, amount)
 
         return (
             "<Invoices>"
