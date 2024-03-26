@@ -1530,6 +1530,44 @@ REPORT_CASHFLOW_APP_CONFIG = {
     },
 }
 
+REPORT_INVENTORY_APP_CONFIG = {
+    "id": "c22a9e96-e56e-4636-9083-8ee1c66cb1b2",
+    "title": "Report Inventory",
+    "code": "reportinventory",
+    "model_code": "reportinventory",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1730,6 +1768,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "69e84b95-b347-4f49-abdf-0ec80d6eb5bd": ApplicationConfigFrame(**REPORT_CASHFLOW_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c22a9e96-e56e-4636-9083-8ee1c66cb1b2": ApplicationConfigFrame(**REPORT_INVENTORY_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

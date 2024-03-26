@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class ReportInventory(DataAbstractModel):
@@ -109,8 +109,8 @@ class ReportInventorySub(DataAbstractModel):
                 )
 
             new_log = cls(
-                tenant=period_mapped.tenant,
-                company=period_mapped.company,
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
                 report_inventory=report_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
@@ -142,6 +142,8 @@ class ReportInventorySub(DataAbstractModel):
         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
         if not latest_trans:
             ReportInventoryProductWarehouse.objects.create(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
                 product=log.product,
                 warehouse=log.warehouse,
                 period_mapped=period_mapped,
@@ -177,8 +179,8 @@ class ReportInventorySub(DataAbstractModel):
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
         period_mapped = Periods.objects.filter(
-            company=activities_obj.company,
-            tenant=activities_obj.tenant,
+            tenant_id=activities_obj.tenant_id,
+            company_id=activities_obj.company_id,
             fiscal_year=activities_obj_date.year
         ).first()
         sub_period_order = activities_obj_date.month - period_mapped.space_month
@@ -199,7 +201,7 @@ class ReportInventorySub(DataAbstractModel):
         permissions = ()
 
 
-class ReportInventoryProductWarehouse(SimpleAbstractModel):
+class ReportInventoryProductWarehouse(DataAbstractModel):
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,

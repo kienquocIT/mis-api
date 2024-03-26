@@ -228,8 +228,8 @@ class ReportInventoryDetailList(BaseListMixin):
         operation_description="Get report inventory Detail",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='report', model_code='reportinventory', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportinventory', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
@@ -264,6 +264,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
 class ReportInventoryList(BaseListMixin):
     queryset = ReportInventoryProductWarehouse.objects
     serializer_list = ReportInventoryListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         try:
@@ -300,8 +301,8 @@ class ReportInventoryList(BaseListMixin):
         operation_description="Get report inventory List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='report', model_code='reportinventory', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportinventory', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1

@@ -46,6 +46,7 @@ class ApplicationName:
     report_reportpipeline = _('Report Pipeline')
     report_reportproduct = _('Report Product')
     report_reportrevenue = _('Report Revenue')
+    report_reportinventory = _('Report Inventory')
     cashoutflow_returnadvance = _('Return Advance')
     revenue_plan_revenueplan = _('Revenue Plan')
     hr_role = _('Role')
