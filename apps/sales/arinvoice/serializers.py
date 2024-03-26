@@ -308,7 +308,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
-                number_vat.append(item.product_tax.rate if item.product_tax else 0)
+                number_vat.append(item.product_tax.rate if item.product_tax_id else 0)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -321,8 +321,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     f"<Discount>{item.product_discount_rate}</Discount>"
                     f"<DiscountAmount>{item.product_discount_value}</DiscountAmount>"
                     f"<Total>{item.product_subtotal}</Total>"
-                    f"<VATRate>{int(item.product_tax.rate) if item.product_tax else 0}</VATRate>"
-                    f"<VATAmount>{item.product_tax_value if item.product_tax else 0}</VATAmount>"
+                    f"<VATRate>{int(item.product_tax.rate) if item.product_tax_id else 0}</VATRate>"
+                    f"<VATAmount>{item.product_tax_value if item.product_tax_id else 0}</VATAmount>"
                     "<VATRateOther/>"
                     f"<Amount>{item.product_subtotal_final}</Amount>"
                     "<Extra></Extra>"
@@ -343,8 +343,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                         "<Discount></Discount>"
                         "<DiscountAmount></DiscountAmount>"
                         f"<Total>{item.product_discount_value}</Total>"
-                        "<VATRate></VATRate>"
-                        "<VATAmount></VATAmount>"
+                        "<VATRate>-1</VATRate>"
+                        "<VATAmount>0</VATAmount>"
                         "<VATRateOther/>"
                         f"<Amount>{item.product_discount_value}</Amount>"
                         "<Extra></Extra>"
@@ -354,8 +354,18 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
 
         number_vat = list(set(number_vat))
         document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
-        billing_address = instance.customer_mapped.account_mapped_billing_address.filter(is_default=True).first()
-        bank_account = instance.customer_mapped.account_banks_mapped.filter(is_default=True).first()
+        billing_address = instance.customer_mapped.account_mapped_billing_address.filter(
+            is_default=True
+        ).first() if instance.customer_mapped else None
+        cus_address = (
+            f"{billing_address.account_name}, {billing_address.account_address}"
+        ) if billing_address else instance.customer_billing_address
+        bank_code = instance.customer_mapped.account_banks_mapped.filter(
+            is_default=True
+        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
+        bank_number = instance.customer_mapped.account_banks_mapped.filter(
+            is_default=True
+        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
@@ -365,20 +375,28 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<Invoice>"
             f"<Ikey>{instance.id}-{pattern}</Ikey>"
             f"<InvNo>{instance.invoice_number}</InvNo>"
-            f"<CusCode>{instance.customer_mapped.code}</CusCode>"
+            "<CusCode>"
+            f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
+            "</CusCode>"
             f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
-            f"<CusName>{instance.customer_mapped.name}</CusName>"
-            f"<Email>{instance.customer_mapped.email}</Email>"
+            "<CusName>"
+            f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
+            "</CusName>"
+            f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
-            f"<CusAddress>{billing_address.account_name}, {billing_address.account_address}</CusAddress>"
-            f"<CusBankName>{bank_account.bank_name}</CusBankName>"
-            f"<CusBankNo>{bank_account.bank_account_number}</CusBankNo>"
-            f"<CusPhone>{instance.customer_mapped.phone}</CusPhone>"
-            f"<CusTaxCode>{instance.customer_mapped.tax_code}</CusTaxCode>"
+            f"<CusAddress>{cus_address}</CusAddress>"
+            f"<CusBankName>{bank_code}</CusBankName>"
+            f"<CusBankNo>{bank_number}</CusBankNo>"
+            f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
+            "<CusTaxCode>"
+            f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
+            "</CusTaxCode>"
             "<PaymentMethod>Tiền mặt/Chuyển khoản</PaymentMethod>"
             f"<ArisingDate>{document_date}</ArisingDate>"
             "<ExchangeRate></ExchangeRate>"
-            f"<CurrencyUnit>{instance.customer_mapped.currency.abbreviation}</CurrencyUnit>"
+            "<CurrencyUnit>"
+            f"{instance.customer_mapped.currency.abbreviation if instance.customer_mapped else 'VND'}"
+            "</CurrencyUnit>"
             "<Extra></Extra>"
 
             f"<Products>{product_xml}</Products>"
