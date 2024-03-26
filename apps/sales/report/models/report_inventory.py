@@ -194,7 +194,7 @@ class ReportInventorySub(DataAbstractModel):
     class Meta:
         verbose_name = 'Report Inventory By Month'
         verbose_name_plural = 'Report Inventory By Months'
-        ordering = ()
+        ordering = ('-system_date',)
         default_permissions = ()
         permissions = ()
 
