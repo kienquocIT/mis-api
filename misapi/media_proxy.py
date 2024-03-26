@@ -58,9 +58,9 @@ def static(prefix, document_root):
     """
     if not prefix:
         raise exceptions.ImproperlyConfigured("Empty static prefix not permitted")
-    if not settings.DEBUG or urlsplit(prefix).netloc:
-        # No-op if not in debug mode or a non-local prefix.
-        return []
+    # if not settings.DEBUG or urlsplit(prefix).netloc:
+    #     # No-op if not in debug mode or a non-local prefix.
+    #     return []
 
     prefix_resolver = re.escape(prefix.lstrip("/"))
     return [
