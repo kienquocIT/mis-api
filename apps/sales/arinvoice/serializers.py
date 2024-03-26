@@ -163,13 +163,14 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        if not validate_data.get('sale_order_mapped'):
+            validate_data['is_free_input'] = True
         return validate_data
 
     # @decorator_run_workflow
     def create(self, validated_data):
         ar_invoice = ARInvoice.objects.create(**validated_data, code=f'AR-00{ARInvoice.objects.all().count()+1}')
 
-        print(self.initial_data.get('data_item_list', []))
         create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))
         create_item_mapped(
             ar_invoice,
@@ -240,14 +241,19 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
                 'id': item.product_uom_id,
                 'code': item.product_uom.code,
                 'title': item.product_uom.title,
+                'group_id': item.product_uom.group_id
             } if item.product_uom else {},
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
             'product_subtotal': item.product_subtotal,
             'product_discount_rate': item.product_discount_rate,
             'product_discount_value': item.product_discount_value,
-            'product_tax_rate': item.product_tax_rate,
-            'product_tax_title': item.product_tax_title,
+            'product_tax': {
+                'id': item.product_tax_id,
+                'code': item.product_tax.code,
+                'title': item.product_tax.title,
+                'rate': item.product_tax.rate,
+            } if item.product_tax else {},
             'product_tax_value': item.product_tax_value,
             'product_subtotal_final': item.product_subtotal_final
         } for item in obj.ar_invoice_items.all()]
@@ -289,18 +295,20 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def create_xml(cls, instance, item_mapped):
+    def create_xml(cls, instance, item_mapped, pattern):
         count = 1
         product_xml = ''
         total = 0
         vat = 0
         amount = 0
         discount = 0
+        number_vat = []
         for item in item_mapped:
             if float(item.product_quantity) > 0:
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
+                number_vat.append(item.product_tax.rate if item.product_tax else 0)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -313,15 +321,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     f"<Discount>{item.product_discount_rate}</Discount>"
                     f"<DiscountAmount>{item.product_discount_value}</DiscountAmount>"
                     f"<Total>{item.product_subtotal}</Total>"
-                    f"<VATRate>{item.product_tax_rate}</VATRate>"
-                    f"<VATAmount>{item.product_tax_value}</VATAmount>"
+                    f"<VATRate>{int(item.product_tax.rate) if item.product_tax else 0}</VATRate>"
+                    f"<VATAmount>{item.product_tax_value if item.product_tax else 0}</VATAmount>"
                     "<VATRateOther/>"
                     f"<Amount>{item.product_subtotal_final}</Amount>"
                     "<Extra></Extra>"
                     "</Product>"
                 )
                 if float(item.product_discount_rate) > 0:
-                    discount += item.product_discount_value
+                    discount += float(item.product_discount_value)
                     product_xml += (
                         "<Product>"
                         "<Code></Code>"
@@ -344,6 +352,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     )
                 count += 1
 
+        number_vat = list(set(number_vat))
         document_date = datetime.strptime(str(instance.document_date), '%Y-%m-%d 00:00:00').strftime('%d/%m/%Y')
         billing_address = instance.customer_mapped.account_mapped_billing_address.filter(is_default=True).first()
         bank_account = instance.customer_mapped.account_banks_mapped.filter(is_default=True).first()
@@ -354,7 +363,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<Invoices>"
             "<Inv>"
             "<Invoice>"
-            f"<Ikey>{instance.id}</Ikey>"
+            f"<Ikey>{instance.id}-{pattern}</Ikey>"
             f"<InvNo>{instance.invoice_number}</InvNo>"
             f"<CusCode>{instance.customer_mapped.code}</CusCode>"
             f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
@@ -375,7 +384,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"<Products>{product_xml}</Products>"
 
             f"<Total>{total - discount}</Total>"
-            f"<VATRate>{vat / (total - discount)}</VATRate>"
+            f"<VATRate>{int(vat * 100 / (total - discount)) if len(number_vat) == 1 else 0}</VATRate>"
             f"<VATAmount>{vat}</VATAmount>"
             "<VATRateOther/>"
             f"<Amount>{amount}</Amount>"
@@ -389,7 +398,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_update_invoice(cls, instance, item_mapped):
-        xml_data = cls.create_xml(instance, item_mapped)
+        xml_data = cls.create_xml(instance, item_mapped, instance.invoice_sign)
 
         token = generate_token("POST", "API", "Api@0317493763")
         headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
@@ -490,6 +499,7 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
                 'product_unit_price',
                 'product_discount_value',
                 'product_discount_amount',
+                'tax',
                 'product_tax_title',
                 'product_tax_value',
                 'product_tax_amount',

@@ -66,8 +66,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_subtotal = models.FloatField(default=0)
     product_discount_rate = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
-    product_tax_rate = models.FloatField(default=0)
-    product_tax_title = models.CharField(max_length=100, blank=True)
+    product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
     product_tax_value = models.FloatField(default=0)
 
     product_subtotal_final = models.FloatField(default=0)
