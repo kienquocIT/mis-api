@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer,\
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer
@@ -340,6 +341,12 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):
@@ -513,6 +520,12 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate_opportunity_rules(self, validate_data):

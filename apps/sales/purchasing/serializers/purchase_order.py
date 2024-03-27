@@ -6,6 +6,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
     PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -555,6 +556,12 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):
@@ -646,6 +653,12 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):

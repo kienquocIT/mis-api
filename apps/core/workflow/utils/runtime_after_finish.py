@@ -1,4 +1,5 @@
 import logging
+from rest_framework import serializers
 from datetime import timedelta
 from typing import Union
 from uuid import UUID
@@ -104,9 +105,10 @@ class DocHandler:
             if check is False:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])
+            else:
+                raise serializers.ValidationError({'detail': 'document has been referenced by another'})
             return True
         return False
-
 
     @classmethod
     def force_update_current_stage(cls, runtime_obj, stage_obj):
