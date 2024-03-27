@@ -4,7 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
-    ReportInventory, ReportInventoryProductWarehouse
+    ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer, ReportInventoryListSerializer
 )
@@ -233,9 +233,26 @@ class ReportInventoryDetailList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        tenant_id = self.request.user.tenant_current_id
+        company_id = self.request.user.company_current_id
         self.ser_context = {
-            'wh_list': set(WareHouse.objects.all().values_list('id', 'code', 'title'))
+            'wh_list': set(WareHouse.objects.filter(
+                tenant_id=tenant_id, company_id=company_id
+            ).values_list('id', 'code', 'title')),
         }
+        if all([
+            'period_mapped' in self.request.query_params,
+            'sub_period_order' in self.request.query_params
+        ]):
+            self.ser_context['all_report_inventory_by_month'] = ReportInventorySub.objects.filter(
+                tenant_id=tenant_id, company_id=company_id,
+                report_inventory__period_mapped_id=self.request.query_params['period_mapped'],
+                report_inventory__sub_period_order=self.request.query_params['sub_period_order']
+            ).select_related('warehouse')
+        else:
+            self.ser_context['all_report_inventory_by_month'] = ReportInventorySub.objects.filter(
+                tenant_id=tenant_id, company_id=company_id,
+            ).select_related('warehouse')
         return self.list(request, *args, **kwargs)
 
 
@@ -245,7 +262,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'product',
+            'product__inventory_uom',
             'warehouse',
             'period_mapped'
         ).prefetch_related().filter(for_balance=True).order_by('warehouse')
