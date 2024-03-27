@@ -1,11 +1,11 @@
 import logging
-from rest_framework import serializers
 from datetime import timedelta
 from typing import Union
 from uuid import UUID
 
 from django.db import models
 from django.utils import timezone
+from rest_framework import serializers
 
 from apps.core.log.tasks import (force_log_activity,)
 from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler, HookEventHandler, WFConfigSupport, \
@@ -106,7 +106,7 @@ class DocHandler:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])
             else:
-                raise serializers.ValidationError({'detail': 'document has been referenced by another'})
+                raise serializers.ValidationError({'detail': "This document is referenced by another document"})
             return True
         return False
 

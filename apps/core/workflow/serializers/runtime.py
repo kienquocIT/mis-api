@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee, CollaborationOutForm
-from apps.core.workflow.tasks import call_approval_task, call_action_workflow_after_finish
+from apps.core.workflow.tasks import call_approval_task
 from apps.core.workflow.utils.runtime_after_finish import RuntimeAfterFinishHandler
 from apps.shared import call_task_background
 
