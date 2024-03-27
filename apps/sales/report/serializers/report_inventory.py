@@ -46,21 +46,22 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     prd_wh.period_mapped_id == obj.period_mapped_id,
                     prd_wh.sub_period_order == obj.sub_period_order
                 ]):
-                    for item in obj.report_inventory_by_month.filter(warehouse=wh_id).all():
-                        data_stock_activity.append({
-                            'system_date': item.system_date,
-                            'posting_date': item.posting_date,
-                            'document_date': item.document_date,
-                            'stock_type': item.stock_type,
-                            'trans_code': item.trans_code,
-                            'trans_title': item.trans_title,
-                            'quantity': item.quantity,
-                            'cost': item.cost,
-                            'value': item.value,
-                            'current_quantity': item.current_quantity,
-                            'current_cost': item.current_cost,
-                            'current_value': item.current_value,
-                        })
+                    for item in self.context.get('all_report_inventory_by_month', []):
+                        if item.warehouse == wh_id:
+                            data_stock_activity.append({
+                                'system_date': item.system_date,
+                                'posting_date': item.posting_date,
+                                'document_date': item.document_date,
+                                'stock_type': item.stock_type,
+                                'trans_code': item.trans_code,
+                                'trans_title': item.trans_title,
+                                'quantity': item.quantity,
+                                'cost': item.cost,
+                                'value': item.value,
+                                'current_quantity': item.current_quantity,
+                                'current_cost': item.current_cost,
+                                'current_value': item.current_value,
+                            })
 
                     data_stock_activity = sorted(
                         data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])

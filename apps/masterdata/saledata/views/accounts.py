@@ -194,6 +194,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
             'contact_account_name', 'account_banks_mapped',
             'company__saledata_periods_belong_to_company',
             'report_customer_customer',
+            'account_mapped_billing_address'
         )
 
     @swagger_auto_schema(

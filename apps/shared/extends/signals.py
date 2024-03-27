@@ -91,16 +91,6 @@ class SaleDefaultData:
     UoM_Group_data = [
         {'title': 'Labor', 'is_default': 1},
     ]
-    CompanyFunctionNumber_data = [
-        {
-            'numbering_by': 0,
-            'schema': None,
-            'schema_text': None,
-            'first_number': None,
-            'last_number': None,
-            'reset_frequency': None
-        }
-    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -199,15 +189,14 @@ class SaleDefaultData:
 
     def create_company_function_number(self):
         objs = []
-        for function_index in range(10):
-            for cf_item in self.CompanyFunctionNumber_data:
-                objs.append(
-                    CompanyFunctionNumber(
-                        company=self.company_obj,
-                        function=function_index,
-                        **cf_item
-                    )
+        for cf_item in range(0, 10):
+            objs.append(
+                CompanyFunctionNumber(
+                    company=self.company_obj,
+                    function=cf_item,
+                    numbering_by=0
                 )
+            )
         CompanyFunctionNumber.objects.bulk_create(objs)
         return True
 
