@@ -233,6 +233,10 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         return GoodsReceiptCommonValidate.validate_quantity_import(value=value)
 
     @classmethod
+    def validate_product_unit_price(cls, value):
+        return GoodsReceiptCommonValidate().validate_price(value=value)
+
+    @classmethod
     def check_lot_serial_exist(cls, warehouse_data, product_obj):
         lot_number_list = []
         serial_number_list = []
@@ -403,9 +407,6 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
-    purchase_order = serializers.SerializerMethodField()
-    inventory_adjustment = serializers.SerializerMethodField()
-    supplier = serializers.SerializerMethodField()
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -417,9 +418,9 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'goods_receipt_type',
-            'purchase_order',
-            'inventory_adjustment',
-            'supplier',
+            'purchase_order_data',
+            'inventory_adjustment_data',
+            'supplier_data',
             'purchase_requests',
             'remarks',
             'date_received',
@@ -431,30 +432,6 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'is_active',
             'employee_inherit',
         )
-
-    @classmethod
-    def get_purchase_order(cls, obj):
-        return {
-            'id': obj.purchase_order_id,
-            'title': obj.purchase_order.title,
-            'code': obj.purchase_order.code,
-        } if obj.purchase_order else {}
-
-    @classmethod
-    def get_inventory_adjustment(cls, obj):
-        return {
-            'id': obj.inventory_adjustment_id,
-            'title': obj.inventory_adjustment.title,
-            'code': obj.inventory_adjustment.code,
-        } if obj.inventory_adjustment else {}
-
-    @classmethod
-    def get_supplier(cls, obj):
-        return {
-            'id': obj.supplier_id,
-            'name': obj.supplier.name,
-            'code': obj.supplier.code,
-        } if obj.supplier else {}
 
     @classmethod
     def get_purchase_requests(cls, obj):
@@ -498,8 +475,11 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             'goods_receipt_type',
             'title',
             'purchase_order',
+            'purchase_order_data',
             'inventory_adjustment',
+            'inventory_adjustment_data',
             'supplier',
+            'supplier_data',
             'purchase_requests',
             'remarks',
             'date_received',
