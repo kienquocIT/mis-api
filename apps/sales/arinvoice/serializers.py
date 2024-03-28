@@ -538,21 +538,26 @@ class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign'
         )
 
     def validate(self, validate_data):
         valid_lengths = (2, 0)
-        len_one_vat = len(validate_data.get('one_vat_sign'))
-        len_many_vat = len(validate_data.get('many_vat_sign'))
-        if len_one_vat not in valid_lengths or len_many_vat not in valid_lengths:
+        valid_len_one_vat = len(validate_data.get('one_vat_sign')) not in valid_lengths
+        valid_len_many_vat = len(validate_data.get('many_vat_sign')) not in valid_lengths
+        valid_len_sale_invoice_sign = len(validate_data.get('sale_invoice_sign')) not in valid_lengths
+        if valid_len_one_vat or valid_len_many_vat or valid_len_sale_invoice_sign:
             raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
+
+        this_year = str(datetime.now().year)[2:]
         if len(validate_data.get('one_vat_sign')) == 2:
-            validate_data['one_vat_sign'] = '1C24T' + validate_data.get('one_vat_sign')
+            validate_data['one_vat_sign'] = f'1C{this_year}T' + validate_data.get('one_vat_sign')
         if len(validate_data.get('many_vat_sign')) == 2:
-            validate_data['many_vat_sign'] = '1C24T' + validate_data.get('many_vat_sign')
+            validate_data['many_vat_sign'] = f'1C{this_year}T' + validate_data.get('many_vat_sign')
+        if len(validate_data.get('sale_invoice_sign')) == 2:
+            validate_data['sale_invoice_sign'] = f'2C{this_year}T' + validate_data.get('sale_invoice_sign')
         return validate_data
 
     def create(self, validated_data):
@@ -568,9 +573,9 @@ class ARInvoiceSignListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )
@@ -580,9 +585,9 @@ class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )

@@ -105,9 +105,9 @@ class ARInvoiceAttachmentFile(M2MFilesAbstractModel):
 class ARInvoiceSign(SimpleAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
     company = models.OneToOneField('company.Company', on_delete=models.CASCADE)
-    type = models.SmallIntegerField(choices=((0, 'VAT invoice'),), default=0)
     one_vat_sign = models.CharField(max_length=50, null=True, blank=True)
     many_vat_sign = models.CharField(max_length=50, null=True, blank=True)
+    sale_invoice_sign = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = 'AR Invoice Sign'
