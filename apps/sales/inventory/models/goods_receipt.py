@@ -265,34 +265,50 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     @classmethod
+    def check_exist(cls, item_product_id, item_warehouse_id, item_trans_id, activities_data):
+        for obj in activities_data:
+            if all([
+                item_product_id == obj['product'].id,
+                item_warehouse_id == obj['warehouse'].id,
+                item_trans_id == obj['trans_id']
+            ]):
+                return obj
+        return None
+
+    @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
         for item in instance.goods_receipt_product_goods_receipt.all():
             warehouse_filter = item.goods_receipt_warehouse_gr_product.all()
             for child in warehouse_filter:
-                lot_data = [{
-                    'lot_id': str(lot.id),
-                    'lot_number': lot.lot_number,
-                    'lot_quantity': lot.quantity_import,
-                    'lot_value': item.product_subtotal_price,
-                    'lot_expire_date': str(lot.expire_date)
-                } for lot in child.goods_receipt_lot_gr_warehouse.all()]
+                existed = cls.check_exist(item.product.id, child.warehouse.id, str(instance.id), activities_data)
+                if not existed:
+                    lot_data = [{
+                        'lot_id': str(lot.id),
+                        'lot_number': lot.lot_number,
+                        'lot_quantity': lot.quantity_import,
+                        'lot_value': item.product_subtotal_price,
+                        'lot_expire_date': str(lot.expire_date)
+                    } for lot in child.goods_receipt_lot_gr_warehouse.all()]
 
-                activities_data.append({
-                    'product': item.product,
-                    'warehouse': child.warehouse,
-                    'system_date': instance.date_approved,
-                    'posting_date': None,
-                    'document_date': None,
-                    'stock_type': 1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Goods receipt',
-                    'quantity': child.quantity_import,
-                    'cost': item.product_unit_price,
-                    'value': item.product_unit_price * child.quantity_import,
-                    'lot_data': lot_data
-                })
+                    activities_data.append({
+                        'product': item.product,
+                        'warehouse': child.warehouse,
+                        'system_date': instance.date_approved,
+                        'posting_date': None,
+                        'document_date': None,
+                        'stock_type': 1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'trans_title': 'Goods receipt',
+                        'quantity': child.quantity_import,
+                        'cost': item.product_unit_price,
+                        'value': item.product_unit_price * child.quantity_import,
+                        'lot_data': lot_data
+                    })
+                else:
+                    existed['quantity'] += child.quantity_import
+                    existed['value'] += item.product_unit_price * child.quantity_import
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,

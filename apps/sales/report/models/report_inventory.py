@@ -129,16 +129,16 @@ class ReportInventorySub(DataAbstractModel):
             bulk_info.append(new_log)
         new_logs = cls.objects.bulk_create(bulk_info)
 
-        return new_logs
+        return new_logs, [obj.pk for obj in new_logs]
 
     @classmethod
-    def process_in_each_log(cls, log, period_mapped, sub_period_order):
+    def process_in_each_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         sub_list = ReportInventorySub.objects.filter(
             product=log.product,
             warehouse=log.warehouse,
             report_inventory__period_mapped=period_mapped,
             report_inventory__sub_period_order=sub_period_order
-        ).exclude(id=log.id)
+        ).exclude(id__in=new_logs_id_list)
         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
         if not latest_trans:
             ReportInventoryProductWarehouse.objects.create(
@@ -185,9 +185,10 @@ class ReportInventorySub(DataAbstractModel):
         ).first()
         sub_period_order = activities_obj_date.month - period_mapped.space_month
         if period_mapped:
-            new_logs = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
+            new_logs, new_logs_id_list = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
             for log in new_logs:
-                cls.process_in_each_log(log, period_mapped, sub_period_order)
+                log_return = cls.process_in_each_log(log, new_logs_id_list, period_mapped, sub_period_order)
+                new_logs_id_list = [log_id for log_id in new_logs_id_list if log_id != log_return.id]
             return True
         raise serializers.ValidationError(
             {'Period missing': f'Period of fiscal year {activities_obj_date.year} does not exist.'}

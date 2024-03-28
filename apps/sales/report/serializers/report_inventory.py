@@ -47,7 +47,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     prd_wh.sub_period_order == obj.sub_period_order
                 ]):
                     for item in self.context.get('all_report_inventory_by_month', []):
-                        if item.warehouse == wh_id:
+                        if item.warehouse.id == wh_id and item.product.id == obj.product.id:
                             data_stock_activity.append({
                                 'system_date': item.system_date,
                                 'posting_date': item.posting_date,
