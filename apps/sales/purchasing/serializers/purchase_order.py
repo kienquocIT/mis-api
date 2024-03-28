@@ -383,6 +383,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     purchase_order_products_data = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -412,6 +413,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'workflow_runtime_id',
             'is_active',
             'attachment',
+            'employee_inherit',
         )
 
     @classmethod
@@ -482,6 +484,19 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_attachment(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
 
 class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
@@ -665,6 +680,7 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
         self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         # update purchase order
         for key, value in validated_data.items():

@@ -720,6 +720,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'attachment',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )
