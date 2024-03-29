@@ -177,6 +177,17 @@ class WFSupportFunctionsHandler:
             is_system=True,
         )
 
+    @classmethod
+    def get_class_view_and_serializer(cls, app_label, model_name):
+        # Get the model class
+        model_class = apps.get_model(app_label=app_label, model_name=model_name)
+        # Get the corresponding view class
+        for cls_ in model_class.mro():
+            if hasattr(cls_, 'serializer_create'):
+                serializer_create_class = cls_.serializer_create
+                return cls_, serializer_create_class
+        return None, None
+
 
 class WFValidateHandler:
     APP_CHECK_REFERENCED = {

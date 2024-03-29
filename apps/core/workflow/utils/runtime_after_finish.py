@@ -92,7 +92,7 @@ class DocHandler:
         return False
 
     @classmethod
-    def force_reject_after_finish(cls, runtime_obj):
+    def force_reject(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
                 'tenant_id': runtime_obj.tenant_id,
@@ -108,6 +108,22 @@ class DocHandler:
             else:
                 raise serializers.ValidationError({'detail': "This document is referenced by another document"})
             return True
+        return False
+
+    @classmethod
+    def force_change_request(cls, runtime_obj, data_cr):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            # Get the class view and serializer
+            app_label, model_name = runtime_obj.app_code.split('.')
+            class_view, serializer_create_class = WFSupportFunctionsHandler.get_class_view_and_serializer(
+                app_label=app_label, model_name=model_name
+            )
         return False
 
     @classmethod
@@ -283,10 +299,11 @@ class RuntimeAfterFinishHandler:
         return None
 
     @classmethod
-    def action_perform(
+    def action_perform_after_finish(
             cls,
             runtime_obj: Runtime,
             action_code: int,
+            data_cr: dict,
     ) -> bool:
         if runtime_obj:
             # WORKFLOW_ACTION = {
@@ -298,28 +315,12 @@ class RuntimeAfterFinishHandler:
             #     5: WorkflowMsg.ACTION_TODO,
             # }
             match action_code:
-                case 0:
-                    ...
-                case 1:  # approved
-                    ...
                 case 2:  # reject
-                    # RuntimeStage logging
-                    # Update flag done
-
-                    # RuntimeLogHandler(
-                    #     stage_obj=rt_assignee.stage,
-                    #     actor_obj=employee_assignee_obj,
-                    #     is_system=False,
-                    # ).log_approval_task(action_number=2)
-
                     # update doc to reject
-                    DocHandler.force_reject_after_finish(runtime_obj)
+                    DocHandler.force_reject(runtime_obj=runtime_obj)
                 case 3:  # return
-                    ...
-                case 4:  # receive
-                    ...
-                case 5:  # To do
-                    ...
+                    # change request
+                    DocHandler.force_change_request(runtime_obj=runtime_obj, data_cr=data_cr)
             return True
         return False
 

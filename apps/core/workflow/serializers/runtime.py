@@ -372,9 +372,11 @@ class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
     action = serializers.IntegerField(
         help_text='Action code submit'
     )
+    data_cr = serializers.JSONField(required=False, default=dict)
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
+        data_cr = validated_data.get('data_cr', {})
         # call_task_background(
         #     call_action_workflow_after_finish,
         #     *[
@@ -382,9 +384,10 @@ class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
         #         action_code,
         #     ]
         # )
-        RuntimeAfterFinishHandler().action_perform(
+        RuntimeAfterFinishHandler().action_perform_after_finish(
             runtime_obj=instance,
             action_code=action_code,
+            data_cr=data_cr
         )
         return instance
 

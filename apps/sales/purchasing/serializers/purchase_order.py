@@ -378,8 +378,6 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     purchase_requests_data = serializers.SerializerMethodField()
     purchase_quotations_data = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
-    supplier = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
     purchase_order_products_data = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -394,8 +392,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'purchase_request_products_data',
-            'supplier',
-            'contact',
+            'supplier_data',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             'receipt_status',
@@ -456,22 +454,6 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         ), many=True).data
 
     @classmethod
-    def get_supplier(cls, obj):
-        return {
-            'id': obj.supplier_id,
-            'name': obj.supplier.name,
-            'code': obj.supplier.code,
-        } if obj.supplier else {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'fullname': obj.contact.fullname,
-            'code': obj.contact.code,
-        } if obj.contact else {}
-
-    @classmethod
     def get_purchase_order_products_data(cls, obj):
         return PurchaseOrderProductListSerializer(obj.purchase_order_product_order.all(), many=True).data
 
@@ -530,7 +512,9 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'supplier',
+            'supplier_data',
             'contact',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             # purchase order tabs
@@ -628,7 +612,9 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'supplier',
+            'supplier_data',
             'contact',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             # purchase order tabs

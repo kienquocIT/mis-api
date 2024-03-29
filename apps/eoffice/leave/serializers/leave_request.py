@@ -275,6 +275,7 @@ class LeaveRequestUpdateSerializer(AbstractDetailSerializerModel):
             )
         LeaveRequestDateListRegister.objects.bulk_create(data_create)
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)

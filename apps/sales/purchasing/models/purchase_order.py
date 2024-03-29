@@ -36,12 +36,20 @@ class PurchaseOrder(DataAbstractModel):
         null=True,
         help_text="sale data Accounts have type supplier"
     )
+    supplier_data = models.JSONField(
+        default=dict,
+        help_text="read data supplier, use for get list or detail"
+    )
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
         verbose_name="contact",
         related_name="purchase_order_contact",
         null=True
+    )
+    contact_data = models.JSONField(
+        default=dict,
+        help_text="read data contact, use for get list or detail"
     )
     delivered_date = models.DateTimeField(
         null=True,

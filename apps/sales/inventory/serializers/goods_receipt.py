@@ -541,6 +541,7 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             'purchase_order',
             'inventory_adjustment',
             'supplier',
+            'supplier_data',
             'purchase_requests',
             'remarks',
             'date_received',
