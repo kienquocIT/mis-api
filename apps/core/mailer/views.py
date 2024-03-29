@@ -2,10 +2,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 
+from django.utils.translation import gettext_lazy as _
+
 from apps.core.mailer.mail_control import SendMailController
 from apps.shared import (
     mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
-    TypeCheck, ResponseController, MailMsg,
+    TypeCheck, ResponseController, MailMsg, DisperseModel,
 )
 
 from apps.core.mailer.models import MailTemplate, MailTemplateSystem, MailConfig
@@ -17,7 +19,33 @@ from apps.core.mailer.serializers import (
 )
 
 
-class MailerConfigList(BaseListMixin, BaseCreateMixin):
+class MailerFeatureAppList(BaseListMixin):
+    queryset = MailTemplate.objects
+    serializer_list = MailTemplateListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=False, allow_admin_company=True)
+    def get(self, request, *args, **kwargs):
+        result = []
+        app_ids = list(
+            MailTemplate.objects.filter_current(fill__tenant=True, fill__company=True).values_list(
+                'application', flat=True
+            ).distinct()
+        )
+        app_cls = DisperseModel(app_model='base.application').get_model()
+        if app_ids and app_cls:
+            result = [
+                {
+                    'id': str(obj.id),
+                    'title': _(str(obj.title)),
+                    'code': str(obj.code)
+                } for obj in app_cls.objects.filter(id__in=app_ids).order_by('title')
+            ]
+        return ResponseController.success_200(data=result)
+
+
+class MailerFeatureList(BaseListMixin, BaseCreateMixin):
     queryset = MailTemplate.objects
     serializer_list = MailTemplateListSerializer
     serializer_create = MailTemplateCreateSerializer
@@ -37,7 +65,22 @@ class MailerConfigList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class MailerConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+class MailTemplateByApplication(BaseListMixin):
+    queryset = MailTemplate.objects
+    serializer_list = MailTemplateListSerializer
+    serializer_create = MailTemplateCreateSerializer
+    serializer_detail = MailTemplateDetailSerializer
+
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=False, allow_admin_company=True)
+    def get(self, request, *args, application_id, **kwargs):
+        return self.list(request, *args, application_id, **kwargs)
+
+
+class MailerFeatureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = MailTemplate.objects
     serializer_detail = MailTemplateDetailSerializer
     serializer_update = MailTemplateUpdateSerializer

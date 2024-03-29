@@ -6,7 +6,7 @@ from apps.core.hr.views.app_of_employee import (
 )
 from apps.core.hr.views.employee import (
     EmployeeList, EmployeeDetail, EmployeeCompanyList, EmployeeTenantList,
-    EmployeeMediaToken, EmployeeUploadAvatar, EmployeeAppList, EmployeeListAll,
+    EmployeeMediaToken, EmployeeUploadAvatar, EmployeeAppList, EmployeeListAll, EmployeeAdminCompany,
 )
 from apps.core.hr.views.group import (
     GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList,
@@ -38,6 +38,7 @@ urlpatterns = [
         name='EmployeeStoragePermissionSummaryList'
     ),
     path('employees-company', EmployeeCompanyList.as_view(), name="EmployeeCompanyList"),
+    path('employee-admin-company', EmployeeAdminCompany.as_view(), name='EmployeeAdminCompany'),
 
     path("roles", RoleList.as_view(), name="RoleList"),
     path("role/<str:pk>", RoleDetail.as_view(), name="RoleDetail"),

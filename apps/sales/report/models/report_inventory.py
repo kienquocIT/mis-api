@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class ReportInventory(DataAbstractModel):
@@ -109,8 +109,8 @@ class ReportInventorySub(DataAbstractModel):
                 )
 
             new_log = cls(
-                tenant=period_mapped.tenant,
-                company=period_mapped.company,
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
                 report_inventory=report_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
@@ -129,19 +129,21 @@ class ReportInventorySub(DataAbstractModel):
             bulk_info.append(new_log)
         new_logs = cls.objects.bulk_create(bulk_info)
 
-        return new_logs
+        return new_logs, [obj.pk for obj in new_logs]
 
     @classmethod
-    def process_in_each_log(cls, log, period_mapped, sub_period_order):
+    def process_in_each_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         sub_list = ReportInventorySub.objects.filter(
             product=log.product,
             warehouse=log.warehouse,
             report_inventory__period_mapped=period_mapped,
             report_inventory__sub_period_order=sub_period_order
-        ).exclude(id=log.id)
+        ).exclude(id__in=new_logs_id_list)
         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
         if not latest_trans:
             ReportInventoryProductWarehouse.objects.create(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
                 product=log.product,
                 warehouse=log.warehouse,
                 period_mapped=period_mapped,
@@ -177,15 +179,16 @@ class ReportInventorySub(DataAbstractModel):
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
         period_mapped = Periods.objects.filter(
-            company=activities_obj.company,
-            tenant=activities_obj.tenant,
+            tenant_id=activities_obj.tenant_id,
+            company_id=activities_obj.company_id,
             fiscal_year=activities_obj_date.year
         ).first()
         sub_period_order = activities_obj_date.month - period_mapped.space_month
         if period_mapped:
-            new_logs = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
+            new_logs, new_logs_id_list = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
             for log in new_logs:
-                cls.process_in_each_log(log, period_mapped, sub_period_order)
+                log_return = cls.process_in_each_log(log, new_logs_id_list, period_mapped, sub_period_order)
+                new_logs_id_list = [log_id for log_id in new_logs_id_list if log_id != log_return.id]
             return True
         raise serializers.ValidationError(
             {'Period missing': f'Period of fiscal year {activities_obj_date.year} does not exist.'}
@@ -194,12 +197,12 @@ class ReportInventorySub(DataAbstractModel):
     class Meta:
         verbose_name = 'Report Inventory By Month'
         verbose_name_plural = 'Report Inventory By Months'
-        ordering = ()
+        ordering = ('-system_date',)
         default_permissions = ()
         permissions = ()
 
 
-class ReportInventoryProductWarehouse(SimpleAbstractModel):
+class ReportInventoryProductWarehouse(DataAbstractModel):
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,

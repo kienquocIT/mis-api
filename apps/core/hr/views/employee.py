@@ -210,9 +210,11 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
                         if '1' in config_by_opp and '4' in config_by_opp:
                             value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id)
                         elif '4' in config_by_opp:
-                            value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id, exclude_data={
-                                'member_id': employee_current_id
-                            })
+                            value_filter = self.member_opp_ids_from_opp_id_selected(
+                                opp_id=opp_id, exclude_data={
+                                    'member_id': employee_current_id
+                                }
+                            )
                         elif '1' in config_by_opp:
                             value_filter = [str(employee_current_id)]
                     if settings.DEBUG_PERMIT:
@@ -500,3 +502,26 @@ class EmployeeAppList(BaseListMixin):
     )
     def get(self, request, *args, pk, **kwargs):
         return self.list(request, *args, pk, **kwargs)
+
+
+class EmployeeAdminCompany(APIView):
+    @swagger_auto_schema()
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        if (
+                request.user and request.user.is_authenticated and request.user.tenant_current_id and
+                request.user.company_current_id
+        ):
+            objs = Employee.objects.filter(
+                tenant_id=request.user.tenant_current_id,
+                company_id=request.user.company_current_id,
+                is_admin_company=True
+            )
+            result = [
+                {
+                    'full_name': obj.get_full_name(),
+                    'email': obj.email,
+                } for obj in objs[:3]
+            ]
+            return ResponseController.success_200(data=result)
+        return ResponseController.success_200(data=[])

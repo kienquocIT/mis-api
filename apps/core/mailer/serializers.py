@@ -8,15 +8,9 @@ from apps.shared import BaseMsg, AttMsg, FORMATTING
 
 
 class MailTemplateListSerializer(serializers.ModelSerializer):
-    contents = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_contents(cls, obj):
-        return HTMLController.unescape(obj.contents)
-
     class Meta:
         model = MailTemplate
-        fields = ('id', 'title', 'remarks', 'application', 'is_active', 'is_default', 'contents')
+        fields = ('id', 'title', 'remarks', 'application', 'is_active', 'is_default')
 
 
 class MailTemplateDetailSerializer(serializers.ModelSerializer):
@@ -25,6 +19,17 @@ class MailTemplateDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_contents(cls, obj):
         return HTMLController.unescape(obj.contents)
+
+    application = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_application(cls, obj):
+        if obj:
+            return {
+                'id': obj.application_id,
+                'title': obj.application.title,
+            }
+        return {}
 
     class Meta:
         model = MailTemplate
@@ -60,7 +65,7 @@ class MailTemplateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MailTemplate
-        fields = ('title', 'remarks', 'application', 'is_active', 'is_default', 'contents')
+        fields = ('title', 'remarks', 'is_active', 'is_default', 'contents')
 
 
 class MailTemplateSystemDetailSerializer(serializers.ModelSerializer):

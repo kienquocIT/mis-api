@@ -172,6 +172,16 @@ class ApplicationPropertyForMailList(BaseListMixin):
     serializer_list = ApplicationPropertyForMailListSerializer
 
     def get_queryset(self):
+        query_params = self.request.query_params
+        system_code__is_null_or_value = query_params.get('system_code__is_null_or_value', None)
+        system_code__exact = query_params.get('system_code', None)
+        system_code__isnull = query_params.get('system_code__isnull', None)
+        if not (
+                system_code__is_null_or_value is not None
+                or system_code__exact is not None
+                or system_code__isnull is not None
+        ):
+            return super().get_queryset().filter(is_mail=True, system_code__isnull=True)
         return super().get_queryset().filter(is_mail=True)
 
     @swagger_auto_schema(operation_summary="Application Property list for Mail", operation_description="")
