@@ -319,7 +319,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         elif instance.customer_mapped:
             buyer_name = instance.customer_mapped.name
 
-        return cus_address, [bank_code, bank_number], money_text, buyer_name
+        return [cus_address, bank_code, bank_number, money_text, buyer_name]
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -384,7 +384,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if len(number_vat) > 0 and instance.invoice_example == 2:
             raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT (API)."})
 
-        cus_address, bank_data, money_text, buyer_name = cls.process_value_xml(instance, amount)
+        value_xml = cls.process_value_xml(instance, amount)
+        # [cus_address, bank_code, bank_number, money_text, buyer_name]
 
         return (
             "<Invoices>"
@@ -395,15 +396,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<CusCode>"
             f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
             "</CusCode>"
-            f"<Buyer>{buyer_name}</Buyer>"
+            f"<Buyer>{value_xml[4]}</Buyer>"
             "<CusName>"
             f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
             "</CusName>"
             f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
-            f"<CusAddress>{cus_address}</CusAddress>"
-            f"<CusBankName>{bank_data[0]}</CusBankName>"
-            f"<CusBankNo>{bank_data[1]}</CusBankNo>"
+            f"<CusAddress>{value_xml[0]}</CusAddress>"
+            f"<CusBankName>{value_xml[1]}</CusBankName>"
+            f"<CusBankNo>{value_xml[2]}</CusBankNo>"
             f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
             "<CusTaxCode>"
             f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
@@ -425,7 +426,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"<VATAmount>{vat}</VATAmount>"
             "<VATRateOther/>"
             f"<Amount>{amount}</Amount>"
-            f"<AmountInWords>{money_text} đồng</AmountInWords>"
+            f"<AmountInWords>{value_xml[3]} đồng</AmountInWords>"
             "</Invoice>"
             "</Inv>"
             "</Invoices>"
