@@ -311,7 +311,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        return cus_address, [bank_code, bank_number], money_text
+        buyer_name = ''
+        if instance.buyer_name:
+            buyer_name = instance.buyer_name
+        elif instance.customer_name:
+            buyer_name = instance.customer_name
+        elif instance.customer_mapped:
+            buyer_name = instance.customer_mapped.name
+
+        return cus_address, [bank_code, bank_number], money_text, buyer_name
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -327,7 +335,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
-                number_vat.append(item.product_tax.rate if item.product_tax_id else 0)
+                if item.product_tax_id:
+                    number_vat.append(item.product_tax.rate)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -373,9 +382,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         number_vat = list(set(number_vat))
 
         if len(number_vat) > 0 and instance.invoice_example == 2:
-            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT."})
+            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT (API)."})
 
-        cus_address, bank_data, money_text = cls.process_value_xml(instance, amount)
+        cus_address, bank_data, money_text, buyer_name = cls.process_value_xml(instance, amount)
 
         return (
             "<Invoices>"
@@ -386,7 +395,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<CusCode>"
             f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
             "</CusCode>"
-            f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
+            f"<Buyer>{buyer_name}</Buyer>"
             "<CusName>"
             f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
             "</CusName>"
