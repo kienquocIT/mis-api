@@ -372,6 +372,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 count += 1
         number_vat = list(set(number_vat))
 
+        if len(number_vat) > 0 and instance.invoice_example == 2:
+            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT."})
+
         cus_address, bank_data, money_text = cls.process_value_xml(instance, amount)
 
         return (
