@@ -311,7 +311,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        return cus_address, [bank_code, bank_number], money_text
+        buyer_name = ''
+        if instance.buyer_name:
+            buyer_name = instance.buyer_name
+        elif instance.customer_name:
+            buyer_name = instance.customer_name
+        elif instance.customer_mapped:
+            buyer_name = instance.customer_mapped.name
+
+        return [cus_address, bank_code, bank_number, money_text, buyer_name]
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -327,7 +335,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
-                number_vat.append(item.product_tax.rate if item.product_tax_id else 0)
+                if item.product_tax_id:
+                    number_vat.append(item.product_tax.rate)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -372,7 +381,11 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 count += 1
         number_vat = list(set(number_vat))
 
-        cus_address, bank_data, money_text = cls.process_value_xml(instance, amount)
+        if len(number_vat) > 0 and instance.invoice_example == 2:
+            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT (API)."})
+
+        value_xml = cls.process_value_xml(instance, amount)
+        # [cus_address, bank_code, bank_number, money_text, buyer_name]
 
         return (
             "<Invoices>"
@@ -383,15 +396,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<CusCode>"
             f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
             "</CusCode>"
-            f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
+            f"<Buyer>{value_xml[4]}</Buyer>"
             "<CusName>"
             f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
             "</CusName>"
             f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
-            f"<CusAddress>{cus_address}</CusAddress>"
-            f"<CusBankName>{bank_data[0]}</CusBankName>"
-            f"<CusBankNo>{bank_data[1]}</CusBankNo>"
+            f"<CusAddress>{value_xml[0]}</CusAddress>"
+            f"<CusBankName>{value_xml[1]}</CusBankName>"
+            f"<CusBankNo>{value_xml[2]}</CusBankNo>"
             f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
             "<CusTaxCode>"
             f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
@@ -413,7 +426,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"<VATAmount>{vat}</VATAmount>"
             "<VATRateOther/>"
             f"<Amount>{amount}</Amount>"
-            f"<AmountInWords>{money_text} đồng</AmountInWords>"
+            f"<AmountInWords>{value_xml[3]} đồng</AmountInWords>"
             "</Invoice>"
             "</Inv>"
             "</Invoices>"
@@ -538,21 +551,26 @@ class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign'
         )
 
     def validate(self, validate_data):
         valid_lengths = (2, 0)
-        len_one_vat = len(validate_data.get('one_vat_sign'))
-        len_many_vat = len(validate_data.get('many_vat_sign'))
-        if len_one_vat not in valid_lengths or len_many_vat not in valid_lengths:
+        valid_len_one_vat = len(validate_data.get('one_vat_sign')) not in valid_lengths
+        valid_len_many_vat = len(validate_data.get('many_vat_sign')) not in valid_lengths
+        valid_len_sale_invoice_sign = len(validate_data.get('sale_invoice_sign')) not in valid_lengths
+        if valid_len_one_vat or valid_len_many_vat or valid_len_sale_invoice_sign:
             raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
+
+        this_year = str(datetime.now().year)[2:]
         if len(validate_data.get('one_vat_sign')) == 2:
-            validate_data['one_vat_sign'] = '1C24T' + validate_data.get('one_vat_sign')
+            validate_data['one_vat_sign'] = f'1C{this_year}T' + validate_data.get('one_vat_sign')
         if len(validate_data.get('many_vat_sign')) == 2:
-            validate_data['many_vat_sign'] = '1C24T' + validate_data.get('many_vat_sign')
+            validate_data['many_vat_sign'] = f'1C{this_year}T' + validate_data.get('many_vat_sign')
+        if len(validate_data.get('sale_invoice_sign')) == 2:
+            validate_data['sale_invoice_sign'] = f'2C{this_year}T' + validate_data.get('sale_invoice_sign')
         return validate_data
 
     def create(self, validated_data):
@@ -568,9 +586,9 @@ class ARInvoiceSignListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )
@@ -580,9 +598,9 @@ class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )
