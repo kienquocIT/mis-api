@@ -41,6 +41,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'invoice_status',
             'system_status'
         )
 
@@ -189,7 +190,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
-    invoice_number = serializers.SerializerMethodField()
+    invoice_info = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -204,7 +205,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'document_date',
             'invoice_date',
             'invoice_sign',
-            'invoice_number',
+            'invoice_info',
             'invoice_example',
             'system_status',
             'is_created_einvoice',
@@ -274,7 +275,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         return [item.attachment.get_detail() for item in att_objs]
 
     @classmethod
-    def get_invoice_number(cls, obj):
+    def get_invoice_info(cls, obj):
         if obj.is_created_einvoice:
             ikey = str(obj.id) + '-' + obj.invoice_sign
             http_method = "POST"
@@ -288,13 +289,13 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
                 json={
                     'Ikeys': [ikey]
                 },
-                timeout=60
+                timeout=30
             )
             if response.status_code == 200:
-                invoice_number = json.loads(response.text).get('Data', {})['Invoices'][0].get('No')
-                return invoice_number if invoice_number != '0' else obj.invoice_number
+                invoice_info = json.loads(response.text).get('Data', {})['Invoices']
+                return invoice_info[0] if invoice_info else {}
 
-        return obj.invoice_number
+        return {}
 
 
 class ARInvoiceUpdateSerializer(serializers.ModelSerializer):

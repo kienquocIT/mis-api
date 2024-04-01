@@ -23,6 +23,14 @@ INVOICE_METHOD = (
     (3, 'TM/CK'),
 )
 
+INVOICE_STATUS = (
+    (0, 'Khởi tạo'),
+    (1, 'Đã phát hành'),
+    (2, 'Đã kê khai'),
+    (3, 'Đã thay thế'),
+    (4, 'Đã điều chỉnh'),
+)
+
 
 class ARInvoice(DataAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
@@ -34,6 +42,7 @@ class ARInvoice(DataAbstractModel):
     invoice_number = models.CharField(max_length=250, null=True, blank=True)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
     invoice_method = models.SmallIntegerField(choices=INVOICE_METHOD, default=3)
+    invoice_status = models.SmallIntegerField(choices=INVOICE_STATUS, default=0)
 
     is_free_input = models.BooleanField(default=False)
     # for free input
