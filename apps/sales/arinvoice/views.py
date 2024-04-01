@@ -86,12 +86,12 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
             )
             if response.status_code == 200:
                 invoice_info = json.loads(response.text).get('Data', {})['Invoices']
-                for ar in all_ar:
+                for ar_obj in all_ar:
                     for item in invoice_info:
-                        if item.get('Ikey') == str(ar.id) + '-' + ar.invoice_sign:
-                            ar.invoice_number = item.get('No')
-                            ar.invoice_status = item.get('InvoiceStatus')
-                            ar.save(update_fields=['invoice_number', 'invoice_status'])
+                        if item.get('Ikey') == str(ar_obj.id) + '-' + ar_obj.invoice_sign:
+                            ar_obj.invoice_number = item.get('No')
+                            ar_obj.invoice_status = item.get('InvoiceStatus')
+                            ar_obj.save(update_fields=['invoice_number', 'invoice_status'])
 
         return self.list(request, *args, **kwargs)
 
