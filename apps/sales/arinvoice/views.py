@@ -37,6 +37,34 @@ def generate_token(http_method, username, password):
     return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
 
 
+def update_ar_status():
+    ikey_list = []
+    all_ar = ARInvoice.objects.all()
+    for item in all_ar:
+        if item.is_created_einvoice:
+            ikey_list.append(str(item.id) + '-' + item.invoice_sign)
+    http_method = "POST"
+    username = "API"
+    password = "Api@0317493763"
+    token = generate_token(http_method, username, password)
+    headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+    response = requests.post(
+        "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
+        headers=headers,
+        json={'Ikeys': ikey_list},
+        timeout=60
+    )
+    if response.status_code == 200:
+        invoice_info = json.loads(response.text).get('Data', {})['Invoices']
+        for ar_obj in all_ar:
+            for item in invoice_info:
+                if item.get('Ikey') == str(ar_obj.id) + '-' + ar_obj.invoice_sign:
+                    ar_obj.invoice_number = item.get('No')
+                    ar_obj.invoice_status = item.get('InvoiceStatus')
+                    ar_obj.save(update_fields=['invoice_number', 'invoice_status'])
+    return True
+
+
 class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     queryset = ARInvoice.objects
     search_fields = [
@@ -68,30 +96,7 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('update_status'):
-            ikey_list = []
-            all_ar = ARInvoice.objects.all()
-            for item in all_ar:
-                if item.is_created_einvoice:
-                    ikey_list.append(str(item.id) + '-' + item.invoice_sign)
-            http_method = "POST"
-            username = "API"
-            password = "Api@0317493763"
-            token = generate_token(http_method, username, password)
-            headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
-            response = requests.post(
-                "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
-                headers=headers,
-                json={'Ikeys': ikey_list},
-                timeout=60
-            )
-            if response.status_code == 200:
-                invoice_info = json.loads(response.text).get('Data', {})['Invoices']
-                for ar_obj in all_ar:
-                    for item in invoice_info:
-                        if item.get('Ikey') == str(ar_obj.id) + '-' + ar_obj.invoice_sign:
-                            ar_obj.invoice_number = item.get('No')
-                            ar_obj.invoice_status = item.get('InvoiceStatus')
-                            ar_obj.save(update_fields=['invoice_number', 'invoice_status'])
+            update_ar_status()
 
         return self.list(request, *args, **kwargs)
 
