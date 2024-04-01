@@ -33,6 +33,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'code',
             'customer_mapped',
             'customer_name',
+            'buyer_name',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -188,6 +189,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    invoice_number = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -271,6 +273,29 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         att_objs = ARInvoiceAttachmentFile.objects.select_related('attachment').filter(ar_invoice=obj)
         return [item.attachment.get_detail() for item in att_objs]
 
+    @classmethod
+    def get_invoice_number(cls, obj):
+        if obj.is_created_einvoice:
+            ikey = str(obj.id) + '-' + obj.invoice_sign
+            http_method = "POST"
+            username = "API"
+            password = "Api@0317493763"
+            token = generate_token(http_method, username, password)
+            headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+            response = requests.post(
+                "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
+                headers=headers,
+                json={
+                    'Ikeys': [ikey]
+                },
+                timeout=60
+            )
+            if response.status_code == 200:
+                invoice_number = json.loads(response.text).get('Data', {})['Invoices'][0].get('No')
+                return invoice_number if invoice_number != '0' else obj.invoice_number
+
+        return obj.invoice_number
+
 
 class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -345,10 +370,12 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     f"<ProdName>{item.product.title}</ProdName>"
                     f"<ProdUnit>{item.product_uom.title}</ProdUnit>"
                     f"<ProdQuantity>{item.product_quantity}</ProdQuantity>"
-                    f"<ProdPrice>{item.product_unit_price}</ProdPrice>"
+                    "<ProdPrice>"
+                    f"{(float(item.product_subtotal)-float(item.product_discount_value))/float(item.product_quantity)}"
+                    "</ProdPrice>"
                     f"<Discount></Discount>"
                     f"<DiscountAmount></DiscountAmount>"
-                    f"<Total>{item.product_subtotal}</Total>"
+                    f"<Total>{float(item.product_subtotal)-float(item.product_discount_value)}</Total>"
                     f"<VATRate>{int(item.product_tax.rate) if item.product_tax_id else 0}</VATRate>"
                     f"<VATAmount>{item.product_tax_value if item.product_tax_id else 0}</VATAmount>"
                     "<VATRateOther/>"
@@ -363,8 +390,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                         "<Code></Code>"
                         "<No></No>"
                         "<Feature>3</Feature>"
-                        f"<ProdName>Chiết khấu {item.product_discount_rate}% "
-                        f"(cho sản phẩm {item.product.title})</ProdName>"
+                        "<ProdName>"
+                        f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                        "</ProdName>"
                         "<ProdUnit></ProdUnit>"
                         "<ProdQuantity></ProdQuantity>"
                         "<ProdPrice></ProdPrice>"
@@ -477,8 +505,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        if 'create_invoice' in self.initial_data:
-            self.create_update_invoice(instance, item_mapped)
+        self.create_update_invoice(instance, item_mapped)
 
         return instance
 
