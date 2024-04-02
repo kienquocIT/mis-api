@@ -1,9 +1,7 @@
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import (
-    SimpleAbstractModel, DataAbstractModel
-)
+from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
 
@@ -24,11 +22,11 @@ INVOICE_METHOD = (
 )
 
 INVOICE_STATUS = (
-    (0, 'Khởi tạo'),
-    (1, 'Đã phát hành'),
-    (2, 'Đã kê khai'),
-    (3, 'Đã thay thế'),
-    (4, 'Đã điều chỉnh'),
+    (0, _('Created')),
+    (1, _('Published')),
+    (2, _('Enumerated')),
+    (3, _('Replaced')),
+    (4, _('Adjusted')),
 )
 
 
