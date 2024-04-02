@@ -22,11 +22,11 @@ INVOICE_METHOD = (
 )
 
 INVOICE_STATUS = (
-    (0, _('Created')),
-    (1, _('Published')),
-    (2, _('Enumerated')),
-    (3, _('Replaced')),
-    (4, _('Adjusted')),
+    (0, _('Created')),  # Khởi tạo
+    (1, _('Published')),  # Đã phát hành
+    (2, _('Enumerated')),  # Đã kê khai
+    (3, _('Replaced')),  # Đã thay thế
+    (4, _('Adjusted')),  # Đã điều chỉnh
 )
 
 
