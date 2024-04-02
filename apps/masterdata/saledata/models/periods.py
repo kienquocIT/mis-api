@@ -43,10 +43,9 @@ class SubPeriods(SimpleAbstractModel):
             if this_sub:
                 if this_sub.locked == 0:
                     return True
-                else:
-                    raise serializers.ValidationError(
-                        {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
-                    )
+                raise serializers.ValidationError(
+                    {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
+                )
             raise serializers.ValidationError({"Error": 'This sub is not found.'})
         raise serializers.ValidationError({"Error": 'This period is not found.'})
 
