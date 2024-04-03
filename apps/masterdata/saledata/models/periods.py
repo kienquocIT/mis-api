@@ -30,6 +30,8 @@ class SubPeriods(SimpleAbstractModel):
         help_text='Sub period end date',
     )
     locked = models.BooleanField(default=0)
+    run_report = models.BooleanField(default=False)
+    run_report_detail = models.BooleanField(default=False)
 
     @classmethod
     def check_open(cls, company_id, tenant_id, date):

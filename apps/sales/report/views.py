@@ -1,7 +1,9 @@
+import datetime
+
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models import WareHouse, Periods, Product, SubPeriods
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
     ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
@@ -195,26 +197,23 @@ class ReportInventoryDetailList(BaseListMixin):
 
     def get_queryset(self):
         try:
+            period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
+            sub_period_order = self.request.query_params['sub_period_order']
+
             if self.request.query_params['product_id_list'] != '':
+                prd_id_list = self.request.query_params['product_id_list'].split(',')
                 return super().get_queryset().select_related(
                     "product", "period_mapped"
                 ).prefetch_related(
                     'report_inventory_by_month',
                     'product__report_inventory_product_warehouse_product__period_mapped',
-                ).filter(
-                    sub_period_order=self.request.query_params['sub_period_order'],
-                    period_mapped_id=self.request.query_params['period_mapped'],
-                    product_id__in=self.request.query_params['product_id_list'].split(',')
-                )
+                ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list)
             return super().get_queryset().select_related(
                 "product", "period_mapped"
             ).prefetch_related(
                 'report_inventory_by_month',
                 'product__report_inventory_product_warehouse_product__period_mapped',
-            ).filter(
-                sub_period_order=self.request.query_params['sub_period_order'],
-                period_mapped_id=self.request.query_params['period_mapped'],
-            )
+            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
         except KeyError:
             return super().get_queryset().select_related(
                 "product", "period_mapped",
@@ -283,28 +282,79 @@ class ReportInventoryList(BaseListMixin):
     serializer_list = ReportInventoryListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    @classmethod
+    def create_this_sub_record(cls, tenant_id, company_id, product_id_list, period_mapped, sub_period_order):
+        sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
+        if not sub.run_report:
+            for prd_id in product_id_list:
+                wh_id_list = set(WareHouse.objects.filter(
+                    tenant_id=tenant_id, company_id=company_id
+                ).values_list('id', flat=True))
+                for wh_id in wh_id_list:
+                    this_sub_record = ReportInventoryProductWarehouse.objects.filter(
+                        product_id=prd_id, warehouse=wh_id,
+                        period_mapped=period_mapped, sub_period_order=sub_period_order
+                    )
+                    if not this_sub_record:
+                        sub_list = ReportInventorySub.objects.filter(
+                            product_id=prd_id, warehouse_id=wh_id,
+                            report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
+                        )
+                        if sub_list.count() == 0:
+                            sub_list = ReportInventorySub.objects.filter(
+                                product_id=prd_id, warehouse_id=wh_id,
+                                report_inventory__period_mapped=period_mapped,
+                                report_inventory__sub_period_order__lt=sub_period_order
+                            )
+                        latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
+                        if latest_trans and int(sub_period_order) <= (
+                                datetime.datetime.now().month - period_mapped.space_month
+                        ):
+                            ReportInventoryProductWarehouse.objects.create(
+                                tenant_id=period_mapped.tenant_id,
+                                company_id=period_mapped.company_id,
+                                product_id=prd_id,
+                                warehouse_id=wh_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=period_mapped.sub_periods_period_mapped.filter(
+                                    order=sub_period_order
+                                ).first(),
+                                opening_balance_quantity=latest_trans.current_quantity,
+                                opening_balance_cost=latest_trans.current_cost,
+                                opening_balance_value=latest_trans.current_value
+                            )
+            sub.run_report = True
+            sub.save(update_fields=['run_report'])
+        return True
+
     def get_queryset(self):
         try:
+            tenant_id = self.request.user.tenant_current_id,
+            company_id = self.request.user.company_current_id
+            period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
+            sub_period_order = self.request.query_params['sub_period_order']
+
             if self.request.query_params['product_id_list'] != '':
+                prd_id_list = self.request.query_params['product_id_list'].split(',')
+                self.create_this_sub_record(tenant_id, company_id, prd_id_list, period_mapped, sub_period_order)
                 return super().get_queryset().select_related(
                     "product__inventory_uom", "warehouse", "period_mapped"
                 ).prefetch_related(
                     'product__report_inventory_product_warehouse_product',
                     'product__report_inventory_by_month_product'
-                ).filter(
-                    sub_period_order=self.request.query_params['sub_period_order'],
-                    period_mapped_id=self.request.query_params['period_mapped'],
-                    product_id__in=self.request.query_params['product_id_list'].split(',')
-                )
+                ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list)
+
+            prd_id_list = set(
+                Product.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
+            )
+            self.create_this_sub_record(tenant_id, company_id, prd_id_list, period_mapped, sub_period_order)
             return super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
             ).prefetch_related(
                 'product__report_inventory_product_warehouse_product',
                 'product__report_inventory_by_month_product'
-            ).filter(
-                sub_period_order=self.request.query_params['sub_period_order'],
-                period_mapped_id=self.request.query_params['period_mapped'],
-            )
+            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
         except KeyError:
             return super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
