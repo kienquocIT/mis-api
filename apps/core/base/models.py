@@ -199,7 +199,7 @@ class Application(CoreAbstractModel):
         verbose_name='Code Allow Space',
         help_text='0: General, 1: All space (not filter opp, prj,... isnull)',
     )
-
+    allow_permit = models.BooleanField(default=False, verbose_name='Allow permit data')
     allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
     allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
     allow_mail = models.BooleanField(default=False, verbose_name='Allow mail template')

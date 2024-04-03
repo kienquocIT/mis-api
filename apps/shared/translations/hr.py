@@ -25,3 +25,5 @@ class HRMsg:
     PLAN_TYPE_INCORRECT = _('Plan Type is incorrect')
     MEMBER_NOT_FOUND = _('Some member not found')
     INVALID_SCHEMA = _("Duplicated code! Check the schema function in Company setting.")
+    GROUP_LEVEL_EXIST = _("The level of the group exists")
+    COMPANY_IS_REQUIRED = _("The company data is requires when validating data")

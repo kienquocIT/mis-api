@@ -407,6 +407,10 @@ msgstr "Quyền không tồn tại."
 msgid "Group level does not exist."
 msgstr "Cấp nhóm không tồn tại."
 
+#
+msgid "The records cause duplicate errors"
+msgstr "Các bản ghi gây ra lỗi trùng lặp"
+
 #: .\apps\shared\translations\hr.py:6
 msgid "Group code is exist."
 msgstr "Mã nhóm không tồn tại."

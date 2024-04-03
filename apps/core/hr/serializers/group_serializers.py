@@ -42,63 +42,17 @@ class GroupLevelCreateSerializer(serializers.ModelSerializer):
             'second_manager_description',
         )
 
+    @classmethod
+    def validate_level(cls, value):
+        if value and isinstance(value, int) and value > 0:
+            if not GroupLevel.objects.filter_current(level=value, fill__company=True).exists():
+                return value
+            raise serializers.ValidationError({'level': HRMsg.GROUP_LEVEL_EXIST})
+        raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_OUT_OF_RANGE})
+
     def create(self, validated_data):
         group_level = GroupLevel.objects.create(**validated_data)
         return group_level
-
-
-class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
-    group_level_data = GroupLevelCreateSerializer(
-        required=False,
-        many=True
-    )
-
-    @classmethod
-    def create_new_update_old_group_level(cls, validated_data, group_level_old_level_list, bulk_info):
-        group_level_old_level = GroupLevel.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-        ).values_list('level', flat=True)
-        for level in group_level_old_level:
-            group_level_old_level_list.append(level)
-        for data in validated_data['group_level_data']:
-            # create new
-            if data['level'] not in group_level_old_level:
-                bulk_info.append(GroupLevel(
-                    **data,
-                ))
-            # update old
-            else:
-                group_level_instance = GroupLevel.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    level=data['level'],
-                ).first()
-                if group_level_instance:
-                    for key, value in data.items():
-                        setattr(group_level_instance, key, value)
-                    group_level_instance.save()
-                    group_level_old_level_list.remove(data['level'])
-        return True
-
-    def create(self, validated_data):
-        bulk_info = []
-        group_level_old_level_list = []
-        if 'group_level_data' in validated_data:
-            if isinstance(validated_data['group_level_data'], list):
-                # create new or update group level
-                if validated_data['group_level_data']:
-                    self.create_new_update_old_group_level(
-                        validated_data=validated_data,
-                        group_level_old_level_list=group_level_old_level_list,
-                        bulk_info=bulk_info
-                    )
-        GroupLevel.objects.bulk_create(bulk_info)
-        return GroupLevel.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            level=1
-        ).first()
 
 
 class GroupLevelUpdateSerializer(serializers.ModelSerializer):
@@ -112,15 +66,16 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
             'second_manager_description',
         )
 
-    @classmethod
-    def validate_level(cls, value):
-        if isinstance(value, int):
-            if value > GroupLevel.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-            ).count() or value == 0:
-                raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_OUT_OF_RANGE})
-        return value
+    def validate_level(self, value):
+        if value and isinstance(value, int) and value > 0:
+            if not GroupLevel.objects.filter_current(
+                    level=value, fill__company=True
+            ).exclude(
+                id=self.instance.id
+            ).exists():
+                return value
+            raise serializers.ValidationError({'level': HRMsg.GROUP_LEVEL_EXIST})
+        raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_OUT_OF_RANGE})
 
     @classmethod
     def update_other_instance_if_change_level(cls, instance, validated_data):

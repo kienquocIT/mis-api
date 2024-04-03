@@ -24,6 +24,7 @@ WORKFLOW_APP_CONFIG = {
     "model_code": "workflow",
     "app_label": "workflow",
     "is_workflow": False,
+    "allow_permit": True,
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
@@ -89,6 +90,7 @@ EMPLOYEE_APP_CONFIG = {
     "model_code": "employee",
     "app_label": "hr",
     "is_workflow": False,
+    "allow_permit": True,
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
@@ -133,7 +135,8 @@ EMPLOYEE_APP_CONFIG = {
                 "view": "4",
             },
         },
-    }
+    },
+    "allow_import": True,
 }
 
 COMPANY_APP_CONFIG = {
@@ -142,6 +145,7 @@ COMPANY_APP_CONFIG = {
     "code": "company",
     "model_code": "company",
     "app_label": "company",
+    "allow_permit": True,
     "is_workflow": False,
     "option_permission": 1,
     "option_allowed": [4],
@@ -154,6 +158,7 @@ USER_APP_CONFIG = {
     "model_code": "user",
     "app_label": "account",
     "is_workflow": False,
+    "allow_permit": True,
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
@@ -201,6 +206,7 @@ ROLE_APP_CONFIG = {
     "model_code": "role",
     "app_label": "hr",
     "is_workflow": False,
+    "allow_permit": True,
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
@@ -242,6 +248,7 @@ ROLE_APP_CONFIG = {
             },
         },
     },
+    "allow_import": True,
 }
 
 GROUP_APP_CONFIG = {
@@ -251,6 +258,7 @@ GROUP_APP_CONFIG = {
     "model_code": "group",
     "app_label": "hr",
     "is_workflow": False,
+    "allow_permit": True,
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
@@ -292,6 +300,16 @@ GROUP_APP_CONFIG = {
             },
         },
     },
+    "allow_import": True,
+}
+
+GROUP_LEVEL_APP_CONFIG = {
+    "id": "d05237c5-0488-40aa-9384-b214412852bf",
+    "title": "Group Level",
+    "code": "grouplevel",
+    "model_code": "grouplevel",
+    "app_label": "hr",
+    "allow_import": True,
 }
 
 Application_base_data = {
@@ -313,6 +331,10 @@ Application_base_data = {
         filtering_inheritor=False,
     ),
     "e17b9123-8002-4c9b-921b-7722c3c9e3a5": ApplicationConfigFrame(**GROUP_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "d05237c5-0488-40aa-9384-b214412852bf": ApplicationConfigFrame(**GROUP_LEVEL_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
