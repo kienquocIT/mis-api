@@ -330,7 +330,7 @@ class ReportInventoryList(BaseListMixin):
 
     def get_queryset(self):
         try:
-            tenant_id = self.request.user.tenant_current_id,
+            tenant_id = self.request.user.tenant_current_id
             company_id = self.request.user.company_current_id
             period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
             sub_period_order = self.request.query_params['sub_period_order']
