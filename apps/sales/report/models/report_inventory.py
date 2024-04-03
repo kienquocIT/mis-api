@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods
-from apps.shared import DataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class ReportInventory(DataAbstractModel):
@@ -135,9 +135,7 @@ class ReportInventorySub(DataAbstractModel):
     def process_in_each_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         sub_list = ReportInventorySub.objects.filter(
             product=log.product,
-            warehouse=log.warehouse,
-            # report_inventory__period_mapped=period_mapped,
-            # report_inventory__sub_period_order=sub_period_order
+            warehouse=log.warehouse
         ).exclude(id__in=new_logs_id_list)
         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
         if not latest_trans:
