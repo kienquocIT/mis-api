@@ -1547,3 +1547,13 @@ def update_date_due_date_payment():
             po_payment.due_date = current_date
             po_payment.save(update_fields=['due_date'])
     print('update_date_due_date_payment done.')
+
+
+def update_is_effective_finished_document():
+    for quotation in Quotation.objects.filter(system_status=3):
+        quotation.is_effective = True
+        quotation.save(update_fields=['is_effective'])
+    for so in SaleOrder.objects.filter(system_status=3):
+        so.is_effective = True
+        so.save(update_fields=['is_effective'])
+    print('update_is_effective_finished_document done.')

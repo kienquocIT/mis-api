@@ -376,7 +376,7 @@ class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
-        data_cr = validated_data.get('data_cr', {})
+        # data_cr = validated_data.get('data_cr', {})
         # call_task_background(
         #     call_action_workflow_after_finish,
         #     *[
@@ -387,10 +387,10 @@ class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
         RuntimeAfterFinishHandler().action_perform_after_finish(
             runtime_obj=instance,
             action_code=action_code,
-            data_cr=data_cr
+            # data_cr=data_cr
         )
         return instance
 
     class Meta:
         model = Runtime
-        fields = ('action',)
+        fields = ('action', 'data_cr')

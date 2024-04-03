@@ -92,6 +92,22 @@ class DocHandler:
         return False
 
     @classmethod
+    def force_open_change_request(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            # check referenced
+            check = WFValidateHandler.is_object_referenced(obj=obj)
+            if check is False:
+                return True
+            raise serializers.ValidationError({'detail': "This document is referenced by another document"})
+        return False
+
+    @classmethod
     def force_reject(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
@@ -110,21 +126,21 @@ class DocHandler:
             return True
         return False
 
-    @classmethod
-    def force_change_request(cls, runtime_obj, data_cr):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
-        )
-        if obj:
-            # Get the class view and serializer
-            app_label, model_name = runtime_obj.app_code.split('.')
-            class_view, serializer_create_class = WFSupportFunctionsHandler.get_class_view_and_serializer(
-                app_label=app_label, model_name=model_name
-            )
-        return False
+    # @classmethod
+    # def force_change_request(cls, runtime_obj, data_cr):
+    #     obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+    #         default_filter={
+    #             'tenant_id': runtime_obj.tenant_id,
+    #             'company_id': runtime_obj.company_id,
+    #         }
+    #     )
+    #     if obj:
+    #         # Get the class view and serializer
+    #         app_label, model_name = obj._meta.label_lower.split('.')
+    #         class_view, serializer_create_class = WFSupportFunctionsHandler.get_class_view_and_serializer(
+    #             app_label=app_label, model_name=model_name
+    #         )
+    #     return False
 
     @classmethod
     def force_update_current_stage(cls, runtime_obj, stage_obj):
@@ -303,7 +319,7 @@ class RuntimeAfterFinishHandler:
             cls,
             runtime_obj: Runtime,
             action_code: int,
-            data_cr: dict,
+            # data_cr: dict,
     ) -> bool:
         if runtime_obj:
             # WORKFLOW_ACTION = {
@@ -315,12 +331,13 @@ class RuntimeAfterFinishHandler:
             #     5: WorkflowMsg.ACTION_TODO,
             # }
             match action_code:
+                case 1:  # open cr
+                    DocHandler.force_open_change_request(runtime_obj=runtime_obj)
                 case 2:  # reject
-                    # update doc to reject
                     DocHandler.force_reject(runtime_obj=runtime_obj)
-                case 3:  # return
-                    # change request
-                    DocHandler.force_change_request(runtime_obj=runtime_obj, data_cr=data_cr)
+                case 3:  # save cr
+                    # DocHandler.force_change_request(runtime_obj=runtime_obj, data_cr=data_cr)
+                    ...
             return True
         return False
 

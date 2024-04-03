@@ -7,7 +7,7 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer,\
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, BaseMsg
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 # SALE ORDER BEGIN
@@ -71,7 +71,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
         } if obj.quotation else {}
 
 
-class SaleOrderDetailSerializer(serializers.ModelSerializer):
+class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -196,7 +196,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class SaleOrderCreateSerializer(serializers.ModelSerializer):
+class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     opportunity_id = serializers.UUIDField(
         required=False,
@@ -241,6 +241,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         model = SaleOrder
         fields = (
             'title',
+            'code',
             'opportunity_id',
             'customer',
             'contact',

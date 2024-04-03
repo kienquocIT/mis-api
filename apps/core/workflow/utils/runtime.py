@@ -66,7 +66,8 @@ class DocHandler:
     def force_finish(cls, obj):
         setattr(obj, 'system_status', 3)  # finish
         setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-        obj.save(update_fields=['system_status', 'date_approved'])
+        setattr(obj, 'is_effective', True)  # flag document is effective
+        obj.save(update_fields=['system_status', 'date_approved', 'is_effective'])
         return True
 
     @classmethod
@@ -82,7 +83,8 @@ class DocHandler:
                 case 'approved':
                     setattr(obj, 'system_status', 3)  # finish
                     setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-                    obj.save(update_fields=['system_status', 'date_approved'])
+                    setattr(obj, 'is_effective', True)  # flag document is effective
+                    obj.save(update_fields=['system_status', 'date_approved', 'is_effective'])
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
