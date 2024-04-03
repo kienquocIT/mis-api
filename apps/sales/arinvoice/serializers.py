@@ -33,6 +33,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'code',
             'customer_mapped',
             'customer_name',
+            'buyer_name',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -40,6 +41,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'invoice_status',
             'system_status'
         )
 
@@ -188,6 +190,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    invoice_info = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -202,7 +205,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'document_date',
             'invoice_date',
             'invoice_sign',
-            'invoice_number',
+            'invoice_info',
             'invoice_example',
             'system_status',
             'is_created_einvoice',
@@ -271,6 +274,29 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         att_objs = ARInvoiceAttachmentFile.objects.select_related('attachment').filter(ar_invoice=obj)
         return [item.attachment.get_detail() for item in att_objs]
 
+    @classmethod
+    def get_invoice_info(cls, obj):
+        if obj.is_created_einvoice:
+            ikey = str(obj.id) + '-' + obj.invoice_sign
+            http_method = "POST"
+            username = "API"
+            password = "Api@0317493763"
+            token = generate_token(http_method, username, password)
+            headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+            response = requests.post(
+                "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
+                headers=headers,
+                json={
+                    'Ikeys': [ikey]
+                },
+                timeout=30
+            )
+            if response.status_code == 200:
+                invoice_info = json.loads(response.text).get('Data', {})['Invoices']
+                return invoice_info[0] if invoice_info else {}
+
+        return {}
+
 
 class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -311,7 +337,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        return cus_address, [bank_code, bank_number], money_text
+        buyer_name = ''
+        if instance.buyer_name:
+            buyer_name = instance.buyer_name
+        elif instance.customer_name:
+            buyer_name = instance.customer_name
+        elif instance.customer_mapped:
+            buyer_name = instance.customer_mapped.name
+
+        return [cus_address, bank_code, bank_number, money_text, buyer_name]
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -327,7 +361,8 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 total += float(item.product_subtotal)
                 vat += float(item.product_tax_value)
                 amount += float(item.product_subtotal_final)
-                number_vat.append(item.product_tax.rate if item.product_tax_id else 0)
+                if item.product_tax_id:
+                    number_vat.append(item.product_tax.rate)
                 product_xml += (
                     "<Product>"
                     f"<Code>{item.product.code}</Code>"
@@ -336,10 +371,12 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     f"<ProdName>{item.product.title}</ProdName>"
                     f"<ProdUnit>{item.product_uom.title}</ProdUnit>"
                     f"<ProdQuantity>{item.product_quantity}</ProdQuantity>"
-                    f"<ProdPrice>{item.product_unit_price}</ProdPrice>"
-                    f"<Discount>{item.product_discount_rate}</Discount>"
-                    f"<DiscountAmount>{item.product_discount_value}</DiscountAmount>"
-                    f"<Total>{item.product_subtotal}</Total>"
+                    "<ProdPrice>"
+                    f"{(float(item.product_subtotal)-float(item.product_discount_value))/float(item.product_quantity)}"
+                    "</ProdPrice>"
+                    f"<Discount></Discount>"
+                    f"<DiscountAmount></DiscountAmount>"
+                    f"<Total>{float(item.product_subtotal)-float(item.product_discount_value)}</Total>"
                     f"<VATRate>{int(item.product_tax.rate) if item.product_tax_id else 0}</VATRate>"
                     f"<VATAmount>{item.product_tax_value if item.product_tax_id else 0}</VATAmount>"
                     "<VATRateOther/>"
@@ -354,25 +391,30 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                         "<Code></Code>"
                         "<No></No>"
                         "<Feature>3</Feature>"
-                        f"<ProdName>Chiết khấu {item.product_discount_rate}% "
-                        f"(cho sản phẩm {item.product.title})</ProdName>"
+                        "<ProdName>"
+                        f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                        "</ProdName>"
                         "<ProdUnit></ProdUnit>"
                         "<ProdQuantity></ProdQuantity>"
                         "<ProdPrice></ProdPrice>"
                         "<Discount></Discount>"
                         "<DiscountAmount></DiscountAmount>"
-                        f"<Total>{item.product_discount_value}</Total>"
+                        f"<Total>{float(item.product_discount_value) * -1}</Total>"
                         "<VATRate>-1</VATRate>"
                         "<VATAmount>0</VATAmount>"
                         "<VATRateOther/>"
-                        f"<Amount>{item.product_discount_value}</Amount>"
+                        f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
                         "<Extra></Extra>"
                         "</Product>"
                     )
                 count += 1
         number_vat = list(set(number_vat))
 
-        cus_address, bank_data, money_text = cls.process_value_xml(instance, amount)
+        if len(number_vat) > 0 and instance.invoice_example == 2:
+            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT (API)."})
+
+        value_xml = cls.process_value_xml(instance, amount)
+        # [cus_address, bank_code, bank_number, money_text, buyer_name]
 
         return (
             "<Invoices>"
@@ -383,15 +425,15 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             "<CusCode>"
             f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
             "</CusCode>"
-            f"<Buyer>{instance.buyer_name if instance.buyer_name else instance.customer_mapped.name}</Buyer>"
+            f"<Buyer>{value_xml[4]}</Buyer>"
             "<CusName>"
             f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
             "</CusName>"
             f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
-            f"<CusAddress>{cus_address}</CusAddress>"
-            f"<CusBankName>{bank_data[0]}</CusBankName>"
-            f"<CusBankNo>{bank_data[1]}</CusBankNo>"
+            f"<CusAddress>{value_xml[0]}</CusAddress>"
+            f"<CusBankName>{value_xml[1]}</CusBankName>"
+            f"<CusBankNo>{value_xml[2]}</CusBankNo>"
             f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
             "<CusTaxCode>"
             f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
@@ -413,7 +455,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             f"<VATAmount>{vat}</VATAmount>"
             "<VATRateOther/>"
             f"<Amount>{amount}</Amount>"
-            f"<AmountInWords>{money_text} đồng</AmountInWords>"
+            f"<AmountInWords>{value_xml[3]} đồng</AmountInWords>"
             "</Invoice>"
             "</Inv>"
             "</Invoices>"
@@ -464,8 +506,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        if 'create_invoice' in self.initial_data:
-            self.create_update_invoice(instance, item_mapped)
+        self.create_update_invoice(instance, item_mapped)
 
         return instance
 
@@ -538,21 +579,26 @@ class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign'
         )
 
     def validate(self, validate_data):
         valid_lengths = (2, 0)
-        len_one_vat = len(validate_data.get('one_vat_sign'))
-        len_many_vat = len(validate_data.get('many_vat_sign'))
-        if len_one_vat not in valid_lengths or len_many_vat not in valid_lengths:
+        valid_len_one_vat = len(validate_data.get('one_vat_sign')) not in valid_lengths
+        valid_len_many_vat = len(validate_data.get('many_vat_sign')) not in valid_lengths
+        valid_len_sale_invoice_sign = len(validate_data.get('sale_invoice_sign')) not in valid_lengths
+        if valid_len_one_vat or valid_len_many_vat or valid_len_sale_invoice_sign:
             raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
+
+        this_year = str(datetime.now().year)[2:]
         if len(validate_data.get('one_vat_sign')) == 2:
-            validate_data['one_vat_sign'] = '1C24T' + validate_data.get('one_vat_sign')
+            validate_data['one_vat_sign'] = f'1C{this_year}T' + validate_data.get('one_vat_sign')
         if len(validate_data.get('many_vat_sign')) == 2:
-            validate_data['many_vat_sign'] = '1C24T' + validate_data.get('many_vat_sign')
+            validate_data['many_vat_sign'] = f'1C{this_year}T' + validate_data.get('many_vat_sign')
+        if len(validate_data.get('sale_invoice_sign')) == 2:
+            validate_data['sale_invoice_sign'] = f'2C{this_year}T' + validate_data.get('sale_invoice_sign')
         return validate_data
 
     def create(self, validated_data):
@@ -568,9 +614,9 @@ class ARInvoiceSignListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )
@@ -580,9 +626,9 @@ class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoiceSign
         fields = (
-            'type',
             'one_vat_sign',
             'many_vat_sign',
+            'sale_invoice_sign',
             'tenant',
             'company'
         )

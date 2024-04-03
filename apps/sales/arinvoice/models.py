@@ -1,9 +1,7 @@
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import (
-    SimpleAbstractModel, DataAbstractModel
-)
+from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
 
@@ -23,6 +21,14 @@ INVOICE_METHOD = (
     (3, 'TM/CK'),
 )
 
+INVOICE_STATUS = (
+    (0, _('Created')),  # Khởi tạo
+    (1, _('Published')),  # Đã phát hành
+    (2, _('Enumerated')),  # Đã kê khai
+    (3, _('Replaced')),  # Đã thay thế
+    (4, _('Adjusted')),  # Đã điều chỉnh
+)
+
 
 class ARInvoice(DataAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
@@ -34,6 +40,7 @@ class ARInvoice(DataAbstractModel):
     invoice_number = models.CharField(max_length=250, null=True, blank=True)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
     invoice_method = models.SmallIntegerField(choices=INVOICE_METHOD, default=3)
+    invoice_status = models.SmallIntegerField(choices=INVOICE_STATUS, default=0)
 
     is_free_input = models.BooleanField(default=False)
     # for free input
@@ -105,9 +112,9 @@ class ARInvoiceAttachmentFile(M2MFilesAbstractModel):
 class ARInvoiceSign(SimpleAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
     company = models.OneToOneField('company.Company', on_delete=models.CASCADE)
-    type = models.SmallIntegerField(choices=((0, 'VAT invoice'),), default=0)
     one_vat_sign = models.CharField(max_length=50, null=True, blank=True)
     many_vat_sign = models.CharField(max_length=50, null=True, blank=True)
+    sale_invoice_sign = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = 'AR Invoice Sign'
