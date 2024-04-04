@@ -42,6 +42,10 @@ class DocHandler:
         except self.model.DoesNotExist:
             return None
 
+    def filter_first_obj(self, default_filter: dict) -> Union[models.Model, None]:
+        first_obj = self.model.objects.filter(**default_filter).first()
+        return first_obj if first_obj else None
+
     @classmethod
     def force_added(cls, obj):
         setattr(obj, 'system_status', 2)  # added
@@ -66,8 +70,14 @@ class DocHandler:
     def force_finish(cls, obj):
         setattr(obj, 'system_status', 3)  # finish
         setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-        setattr(obj, 'is_effective', True)  # flag document is effective
-        obj.save(update_fields=['system_status', 'date_approved', 'is_effective'])
+        update_fields = ['system_status', 'date_approved']
+        if hasattr(obj, 'is_document_change'):
+            if obj.is_document_change is False:
+                setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
+                update_fields.append('document_root_id')
+        obj.save(update_fields=update_fields)
+        # cancel document root or previous document
+        DocHandler.force_cancel_if_change_document_finish(document_change=obj)
         return True
 
     @classmethod
@@ -81,10 +91,7 @@ class DocHandler:
         if obj:
             match approved_or_rejected:
                 case 'approved':
-                    setattr(obj, 'system_status', 3)  # finish
-                    setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-                    setattr(obj, 'is_effective', True)  # flag document is effective
-                    obj.save(update_fields=['system_status', 'date_approved', 'is_effective'])
+                    DocHandler.force_finish(obj=obj)
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
@@ -132,6 +139,34 @@ class DocHandler:
             if hasattr(obj, 'next_node_collab_id'):
                 return obj.next_node_collab_id
         return None
+
+    @classmethod
+    def force_cancel_if_change_document_finish(cls, document_change):
+        if hasattr(document_change, 'document_change_order') and hasattr(document_change, 'document_root_id'):
+            if document_change.document_change_order and document_change.document_root_id:
+                document_target = None
+                if document_change.document_change_order == 1:
+                    document_target = DocHandler(
+                        document_change.document_root_id, document_change._meta.label_lower
+                    ).get_obj(
+                        default_filter={
+                            'tenant_id': document_change.tenant_id,
+                            'company_id': document_change.company_id,
+                        }
+                    )
+                if document_change.document_change_order > 1:
+                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                        default_filter={
+                            'tenant_id': document_change.tenant_id,
+                            'company_id': document_change.company_id,
+                            'document_change_order': document_change.document_change_order - 1,
+                            'document_root_id': document_change.document_root_id,
+                        }
+                    )
+                if document_target:
+                    setattr(document_target, 'system_status', 4)
+                    document_target.save(update_fields=['system_status'])
+        return True
 
 
 class RuntimeHandler:

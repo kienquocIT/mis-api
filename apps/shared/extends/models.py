@@ -317,10 +317,6 @@ class DataAbstractModel(SimpleAbstractModel):
         null=True,
         help_text='this is order of changed document from root document, start from 1,2,3...'
     )
-    is_effective = models.BooleanField(
-        default=False,
-        help_text='flag to know this document is last effective in list documents change',
-    )
     # active, delete status
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)
