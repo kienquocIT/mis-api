@@ -35,7 +35,9 @@ LEAVE_APP_CONFIG = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
+
 LEAVE_APP_AVAILABLE = {
     "id": "7738935a-0442-4fd4-a7ff-d06a22aaeccf",
     "title": "Leave available",
@@ -57,7 +59,9 @@ LEAVE_APP_AVAILABLE = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
+
 BUSINESS_TRIP_REQUEST = {
     "id": "87ce1662-ca9d-403f-a32e-9553714ebc6d",
     "title": "Business trip",
@@ -89,7 +93,9 @@ BUSINESS_TRIP_REQUEST = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
+
 ASSET_TOOLS_PROVIDE = {
     "id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
     "title": "Asset, Tools Provide",
@@ -125,7 +131,9 @@ ASSET_TOOLS_PROVIDE = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
+
 MEETING_SCHEDULE = {
     "id": "6078deaa-96b3-4743-97e3-5457454fa7aa",
     "title": "Meeting Schedule",
@@ -165,7 +173,9 @@ MEETING_SCHEDULE = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
+
 ASSET_TOOLS_DELIVERY = {
     "id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",
     "title": "Asset, Tools Delivery",
@@ -205,6 +215,7 @@ ASSET_TOOLS_DELIVERY = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
 
 ASSET_TOOLS_RETURN = {
@@ -246,6 +257,7 @@ ASSET_TOOLS_RETURN = {
             "local_depends_on": {},
         },
     },
+    "allow_permit": True,
 }
 
 Application_eOffice_data = {

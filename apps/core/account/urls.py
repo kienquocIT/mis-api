@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.core.account.views import (
+    UserCompanies,
     UserList, UserDetail, CompanyUserDetail, UserOfTenantList, UserDetailResetPassword,
     UserSendWelcome, UserAdminTenant,
 )
@@ -8,6 +9,7 @@ from apps.core.account.views import (
 urlpatterns = [
     path('users', UserList.as_view(), name='UserList'),
     path('user/<str:pk>', UserDetail.as_view(), name='UserDetail'),
+    path('user/<str:pk>/companies', UserCompanies.as_view(), name='UserCompanies'),
     path('user/<str:pk>/mail-welcome', UserSendWelcome.as_view(), name='UserSendWelcome'),
     path('user/<str:pk>/reset-password', UserDetailResetPassword.as_view(), name='UserDetailResetPassword'),
 

@@ -279,6 +279,7 @@ QUOTATION_APP_CONFIG = {
     },
     "allow_print": True,
     "allow_mail": True,
+    "allow_permit": True,
 }
 
 SALEORDER_APP_CONFIG = {
@@ -361,6 +362,7 @@ SALEORDER_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 PRODUCT_APP_CONFIG = {
@@ -370,6 +372,7 @@ PRODUCT_APP_CONFIG = {
     "model_code": "product",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 EXPENSES_APP_CONFIG = {
@@ -379,6 +382,7 @@ EXPENSES_APP_CONFIG = {
     "model_code": "expenses",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 EXPENSE_ITEM_APP_CONFIG = {
@@ -388,6 +392,7 @@ EXPENSE_ITEM_APP_CONFIG = {
     "model_code": "expenseitem",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 WAREHOUSE_APP_CONFIG = {
@@ -397,6 +402,7 @@ WAREHOUSE_APP_CONFIG = {
     "model_code": "warehouse",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 PICKING_APP_CONFIG = {
@@ -435,6 +441,7 @@ PICKING_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 DELIVERY_APP_CONFIG = {
@@ -476,6 +483,7 @@ DELIVERY_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 PRICES_APP_CONFIG = {
@@ -485,6 +493,7 @@ PRICES_APP_CONFIG = {
     "model_code": "price",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 SHIPPING_APP_CONFIG = {
@@ -494,6 +503,7 @@ SHIPPING_APP_CONFIG = {
     "model_code": "shipping",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 PROMOTION_APP_CONFIG = {
@@ -535,6 +545,7 @@ PROMOTION_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 ADVANCE_PAYMENT_APP_CONFIG = {
@@ -618,6 +629,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -677,6 +689,7 @@ PAYMENT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -686,6 +699,7 @@ PAYMENT_TERM_APP_CONFIG = {
     "model_code": "paymentterm",
     "app_label": "saledata",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 RETURN_ADVANCE_APP_CONFIG = {
@@ -733,6 +747,7 @@ RETURN_ADVANCE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 DOCUMENT_FOR_CUSTOMER_APP_CONFIG = {
@@ -742,6 +757,7 @@ DOCUMENT_FOR_CUSTOMER_APP_CONFIG = {
     "model_code": "documentforcustomer",
     "app_label": "opportunity",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 CALL_LOG_APP_CONFIG = {
@@ -751,6 +767,7 @@ CALL_LOG_APP_CONFIG = {
     "model_code": "opportunitycall",
     "app_label": "opportunity",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 EMAIL_LOG_APP_CONFIG = {
@@ -760,6 +777,7 @@ EMAIL_LOG_APP_CONFIG = {
     "model_code": "opportunityemail",
     "app_label": "opportunity",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 MEETING_LOG_APP_CONFIG = {
@@ -769,6 +787,7 @@ MEETING_LOG_APP_CONFIG = {
     "model_code": "meetingwithcustomer",
     "app_label": "opportunity",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 CONTRACT_APP_CONFIG = {
@@ -778,6 +797,7 @@ CONTRACT_APP_CONFIG = {
     "model_code": "contract",
     "app_label": "contract",
     "is_workflow": False,
+    "allow_permit": True,
 }
 
 PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
@@ -822,6 +842,7 @@ PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 PURCHASE_QUOTATION_APP_CONFIG = {
@@ -869,6 +890,7 @@ PURCHASE_QUOTATION_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 PURCHASE_ORDER_APP_CONFIG = {
@@ -925,6 +947,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 PURCHASE_REQUEST_APP_CONFIG = {
@@ -972,6 +995,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 GOODS_RECEIPT_APP_CONFIG = {
@@ -1026,6 +1050,7 @@ GOODS_RECEIPT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 GOODS_TRANSFER_APP_CONFIG = {
@@ -1072,6 +1097,7 @@ GOODS_TRANSFER_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 GOODS_ISSUE_APP_CONFIG = {
@@ -1118,6 +1144,7 @@ GOODS_ISSUE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
@@ -1157,6 +1184,7 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_REVENUE_APP_CONFIG = {
@@ -1195,6 +1223,7 @@ REPORT_REVENUE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_PRODUCT_APP_CONFIG = {
@@ -1233,6 +1262,7 @@ REPORT_PRODUCT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_CUSTOMER_APP_CONFIG = {
@@ -1271,6 +1301,7 @@ REPORT_CUSTOMER_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_PIPELINE_APP_CONFIG = {
@@ -1309,6 +1340,7 @@ REPORT_PIPELINE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REVENUE_PLAN_APP_CONFIG = {
@@ -1347,6 +1379,7 @@ REVENUE_PLAN_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 AR_INVOICE_APP_CONFIG = {
@@ -1397,6 +1430,7 @@ AR_INVOICE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 AP_INVOICE_APP_CONFIG = {
@@ -1447,6 +1481,7 @@ AP_INVOICE_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 GOODS_RETURN_APP_CONFIG = {
@@ -1491,6 +1526,7 @@ GOODS_RETURN_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_CASHFLOW_APP_CONFIG = {
@@ -1529,6 +1565,7 @@ REPORT_CASHFLOW_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 REPORT_INVENTORY_APP_CONFIG = {
@@ -1567,6 +1604,7 @@ REPORT_INVENTORY_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity

@@ -11,6 +11,7 @@ class BaseMsg:
     SYSTEM_STATUS_INCORRECT = _('The document status is incorrect')
     NOT_IS_HTML = _('The content is not HTML')
     BLOCK_PHISHING_CODE = _('The content has been blocked because contains phishing code')
+    CAUSE_DUPLICATE = _("The records cause duplicate errors")
 
 
 class PermissionMsg:
