@@ -17,10 +17,8 @@ from apps.core.workflow.models import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'DocHandler',
-    'RuntimeHandler',
-    'RuntimeStageHandler',
-    'RuntimeLogHandler',
+    'DocHandler', 'RuntimeHandler',
+    'RuntimeStageHandler', 'RuntimeLogHandler',
 ]
 
 
@@ -55,10 +53,7 @@ class DocHandler:
     @classmethod
     def force_added_with_runtime(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'system_status', 2)  # added
@@ -83,10 +78,7 @@ class DocHandler:
     @classmethod
     def force_finish_with_runtime(cls, runtime_obj, approved_or_rejected='approved'):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             match approved_or_rejected:
@@ -101,10 +93,7 @@ class DocHandler:
     @classmethod
     def force_update_current_stage(cls, runtime_obj, stage_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'current_stage', stage_obj)
@@ -116,10 +105,7 @@ class DocHandler:
     @classmethod
     def force_update_next_node_collab(cls, runtime_obj, next_node_collab_id):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'next_node_collab_id', next_node_collab_id)
@@ -130,10 +116,7 @@ class DocHandler:
     @classmethod
     def get_next_node_collab_id(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             if hasattr(obj, 'next_node_collab_id'):
@@ -144,29 +127,30 @@ class DocHandler:
     def force_cancel_if_change_document_finish(cls, document_change):
         if hasattr(document_change, 'document_change_order') and hasattr(document_change, 'document_root_id'):
             if document_change.document_change_order and document_change.document_root_id:
-                document_target = None
-                if document_change.document_change_order == 1:
-                    document_target = DocHandler(
-                        document_change.document_root_id, document_change._meta.label_lower
-                    ).get_obj(
-                        default_filter={
-                            'tenant_id': document_change.tenant_id,
-                            'company_id': document_change.company_id,
-                        }
-                    )
-                if document_change.document_change_order > 1:
-                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
-                        default_filter={
-                            'tenant_id': document_change.tenant_id,
-                            'company_id': document_change.company_id,
-                            'document_change_order': document_change.document_change_order - 1,
-                            'document_root_id': document_change.document_root_id,
-                        }
-                    )
+                document_target = DocHandler.get_previous_document(document_change=document_change)
                 if document_target:
                     setattr(document_target, 'system_status', 4)
                     document_target.save(update_fields=['system_status'])
         return True
+
+    @classmethod
+    def get_previous_document(cls, document_change):
+        document_target = None
+        if document_change.document_change_order == 1:
+            document_target = DocHandler(
+                document_change.document_root_id, document_change._meta.label_lower
+            ).get_obj(
+                default_filter={'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id}
+            )
+        if document_change.document_change_order > 1:
+            document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                default_filter={
+                    'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
+                    'document_change_order': document_change.document_change_order - 1,
+                    'document_root_id': document_change.document_root_id,
+                }
+            )
+        return document_target
 
 
 class RuntimeHandler:
@@ -254,7 +238,6 @@ class RuntimeHandler:
                 )
                 if not doc_obj:
                     raise ValueError('Document Object does not exist')
-
                 runtime_obj = Runtime.objects.create(
                     tenant_id=tenant_id,
                     company_id=company_id,
