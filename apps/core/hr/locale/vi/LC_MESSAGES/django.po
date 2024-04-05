@@ -24,3 +24,7 @@ msgstr "Cấp độ của nhóm tồn tại"
 #
 msgid "The company data is requires when validating data"
 msgstr "Dữ liệu công ty được yêu cầu khi xác thực dữ liệu"
+
+#
+msgid "The user was either linked to another employee or not found in the company members"
+msgstr "Người dùng đã được liên kết với một nhân viên khác hoặc không được tìm thấy trong các thành viên công ty"
