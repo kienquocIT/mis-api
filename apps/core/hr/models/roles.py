@@ -75,7 +75,7 @@ class Role(TenantAbstractModel):
         verbose_name = 'Role'
         verbose_name_plural = 'Roles'
         ordering = ('-date_created',)
-        unique_together = ('company', 'code')
+        unique_together = ('company', 'abbreviation')
         default_permissions = ()
         permissions = ()
 

@@ -28,3 +28,7 @@ msgstr "Người dùng không thuộc về công ty này."
 #
 msgid "Please go to the tenant management page feature to add a company for this user."
 msgstr "Vui lòng truy cập vào quản trị tenant để thêm công ty cho người dùng này."
+
+#
+msgid "Phone number should be a Vietnam phone number"
+msgstr "Số điện thoại phải là số điện thoại Việt Nam"

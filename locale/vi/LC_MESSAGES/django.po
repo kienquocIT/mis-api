@@ -408,12 +408,20 @@ msgid "Group level does not exist."
 msgstr "Cấp nhóm không tồn tại."
 
 #
+msgid "Code must not null"
+msgstr "Mã không được trống"
+
+#
+msgid "Code is exists"
+msgstr "Mã đã tồn tại"
+
+#
 msgid "The records cause duplicate errors"
 msgstr "Các bản ghi gây ra lỗi trùng lặp"
 
 #: .\apps\shared\translations\hr.py:6
 msgid "Group code is exist."
-msgstr "Mã nhóm không tồn tại."
+msgstr "Mã nhóm đã tồn tại."
 
 #: .\apps\shared\translations\hr.py:7
 msgid "Group does not exist."
@@ -445,7 +453,7 @@ msgstr "Nhân viên bắt buộc là danh sách."
 
 #: .\apps\shared\translations\hr.py:14
 msgid "Role code is exist."
-msgstr "Mã vai trò không tồn tại."
+msgstr "Mã vai trò đã tồn tại."
 
 #: .\apps\shared\translations\hr.py:17
 msgid "Permissions is incorrect."
