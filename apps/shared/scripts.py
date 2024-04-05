@@ -1547,3 +1547,19 @@ def update_date_due_date_payment():
             po_payment.due_date = current_date
             po_payment.save(update_fields=['due_date'])
     print('update_date_due_date_payment done.')
+
+
+def change_duplicate_group():
+    from apps.core.hr.models import Group
+
+    for item in Group.objects.all():
+        item.code = item.code.upper()
+        item.save()
+
+    for item in Group.objects.all():
+        if Group.objects.filter(company=item.company, code=item.code).exclude(id=item.id).exists():
+            old_code = item.code
+            item.code = item.code + '01'
+            item.save()
+            print('Change:', item.id, old_code, 'TO', item.code)
+    print('Function run successful')
