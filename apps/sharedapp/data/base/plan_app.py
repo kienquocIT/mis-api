@@ -41,6 +41,10 @@ Application_data = {
 }
 
 _PlanApplication_base_data = {
+    "ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68": {
+        "plan_id": "e42e93b6-5a7d-4d75-b6da-b288045058df",  # Base
+        "application_id": "ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68",  # Base
+    },
     "269f4421-04d8-4528-bc95-148ffd807235": {
         "plan_id": "e42e93b6-5a7d-4d75-b6da-b288045058df",  # Base
         "application_id": "269f4421-04d8-4528-bc95-148ffd807235",  # Company
@@ -60,6 +64,10 @@ _PlanApplication_base_data = {
     "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {
         "plan_id": "e42e93b6-5a7d-4d75-b6da-b288045058df",  # Base
         "application_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",  # Group
+    },
+    "d05237c5-0488-40aa-9384-b214412852bf": {
+        "plan_id": "e42e93b6-5a7d-4d75-b6da-b288045058df",  # Base
+        "application_id": "d05237c5-0488-40aa-9384-b214412852bf",  # Group Level
     },
     "71393401-e6e7-4a00-b481-6097154efa64": {
         "plan_id": "e42e93b6-5a7d-4d75-b6da-b288045058df",  # Base

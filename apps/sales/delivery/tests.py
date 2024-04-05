@@ -601,7 +601,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     name=f'P2024-M{letter}-2024',
                     start_date=f'2024-{letter}-01',
                     end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
-                    state=0
+                    locked=0
                 )
             )
         SubPeriods.objects.bulk_create(bulk_info)

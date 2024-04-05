@@ -29,7 +29,9 @@ class SubPeriods(SimpleAbstractModel):
     end_date = models.DateField(
         help_text='Sub period end date',
     )
-    state = models.SmallIntegerField(choices=[(0, 'Open'), (1, 'Close'), (2, 'Lock')], default=0)
+    locked = models.BooleanField(default=0)
+    run_report = models.BooleanField(default=False)
+    run_report_detail = models.BooleanField(default=False)
 
     @classmethod
     def check_open(cls, company_id, tenant_id, date):
@@ -41,16 +43,11 @@ class SubPeriods(SimpleAbstractModel):
                 order=date.month - this_period.space_month
             ).first()
             if this_sub:
-                if this_sub.state == 0:
+                if this_sub.locked == 0:
                     return True
-                if this_sub.state == 1:
-                    raise serializers.ValidationError(
-                        {"Error": 'Can not create inventory activity now. This sub period has been Closed.'}
-                    )
-                if this_sub.state == 2:
-                    raise serializers.ValidationError(
-                        {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
-                    )
+                raise serializers.ValidationError(
+                    {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
+                )
             raise serializers.ValidationError({"Error": 'This sub is not found.'})
         raise serializers.ValidationError({"Error": 'This period is not found.'})
 

@@ -207,7 +207,7 @@ class Opportunity(DataAbstractModel):
                 'title': 'Customer'
             },
             'comparison_operator': '≠' if obj.customer else '=',
-            'compare_data': '0',
+            'compare_data': 0,
         }
         list_property.append(customer_data)
 
@@ -230,7 +230,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product Category'
                 },
                 'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -242,7 +242,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Budget'
                 },
                 'comparison_operator': '=' if obj.budget_value == 0 else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -253,7 +253,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Open Date'
                 },
                 'comparison_operator': '≠' if obj.open_date else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -264,7 +264,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Date'
                 },
                 'comparison_operator': '≠' if obj.close_date else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -275,7 +275,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Decision maker'
                 },
                 'comparison_operator': '≠' if obj.decision_maker else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -286,7 +286,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Lost By Other Reason'
                 },
                 'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -297,7 +297,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Competitor.Win'
                 },
                 'comparison_operator': '=' if not obj.lost_by_other_reason and obj.is_close_lost else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -308,7 +308,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product.Line.Detail'
                 },
                 'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -319,7 +319,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Deal'
                 },
                 'comparison_operator': '=' if obj.is_deal_close else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         return list_property
@@ -335,7 +335,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Quotation.confirm'
                 },
                 'comparison_operator': '=' if is_quotation_confirm else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -346,7 +346,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.status'
                 },
                 'comparison_operator': '=' if obj.sale_order and obj.sale_order.system_status == 0 else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -357,7 +357,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         return list_property
@@ -373,7 +373,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.status'
                 },
                 'comparison_operator': '=' if sale_order_status == 0 else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -386,7 +386,7 @@ class Opportunity(DataAbstractModel):
                 'comparison_operator':
                     '=' if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
                     else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -397,7 +397,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         return list_property
@@ -413,7 +413,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.status'
                 },
                 'comparison_operator': '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -424,7 +424,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if delivery_status else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
 
@@ -437,15 +437,14 @@ class Opportunity(DataAbstractModel):
                 'comparison_operator': '='
                 if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
                 else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         return list_property
 
     @classmethod
     def auto_update_stage(cls, list_property, obj):
-        stages = OpportunityConfigStage.objects.filter_current(fill__company=True).order_by(
-            'win_rate', )
+        stages = OpportunityConfigStage.objects.filter_current(fill__company=True).order_by('win_rate')
 
         stage_lost = None
         stage_delivery = None

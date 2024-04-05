@@ -1549,11 +1549,17 @@ def update_date_due_date_payment():
     print('update_date_due_date_payment done.')
 
 
-def update_is_effective_finished_document():
-    for quotation in Quotation.objects.filter(system_status=3):
-        quotation.is_effective = True
-        quotation.save(update_fields=['is_effective'])
-    for so in SaleOrder.objects.filter(system_status=3):
-        so.is_effective = True
-        so.save(update_fields=['is_effective'])
-    print('update_is_effective_finished_document done.')
+def change_duplicate_group():
+    from apps.core.hr.models import Group
+
+    for item in Group.objects.all():
+        item.code = item.code.upper()
+        item.save()
+
+    for item in Group.objects.all():
+        if Group.objects.filter(company=item.company, code=item.code).exclude(id=item.id).exists():
+            old_code = item.code
+            item.code = item.code + '01'
+            item.save()
+            print('Change:', item.id, old_code, 'TO', item.code)
+    print('Function run successful')

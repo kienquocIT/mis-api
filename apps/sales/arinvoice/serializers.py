@@ -386,27 +386,27 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 )
                 if float(item.product_discount_rate) > 0:
                     discount += float(item.product_discount_value)
-                    product_xml += (
-                        "<Product>"
-                        "<Code></Code>"
-                        "<No></No>"
-                        "<Feature>3</Feature>"
-                        "<ProdName>"
-                        f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
-                        "</ProdName>"
-                        "<ProdUnit></ProdUnit>"
-                        "<ProdQuantity></ProdQuantity>"
-                        "<ProdPrice></ProdPrice>"
-                        "<Discount></Discount>"
-                        "<DiscountAmount></DiscountAmount>"
-                        f"<Total>{float(item.product_discount_value) * -1}</Total>"
-                        "<VATRate>-1</VATRate>"
-                        "<VATAmount>0</VATAmount>"
-                        "<VATRateOther/>"
-                        f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
-                        "<Extra></Extra>"
-                        "</Product>"
-                    )
+                #     product_xml += (
+                #         "<Product>"
+                #         "<Code></Code>"
+                #         "<No></No>"
+                #         "<Feature>3</Feature>"
+                #         "<ProdName>"
+                #         f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                #         "</ProdName>"
+                #         "<ProdUnit></ProdUnit>"
+                #         "<ProdQuantity></ProdQuantity>"
+                #         "<ProdPrice></ProdPrice>"
+                #         "<Discount></Discount>"
+                #         "<DiscountAmount></DiscountAmount>"
+                #         f"<Total>{float(item.product_discount_value) * -1}</Total>"
+                #         "<VATRate>-1</VATRate>"
+                #         "<VATAmount>0</VATAmount>"
+                #         "<VATRateOther/>"
+                #         f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
+                #         "<Extra></Extra>"
+                #         "</Product>"
+                #     )
                 count += 1
         number_vat = list(set(number_vat))
 
@@ -484,9 +484,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             )
 
         instance.is_created_einvoice = True
-        if not instance.buyer_name:
-            instance.buyer_name = instance.customer_mapped.name
-        instance.save(update_fields=['is_created_einvoice', 'buyer_name'])
+        instance.save(update_fields=['is_created_einvoice'])
         return response.status_code
 
     def validate(self, validate_data):

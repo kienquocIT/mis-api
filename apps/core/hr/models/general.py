@@ -39,6 +39,7 @@ class GroupLevel(TenantAbstractModel):
         verbose_name = 'Group Level'
         verbose_name_plural = 'Group Levels'
         ordering = ('level',)
+        unique_together = ('company', 'level')
         default_permissions = ()
         permissions = ()
 
@@ -104,6 +105,7 @@ class Group(TenantAbstractModel):
         verbose_name = 'Group'
         verbose_name_plural = 'Groups'
         ordering = ('-date_created',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
 

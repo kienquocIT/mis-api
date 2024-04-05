@@ -50,6 +50,9 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
         label_code='hr', model_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_current_id': request.user.company_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 

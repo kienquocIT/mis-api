@@ -1,8 +1,15 @@
+from django.utils.text import slugify
 from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.shared import AccountMsg
+
+
+class UserCompaniesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ('id', 'title')
 
 
 class UserListTenantOverviewSerializer(serializers.ModelSerializer):
@@ -84,42 +91,26 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
-            if data_bulk != instance.company_current:
-                list_company_user_emp = CompanyUserEmployee.objects.select_related(
+            if data_bulk:
+                company_user_bulk = CompanyUserEmployee.objects.select_related(
                     'employee', 'company'
-                ).filter(
-                    user=instance
-                )
-                company_user_bulk = list_company_user_emp.filter(company=data_bulk).first()
-                company_user_instance = list_company_user_emp.filter(company=instance.company_current).first()
-
+                ).filter(user=instance, company=data_bulk).first()
                 if company_user_bulk:
-                    if company_user_bulk.employee is None:
-                        if company_user_instance.employee is not None:
-                            company_user_instance.employee.company = data_bulk
-                            company_user_instance.employee.save()
-
-                            company_user_bulk.employee = company_user_instance.employee
-                            company_user_instance.employee = None
-
-                    company_user_bulk.is_created_company = True
-                    company_user_bulk.save()
-
-                    company_user_instance.is_created_company = False
-                    company_user_instance.save()
+                    instance.company_current = company_user_bulk.company
                 else:
-                    if company_user_instance.employee:
-                        company_user_instance.employee.company = data_bulk
-                        company_user_instance.employee.save()
-
-                    company_user_instance.company = data_bulk
-                    company_user_instance.save()
-
-                    instance.company_current.total_user -= 1
-                    instance.company_current.save()
-
-                    data_bulk.total_user += 1
-                    data_bulk.save()
+                    company_obj = Company.objects.filter_current(fill__tenant=True)
+                    if company_obj:
+                        raise serializers.ValidationError(
+                            {
+                                'company_current': f"{AccountMsg.USER_NOT_BELONG_TO_COMPANY} "
+                                                   f"{AccountMsg.TENANT_MANAGE_ADD_USER_TO_COMPANY}",
+                            }
+                        )
+                    raise serializers.ValidationError(
+                        {
+                            'company_current': AccountMsg.COMPANY_NOT_EXIST,
+                        }
+                    )
 
             for key, value in validated_data.items():
                 setattr(instance, key, value)
@@ -137,9 +128,11 @@ class UserResetPasswordSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] == attrs['re_password']:
             return attrs
-        raise serializers.ValidationError({
-            'detail': AccountMsg.VALID_PASSWORD
-        })
+        raise serializers.ValidationError(
+            {
+                'detail': AccountMsg.VALID_PASSWORD
+            }
+        )
 
     def update(self, instance, validated_data):
         password = validated_data['password']
@@ -175,12 +168,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_username(cls, attrs):
+        username_slugify = slugify(attrs)
+        if username_slugify != attrs:
+            raise serializers.ValidationError({'username': AccountMsg.USERNAME_MUST_BE_SLUGIFY_STRING})
+
         if User.objects.filter_current(
-                username=attrs,
+                username=username_slugify,
                 fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
         ).exists():
             raise serializers.ValidationError({'username': AccountMsg.USERNAME_EXISTS})
-        return attrs
+        return username_slugify
 
     @classmethod
     def validate_password(cls, attrs):
@@ -205,9 +202,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 if not company_current or (company_current and str(company_current) == str(company_current_obj.id)):
                     attrs['company_current'] = company_current_obj
                     return attrs
-        raise serializers.ValidationError({
-            'company_current': AccountMsg.COMPANY_NOT_EXIST
-        })
+        raise serializers.ValidationError(
+            {
+                'company_current': AccountMsg.COMPANY_NOT_EXIST
+            }
+        )
 
     def create(self, validated_data):
         company = validated_data.get('company_current', None)

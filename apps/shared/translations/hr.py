@@ -11,6 +11,9 @@ class HRMsg:
     EMPLOYEE_NOT_EXIST = _('Employee does not exist.')
     EMPLOYEES_NOT_EXIST = _('Employees do not exist.')
     EMPLOYEE_IS_ARRAY = _('Employee must be array.')
+    USER_RELATE_USED_OR_NOT_FOUND = _(
+        'The user was either linked to another employee or not found in the company members'
+    )
     ROLE_CODE_EXIST = _('Role code is exist.')
     ROLE_DATA_VALID = _('Data is not valid')
     PERMISSIONS_BY_CONFIGURED_INCORRECT = _("Permissions is incorrect.")
@@ -25,3 +28,5 @@ class HRMsg:
     PLAN_TYPE_INCORRECT = _('Plan Type is incorrect')
     MEMBER_NOT_FOUND = _('Some member not found')
     INVALID_SCHEMA = _("Duplicated code! Check the schema function in Company setting.")
+    GROUP_LEVEL_EXIST = _("The level of the group exists")
+    COMPANY_IS_REQUIRED = _("The company data is requires when validating data")

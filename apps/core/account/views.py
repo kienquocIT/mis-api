@@ -6,18 +6,19 @@ from rest_framework.views import APIView
 
 from apps.shared import (
     mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more, ResponseController,
-    call_task_background, DisperseModel, MailMsg,
+    call_task_background, DisperseModel, MailMsg, BaseListMixin,
 )
-from apps.core.company.models import CompanyUserEmployee
+from apps.core.company.models import CompanyUserEmployee, Company
+from apps.core.mailer.tasks import send_mail_welcome
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
+    UserCompaniesSerializer,
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer,
     CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
     CompanyUserEmployeeUpdateSerializer, UserResetPasswordSerializer,
 )
 from .models import User
-from ..mailer.tasks import send_mail_welcome
 
 
 class UserList(AccountListMixin, AccountCreateMixin):
@@ -116,6 +117,38 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class UserCompanies(BaseListMixin):
+    user_obj: User
+    queryset = Company.objects
+    serializer_list = UserCompaniesSerializer
+    list_hidden_field = ['tenant_id']
+
+    @property
+    def filter_kwargs(self):
+        ids = CompanyUserEmployee.objects.filter(user=self.user_obj).values_list('company_id', flat=True)
+        return {
+            'id__in': ids,
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
+
+    @swagger_auto_schema()
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='edit',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            try:
+                self.user_obj = User.objects.get_current(
+                    pk=pk, fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
+                )
+            except User.DoesNotExist:
+                raise exceptions.NotFound
+            return self.list(request, *args, pk, **kwargs)
+        raise exceptions.NotFound
 
 
 class UserSendWelcome(BaseRetrieveMixin):

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.tenant.models import TenantPlan
 
 
-class TenantPlanSerializer(serializers.ModelSerializer):
+class TenantPlanAppAllowPermitSerializer(serializers.ModelSerializer):
     plan = serializers.SerializerMethodField()
     license_used = serializers.SerializerMethodField()
 
@@ -29,7 +29,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
                         'id': x.id,
                         'title': x.title,
                         'code': x.code,
-                    } for x in obj.plan.applications.all()
+                    } for x in obj.plan.applications.filter(allow_permit=True)
                 ],
             }
         return {}
