@@ -29,6 +29,7 @@ class ReportRevenueList(BaseListMixin):
         'sale_order_id': ['exact', 'in'],
         'sale_order__customer_id': ['exact', 'in'],
         'is_initial': ['exact'],
+        'sale_order__system_status': ['exact'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -176,6 +177,12 @@ class ReportCashflowList(BaseListMixin):
     }
     serializer_list = ReportCashflowListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "sale_order",
+            "purchase_order",
+        )
 
     @swagger_auto_schema(
         operation_summary="Report cashflow list",
@@ -380,7 +387,7 @@ class ReportInventoryList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-# REPORT REVENUE
+# REPORT GENERAL
 class ReportGeneralList(BaseListMixin):
     queryset = ReportRevenue.objects
     search_fields = ['group_inherit__title', 'employee_inherit__search_content']

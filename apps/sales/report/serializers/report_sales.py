@@ -196,6 +196,7 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
 # REPORT CASHFLOW
 class ReportCashflowListSerializer(serializers.ModelSerializer):
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportCashflow
@@ -203,6 +204,7 @@ class ReportCashflowListSerializer(serializers.ModelSerializer):
             'id',
             'cashflow_type',
             'due_date',
+            'system_status',
             # so
             'value_estimate_sale',
             'value_actual_sale',
@@ -212,6 +214,14 @@ class ReportCashflowListSerializer(serializers.ModelSerializer):
             'value_actual_cost',
             'value_variance_cost',
         )
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.sale_order:
+            return obj.sale_order.system_status
+        if obj.purchase_order:
+            return obj.purchase_order.system_status
+        return None
 
 
 # REPORT GENERAL
