@@ -305,9 +305,9 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='employee that selected for next node defined as type out form',
         related_name='%(app_label)s_%(class)s_collab_out_form',
     )
-    is_document_change = models.BooleanField(
+    is_change = models.BooleanField(
         default=False,
-        help_text='flag to know this document is the changed document from root document',
+        help_text='flag to know this document is the changed, include root document and change documents',
     )
     document_root_id = models.UUIDField(
         null=True,
