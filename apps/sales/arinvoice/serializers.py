@@ -331,7 +331,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         bank_df = instance.customer_mapped.account_banks_mapped.filter(
             is_default=True
         ).first() if instance.customer_mapped else None
-        bank_code = bank_df.bank_name if bank_df else instance.customer_bank_code
+        bank_code = bank_df.bank_code if bank_df else instance.customer_bank_code
         bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
         if not (bank_code and bank_number):
             raise serializers.ValidationError({'Error': "Can not find bank information."})
