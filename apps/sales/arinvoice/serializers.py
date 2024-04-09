@@ -328,12 +328,14 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         cus_address = (
             f"{billing_address.account_name}, {billing_address.account_address}"
         ) if billing_address else instance.customer_billing_address
-        bank_code = instance.customer_mapped.account_banks_mapped.filter(
+        bank_df = instance.customer_mapped.account_banks_mapped.filter(
             is_default=True
-        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
-        bank_number = instance.customer_mapped.account_banks_mapped.filter(
-            is_default=True
-        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
+        ).first() if instance.customer_mapped else None
+        bank_code = bank_df.bank_name if bank_df else instance.customer_bank_code
+        bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
+        if not bank_code or not bank_number:
+            raise serializers.ValidationError({'Error': "Can not find bank information."})
+
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
