@@ -140,11 +140,14 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     filterset_class = OpportunityMeetingFilters
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity").prefetch_related(
+        queryset = super().get_queryset().select_related("opportunity").prefetch_related(
             'employee_attended_list',
             'customer_member_list',
             'opportunity__employee_inherit'
         )
+        if 'is_cancelled' in self.request.query_params:
+            queryset = queryset.filter(is_cancelled=False)
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="OpportunityMeeting List",
