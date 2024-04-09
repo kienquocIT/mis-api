@@ -152,3 +152,38 @@ class PurchaseRequestProductList(BaseListMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+# PR list use for other apps
+class PurchaseRequestSaleList(
+    BaseListMixin,
+    BaseCreateMixin
+):
+    queryset = PurchaseRequest.objects
+    filterset_fields = {
+        'is_all_ordered': ['exact'],
+        'system_status': ['exact'],
+    }
+    search_fields = [
+        'title',
+        'sale_order__title',
+        'supplier__name',
+    ]
+    serializer_list = PurchaseRequestListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+        ).order_by('purchase_status')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request For Sale List",
+        operation_description="Get Purchase Request For Sale List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
