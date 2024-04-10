@@ -9,7 +9,7 @@ from rest_framework import serializers
 
 from apps.core.log.tasks import (force_log_activity,)
 from apps.core.workflow.utils.runtime_sub import WFValidateHandler
-from apps.shared import (DisperseModel, MAP_FIELD_TITLE, call_task_background,)
+from apps.shared import (DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsg, )
 from apps.core.workflow.models import (Runtime, RuntimeLog, RuntimeStage, )
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ class DocHandler:
             is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj)
             if is_possible is True:
                 return True
-            raise serializers.ValidationError({'detail': "This document is referenced by another document"})
+            raise serializers.ValidationError({'detail': WorkflowMsg.WF_VALIDATE_CHANGE_CANCEL})
         return False
 
     @classmethod
@@ -117,7 +117,7 @@ class DocHandler:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])
             else:
-                raise serializers.ValidationError({'detail': "This document is referenced by another document"})
+                raise serializers.ValidationError({'detail': WorkflowMsg.WF_VALIDATE_CHANGE_CANCEL})
             return True
         return False
 
