@@ -305,6 +305,18 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='employee that selected for next node defined as type out form',
         related_name='%(app_label)s_%(class)s_collab_out_form',
     )
+    is_change = models.BooleanField(
+        default=False,
+        help_text='flag to know this document is the changed, include root document and change documents',
+    )
+    document_root_id = models.UUIDField(
+        null=True,
+        help_text='this is id of root document of the changed documents',
+    )
+    document_change_order = models.IntegerField(
+        null=True,
+        help_text='this is order of changed document from root document, start from 1,2,3...'
+    )
     # active, delete status
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)

@@ -393,4 +393,12 @@ class Migration(migrations.Migration):
             name='distributionapplication',
             unique_together={('tenant', 'company', 'employee', 'app')},
         ),
+        migrations.AlterUniqueTogether(
+            name='group',
+            unique_together={('company', 'code')},
+        ),
+        migrations.AlterUniqueTogether(
+            name='grouplevel',
+            unique_together={('company', 'level')},
+        ),
     ]

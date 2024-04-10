@@ -125,3 +125,41 @@ class PurchaseQuotationProductList(BaseListMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+# PQ list use for other apps
+class PurchaseQuotationSaleList(BaseListMixin, BaseCreateMixin):
+    queryset = PurchaseQuotation.objects
+    search_fields = [
+        'title',
+        'code',
+        'supplier_mapped__name',
+        'purchase_quotation_request_mapped__title',
+        'purchase_quotation_request_mapped__code',
+    ]
+    filterset_fields = {
+        'purchase_quotation_request_mapped__purchase_request_mapped__id': ['in', 'exact'],
+        'supplier_mapped_id': ['exact'],
+    }
+    serializer_list = PurchaseQuotationListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        # Check filter parameters in the request
+        data_filter = self.request.query_params.dict()
+        if 'purchase_quotation_request_mapped__purchase_request_mapped__id__in' in data_filter:
+            return super().get_queryset().select_related(
+                'purchase_quotation_request_mapped',
+                'supplier_mapped__owner',
+            ).distinct()
+        return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped__owner')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Quotation Sale List",
+        operation_description="Get Purchase Quotation Sale List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

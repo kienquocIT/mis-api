@@ -11,6 +11,9 @@ class BaseMsg:
     SYSTEM_STATUS_INCORRECT = _('The document status is incorrect')
     NOT_IS_HTML = _('The content is not HTML')
     BLOCK_PHISHING_CODE = _('The content has been blocked because contains phishing code')
+    CAUSE_DUPLICATE = _("The records cause duplicate errors")
+    CODE_IS_EXISTS = _('Code is exists')
+    CODE_NOT_NULL = _('Code must not null')
     NOT_EXIST = _('do not exist.')
 
 

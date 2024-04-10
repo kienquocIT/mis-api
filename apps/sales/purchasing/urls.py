@@ -4,13 +4,15 @@ from apps.sales.purchasing.views import (
     PurchaseRequestList, PurchaseRequestDetail, PurchaseQuotationRequestList, PurchaseQuotationRequestDetail,
     PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
     PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
-    PurchaseOrderProductList, PurchaseOrderSaleList, PurchaseRequestConfigDetail
+    PurchaseOrderProductList, PurchaseOrderSaleList, PurchaseRequestConfigDetail, PurchaseRequestSaleList,
+    PurchaseQuotationSaleList
 )
 
 urlpatterns = [
     # purchase request
     path('purchase-request/config', PurchaseRequestConfigDetail.as_view(), name='PurchaseRequestConfigDetail'),
     path('purchase-request/list', PurchaseRequestList.as_view(), name='PurchaseRequestList'),
+    path('purchase-request/list-sale', PurchaseRequestSaleList.as_view(), name='PurchaseRequestSaleList'),
     path('purchase-request-for-pqr/list', PurchaseRequestListForPQR.as_view(), name='PurchaseRequestListForPQR'),
     path('purchase-request/<str:pk>', PurchaseRequestDetail.as_view(), name='PurchaseRequestDetail'),
     path('purchase-request-product/list', PurchaseRequestProductList.as_view(), name='PurchaseRequestProductList'),
@@ -40,6 +42,7 @@ urlpatterns = [
 
     # purchase quotation
     path('purchase-quotation/list', PurchaseQuotationList.as_view(), name='PurchaseQuotationList'),
+    path('purchase-quotation/list-sale', PurchaseQuotationSaleList.as_view(), name='PurchaseQuotationSaleList'),
     path('purchase-quotation/<str:pk>', PurchaseQuotationDetail.as_view(), name='PurchaseQuotationDetail'),
     path(
         'purchase-quotation-product/list',

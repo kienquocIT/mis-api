@@ -64,10 +64,7 @@ class GoodsReceiptDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "purchase_order",
-            "supplier",
-        ).prefetch_related(
+        return super().get_queryset().prefetch_related(
             'purchase_requests',
             Prefetch(
                 'goods_receipt_product_goods_receipt',

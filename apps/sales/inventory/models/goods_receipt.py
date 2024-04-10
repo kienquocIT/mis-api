@@ -17,6 +17,10 @@ class GoodsReceipt(DataAbstractModel):
         related_name="goods_receipt_po",
         null=True,
     )
+    purchase_order_data = models.JSONField(
+        default=dict,
+        help_text="read data purchase_order, use for get list or detail"
+    )
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -24,6 +28,10 @@ class GoodsReceipt(DataAbstractModel):
         related_name="goods_receipt_supplier",
         null=True,
         help_text="sale data Accounts have type supplier"
+    )
+    supplier_data = models.JSONField(
+        default=dict,
+        help_text="read data supplier, use for get list or detail"
     )
     purchase_requests = models.ManyToManyField(
         'purchasing.PurchaseRequest',
@@ -39,6 +47,10 @@ class GoodsReceipt(DataAbstractModel):
         verbose_name="inventory adjustment",
         related_name="goods_receipt_ia",
         null=True,
+    )
+    inventory_adjustment_data = models.JSONField(
+        default=dict,
+        help_text="read data inventory_adjustment, use for get list or detail"
     )
     # FIELDS OF TYPE 2(For production)
     # COMMON FIELDS

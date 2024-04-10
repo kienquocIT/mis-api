@@ -5,23 +5,19 @@ from uuid import UUID
 
 from django.db import models
 from django.utils import timezone
+from rest_framework import serializers
 
 from apps.core.log.tasks import (force_log_activity,)
-from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler, HookEventHandler, WFConfigSupport, \
-    WFValidateHandler
-from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify,)
-from apps.core.workflow.models import (
-    WorkflowConfigOfApp, Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
-    Zone, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
-)
+from apps.core.workflow.utils.runtime_sub import WFValidateHandler
+from apps.shared import (DisperseModel, MAP_FIELD_TITLE, call_task_background,)
+from apps.core.workflow.models import (Runtime, RuntimeLog, RuntimeStage, )
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     'DocHandler',
     'RuntimeAfterFinishHandler',
-    'RuntimeStageHandler',
-    'RuntimeLogHandler',
+    'RuntimeAFLogHandler',
 ]
 
 
@@ -91,7 +87,23 @@ class DocHandler:
         return False
 
     @classmethod
-    def force_reject_after_finish(cls, runtime_obj):
+    def force_open_change_request(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            # check referenced
+            check = WFValidateHandler.is_object_referenced(obj=obj)
+            if check is False:
+                return True
+            raise serializers.ValidationError({'detail': "This document is referenced by another document"})
+        return False
+
+    @classmethod
+    def force_reject(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
                 'tenant_id': runtime_obj.tenant_id,
@@ -104,9 +116,10 @@ class DocHandler:
             if check is False:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])
+            else:
+                raise serializers.ValidationError({'detail': "This document is referenced by another document"})
             return True
         return False
-
 
     @classmethod
     def force_update_current_stage(cls, runtime_obj, stage_obj):
@@ -281,10 +294,11 @@ class RuntimeAfterFinishHandler:
         return None
 
     @classmethod
-    def action_perform(
+    def action_perform_after_finish(
             cls,
             runtime_obj: Runtime,
             action_code: int,
+            # data_cr: dict,
     ) -> bool:
         if runtime_obj:
             # WORKFLOW_ACTION = {
@@ -296,430 +310,23 @@ class RuntimeAfterFinishHandler:
             #     5: WorkflowMsg.ACTION_TODO,
             # }
             match action_code:
-                case 0:
-                    ...
-                case 1:  # approved
-                    ...
+                case 1:  # open cr
+                    DocHandler.force_open_change_request(runtime_obj=runtime_obj)
                 case 2:  # reject
-                    # RuntimeStage logging
-                    # Update flag done
-
-                    # RuntimeLogHandler(
-                    #     stage_obj=rt_assignee.stage,
-                    #     actor_obj=employee_assignee_obj,
-                    #     is_system=False,
-                    # ).log_approval_task(action_number=2)
-
-                    # update doc to reject
-                    DocHandler.force_reject_after_finish(runtime_obj)
-                case 3:  # return
-                    ...
-                case 4:  # receive
-                    ...
-                case 5:  # To do
+                    if runtime_obj.stage_currents:
+                        RuntimeAFLogHandler(
+                            stage_obj=runtime_obj.stage_currents,
+                            actor_obj=runtime_obj.doc_employee_inherit,
+                            is_system=False,
+                        ).log_cancel_document()
+                    DocHandler.force_reject(runtime_obj=runtime_obj)
+                case 3:  # save cr
                     ...
             return True
         return False
 
 
-class RuntimeStageHandler:
-    def reject_runtime_by_assignee(self, stage_runtime_currently: RuntimeStage):
-        self.runtime_obj.state = 2  # finish
-        self.runtime_obj.status = 2
-        self.runtime_obj.save(update_fields=['state', 'status'])
-        RuntimeLogHandler(
-            stage_obj=stage_runtime_currently,
-            actor_obj=self.runtime_obj.doc_employee_created,
-            is_system=True,
-        ).log_finish_station_doc(final_state_num=2, msg_log='Document was rejected')  # reject
-        return True
-
-    def return_begin_runtime_by_assignee(
-            self,
-            stage_runtime_currently: RuntimeStage,
-            assignee_action_return, remark
-    ):
-        RuntimeLogHandler(
-            stage_obj=stage_runtime_currently,
-            # actor_obj=self.runtime_obj.doc_employee_created,
-            actor_obj=assignee_action_return,
-            is_system=False,
-            remark=remark,
-        ).log_return_task()  # return
-        config_cls = WFConfigSupport(workflow=self.runtime_obj.flow)
-        initial_node = config_cls.get_initial_node()
-        if initial_node:
-            _is_next_stage, next_stage = self.create_stage(
-                node_passed=initial_node,
-                from_stage=stage_runtime_currently,
-                **{'is_return': True},
-            )
-            if next_stage:
-                self.runtime_obj.stage_currents = next_stage
-                self.runtime_obj.save()
-                stage_runtime_currently.to_stage = next_stage
-                stage_runtime_currently.save()
-            self.set_state_task_bg('SUCCESS')
-            return True
-        return False
-
-    def set_state_task_bg(self, state, field_saved=None):
-        """
-        Args:
-            state:
-            field_saved:
-        Returns:
-        """
-        field_saved = field_saved if isinstance(field_saved, list) else []
-        self.runtime_obj.task_bg_state = state
-        self.runtime_obj.save(update_fields=['task_bg_state'] + field_saved)
-        return True
-
-    @classmethod
-    def __get_zone_and_properties(cls, zone_objs: list[Zone]) -> list[dict]:
-        result = []
-        for obj in zone_objs:
-            properties = []
-            properties_detail = []
-            for detail in obj.properties.all():
-                properties.append(str(detail.id))
-                properties_detail.append(
-                    {
-                        'id': str(detail.id),
-                        'code': str(detail.code),
-                        'type': str(detail.type),
-                        'content_type': str(detail.content_type),
-                        'properties': str(detail.properties),
-                        'compare_operator': str(detail.compare_operator),
-                        'remark': str(detail.remark),
-                    }
-                )
-            result.append(
-                {
-                    "id": str(obj.id),
-                    "title": obj.title,
-                    "remark": obj.remark,
-                    "properties": properties,
-                    "properties_detail": properties_detail,
-                }
-            )
-        return result
-
-    @classmethod
-    def parse_in_wf_collab(cls, node, doc_employee_inherit):
-        collab_in_wf = {}
-        for collab in CollabInWorkflow.objects.filter(node=node):
-            zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
-            zone_hidden_and_properties = cls.__get_zone_and_properties(collab.zone_hidden.all())
-            assignee_id = WFSupportFunctionsHandler.get_assignee_node_in_wf(
-                collab=collab, doc_employee_inherit=doc_employee_inherit
-            )
-            collab_in_wf[str(assignee_id)] = {
-                'zone_edit': zone_and_properties,
-                'zone_hidden': zone_hidden_and_properties,
-                'is_edit_all_zone': collab.is_edit_all_zone,
-            }
-        return collab_in_wf
-
-    @classmethod
-    def __parse_collaboration(
-            cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None,
-            doc_employee_inherit=None, runtime_obj=None
-    ) -> dict:
-        # OPTION_COLLABORATOR = (
-        #     (0, WorkflowMsg.COLLABORATOR_IN),
-        #     (1, WorkflowMsg.COLLABORATOR_OUT),
-        #     (2, WorkflowMsg.COLLABORATOR_WF),
-        # )
-        state_system, code_system = WFConfigSupport.check_stage_is_system(node)
-        if state_system and code_system == WFConfigSupport.code_node_initial and employee_creator_id:
-            return {
-                str(employee_creator_id): {
-                    'zone_edit': cls.__get_zone_and_properties(node.zones_initial_node.all()),
-                    'zone_hidden': cls.__get_zone_and_properties(node.zones_hidden_initial_node.all()),
-                    'is_edit_all_zone': node.is_edit_all_zone,
-                }
-            }
-        try:
-            collab_opt = node.option_collaborator
-            match collab_opt:
-                case 0:
-                    in_form_obj = CollaborationInForm.objects.get(node=node)
-                    app_properties = in_form_obj.app_property
-                    if not app_properties:
-                        raise ValueError('Application Properties must be required with collab in form')
-                    employee_id = doc_params.get(app_properties.code, None)
-                    if not employee_id:
-                        raise ValueError('Get employee from IN FORM return None')
-                    return {
-                        str(employee_id): {
-                            'zone_edit': cls.__get_zone_and_properties(in_form_obj.zone.all()),
-                            'zone_hidden': cls.__get_zone_and_properties(in_form_obj.zone_hidden.all()),
-                            'is_edit_all_zone': in_form_obj.is_edit_all_zone,
-                        }
-                    }
-                case 1:
-                    out_form_obj = CollaborationOutForm.objects.get(node=node)
-                    # zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
-                    # zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
-                    if runtime_obj:
-                        next_node_collab_id = DocHandler.get_next_node_collab_id(runtime_obj=runtime_obj)
-                        return {str(next_node_collab_id): {
-                            'zone_edit': cls.__get_zone_and_properties(out_form_obj.zone.all()),
-                            'zone_hidden': cls.__get_zone_and_properties(out_form_obj.zone_hidden.all()),
-                            'is_edit_all_zone': out_form_obj.is_edit_all_zone,
-                        }} if next_node_collab_id else {}
-                    # return {
-                    #     str(_id): {
-                    #         'zone_edit': zones, 'zone_hidden': zones_hidden,
-                    #         'is_edit_all_zone': out_form_obj.is_edit_all_zone,
-                    #     }
-                    #     for _id in out_form_obj.employees.all().values_list('id', flat=True)
-                    # }
-                case 2:
-                    return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
-        except CollaborationInForm.DoesNotExist:
-            pass
-        except CollaborationOutForm.DoesNotExist:
-            pass
-        return {}
-
-    def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> list[RuntimeAssignee]:
-        if stage_obj.node:
-            try:
-                # get assignee and zone
-                assignee_and_zone = self.__parse_collaboration(
-                    node=stage_obj.node,
-                    doc_params=self.runtime_obj.doc_params,
-                    employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
-                    doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
-                    runtime_obj=self.runtime_obj,
-                )
-                # convert assignee and zone to simple data
-                employee_ids_zones = {}
-                employee_ids_zones_hidden = {}
-                objs = []
-                log_objs = []
-                objs_created = []
-                for emp_id, zone_and_properties in assignee_and_zone.items():
-                    obj_assignee = RuntimeAssignee(
-                        stage=stage_obj,
-                        employee_id=emp_id,
-                        zone_and_properties=zone_and_properties.get('zone_edit', []),
-                        zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
-                        is_edit_all_zone=zone_and_properties.get('is_edit_all_zone', False),
-                    )
-                    obj_assignee.before_save(force_insert=True)
-                    objs.append(obj_assignee)
-
-                    obj_created = RuntimeAssignee.objects.create(
-                        stage=stage_obj,
-                        employee_id=emp_id,
-                        zone_and_properties=zone_and_properties.get('zone_edit', []),
-                        zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
-                        is_edit_all_zone=zone_and_properties.get('is_edit_all_zone', False),
-                    )
-                    objs_created.append(obj_created)
-                    # create instance log
-                    log_obj_tmp = RuntimeLogHandler(
-                        stage_obj=stage_obj,
-                        actor_id=emp_id,
-                        is_system=True,
-                    ).log_new_assignee(
-                        perform_created=False,
-                        is_return=is_return,
-                    )
-                    # update some field need call save() (call bulk don't hit save())
-                    log_obj_tmp.before_save(force_insert=True)
-                    # add to list for call bulk create
-                    log_objs.append(log_obj_tmp)
-                    # push employee to stages.assignees
-                    employee_ids_zones.update({emp_id: zone_and_properties.get('zone_edit', [])})
-                    employee_ids_zones_hidden.update({emp_id: zone_and_properties.get('zone_hidden', [])})
-                # create runtime assignee
-                # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
-
-                # active hook push notify
-                HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
-                    runtime_assignee_obj=objs_created,
-                )
-                # update assignee and zone to Stage
-                stage_obj.assignee_and_zone_data = employee_ids_zones
-                stage_obj.assignee_and_zone_hidden_data = employee_ids_zones_hidden
-                stage_obj.save(update_fields=['assignee_and_zone_data', 'assignee_and_zone_hidden_data'])
-                # create log
-                RuntimeLogHandler.perform_create(log_objs)
-                return objs_created
-            except Exception as err:
-                WFSupportFunctionsHandler.update_runtime_when_error(stage_obj=stage_obj, value_error=err)
-                print(err)
-        return []
-
-    def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
-        config_cls = WFConfigSupport(workflow=workflow)
-        association_passed = config_cls.get_next(stage_obj_currently.node, self.runtime_obj.doc_params)
-        if association_passed and isinstance(association_passed, Association):
-            is_next_stage, next_stage = self.create_stage(
-                node_passed=association_passed.node_out,
-                association_passed=association_passed,
-                from_stage=stage_obj_currently,
-            )
-            if next_stage:
-                self.runtime_obj.stage_currents = next_stage
-                self.runtime_obj.save()
-                stage_obj_currently.to_stage = next_stage
-                stage_obj_currently.save()
-                # check if stage is approved then auto added
-                if next_stage.code == 'approved':
-                    # call added doc obj
-                    DocHandler.force_added_with_runtime(self.runtime_obj)
-            if is_next_stage:
-                return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
-            self.set_state_task_bg('SUCCESS')
-            return next_stage
-        # update some field when go to completed
-        if stage_obj_currently.code == 'completed':
-            self.runtime_obj.status = 1
-            self.runtime_obj.state = 2
-            self.runtime_obj.save(update_fields=['status', 'state'])
-            DocHandler.force_finish_with_runtime(self.runtime_obj)
-        elif stage_obj_currently.code == 'approved':
-            # call added doc obj
-            DocHandler.force_added_with_runtime(self.runtime_obj)
-        return None
-
-    @classmethod
-    def replace_actions(cls, actions: list[any], is_return: bool):
-        if is_return is True:
-            actions = [x for x in actions if x not in (0, '0')]
-            actions.append(4)
-            actions = list(set(actions))
-        return actions
-
-    def create_stage(self, node_passed: Node, **kwargs) -> (bool, RuntimeStage):
-        """
-        Create Runtime Stage
-        Args:
-            node_passed: Node was selected that passed compare params with condition
-            **kwargs: field in RuntimeStage
-
-        Returns:
-            RuntimeStage Object
-        """
-        is_return = kwargs.pop('is_return', False)
-        actions = self.replace_actions(node_passed.actions, is_return=is_return)
-        stage_obj = RuntimeStage.objects.create(
-            runtime=self.runtime_obj,
-            node=node_passed,
-            title=node_passed.title,
-            code=node_passed.code_node_system,
-            node_data={
-                "id": str(node_passed.id),
-                "title": node_passed.title,
-                "code": node_passed.code,
-                "date_created": FORMATTING.parse_datetime(node_passed.date_created)
-            },
-            actions=actions,
-            exit_node_conditions=node_passed.condition,
-            association_passed=kwargs.get('association_passed', None),
-            from_stage=kwargs.get('from_stage', None)
-        )
-        match stage_obj.code:
-            case 'initial':
-                RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_obj=self.runtime_obj.doc_employee_created,
-                    is_system=True,
-                ).log_create_doc(is_return=is_return)
-            case 'approved':
-                RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_obj=self.runtime_obj.doc_employee_created,
-                    is_system=True,
-                ).log_approval_station()
-            case 'completed':
-                RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_obj=self.runtime_obj.doc_employee_created,
-                    is_system=True,
-                ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
-        # update current_stage for document
-        if stage_obj:
-            DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)
-        # create assignee and zone (task)
-        assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
-        if len(assignee_created) == 0:
-            return True, stage_obj
-        return False, stage_obj
-
-    def run_stage(self, workflow: Workflow) -> Union[RuntimeStage, None]:
-        config_cls = WFConfigSupport(workflow=workflow)
-        initial_node = config_cls.get_initial_node()
-        if initial_node:
-            _is_next_init, init_stage = self.create_stage(initial_node)
-            self.runtime_obj.stage_currents = init_stage
-            self.runtime_obj.save()
-            if _is_next_init:
-                return self.run_next(workflow=workflow, stage_obj_currently=init_stage)
-            return init_stage
-        return None
-
-    def __init__(self, runtime_obj: Runtime):
-        if not isinstance(runtime_obj, Runtime):
-            raise AttributeError('[RuntimeStageHandler] runtime_obj must be required.')
-        self.runtime_obj = runtime_obj
-
-    @classmethod
-    def get_flow_applied(cls, runtime_obj: Runtime, app_obj: models.Model) -> (bool, int, Workflow):
-        app_wf_config = WorkflowConfigOfApp.objects.filter(
-            tenant=runtime_obj.tenant,
-            company=runtime_obj.company,
-            application=app_obj,
-        ).first()
-        if app_wf_config:
-            return True, app_wf_config.mode, app_wf_config.workflow_currently
-        return False, None, None
-
-    def apply(self, app_obj: models.Model) -> Union[bool, None]:
-        self.set_state_task_bg('STARTED')
-        field_saved = ['state', 'start_mode']
-        have_config, mode_wf, flow_apply = self.get_flow_applied(self.runtime_obj, app_obj)
-        if have_config is True:
-            self.runtime_obj.start_mode = mode_wf
-            if mode_wf == 0:  # un-apply
-                self.runtime_obj.state = 3  # finish with flow is non-apply.
-                self.runtime_obj.status = 1  # finish with flow is non-apply.
-                field_saved += ['status']
-                state_task = 'SUCCESS'
-                DocHandler.force_finish_with_runtime(self.runtime_obj)
-            elif mode_wf == 1:  # apply
-                if not flow_apply or not isinstance(flow_apply, Workflow):
-                    raise ValueError('[RuntimeStageHandler][apply] Workflow must be required with apply flow.')
-                self.runtime_obj.flow = flow_apply
-                self.runtime_obj.state = 1  # in-progress
-                self.runtime_obj.save(update_fields=['flow', 'state'])
-                self.run_stage(workflow=flow_apply)
-                state_task = 'SUCCESS'
-            elif mode_wf == 2:  # pending
-                self.runtime_obj.state = 0  # created
-                state_task = 'PENDING'
-            else:  # not support
-                raise ValueError(
-                    '[RuntimeStageHandler][apply] Mode app workflow must be choice in '
-                    '[0: un-apply, 1: apply, 2: pending].'
-                )
-        else:
-            state_task = 'SUCCESS'
-            self.runtime_obj.start_mode = None
-            self.runtime_obj.state = 3  # finish with flow is non-apply.
-            self.runtime_obj.satus = 1  # finish with flow is non-apply.
-            field_saved += ['status']
-            DocHandler.force_finish_with_runtime(self.runtime_obj)
-        self.set_state_task_bg(state_task, field_saved=field_saved)
-        return True
-
-
-class RuntimeLogHandler:
+class RuntimeAFLogHandler:
     @staticmethod
     def get_correct_date_log(runtime_obj: Runtime, seconds_compare_and_add: int):
         delta_time = timezone.now() - runtime_obj.date_created
@@ -751,84 +358,7 @@ class RuntimeLogHandler:
     def perform_create(cls, objs: list[RuntimeLog]):
         return RuntimeLog.objects.bulk_create(objs)
 
-    def log_create_doc(self, is_return=False):
-        runtime_obj = self.stage_obj.runtime
-        if runtime_obj:
-            # force log run WF
-            call_task_background(
-                force_log_activity,
-                **{
-                    'tenant_id': runtime_obj.tenant_id,
-                    'company_id': runtime_obj.company_id,
-                    'request_method': '',
-                    'date_created': RuntimeLogHandler.get_correct_date_log(runtime_obj, 3),
-                    # + 10s for this crated after doc log created
-                    'doc_id': runtime_obj.doc_id,
-                    'doc_app': runtime_obj.app_code,
-                    'automated_logging': True,
-                    'user_id': None,
-                    'employee_id': None,
-                    'msg': 'Re-run begin station' if is_return else 'Runtime Workflow is successfully',
-                    'data_change': {},
-                    'change_partial': False,
-                },
-            )
-        return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg='Re-run begin station' if is_return else 'Create document',
-            is_system=self.is_system,
-        )
-
-    def log_new_assignee(self, perform_created: bool = True, is_return: bool = False):
-        data = {
-            "actor": self.actor_obj,
-            "runtime": self.stage_obj.runtime,
-            "stage": self.stage_obj,
-            "kind": 2,
-            "action": 0,
-            "msg": WorkflowMsgNotify.was_return_begin if is_return else WorkflowMsgNotify.new_task,
-            "is_system": self.is_system,
-        }
-        if perform_created is True:
-            return RuntimeLog.objects.create(**data)
-        return RuntimeLog(**data)
-
-    def log_approval_station(self):
-        runtime_obj = self.stage_obj.runtime
-        if runtime_obj:
-            call_task_background(
-                force_log_activity,
-                **{
-                    'tenant_id': runtime_obj.tenant_id,
-                    'company_id': runtime_obj.company_id,
-                    'date_created': RuntimeLogHandler.get_correct_date_log(runtime_obj, 6),
-                    'doc_id': runtime_obj.doc_id,
-                    'doc_app': runtime_obj.app_code,
-                    'automated_logging': True,
-                    'msg': 'Final approval station',
-                },
-            )
-        return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
-            actor=None,  # edit by PO's request
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg='Approved',
-            is_system=self.is_system,
-        )
-
-    def log_approval_task(self, action_number):
-        action_choices = {
-            1: 'Approved',
-            2: 'Rejected',
-        }
-        # msg choice in: ['Approved']
+    def log_cancel_document(self):
         call_task_background(
             force_log_activity,
             **{
@@ -840,7 +370,7 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': action_choices[action_number],
+                'msg': "Rejected by owner",
                 'task_workflow_id': None,
             },
         )
@@ -850,65 +380,7 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg=action_choices[action_number],
-            is_system=self.is_system,
-        )
-
-    def log_return_task(self):
-        call_task_background(
-            force_log_activity,
-            **{
-                'tenant_id': self.stage_obj.runtime.tenant_id,
-                'company_id': self.stage_obj.runtime.company_id,
-                'date_created': timezone.now(),
-                'doc_id': self.stage_obj.runtime.doc_id,
-                'doc_app': self.stage_obj.runtime.app_code,
-                'automated_logging': False,
-                'user_id': None,
-                'employee_id': self.actor_obj.id,
-                # 'msg': 'Return to begin station',
-                'msg': f'Return to initial node ({self.remark})',  # edit by PO's request
-                'task_workflow_id': None,
-            },
-        )
-        return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            # msg='Return to begin station',
-            msg=f'Return to initial node ({self.remark})',  # edit by PO's request
-            is_system=self.is_system,
-        )
-
-    def log_finish_station_doc(self, final_state_num=1, msg_log=''):
-        final_state_choices = {
-            1: 'Approved',
-            2: 'Reject',
-        }
-        runtime_obj = self.stage_obj.runtime
-        if runtime_obj:
-            call_task_background(
-                force_log_activity,
-                **{
-                    'tenant_id': runtime_obj.tenant_id,
-                    'company_id': runtime_obj.company_id,
-                    'date_created': RuntimeLogHandler.get_correct_date_log(runtime_obj, 9),
-                    'doc_id': runtime_obj.doc_id,
-                    'doc_app': runtime_obj.app_code,
-                    'automated_logging': True,
-                    'msg': msg_log,
-                },
-            )
-        return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
-            actor=None,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg='Finish flow' + f' with {final_state_choices[final_state_num]}',
+            msg="Canceled by creator",
             is_system=self.is_system,
         )
 
@@ -916,20 +388,8 @@ class RuntimeLogHandler:
         return RuntimeLog.objects.create(
             actor=self.actor_obj,
             runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
             kind=2,
             action=0,
             msg='Perform a action',
-            is_system=self.is_system,
-        )
-
-    def log_update_at_zone(self):
-        return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=1,  # in doc
-            action=0,
-            msg='Update data at zone',
             is_system=self.is_system,
         )

@@ -4,14 +4,13 @@ from rest_framework import serializers
 from django.utils import timezone
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term
-# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
     AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.shared import AccountsMsg, HRMsg, AbstractDetailSerializerModel
+from apps.shared import AccountsMsg, HRMsg
 
 
 # Account
@@ -321,7 +320,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         return validate_data
 
-    # @decorator_run_workflow (comment do yeu cau ko chay WF)
     def create(self, validated_data):
         contact_mapped = self.initial_data.get('contact_mapped', None)
 
@@ -348,7 +346,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return account
 
 
-class AccountDetailSerializer(AbstractDetailSerializerModel):
+class AccountDetailSerializer(serializers.ModelSerializer):
     contact_mapped = serializers.SerializerMethodField()
     account_group = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
@@ -392,7 +390,6 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'currency',
             'contact_mapped',
             'account_type_selection',
-            'workflow_runtime_id',
             "activity",
         )
 

@@ -129,6 +129,7 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
     queryset = Contact.objects
+    search_fields = ['title', 'code', 'fullname', 'mobile', 'email', 'account_name__name']
     filterset_fields = ['account_name_id']
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer

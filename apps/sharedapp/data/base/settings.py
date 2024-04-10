@@ -178,6 +178,10 @@ class ApplicationConfigFrame:
         },
     }
     default__spacing_allow = ["0"]  # allow: general
+    default__allow_permit = False  # allow: permit config | DB default: False
+    default__allow_import = False  # allow: import | DB default: False
+    default__allow_print = False  # allow: print | DB default: False
+    default__allow_mail = False  # allow: mail | DB default: False
 
     def __init__(self, **config):
         self._data: dict = {
@@ -187,6 +191,10 @@ class ApplicationConfigFrame:
             "app_depend_on": self.default__app_depend_on,
             "permit_mapping": self.default__permit_mapping,
             "spacing_allow": self.default__spacing_allow,
+            "allow_permit": self.default__allow_permit,
+            "allow_import": self.default__allow_import,
+            "allow_print": self.default__allow_print,
+            "allow_mail": self.default__allow_mail,
             **config
         }
 

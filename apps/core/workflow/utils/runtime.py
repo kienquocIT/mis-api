@@ -17,10 +17,8 @@ from apps.core.workflow.models import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'DocHandler',
-    'RuntimeHandler',
-    'RuntimeStageHandler',
-    'RuntimeLogHandler',
+    'DocHandler', 'RuntimeHandler',
+    'RuntimeStageHandler', 'RuntimeLogHandler',
 ]
 
 
@@ -42,6 +40,10 @@ class DocHandler:
         except self.model.DoesNotExist:
             return None
 
+    def filter_first_obj(self, default_filter: dict) -> Union[models.Model, None]:
+        first_obj = self.model.objects.filter(**default_filter).first()
+        return first_obj if first_obj else None
+
     @classmethod
     def force_added(cls, obj):
         setattr(obj, 'system_status', 2)  # added
@@ -51,10 +53,7 @@ class DocHandler:
     @classmethod
     def force_added_with_runtime(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'system_status', 2)  # added
@@ -66,23 +65,25 @@ class DocHandler:
     def force_finish(cls, obj):
         setattr(obj, 'system_status', 3)  # finish
         setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-        obj.save(update_fields=['system_status', 'date_approved'])
+        update_fields = ['system_status', 'date_approved']
+        if hasattr(obj, 'is_change'):
+            if obj.is_change is False:
+                setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
+                update_fields.append('document_root_id')
+        obj.save(update_fields=update_fields)
+        # cancel document root or previous document
+        DocHandler.force_cancel_if_change_document_finish(document_change=obj)
         return True
 
     @classmethod
     def force_finish_with_runtime(cls, runtime_obj, approved_or_rejected='approved'):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             match approved_or_rejected:
                 case 'approved':
-                    setattr(obj, 'system_status', 3)  # finish
-                    setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-                    obj.save(update_fields=['system_status', 'date_approved'])
+                    DocHandler.force_finish(obj=obj)
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
@@ -92,10 +93,7 @@ class DocHandler:
     @classmethod
     def force_update_current_stage(cls, runtime_obj, stage_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'current_stage', stage_obj)
@@ -107,10 +105,7 @@ class DocHandler:
     @classmethod
     def force_update_next_node_collab(cls, runtime_obj, next_node_collab_id):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             setattr(obj, 'next_node_collab_id', next_node_collab_id)
@@ -121,15 +116,41 @@ class DocHandler:
     @classmethod
     def get_next_node_collab_id(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={
-                'tenant_id': runtime_obj.tenant_id,
-                'company_id': runtime_obj.company_id,
-            }
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
             if hasattr(obj, 'next_node_collab_id'):
                 return obj.next_node_collab_id
         return None
+
+    @classmethod
+    def force_cancel_if_change_document_finish(cls, document_change):
+        if hasattr(document_change, 'document_change_order') and hasattr(document_change, 'document_root_id'):
+            if document_change.document_change_order and document_change.document_root_id:
+                document_target = DocHandler.get_previous_document(document_change=document_change)
+                if document_target:
+                    setattr(document_target, 'system_status', 4)
+                    document_target.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def get_previous_document(cls, document_change):
+        document_target = None
+        if document_change.document_change_order == 1:
+            document_target = DocHandler(
+                document_change.document_root_id, document_change._meta.label_lower
+            ).get_obj(
+                default_filter={'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id}
+            )
+        if document_change.document_change_order > 1:
+            document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                default_filter={
+                    'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
+                    'document_change_order': document_change.document_change_order - 1,
+                    'document_root_id': document_change.document_root_id,
+                }
+            )
+        return document_target
 
 
 class RuntimeHandler:
@@ -217,7 +238,6 @@ class RuntimeHandler:
                 )
                 if not doc_obj:
                     raise ValueError('Document Object does not exist')
-
                 runtime_obj = Runtime.objects.create(
                     tenant_id=tenant_id,
                     company_id=company_id,
@@ -311,10 +331,13 @@ class RuntimeHandler:
                                 runtime_obj=runtime_obj,
                             ).set_state_task_bg('SUCCESS')
                         except Exception as err:
+                            # reject document if workflow error
+                            DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
                             WFSupportFunctionsHandler.update_runtime_when_error(
                                 stage_obj=rt_assignee.stage, value_error=err
                             )
                             print(err)
+                            return False
                 case 2:  # reject
                     # RuntimeStage logging
                     # Update flag done
@@ -503,8 +526,6 @@ class RuntimeStageHandler:
                     }
                 case 1:
                     out_form_obj = CollaborationOutForm.objects.get(node=node)
-                    # zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
-                    # zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
                     if runtime_obj:
                         next_node_collab_id = DocHandler.get_next_node_collab_id(runtime_obj=runtime_obj)
                         return {str(next_node_collab_id): {
@@ -512,13 +533,6 @@ class RuntimeStageHandler:
                             'zone_hidden': cls.__get_zone_and_properties(out_form_obj.zone_hidden.all()),
                             'is_edit_all_zone': out_form_obj.is_edit_all_zone,
                         }} if next_node_collab_id else {}
-                    # return {
-                    #     str(_id): {
-                    #         'zone_edit': zones, 'zone_hidden': zones_hidden,
-                    #         'is_edit_all_zone': out_form_obj.is_edit_all_zone,
-                    #     }
-                    #     for _id in out_form_obj.employees.all().values_list('id', flat=True)
-                    # }
                 case 2:
                     return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
         except CollaborationInForm.DoesNotExist:
@@ -527,7 +541,7 @@ class RuntimeStageHandler:
             pass
         return {}
 
-    def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> list[RuntimeAssignee]:
+    def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> (bool, list[RuntimeAssignee]):
         if stage_obj.node:
             try:
                 # get assignee and zone
@@ -579,9 +593,6 @@ class RuntimeStageHandler:
                     # push employee to stages.assignees
                     employee_ids_zones.update({emp_id: zone_and_properties.get('zone_edit', [])})
                     employee_ids_zones_hidden.update({emp_id: zone_and_properties.get('zone_hidden', [])})
-                # create runtime assignee
-                # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
-
                 # active hook push notify
                 HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
                     runtime_assignee_obj=objs_created,
@@ -592,11 +603,13 @@ class RuntimeStageHandler:
                 stage_obj.save(update_fields=['assignee_and_zone_data', 'assignee_and_zone_hidden_data'])
                 # create log
                 RuntimeLogHandler.perform_create(log_objs)
-                return objs_created
+                return True, objs_created
             except Exception as err:
+                # reject document if workflow error
+                DocHandler.force_finish_with_runtime(stage_obj.runtime, approved_or_rejected='rejected')
                 WFSupportFunctionsHandler.update_runtime_when_error(stage_obj=stage_obj, value_error=err)
-                print(err)
-        return []
+                return False, []
+        return True, []
 
     def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
         config_cls = WFConfigSupport(workflow=workflow)
@@ -690,7 +703,9 @@ class RuntimeStageHandler:
         if stage_obj:
             DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)
         # create assignee and zone (task)
-        assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
+        is_success, assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
+        if is_success is False:
+            return False, stage_obj
         if len(assignee_created) == 0:
             return True, stage_obj
         return False, stage_obj
@@ -951,7 +966,7 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Finish flow' + f' with {final_state_choices[final_state_num]}',
+            msg='Finish flow' + f' with {final_state_choices[final_state_num].lower()}',
             is_system=self.is_system,
         )
 

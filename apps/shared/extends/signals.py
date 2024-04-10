@@ -48,7 +48,8 @@ from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
 from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 from apps.core.mailer.tasks import send_mail_otp
-from ...core.account.models import ValidateUser
+from apps.core.account.models import ValidateUser
+from apps.eoffice.leave.leave_util import leave_available_map_employee
 from ...sales.project.models import ProjectMapMember
 
 logger = logging.getLogger(__name__)
@@ -1043,6 +1044,12 @@ def new_employee_or_role(sender, instance, created, **kwargs):
             EmployeePermission.objects.get_or_create(employee=instance)
         elif isinstance(instance, Role):
             RolePermission.objects.get_or_create(role=instance)
+
+
+@receiver(post_save, sender=Employee)
+def new_employee(sender, instance, created, **kwargs):
+    if created is True:
+        leave_available_map_employee(instance, instance.company)
 
 
 @receiver(post_save, sender=TaskResult)

@@ -61,7 +61,9 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
-                'attachment'
+                'attachment',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -147,7 +149,9 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
-                'attachment'
+                'attachment',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -227,7 +231,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status', 'activity',
+                'annual_revenue', 'price_list_mapped', 'activity',
             ],
             check_sum_second=True,
         )
@@ -381,6 +385,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -432,7 +438,9 @@ class PaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'employee_payment',
                 'is_internal_payment',
-                'attachment'
+                'attachment',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -514,7 +522,9 @@ class PaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'employee_payment',
                 'is_internal_payment',
-                'attachment'
+                'attachment',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -618,7 +628,9 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
-                'attachment'
+                'attachment',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -667,7 +679,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'workflow_runtime_id',
-                'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total'
+                'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total',
+                'document_root_id', 'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -765,6 +778,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             [
                 'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method',
                 'system_status', 'money_received', 'date_created', 'cost', 'return_total', 'workflow_runtime_id',
+                'document_root_id', 'document_change_order',
             ],
             check_sum_second=True,
         )

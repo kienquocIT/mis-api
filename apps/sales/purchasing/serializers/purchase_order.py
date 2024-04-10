@@ -6,6 +6,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
     PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -349,6 +350,7 @@ def validate_attachment(instance, value):
     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
+# BEGIN PURCHASE ORDER
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
 
@@ -377,11 +379,10 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     purchase_requests_data = serializers.SerializerMethodField()
     purchase_quotations_data = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
-    supplier = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
     purchase_order_products_data = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -392,8 +393,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'purchase_request_products_data',
-            'supplier',
-            'contact',
+            'supplier_data',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             'receipt_status',
@@ -411,6 +412,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'workflow_runtime_id',
             'is_active',
             'attachment',
+            'employee_inherit',
         )
 
     @classmethod
@@ -453,22 +455,6 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         ), many=True).data
 
     @classmethod
-    def get_supplier(cls, obj):
-        return {
-            'id': obj.supplier_id,
-            'name': obj.supplier.name,
-            'code': obj.supplier.code,
-        } if obj.supplier else {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'fullname': obj.contact.fullname,
-            'code': obj.contact.code,
-        } if obj.contact else {}
-
-    @classmethod
     def get_purchase_order_products_data(cls, obj):
         return PurchaseOrderProductListSerializer(obj.purchase_order_product_order.all(), many=True).data
 
@@ -481,6 +467,19 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_attachment(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
 
 class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
@@ -514,7 +513,9 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'supplier',
+            'supplier_data',
             'contact',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             # purchase order tabs
@@ -555,6 +556,12 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):
@@ -606,7 +613,9 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'purchase_quotations_data',
             'supplier',
+            'supplier_data',
             'contact',
+            'contact_data',
             'delivered_date',
             'status_delivered',
             # purchase order tabs
@@ -646,12 +655,19 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):
         self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         # update purchase order
         for key, value in validated_data.items():

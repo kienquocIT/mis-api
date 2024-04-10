@@ -26,6 +26,8 @@ class AbstractDetailSerializerModel(serializers.ModelSerializer):
             **super().get_fields(),
             'workflow_runtime_id': serializers.UUIDField(),
             'system_status': serializers.IntegerField(),
+            'document_root_id': serializers.UUIDField(),
+            'document_change_order': serializers.IntegerField(),
         }
 
     class Meta:
@@ -40,7 +42,10 @@ class AbstractCreateSerializerModel(serializers.ModelSerializer):
                 choices=[0, 1],
                 help_text='0: draft, 1: created',
                 default=0,
-            )
+            ),
+            'is_change': serializers.BooleanField(required=False, default=False),
+            'document_root_id': serializers.UUIDField(required=False, allow_null=True),
+            'document_change_order': serializers.IntegerField(required=False, allow_null=True),
         }
 
     class Meta:

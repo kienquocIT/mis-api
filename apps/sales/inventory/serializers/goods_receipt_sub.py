@@ -9,7 +9,7 @@ from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceip
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
-from apps.shared.translations.sales import InventoryMsg
+from apps.shared.translations.sales import InventoryMsg, SaleMsg
 
 
 class GoodsReceiptCommonCreate:
@@ -300,4 +300,11 @@ class GoodsReceiptCommonValidate:
     def validate_quantity_import(cls, value):
         if value <= 0:
             raise serializers.ValidationError({'quantity_import': InventoryMsg.GOODS_RECEIPT_QUANTITY})
+        return value
+
+    @classmethod
+    def validate_price(cls, value):
+        if isinstance(value, float):
+            if value <= 0:
+                raise serializers.ValidationError({'price': SaleMsg.PRICE_VALID})
         return value

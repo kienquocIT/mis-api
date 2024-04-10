@@ -24,6 +24,7 @@ class SaleMsg:
     QUANTITY_VALID = _('Quantity must be larger than 0.')
     DATE_REQUIRED = _('Date is required.')
     DUE_DATE_REQUIRED = _('Due date is required.')
+    PAYMENT_REQUIRED_BY_CONFIG = _('Payment is required according to config.')
 
 
 class SaleTask:

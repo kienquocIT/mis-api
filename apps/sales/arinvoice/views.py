@@ -1,5 +1,11 @@
-from drf_yasg.utils import swagger_auto_schema
+import hashlib
+import uuid
+import time
+import json
+import base64
+import requests
 
+from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceSign
@@ -16,6 +22,47 @@ __all__ = [
     'ARInvoiceDetail',
     'ARInvoiceSignList'
 ]
+
+
+def generate_token(http_method, username, password):
+    epoch_start = 0
+    timestamp = str(int(time.time() - epoch_start))
+    nonce = uuid.uuid4().hex
+    signature_raw_data = http_method.upper() + timestamp + nonce
+
+    md5 = hashlib.md5()
+    md5.update(signature_raw_data.encode('utf-8'))
+    signature = base64.b64encode(md5.digest()).decode('utf-8')
+
+    return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
+
+
+def update_ar_status():
+    ikey_list = []
+    all_ar = ARInvoice.objects.all()
+    for item in all_ar:
+        if item.is_created_einvoice:
+            ikey_list.append(str(item.id) + '-' + item.invoice_sign)
+    http_method = "POST"
+    username = "API"
+    password = "Api@0317493763"
+    token = generate_token(http_method, username, password)
+    headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+    response = requests.post(
+        "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
+        headers=headers,
+        json={'Ikeys': ikey_list},
+        timeout=60
+    )
+    if response.status_code == 200:
+        invoice_info = json.loads(response.text).get('Data', {})['Invoices']
+        for ar_obj in all_ar:
+            for item in invoice_info:
+                if item.get('Ikey') == str(ar_obj.id) + '-' + ar_obj.invoice_sign:
+                    ar_obj.invoice_number = item.get('No')
+                    ar_obj.invoice_status = item.get('InvoiceStatus')
+                    ar_obj.save(update_fields=['invoice_number', 'invoice_status'])
+    return True
 
 
 class ARInvoiceList(BaseListMixin, BaseCreateMixin):
@@ -48,6 +95,9 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
         label_code='arinvoice', model_code='arinvoice', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        if request.query_params.get('update_status'):
+            update_ar_status()
+
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

@@ -2,11 +2,12 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer,\
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, BaseMsg
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 # SALE ORDER BEGIN
@@ -70,7 +71,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
         } if obj.quotation else {}
 
 
-class SaleOrderDetailSerializer(serializers.ModelSerializer):
+class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -195,7 +196,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class SaleOrderCreateSerializer(serializers.ModelSerializer):
+class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     opportunity_id = serializers.UUIDField(
         required=False,
@@ -240,6 +241,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         model = SaleOrder
         fields = (
             'title',
+            'code',
             'opportunity_id',
             'customer',
             'contact',
@@ -340,6 +342,12 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate(self, validate_data):
@@ -513,6 +521,12 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+        else:
+            # check required by config
+            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if so_config:
+                if so_config.is_require_payment is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate_opportunity_rules(self, validate_data):

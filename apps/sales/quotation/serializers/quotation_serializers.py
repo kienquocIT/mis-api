@@ -6,7 +6,7 @@ from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer,\
     QuotationExpenseSerializer, QuotationIndicatorSerializer
-from apps.shared import SaleMsg, BaseMsg
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 # QUOTATION BEGIN
@@ -58,7 +58,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
 
-class QuotationDetailSerializer(serializers.ModelSerializer):
+class QuotationDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -176,7 +176,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class QuotationCreateSerializer(serializers.ModelSerializer):
+class QuotationCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     opportunity_id = serializers.UUIDField(
         required=False,

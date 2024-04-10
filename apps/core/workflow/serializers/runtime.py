@@ -3,7 +3,8 @@ from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee, CollaborationOutForm
-from apps.core.workflow.tasks import call_approval_task, call_action_workflow_after_finish
+from apps.core.workflow.tasks import call_approval_task
+from apps.core.workflow.utils.runtime_after_finish import RuntimeAfterFinishHandler
 from apps.shared import call_task_background
 
 __all__ = [
@@ -371,19 +372,25 @@ class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):
     action = serializers.IntegerField(
         help_text='Action code submit'
     )
+    data_cr = serializers.JSONField(required=False, default=dict)
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
-        call_task_background(
-            call_action_workflow_after_finish,
-            *[
-                instance,
-                action_code,
-            ]
+        # data_cr = validated_data.get('data_cr', {})
+        # call_task_background(
+        #     call_action_workflow_after_finish,
+        #     *[
+        #         instance,
+        #         action_code,
+        #     ]
+        # )
+        RuntimeAfterFinishHandler().action_perform_after_finish(
+            runtime_obj=instance,
+            action_code=action_code,
+            # data_cr=data_cr
         )
-
         return instance
 
     class Meta:
         model = Runtime
-        fields = ('action',)
+        fields = ('action', 'data_cr')

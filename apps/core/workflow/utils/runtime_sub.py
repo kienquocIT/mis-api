@@ -138,6 +138,10 @@ class WFSupportFunctionsHandler:
         if group.parent_n:
             if group.parent_n.first_manager_id:
                 return group.parent_n.first_manager_id
+        # check if group of assignee is the highest group and assignee is 1st manager
+        if group.first_manager_id and group.group_level:
+            if group.group_level.level == 1:
+                return group.first_manager_id
         raise ValueError('1st manager is not defined')
 
     @classmethod
@@ -148,7 +152,8 @@ class WFSupportFunctionsHandler:
         # log error
         msg = 'Workflow error: ' + str(value_error)
         cls.log_runtime_error(stage_obj=stage_obj, msg=msg)
-        raise value_error
+        cls.log_runtime_reject_by_error(stage_obj=stage_obj)
+        return False
 
     @classmethod
     def log_runtime_error(cls, stage_obj, msg):
@@ -176,6 +181,44 @@ class WFSupportFunctionsHandler:
             msg=msg,
             is_system=True,
         )
+
+    @classmethod
+    def log_runtime_reject_by_error(cls, stage_obj):
+        call_task_background(
+            force_log_activity,
+            **{
+                'tenant_id': stage_obj.runtime.tenant_id,
+                'company_id': stage_obj.runtime.company_id,
+                'date_created': timezone.now(),
+                'doc_id': stage_obj.runtime.doc_id,
+                'doc_app': stage_obj.runtime.app_code,
+                'automated_logging': False,
+                'user_id': None,
+                'employee_id': None,
+                'msg': "Rejected because of workflow error",
+                'task_workflow_id': None,
+            },
+        )
+        return RuntimeLog.objects.create(
+            actor=None,
+            runtime=stage_obj.runtime,
+            stage=stage_obj,
+            kind=2,
+            action=0,
+            msg="Rejected because of workflow error",
+            is_system=True,
+        )
+
+    @classmethod
+    def get_class_view_and_serializer(cls, app_label, model_name):
+        # Get the model class
+        model_class = apps.get_model(app_label=app_label, model_name=model_name)
+        # Get the corresponding view class
+        for cls_ in model_class.mro():
+            if hasattr(cls_, 'serializer_create'):
+                serializer_create_class = cls_.serializer_create
+                return cls_, serializer_create_class
+        return None, None
 
 
 class WFValidateHandler:

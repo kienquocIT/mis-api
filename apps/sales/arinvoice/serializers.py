@@ -33,6 +33,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'code',
             'customer_mapped',
             'customer_name',
+            'buyer_name',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -40,6 +41,7 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'invoice_status',
             'system_status'
         )
 
@@ -188,6 +190,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    invoice_info = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -202,7 +205,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'document_date',
             'invoice_date',
             'invoice_sign',
-            'invoice_number',
+            'invoice_info',
             'invoice_example',
             'system_status',
             'is_created_einvoice',
@@ -271,6 +274,29 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         att_objs = ARInvoiceAttachmentFile.objects.select_related('attachment').filter(ar_invoice=obj)
         return [item.attachment.get_detail() for item in att_objs]
 
+    @classmethod
+    def get_invoice_info(cls, obj):
+        if obj.is_created_einvoice:
+            ikey = str(obj.id) + '-' + obj.invoice_sign
+            http_method = "POST"
+            username = "API"
+            password = "Api@0317493763"
+            token = generate_token(http_method, username, password)
+            headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
+            response = requests.post(
+                "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
+                headers=headers,
+                json={
+                    'Ikeys': [ikey]
+                },
+                timeout=30
+            )
+            if response.status_code == 200:
+                invoice_info = json.loads(response.text).get('Data', {})['Invoices']
+                return invoice_info[0] if invoice_info else {}
+
+        return {}
+
 
 class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -302,12 +328,14 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         cus_address = (
             f"{billing_address.account_name}, {billing_address.account_address}"
         ) if billing_address else instance.customer_billing_address
-        bank_code = instance.customer_mapped.account_banks_mapped.filter(
+        bank_df = instance.customer_mapped.account_banks_mapped.filter(
             is_default=True
-        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
-        bank_number = instance.customer_mapped.account_banks_mapped.filter(
-            is_default=True
-        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
+        ).first() if instance.customer_mapped else None
+        bank_code = bank_df.bank_code if bank_df else instance.customer_bank_code
+        bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
+        if not (bank_code and bank_number):
+            raise serializers.ValidationError({'Error': "Can not find bank information."})
+
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
@@ -345,10 +373,12 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                     f"<ProdName>{item.product.title}</ProdName>"
                     f"<ProdUnit>{item.product_uom.title}</ProdUnit>"
                     f"<ProdQuantity>{item.product_quantity}</ProdQuantity>"
-                    f"<ProdPrice>{item.product_unit_price}</ProdPrice>"
-                    f"<Discount>{item.product_discount_rate}</Discount>"
-                    f"<DiscountAmount>{item.product_discount_value}</DiscountAmount>"
-                    f"<Total>{item.product_subtotal}</Total>"
+                    "<ProdPrice>"
+                    f"{(float(item.product_subtotal)-float(item.product_discount_value))/float(item.product_quantity)}"
+                    "</ProdPrice>"
+                    f"<Discount></Discount>"
+                    f"<DiscountAmount></DiscountAmount>"
+                    f"<Total>{float(item.product_subtotal)-float(item.product_discount_value)}</Total>"
                     f"<VATRate>{int(item.product_tax.rate) if item.product_tax_id else 0}</VATRate>"
                     f"<VATAmount>{item.product_tax_value if item.product_tax_id else 0}</VATAmount>"
                     "<VATRateOther/>"
@@ -358,26 +388,27 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 )
                 if float(item.product_discount_rate) > 0:
                     discount += float(item.product_discount_value)
-                    product_xml += (
-                        "<Product>"
-                        "<Code></Code>"
-                        "<No></No>"
-                        "<Feature>3</Feature>"
-                        f"<ProdName>Chiết khấu {item.product_discount_rate}% "
-                        f"(cho sản phẩm {item.product.title})</ProdName>"
-                        "<ProdUnit></ProdUnit>"
-                        "<ProdQuantity></ProdQuantity>"
-                        "<ProdPrice></ProdPrice>"
-                        "<Discount></Discount>"
-                        "<DiscountAmount></DiscountAmount>"
-                        f"<Total>{item.product_discount_value}</Total>"
-                        "<VATRate>-1</VATRate>"
-                        "<VATAmount>0</VATAmount>"
-                        "<VATRateOther/>"
-                        f"<Amount>{item.product_discount_value}</Amount>"
-                        "<Extra></Extra>"
-                        "</Product>"
-                    )
+                #     product_xml += (
+                #         "<Product>"
+                #         "<Code></Code>"
+                #         "<No></No>"
+                #         "<Feature>3</Feature>"
+                #         "<ProdName>"
+                #         f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                #         "</ProdName>"
+                #         "<ProdUnit></ProdUnit>"
+                #         "<ProdQuantity></ProdQuantity>"
+                #         "<ProdPrice></ProdPrice>"
+                #         "<Discount></Discount>"
+                #         "<DiscountAmount></DiscountAmount>"
+                #         f"<Total>{float(item.product_discount_value) * -1}</Total>"
+                #         "<VATRate>-1</VATRate>"
+                #         "<VATAmount>0</VATAmount>"
+                #         "<VATRateOther/>"
+                #         f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
+                #         "<Extra></Extra>"
+                #         "</Product>"
+                #     )
                 count += 1
         number_vat = list(set(number_vat))
 
@@ -455,9 +486,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             )
 
         instance.is_created_einvoice = True
-        if not instance.buyer_name:
-            instance.buyer_name = instance.customer_mapped.name
-        instance.save(update_fields=['is_created_einvoice', 'buyer_name'])
+        instance.save(update_fields=['is_created_einvoice'])
         return response.status_code
 
     def validate(self, validate_data):
@@ -477,8 +506,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        if 'create_invoice' in self.initial_data:
-            self.create_update_invoice(instance, item_mapped)
+        self.create_update_invoice(instance, item_mapped)
 
         return instance
 

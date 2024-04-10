@@ -135,21 +135,10 @@ class ReportInventorySub(DataAbstractModel):
     def process_in_each_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         sub_list = ReportInventorySub.objects.filter(
             product=log.product,
-            warehouse=log.warehouse,
-            report_inventory__period_mapped=period_mapped,
-            report_inventory__sub_period_order=sub_period_order
+            warehouse=log.warehouse
         ).exclude(id__in=new_logs_id_list)
         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
         if not latest_trans:
-            ReportInventoryProductWarehouse.objects.create(
-                tenant_id=period_mapped.tenant_id,
-                company_id=period_mapped.company_id,
-                product=log.product,
-                warehouse=log.warehouse,
-                period_mapped=period_mapped,
-                sub_period_order=sub_period_order,
-                sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
-            )
             now_ending_balance_quantity = 0
             now_ending_balance_cost = 0
             now_ending_balance_value = 0
@@ -157,6 +146,29 @@ class ReportInventorySub(DataAbstractModel):
             now_ending_balance_quantity = latest_trans.current_quantity
             now_ending_balance_cost = latest_trans.current_cost
             now_ending_balance_value = latest_trans.current_value
+
+        prd_wh_this_sub = ReportInventoryProductWarehouse.objects.filter(
+            tenant_id=period_mapped.tenant_id,
+            company_id=period_mapped.company_id,
+            product=log.product,
+            warehouse=log.warehouse,
+            period_mapped=period_mapped,
+            sub_period_order=sub_period_order,
+            sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        )
+        if not prd_wh_this_sub.exists():
+            ReportInventoryProductWarehouse.objects.create(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
+                product=log.product,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                opening_balance_quantity=now_ending_balance_quantity,
+                opening_balance_cost=now_ending_balance_cost,
+                opening_balance_value=now_ending_balance_value
+            )
 
         if log.stock_type == 1:
             new_quantity = now_ending_balance_quantity + log.quantity
