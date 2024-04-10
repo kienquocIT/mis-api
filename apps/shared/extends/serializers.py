@@ -26,6 +26,7 @@ class AbstractDetailSerializerModel(serializers.ModelSerializer):
             **super().get_fields(),
             'workflow_runtime_id': serializers.UUIDField(),
             'system_status': serializers.IntegerField(),
+            'document_root_id': serializers.UUIDField(),
             'document_change_order': serializers.IntegerField(),
         }
 
