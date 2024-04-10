@@ -966,7 +966,7 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Finish flow' + f' with {final_state_choices[final_state_num]}',
+            msg='Finish flow' + f' with {final_state_choices[final_state_num].lower()}',
             is_system=self.is_system,
         )
 

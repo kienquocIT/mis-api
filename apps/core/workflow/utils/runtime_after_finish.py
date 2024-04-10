@@ -10,7 +10,7 @@ from rest_framework import serializers
 from apps.core.log.tasks import (force_log_activity,)
 from apps.core.workflow.utils.runtime_sub import WFValidateHandler
 from apps.shared import (DisperseModel, MAP_FIELD_TITLE, call_task_background,)
-from apps.core.workflow.models import (Runtime, RuntimeLog,)
+from apps.core.workflow.models import (Runtime, RuntimeLog, RuntimeStage, )
 
 logger = logging.getLogger(__name__)
 
@@ -313,6 +313,12 @@ class RuntimeAfterFinishHandler:
                 case 1:  # open cr
                     DocHandler.force_open_change_request(runtime_obj=runtime_obj)
                 case 2:  # reject
+                    if runtime_obj.stage_currents:
+                        RuntimeAFLogHandler(
+                            stage_obj=runtime_obj.stage_currents,
+                            actor_obj=runtime_obj.doc_employee_inherit,
+                            is_system=False,
+                        ).log_cancel_document()
                     DocHandler.force_reject(runtime_obj=runtime_obj)
                 case 3:  # save cr
                     ...
@@ -330,14 +336,14 @@ class RuntimeAFLogHandler:
 
     def __init__(
             self,
-            runtime_obj: Runtime,
+            stage_obj: RuntimeStage,
             actor_obj: DisperseModel(app_model='hr.employee').get_model() = None,
             actor_id: Union[UUID, str] = None,
             is_system: bool = False,
             remark: str = '',
     ):
         self.is_system = is_system
-        self.runtime_obj = runtime_obj
+        self.stage_obj = stage_obj
         if not actor_id and not actor_obj:
             self.actor_obj = None
         elif actor_obj:
@@ -352,15 +358,15 @@ class RuntimeAFLogHandler:
     def perform_create(cls, objs: list[RuntimeLog]):
         return RuntimeLog.objects.bulk_create(objs)
 
-    def log_reject_task(self):
+    def log_cancel_document(self):
         call_task_background(
             force_log_activity,
             **{
-                'tenant_id': self.runtime_obj.tenant_id,
-                'company_id': self.runtime_obj.company_id,
+                'tenant_id': self.stage_obj.runtime.tenant_id,
+                'company_id': self.stage_obj.runtime.company_id,
                 'date_created': timezone.now(),
-                'doc_id': self.runtime_obj.doc_id,
-                'doc_app': self.runtime_obj.app_code,
+                'doc_id': self.stage_obj.runtime.doc_id,
+                'doc_app': self.stage_obj.runtime.app_code,
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
@@ -370,46 +376,18 @@ class RuntimeAFLogHandler:
         )
         return RuntimeLog.objects.create(
             actor=self.actor_obj,
-            runtime=self.runtime_obj,
+            runtime=self.stage_obj.runtime,
+            stage=self.stage_obj,
             kind=2,
             action=0,
-            msg="Rejected by owner",
-            is_system=self.is_system,
-        )
-
-    def log_finish_station_doc(self, final_state_num=1, msg_log=''):
-        final_state_choices = {
-            1: 'Approved',
-            2: 'Reject',
-        }
-        runtime_obj = self.runtime_obj
-        if runtime_obj:
-            call_task_background(
-                force_log_activity,
-                **{
-                    'tenant_id': runtime_obj.tenant_id,
-                    'company_id': runtime_obj.company_id,
-                    'date_created': RuntimeAFLogHandler.get_correct_date_log(runtime_obj, 9),
-                    'doc_id': runtime_obj.doc_id,
-                    'doc_app': runtime_obj.app_code,
-                    'automated_logging': True,
-                    'msg': msg_log,
-                },
-            )
-        return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
-            actor=None,
-            runtime=self.runtime_obj,
-            kind=2,
-            action=0,
-            msg='Finish flow' + f' with {final_state_choices[final_state_num]}',
+            msg="Canceled by creator",
             is_system=self.is_system,
         )
 
     def log_action_perform(self):
         return RuntimeLog.objects.create(
             actor=self.actor_obj,
-            runtime=self.runtime_obj,
+            runtime=self.stage_obj.runtime,
             kind=2,
             action=0,
             msg='Perform a action',

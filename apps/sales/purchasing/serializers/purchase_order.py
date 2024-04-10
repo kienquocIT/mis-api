@@ -350,6 +350,7 @@ def validate_attachment(instance, value):
     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
+# BEGIN PURCHASE ORDER
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
 

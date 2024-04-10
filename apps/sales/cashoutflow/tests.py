@@ -229,8 +229,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status', 'activity',
-                'document_change_order',
+                'annual_revenue', 'price_list_mapped', 'activity',
             ],
             check_sum_second=True,
         )
