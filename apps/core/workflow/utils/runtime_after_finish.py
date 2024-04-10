@@ -87,7 +87,7 @@ class DocHandler:
         return False
 
     @classmethod
-    def force_open_change_request(cls, runtime_obj):
+    def force_open_change(cls, runtime_obj):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
                 'tenant_id': runtime_obj.tenant_id,
@@ -95,9 +95,9 @@ class DocHandler:
             }
         )
         if obj:
-            # check referenced
-            check = WFValidateHandler.is_object_referenced(obj=obj)
-            if check is False:
+            # check is_possible
+            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj)
+            if is_possible is True:
                 return True
             raise serializers.ValidationError({'detail': "This document is referenced by another document"})
         return False
@@ -111,9 +111,9 @@ class DocHandler:
             }
         )
         if obj:
-            # check referenced
-            check = WFValidateHandler.is_object_referenced(obj=obj)
-            if check is False:
+            # check is_possible
+            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj)
+            if is_possible is True:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])
             else:
@@ -311,7 +311,7 @@ class RuntimeAfterFinishHandler:
             # }
             match action_code:
                 case 1:  # open cr
-                    DocHandler.force_open_change_request(runtime_obj=runtime_obj)
+                    DocHandler.force_open_change(runtime_obj=runtime_obj)
                 case 2:  # reject
                     if runtime_obj.stage_currents:
                         RuntimeAFLogHandler(

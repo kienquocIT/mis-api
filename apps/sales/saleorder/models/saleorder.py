@@ -3,6 +3,7 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
+from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
@@ -389,6 +390,19 @@ class SaleOrder(DataAbstractModel):
                 date_activity=instance.date_approved,
                 revenue=instance.indicator_revenue,
             )
+        return True
+
+    @classmethod
+    def check_change_document(cls, instance):
+        # check delivery
+        if hasattr(instance, 'delivery_of_sale_order'):
+            if not OrderDeliverySub.objects.filter(**{
+                'tenant_id': instance.tenant_id,
+                'company_id': instance.company_id,
+                'order_delivery__sale_order_id': instance.id,
+                'state': 1
+            }).exists():
+                return False
         return True
 
     def save(self, *args, **kwargs):

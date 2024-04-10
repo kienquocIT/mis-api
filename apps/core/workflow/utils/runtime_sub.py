@@ -7,7 +7,7 @@ from apps.core.log.tasks import (
 )
 from apps.shared import (
     call_task_background,
-    WorkflowMsgNotify
+    WorkflowMsgNotify, DisperseModel
 )
 from apps.core.workflow.models import (Workflow, Node, Association, Runtime, RuntimeAssignee, RuntimeLog)
 
@@ -229,30 +229,36 @@ class WFValidateHandler:
         'saleorder.saleorder': [
             'delivery.orderpicking',
             'delivery.orderdelivery',
-            # 'report.reportrevenue',
-            # 'report.reportcashflow',
         ],
     }
 
+    # @classmethod
+    # def is_object_referenced(cls, obj):
+    #     app_label_current = obj._meta.label_lower
+    #     # Get all models
+    #     models = apps.get_models()
+    #     for model in models:
+    #         # Check if model in list check by WFValidateHandler.APP_CHECK_REFERENCED
+    #         model_check = model._meta.label_lower
+    #         if model_check in WFValidateHandler.APP_CHECK_REFERENCED.get(app_label_current, []):
+    #             # Get all ForeignKey and OneToOneField fields in the model
+    #             related_fields = [
+    #                 field for field in model._meta.get_fields()
+    #                 if field.is_relation and (field.one_to_one or field.many_to_one)
+    #             ]
+    #             for field in related_fields:
+    #                 # Check if the object is referenced by any ForeignKey and OneToOneField field
+    #                 if field.related_model == obj.__class__:
+    #                     # Check if there are any instances of the model referencing the object
+    #                     if model.objects.filter(**{f"{field.name}": obj, 'system_status': 3}).exists():
+    #                         return True
+    #     # Object is not referenced by any ForeignKey fields
+    #     return False
+
     @classmethod
-    def is_object_referenced(cls, obj):
-        model_current = obj._meta.label_lower
-        # Get all models
-        models = apps.get_models()
-        for model in models:
-            # Check if model in list check by WFValidateHandler.APP_CHECK_REFERENCED
-            model_check = model._meta.label_lower
-            if model_check in WFValidateHandler.APP_CHECK_REFERENCED.get(model_current, []):
-                # Get all ForeignKey and OneToOneField fields in the model
-                related_fields = [
-                    field for field in model._meta.get_fields()
-                    if field.is_relation and (field.one_to_one or field.many_to_one)
-                ]
-                for field in related_fields:
-                    # Check if the object is referenced by any ForeignKey and OneToOneField field
-                    if field.related_model == obj.__class__:
-                        # Check if there are any instances of the model referencing the object
-                        if model.objects.filter(**{f"{field.name}": obj}).exists():
-                            return True
-        # Object is not referenced by any ForeignKey fields
+    def is_possible_change_cancel(cls, obj):
+        app_label_current = obj._meta.label_lower
+        model_current = DisperseModel(app_model=app_label_current).get_model()
+        if model_current and hasattr(model_current, 'objects') and hasattr(model_current, 'check_change_document'):
+            return model_current.check_change_document(instance=obj)
         return False
