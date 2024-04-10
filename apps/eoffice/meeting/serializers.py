@@ -309,6 +309,9 @@ class MeetingScheduleSubFunction:
 
 class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
     date_occur = serializers.SerializerMethodField()
+    employee_attended_list = serializers.SerializerMethodField()
+    customer_member_list = serializers.SerializerMethodField()
+    room_info = serializers.SerializerMethodField()
 
     class Meta:
         model = MeetingSchedule
@@ -319,7 +322,11 @@ class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
             'meeting_start_date',
             'meeting_start_time',
             'meeting_duration',
-            'date_occur'
+            'date_occur',
+            'employee_attended_list',
+            'customer_member_list',
+            'room_info',
+            'meeting_content'
         )
 
     @classmethod
@@ -327,6 +334,31 @@ class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
         date = obj.meeting_start_date.strftime('%Y-%m-%d')
         time = obj.meeting_start_time.strftime('%H:%M')
         return date + ' ' + time + ' ' + ('AM' if time.split(':')[0] < '12' else 'PM')
+
+    @classmethod
+    def get_employee_attended_list(cls, obj):
+        employee_attended_list = [{
+            'id': item.internal_id,
+            'code': item.internal.code,
+            'full_name': item.internal.get_full_name(2)
+        } if item.internal else None for item in obj.meeting_schedule_mapped.filter(is_external=False)]
+        return employee_attended_list
+
+    @classmethod
+    def get_customer_member_list(cls, obj):
+        customer_member_list = [{
+            'id': item.external_id,
+            'code': item.external.code,
+            'full_name': item.external.fullname
+        } if item.external else None for item in obj.meeting_schedule_mapped.filter(is_external=True)]
+        return customer_member_list
+
+    @classmethod
+    def get_room_info(cls, obj):
+        return {
+            'title': obj.meeting_room_mapped.title,
+            'location': obj.meeting_room_mapped.location
+        } if obj.meeting_room_mapped else None
 
 
 class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
