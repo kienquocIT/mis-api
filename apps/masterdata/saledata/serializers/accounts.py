@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.shared import AccountsMsg, HRMsg, AbstractDetailSerializerModel
+from apps.shared import AccountsMsg, HRMsg
 
 
 # Account
