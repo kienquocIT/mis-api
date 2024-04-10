@@ -994,3 +994,11 @@ msgstr "Số lượng phải lớn hơn 0."
 #
 msgid "Total payment must be 100%."
 msgstr "Tổng thanh toán phải đủ 100%."
+
+#
+msgid "Project"
+msgstr "Dự án"
+
+#
+msgid "do not exist."
+msgstr "không tồn tại."
