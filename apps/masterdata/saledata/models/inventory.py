@@ -81,14 +81,11 @@ class WareHouse(MasterDataAbstractModel):
 
     @classmethod
     def check_interact_warehouse(cls, employee_obj, warehouse_id):
-        interact = WarehouseEmployeeConfig.objects.filter(
-            tenant_id=employee_obj.tenant_id,
-            company_id=employee_obj.company_id,
-            employee=employee_obj
-        ).first()
-        if interact:
-            if warehouse_id not in interact.warehouse_list:
-                raise serializers.ValidationError({"Error": 'You are not allowed to interact with this warehouse.'})
+        if hasattr(employee_obj, 'warehouse_employees_emp'):
+            interact = employee_obj.warehouse_employees_emp
+            if interact:
+                if warehouse_id not in interact.warehouse_list:
+                    raise serializers.ValidationError({"Error": 'You are not allowed to interact with this warehouse.'})
         return True
 
     def save(self, *args, **kwargs):
@@ -106,7 +103,7 @@ class WareHouse(MasterDataAbstractModel):
 
 
 class WarehouseEmployeeConfig(MasterDataAbstractModel):
-    employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, related_name='warehouse_employees_emp')
+    employee = models.OneToOneField('hr.Employee', on_delete=models.CASCADE, related_name='warehouse_employees_emp')
     warehouse_list = models.JSONField(default=list)
 
     class Meta:

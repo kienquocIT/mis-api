@@ -474,7 +474,7 @@ class WarehouseEmployeeConfigListSerializer(serializers.ModelSerializer):
 
 class WarehouseEmployeeConfigCreateSerializer(serializers.ModelSerializer):
     employee = serializers.UUIDField(required=True)
-    warehouse_list = serializers.ListField(required=True)
+    warehouse_list = serializers.ListField(required=True, help_text="List of Warehouse id")
 
     class Meta:
         model = WarehouseEmployeeConfig
@@ -496,7 +496,8 @@ class WarehouseEmployeeConfigCreateSerializer(serializers.ModelSerializer):
         return attr
 
     def create(self, validated_data):
-        WarehouseEmployeeConfig.objects.filter(employee=validated_data['employee']).delete()
+        if hasattr(validated_data['employee'], 'warehouse_employees_emp'):
+            validated_data['employee'].warehouse_employees_emp.delete()
         config = WarehouseEmployeeConfig.objects.create(**validated_data)
         bulk_info = []
         for wh_id in config.warehouse_list:

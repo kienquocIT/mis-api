@@ -38,13 +38,10 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         if 'interact' in self.request.query_params:
-            interact = WarehouseEmployeeConfig.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                employee=self.request.user.employee_current_id
-            ).first()
-            if interact:
-                return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                if interact:
+                    return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='WareHouse List')
@@ -132,15 +129,12 @@ class ProductWareHouseList(BaseListMixin):
 
     def get_queryset(self):
         if 'interact' in self.request.query_params:
-            interact = WarehouseEmployeeConfig.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                employee=self.request.user.employee_current_id
-            ).first()
-            if interact:
-                return super().get_queryset().select_related(
-                    'product', 'warehouse', 'uom'
-                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                if interact:
+                    return super().get_queryset().select_related(
+                        'product', 'warehouse', 'uom'
+                    ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
         return super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
         ).order_by('product__code')
