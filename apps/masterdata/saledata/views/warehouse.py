@@ -41,7 +41,7 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
             if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
                 interact = self.request.user.employee_current.warehouse_employees_emp
                 return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
-        return super().get_queryset()
+        return super().get_queryset().order_by('code')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
