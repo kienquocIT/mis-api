@@ -1,5 +1,5 @@
 from django.db import models
-
+from rest_framework import serializers
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, WAREHOUSE_TYPE
 
 __all__ = [
@@ -78,6 +78,14 @@ class WareHouse(MasterDataAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def check_interact_warehouse(cls, employee_obj, warehouse_id):
+        interact = WarehouseEmployeeConfig.objects.filter(employee=employee_obj).first()
+        if interact:
+            if warehouse_id not in interact.warehouse_list:
+                raise serializers.ValidationError({"Error": 'You are not allowed to interact with this warehouse.'})
+        return True
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)

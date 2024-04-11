@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import WareHouse
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
@@ -90,6 +92,7 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             code=f'GRT00{GoodsReturn.objects.all().count() + 1}',
             **validated_data
         )
+        WareHouse.check_interact_warehouse(goods_return.employee_created, goods_return.return_to_warehouse_id)
 
         product_detail_list = self.initial_data.get('product_detail_list', [])
 
