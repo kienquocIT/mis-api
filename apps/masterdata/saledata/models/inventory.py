@@ -81,7 +81,11 @@ class WareHouse(MasterDataAbstractModel):
 
     @classmethod
     def check_interact_warehouse(cls, employee_obj, warehouse_id):
-        interact = WarehouseEmployeeConfig.objects.filter(employee=employee_obj).first()
+        interact = WarehouseEmployeeConfig.objects.filter(
+            tenant_id=employee_obj.tenant_id,
+            company_id=employee_obj.company_id,
+            employee=employee_obj
+        ).first()
         if interact:
             if warehouse_id not in interact.warehouse_list:
                 raise serializers.ValidationError({"Error": 'You are not allowed to interact with this warehouse.'})
