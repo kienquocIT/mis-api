@@ -127,10 +127,14 @@ class ProductWareHouseList(BaseListMixin):
     # }
 
     def get_queryset(self):
+        if 'interact' in self.request.query_params:
+            interact = WarehouseEmployeeConfig.objects.filter(employee=self.request.user.employee_current_id).first()
+            if interact:
+                return super().get_queryset().select_related(
+                    'product', 'warehouse', 'uom'
+                ).filter(warehouse_id__in=interact.warehouse_list)
         return super().get_queryset().select_related(
-            'product',
-            'warehouse',
-            'uom',
+            'product', 'warehouse', 'uom',
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
