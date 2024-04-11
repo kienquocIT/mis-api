@@ -40,7 +40,7 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         if 'interact' in self.request.query_params:
             interact = WarehouseEmployeeConfig.objects.filter(employee=self.request.user.employee_current_id).first()
             if interact:
-                return super().get_queryset().filter(id__in=interact.warehouse_list)
+                return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='WareHouse List')
@@ -132,10 +132,10 @@ class ProductWareHouseList(BaseListMixin):
             if interact:
                 return super().get_queryset().select_related(
                     'product', 'warehouse', 'uom'
-                ).filter(warehouse_id__in=interact.warehouse_list)
+                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
         return super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
-        )
+        ).order_by('product__code')
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
     @mask_view(
