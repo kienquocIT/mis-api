@@ -72,6 +72,7 @@ def create_files_mapped(gr_obj, file_id_list):
 
 class GoodsReturnCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150, required=True)
+    return_to_warehouse = serializers.UUIDField(required=True)
 
     class Meta:
         model = GoodsReturn
@@ -86,6 +87,12 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'return_to_warehouse',
             'system_status',
         )
+
+    @classmethod
+    def validate_return_to_warehouse(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({"Warehouse": 'Please select return warehouse.'})
+        return WareHouse.objects.get(id=attrs)
 
     def create(self, validated_data):
         goods_return = GoodsReturn.objects.create(
