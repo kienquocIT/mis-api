@@ -106,8 +106,16 @@ class WarehouseEmployeeConfig(MasterDataAbstractModel):
 
 
 class WarehouseEmployeeConfigDetail(SimpleAbstractModel):
-    config = models.ForeignKey(WarehouseEmployeeConfig, on_delete=models.CASCADE, related_name='wh_emp_config_detail_cf')
-    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='wh_emp_config_detail_wh')
+    config = models.ForeignKey(
+        WarehouseEmployeeConfig,
+        on_delete=models.CASCADE,
+        related_name='wh_emp_config_detail_cf'
+    )
+    warehouse = models.ForeignKey(
+        WareHouse,
+        on_delete=models.CASCADE,
+        related_name='wh_emp_config_detail_wh'
+    )
 
     class Meta:
         verbose_name = 'Warehouse Employee Config Detail'
