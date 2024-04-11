@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import (
     WareHouse, ProductWareHouse, Account, ProductWareHouseLot, ProductWareHouseSerial,
+    WarehouseEmployeeConfig, WarehouseEmployeeConfigDetail
 )
 
 __all__ = [
@@ -14,7 +16,10 @@ __all__ = [
     'WareHouseListSerializerForInventoryAdjustment',
     'ProductWarehouseLotListSerializer',
     'ProductWarehouseSerialListSerializer',
-    'ProductWarehouseAssetToolsListSerializer'
+    'ProductWarehouseAssetToolsListSerializer',
+    'WarehouseEmployeeConfigListSerializer',
+    'WarehouseEmployeeConfigCreateSerializer',
+    'WarehouseEmployeeConfigDetailSerializer'
 ]
 
 from apps.shared import TypeCheck, WarehouseMsg
@@ -29,7 +34,8 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'code',
             'remarks',
             'is_active',
-            'agency'
+            'agency',
+            'full_address'
         )
 
 
@@ -435,3 +441,75 @@ class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
             'id': obj.warehouse_id,
             'title': obj.warehouse.title,
         } if obj.warehouse else {}
+
+
+class WarehouseEmployeeConfigListSerializer(serializers.ModelSerializer):
+    warehouse_list = serializers.SerializerMethodField()
+    employee = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WarehouseEmployeeConfig
+        fields = (
+            'id',
+            'warehouse_list',
+            'employee'
+        )
+
+    @classmethod
+    def get_employee(cls, obj):
+        return {
+            'id': obj.employee_id,
+            'fullname': obj.employee.get_full_name(2),
+            'code': obj.employee.code
+        }
+
+    @classmethod
+    def get_warehouse_list(cls, obj):
+        return sorted([{
+            'id': cf_obj.warehouse_id,
+            'title': cf_obj.warehouse.title,
+            'code': cf_obj.warehouse.code
+        } for cf_obj in obj.wh_emp_config_detail_cf.all()], key=lambda key: key['code'])
+
+
+class WarehouseEmployeeConfigCreateSerializer(serializers.ModelSerializer):
+    employee = serializers.UUIDField(required=True)
+    warehouse_list = serializers.ListField(required=True)
+
+    class Meta:
+        model = WarehouseEmployeeConfig
+        fields = (
+            'warehouse_list',
+            'employee'
+        )
+
+    @classmethod
+    def validate_employee(cls, attr):
+        if not attr:
+            raise serializers.ValidationError({'Employee': 'Employee can not be null.'})
+        return Employee.objects.get(id=attr)
+
+    @classmethod
+    def validate_warehouse_list(cls, attr):
+        if len(attr) == 0:
+            raise serializers.ValidationError({'Warehouse list': 'Please select at least 1 warehouse.'})
+        return attr
+
+    def create(self, validated_data):
+        WarehouseEmployeeConfig.objects.filter(employee=validated_data['employee']).delete()
+        config = WarehouseEmployeeConfig.objects.create(**validated_data)
+        bulk_info = []
+        for wh_id in config.warehouse_list:
+            bulk_info.append(WarehouseEmployeeConfigDetail(config=config, warehouse_id=wh_id))
+        WarehouseEmployeeConfigDetail.objects.bulk_create(bulk_info)
+        return config
+
+
+class WarehouseEmployeeConfigDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WarehouseEmployeeConfig
+        fields = (
+            'id',
+            'warehouse_list',
+            'employee'
+        )

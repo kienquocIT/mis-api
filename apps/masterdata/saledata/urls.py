@@ -27,7 +27,7 @@ from apps.masterdata.saledata.views import (
     RevenuePlanConfigList
 )
 from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
-    ProductWareHouseAssetToolsList
+    ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -144,6 +144,12 @@ urlpatterns += [
     path(
         'warehouses/product-asset/list', ProductWareHouseAssetToolsList.as_view(),
         name='ProductWareHouseAssetToolsList'
+    ),
+    path('warehouses/config-interact', WarehouseEmployeeConfigList.as_view(), name='WarehouseEmployeeConfigList'),
+    path(
+        'warehouses/config-interact/<str:pk>',
+        WarehouseEmployeeConfigDetail.as_view(),
+        name='WarehouseEmployeeConfigDetail'
     ),
 ]
 # // warehouse

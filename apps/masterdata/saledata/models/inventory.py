@@ -1,9 +1,11 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, WAREHOUSE_TYPE
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, WAREHOUSE_TYPE
 
 __all__ = [
     'WareHouse',
+    'WarehouseEmployeeConfig',
+    'WarehouseEmployeeConfigDetail'
 ]
 
 
@@ -73,7 +75,7 @@ class WareHouse(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'WareHouse storage'
         verbose_name_plural = 'WareHouse storage'
-        ordering = ('title',)
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
@@ -89,3 +91,27 @@ class WareHouse(MasterDataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
         super().save(*args, **kwargs)
+
+
+class WarehouseEmployeeConfig(MasterDataAbstractModel):
+    employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, related_name='warehouse_employees_emp')
+    warehouse_list = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Warehouse Employee Config'
+        verbose_name_plural = 'Warehouse Employee Configs'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class WarehouseEmployeeConfigDetail(SimpleAbstractModel):
+    config = models.ForeignKey(WarehouseEmployeeConfig, on_delete=models.CASCADE, related_name='wh_emp_config_detail_cf')
+    warehouse = models.ForeignKey(WareHouse, on_delete=models.CASCADE, related_name='wh_emp_config_detail_wh')
+
+    class Meta:
+        verbose_name = 'Warehouse Employee Config Detail'
+        verbose_name_plural = 'Warehouse Employee Configs Detail'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
