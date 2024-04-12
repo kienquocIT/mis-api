@@ -83,7 +83,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     obj.sub_period_order
                 )
                 result.append({
-                    'is_close': this_sub_value['is_close'],
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
                     'warehouse_title': wh_title,
@@ -353,7 +352,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         )
 
         result = {
-            'is_close': this_sub_value['is_close'],
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
             'sum_in_value': sum_in_value,

@@ -268,8 +268,6 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     for_balance = models.BooleanField(default=False)
     wrong_cost = models.BooleanField(default=False)
 
-    is_close = models.BooleanField(default=False)
-
     class Meta:
         verbose_name = 'Report Inventory Product Warehouse'
         verbose_name_plural = 'Report Inventories Product Warehouse'
@@ -330,13 +328,10 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
-        flag = True
         if last_inventory_cost_data:
-            flag = last_inventory_cost_data.is_close
-            if flag:
-                opening_quantity = last_inventory_cost_data.ending_balance_quantity
-                opening_value = last_inventory_cost_data.ending_balance_value
-                opening_cost = last_inventory_cost_data.ending_balance_cost
+            opening_quantity = last_inventory_cost_data.ending_balance_quantity
+            opening_value = last_inventory_cost_data.ending_balance_value
+            opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending
@@ -350,7 +345,6 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         # End
 
         return {
-            'is_close': flag,
             'opening_balance_quantity': opening_quantity,
             'opening_balance_value': opening_value,
             'opening_balance_cost': opening_cost,
