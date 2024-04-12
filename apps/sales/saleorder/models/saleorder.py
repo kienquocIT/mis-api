@@ -405,7 +405,7 @@ class SaleOrder(DataAbstractModel):
         return True
 
     @classmethod
-    def get_previous_change(cls, instance):
+    def get_doc_previous(cls, instance):
         data_filter = {'tenant_id': instance.tenant_id, 'company_id': instance.company_id}
         if instance.document_change_order == 1:
             data_filter.update({'id': instance.document_root_id})
@@ -420,7 +420,7 @@ class SaleOrder(DataAbstractModel):
     @classmethod
     def change_document_handle(cls, instance):
         if instance.is_change and instance.document_root_id and instance.document_change_order:
-            doc_previous = cls.get_previous_change(instance=instance)
+            doc_previous = cls.get_doc_previous(instance=instance)
             if doc_previous:
                 # delivery
                 cls.change_handle_delivery(instance=instance, doc_previous=doc_previous)

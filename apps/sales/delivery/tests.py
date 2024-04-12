@@ -331,6 +331,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],

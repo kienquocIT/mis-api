@@ -16,10 +16,7 @@ from apps.core.workflow.models import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = [
-    'DocHandler', 'RuntimeHandler',
-    'RuntimeStageHandler', 'RuntimeLogHandler',
-]
+__all__ = ['DocHandler', 'RuntimeHandler', 'RuntimeStageHandler', 'RuntimeLogHandler']
 
 
 class DocHandler:
@@ -178,7 +175,6 @@ class RuntimeHandler:
         """
         Get Model class Application
         Returns:
-
         """
         return DisperseModel(app_model='base.application').get_model()
 
@@ -188,7 +184,6 @@ class RuntimeHandler:
         Get Application Obj by App_Model
         Args:
             app_code: "app.model"
-
         Returns:
             Application Object
         """
@@ -320,8 +315,7 @@ class RuntimeHandler:
                     # RuntimeStage logging
                     # Update flag done
                     RuntimeLogHandler(
-                        stage_obj=rt_assignee.stage,
-                        actor_obj=employee_assignee_obj,
+                        stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False,
                     ).log_approval_task(action_number=1)
                     rt_assignee.is_done = True
@@ -355,8 +349,7 @@ class RuntimeHandler:
                     # RuntimeStage logging
                     # Update flag done
                     RuntimeLogHandler(
-                        stage_obj=rt_assignee.stage,
-                        actor_obj=employee_assignee_obj,
+                        stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False,
                     ).log_approval_task(action_number=2)
                     rt_assignee.is_done = True
@@ -671,7 +664,6 @@ class RuntimeStageHandler:
         Args:
             node_passed: Node was selected that passed compare params with condition
             **kwargs: field in RuntimeStage
-
         Returns:
             RuntimeStage Object
         """
@@ -939,7 +931,6 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                # 'msg': 'Return to begin station',
                 'msg': f'Return to initial node ({self.remark})',  # edit by PO's request
                 'task_workflow_id': None,
             },
@@ -950,7 +941,6 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            # msg='Return to begin station',
             msg=f'Return to initial node ({self.remark})',  # edit by PO's request
             is_system=self.is_system,
         )
@@ -975,7 +965,6 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
             actor=None,
             runtime=self.stage_obj.runtime,
             stage=self.stage_obj,
