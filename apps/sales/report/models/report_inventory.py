@@ -278,7 +278,13 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def get_inventory_cost_data_last_sub_period(cls, inventory_cost_data_list, warehouse_id, period_mapped_id, sub_period_order):
+    def get_inventory_cost_data_last_sub_period(
+            cls,
+            inventory_cost_data_list,
+            warehouse_id,
+            period_mapped_id,
+            sub_period_order
+    ):
         if sub_period_order > 1:
             for inventory_cost_data in inventory_cost_data_list:
                 if all([
