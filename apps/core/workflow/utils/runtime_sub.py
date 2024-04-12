@@ -259,6 +259,6 @@ class WFValidateHandler:
     def is_possible_change_cancel(cls, obj):
         app_label_current = obj._meta.label_lower
         model_current = DisperseModel(app_model=app_label_current).get_model()
-        if model_current and hasattr(model_current, 'objects') and hasattr(model_current, 'check_change_document'):
-            return model_current.check_change_document(instance=obj)
+        if model_current and all(hasattr(model_current, attr) for attr in ('objects', 'check_change_document')):
+            return getattr(model_current, 'check_change_document')(instance=obj)
         return False

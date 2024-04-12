@@ -72,7 +72,7 @@ class DocHandler:
                 update_fields.append('document_root_id')
         obj.save(update_fields=update_fields)
         # cancel document root or previous document
-        DocHandler.force_cancel_if_change_document_finish(document_change=obj)
+        DocHandler.force_cancel_doc_previous(document_change=obj)
         return True
 
     @classmethod
@@ -124,32 +124,45 @@ class DocHandler:
         return None
 
     @classmethod
-    def force_cancel_if_change_document_finish(cls, document_change):
-        if hasattr(document_change, 'document_change_order') and hasattr(document_change, 'document_root_id'):
-            if document_change.document_change_order and document_change.document_root_id:
-                document_target = DocHandler.get_previous_document(document_change=document_change)
-                if document_target:
-                    setattr(document_target, 'system_status', 4)
-                    document_target.save(update_fields=['system_status'])
+    def force_set_is_change_doc_previous(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
+        )
+        if obj:
+            doc_previous = DocHandler.get_doc_previous(document_change=obj)
+            if doc_previous:
+                doc_previous.is_change = True
+                doc_previous.save(update_fields=['is_change'])
         return True
 
     @classmethod
-    def get_previous_document(cls, document_change):
+    def force_cancel_doc_previous(cls, document_change):
+        doc_previous = DocHandler.get_doc_previous(document_change=document_change)
+        if doc_previous:
+            setattr(doc_previous, 'system_status', 4)
+            doc_previous.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def get_doc_previous(cls, document_change):
         document_target = None
-        if document_change.document_change_order == 1:
-            document_target = DocHandler(
-                document_change.document_root_id, document_change._meta.label_lower
-            ).get_obj(
-                default_filter={'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id}
-            )
-        if document_change.document_change_order > 1:
-            document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
-                default_filter={
-                    'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
-                    'document_change_order': document_change.document_change_order - 1,
-                    'document_root_id': document_change.document_root_id,
-                }
-            )
+        if all(hasattr(document_change, attr) for attr in ('document_change_order', 'document_root_id')):
+            if document_change.document_change_order and document_change.document_root_id:
+                if document_change.document_change_order == 1:
+                    document_target = DocHandler(
+                        document_change.document_root_id, document_change._meta.label_lower
+                    ).get_obj(
+                        default_filter={'tenant_id': document_change.tenant_id,
+                                        'company_id': document_change.company_id}
+                    )
+                if document_change.document_change_order > 1:
+                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                        default_filter={
+                            'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
+                            'document_change_order': document_change.document_change_order - 1,
+                            'document_root_id': document_change.document_root_id,
+                        }
+                    )
         return document_target
 
 
@@ -774,6 +787,8 @@ class RuntimeStageHandler:
             field_saved += ['status']
             DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
+        # check document is change document then set is_change = True
+        DocHandler.force_set_is_change_doc_previous(runtime_obj=self.runtime_obj)
         return True
 
 

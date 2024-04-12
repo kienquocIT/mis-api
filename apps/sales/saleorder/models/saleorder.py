@@ -404,6 +404,82 @@ class SaleOrder(DataAbstractModel):
                 return False
         return True
 
+    @classmethod
+    def get_previous_change(cls, instance):
+        data_filter = {'tenant_id': instance.tenant_id, 'company_id': instance.company_id}
+        if instance.document_change_order == 1:
+            data_filter.update({'id': instance.document_root_id})
+        if instance.document_change_order > 1:
+            data_filter.update({
+                'is_change': True,
+                'document_root_id': instance.document_root_id,
+                'document_change_order': instance.document_change_order - 1,
+            })
+        return cls.objects.filter(**data_filter).first()
+
+    @classmethod
+    def change_document_handle(cls, instance):
+        if instance.is_change and instance.document_root_id and instance.document_change_order:
+            doc_previous = cls.get_previous_change(instance=instance)
+            if doc_previous:
+                # delivery
+                cls.change_handle_delivery(instance=instance, doc_previous=doc_previous)
+        return True
+
+    @classmethod
+    def change_handle_delivery(cls, instance, doc_previous):
+        instance.delivery_status = doc_previous.delivery_status
+        instance.delivery_call = True
+        so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
+        if hasattr(doc_previous, 'delivery_of_sale_order'):
+            doc_previous.delivery_of_sale_order.sale_order = instance
+            doc_previous.delivery_of_sale_order.sale_order_data = so_data
+            deli_update_fields = ['sale_order', 'sale_order_data']
+            data_product_change = cls.setup_data_product_change(instance=instance, doc_previous=doc_previous)
+            delivery_sub = doc_previous.delivery_of_sale_order.orderdeliverysub_set.filter(**{
+                'tenant_id': instance.tenant_id,
+                'company_id': instance.company_id,
+                'order_delivery__sale_order_id': doc_previous.id,
+                'state': 1
+            }).first()
+            if delivery_sub:
+                delivery_sub.sale_order_data = so_data
+                deli_sub_update_fields = ['sale_order_data']
+                num_keys = len(data_product_change)
+                product_check = 0
+                for key, value in data_product_change.items():
+                    product_deli = delivery_sub.delivery_product_delivery_sub.filter(**{'product_id': key}).first()
+                    if product_deli:
+                        product_deli.delivery_quantity += value
+                        product_deli.remaining_quantity += value
+                        if product_deli.remaining_quantity >= 0:
+                            product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
+                            if product_deli.remaining_quantity == 0:
+                                product_check += 1
+                if product_check == num_keys:
+                    delivery_sub.state = 2
+                    deli_sub_update_fields.append('state')
+                    doc_previous.delivery_of_sale_order.state = 2
+                    deli_update_fields.append('state')
+                    instance.delivery_status = 3
+                delivery_sub.save(update_fields=deli_sub_update_fields)
+            instance.save(update_fields=['delivery_status', 'delivery_call'])
+            doc_previous.delivery_of_sale_order.save(update_fields=deli_update_fields)
+        return True
+
+    @classmethod
+    def setup_data_product_change(cls, instance, doc_previous):
+        data_product_change = {}
+        for so_product in doc_previous.sale_order_product_sale_order.all():
+            if so_product.product_id not in data_product_change:
+                data_product_change.update({str(so_product.product_id): so_product.product_quantity})
+            for so_product_change in instance.sale_order_product_sale_order.all():
+                if so_product_change.product_id == so_product.product_id:
+                    quantity_change = so_product_change.product_quantity - so_product.product_quantity
+                    data_product_change[str(so_product.product_id)] = quantity_change
+                    break
+        return data_product_change
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -435,6 +511,8 @@ class SaleOrder(DataAbstractModel):
                         self.push_to_report_cashflow(self)
                         # final acceptance
                         self.push_to_final_acceptance(self)
+                        # change document handle
+                        self.change_document_handle(self)
 
         # hit DB
         super().save(*args, **kwargs)
