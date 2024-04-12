@@ -35,58 +35,62 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     def get_stock_activities(self, obj):
+        # danh sách dữ liệu giá cost hàng tồn kho của sản phẩm (cost_data)
+        inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
+        #                                    SP
+        #        Kho 1           -          Kho 2          -          Kho 3
+        # (Các hđ nhập-xuất 1)   -   (Các hđ nhập-xuất 2)  -   (Các hđ nhập-xuất 3)
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             wh_id, wh_code, wh_title = warehouse_item
             data_stock_activity = []
-            rp_prd_wh_list = obj.product.report_inventory_product_warehouse_product.all()
-            for prd_wh in rp_prd_wh_list:
-                if all([
-                    prd_wh.warehouse_id == wh_id,
-                    prd_wh.period_mapped_id == obj.period_mapped_id,
-                    prd_wh.sub_period_order == obj.sub_period_order
-                ]):
-                    for item in self.context.get('all_report_inventory_by_month', []):
-                        if item.warehouse.id == wh_id and item.product.id == obj.product.id:
-                            data_stock_activity.append({
-                                'system_date': item.system_date,
-                                'posting_date': item.posting_date,
-                                'document_date': item.document_date,
-                                'stock_type': item.stock_type,
-                                'trans_code': item.trans_code,
-                                'trans_title': item.trans_title,
-                                'quantity': item.quantity,
-                                'cost': item.cost,
-                                'value': item.value,
-                                'current_quantity': item.current_quantity,
-                                'current_cost': item.current_cost,
-                                'current_value': item.current_value,
-                            })
-
-                    data_stock_activity = sorted(
-                        data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
-                    )
-                    value_this_sub_period = prd_wh.get_value_this_sub_period(
-                        data_stock_activity,
-                        rp_prd_wh_list,
-                        wh_id,
-                        obj.period_mapped_id,
-                        obj.sub_period_order
-                    )
-                    result.append({
-                        'is_close': value_this_sub_period.get('is_close'),
-                        'warehouse_id': wh_id,
-                        'warehouse_code': wh_code,
-                        'warehouse_title': wh_title,
-                        'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
-                        'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
-                        'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
-                        'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
-                        'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
-                        'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
-                        'data_stock_activity': data_stock_activity
+            # lọc lấy cost_data của sp đó theo kho + theo kì
+            inventory_cost_data = inventory_cost_data_list.filter(
+                warehouse_id=wh_id,
+                period_mapped_id=obj.period_mapped_id,
+                sub_period_order=obj.sub_period_order
+            ).first()
+            # lọc trong các root trong kì đó theo kho + theo sp và thêm vào
+            for root in self.context.get('all_roots_by_month', []):
+                if root.warehouse_id == wh_id and root.product_id == obj.product_id:
+                    data_stock_activity.append({
+                        'system_date': root.system_date,
+                        'posting_date': root.posting_date,
+                        'document_date': root.document_date,
+                        'stock_type': root.stock_type,
+                        'trans_code': root.trans_code,
+                        'trans_title': root.trans_title,
+                        'quantity': root.quantity,
+                        'cost': root.cost,
+                        'value': root.value,
+                        'current_quantity': root.current_quantity,
+                        'current_cost': root.current_cost,
+                        'current_value': root.current_value,
                     })
-                    break
+
+            data_stock_activity = sorted(
+                data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
+            )
+            value_this_sub_period = inventory_cost_data.get_value_this_sub_period(
+                data_stock_activity,
+                inventory_cost_data_list,
+                wh_id,
+                obj.period_mapped_id,
+                obj.sub_period_order
+            )
+            result.append({
+                'is_close': value_this_sub_period.get('is_close'),
+                'warehouse_id': wh_id,
+                'warehouse_code': wh_code,
+                'warehouse_title': wh_title,
+                'opening_balance_quantity': value_this_sub_period.get('opening_balance_quantity'),
+                'opening_balance_value': value_this_sub_period.get('opening_balance_value'),
+                'opening_balance_cost': value_this_sub_period.get('opening_balance_cost'),
+                'ending_balance_quantity': value_this_sub_period.get('ending_balance_quantity'),
+                'ending_balance_value': value_this_sub_period.get('ending_balance_value'),
+                'ending_balance_cost': value_this_sub_period.get('ending_balance_cost'),
+                'data_stock_activity': data_stock_activity
+            })
         return sorted(result, key=lambda key: key['warehouse_code'])
 
 
