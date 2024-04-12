@@ -278,30 +278,30 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def get_last_sub_period(cls, rp_prd_wh, warehouse_id, period_mapped_id, sub_period_order):
+    def get_inventory_cost_data_last_sub_period(cls, inventory_cost_data_list, warehouse_id, period_mapped_id, sub_period_order):
         if sub_period_order > 1:
-            for last_item in rp_prd_wh:
+            for inventory_cost_data in inventory_cost_data_list:
                 if all([
-                    last_item.warehouse_id == warehouse_id,
-                    last_item.period_mapped_id == period_mapped_id,
-                    last_item.sub_period_order == sub_period_order - 1
+                    inventory_cost_data.warehouse_id == warehouse_id,
+                    inventory_cost_data.period_mapped_id == period_mapped_id,
+                    inventory_cost_data.sub_period_order == sub_period_order - 1
                 ]):
-                    return last_item
+                    return inventory_cost_data
             return None
-        for last_item in rp_prd_wh:
+        for inventory_cost_data in inventory_cost_data_list:
             period_obj = Periods.objects.filter(id=period_mapped_id).first()
             if period_obj and all([
-                last_item.warehouse_id == warehouse_id,
-                last_item.period_mapped.fiscal_year == period_obj.fiscal_year - 1,
-                last_item.sub_period_order == 12
+                inventory_cost_data.warehouse_id == warehouse_id,
+                inventory_cost_data.period_mapped.fiscal_year == period_obj.fiscal_year - 1,
+                inventory_cost_data.sub_period_order == 12
             ]):
-                return last_item
+                return inventory_cost_data
         return None
 
-    def get_value_this_sub_period(
+    def get_inventory_cost_data_this_sub_period(
             self,
             data_stock_activity,
-            rp_prd_wh,
+            inventory_cost_data_list,
             warehouse_id,
             period_mapped_id,
             sub_period_order
@@ -315,8 +315,8 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
         # Begin get Opening
-        last_sub_period = self.get_last_sub_period(
-            rp_prd_wh,
+        last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
+            inventory_cost_data_list,
             warehouse_id,
             period_mapped_id,
             sub_period_order
@@ -325,16 +325,15 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
         flag = True
-        if last_sub_period:
-            flag = last_sub_period.is_close
+        if last_inventory_cost_data:
+            flag = last_inventory_cost_data.is_close
             if flag:
-                opening_quantity = last_sub_period.ending_balance_quantity
-                opening_value = last_sub_period.ending_balance_value
-                opening_cost = last_sub_period.ending_balance_cost
+                opening_quantity = last_inventory_cost_data.ending_balance_quantity
+                opening_value = last_inventory_cost_data.ending_balance_value
+                opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending
-        data_stock_activity = sorted(data_stock_activity, key=lambda key: key['system_date'])
         ending_quantity = opening_quantity
         ending_value = opening_value
         ending_cost = opening_cost
