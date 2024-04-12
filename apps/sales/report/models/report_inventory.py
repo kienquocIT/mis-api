@@ -176,7 +176,7 @@ class ReportInventorySub(DataAbstractModel):
 
     @classmethod
     def update_inventory_value_for_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
-        """ Hàm để cập nhập gi trị tồn kho cho từng log """
+        """ Hàm để cập nhập giá trị tồn kho cho từng log """
         # tìm giao dịch gần nhất để lấy các giá trị (SL, cost, value)
         latest_trans = cls.get_latest_trans(log, new_logs_id_list)
         [new_opening_quantity, new_opening_cost, new_opening_value] = [
