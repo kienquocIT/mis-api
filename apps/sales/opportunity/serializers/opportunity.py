@@ -587,7 +587,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
         instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage)
-        instance.is_deal_close = True
+        instance.is_deal_close = is_deal_close
         instance.save(update_fields=['is_deal_close'])
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
