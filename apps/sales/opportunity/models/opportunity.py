@@ -372,7 +372,7 @@ class Opportunity(DataAbstractModel):
                     'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
                     'title': 'SaleOrder.status'
                 },
-                'comparison_operator': '=' if sale_order_status == 0 else '≠',
+                'comparison_operator': '≠' if sale_order_status == 0 else '=',
                 'compare_data': 0,
             }
         )
@@ -444,7 +444,7 @@ class Opportunity(DataAbstractModel):
 
     @classmethod
     def auto_update_stage(cls, list_property, obj):
-        stages = OpportunityConfigStage.objects.filter_current(fill__company=True).order_by('win_rate')
+        stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id).order_by('win_rate')
 
         stage_lost = None
         stage_delivery = None
@@ -465,10 +465,10 @@ class Opportunity(DataAbstractModel):
         if stage_lost:
             list_stage.append(stage_lost)
 
-        if stage_lost:
+        if stage_delivery:
             list_stage.append(stage_delivery)
 
-        if stage_lost:
+        if stage_close:
             list_stage.append(stage_close)
 
         # check stage

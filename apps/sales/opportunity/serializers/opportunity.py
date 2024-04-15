@@ -449,8 +449,9 @@ def get_instance_stage(instance):
     return instance_stage
 
 
-def get_instance_current_stage(opp_config_stage, instance_stage):
+def get_instance_current_stage(opp_config_stage, instance_stage, instance):
     instance_current_stage = []
+    current_stage_indicator = []
     for stage in opp_config_stage:
         if stage['logical_operator']:
             flag = False
@@ -459,6 +460,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage):
                     flag = True
                     break
             if flag:
+                current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
@@ -468,6 +470,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage):
                 if item not in instance_stage:
                     flag = False
             if flag:
+                current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
@@ -479,7 +482,48 @@ def get_instance_current_stage(opp_config_stage, instance_stage):
             is_deal_close = True
         else:
             instance_current_stage[0]['current'] = 1
-        return instance_current_stage, is_deal_close
+
+        new_instance_current_stage = []
+        stages = OpportunityConfigStage.objects.filter(
+            company_id=instance.company_id,
+            win_rate__lte=instance_current_stage[0]['win_rate']
+        ).order_by('-win_rate')
+
+        for stage in stages:
+            if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
+                if stage.indicator in current_stage_indicator:
+                    if stage.win_rate == 0 and is_deal_close:
+                        new_instance_current_stage[0]['current'] = 0
+                        new_instance_current_stage.append({
+                            'id': stage.id,
+                            'indicator': stage.indicator,
+                            'win_rate': stage.win_rate,
+                            'current': 1
+                        })
+                    new_instance_current_stage.append({
+                        'id': stage.id,
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate,
+                        'current': 1 if len(new_instance_current_stage) == 0 else 0
+                    })
+            else:
+                print(stage.win_rate, stage.win_rate == 0, is_deal_close, stage.win_rate == 0 and is_deal_close)
+                if stage.win_rate == 0 and is_deal_close:
+                    new_instance_current_stage[0]['current'] = 0
+                    new_instance_current_stage.append({
+                        'id': stage.id,
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate,
+                        'current': 1
+                    })
+                new_instance_current_stage.append({
+                    'id': stage.id,
+                    'indicator': stage.indicator,
+                    'win_rate': stage.win_rate,
+                    'current': 1 if len(new_instance_current_stage) == 0 else 0
+                })
+
+        return new_instance_current_stage, is_deal_close
     raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
@@ -586,7 +630,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
-        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage)
+        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage, instance)
         instance.is_deal_close = is_deal_close
         instance.save(update_fields=['is_deal_close'])
 

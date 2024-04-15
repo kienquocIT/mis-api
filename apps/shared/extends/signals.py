@@ -354,8 +354,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                        'title': 'SaleOlder.status'
-                    },  # application property SaleOlder.status
+                        'title': 'SaleOrder.status'
+                    },  # application property SaleOrder.status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
