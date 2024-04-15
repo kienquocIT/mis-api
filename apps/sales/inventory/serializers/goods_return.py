@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import WareHouse
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
@@ -70,6 +72,7 @@ def create_files_mapped(gr_obj, file_id_list):
 
 class GoodsReturnCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150, required=True)
+    return_to_warehouse = serializers.UUIDField(required=True)
 
     class Meta:
         model = GoodsReturn
@@ -85,11 +88,18 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'system_status',
         )
 
+    @classmethod
+    def validate_return_to_warehouse(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({"Warehouse": 'Please select return warehouse.'})
+        return WareHouse.objects.get(id=attrs)
+
     def create(self, validated_data):
         goods_return = GoodsReturn.objects.create(
             code=f'GRT00{GoodsReturn.objects.all().count() + 1}',
             **validated_data
         )
+        WareHouse.check_interact_warehouse(goods_return.employee_created, goods_return.return_to_warehouse_id)
 
         product_detail_list = self.initial_data.get('product_detail_list', [])
 
