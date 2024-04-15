@@ -5,7 +5,7 @@ from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, Inventory
 
 __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssueCreateSerializer']
 
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS
+from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE
 from apps.shared.translations.goods_issue import GIMsg
 
 
