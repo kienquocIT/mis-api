@@ -6,7 +6,8 @@ import json
 from django.utils import timezone
 
 from apps.core.hr.models import PermissionAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, PROJECT_WORK_STT, \
+    PROJECT_WORK_TYPE
 from django.db import models
 
 
@@ -106,6 +107,7 @@ class Project(DataAbstractModel):
         self.before_save()
         if self.system_status == 1:
             self.code_generator()
+            self.system_status = 3
         super().save(*args, **kwargs)
 
     class Meta:
@@ -121,7 +123,6 @@ class ProjectGroups(DataAbstractModel):
         'project.ProjectGroups',
         through='GroupMapWork',
         symmetrical=False,
-        default=None,
         blank=True,
         related_name='projects_group_map_works',
     )
@@ -174,7 +175,7 @@ class ProjectGroups(DataAbstractModel):
     class Meta:
         verbose_name = 'Group of project'
         verbose_name_plural = 'Groups of project'
-        ordering = (),
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -187,6 +188,14 @@ class ProjectWorks(DataAbstractModel):
         default=None,
         blank=True,
         related_name='projects_works_map_tasks',
+    )
+    work_status = models.SmallIntegerField(
+        choices=PROJECT_WORK_STT,
+        default=0,
+    )
+    work_dependencies_style = models.SmallIntegerField(
+        choices=PROJECT_WORK_TYPE,
+        null=True,
     )
     employee_inherit_data = models.JSONField(
         default=dict,
@@ -237,7 +246,7 @@ class ProjectWorks(DataAbstractModel):
     class Meta:
         verbose_name = 'Group of work'
         verbose_name_plural = 'Groups of works'
-        ordering = (),
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -259,7 +268,6 @@ class ProjectMapGroup(DataAbstractModel):
     class Meta:
         verbose_name = 'Project map group'
         verbose_name_plural = 'Project map groups'
-        ordering = (),
         default_permissions = ()
         permissions = ()
 
@@ -281,7 +289,6 @@ class ProjectMapWork(DataAbstractModel):
     class Meta:
         verbose_name = 'Project map work'
         verbose_name_plural = 'Project map work'
-        ordering = (),
         default_permissions = ()
         permissions = ()
 
@@ -303,7 +310,6 @@ class GroupMapWork(DataAbstractModel):
     class Meta:
         verbose_name = 'Group map work'
         verbose_name_plural = 'Group map work'
-        ordering = (),
         default_permissions = ()
         permissions = ()
 
@@ -325,7 +331,6 @@ class WorkMapTask(DataAbstractModel):
     class Meta:
         verbose_name = 'Work map task'
         verbose_name_plural = 'Work map task'
-        ordering = (),
         default_permissions = ()
         permissions = ()
 
@@ -392,7 +397,6 @@ class ProjectMapMember(MasterDataAbstractModel, PermissionAbstractModel):
     class Meta:
         verbose_name = 'Project Team Member'
         verbose_name_plural = 'Project Team Members'
-        ordering = ()
         default_permissions = ()
         permissions = ()
         unique_together = ('tenant', 'company', 'project', 'member')

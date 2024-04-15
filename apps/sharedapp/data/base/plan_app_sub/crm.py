@@ -1657,6 +1657,7 @@ SALE_PROJECT = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity

@@ -78,3 +78,4 @@ class InventoryMsg:
 
 class ProjectMsg:
     PROJECT = _('Project')
+    PROJECT_GROUP = _('Project group')

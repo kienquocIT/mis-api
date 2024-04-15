@@ -1,6 +1,5 @@
 __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailSerializers', 'ProjectUpdateSerializers',
-           'GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSerializers', 'WorkListSerializers',
-           'WorkCreateSerializers', 'WorkDetailSerializers']
+           ]
 
 from rest_framework import serializers
 
@@ -100,10 +99,40 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
 
     @classmethod
     def get_groups(cls, obj):
+        if obj:
+            return [{
+                "id": str(item.group.id),
+                "title": item.group.title,
+                "date_from": item.group.gr_start_date,
+                "date_end": item.group.gr_end_date,
+                "order": item.group.order,
+                "progress": item.group.gr_rate
+            } for item in obj.project_projectmapgroup_project.all()
+            ]
         return []
 
     @classmethod
     def get_works(cls, obj):
+        if obj:
+            pj_works = obj.project_projectmapwork_project.all()
+            works_list = []
+            for item in pj_works:
+                temp = {
+                    "id": str(item.work.id),
+                    "title": item.work.title,
+                    "work_status": item.work.work_status,
+                    "date_from": item.work.w_start_date,
+                    "date_end": item.work.w_end_date,
+                    "order": item.work.order,
+                    "group": "",
+                    "relationships_type": item.work.work_dependencies_style
+                }
+                group_mw = item.work.project_groupmapwork_work.all()
+                if group_mw:
+                    group_mw = group_mw.first()
+                    temp['group'] = str(group_mw.group.id)
+                works_list.append(temp)
+            return works_list
         return []
 
     def get_members(self, obj):
@@ -193,176 +222,3 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
-class GroupCreateSerializers(serializers.ModelSerializer):
-    project = serializers.UUIDField()
-
-    @classmethod
-    def validate_employee_inherit(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return value
-
-    @classmethod
-    def validate_project(cls, value):
-        try:
-            pj = Project.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return pj
-        except Project.DoesNotExist:
-            raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
-
-    def create(self, validated_data):
-        project = validated_data.pop('project', None)
-        group = ProjectGroups.objects.create(**validated_data)
-        ProjectMapGroup.objects.create(project=project, group=group)
-        return group
-
-    class Meta:
-        model = ProjectGroups
-        fields = (
-            'title',
-            'employee_inherit',
-            'gr_weight',
-            'gr_rate',
-            'gr_start_date',
-            'gr_end_date',
-            'project'
-        )
-
-
-class GroupListSerializers(serializers.ModelSerializer):
-    # employee_inherit = serializers.SerializerMethodField()
-    #
-    # @classmethod
-    # def get_employee_inherit(cls, obj):
-    #     if obj.employee_inherit:
-    #         return obj.employee_inherit_data
-    #     return {}
-
-    class Meta:
-        model = ProjectGroups
-        fields = (
-            'id',
-            'title',
-            'employee_inherit',
-            'gr_weight',
-            'gr_rate',
-            'gr_start_date',
-            'gr_end_date',
-            'order',
-        )
-
-
-class GroupDetailSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectGroups
-        fields = (
-            'id',
-            'title',
-            'employee_inherit',
-            'gr_weight',
-            'gr_rate',
-            'gr_start_date',
-            'gr_end_date',
-            'order',
-        )
-
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance
-
-
-class WorkListSerializers(serializers.ModelSerializer):
-    employee_inherit = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_employee_inherit(cls, obj):
-        if obj.employee_inherit:
-            return obj.employee_inherit_data
-        return {}
-
-    class Meta:
-        model = ProjectWorks
-        fields = (
-            'id',
-            'title',
-            'employee_inherit',
-            'w_weight',
-            'w_rate',
-            'w_start_date',
-            'w_end_date',
-            'order',
-        )
-
-
-class WorkCreateSerializers(serializers.ModelSerializer):
-    project = serializers.UUIDField()
-    group = serializers.UUIDField(required=False)
-
-    @classmethod
-    def validate_employee_inherit(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return str(value)
-
-    @classmethod
-    def validate_project(cls, value):
-        try:
-            pj = Project.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return pj
-        except Project.DoesNotExist:
-            raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
-
-    def create(self, validated_data):
-        project = validated_data.pop('project', None)
-        group = validated_data.pop('group', None)
-        work = ProjectWorks.objects.create(**validated_data)
-        ProjectMapWork.objects.create(project=project, work=work)
-        if group:
-            GroupMapWork.objects.create(group=group, work=work)
-        return work
-
-    class Meta:
-        model = ProjectWorks
-        fields = (
-            'title',
-            'employee_inherit',
-            'w_weight',
-            'w_rate',
-            'w_start_date',
-            'w_end_date',
-            'order',
-            'project',
-            'group'
-        )
-
-
-class WorkDetailSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectWorks
-        fields = (
-            'id',
-            'title',
-            'employee_inherit',
-            'w_weight',
-            'w_rate',
-            'w_start_date',
-            'w_end_date',
-            'order',
-        )
-
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance

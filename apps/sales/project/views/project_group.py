@@ -1,98 +1,36 @@
-__all__ = ['ProjectWorkList']
+__all__ = ['ProjectGroupList', 'ProjectGroupDetail']
 
-from typing import Union
-
-from django.conf import settings
-from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.response import Response
 
-from apps.sales.project.models import ProjectWorks, ProjectMapMember, Project
-from apps.sales.project.serializers import WorkListSerializers, WorkCreateSerializers, WorkDetailSerializers
-from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, \
-    BaseUpdateMixin, BaseDestroyMixin
+from apps.sales.project.models import ProjectGroups, ProjectMapMember, Project
+from apps.sales.project.serializers import GroupListSerializers, GroupCreateSerializers, GroupDetailSerializers
+from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, BaseUpdateMixin, \
+    BaseDestroyMixin, BaseCreateMixin
 
 
-# common function
 def get_project_obj(pk_idx):
     if TypeCheck.check_uuid(pk_idx):
         return Project.objects.filter_current(pk=pk_idx, fill__tenant=True, fill__company=True).first()
     return None
 
 
-class ProjectWorkList(BaseListMixin, BaseCreateMixin):
-    queryset = ProjectWorks.objects
-    serializer_list = WorkListSerializers
-    serializer_create = WorkCreateSerializers
-    serializer_detail = WorkDetailSerializers
+class ProjectGroupList(BaseListMixin, BaseCreateMixin):
+    queryset = ProjectGroups.objects
+    serializer_list = GroupListSerializers
+    serializer_create = GroupCreateSerializers
+    serializer_detail = GroupDetailSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title']
     create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
     ]
-    filterset_fields = {
-        'employee_inherit': ['exact', 'in'],
-    }
 
-    def get_queryset(self):
-        return super().get_queryset()
-
-    @classmethod
-    def get_prj_allowed(cls, item_data):
-        if item_data and isinstance(item_data, dict) and 'prj' in item_data and isinstance(item_data['prj'], dict):
-            ids = list(item_data['prj'].keys())
-            if TypeCheck.check_uuid_list(data=ids):
-                return item_data['prj'].keys()
-        return []
-
-    def get_project_has_view_this(self):
-        return [
-            str(item) for item in ProjectMapMember.objects.filter_current(
-                fill__tenant=True, fill__company=True,
-                member_id=self.cls_check.employee_attr.employee_current_id,
-                permit_view_this_project=True,
-            ).values_list('project_id', flat=True)
-        ]
-
-    @property
-    def filter_kwargs_q(self) -> Union[Q, Response]:
-        """
-        Check case get list opp for feature or list by configured.
-        query_params: from_app=app_label-model_code
-        """
-        state_from_app, data_from_app = self.has_get_list_from_app()
-        if state_from_app is True:
-            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
-                return self.filter_kwargs_q__from_app(data_from_app)
-            return self.list_empty()
-        # check permit config exists if from_app not calling...
-        project_has_view_ids = self.get_project_has_view_this()
-        if self.cls_check.permit_cls.config_data__exist or project_has_view_ids:
-            return self.filter_kwargs_q__from_config() | Q(id__in=project_has_view_ids)
-        return self.list_empty()
-
-    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
-        # permit_data = {"employee": [], "roles": []}
-        project_ids = []
-        if arr_from_app and isinstance(arr_from_app, list) and len(arr_from_app) == 3:
-            permit_data = self.cls_check.permit_cls.config_data__by_code(
-                label_code=arr_from_app[0],
-                model_code=arr_from_app[1],
-                perm_code=arr_from_app[2],
-                has_roles=False,
-            )
-            if 'employee' in permit_data:
-                project_ids += self.get_prj_allowed(item_data=permit_data['employee'])
-            if 'roles' in permit_data and isinstance(permit_data['roles'], list):
-                for item_data in permit_data['roles']:
-                    project_ids += self.get_prj_allowed(item_data=item_data)
-            if settings.DEBUG_PERMIT:
-                print('=> project_ids:                :', '[HAS FROM APP]', project_ids)
-        return Q(id__in=list(set(project_ids)))
+    # filterset_class = ProjectGroupListFilter
 
     @swagger_auto_schema(
-        operation_summary="Project work list",
-        operation_description="get project work list",
+        operation_summary="Project group list",
+        operation_description="get project group list",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -120,12 +58,12 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         return False
 
     @swagger_auto_schema(
-        operation_summary="Create project work",
-        operation_description="Create project work",
-        request_body=WorkCreateSerializers,
+        operation_summary="Create project group",
+        operation_description="Create project group",
+        request_body=GroupCreateSerializers,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='project', model_code='project', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
@@ -139,18 +77,18 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         return ResponseController.notfound_404()
 
 
-class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
-    queryset = ProjectWorks.objects
-    serializer_detail = WorkDetailSerializers
-    serializer_update = WorkDetailSerializers
+class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+    queryset = ProjectGroups.objects
+    serializer_detail = GroupDetailSerializers
+    serializer_update = GroupDetailSerializers
 
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, opp_obj):
+    def check_has_permit_of_space_all(self, opp_obj):  # pylint: disable=R0912
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
-                if 'general' in config_data['employee']:
+                if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
                     if general_data and isinstance(general_data, dict):
                         for _permit_code, permit_config in general_data.items():
@@ -185,7 +123,7 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         if not state:
             # special case skip with True if current user is employee_inherit
             emp_id = self.cls_check.employee_attr.employee_current_id
-            if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
+            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
                 return True
 
             obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
@@ -225,17 +163,17 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
     def get_lookup_url_kwarg(self) -> dict:
         return {
-            'project_id': self.kwargs['pk_pj'],
+            'project_id': self.kwargs['pk_opp'],
             'member_id': self.kwargs['pk_member']
         }
 
     @swagger_auto_schema(
-        operation_summary='Get work detail',
-        operation_description='Get work detail by ID',
+        operation_summary='Get group detail',
+        operation_description='Get group detail by ID',
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='project', model_code='project', perm_code="view",
+        label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, pk_pj, pk_member, **kwargs):
         if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
@@ -243,19 +181,19 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return ResponseController.notfound_404()
 
     @swagger_auto_schema(
-        operation_summary='Update work for project',
+        operation_summary='Update app and permit for member',
     )
     @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.update(request, *args, pk_pj, pk_member, **kwargs)
+    def put(self, request, *args, pk_opp, pk_member, **kwargs):
+        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
+            return self.update(request, *args, pk_opp, pk_member, **kwargs)
         return ResponseController.notfound_404()
 
     @swagger_auto_schema(
-        operation_summary='Remove work from project'
+        operation_summary='Remove member from opp'
     )
     @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.destroy(request, *args, pk_pj, pk_member, is_purge=True, **kwargs)
+    def delete(self, request, *args, pk_opp, pk_member, **kwargs):
+        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
+            return self.destroy(request, *args, pk_opp, pk_member, is_purge=True, **kwargs)
         return ResponseController.notfound_404()

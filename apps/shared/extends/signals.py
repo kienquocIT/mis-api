@@ -1091,7 +1091,7 @@ def project_member_event_update(sender, instance, created, **kwargs):
         employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
         employee_permission.append_permit_by_prj(
             tenant_id=instance.project.tenant_id,
-            prj_id=instance.project_id,
+            prj_id=str(instance.project_id),
             perm_config=instance.permission_by_configured,
         )
 

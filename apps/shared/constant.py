@@ -180,6 +180,18 @@ TASK_KIND = (
     (3, 'Pending')
 )
 
+PROJECT_WORK_STT = (
+    (0, 'To do'),
+    (1, 'In progress'),
+    (2, 'Completed'),
+    (3, 'Pending')
+)
+
+PROJECT_WORK_TYPE = (
+    (0, 'Start to start'),
+    (1, 'Finish to start')
+)
+
 # permissions
 PERMISSION_OPTION_RANGE = (
     (0, 'All option range'),
