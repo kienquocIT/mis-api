@@ -502,7 +502,9 @@ CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
 CELERY_RESULT_EXTENDED = True
 
-# CELEY BEAT
+# CELERY BEAT
+CELERY_ENABLE_UTC = False
+CELERY_TIMEZONE = 'Asia/Ho_Chi_Minh'
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # -- CELERY + RABBITMQ CONFIG
