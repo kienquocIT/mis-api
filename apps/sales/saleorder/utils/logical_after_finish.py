@@ -191,6 +191,7 @@ class DocumentChangeHandler:
             return model_cls.objects.filter(**data_filter).first()
         return None
 
+    # DELIVERY
     @classmethod
     def handle_delivery(cls, instance, doc_previous):
         instance.delivery_status = doc_previous.delivery_status
@@ -210,18 +211,11 @@ class DocumentChangeHandler:
             if delivery_sub:
                 delivery_sub.sale_order_data = so_data
                 deli_sub_update_fields = ['sale_order_data']
-                num_keys = len(data_product_change)
-                product_check = 0
-                for key, value in data_product_change.items():
-                    product_deli = delivery_sub.delivery_product_delivery_sub.filter(**{'product_id': key}).first()
-                    if product_deli:
-                        product_deli.delivery_quantity += value
-                        product_deli.remaining_quantity += value
-                        if product_deli.remaining_quantity >= 0:
-                            product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
-                            if product_deli.remaining_quantity == 0:
-                                product_check += 1
-                if product_check == num_keys:
+                is_all_done = cls.update_and_check_deli_product(
+                    data_product_change=data_product_change,
+                    delivery_sub=delivery_sub,
+                )
+                if is_all_done is True:
                     delivery_sub.state = 2
                     deli_sub_update_fields.append('state')
                     doc_previous.delivery_of_sale_order.state = 2
@@ -244,3 +238,20 @@ class DocumentChangeHandler:
                     data_product_change[str(so_product.product_id)] = quantity_change
                     break
         return data_product_change
+
+    @classmethod
+    def update_and_check_deli_product(cls, data_product_change, delivery_sub):
+        num_keys = len(data_product_change)
+        product_check = 0
+        for key, value in data_product_change.items():
+            product_deli = delivery_sub.delivery_product_delivery_sub.filter(**{'product_id': key}).first()
+            if product_deli:
+                product_deli.delivery_quantity += value
+                product_deli.remaining_quantity += value
+                if product_deli.remaining_quantity >= 0:
+                    product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
+                    if product_deli.remaining_quantity == 0:
+                        product_check += 1
+        if product_check == num_keys:
+            return True
+        return False

@@ -592,6 +592,9 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'quotation',
                 'delivery_call',
                 'delivery_status',
+                'is_change',
+                'document_change_order',
+                'document_root_id',
             ],
             check_sum_second=True,
         )
