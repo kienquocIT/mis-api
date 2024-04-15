@@ -32,6 +32,9 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'quotation',
             'delivery_call',
             'delivery_status',
+            'is_change',
+            'document_change_order',
+            'document_root_id',
         )
 
     @classmethod

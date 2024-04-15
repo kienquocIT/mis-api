@@ -19,6 +19,7 @@ __all__ = [
     'Contact',
     'PaymentTerm',
     'ANNUAL_REVENUE_SELECTION',
+    'AccountActivity',
 ]
 
 

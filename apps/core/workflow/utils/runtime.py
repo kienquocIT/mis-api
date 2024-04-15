@@ -16,10 +16,7 @@ from apps.core.workflow.models import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = [
-    'DocHandler', 'RuntimeHandler',
-    'RuntimeStageHandler', 'RuntimeLogHandler',
-]
+__all__ = ['DocHandler', 'RuntimeHandler', 'RuntimeStageHandler', 'RuntimeLogHandler']
 
 
 class DocHandler:
@@ -72,7 +69,7 @@ class DocHandler:
                 update_fields.append('document_root_id')
         obj.save(update_fields=update_fields)
         # cancel document root or previous document
-        DocHandler.force_cancel_if_change_document_finish(document_change=obj)
+        DocHandler.force_cancel_doc_previous(document_change=obj)
         return True
 
     @classmethod
@@ -124,32 +121,45 @@ class DocHandler:
         return None
 
     @classmethod
-    def force_cancel_if_change_document_finish(cls, document_change):
-        if hasattr(document_change, 'document_change_order') and hasattr(document_change, 'document_root_id'):
-            if document_change.document_change_order and document_change.document_root_id:
-                document_target = DocHandler.get_previous_document(document_change=document_change)
-                if document_target:
-                    setattr(document_target, 'system_status', 4)
-                    document_target.save(update_fields=['system_status'])
+    def force_set_is_change_doc_previous(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
+        )
+        if obj:
+            doc_previous = DocHandler.get_doc_previous(document_change=obj)
+            if doc_previous:
+                doc_previous.is_change = True
+                doc_previous.save(update_fields=['is_change'])
         return True
 
     @classmethod
-    def get_previous_document(cls, document_change):
+    def force_cancel_doc_previous(cls, document_change):
+        doc_previous = DocHandler.get_doc_previous(document_change=document_change)
+        if doc_previous:
+            setattr(doc_previous, 'system_status', 4)
+            doc_previous.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def get_doc_previous(cls, document_change):
         document_target = None
-        if document_change.document_change_order == 1:
-            document_target = DocHandler(
-                document_change.document_root_id, document_change._meta.label_lower
-            ).get_obj(
-                default_filter={'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id}
-            )
-        if document_change.document_change_order > 1:
-            document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
-                default_filter={
-                    'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
-                    'document_change_order': document_change.document_change_order - 1,
-                    'document_root_id': document_change.document_root_id,
-                }
-            )
+        if all(hasattr(document_change, attr) for attr in ('document_change_order', 'document_root_id')):
+            if document_change.document_change_order and document_change.document_root_id:
+                if document_change.document_change_order == 1:
+                    document_target = DocHandler(
+                        document_change.document_root_id, document_change._meta.label_lower
+                    ).get_obj(
+                        default_filter={'tenant_id': document_change.tenant_id,
+                                        'company_id': document_change.company_id}
+                    )
+                if document_change.document_change_order > 1:
+                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                        default_filter={
+                            'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
+                            'document_change_order': document_change.document_change_order - 1,
+                            'document_root_id': document_change.document_root_id,
+                        }
+                    )
         return document_target
 
 
@@ -165,7 +175,6 @@ class RuntimeHandler:
         """
         Get Model class Application
         Returns:
-
         """
         return DisperseModel(app_model='base.application').get_model()
 
@@ -175,7 +184,6 @@ class RuntimeHandler:
         Get Application Obj by App_Model
         Args:
             app_code: "app.model"
-
         Returns:
             Application Object
         """
@@ -307,8 +315,7 @@ class RuntimeHandler:
                     # RuntimeStage logging
                     # Update flag done
                     RuntimeLogHandler(
-                        stage_obj=rt_assignee.stage,
-                        actor_obj=employee_assignee_obj,
+                        stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False,
                     ).log_approval_task(action_number=1)
                     rt_assignee.is_done = True
@@ -342,8 +349,7 @@ class RuntimeHandler:
                     # RuntimeStage logging
                     # Update flag done
                     RuntimeLogHandler(
-                        stage_obj=rt_assignee.stage,
-                        actor_obj=employee_assignee_obj,
+                        stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False,
                     ).log_approval_task(action_number=2)
                     rt_assignee.is_done = True
@@ -658,7 +664,6 @@ class RuntimeStageHandler:
         Args:
             node_passed: Node was selected that passed compare params with condition
             **kwargs: field in RuntimeStage
-
         Returns:
             RuntimeStage Object
         """
@@ -774,6 +779,8 @@ class RuntimeStageHandler:
             field_saved += ['status']
             DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
+        # check document is change document then set is_change = True
+        DocHandler.force_set_is_change_doc_previous(runtime_obj=self.runtime_obj)
         return True
 
 
@@ -924,7 +931,6 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                # 'msg': 'Return to begin station',
                 'msg': f'Return to initial node ({self.remark})',  # edit by PO's request
                 'task_workflow_id': None,
             },
@@ -935,7 +941,6 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            # msg='Return to begin station',
             msg=f'Return to initial node ({self.remark})',  # edit by PO's request
             is_system=self.is_system,
         )
@@ -960,7 +965,6 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
             actor=None,
             runtime=self.stage_obj.runtime,
             stage=self.stage_obj,

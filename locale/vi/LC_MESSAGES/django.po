@@ -1006,3 +1006,11 @@ msgstr "Số lượng phải lớn hơn 0."
 #
 msgid "Total payment must be 100%."
 msgstr "Tổng thanh toán phải đủ 100%."
+
+#
+msgid "Payment is required according to config."
+msgstr "Thanh toán là bắt buộc theo cấu hình."
+
+#
+msgid "Document was referenced by other documents"
+msgstr "Phiếu đã được tham chiếu bởi các phiếu khác"
