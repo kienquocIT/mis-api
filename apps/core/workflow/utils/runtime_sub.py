@@ -222,38 +222,6 @@ class WFSupportFunctionsHandler:
 
 
 class WFValidateHandler:
-    APP_CHECK_REFERENCED = {
-        'quotation.quotation': [
-            'saleorder.saleorder'
-        ],
-        'saleorder.saleorder': [
-            'delivery.orderpicking',
-            'delivery.orderdelivery',
-        ],
-    }
-
-    # @classmethod
-    # def is_object_referenced(cls, obj):
-    #     app_label_current = obj._meta.label_lower
-    #     # Get all models
-    #     models = apps.get_models()
-    #     for model in models:
-    #         # Check if model in list check by WFValidateHandler.APP_CHECK_REFERENCED
-    #         model_check = model._meta.label_lower
-    #         if model_check in WFValidateHandler.APP_CHECK_REFERENCED.get(app_label_current, []):
-    #             # Get all ForeignKey and OneToOneField fields in the model
-    #             related_fields = [
-    #                 field for field in model._meta.get_fields()
-    #                 if field.is_relation and (field.one_to_one or field.many_to_one)
-    #             ]
-    #             for field in related_fields:
-    #                 # Check if the object is referenced by any ForeignKey and OneToOneField field
-    #                 if field.related_model == obj.__class__:
-    #                     # Check if there are any instances of the model referencing the object
-    #                     if model.objects.filter(**{f"{field.name}": obj, 'system_status': 3}).exists():
-    #                         return True
-    #     # Object is not referenced by any ForeignKey fields
-    #     return False
 
     @classmethod
     def is_possible_change_cancel(cls, obj):
