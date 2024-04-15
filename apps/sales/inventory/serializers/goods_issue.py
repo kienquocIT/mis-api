@@ -115,7 +115,7 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
         return str(dict(GOODS_ISSUE_TYPE).get(obj.goods_issue_type))
 
     @classmethod
-    def get_system_status(cls, obj):
+    def get_system_status(cls):
         return 'Open'
 
 
