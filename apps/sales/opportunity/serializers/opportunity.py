@@ -442,7 +442,7 @@ def get_instance_stage(instance):
     product_line = instance.opportunity_product_opportunity.all()
     instance_stage.append('Product.Line.Detail=0' if product_line.count() == 0 else 'Product.Line.Detail!=0')
     # Competitor Win
-    competitors = instance.opportunity_competitor_opportunity.all()
+    competitors = instance.opportunity_competitor_opportunity.filter(win_deal=True)
     instance_stage.append('Competitor.Win!=0' if competitors.count() == 0 else 'Competitor.Win=0')
     # Lost By Other Reason
     instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
@@ -462,14 +462,14 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
                         'win_rate': stage.win_rate,
                         'current': 1
                     })
-                new_instance_current_stage.append({
-                    'id': stage.id,
-                    'indicator': stage.indicator,
-                    'win_rate': stage.win_rate,
-                    'current': 1 if len(new_instance_current_stage) == 0 else 0
-                })
+                else:
+                    new_instance_current_stage.append({
+                        'id': stage.id,
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate,
+                        'current': 1 if len(new_instance_current_stage) == 0 else 0
+                    })
         else:
-            print(stage.win_rate, stage.win_rate == 0, is_deal_close, stage.win_rate == 0 and is_deal_close)
             if stage.win_rate == 0 and is_deal_close:
                 new_instance_current_stage[0]['current'] = 0
                 new_instance_current_stage.append({
@@ -478,12 +478,13 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
                     'win_rate': stage.win_rate,
                     'current': 1
                 })
-            new_instance_current_stage.append({
-                'id': stage.id,
-                'indicator': stage.indicator,
-                'win_rate': stage.win_rate,
-                'current': 1 if len(new_instance_current_stage) == 0 else 0
-            })
+            else:
+                new_instance_current_stage.append({
+                    'id': stage.id,
+                    'indicator': stage.indicator,
+                    'win_rate': stage.win_rate,
+                    'current': 1 if len(new_instance_current_stage) == 0 else 0
+                })
     return new_instance_current_stage
 
 
