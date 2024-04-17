@@ -118,6 +118,7 @@ class ContactListSerializer(AbstractListSerializerModel):
     class Meta:
         model = Contact
         fields = (
+            'code',
             'fullname',
             'job_title',
             'owner',
