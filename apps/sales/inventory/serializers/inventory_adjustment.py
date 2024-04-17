@@ -75,8 +75,8 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
         return data
 
     @classmethod
-    def get_system_status(cls):
-        return 'Open'
+    def get_system_status(cls, obj):
+        return 'Open' if obj.system_status else None
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):

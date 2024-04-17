@@ -115,8 +115,8 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
         return str(dict(GOODS_ISSUE_TYPE).get(obj.goods_issue_type))
 
     @classmethod
-    def get_system_status(cls):
-        return 'Open'
+    def get_system_status(cls, obj):
+        return 'Open' if obj.system_status else None
 
 
 class GoodsIssueDetailSerializer(serializers.ModelSerializer):
