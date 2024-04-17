@@ -151,6 +151,7 @@ class TestCaseQuotation(AdvanceTestCase):
     def create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
             'apply_for': 1,
             'remark': 'lorem ipsum dolor sit amet.',
             'term': [

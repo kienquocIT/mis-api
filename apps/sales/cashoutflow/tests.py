@@ -242,6 +242,7 @@ class PaymentTestCase(AdvanceTestCase):
     def create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
             'apply_for': 1,
             'remark': 'lorem ipsum dolor sit amet.',
             'term': [{"value": '100% sau khi ký HD', "unit_type": 1, "day_type": 1, "no_of_days": "1", "after": 1}],
