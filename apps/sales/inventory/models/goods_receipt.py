@@ -319,8 +319,8 @@ class GoodsReceipt(DataAbstractModel):
                         'lot_data': lot_data
                     })
                 else:
-                    existed['quantity'] += child.quantity_import
-                    existed['value'] += item.product_unit_price * child.quantity_import
+                    existed['quantity'] += item.quantity_import
+                    existed['value'] += item.product_unit_price * item.quantity_import
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
