@@ -701,8 +701,8 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'purchase_requests_data',
                 'purchase_quotations_data',
                 'purchase_request_products_data',
-                'supplier',
-                'contact',
+                'supplier_data',
+                'contact_data',
                 'delivered_date',
                 'status_delivered',
                 'receipt_status',
@@ -720,6 +720,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'attachment',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )

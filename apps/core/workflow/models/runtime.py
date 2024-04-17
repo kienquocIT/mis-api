@@ -627,8 +627,8 @@ class RuntimeLog(SimpleAbstractModel):
 
     def before_save(self, force_insert=False):
         if force_insert:
-            self.tenant = self.stage.tenant
-            self.company = self.stage.company
+            self.tenant = self.stage.tenant if self.stage else self.runtime.tenant
+            self.company = self.stage.company if self.stage else self.runtime.company
             if self.actor:
                 self.actor_data = {
                     "id": str(self.actor_id),

@@ -561,7 +561,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_warehouse_detail(cls, obj):
         result = []
-        product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+        product_warehouse = obj.product_warehouse_product.all().select_related(
+            'warehouse', 'uom'
+        ).order_by('warehouse__code')
         cost_data = obj.report_inventory_by_month_product.filter(stock_type=1).values_list(
             'warehouse_id', 'current_cost'
         )

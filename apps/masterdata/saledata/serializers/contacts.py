@@ -1,12 +1,8 @@
 from rest_framework import serializers
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
-from apps.shared import (
-    AccountsMsg,
-    AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel,
-)
+from apps.shared import (AccountsMsg,)
 
 
 # Salutation
@@ -110,7 +106,7 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 
 
 # Contact
-class ContactListSerializer(AbstractListSerializerModel):
+class ContactListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
@@ -118,6 +114,7 @@ class ContactListSerializer(AbstractListSerializerModel):
     class Meta:
         model = Contact
         fields = (
+            'id',
             'code',
             'fullname',
             'job_title',
@@ -156,7 +153,7 @@ class ContactListSerializer(AbstractListSerializerModel):
         return {}
 
 
-class ContactCreateSerializer(AbstractCreateSerializerModel):
+class ContactCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
@@ -216,7 +213,6 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
             return attrs
         raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
 
-    @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
         if contact.account_name:
@@ -225,7 +221,7 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
         return contact
 
 
-class ContactDetailSerializer(AbstractDetailSerializerModel):
+class ContactDetailSerializer(serializers.ModelSerializer):
     work_country = serializers.SerializerMethodField()
     work_city = serializers.SerializerMethodField()
     work_district = serializers.SerializerMethodField()
@@ -245,6 +241,7 @@ class ContactDetailSerializer(AbstractDetailSerializerModel):
     class Meta:
         model = Contact
         fields = (
+            "id",
             "owner",
             "job_title",
             "biography",

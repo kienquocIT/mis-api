@@ -295,6 +295,9 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -551,6 +554,9 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -586,6 +592,9 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'quotation',
                 'delivery_call',
                 'delivery_status',
+                'is_change',
+                'document_change_order',
+                'document_root_id',
             ],
             check_sum_second=True,
         )

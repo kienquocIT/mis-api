@@ -65,10 +65,7 @@ class PurchaseOrderDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "supplier",
-            "contact",
-        ).prefetch_related(
+        return super().get_queryset().prefetch_related(
             'purchase_requests',
             Prefetch(
                 'purchase_order_quotation_order',
@@ -144,7 +141,21 @@ class PurchaseOrderProductList(BaseListMixin):
             'uom_order_request',
             'uom_order_actual',
             'tax',
-        ).prefetch_related('purchase_order_request_order_product')
+            'uom_order_request__group',
+            'uom_order_actual__group',
+            'uom_order_request__group__uom_reference',
+            'uom_order_actual__group__uom_reference',
+        ).prefetch_related(
+            Prefetch(
+                'purchase_order_request_order_product',
+                queryset=PurchaseOrderRequestProduct.objects.select_related(
+                    'uom_stock',
+                    'purchase_request_product',
+                    'purchase_request_product__purchase_request',
+                    'purchase_request_product__uom',
+                ),
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase Order Product List",

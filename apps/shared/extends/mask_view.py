@@ -1894,6 +1894,11 @@ def mask_view(**parent_kwargs):
                 if permit_check is True:
                     # active translate if request.user is anonymous
                     if self.request.user is AnonymousUser or self.request.user.is_authenticated is False:
+                        if settings.DEBUG_PERMIT:
+                            print(
+                                'active language [mask_view]:',
+                                self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE)
+                            )
                         translation.activate(self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE))
 
                     # call view when access login and auth permission | Data returned is three case:

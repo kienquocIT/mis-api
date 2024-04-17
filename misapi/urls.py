@@ -20,6 +20,23 @@ urlpatterns = [
 
 if getattr(settings, 'SHOW_API_DOCS', False):
     class CustomSchemaGenerator(OpenAPISchemaGenerator):
+        @classmethod
+        def get_tag(cls, new_path_str):
+            arr = new_path_str.split('/')
+
+            # special case
+            state = True
+            if len(arr) >= 1 and arr[0] in [
+                'account', 'hr', 'attachment', 'auth', 'base', 'workflow', 'comment', 'company', 'log',
+                'provisioning', 'site', 'task', 'tenant', 'media', 'business-trip', 'mailer', 'printer',
+            ]:
+                state = False
+
+            # handle return
+            if len(arr) >= 2 and state is True:
+                return f"""{arr[0]} + {arr[1]}"""
+            return f"""{arr[0]}"""
+
         def get_schema(self, request=None, public=False):
             schema = super().get_schema(request, public)
 
@@ -34,12 +51,14 @@ if getattr(settings, 'SHOW_API_DOCS', False):
                                 if tags:
                                     new_path_str = path_str.replace('/api/', '')
                                     if new_path_str:
-                                        new_tag = f"""ᓚᘏᗢ ↣ {path_str.replace('/api/', '').split('/')[0]}"""
+                                        new_tag = self.get_tag(new_path_str)
                                         operation.tags = [new_tag]
                 except Exception as errs:
                     print('[CustomSchemaGenerator][get_schema] Errors: ' + str(errs))
 
             return schema
+
+
     schema_view = get_schema_view(
         openapi.Info(
             title="MIS API",

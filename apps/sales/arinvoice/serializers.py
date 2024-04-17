@@ -328,12 +328,14 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         cus_address = (
             f"{billing_address.account_name}, {billing_address.account_address}"
         ) if billing_address else instance.customer_billing_address
-        bank_code = instance.customer_mapped.account_banks_mapped.filter(
+        bank_df = instance.customer_mapped.account_banks_mapped.filter(
             is_default=True
-        ).first().bank_name if instance.customer_mapped else instance.customer_bank_code
-        bank_number = instance.customer_mapped.account_banks_mapped.filter(
-            is_default=True
-        ).first().bank_account_number if instance.customer_mapped else instance.customer_bank_code
+        ).first() if instance.customer_mapped else None
+        bank_code = bank_df.bank_code if bank_df else instance.customer_bank_code
+        bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
+        if not (bank_code and bank_number):
+            raise serializers.ValidationError({'Error': "Can not find bank information."})
+
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
@@ -386,27 +388,27 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
                 )
                 if float(item.product_discount_rate) > 0:
                     discount += float(item.product_discount_value)
-                    product_xml += (
-                        "<Product>"
-                        "<Code></Code>"
-                        "<No></No>"
-                        "<Feature>3</Feature>"
-                        "<ProdName>"
-                        f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
-                        "</ProdName>"
-                        "<ProdUnit></ProdUnit>"
-                        "<ProdQuantity></ProdQuantity>"
-                        "<ProdPrice></ProdPrice>"
-                        "<Discount></Discount>"
-                        "<DiscountAmount></DiscountAmount>"
-                        f"<Total>{float(item.product_discount_value) * -1}</Total>"
-                        "<VATRate>-1</VATRate>"
-                        "<VATAmount>0</VATAmount>"
-                        "<VATRateOther/>"
-                        f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
-                        "<Extra></Extra>"
-                        "</Product>"
-                    )
+                #     product_xml += (
+                #         "<Product>"
+                #         "<Code></Code>"
+                #         "<No></No>"
+                #         "<Feature>3</Feature>"
+                #         "<ProdName>"
+                #         f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                #         "</ProdName>"
+                #         "<ProdUnit></ProdUnit>"
+                #         "<ProdQuantity></ProdQuantity>"
+                #         "<ProdPrice></ProdPrice>"
+                #         "<Discount></Discount>"
+                #         "<DiscountAmount></DiscountAmount>"
+                #         f"<Total>{float(item.product_discount_value) * -1}</Total>"
+                #         "<VATRate>-1</VATRate>"
+                #         "<VATAmount>0</VATAmount>"
+                #         "<VATRateOther/>"
+                #         f"<Amount>{float(item.product_discount_value) * -1}</Amount>"
+                #         "<Extra></Extra>"
+                #         "</Product>"
+                #     )
                 count += 1
         number_vat = list(set(number_vat))
 
@@ -484,9 +486,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             )
 
         instance.is_created_einvoice = True
-        if not instance.buyer_name:
-            instance.buyer_name = instance.customer_mapped.name
-        instance.save(update_fields=['is_created_einvoice', 'buyer_name'])
+        instance.save(update_fields=['is_created_einvoice'])
         return response.status_code
 
     def validate(self, validate_data):

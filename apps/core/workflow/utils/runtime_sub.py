@@ -7,7 +7,7 @@ from apps.core.log.tasks import (
 )
 from apps.shared import (
     call_task_background,
-    WorkflowMsgNotify
+    WorkflowMsgNotify, DisperseModel
 )
 from apps.core.workflow.models import (Workflow, Node, Association, Runtime, RuntimeAssignee, RuntimeLog)
 
@@ -138,6 +138,10 @@ class WFSupportFunctionsHandler:
         if group.parent_n:
             if group.parent_n.first_manager_id:
                 return group.parent_n.first_manager_id
+        # check if group of assignee is the highest group and assignee is 1st manager
+        if group.first_manager_id and group.group_level:
+            if group.group_level.level == 1:
+                return group.first_manager_id
         raise ValueError('1st manager is not defined')
 
     @classmethod
@@ -148,7 +152,8 @@ class WFSupportFunctionsHandler:
         # log error
         msg = 'Workflow error: ' + str(value_error)
         cls.log_runtime_error(stage_obj=stage_obj, msg=msg)
-        raise value_error
+        cls.log_runtime_reject_by_error(stage_obj=stage_obj)
+        return False
 
     @classmethod
     def log_runtime_error(cls, stage_obj, msg):
@@ -177,39 +182,51 @@ class WFSupportFunctionsHandler:
             is_system=True,
         )
 
-
-class WFValidateHandler:
-    APP_CHECK_REFERENCED = {
-        'quotation.quotation': [
-            'saleorder.saleorder'
-        ],
-        'saleorder.saleorder': [
-            'delivery.orderpicking',
-            'delivery.orderdelivery',
-            # 'report.reportrevenue',
-            # 'report.reportcashflow',
-        ],
-    }
+    @classmethod
+    def log_runtime_reject_by_error(cls, stage_obj):
+        call_task_background(
+            force_log_activity,
+            **{
+                'tenant_id': stage_obj.runtime.tenant_id,
+                'company_id': stage_obj.runtime.company_id,
+                'date_created': timezone.now(),
+                'doc_id': stage_obj.runtime.doc_id,
+                'doc_app': stage_obj.runtime.app_code,
+                'automated_logging': False,
+                'user_id': None,
+                'employee_id': None,
+                'msg': "Rejected because of workflow error",
+                'task_workflow_id': None,
+            },
+        )
+        return RuntimeLog.objects.create(
+            actor=None,
+            runtime=stage_obj.runtime,
+            stage=stage_obj,
+            kind=2,
+            action=0,
+            msg="Rejected because of workflow error",
+            is_system=True,
+        )
 
     @classmethod
-    def is_object_referenced(cls, obj):
-        model_current = obj._meta.label_lower
-        # Get all models
-        models = apps.get_models()
-        for model in models:
-            # Check if model in list check by WFValidateHandler.APP_CHECK_REFERENCED
-            model_check = model._meta.label_lower
-            if model_check in WFValidateHandler.APP_CHECK_REFERENCED.get(model_current, []):
-                # Get all ForeignKey and OneToOneField fields in the model
-                related_fields = [
-                    field for field in model._meta.get_fields()
-                    if field.is_relation and (field.one_to_one or field.many_to_one)
-                ]
-                for field in related_fields:
-                    # Check if the object is referenced by any ForeignKey and OneToOneField field
-                    if field.related_model == obj.__class__:
-                        # Check if there are any instances of the model referencing the object
-                        if model.objects.filter(**{f"{field.name}": obj}).exists():
-                            return True
-        # Object is not referenced by any ForeignKey fields
+    def get_class_view_and_serializer(cls, app_label, model_name):
+        # Get the model class
+        model_class = apps.get_model(app_label=app_label, model_name=model_name)
+        # Get the corresponding view class
+        for cls_ in model_class.mro():
+            if hasattr(cls_, 'serializer_create'):
+                serializer_create_class = cls_.serializer_create
+                return cls_, serializer_create_class
+        return None, None
+
+
+class WFValidateHandler:
+
+    @classmethod
+    def is_possible_change_cancel(cls, obj):
+        app_label_current = obj._meta.label_lower
+        model_current = DisperseModel(app_model=app_label_current).get_model()
+        if model_current and all(hasattr(model_current, attr) for attr in ('objects', 'check_change_document')):
+            return getattr(model_current, 'check_change_document')(instance=obj)
         return False

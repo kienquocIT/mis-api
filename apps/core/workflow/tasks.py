@@ -100,7 +100,7 @@ def call_approval_task(
 def call_action_workflow_after_finish(
         runtime_obj: Runtime, action_code: int,
 ):
-    return RuntimeAfterFinishHandler().action_perform(
+    return RuntimeAfterFinishHandler().action_perform_after_finish(
         runtime_obj=runtime_obj,
         action_code=action_code,
     )

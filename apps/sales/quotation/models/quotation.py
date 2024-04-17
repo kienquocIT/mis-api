@@ -22,6 +22,7 @@ class QuotationAppConfig(MasterDataAbstractModel):
         default=dict,
         help_text="all config use for Quotation with Opportunity, data record in ConfigLongSale"
     )
+    is_require_payment = models.BooleanField(default=False, help_text='flag to know require payment or not')
 
     class Meta:
         verbose_name = 'Quotation Config'

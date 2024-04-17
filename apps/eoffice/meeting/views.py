@@ -145,6 +145,13 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'meeting_schedule_mapped',
+        ).select_related(
+            'meeting_room_mapped',
+        )
+
     @swagger_auto_schema(
         operation_summary="Meeting Schedule list",
         operation_description="Meeting Schedule list"
@@ -183,6 +190,14 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = MeetingScheduleUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'meeting_schedule_mapped',
+            'meeting_online_schedule_mapped'
+        ).select_related(
+            'meeting_room_mapped',
+        )
 
     @swagger_auto_schema(
         operation_summary='Detail Meeting Schedule',

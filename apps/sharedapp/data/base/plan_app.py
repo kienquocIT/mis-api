@@ -78,6 +78,26 @@ _PlanApplication_base_data = {
 _PlanApplication_hrm_data = {}
 
 _PlanApplication_sale_data = {
+    "35b38745-ba92-4d97-b1f7-4675a46585d3": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "35b38745-ba92-4d97-b1f7-4675a46585d3",  # Account Group
+    },
+    "b22a58d3-cc9e-4913-a06d-beee11afba60": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "b22a58d3-cc9e-4913-a06d-beee11afba60",  # Account Type
+    },
+    "37eb1961-8103-46c5-ad2e-236f3a6585f5": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "37eb1961-8103-46c5-ad2e-236f3a6585f5",  # Industry
+    },
+    "1102a36d-5dbe-48f6-845e-a6e0e69e04b2": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "1102a36d-5dbe-48f6-845e-a6e0e69e04b2",  # Currency
+    },
+    "d3903adb-61a9-4b18-90ed-542ce7acedc8": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "d3903adb-61a9-4b18-90ed-542ce7acedc8",  # Salutation
+    },
     "828b785a-8f57-4a03-9f90-e0edf96560d7": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact

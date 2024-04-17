@@ -471,10 +471,15 @@ def get_instance_current_stage(opp_config_stage, instance_stage):
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
+    is_deal_close = False
     if len(instance_current_stage) > 0:
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-        instance_current_stage[0]['current'] = 1
-        return instance_current_stage
+        if instance_current_stage[-1]['win_rate'] == 0:
+            instance_current_stage[-1]['current'] = 1
+            is_deal_close = True
+        else:
+            instance_current_stage[0]['current'] = 1
+        return instance_current_stage, is_deal_close
     raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
@@ -581,13 +586,16 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
-        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage)
+        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage)
+        instance.is_deal_close = is_deal_close
+        instance.save(update_fields=['is_deal_close'])
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
         for item in instance_current_stage:
-            opportunity_stage = OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
-            data_bulk.append(opportunity_stage)
+            data_bulk.append(
+                OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
+            )
         OpportunityStage.objects.bulk_create(data_bulk)
         return True
 

@@ -41,7 +41,8 @@ class QuotationConfigUpdateSerializer(serializers.ModelSerializer):
         model = QuotationAppConfig
         fields = (
             'short_sale_config',
-            'long_sale_config'
+            'long_sale_config',
+            'is_require_payment',
         )
 
     def update(self, instance, validated_data):
@@ -72,5 +73,6 @@ class QuotationConfigDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'short_sale_config',
-            'long_sale_config'
+            'long_sale_config',
+            'is_require_payment',
         )

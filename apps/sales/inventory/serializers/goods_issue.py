@@ -233,7 +233,6 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
     inventory_adjustment = serializers.UUIDField(required=False)
     title = serializers.CharField(required=False)
     date_issue = serializers.DateTimeField(required=False)
-    goods_issue_type = serializers.IntegerField(required=False)
     note = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -242,7 +241,6 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
             'title',
             'date_issue',
             'note',
-            'goods_issue_type',
             'inventory_adjustment',
             'goods_issue_datas',
         )
