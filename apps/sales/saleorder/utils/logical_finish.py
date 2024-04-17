@@ -1,5 +1,6 @@
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
+from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
 from apps.sales.report.models import ReportCashflow, ReportCustomer, ReportProduct, ReportRevenue
 from apps.shared import DisperseModel
 
@@ -194,34 +195,70 @@ class DocumentChangeHandler:
     # DELIVERY
     @classmethod
     def handle_delivery(cls, instance, doc_previous):
-        # is_picking = False
-        # config = instance.config_at_that_point
-        # if not config:
-        #     if hasattr(instance.company, 'sales_delivery_config_detail'):
-        #         is_picking = instance.company.sales_delivery_config_detail.is_picking
         instance.delivery_status = doc_previous.delivery_status
         instance.delivery_call = True
         so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
-        if hasattr(doc_previous, 'delivery_of_sale_order'):
+        data_product_change = cls.setup_data_product_change(instance=instance, doc_previous=doc_previous)
+
+        if hasattr(doc_previous, 'picking_of_sale_order'):  # picking
+            doc_previous.picking_of_sale_order.sale_order = instance
+            doc_previous.picking_of_sale_order.sale_order_data = so_data
+            picking_update_fields = ['sale_order', 'sale_order_data']
+            picking_sub = doc_previous.picking_of_sale_order.orderpickingsub_set.filter(**{
+                'tenant_id': instance.tenant_id,
+                'company_id': instance.company_id,
+                'order_picking__sale_order_id': doc_previous.id,
+                'state': 0,
+            }).first()
+            if picking_sub:
+                picking_sub.sale_order_data = so_data
+                picking_sub_update_fields = ['sale_order_data']
+                change_quantity = cls.update_and_check_pick_product(
+                    data_product_change=data_product_change,
+                    picking_sub=picking_sub,
+                )
+                picking_sub.pickup_quantity += change_quantity
+                picking_sub.remaining_quantity += change_quantity
+                picking_sub_update_fields.append('pickup_quantity')
+                picking_sub_update_fields.append('remaining_quantity')
+                if picking_sub.remaining_quantity == 0:
+                    picking_sub.state = 1
+                    picking_sub_update_fields.append('state')
+                picking_sub.save(update_fields=picking_sub_update_fields)
+            else:
+                picking_sub = doc_previous.picking_of_sale_order.orderpickingsub_set.filter(**{
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'order_picking__sale_order_id': doc_previous.id,
+                    'state': 1,
+                }).first()
+                if picking_sub:
+                    cls.create_new_picking_sub(
+                        instance=picking_sub,
+                        data_product_change=data_product_change,
+                        sale_order_data=so_data
+                    )
+            doc_previous.picking_of_sale_order.save(update_fields=picking_update_fields)
+
+        if hasattr(doc_previous, 'delivery_of_sale_order'):  # delivery
             doc_previous.delivery_of_sale_order.sale_order = instance
             doc_previous.delivery_of_sale_order.sale_order_data = so_data
             deli_update_fields = ['sale_order', 'sale_order_data']
-            data_product_change = cls.setup_data_product_change(instance=instance, doc_previous=doc_previous)
             delivery_sub = doc_previous.delivery_of_sale_order.orderdeliverysub_set.filter(**{
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
                 'order_delivery__sale_order_id': doc_previous.id,
-                'state__in': [0, 1]
+                'state__in': [0, 1],
             }).first()
             if delivery_sub:
                 delivery_sub.sale_order_data = so_data
                 deli_sub_update_fields = ['sale_order_data']
-                change_delivery_quantity, change_remaining_quantity = cls.update_and_check_deli_product(
+                change_quantity = cls.update_and_check_deli_product(
                     data_product_change=data_product_change,
                     delivery_sub=delivery_sub,
                 )
-                delivery_sub.delivery_quantity += change_delivery_quantity
-                delivery_sub.remaining_quantity += change_remaining_quantity
+                delivery_sub.delivery_quantity += change_quantity
+                delivery_sub.remaining_quantity += change_quantity
                 deli_sub_update_fields.append('delivery_quantity')
                 deli_sub_update_fields.append('remaining_quantity')
                 if delivery_sub.remaining_quantity == 0:
@@ -231,8 +268,9 @@ class DocumentChangeHandler:
                     deli_update_fields.append('state')
                     instance.delivery_status = 3
                 delivery_sub.save(update_fields=deli_sub_update_fields)
-            instance.save(update_fields=['delivery_status', 'delivery_call'])
             doc_previous.delivery_of_sale_order.save(update_fields=deli_update_fields)
+
+        instance.save(update_fields=['delivery_status', 'delivery_call'])
         return True
 
     @classmethod
@@ -250,15 +288,83 @@ class DocumentChangeHandler:
 
     @classmethod
     def update_and_check_deli_product(cls, data_product_change, delivery_sub):
-        change_delivery_quantity = 0
-        change_remaining_quantity = 0
+        change_quantity = 0
+        for product_deli in delivery_sub.delivery_product_delivery_sub.all():
+            for key, value in data_product_change.items():
+                if str(product_deli.product_id) == key:
+                    product_deli.delivery_quantity += value
+                    product_deli.remaining_quantity += value
+                    if product_deli.remaining_quantity >= 0:
+                        product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
+                        change_quantity += value
+                    break
+        return change_quantity
+
+    @classmethod
+    def update_and_check_pick_product(cls, data_product_change, picking_sub):
+        change_quantity = 0
+        for product_pick in picking_sub.picking_product_picking_sub.all():
+            for key, value in data_product_change.items():
+                if str(product_pick.product_id) == key:
+                    product_pick.pickup_quantity += value
+                    product_pick.remaining_quantity += value
+                    if product_pick.remaining_quantity >= 0:
+                        product_pick.save(update_fields=['pickup_quantity', 'remaining_quantity'])
+                        change_quantity += value
+                    break
+        return change_quantity
+
+    @classmethod
+    def create_new_picking_sub(cls, instance, data_product_change, sale_order_data):
+        picking = instance.order_picking
+        change_quantity = 0
         for key, value in data_product_change.items():
-            product_deli = delivery_sub.delivery_product_delivery_sub.filter(**{'product_id': key}).first()
-            if product_deli:
-                product_deli.delivery_quantity += value
-                product_deli.remaining_quantity += value
-                if product_deli.remaining_quantity >= 0:
-                    product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
-                    change_delivery_quantity += value
-                    change_remaining_quantity += value
-        return change_delivery_quantity, change_remaining_quantity
+            change_quantity += value if value > 0 else 0
+        if change_quantity > 0:
+            pickup_quantity = instance.pickup_quantity + change_quantity
+            picked_quantity_before = instance.picked_quantity_before + instance.picked_quantity
+            remaining_quantity = pickup_quantity - picked_quantity_before
+            # create new sub follow by prev sub
+            new_sub = OrderPickingSub.objects.create(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                order_picking=picking,
+                date_done=None,
+                previous_step=instance,
+                times=instance.times + 1,
+                pickup_quantity=pickup_quantity,
+                picked_quantity_before=picked_quantity_before,
+                remaining_quantity=remaining_quantity,
+                picked_quantity=0,
+                pickup_data=instance.pickup_data,
+                sale_order_data=sale_order_data,
+                delivery_option=instance.delivery_option,
+                config_at_that_point=instance.config_at_that_point,
+                employee_inherit=instance.employee_inherit
+            )
+            picking.sub = new_sub
+            picking.save(update_fields=['sub'])
+            # create prod with new sub id
+            obj_new_prod = []
+            for product_pick in instance.picking_product_picking_sub.all():
+                for key, value in data_product_change.items():
+                    if str(product_pick.product_id) == key:
+                        pickup_quantity = product_pick.pickup_quantity + value
+                        picked_quantity_before = product_pick.picked_quantity_before + product_pick.picked_quantity
+                        remaining_quantity = pickup_quantity - picked_quantity_before
+                        new_item = OrderPickingProduct(
+                            product_data=product_pick.product_data,
+                            uom_data=product_pick.uom_data,
+                            uom_id=product_pick.uom_id,
+                            pickup_quantity=pickup_quantity,
+                            picked_quantity_before=picked_quantity_before,
+                            remaining_quantity=remaining_quantity,
+                            picked_quantity=0,
+                            picking_sub=new_sub,
+                            product_id=product_pick.product_id,
+                            order=product_pick.order
+                        )
+                        new_item.before_save()
+                        obj_new_prod.append(new_item)
+            OrderPickingProduct.objects.bulk_create(obj_new_prod)
+        return True
