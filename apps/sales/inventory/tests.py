@@ -564,7 +564,7 @@
 #         return response
 #
 #     def create_new_warehouse(self):
-#         city = [item for item in self.get_city().data['result'] if item['title'] == 'TP Hồ Chí Minh']
+#         city = [item for item in self.get_city().data['result'] if item['title'] == 'Thành Phố Hồ Chí Minh']
 #         district = [item for item in self.get_district(city[0]['id']).data['result'] if item['title'] == 'Quận 7']
 #         ward = self.get_ward().data['result'][0]['id']
 #
@@ -575,7 +575,7 @@
 #             'is_active': True,
 #             'address': 'chung cư DEF',
 #             'warehouse_type': 0,
-#             'full_address': 'chung cư DEF, Phường Phú Mỹ, Quận 7, TP Hồ Chí Minh',
+#             'full_address': 'chung cư DEF, Phường Phú Mỹ, Quận 7, Thành Phố Hồ Chí Minh',
 #             'city': city[0]['id'],
 #             'district': district[0]['id'],
 #             'ward': ward,

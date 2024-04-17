@@ -154,6 +154,9 @@ class WareHouseListForInventoryAdjustment(BaseListMixin):
         "is_active": ['exact'],
     }
 
+    def get_queryset(self):
+        return super().get_queryset().order_by('code')
+
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
         login_require=True, auth_require=False,

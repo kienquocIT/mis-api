@@ -115,6 +115,7 @@ class ContactListSerializer(serializers.ModelSerializer):
         model = Contact
         fields = (
             'id',
+            'code',
             'fullname',
             'job_title',
             'owner',

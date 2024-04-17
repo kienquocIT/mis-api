@@ -134,15 +134,15 @@ class GoodsReceipt(DataAbstractModel):
                         'stock_type': 1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
-                        'trans_title': 'Goods receipt',
-                        'quantity': child.quantity_import,
+                        'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
+                        'quantity': item.quantity_import,
                         'cost': item.product_unit_price,
-                        'value': item.product_unit_price * child.quantity_import,
+                        'value': item.product_unit_price * item.quantity_import,
                         'lot_data': lot_data
                     })
                 else:
-                    existed['quantity'] += child.quantity_import
-                    existed['value'] += item.product_unit_price * child.quantity_import
+                    existed['quantity'] += item.quantity_import
+                    existed['value'] += item.product_unit_price * item.quantity_import
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,

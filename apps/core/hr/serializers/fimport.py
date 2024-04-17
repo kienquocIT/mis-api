@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 
 from apps.core.account.models import User
@@ -267,12 +269,23 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
             })
         return []
 
+    phone = serializers.CharField(max_length=25)
+
+    @classmethod
+    def validate_phone(cls, attrs):
+        if attrs:
+            regex = r"""^((\+84)|0)([35789]|1[2389])([0-9]{8})$"""
+            pattern = re.compile(regex)
+            if pattern.match(attrs):
+                return attrs
+            raise serializers.ValidationError({"phone": AccountMsg.PHONE_FORMAT_VN_INCORRECT})
+        return None
+
     date_joined = serializers.DateField(input_formats=['%d/%m/%Y', 'iso-8601'], allow_null=True)
     dob = serializers.DateField(input_formats=['%d/%m/%Y', 'iso-8601'], allow_null=True)
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
     email = serializers.CharField(max_length=150)
-    phone = serializers.CharField(max_length=25)
 
     def create(self, validated_data):
         """

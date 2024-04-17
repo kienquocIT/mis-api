@@ -13,7 +13,10 @@ class BaseMsg:
     BLOCK_PHISHING_CODE = _('The content has been blocked because contains phishing code')
     CAUSE_DUPLICATE = _("The records cause duplicate errors")
     CODE_IS_EXISTS = _('Code is exists')
+    CODE_NOT_EXIST = _('Code is not exist')
     CODE_NOT_NULL = _('Code must not null')
+    REQUIRED = _('This field is required')
+    FORMAT_NOT_MATCH = _('The value formatting is incorrect')
 
 
 class PermissionMsg:

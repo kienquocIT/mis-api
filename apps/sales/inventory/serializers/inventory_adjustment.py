@@ -47,6 +47,7 @@ def create_inventory_adjustment_items(obj, data):
 
 class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
     warehouses = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustment
@@ -55,7 +56,8 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'warehouses',
-            'date_created'
+            'date_created',
+            'system_status'
         )
 
     @classmethod
@@ -72,6 +74,10 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
             )
         return data
 
+    @classmethod
+    def get_system_status(cls, obj):
+        return 'Open' if obj else None
+
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
     warehouses = serializers.SerializerMethodField()
@@ -87,7 +93,7 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
             'warehouses',
             'employees_in_charge',
             'inventory_adjustment_item_mapped',
-            'date_created'
+            'date_created',
         )
 
     @classmethod
@@ -179,12 +185,13 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
 class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryAdjustment
-        fields = ()
+        fields = ('title',)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
 
@@ -216,6 +223,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
                 'id': obj.product_mapped_id,
                 'title': obj.product_mapped.title,
                 'code': obj.product_mapped.code,
+                'description': obj.product_mapped.description,
             }
         return {}
 

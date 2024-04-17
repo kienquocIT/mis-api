@@ -5,7 +5,7 @@ from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, Inventory
 
 __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssueCreateSerializer']
 
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS
+from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE
 from apps.shared.translations.goods_issue import GIMsg
 
 
@@ -116,12 +116,11 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.system_status))
+        return 'Open' if obj else None
 
 
 class GoodsIssueDetailSerializer(serializers.ModelSerializer):
     inventory_adjustment = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -132,14 +131,9 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
             'date_issue',
             'note',
             'goods_issue_type',
-            'system_status',
             'goods_issue_datas',
             'inventory_adjustment',
         )
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_inventory_adjustment(cls, obj):
@@ -232,14 +226,12 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
     goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer(), required=False)
     inventory_adjustment = serializers.UUIDField(required=False)
     title = serializers.CharField(required=False)
-    date_issue = serializers.DateTimeField(required=False)
     note = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
-            'date_issue',
             'note',
             'inventory_adjustment',
             'goods_issue_datas',
@@ -250,11 +242,7 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
         try:
             return InventoryAdjustment.objects.get(id=value)
         except InventoryAdjustment.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'inventory_adjustment': GIMsg.IA_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'inventory_adjustment': GIMsg.IA_NOT_EXIST})
 
     @classmethod
     def revert_stock_amount(cls, instance):

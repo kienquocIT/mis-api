@@ -785,7 +785,7 @@ def re_init_available():
     # leave_available_map_employee
     LeaveAvailable.objects.all().delete()
     for obj in Company.objects.all():
-        for employee in Employee.objects.all():
+        for employee in Employee.objects.filter(company=obj):
             leave_available_map_employee(employee, obj)
 
 
