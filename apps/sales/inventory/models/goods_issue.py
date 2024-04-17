@@ -1,6 +1,8 @@
 import json
 
 from django.db import models
+
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -54,6 +56,32 @@ class GoodsIssue(DataAbstractModel):
         )
     )
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        activities_data = []
+        for item in instance.goods_issue_product.all():
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.warehouse,
+                'system_date': instance.date_created,
+                'posting_date': None,
+                'document_date': None,
+                'stock_type': -1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods issue',
+                'quantity': item.quantity,
+                'cost': item.unit_cost,
+                'value': item.unit_cost * item.quantity,
+                'lot_data': []
+            })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            activities_data
+        )
+        return True
+
     class Meta:
         verbose_name = 'Goods Transfer'
         verbose_name_plural = 'Goods Transfer'
@@ -69,11 +97,10 @@ class GoodsIssue(DataAbstractModel):
             is_delete=False
         ).count()
         char = "GI"
-        if self.system_status in [2, 3]:  # added, finish
-            if not self.code:
-                temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-                code = f"{char}{temper}"
-                self.code = code
+        if not self.code:
+            temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
         # hit DB
         super().save(*args, **kwargs)
 

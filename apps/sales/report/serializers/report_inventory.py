@@ -200,7 +200,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
-    def get_data_stock_activity_for_goods_receipt(cls, log, data_stock_activity):
+    def get_data_stock_activity_for_in(cls, log, data_stock_activity):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
                 data_stock_activity.append({
@@ -238,44 +238,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         return data_stock_activity
 
     @classmethod
-    def get_data_stock_activity_for_goods_return(cls, log, data_stock_activity):
-        if len(log.lot_data) > 0:
-            for lot in log.lot_data:
-                data_stock_activity.append({
-                    'trans_id': log.trans_id,
-                    'trans_code': log.trans_code,
-                    'trans_title': log.trans_title,
-                    'in_quantity': lot.get('lot_quantity'),
-                    'in_value': lot.get('lot_value'),
-                    'out_quantity': '',
-                    'out_value': '',
-                    'current_quantity': log.current_quantity,
-                    'current_cost': log.current_cost,
-                    'current_value': log.current_value,
-                    'system_date': log.system_date,
-                    'lot_number': lot.get('lot_number'),
-                    'expire_date': lot.get('lot_expire_date')
-                })
-        else:
-            data_stock_activity.append({
-                'trans_id': log.trans_id,
-                'trans_code': log.trans_code,
-                'trans_title': log.trans_title,
-                'in_quantity': log.quantity,
-                'in_value': log.cost * log.quantity,
-                'out_quantity': '',
-                'out_value': '',
-                'current_quantity': log.current_quantity,
-                'current_cost': log.current_cost,
-                'current_value': log.current_value,
-                'system_date': log.system_date,
-                'lot_number': '',
-                'expire_date': ''
-            })
-        return data_stock_activity
-
-    @classmethod
-    def get_data_stock_activity_for_delivery(cls, log, data_stock_activity):
+    def get_data_stock_activity_for_out(cls, log, data_stock_activity):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
                 data_stock_activity.append({
@@ -319,6 +282,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
+        print(obj.product.report_inventory_by_month_product.filter(
+            warehouse_id=obj.warehouse_id,
+            report_inventory__period_mapped_id=obj.period_mapped_id,
+            report_inventory__sub_period_order=obj.sub_period_order,
+        ).count())
         for log in obj.product.report_inventory_by_month_product.filter(
             warehouse_id=obj.warehouse_id,
             report_inventory__period_mapped_id=obj.period_mapped_id,
@@ -332,12 +300,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_quantity += log.quantity
                     sum_out_value += log.value
                 # lấy detail cho từng TH
-                if log.trans_title == 'Goods receipt':
-                    data_stock_activity = self.get_data_stock_activity_for_goods_receipt(log, data_stock_activity)
-                elif log.trans_title == 'Goods return':
-                    data_stock_activity = self.get_data_stock_activity_for_goods_return(log, data_stock_activity)
-                elif log.trans_title == 'Delivery':
-                    data_stock_activity = self.get_data_stock_activity_for_delivery(log, data_stock_activity)
+                if log.trans_title in ['Goods receipt', 'Goods return', 'Goods receipt (IA)']:
+                    data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity)
+                elif log.trans_title in ['Delivery', 'Goods issue']:
+                    data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
