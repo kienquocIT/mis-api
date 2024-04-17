@@ -11,6 +11,7 @@ class HrMsg:
     PERMISSIONS_BY_CONFIGURED_OPTION_INCORRECT = _('Permissions item option is incorrect.')
     PERMISSIONS_BY_CONFIGURED_NOT_EXIST = _('Permissions does not exist.')
 
+    EMPLOYEE_NOT_FOUND = _('Employee is not exists')
     EMPLOYEE_REQUIRED = _('Employee must be required')
     EMPLOYEE_WAS_LINKED = _('User still not map with The employee please contact your Admin!')
     EMPLOYEE_SOME_NOT_FOUND = _('Some employee is not available')

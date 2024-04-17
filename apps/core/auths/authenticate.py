@@ -1,8 +1,9 @@
+from django.conf import settings
+from django.utils import translation
+
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
 from rest_framework_simplejwt.settings import api_settings
-
-from django.utils import translation
 
 
 class MyCustomJWTAuthenticate(JWTAuthentication):
@@ -40,5 +41,7 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         user = self.get_user(token)
 
         if user and token and isinstance(user, self.user_model):
+            if settings.DEBUG_PERMIT:
+                print('active language [authenticate]:', user.language if user.language else 'vi', user, user.id)
             translation.activate(user.language if user.language else 'vi')
         return user, token

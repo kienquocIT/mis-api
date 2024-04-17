@@ -34,3 +34,5 @@ class AccountsMsg:
     TOTAL_EMPLOYEES_NOT_NONE = _('Total employees must not NULL.')
     ACCOUNT_SHIPPING_NOT_EXIST = _('Account shipping address does not exist.')
     ACCOUNT_BILLING_NOT_EXIST = _('Account billing address does not exist.')
+    ADDRESS_ONLY_ONE_DEFAULT = _('Only one address is the default')
+    ACCOUNT_RELATE_ONLY_ONE_OWNER = _('Only one contact can be the owner of the account')

@@ -1,9 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models.accounts import AccountActivity
-from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
+from apps.sales.saleorder.utils.logical_after_finish import AfterFinishHandler, DocumentChangeHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
@@ -243,152 +241,16 @@ class SaleOrder(DataAbstractModel):
         return code
 
     @classmethod
-    def update_product_wait_delivery_amount(cls, instance):
-        for product_order in instance.sale_order_product_sale_order.all():
-            if product_order.product:
-                uom_product_inventory = product_order.product.inventory_uom
-                uom_product_so = product_order.unit_of_measure
-                final_ratio = 1
-                if uom_product_inventory and uom_product_so:
-                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
-                product_order.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_order': product_order.product_quantity * final_ratio,
-                    'update_fields': ['wait_delivery_amount', 'available_amount']
-                })
-        return True
-
-    @classmethod
-    def push_to_report_revenue(cls, instance):
-        ReportRevenue.push_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
-            date_approved=instance.date_approved,
-            revenue=instance.indicator_revenue,
-            gross_profit=instance.indicator_gross_profit,
-            net_income=instance.indicator_net_income,
-        )
-        return True
-
-    @classmethod
-    def push_to_report_product(cls, instance):
-        gross_profit_rate = 0
-        net_income_rate = 0
-        # total_pretax = instance.total_product_pretax_amount
-        # total_discount = instance.total_product_discount
-        if instance.indicator_revenue > 0:
-            gross_profit_rate = instance.indicator_gross_profit / instance.indicator_revenue
-            net_income_rate = instance.indicator_net_income / instance.indicator_revenue
-        # if total_pretax > 0:
-        for so_product in instance.sale_order_product_sale_order.filter(
-                is_promotion=False, is_shipping=False, is_group=False,
-        ):
-            # subtotal = so_product.product_unit_price * so_product.product_quantity
-            # ratio = subtotal / total_pretax
-            # discount = total_discount * ratio
-            # revenue = subtotal - discount
-            revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
-            gross_profit = revenue * gross_profit_rate
-            net_income = revenue * net_income_rate
-            ReportProduct.push_from_so(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                product_id=so_product.product_id,
-                employee_created_id=instance.employee_created_id,
-                employee_inherit_id=instance.employee_inherit_id,
-                group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
-                date_approved=instance.date_approved,
-                revenue=revenue,
-                gross_profit=gross_profit,
-                net_income=net_income,
-            )
-        return True
-
-    @classmethod
-    def push_to_report_customer(cls, instance):
-        ReportCustomer.push_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            customer_id=instance.customer_id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
-            date_approved=instance.date_approved,
-            revenue=instance.indicator_revenue,
-            gross_profit=instance.indicator_gross_profit,
-            net_income=instance.indicator_net_income,
-        )
-        return True
-
-    @classmethod
-    def push_to_report_cashflow(cls, instance):
-        bulk_data = [ReportCashflow(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.id,
-            cashflow_type=2,
-            employee_inherit_id=instance.employee_inherit_id,
-            group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
-            due_date=payment_stage.due_date,
-            value_estimate_sale=payment_stage.value_before_tax,
-        ) for payment_stage in instance.payment_stage_sale_order.all()]
-        ReportCashflow.push_from_so_po(bulk_data)
-        return True
-
-    @classmethod
-    def push_to_final_acceptance(cls, instance):
-        list_data_indicator = [
-            {
+    def check_change_document(cls, instance):
+        # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
+        if hasattr(instance, 'delivery_of_sale_order'):
+            if not instance.delivery_of_sale_order.orderdeliverysub_set.filter(**{
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
-                'sale_order_id': instance.id,
-                'sale_order_indicator_id': so_ind.id,
-                'indicator_id': so_ind.quotation_indicator_id,
-                'indicator_value': so_ind.indicator_value,
-                'different_value': 0 - so_ind.indicator_value,
-                'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
-                'order': so_ind.order,
-                'is_indicator': True,
-            }
-            for so_ind in instance.sale_order_indicator_sale_order.all()
-        ]
-        FinalAcceptance.create_final_acceptance_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            opportunity_id=instance.opportunity_id,
-            list_data_indicator=list_data_indicator
-        )
-        return True
-
-    @classmethod
-    def update_opportunity_stage_by_so(cls, instance):
-        if instance.opportunity:
-            instance.opportunity.save(**{
-                'sale_order_status': instance.system_status,
-            })
-        return True
-
-    @classmethod
-    def push_to_customer_activity(cls, instance):
-        if instance.customer:
-            AccountActivity.push_activity(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                account_id=instance.customer_id,
-                app_code=instance._meta.label_lower,
-                document_id=instance.id,
-                title=instance.title,
-                code=instance.code,
-                date_activity=instance.date_approved,
-                revenue=instance.indicator_revenue,
-            )
+                'order_delivery__sale_order_id': instance.id,
+                'state__in': [0, 1]
+            }).exists():
+                return False
         return True
 
     def save(self, *args, **kwargs):
@@ -410,18 +272,20 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        self.update_product_wait_delivery_amount(self)
+                        AfterFinishHandler.update_product_wait_delivery_amount(self)
                         # opportunity
-                        self.update_opportunity_stage_by_so(self)
+                        AfterFinishHandler.update_opportunity_stage_by_so(self)
                         # customer
-                        self.push_to_customer_activity(self)
+                        AfterFinishHandler.push_to_customer_activity(self)
                         # reports
-                        self.push_to_report_revenue(self)
-                        self.push_to_report_product(self)
-                        self.push_to_report_customer(self)
-                        self.push_to_report_cashflow(self)
+                        AfterFinishHandler.push_to_report_revenue(self)
+                        AfterFinishHandler.push_to_report_product(self)
+                        AfterFinishHandler.push_to_report_customer(self)
+                        AfterFinishHandler.push_to_report_cashflow(self)
                         # final acceptance
-                        self.push_to_final_acceptance(self)
+                        AfterFinishHandler.push_to_final_acceptance(self)
+                        # change document handle
+                        DocumentChangeHandler.change_handle(self)
 
         # hit DB
         super().save(*args, **kwargs)
