@@ -69,10 +69,11 @@ class GoodsIssue(DataAbstractModel):
             is_delete=False
         ).count()
         char = "GI"
-        if not self.code:
-            temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        if self.system_status in [2, 3]:  # added, finish
+            if not self.code:
+                temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
+                code = f"{char}{temper}"
+                self.code = code
         # hit DB
         super().save(*args, **kwargs)
 
