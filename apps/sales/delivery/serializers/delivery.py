@@ -562,7 +562,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             delivery_quantity=instance.delivery_quantity,
             delivered_quantity_before=delivered,
             remaining_quantity=remain,
-            ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
+            # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
+            ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
             delivery_data=None,
             is_updated=False,
             state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
@@ -575,25 +576,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             employee_inherit=instance.employee_inherit
         )
         return new_sub
-
-    @classmethod
-    def config_one(cls, instance, total_done, product_done, config):  # none_picking_one_delivery
-        if instance.remaining_quantity == total_done:
-            # update product and sub date_done
-            cls.update_prod(instance, product_done, config)
-            instance.date_done = timezone.now()
-            instance.state = 2
-            instance.is_updated = True
-            instance.save(
-                update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
-            )
-        else:
-            raise serializers.ValidationError(
-                {
-                    'products': _('Done quantity not equal remain quantity!')
-                }
-            )
 
     @classmethod
     def config_two(cls, instance, total_done, product_done, config):  # none_picking_many_delivery
@@ -618,28 +600,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def config_three(cls, instance, total_done, product_done, config):  # many_picking_one_delivery
-        order_delivery = instance.order_delivery
-        if instance.remaining_quantity == total_done:
-            cls.update_prod(instance, product_done, config)
-            instance.date_done = timezone.now()
-            instance.state = 2
-            instance.is_updated = True
-            instance.save(
-                update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
-            )
-            order_delivery.state = 2
-            order_delivery.save(update_fields=['state'])
-        else:
-            raise serializers.ValidationError(
-                {
-                    'products': _('Done quantity not equal remain quantity!')
-                }
-            )
-
-    @classmethod
-    def config_four(cls, instance, total_done, product_done, config):  # many_picking_many_delivery
+    def config_four(cls, instance, total_done, product_done, config):  # picking_many_delivery
         cls.update_prod(instance, product_done, config)
         order_delivery = instance.order_delivery
         if instance.remaining_quantity > total_done:
@@ -739,17 +700,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             try:
                 with transaction.atomic():
                     self.handle_attach_file(instance, validated_data)
-                    if not is_partial and not is_picking:
-                        # config 1 (one_picking_one_delivery)
-                        self.config_one(instance, total_done, product_done, config)
-                    elif is_partial and not is_picking:
-                        # config 2 (one_picking_many_delivery)
+                    if is_partial and not is_picking:
+                        # config 2 (none_picking_many_delivery)
                         self.config_two(instance, total_done, product_done, config)
-                    elif is_picking and not is_partial:
-                        # config 3 (many_picking_one_delivery)
-                        self.config_three(instance, total_done, product_done, config)
-                    else:
-                        # config 4 (many_picking_many_delivery)
+                    if is_partial and is_picking:
+                        # config 4 (picking_many_delivery)
                         self.config_four(instance, total_done, product_done, config)
             except Exception as err:
                 print(err)

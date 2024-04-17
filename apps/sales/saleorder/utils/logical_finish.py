@@ -13,7 +13,7 @@ class DocHandler:
         return None
 
 
-class AfterFinishHandler:
+class FinishHandler:
     @classmethod
     def update_product_wait_delivery_amount(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
@@ -194,6 +194,11 @@ class DocumentChangeHandler:
     # DELIVERY
     @classmethod
     def handle_delivery(cls, instance, doc_previous):
+        # is_picking = False
+        # config = instance.config_at_that_point
+        # if not config:
+        #     if hasattr(instance.company, 'sales_delivery_config_detail'):
+        #         is_picking = instance.company.sales_delivery_config_detail.is_picking
         instance.delivery_status = doc_previous.delivery_status
         instance.delivery_call = True
         so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
