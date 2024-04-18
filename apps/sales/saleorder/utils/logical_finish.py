@@ -13,7 +13,7 @@ class DocHandler:
         return None
 
 
-class AfterFinishHandler:
+class FinishHandler:
     @classmethod
     def update_product_wait_delivery_amount(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
@@ -194,6 +194,11 @@ class DocumentChangeHandler:
     # DELIVERY
     @classmethod
     def handle_delivery(cls, instance, doc_previous):
+        # is_picking = False
+        # config = instance.config_at_that_point
+        # if not config:
+        #     if hasattr(instance.company, 'sales_delivery_config_detail'):
+        #         is_picking = instance.company.sales_delivery_config_detail.is_picking
         instance.delivery_status = doc_previous.delivery_status
         instance.delivery_call = True
         so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
@@ -211,11 +216,15 @@ class DocumentChangeHandler:
             if delivery_sub:
                 delivery_sub.sale_order_data = so_data
                 deli_sub_update_fields = ['sale_order_data']
-                is_all_done = cls.update_and_check_deli_product(
+                change_delivery_quantity, change_remaining_quantity = cls.update_and_check_deli_product(
                     data_product_change=data_product_change,
                     delivery_sub=delivery_sub,
                 )
-                if is_all_done is True:
+                delivery_sub.delivery_quantity += change_delivery_quantity
+                delivery_sub.remaining_quantity += change_remaining_quantity
+                deli_sub_update_fields.append('delivery_quantity')
+                deli_sub_update_fields.append('remaining_quantity')
+                if delivery_sub.remaining_quantity == 0:
                     delivery_sub.state = 2
                     deli_sub_update_fields.append('state')
                     doc_previous.delivery_of_sale_order.state = 2
@@ -241,8 +250,8 @@ class DocumentChangeHandler:
 
     @classmethod
     def update_and_check_deli_product(cls, data_product_change, delivery_sub):
-        num_keys = len(data_product_change)
-        product_check = 0
+        change_delivery_quantity = 0
+        change_remaining_quantity = 0
         for key, value in data_product_change.items():
             product_deli = delivery_sub.delivery_product_delivery_sub.filter(**{'product_id': key}).first()
             if product_deli:
@@ -250,8 +259,6 @@ class DocumentChangeHandler:
                 product_deli.remaining_quantity += value
                 if product_deli.remaining_quantity >= 0:
                     product_deli.save(update_fields=['delivery_quantity', 'remaining_quantity'])
-                    if product_deli.remaining_quantity == 0:
-                        product_check += 1
-        if product_check == num_keys:
-            return True
-        return False
+                    change_delivery_quantity += value
+                    change_remaining_quantity += value
+        return change_delivery_quantity, change_remaining_quantity

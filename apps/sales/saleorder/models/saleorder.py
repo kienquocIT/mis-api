@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.saleorder.utils.logical_after_finish import AfterFinishHandler, DocumentChangeHandler
+from apps.sales.saleorder.utils import FinishHandler, DocumentChangeHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
@@ -272,18 +272,18 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        AfterFinishHandler.update_product_wait_delivery_amount(self)
+                        FinishHandler.update_product_wait_delivery_amount(self)
                         # opportunity
-                        AfterFinishHandler.update_opportunity_stage_by_so(self)
+                        FinishHandler.update_opportunity_stage_by_so(self)
                         # customer
-                        AfterFinishHandler.push_to_customer_activity(self)
+                        FinishHandler.push_to_customer_activity(self)
                         # reports
-                        AfterFinishHandler.push_to_report_revenue(self)
-                        AfterFinishHandler.push_to_report_product(self)
-                        AfterFinishHandler.push_to_report_customer(self)
-                        AfterFinishHandler.push_to_report_cashflow(self)
+                        FinishHandler.push_to_report_revenue(self)
+                        FinishHandler.push_to_report_product(self)
+                        FinishHandler.push_to_report_customer(self)
+                        FinishHandler.push_to_report_cashflow(self)
                         # final acceptance
-                        AfterFinishHandler.push_to_final_acceptance(self)
+                        FinishHandler.push_to_final_acceptance(self)
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
 
