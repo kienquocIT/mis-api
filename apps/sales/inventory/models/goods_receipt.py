@@ -298,7 +298,7 @@ class GoodsReceipt(DataAbstractModel):
                     lot_data = [{
                         'lot_id': str(lot.id),
                         'lot_number': lot.lot_number,
-                        'lot_quantity': lot.quantity_import,
+                        'lot_quantity': item.quantity_import,
                         'lot_value': item.product_subtotal_price,
                         'lot_expire_date': str(lot.expire_date)
                     } for lot in child.goods_receipt_lot_gr_warehouse.all()]

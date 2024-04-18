@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse
+from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 
 __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssueCreateSerializer']
+
+from apps.sales.report.models import ReportInventorySub
 
 from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE
 from apps.shared.translations.goods_issue import GIMsg
@@ -216,10 +218,49 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
 
         return True
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        activities_data = []
+        for item in instance.goods_issue_product.all():
+            lot_data = []
+            prd_wh_lot = ProductWareHouseLot.objects.filter(
+                product_warehouse__product=item.product,
+                product_warehouse__warehouse=item.warehouse
+            ).first()
+            if prd_wh_lot:
+                lot_data.append({
+                    'lot_id': str(prd_wh_lot.id),
+                    'lot_number': prd_wh_lot.lot_number,
+                    'lot_quantity': item.quantity,
+                    'lot_value': item.unit_cost * item.quantity,
+                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                })
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.warehouse,
+                'system_date': instance.date_created,
+                'posting_date': None,
+                'document_date': None,
+                'stock_type': -1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods issue',
+                'quantity': item.quantity,
+                'cost': item.unit_cost,
+                'value': item.unit_cost * item.quantity,
+                'lot_data': []
+            })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            activities_data
+        )
+        return True
+
     def create(self, validated_data):
         instance = GoodsIssue.objects.create(**validated_data)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
-        instance.prepare_data_for_logging(instance)
+        self.prepare_data_for_logging(instance)
         return instance
 
 
