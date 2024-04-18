@@ -199,7 +199,32 @@ class DocumentChangeHandler:
         instance.delivery_call = True
         so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
         data_product_change = cls.setup_data_product_change(instance=instance, doc_previous=doc_previous)
+        # picking
+        cls.update_picking(
+            instance=instance, doc_previous=doc_previous, so_data=so_data, data_product_change=data_product_change
+        )
+        # delivery
+        cls.update_delivery(
+            instance=instance, doc_previous=doc_previous, so_data=so_data, data_product_change=data_product_change
+        )
+        instance.save(update_fields=['delivery_status', 'delivery_call'])
+        return True
 
+    @classmethod
+    def setup_data_product_change(cls, instance, doc_previous):
+        data_product_change = {}
+        for so_product in doc_previous.sale_order_product_sale_order.all():
+            if so_product.product_id not in data_product_change:
+                data_product_change.update({str(so_product.product_id): so_product.product_quantity})
+            for so_product_change in instance.sale_order_product_sale_order.all():
+                if so_product_change.product_id == so_product.product_id:
+                    quantity_change = so_product_change.product_quantity - so_product.product_quantity
+                    data_product_change[str(so_product.product_id)] = quantity_change
+                    break
+        return data_product_change
+
+    @classmethod
+    def update_picking(cls, instance, doc_previous, so_data, data_product_change):
         if hasattr(doc_previous, 'picking_of_sale_order'):  # picking
             doc_previous.picking_of_sale_order.sale_order = instance
             doc_previous.picking_of_sale_order.sale_order_data = so_data
@@ -214,8 +239,7 @@ class DocumentChangeHandler:
                 picking_sub.sale_order_data = so_data
                 picking_sub_update_fields = ['sale_order_data']
                 change_quantity = cls.update_and_check_pick_product(
-                    data_product_change=data_product_change,
-                    picking_sub=picking_sub,
+                    data_product_change=data_product_change, picking_sub=picking_sub,
                 )
                 picking_sub.pickup_quantity += change_quantity
                 picking_sub.remaining_quantity += change_quantity
@@ -234,12 +258,13 @@ class DocumentChangeHandler:
                 }).first()
                 if picking_sub:
                     cls.create_new_picking_sub(
-                        instance=picking_sub,
-                        data_product_change=data_product_change,
-                        sale_order_data=so_data
+                        instance=picking_sub, data_product_change=data_product_change, sale_order_data=so_data
                     )
             doc_previous.picking_of_sale_order.save(update_fields=picking_update_fields)
+        return True
 
+    @classmethod
+    def update_delivery(cls, instance, doc_previous, so_data, data_product_change):
         if hasattr(doc_previous, 'delivery_of_sale_order'):  # delivery
             doc_previous.delivery_of_sale_order.sale_order = instance
             doc_previous.delivery_of_sale_order.sale_order_data = so_data
@@ -254,8 +279,7 @@ class DocumentChangeHandler:
                 delivery_sub.sale_order_data = so_data
                 deli_sub_update_fields = ['sale_order_data']
                 change_quantity = cls.update_and_check_deli_product(
-                    data_product_change=data_product_change,
-                    delivery_sub=delivery_sub,
+                    data_product_change=data_product_change, delivery_sub=delivery_sub,
                 )
                 delivery_sub.delivery_quantity += change_quantity
                 delivery_sub.remaining_quantity += change_quantity
@@ -269,22 +293,7 @@ class DocumentChangeHandler:
                     instance.delivery_status = 3
                 delivery_sub.save(update_fields=deli_sub_update_fields)
             doc_previous.delivery_of_sale_order.save(update_fields=deli_update_fields)
-
-        instance.save(update_fields=['delivery_status', 'delivery_call'])
         return True
-
-    @classmethod
-    def setup_data_product_change(cls, instance, doc_previous):
-        data_product_change = {}
-        for so_product in doc_previous.sale_order_product_sale_order.all():
-            if so_product.product_id not in data_product_change:
-                data_product_change.update({str(so_product.product_id): so_product.product_quantity})
-            for so_product_change in instance.sale_order_product_sale_order.all():
-                if so_product_change.product_id == so_product.product_id:
-                    quantity_change = so_product_change.product_quantity - so_product.product_quantity
-                    data_product_change[str(so_product.product_id)] = quantity_change
-                    break
-        return data_product_change
 
     @classmethod
     def update_and_check_deli_product(cls, data_product_change, delivery_sub):
