@@ -167,8 +167,9 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
             unit_price=data['unit_price']
         )
         ProductWareHouse.pop_from_transfer(
-            instance_id=data['warehouse_product']['id'],
+            product_warehouse_id=data['warehouse_product']['id'],
             amount=data['quantity'],
+            data=data
         )
         return True
 
