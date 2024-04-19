@@ -452,9 +452,9 @@ def get_instance_stage(instance):
 def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close):
     new_instance_current_stage = []
     for stage in stages:
-        if stage.indicator in ['Delivery', 'Deal Close']:
+        if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
             if stage.indicator in current_stage_indicator:
-                if stage.win_rate == 0 or is_deal_close:
+                if stage.win_rate == 0 and is_deal_close:
                     new_instance_current_stage[0]['current'] = 0
                     new_instance_current_stage.append({
                         'id': stage.id,
@@ -470,7 +470,7 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
                         'current': 1 if len(new_instance_current_stage) == 0 else 0
                     })
         else:
-            if stage.win_rate == 0 or is_deal_close:
+            if stage.win_rate == 0 and is_deal_close:
                 new_instance_current_stage[0]['current'] = 0
                 new_instance_current_stage.append({
                     'id': stage.id,
