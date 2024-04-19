@@ -488,27 +488,35 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
     return new_instance_current_stage
 
 
+def check_or(stage_condition, instance_stage):
+    flag = False
+    for item in stage_condition:
+        if item in instance_stage:
+            flag = True
+            break
+    return flag
+
+
+def check_and(stage_condition, instance_stage):
+    flag = True
+    for item in stage_condition:
+        if item not in instance_stage:
+            flag = False
+    return flag
+
+
 def get_instance_current_stage(opp_config_stage, instance_stage, instance):
     instance_current_stage = []
     current_stage_indicator = []
     for stage in opp_config_stage:
         if stage['logical_operator']:
-            flag = False
-            for item in stage['condition']:
-                if item in instance_stage:
-                    flag = True
-                    break
-            if flag:
+            if check_or(stage['condition'], instance_stage):
                 current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
         else:
-            flag = True
-            for item in stage['condition']:
-                if item not in instance_stage:
-                    flag = False
-            if flag:
+            if check_and(stage['condition'], instance_stage):
                 current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
