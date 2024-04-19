@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
     PaymentTerm, Term, Price,
 )
+from apps.masterdata.saledata.models.accounts import ACCOUNT_TYPE_SELECTION
 from apps.masterdata.saledata.serializers import (
     create_employee_map_account, add_account_types_information,
     add_shipping_address_information, add_billing_address_information,
@@ -574,6 +575,8 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'account_types_mapped': BaseMsg.CODE_NOT_EXIST})
         raise serializers.ValidationError({'account_types_mapped': BaseMsg.REQUIRED})
 
+    account_type_selection = serializers.ChoiceField(choices=ACCOUNT_TYPE_SELECTION)
+
     manager = serializers.CharField()
 
     @classmethod
@@ -825,6 +828,7 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
             'name',
             'code',
             'account_type',
+            'account_type_selection',
             'account_group',
             'manager',
             'industry',
