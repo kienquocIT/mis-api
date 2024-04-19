@@ -206,7 +206,6 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
 
 
 class GoodsTransferDetailSerializer(serializers.ModelSerializer):
-    system_status = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
 
     class Meta:
@@ -222,10 +221,6 @@ class GoodsTransferDetailSerializer(serializers.ModelSerializer):
             'note',
             'goods_transfer_datas'
         )
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_agency(cls, obj):

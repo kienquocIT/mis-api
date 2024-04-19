@@ -131,7 +131,6 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
 class GoodsIssueDetailSerializer(serializers.ModelSerializer):
     inventory_adjustment = serializers.SerializerMethodField()
     goods_issue_datas = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -186,12 +185,6 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
             'lot_data': item.lot_data,
             'sn_data': item.sn_data
         } for item in obj.goods_issue_product.all()]
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
 
 class GoodsIssueCreateSerializer(serializers.ModelSerializer):
