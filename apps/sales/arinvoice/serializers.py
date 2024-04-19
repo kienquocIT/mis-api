@@ -10,7 +10,7 @@ from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, \
     ARInvoiceSign
-from apps.shared import SaleMsg
+from apps.shared import SaleMsg, SYSTEM_STATUS
 
 __all__ = [
     'DeliveryListSerializerForARInvoice',
@@ -24,6 +24,7 @@ __all__ = [
 class ARInvoiceListSerializer(serializers.ModelSerializer):
     customer_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -60,6 +61,12 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title
         } if obj.sale_order_mapped else {}
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 def create_delivery_mapped(ar_invoice, delivery_mapped_list):
