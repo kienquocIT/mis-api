@@ -175,7 +175,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'IA.000' + str(new_code)
 
-        obj = InventoryAdjustment.objects.create(**validated_data, code=new_code)
+        obj = InventoryAdjustment.objects.create(**validated_data, code=new_code, system_status=3)
         create_inventory_adjustment_warehouses(obj, self.initial_data.get('ia_warehouses_data', []))
         create_inventory_adjustment_employees_in_charge(obj, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(obj, self.initial_data.get('ia_items_data', []))
