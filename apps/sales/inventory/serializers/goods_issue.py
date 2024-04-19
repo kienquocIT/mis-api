@@ -7,7 +7,7 @@ __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssue
 
 from apps.sales.report.models import ReportInventorySub
 
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE
+from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS
 from apps.shared.translations.goods_issue import GIMsg
 
 
@@ -16,6 +16,8 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField()
     product_warehouse = serializers.UUIDField()
     inventory_adjustment_item = serializers.UUIDField(allow_null=True)
+    sn_changes = serializers.ListField(default=[])
+    lot_changes = serializers.ListField(default=[])
 
     class Meta:
         model = GoodsIssueProduct
@@ -28,6 +30,8 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_cost',
             'subtotal',
+            'sn_changes',
+            'lot_changes'
         )
 
     @classmethod
@@ -50,6 +54,7 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
             obj = ProductWareHouse.objects.select_related('product').get(id=value)
             return {
                 'id': str(obj.id),
+                'product_general_traceability_method': obj.product.general_traceability_method,
                 'product_data': {
                     'id': str(obj.product_id),
                     'title': obj.product.title,
@@ -118,11 +123,15 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return 'Open' if obj else None
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class GoodsIssueDetailSerializer(serializers.ModelSerializer):
     inventory_adjustment = serializers.SerializerMethodField()
+    goods_issue_datas = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -135,6 +144,7 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
             'goods_issue_type',
             'goods_issue_datas',
             'inventory_adjustment',
+            'system_status',
         )
 
     @classmethod
@@ -146,6 +156,42 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
                 'code': obj.inventory_adjustment.code,
             }
         return {}
+
+    @classmethod
+    def get_goods_issue_datas(cls, obj):
+        return [{
+            'product_warehouse': {
+                'id': item.product_warehouse_id,
+                'product_mapped': {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title,
+                    'description': item.product.description,
+                    'general_traceability_method': item.product.general_traceability_method
+                },
+                'uom_mapped': {
+                    'id': item.uom_id,
+                    'code': item.uom.code,
+                    'title': item.uom.title
+                },
+                'warehouse_mapped': {
+                    'id': item.warehouse_id,
+                    'code': item.warehouse.code,
+                    'title': item.warehouse.title
+                }
+            },
+            'quantity': item.quantity,
+            'unit_cost': item.unit_cost,
+            'subtotal': item.subtotal,
+            'lot_data': item.lot_data,
+            'sn_data': item.sn_data
+        } for item in obj.goods_issue_product.all()]
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class GoodsIssueCreateSerializer(serializers.ModelSerializer):
@@ -177,8 +223,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def update_product_amount(cls, data):
         ProductWareHouse.pop_from_transfer(
-            instance_id=data['product_warehouse']['id'],
+            product_warehouse_id=data['product_warehouse']['id'],
             amount=data['quantity'],
+            data=data
         )
         return True
 
@@ -208,7 +255,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
                 unit_cost=item['unit_cost'],
                 subtotal=item['subtotal'],
                 company=instance.company,
-                tenant=instance.tenant
+                tenant=instance.tenant,
+                lot_data=item['lot_changes'],
+                sn_data=item['sn_changes']
             )
             bulk_data.append(obj)
             cls.update_product_amount(item)
@@ -258,7 +307,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
         return True
 
     def create(self, validated_data):
-        instance = GoodsIssue.objects.create(**validated_data)
+        instance = GoodsIssue.objects.create(**validated_data, system_status=3)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
         self.prepare_data_for_logging(instance)
         return instance

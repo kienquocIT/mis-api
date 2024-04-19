@@ -224,6 +224,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
                 'title': obj.product_mapped.title,
                 'code': obj.product_mapped.code,
                 'description': obj.product_mapped.description,
+                'general_traceability_method': obj.product_mapped.general_traceability_method,
             }
         return {}
 

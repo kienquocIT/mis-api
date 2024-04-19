@@ -6,12 +6,13 @@ from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
 from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnSubSerializerForPicking, GReturnFinalAcceptanceHandle, GReturnProductInformationHandle
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import SaleMsg
+from apps.shared import SaleMsg, SYSTEM_STATUS
 
 
 class GoodsReturnListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     delivery = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -53,6 +54,12 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
             'code': obj.delivery.code
         } if obj.delivery_id else {}
 
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
+
 
 def create_files_mapped(gr_obj, file_id_list):
     try:
@@ -85,7 +92,6 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'return_to_warehouse',
-            'system_status',
         )
 
     @classmethod
@@ -97,6 +103,7 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         goods_return = GoodsReturn.objects.create(
             code=f'GRT00{GoodsReturn.objects.all().count() + 1}',
+            system_status=3,
             **validated_data
         )
         WareHouse.check_interact_warehouse(goods_return.employee_created, goods_return.return_to_warehouse_id)
@@ -134,6 +141,7 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
     data_detail = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     return_to_warehouse = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -219,6 +227,12 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
     def get_attachment(cls, obj):
         att_objs = GoodsReturnAttachmentFile.objects.select_related('attachment').filter(goods_return=obj)
         return [item.attachment.get_detail() for item in att_objs]
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
