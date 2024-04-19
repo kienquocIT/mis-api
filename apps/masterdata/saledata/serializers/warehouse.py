@@ -388,6 +388,7 @@ class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
             'manufacture_date',
             'warranty_start',
             'warranty_end',
+            'is_delete'
         )
 
     @classmethod

@@ -216,6 +216,8 @@ class ProductWareHouse(MasterDataAbstractModel):
             product_warehouse_obj.save(update_fields=['stock_amount'])
             product_warehouse_obj.product.save(update_fields=['stock_amount', 'available_amount'])
             if product_warehouse_obj.product.general_traceability_method == 1:  # lot
+                if len(data['lot_changes']) == 0:
+                    raise ValueError('Lot data can not NULL')
                 for each in data['lot_changes']:
                     lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
                     if lot:
@@ -225,6 +227,8 @@ class ProductWareHouse(MasterDataAbstractModel):
                         else:
                             raise ValueError('Lot quantity must be > 0')
             elif product_warehouse_obj.product.general_traceability_method == 2:  # sn
+                if len(data['sn_changes']) == 0:
+                    raise ValueError('Serial data can not NULL')
                 sn_list = ProductWareHouseSerial.objects.filter(id__in=data['sn_changes'])
                 for each in sn_list:
                     each.is_delete = 1
