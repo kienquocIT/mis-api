@@ -506,8 +506,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
         else:
             flag = True
             for item in stage['condition']:
-                if item not in instance_stage:
-                    flag = False
+                flag = False if item not in instance_stage else True
             if flag:
                 current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
