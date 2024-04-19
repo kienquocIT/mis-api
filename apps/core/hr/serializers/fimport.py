@@ -98,7 +98,7 @@ class GroupImportSerializer(serializers.ModelSerializer):
                     'group_employee': HRMsg.EMPLOYEE_NOT_EXIST,
                 }
             )
-        return None
+        return []
 
     first_manager = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 

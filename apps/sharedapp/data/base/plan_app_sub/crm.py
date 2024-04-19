@@ -107,6 +107,7 @@ CONTACT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
     "allow_import": True,
 }
 
@@ -164,6 +165,7 @@ ACCOUNT_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
     "allow_import": True,
 }
 
@@ -218,6 +220,7 @@ OPPORTUNITY_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 TASK_APP_CONFIG = {
@@ -261,6 +264,7 @@ TASK_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 QUOTATION_APP_CONFIG = {
