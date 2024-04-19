@@ -76,6 +76,7 @@ class GoodsReceiptWarehouseSerializer(serializers.ModelSerializer):
             'quantity_import',
             'lot_data',
             'serial_data',
+            'is_additional',
         )
 
     @classmethod
@@ -95,6 +96,7 @@ class GoodsReceiptWarehouseListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'lot_data',
             'serial_data',
+            'is_additional',
         )
 
     @classmethod

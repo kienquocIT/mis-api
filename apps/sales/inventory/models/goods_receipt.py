@@ -342,6 +342,9 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
         null=True
     )
     quantity_import = models.FloatField(default=0)
+    is_additional = models.BooleanField(
+        default=False, help_text='flag to know enter quantity first, add lot/serial later'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Warehouse'
