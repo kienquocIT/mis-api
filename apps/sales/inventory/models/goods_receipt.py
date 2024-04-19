@@ -137,7 +137,7 @@ class GoodsReceipt(DataAbstractModel):
                         'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
                         'quantity': item.quantity_import,
                         'cost': item.product_unit_price,
-                        'value': item.product_unit_price * item.quantity_import,
+                        'value': item.product_subtotal_price,
                         'lot_data': lot_data
                     })
                 else:
