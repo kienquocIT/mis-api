@@ -4,6 +4,7 @@ from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
 )
+from apps.shared import SYSTEM_STATUS
 
 
 def create_inventory_adjustment_warehouses(obj, data):
@@ -76,7 +77,9 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return 'Open' if obj else None
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
