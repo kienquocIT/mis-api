@@ -290,7 +290,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
                 'quantity': item.quantity,
                 'cost': item.unit_cost,
                 'value': item.unit_cost * item.quantity,
-                'lot_data': []
+                'lot_data': lot_data
             })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
