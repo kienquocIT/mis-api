@@ -518,8 +518,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
         if instance_current_stage[-1]['win_rate'] == 0:
             instance_current_stage[-1]['current'] = 1
-            if instance_current_stage[-1]['indicator'] == 'Deal Close':
-                is_deal_close = True
+            is_deal_close = True if instance_current_stage[-1]['indicator'] == 'Deal Close' else False
         else:
             instance_current_stage[0]['current'] = 1
 
