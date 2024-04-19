@@ -506,7 +506,8 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
         else:
             flag = True
             for item in stage['condition']:
-                flag = False if item not in instance_stage else True
+                if item not in instance_stage:
+                    flag = False
             if flag:
                 current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
@@ -517,7 +518,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
         if instance_current_stage[-1]['win_rate'] == 0:
             instance_current_stage[-1]['current'] = 1
-            is_deal_close = True if instance_current_stage[-1]['indicator'] == 'Deal Close' else False
+            is_deal_close = instance_current_stage[-1]['indicator'] == 'Deal Close'
         else:
             instance_current_stage[0]['current'] = 1
 
