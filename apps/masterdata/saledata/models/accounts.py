@@ -124,7 +124,7 @@ class Account(DataAbstractModel):
     account_type = models.JSONField(
         default=list
     )
-    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=0)
+    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=1)
     account_group = models.ForeignKey(
         AccountGroup,
         on_delete=models.CASCADE,
