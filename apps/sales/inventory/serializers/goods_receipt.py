@@ -76,6 +76,7 @@ class GoodsReceiptWarehouseSerializer(serializers.ModelSerializer):
             'quantity_import',
             'lot_data',
             'serial_data',
+            'is_additional',
         )
 
     @classmethod
@@ -95,6 +96,7 @@ class GoodsReceiptWarehouseListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'lot_data',
             'serial_data',
+            'is_additional',
         )
 
     @classmethod
@@ -205,7 +207,8 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
-            'warehouse_data'
+            'warehouse_data',
+            'is_additional',
         )
 
     @classmethod
@@ -308,6 +311,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'order',
             'purchase_request_products_data',
             'warehouse_data',
+            'is_additional',
         )
 
     @classmethod
@@ -316,6 +320,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'id': obj.product_id,
             'title': obj.product.title,
             'code': obj.product.code,
+            'description': obj.product.description,
             'general_traceability_method': obj.product.general_traceability_method,
         } if obj.product else {}
 
