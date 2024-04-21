@@ -1,10 +1,10 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
 )
-from django.utils.translation import gettext_lazy as _
 
 
 def create_inventory_adjustment_warehouses(obj, data):
