@@ -19,6 +19,14 @@ class InventoryAdjustment(DataAbstractModel):
         blank=True,
         related_name='employees_in_charge_mapped_ia'
     )
+    state = models.BooleanField(default=False)
+
+    def update_ia_state(self):
+        all_item = self.inventory_adjustment_item_mapped.all().count()
+        done = all_item.filter(action_status=True).count()
+        self.state = all_item == done
+        self.save(update_fields=['state'])
+        return True
 
     class Meta:
         verbose_name = 'Inventory Adjustment'

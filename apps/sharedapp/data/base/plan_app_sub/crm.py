@@ -1208,8 +1208,7 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "model_code": "inventoryadjustment",
     "app_label": "inventory",
     "is_workflow": True,
-    "app_depend_on": [
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -1218,24 +1217,18 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-            },
-            "local_depends_on": {
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-            },
-            "local_depends_on": {
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-            },
-            "local_depends_on": {
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
     },
     "allow_permit": True,
@@ -1833,7 +1826,7 @@ Application_crm_data = {
     ),
     "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data(
         depend_follow_main=False,
-        filtering_inheritor=True,
+        filtering_inheritor=False,
     ),
     "c3260940-21ff-4929-94fe-43bc4199d38b": ApplicationConfigFrame(**REPORT_REVENUE_APP_CONFIG).data(
         depend_follow_main=False,

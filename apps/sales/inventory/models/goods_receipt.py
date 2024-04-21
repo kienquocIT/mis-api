@@ -163,7 +163,7 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-
+                self.inventory_adjustment.update_ia_state()
                 self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
@@ -264,6 +264,11 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     order = models.IntegerField(default=1)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
+    )
+    inventory_adjustment_item = models.ForeignKey(
+        'inventory.InventoryAdjustmentItem',
+        on_delete=models.CASCADE,
+        null=True
     )
 
     class Meta:

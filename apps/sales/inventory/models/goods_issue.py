@@ -72,6 +72,7 @@ class GoodsIssue(DataAbstractModel):
             temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
             self.code = code
+            self.inventory_adjustment.update_ia_state()
         # hit DB
         super().save(*args, **kwargs)
 
