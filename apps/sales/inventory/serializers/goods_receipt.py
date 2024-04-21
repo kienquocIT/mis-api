@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
 
 
@@ -189,6 +189,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     quantity_import = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
+    inventory_adjustment_item = serializers.UUIDField(required=False)
 
     class Meta:
         model = GoodsReceiptProduct
@@ -209,6 +210,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'purchase_request_products_data',
             'warehouse_data',
             'is_additional',
+            'inventory_adjustment_item'
         )
 
     @classmethod
@@ -238,6 +240,15 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_unit_price(cls, value):
         return GoodsReceiptCommonValidate().validate_price(value=value)
+
+    @classmethod
+    def validate_inventory_adjustment_item(cls, value):
+        try:
+            if value is None:
+                return None
+            return InventoryAdjustmentItem.objects.get(id=value)
+        except InventoryAdjustmentItem.DoesNotExist:
+            raise serializers.ValidationError({'unit_of_measure': 'IA item not exist'})
 
     @classmethod
     def check_lot_serial_exist(cls, warehouse_data, product_obj):

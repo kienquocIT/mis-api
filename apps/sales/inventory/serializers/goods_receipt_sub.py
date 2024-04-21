@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
@@ -13,6 +13,13 @@ from apps.shared.translations.sales import InventoryMsg, SaleMsg
 
 
 class GoodsReceiptCommonCreate:
+    @classmethod
+    def update_status_inventory_adjustment_item(cls, item_id, value):
+        item = InventoryAdjustmentItem.objects.get(id=item_id)
+        item.action_status = value
+        item.select_for_action = value
+        item.save(update_fields=['action_status', 'select_for_action'])
+        return True
 
     @classmethod
     def create_m2m_goods_receipt_pr(cls, purchase_requests, instance):
@@ -34,6 +41,11 @@ class GoodsReceiptCommonCreate:
                 warehouse_gr_data = gr_product['warehouse_data']
                 del gr_product['warehouse_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
+            if new_gr_product.inventory_adjustment_item_id:
+                cls.update_status_inventory_adjustment_item(
+                    new_gr_product.inventory_adjustment_item_id,
+                    True
+                )
             # If PO have PR
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             for pr_product in purchase_request_products_data:
