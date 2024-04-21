@@ -303,6 +303,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = GoodsIssue.objects.create(**validated_data, system_status=3)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
+        instance.inventory_adjustment.update_ia_state()
         self.prepare_data_for_logging(instance)
         return instance
 
