@@ -224,10 +224,11 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def update_status_inventory_adjustment_item(cls, item_id, value):
-        item = InventoryAdjustmentItem.objects.get(id=item_id)
-        item.action_status = value
-        item.select_for_action = value
-        item.save(update_fields=['action_status', 'select_for_action'])
+        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
+        if item:
+            item.action_status = value
+            item.select_for_action = value
+            item.save(update_fields=['action_status', 'select_for_action'])
         return True
 
     @classmethod

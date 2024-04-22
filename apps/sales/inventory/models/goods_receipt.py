@@ -266,9 +266,9 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
     )
-    inventory_adjustment_item = models.ForeignKey(
+    ia_item = models.ForeignKey(
         'inventory.InventoryAdjustmentItem',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True
     )
 

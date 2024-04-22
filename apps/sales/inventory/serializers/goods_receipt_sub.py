@@ -15,10 +15,11 @@ from apps.shared.translations.sales import InventoryMsg, SaleMsg
 class GoodsReceiptCommonCreate:
     @classmethod
     def update_status_inventory_adjustment_item(cls, item_id, value):
-        item = InventoryAdjustmentItem.objects.get(id=item_id)
-        item.action_status = value
-        item.select_for_action = value
-        item.save(update_fields=['action_status', 'select_for_action'])
+        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
+        if item:
+            item.action_status = value
+            item.select_for_action = value
+            item.save(update_fields=['action_status', 'select_for_action'])
         return True
 
     @classmethod
@@ -41,9 +42,9 @@ class GoodsReceiptCommonCreate:
                 warehouse_gr_data = gr_product['warehouse_data']
                 del gr_product['warehouse_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
-            if new_gr_product.inventory_adjustment_item_id:
+            if new_gr_product.ia_item_id:
                 cls.update_status_inventory_adjustment_item(
-                    new_gr_product.inventory_adjustment_item_id,
+                    new_gr_product.ia_item_id,
                     True
                 )
             # If PO have PR
