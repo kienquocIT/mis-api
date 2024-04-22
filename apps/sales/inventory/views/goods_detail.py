@@ -22,8 +22,8 @@ class GoodsDetailList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Goods detail List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='inventory', model_code='goodsreceipt', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
