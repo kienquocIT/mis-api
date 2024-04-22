@@ -193,8 +193,15 @@ class ProjectWorks(DataAbstractModel):
         choices=PROJECT_WORK_STT,
         default=0,
     )
-    work_dependencies_style = models.SmallIntegerField(
+    work_dependencies_type = models.SmallIntegerField(
         choices=PROJECT_WORK_TYPE,
+        null=True,
+    )
+    work_dependencies_parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="work_parent",
+        verbose_name="parent work",
         null=True,
     )
     employee_inherit_data = models.JSONField(

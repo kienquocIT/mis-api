@@ -79,3 +79,6 @@ class InventoryMsg:
 class ProjectMsg:
     PROJECT = _('Project')
     PROJECT_GROUP = _('Project group')
+    PROJECT_WORK = _('Project work')
+    PROJECT_WORK_ERROR_DATE = _('Make sure date start larger than relationship work date end')
+    PROJECT_WORK_ERROR_DATE2 = _('Date work is not followed with date group')

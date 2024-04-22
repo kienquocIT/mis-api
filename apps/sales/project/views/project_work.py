@@ -1,4 +1,4 @@
-__all__ = ['ProjectWorkList']
+__all__ = ['ProjectWorkList', 'ProjectWorkDetail']
 
 from typing import Union
 
@@ -143,8 +143,10 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProjectWorks.objects
     serializer_detail = WorkDetailSerializers
     serializer_update = WorkDetailSerializers
-
     retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('work_dependencies_parent')
 
     def check_has_permit_of_space_all(self, opp_obj):
         config_data = self.cls_check.permit_cls.config_data  # noqa
@@ -174,29 +176,18 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return False
 
     def get_project_member_of_current_user(self, instance):
+        project = instance.project_projectmapgroup_group.all().first().project
         return ProjectMapMember.objects.filter_current(
-            project=instance.project,
+            project=project,
             member=self.cls_check.employee_attr.employee_current,
             fill__tenant=True, fill__company=True
         ).first()
 
-    def manual_check_obj_retrieve(self, instance, **kwargs):
-        state = self.check_has_permit_of_space_all(opp_obj=instance.project)
-        if not state:
-            # special case skip with True if current user is employee_inherit
-            emp_id = self.cls_check.employee_attr.employee_current_id
-            if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
-                return True
-
-            obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
-            if obj_of_current_user:
-                return obj_of_current_user.permit_add_gaw
-        return state
-
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
-        if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
+        project_map_group = instance.project_projectmapwork_work.all().first()
+        if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
             return True
         obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
         if obj_of_current_user:
@@ -223,12 +214,6 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
             return obj_of_current_user.permit_add_gaw
         return False
 
-    def get_lookup_url_kwarg(self) -> dict:
-        return {
-            'project_id': self.kwargs['pk_pj'],
-            'member_id': self.kwargs['pk_member']
-        }
-
     @swagger_auto_schema(
         operation_summary='Get work detail',
         operation_description='Get work detail by ID',
@@ -237,18 +222,22 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         login_require=True, auth_require=False,
         label_code='project', model_code='project', perm_code="view",
     )
-    def get(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.retrieve(request, *args, pk_pj, pk_member, **kwargs)
-        return ResponseController.notfound_404()
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(
         operation_summary='Update work for project',
+        operation_description='Update work detail by ID',
     )
     @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.update(request, *args, pk_pj, pk_member, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        data = request.data
+        project_id = data.get('project', None)
+        employee_id = data.get('employee_inherit', None) if data.get(
+            'employee_inherit', None
+        ) is not None else request.user.employee_current_id
+        if TypeCheck.check_uuid(project_id) and TypeCheck.check_uuid(employee_id):
+            return self.update(request, *args, pk, **kwargs)
         return ResponseController.notfound_404()
 
     @swagger_auto_schema(

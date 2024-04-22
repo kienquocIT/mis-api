@@ -1014,3 +1014,15 @@ msgstr "Dự án"
 #
 msgid "do not exist."
 msgstr "không tồn tại."
+
+#
+msgid "Project group"
+msgstr "Nhóm dự án"
+
+#
+msgid "Project work"
+msgstr "Công việc dự án"
+
+#
+msgid "Make sure date start larger than relationship work date end"
+msgstr "Ngày bắt đầu phải lớn hơn ngày kết thúc của công việc được liên kết"

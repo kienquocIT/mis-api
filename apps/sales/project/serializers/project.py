@@ -4,11 +4,9 @@ __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailS
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
-from apps.shared.translations.sales import ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
-from ..models import Project, ProjectMapMember, ProjectGroups, ProjectWorks
-from apps.shared import HRMsg, BaseMsg
-from ..models.models import ProjectMapGroup, ProjectMapWork, GroupMapWork
+from ..models import Project, ProjectMapMember
+from apps.shared import HRMsg, FORMATTING
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
@@ -100,15 +98,20 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     @classmethod
     def get_groups(cls, obj):
         if obj:
-            return [{
-                "id": str(item.group.id),
-                "title": item.group.title,
-                "date_from": item.group.gr_start_date,
-                "date_end": item.group.gr_end_date,
-                "order": item.group.order,
-                "progress": item.group.gr_rate
-            } for item in obj.project_projectmapgroup_project.all()
-            ]
+            groups_list = obj.project_projectmapgroup_project.all()
+            groups = []
+            for item in groups_list:
+                groups.append(
+                    {
+                        "id": str(item.group.id),
+                        "title": item.group.title,
+                        "date_from": FORMATTING.parse_datetime(item.group.gr_start_date),
+                        "date_end": FORMATTING.parse_datetime(item.group.gr_end_date),
+                        "order": item.group.order,
+                        "progress": item.group.gr_rate
+                    }
+                )
+            return groups
         return []
 
     @classmethod
@@ -125,12 +128,18 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                     "date_end": item.work.w_end_date,
                     "order": item.work.order,
                     "group": "",
-                    "relationships_type": item.work.work_dependencies_style
+                    "relationships_type": None,
+                    "dependencies_parent": "",
+                    "progress": item.work.w_rate,
                 }
                 group_mw = item.work.project_groupmapwork_work.all()
                 if group_mw:
                     group_mw = group_mw.first()
                     temp['group'] = str(group_mw.group.id)
+                if item.work.work_dependencies_type is not None:
+                    temp['relationships_type'] = item.work.work_dependencies_type
+                if item.work.work_dependencies_parent:
+                    temp['dependencies_parent'] = str(item.work.work_dependencies_parent.id)
                 works_list.append(temp)
             return works_list
         return []
@@ -221,4 +230,3 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
-

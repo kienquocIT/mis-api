@@ -43,7 +43,8 @@ class GroupCreateSerializers(serializers.ModelSerializer):
             'gr_rate',
             'gr_start_date',
             'gr_end_date',
-            'project'
+            'project',
+            'order',
         )
 
 

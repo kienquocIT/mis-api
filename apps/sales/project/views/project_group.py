@@ -81,12 +81,11 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProjectGroups.objects
     serializer_detail = GroupDetailSerializers
     serializer_update = GroupDetailSerializers
-
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, opp_obj):  # pylint: disable=R0912
+    def check_has_permit_of_space_all(self, pj_obj):
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
+        if config_data and isinstance(config_data, dict):
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
@@ -95,7 +94,7 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
                             if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
                                 if (
                                         permit_config['space'] == '1'
-                                        and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
+                                        and str(pj_obj.company_id) == self.cls_check.employee_attr.company_id
                                 ):
                                     return True
             if 'roles' in config_data and isinstance(config_data['roles'], list):
@@ -106,35 +105,24 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
                             if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
                                 if (
                                         permit_config['space'] == '1'
-                                        and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
+                                        and str(pj_obj.company_id) == self.cls_check.employee_attr.company_id
                                 ):
                                     return True
         return False
 
     def get_project_member_of_current_user(self, instance):
+        project = instance.project_projectmapgroup_group.all().first().project
         return ProjectMapMember.objects.filter_current(
-            project=instance.project,
+            project=project,
             member=self.cls_check.employee_attr.employee_current,
             fill__tenant=True, fill__company=True
         ).first()
 
-    def manual_check_obj_retrieve(self, instance, **kwargs):
-        state = self.check_has_permit_of_space_all(opp_obj=instance.project)
-        if not state:
-            # special case skip with True if current user is employee_inherit
-            emp_id = self.cls_check.employee_attr.employee_current_id
-            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
-                return True
-
-            obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
-            if obj_of_current_user:
-                return obj_of_current_user.permit_add_gaw
-        return state
-
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
-        if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
+        project_map_group = instance.project_projectmapgroup_group.all().first()
+        if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
             return True
         obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
         if obj_of_current_user:
@@ -142,30 +130,16 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return False
 
     def manual_check_obj_destroy(self, instance, **kwargs):
-        if instance.member_id == instance.project.employee_inherit_id:
-            return False
-
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
-
-        if emp_id == instance.member_id:
-            # deny delete member is owner opp.
-            return False
-
-        if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
+        project_map_group = instance.project_projectmapgroup_group.all().first()
+        if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
             # owner auto allow in member
             return True
-
         obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
-
-    def get_lookup_url_kwarg(self) -> dict:
-        return {
-            'project_id': self.kwargs['pk_opp'],
-            'member_id': self.kwargs['pk_member']
-        }
 
     @swagger_auto_schema(
         operation_summary='Get group detail',
@@ -173,27 +147,30 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='opportunity', model_code='opportunity', perm_code="view",
+        label_code='project', model_code='project', perm_code="view",
     )
-    def get(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.retrieve(request, *args, pk_pj, pk_member, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Update group detail',
+        operation_description='Update group detail by ID',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        data = request.data
+        project_id = data.get('project', None)
+        employee_id = data.get('employee_inherit', None) if data.get(
+            'employee_inherit', None
+        ) is not None else request.user.employee_current_id
+        if TypeCheck.check_uuid(project_id) and TypeCheck.check_uuid(employee_id):
+            return self.update(request, *args, pk, **kwargs)
         return ResponseController.notfound_404()
 
     @swagger_auto_schema(
-        operation_summary='Update app and permit for member',
+        operation_summary='Remove group from project',
+        operation_description='Remove group detail by ID',
     )
     @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, pk_opp, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
-            return self.update(request, *args, pk_opp, pk_member, **kwargs)
-        return ResponseController.notfound_404()
-
-    @swagger_auto_schema(
-        operation_summary='Remove member from opp'
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, pk_opp, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
-            return self.destroy(request, *args, pk_opp, pk_member, is_purge=True, **kwargs)
-        return ResponseController.notfound_404()
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, is_purge=True, **kwargs)
