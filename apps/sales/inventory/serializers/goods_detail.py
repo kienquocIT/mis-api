@@ -45,6 +45,14 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 'warranty_start': serial.warranty_start,
                 'warranty_end': serial.warranty_end
             } for serial in item.goods_receipt_warehouse_gr_product.first().goods_receipt_serial_gr_warehouse.all(
-                ).order_by('serial_number')],
+            ).order_by('serial_number')],
+            'lot_list': [{
+                'id': lot.id,
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date,
+            } for lot in item.goods_receipt_warehouse_gr_product.first().goods_receipt_lot_gr_warehouse.all(
+            ).order_by('lot_number')],
             'quantity_import': item.quantity_import
         } for item in obj.goods_receipt_product_goods_receipt.all()]
