@@ -269,7 +269,8 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     ia_item = models.ForeignKey(
         'inventory.InventoryAdjustmentItem',
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        related_name='goods_receipt_product_ia_item'
     )
 
     class Meta:

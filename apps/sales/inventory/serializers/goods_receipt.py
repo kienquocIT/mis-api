@@ -189,7 +189,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     quantity_import = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
-    inventory_adjustment_item = serializers.UUIDField(required=False)
+    ia_item = serializers.UUIDField(required=False)
 
     class Meta:
         model = GoodsReceiptProduct
@@ -210,7 +210,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'purchase_request_products_data',
             'warehouse_data',
             'is_additional',
-            'inventory_adjustment_item'
+            'ia_item'
         )
 
     @classmethod
@@ -242,7 +242,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         return GoodsReceiptCommonValidate().validate_price(value=value)
 
     @classmethod
-    def validate_inventory_adjustment_item(cls, value):
+    def validate_ia_item(cls, value):
         try:
             if value is None:
                 return None
