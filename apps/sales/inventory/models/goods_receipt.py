@@ -163,7 +163,8 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.inventory_adjustment.update_ia_state()
+                if self.inventory_adjustment:
+                    self.inventory_adjustment.update_ia_state()
                 self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
