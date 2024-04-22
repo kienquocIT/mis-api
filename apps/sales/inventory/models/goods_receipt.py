@@ -265,6 +265,9 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
     )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Product'
@@ -347,6 +350,9 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
     quantity_import = models.FloatField(default=0)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
+    )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
     )
 
     class Meta:
