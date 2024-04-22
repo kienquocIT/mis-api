@@ -271,6 +271,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
         help_text='choices= ' + str(OPPORTUNITY_LOG_TYPE),
     )
     is_cancelled = models.BooleanField(default=False)
+    doc_data = models.JSONField(default=dict, help_text="data of related document: {'id', 'title', 'code',...}")
 
     @classmethod
     def create_opportunity_log_application(

@@ -6,12 +6,14 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
+    WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, WarehouseEmployeeConfig
 )
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer, WareHouseListSerializerForInventoryAdjustment,
     WareHouseDetailSerializer, WareHouseUpdateSerializer,
-    ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
+    ProductWareHouseStockListSerializer, ProductWareHouseListSerializer,
+    WarehouseEmployeeConfigListSerializer, WarehouseEmployeeConfigCreateSerializer,
+    WarehouseEmployeeConfigDetailSerializer
 )
 from ..filters import ProductWareHouseListFilter
 
@@ -33,6 +35,13 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         "is_active": ['exact'],
         "is_dropship": ['exact'],
     }
+
+    def get_queryset(self):
+        if 'interact' in self.request.query_params:
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
+        return super().get_queryset().order_by('code')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
@@ -118,11 +127,15 @@ class ProductWareHouseList(BaseListMixin):
     # }
 
     def get_queryset(self):
+        if 'interact' in self.request.query_params:
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                return super().get_queryset().select_related(
+                    'product', 'warehouse', 'uom'
+                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
         return super().get_queryset().select_related(
-            'product',
-            'warehouse',
-            'uom',
-        )
+            'product', 'warehouse', 'uom',
+        ).order_by('product__code')
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
     @mask_view(
@@ -140,6 +153,9 @@ class WareHouseListForInventoryAdjustment(BaseListMixin):
     filterset_fields = {
         "is_active": ['exact'],
     }
+
+    def get_queryset(self):
+        return super().get_queryset().order_by('code')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
@@ -223,3 +239,54 @@ class ProductWareHouseAssetToolsList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class WarehouseEmployeeConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = WarehouseEmployeeConfig.objects
+    serializer_list = WarehouseEmployeeConfigListSerializer
+    serializer_create = WarehouseEmployeeConfigCreateSerializer
+    serializer_detail = WarehouseEmployeeConfigDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee').prefetch_related('wh_emp_config_detail_cf')
+
+    @swagger_auto_schema(operation_summary='Warehouse Employee Config List')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Create new Warehouse Employee Config',
+        request_body=WarehouseEmployeeConfigCreateSerializer
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class WarehouseEmployeeConfigDetail(BaseRetrieveMixin, BaseDestroyMixin):
+    queryset = WarehouseEmployeeConfig.objects
+    serializer_detail = WarehouseEmployeeConfigDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(operation_summary='Detail a warehouse-employee')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(operation_summary='Destroy a warehouse-employee')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)

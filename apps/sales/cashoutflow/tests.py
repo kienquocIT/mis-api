@@ -62,6 +62,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'attachment',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -150,6 +151,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'attachment',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -240,6 +242,7 @@ class PaymentTestCase(AdvanceTestCase):
     def create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
             'apply_for': 1,
             'remark': 'lorem ipsum dolor sit amet.',
             'term': [{"value": '100% sau khi ký HD', "unit_type": 1, "day_type": 1, "no_of_days": "1", "after": 1}],
@@ -385,6 +388,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -439,6 +443,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_payment',
                 'is_internal_payment',
                 'attachment',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -523,6 +528,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_payment',
                 'is_internal_payment',
                 'attachment',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -629,6 +635,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'attachment',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -680,7 +687,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             [
                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'workflow_runtime_id',
                 'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total',
-                'document_root_id', 'document_change_order',
+                'is_change', 'document_root_id', 'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -778,7 +785,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             [
                 'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method',
                 'system_status', 'money_received', 'date_created', 'cost', 'return_total', 'workflow_runtime_id',
-                'document_root_id', 'document_change_order',
+                'is_change', 'document_root_id', 'document_change_order',
             ],
             check_sum_second=True,
         )

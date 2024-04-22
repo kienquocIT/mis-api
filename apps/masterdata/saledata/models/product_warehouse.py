@@ -207,16 +207,35 @@ class ProductWareHouse(MasterDataAbstractModel):
         return 0
 
     @classmethod
-    def pop_from_transfer(cls, instance_id, amount):
+    def pop_from_transfer(cls, product_warehouse_id, amount, data):
         try:
-            obj = cls.objects.get(
-                id=instance_id
-            )
+            product_warehouse_obj = cls.objects.get(id=product_warehouse_id)
+            product_warehouse_obj.stock_amount -= amount
+            product_warehouse_obj.product.stock_amount -= amount
+            product_warehouse_obj.product.available_amount -= amount
+            product_warehouse_obj.save(update_fields=['stock_amount'])
+            product_warehouse_obj.product.save(update_fields=['stock_amount', 'available_amount'])
+            if product_warehouse_obj.product.general_traceability_method == 1:  # lot
+                if len(data['lot_changes']) == 0:
+                    raise ValueError('Lot data can not NULL')
+                for each in data['lot_changes']:
+                    lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
+                    if lot and each['quantity'] > 0:
+                        if lot.quantity_import >= amount:
+                            lot.quantity_import -= amount
+                            lot.save(update_fields=['quantity_import'])
+                        else:
+                            raise ValueError('Lot quantity must be > 0')
+            elif product_warehouse_obj.product.general_traceability_method == 2:  # sn
+                if len(data['sn_changes']) == 0:
+                    raise ValueError('Serial data can not NULL')
+                sn_list = ProductWareHouseSerial.objects.filter(id__in=data['sn_changes'])
+                for each in sn_list:
+                    each.is_delete = 1
+                    each.save(update_fields=['is_delete'])
+            return True
         except cls.DoesNotExist:
-            raise ValueError('Product not found in warehouse with UOM')
-        obj.stock_amount -= amount
-        obj.save(update_fields=['stock_amount'])
-        return True
+            raise ValueError('Product is not found in warehouse with UOM')
 
     def before_save(self, **kwargs):
         if kwargs.get('force_insert', False):

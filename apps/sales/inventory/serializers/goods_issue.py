@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse
+from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 
 __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssueCreateSerializer']
+
+from apps.sales.report.models import ReportInventorySub
 
 from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS
 from apps.shared.translations.goods_issue import GIMsg
@@ -14,6 +16,8 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField()
     product_warehouse = serializers.UUIDField()
     inventory_adjustment_item = serializers.UUIDField(allow_null=True)
+    sn_changes = serializers.ListField(default=[])
+    lot_changes = serializers.ListField(default=[])
 
     class Meta:
         model = GoodsIssueProduct
@@ -26,6 +30,8 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_cost',
             'subtotal',
+            'sn_changes',
+            'lot_changes'
         )
 
     @classmethod
@@ -48,6 +54,7 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
             obj = ProductWareHouse.objects.select_related('product').get(id=value)
             return {
                 'id': str(obj.id),
+                'product_general_traceability_method': obj.product.general_traceability_method,
                 'product_data': {
                     'id': str(obj.product_id),
                     'title': obj.product.title,
@@ -116,12 +123,14 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.system_status))
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class GoodsIssueDetailSerializer(serializers.ModelSerializer):
     inventory_adjustment = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
+    goods_issue_datas = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -132,14 +141,10 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
             'date_issue',
             'note',
             'goods_issue_type',
-            'system_status',
             'goods_issue_datas',
             'inventory_adjustment',
+            'system_status',
         )
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_inventory_adjustment(cls, obj):
@@ -150,6 +155,36 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
                 'code': obj.inventory_adjustment.code,
             }
         return {}
+
+    @classmethod
+    def get_goods_issue_datas(cls, obj):
+        return [{
+            'product_warehouse': {
+                'id': item.product_warehouse_id,
+                'product_mapped': {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title,
+                    'description': item.product.description,
+                    'general_traceability_method': item.product.general_traceability_method
+                },
+                'uom_mapped': {
+                    'id': item.uom_id,
+                    'code': item.uom.code,
+                    'title': item.uom.title
+                },
+                'warehouse_mapped': {
+                    'id': item.warehouse_id,
+                    'code': item.warehouse.code,
+                    'title': item.warehouse.title
+                }
+            },
+            'quantity': item.quantity,
+            'unit_cost': item.unit_cost,
+            'subtotal': item.subtotal,
+            'lot_data': item.lot_data,
+            'sn_data': item.sn_data
+        } for item in obj.goods_issue_product.all()]
 
 
 class GoodsIssueCreateSerializer(serializers.ModelSerializer):
@@ -181,8 +216,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def update_product_amount(cls, data):
         ProductWareHouse.pop_from_transfer(
-            instance_id=data['product_warehouse']['id'],
+            product_warehouse_id=data['product_warehouse']['id'],
             amount=data['quantity'],
+            data=data
         )
         return True
 
@@ -212,7 +248,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
                 unit_cost=item['unit_cost'],
                 subtotal=item['subtotal'],
                 company=instance.company,
-                tenant=instance.tenant
+                tenant=instance.tenant,
+                lot_data=item['lot_changes'],
+                sn_data=item['sn_changes']
             )
             bulk_data.append(obj)
             cls.update_product_amount(item)
@@ -222,9 +260,49 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
 
         return True
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        activities_data = []
+        for item in instance.goods_issue_product.all():
+            lot_data = []
+            prd_wh_lot = ProductWareHouseLot.objects.filter(
+                product_warehouse__product=item.product,
+                product_warehouse__warehouse=item.warehouse
+            ).first()
+            if prd_wh_lot:
+                lot_data.append({
+                    'lot_id': str(prd_wh_lot.id),
+                    'lot_number': prd_wh_lot.lot_number,
+                    'lot_quantity': item.quantity,
+                    'lot_value': item.unit_cost * item.quantity,
+                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                })
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.warehouse,
+                'system_date': instance.date_created,
+                'posting_date': None,
+                'document_date': None,
+                'stock_type': -1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods issue',
+                'quantity': item.quantity,
+                'cost': item.unit_cost,
+                'value': item.unit_cost * item.quantity,
+                'lot_data': lot_data
+            })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            activities_data
+        )
+        return True
+
     def create(self, validated_data):
-        instance = GoodsIssue.objects.create(**validated_data)
+        instance = GoodsIssue.objects.create(**validated_data, system_status=3)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
+        self.prepare_data_for_logging(instance)
         return instance
 
 
@@ -232,14 +310,12 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
     goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer(), required=False)
     inventory_adjustment = serializers.UUIDField(required=False)
     title = serializers.CharField(required=False)
-    date_issue = serializers.DateTimeField(required=False)
     note = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
-            'date_issue',
             'note',
             'inventory_adjustment',
             'goods_issue_datas',
@@ -250,11 +326,7 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
         try:
             return InventoryAdjustment.objects.get(id=value)
         except InventoryAdjustment.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'inventory_adjustment': GIMsg.IA_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'inventory_adjustment': GIMsg.IA_NOT_EXIST})
 
     @classmethod
     def revert_stock_amount(cls, instance):

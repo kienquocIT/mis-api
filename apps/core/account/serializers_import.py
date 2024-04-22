@@ -19,6 +19,7 @@ class UserImportSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_username(cls, attrs):
+        attrs = attrs.lower()
         username_slugify = slugify(attrs)
         if username_slugify != attrs:
             raise serializers.ValidationError({'username': AccountMsg.USERNAME_MUST_BE_SLUGIFY_STRING})

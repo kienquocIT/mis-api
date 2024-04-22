@@ -442,39 +442,101 @@ def get_instance_stage(instance):
     product_line = instance.opportunity_product_opportunity.all()
     instance_stage.append('Product.Line.Detail=0' if product_line.count() == 0 else 'Product.Line.Detail!=0')
     # Competitor Win
-    competitors = instance.opportunity_competitor_opportunity.all()
+    competitors = instance.opportunity_competitor_opportunity.filter(win_deal=True)
     instance_stage.append('Competitor.Win!=0' if competitors.count() == 0 else 'Competitor.Win=0')
     # Lost By Other Reason
     instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
     return instance_stage
 
 
-def get_instance_current_stage(opp_config_stage, instance_stage):
+def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close):
+    new_instance_current_stage = []
+    for stage in stages:
+        if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
+            if stage.indicator in current_stage_indicator:
+                if stage.win_rate == 0 and is_deal_close:
+                    new_instance_current_stage[0]['current'] = 0
+                    new_instance_current_stage.append({
+                        'id': stage.id,
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate,
+                        'current': 1
+                    })
+                else:
+                    new_instance_current_stage.append({
+                        'id': stage.id,
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate,
+                        'current': 1 if len(new_instance_current_stage) == 0 else 0
+                    })
+        else:
+            if stage.win_rate == 0 and is_deal_close:
+                new_instance_current_stage[0]['current'] = 0
+                new_instance_current_stage.append({
+                    'id': stage.id,
+                    'indicator': stage.indicator,
+                    'win_rate': stage.win_rate,
+                    'current': 1
+                })
+            else:
+                new_instance_current_stage.append({
+                    'id': stage.id,
+                    'indicator': stage.indicator,
+                    'win_rate': stage.win_rate,
+                    'current': 1 if len(new_instance_current_stage) == 0 else 0
+                })
+    return new_instance_current_stage
+
+
+def check_or(stage_condition, instance_stage):
+    flag = False
+    for item in stage_condition:
+        if item in instance_stage:
+            flag = True
+            break
+    return flag
+
+
+def check_and(stage_condition, instance_stage):
+    flag = True
+    for item in stage_condition:
+        if item not in instance_stage:
+            flag = False
+    return flag
+
+
+def get_instance_current_stage(opp_config_stage, instance_stage, instance):
     instance_current_stage = []
+    current_stage_indicator = []
     for stage in opp_config_stage:
         if stage['logical_operator']:
-            flag = False
-            for item in stage['condition']:
-                if item in instance_stage:
-                    flag = True
-                    break
-            if flag:
+            if check_or(stage['condition'], instance_stage):
+                current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
         else:
-            flag = True
-            for item in stage['condition']:
-                if item not in instance_stage:
-                    flag = False
-            if flag:
+            if check_and(stage['condition'], instance_stage):
+                current_stage_indicator.append(stage['indicator'])
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
+    is_deal_close = False
     if len(instance_current_stage) > 0:
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-        instance_current_stage[0]['current'] = 1
-        return instance_current_stage
+        if instance_current_stage[-1]['win_rate'] == 0:
+            instance_current_stage[-1]['current'] = 1
+            is_deal_close = instance_current_stage[-1]['indicator'] == 'Deal Close'
+        else:
+            instance_current_stage[0]['current'] = 1
+
+        stages = OpportunityConfigStage.objects.filter(
+            company_id=instance.company_id,
+            win_rate__lte=instance_current_stage[0]['win_rate']
+        ).order_by('-win_rate')
+        new_instance_current_stage = get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close)
+
+        return new_instance_current_stage, is_deal_close
     raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
@@ -581,13 +643,16 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
-        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage)
+        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage, instance)
+        instance.is_deal_close = is_deal_close
+        instance.save(update_fields=['is_deal_close'])
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
         for item in instance_current_stage:
-            opportunity_stage = OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
-            data_bulk.append(opportunity_stage)
+            data_bulk.append(
+                OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
+            )
         OpportunityStage.objects.bulk_create(data_bulk)
         return True
 

@@ -416,6 +416,22 @@ msgid "Code is exists"
 msgstr "Mã đã tồn tại"
 
 #
+msgid "Code is not exist"
+msgstr "Mã không tồn tại"
+
+#
+msgid "The value formatting is incorrect"
+msgstr "Định dạng dữ liệu không đúng"
+
+#
+msgid "Only one address is the default"
+msgstr "Chỉ một địa chỉ là mặc định"
+
+#
+msgid "Only one contact can be the owner of the account"
+msgstr "Chỉ một liên hệ có thể là chủ của tài khoản"
+
+#
 msgid "The records cause duplicate errors"
 msgstr "Các bản ghi gây ra lỗi trùng lặp"
 
@@ -1006,6 +1022,14 @@ msgstr "Số lượng phải lớn hơn 0."
 #
 msgid "Total payment must be 100%."
 msgstr "Tổng thanh toán phải đủ 100%."
+
+#
+msgid "Payment is required according to config."
+msgstr "Thanh toán là bắt buộc theo cấu hình."
+
+#
+msgid "Document was referenced by other documents"
+msgstr "Phiếu đã được tham chiếu bởi các phiếu khác"
 
 #
 msgid "Project"

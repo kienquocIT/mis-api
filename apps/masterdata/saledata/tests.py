@@ -1885,6 +1885,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
     def test_create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
             'apply_for': 1,
             'remark': 'lorem ipsum dolor sit amet.',
             'term': [
@@ -1952,22 +1953,26 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         data = {
             'id': res.data['result'].get('id', ''),
             'title': 'config payment term 01 edited',
+            'code': 'PaymentTerm01',
             'apply_for': 0,
             'remark': 'lorem ipsum dolor sit amet...',
             'term': [
                 {
                     "value": '100% sau khi ký HD edited',
                     "unit_type": 0,
-                    "day_type": 0,
+                    "day_type": 1,
                     "no_of_days": "15",
                     "after": 3
                 }
             ],
         }
-        self.client.put(url, data, format='json')
-        response = self.client.get(url, data, format='json')
-        self.assertEqual(response.status_code, 200)
-        self.assertDictEqual(response.data['result'], data)
+        put_response = self.client.put(url, data, format='json')
+        if put_response.status_code == 200:
+            response = self.client.get(url, data, format='json')
+            self.assertEqual(response.status_code, 200)
+            self.assertDictEqual(response.data['result'], data)
+        else:
+            self.fail(f'FAILURE - PUT - url: {url} - response data: {str(put_response.data)}')
 
     def test_delete_detail(self):
         res = self.test_create_config_payment_term()
@@ -2249,7 +2254,7 @@ class WareHouseTestCase(AdvanceTestCase):
         return response
 
     def test_warehouse_create(self):
-        city = [item for item in self.get_city().data['result'] if item['title'] == 'TP Hồ Chí Minh']
+        city = [item for item in self.get_city().data['result'] if item['title'] == 'Thành Phố Hồ Chí Minh']
         district = [item for item in self.get_district(city[0]['id']).data['result'] if item['title'] == 'Quận 7']
         ward = self.get_ward().data['result'][0]['id']
 
@@ -2260,7 +2265,7 @@ class WareHouseTestCase(AdvanceTestCase):
             'is_active': True,
             'address': 'chung cư ABC',
             'warehouse_type': 0,
-            'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, TP Hồ Chí Minh',
+            'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, Thành Phố Hồ Chí Minh',
             'city': city[0]['id'],
             'district': district[0]['id'],
             'ward': ward,
@@ -2299,7 +2304,7 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'agency'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'agency', 'full_address'],
             check_sum_second=True,
         )
         return response

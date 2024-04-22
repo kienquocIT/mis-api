@@ -68,6 +68,7 @@ class Currency(MasterDataAbstractModel):
         verbose_name = 'Currency'
         verbose_name_plural = 'Currencies'
         ordering = ('date_created',)
+        unique_together = ('company', 'abbreviation')
         default_permissions = ()
         permissions = ()
 

@@ -57,6 +57,7 @@ class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    @swagger_auto_schema(request_body=PaymentTermDetailSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
@@ -64,6 +65,7 @@ class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    @swagger_auto_schema()
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,

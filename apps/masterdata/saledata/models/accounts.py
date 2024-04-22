@@ -19,6 +19,7 @@ __all__ = [
     'Contact',
     'PaymentTerm',
     'ANNUAL_REVENUE_SELECTION',
+    'AccountActivity',
 ]
 
 
@@ -79,6 +80,7 @@ class AccountGroup(MasterDataAbstractModel):
         verbose_name = 'AccountGroup'
         verbose_name_plural = 'AccountGroups'
         ordering = ('code',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
 
@@ -90,6 +92,7 @@ class Industry(MasterDataAbstractModel):
         verbose_name = 'Industry'
         verbose_name_plural = 'Industries'
         ordering = ('code',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
 
@@ -121,7 +124,7 @@ class Account(DataAbstractModel):
     account_type = models.JSONField(
         default=list
     )
-    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=0)
+    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=1)
     account_group = models.ForeignKey(
         AccountGroup,
         on_delete=models.CASCADE,
@@ -219,6 +222,7 @@ class Account(DataAbstractModel):
         verbose_name = 'Account'
         verbose_name_plural = 'Accounts'
         ordering = ('-date_created',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
 

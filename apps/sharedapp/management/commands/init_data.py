@@ -124,11 +124,17 @@ class InitialsData:
                 tmp.delete()
 
         for idx, more_fields in data.items():
-            obj, _created = cls_model.objects.get_or_create(pk=idx, defaults=more_fields)
-            if _created is False:
-                for field, data_field in more_fields.items():
-                    setattr(obj, field, data_field)
-                obj.save()
+            try:
+                obj, _created = cls_model.objects.get_or_create(pk=idx, defaults=more_fields)
+                if _created is False:
+                    for field, data_field in more_fields.items():
+                        setattr(obj, field, data_field)
+                    obj.save()
+            except Exception as err:
+                print('[active_loads] errors:', str(err))
+                print('last item before errors:', idx, more_fields)
+                raise err
+
         count_diff = cls_model.objects.all().exclude(id__in=data.keys()).count()
         sys.stdout.write(
             f"{Fore.CYAN} DONE... {Fore.RESET}"

@@ -151,6 +151,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
     def test_create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
             'apply_for': 1,
             'remark': 'lorem ipsum dolor sit amet.',
             'term': [
@@ -295,6 +296,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -553,6 +555,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
+                'is_change',
                 'document_root_id',
                 'document_change_order',
             ],
@@ -590,6 +593,9 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'quotation',
                 'delivery_call',
                 'delivery_status',
+                'is_change',
+                'document_change_order',
+                'document_root_id',
             ],
             check_sum_second=True,
         )

@@ -9,12 +9,14 @@ __all__ = [
 
 # Contact Master data
 class Salutation(MasterDataAbstractModel):  # noqa
+    code = models.CharField(max_length=100)
     description = models.CharField(blank=True, max_length=200)
 
     class Meta:
         verbose_name = 'Salutation'
         verbose_name_plural = 'Salutations'
         ordering = ('code',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
 
@@ -32,6 +34,7 @@ class Interest(MasterDataAbstractModel):
 
 # Contact
 class Contact(DataAbstractModel):
+    code = models.CharField(max_length=100)
     owner = models.ForeignKey(
         'hr.Employee',
         verbose_name='Contact owner mapped',
@@ -187,5 +190,6 @@ class Contact(DataAbstractModel):
         verbose_name = 'Contact'
         verbose_name_plural = 'Contacts'
         ordering = ('-date_created',)
+        unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()

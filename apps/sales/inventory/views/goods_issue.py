@@ -41,10 +41,7 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class GoodsIssueDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = GoodsIssue.objects
     serializer_detail = GoodsIssueDetailSerializer
     serializer_update = GoodsIssueUpdateSerializer
@@ -54,6 +51,10 @@ class GoodsIssueDetail(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "inventory_adjustment",
+        ).prefetch_related(
+            'goods_issue_product__product',
+            'goods_issue_product__uom',
+            'goods_issue_product__warehouse'
         )
 
     @swagger_auto_schema(

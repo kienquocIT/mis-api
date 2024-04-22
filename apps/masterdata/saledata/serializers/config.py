@@ -34,6 +34,7 @@ class PaymentTermListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'apply_for',
             'term',
         )
@@ -50,6 +51,7 @@ class PaymentTermCreateSerializer(serializers.ModelSerializer):
         model = PaymentTerm
         fields = (
             'title',
+            'code',
             'apply_for',
             'remark',
             'term',
@@ -83,6 +85,7 @@ class PaymentTermDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'apply_for',
             'remark',
             'term',

@@ -4,13 +4,61 @@ __all__ = [
     'Application_crm_data',
 ]
 
+CURRENCY_APP_CONFIG = {
+    "id": "1102a36d-5dbe-48f6-845e-a6e0e69e04b2",
+    "title": "Currency",
+    "code": "currency",
+    "permit_mapping": {},
+    "model_code": "currency",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+ACCOUNT_GROUP_APP_CONFIG = {
+    "id": "35b38745-ba92-4d97-b1f7-4675a46585d3",
+    "title": "Account Group",
+    "code": "AccountGroup",
+    "permit_mapping": {},
+    "model_code": "accountgroup",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+ACCOUNT_TYPE_APP_CONFIG = {
+    "id": "b22a58d3-cc9e-4913-a06d-beee11afba60",
+    "title": "Account Type",
+    "code": "AccountType",
+    "permit_mapping": {},
+    "model_code": "accounttype",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+INDUSTRY_APP_CONFIG = {
+    "id": "37eb1961-8103-46c5-ad2e-236f3a6585f5",
+    "title": "Industry",
+    "code": "industry",
+    "permit_mapping": {},
+    "model_code": "industry",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+SALUTATION_APP_CONFIG = {
+    "id": "d3903adb-61a9-4b18-90ed-542ce7acedc8",
+    "title": "Salutation",
+    "code": "salutation",
+    "model_code": "salutation",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 CONTACT_APP_CONFIG = {
     "id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
     "title": "Contact",
     "code": "contact",
     "model_code": "contact",
     "app_label": "saledata",
-    "is_workflow": True,
     "option_permission": 0,
     "option_allowed": [1, 2, 3, 4],
     "app_depend_on": [
@@ -58,7 +106,9 @@ CONTACT_APP_CONFIG = {
                 "view": "==",
             },
         },
-    }
+    },
+    "allow_permit": True,
+    "allow_import": True,
 }
 
 ACCOUNT_APP_CONFIG = {
@@ -67,7 +117,6 @@ ACCOUNT_APP_CONFIG = {
     "code": "account",
     "model_code": "account",
     "app_label": "saledata",
-    "is_workflow": True,
     "option_permission": 0,
     "option_allowed": [1, 2, 3, 4],
     "app_depend_on": [
@@ -115,7 +164,9 @@ ACCOUNT_APP_CONFIG = {
                 "view": "==",
             },
         },
-    }
+    },
+    "allow_permit": True,
+    "allow_import": True,
 }
 
 OPPORTUNITY_APP_CONFIG = {
@@ -169,6 +220,7 @@ OPPORTUNITY_APP_CONFIG = {
             },
         },
     },
+    "allow_permit": True,
 }
 
 TASK_APP_CONFIG = {
@@ -212,6 +264,7 @@ TASK_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_permit": True,
 }
 
 QUOTATION_APP_CONFIG = {
@@ -700,6 +753,7 @@ PAYMENT_TERM_APP_CONFIG = {
     "app_label": "saledata",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_import": True,
 }
 
 RETURN_ADVANCE_APP_CONFIG = {
@@ -1681,6 +1735,13 @@ SALE_PROJECT = {
 # # # Tự trình bày: Các chức năng ở nhóm 1/2 sẽ có thêm spacing_allow = "1"
 
 Application_crm_data = {
+    # another
+    'd3903adb-61a9-4b18-90ed-542ce7acedc8': ApplicationConfigFrame(**SALUTATION_APP_CONFIG).data(),
+    '1102a36d-5dbe-48f6-845e-a6e0e69e04b2': ApplicationConfigFrame(**CURRENCY_APP_CONFIG).data(),
+    '35b38745-ba92-4d97-b1f7-4675a46585d3': ApplicationConfigFrame(**ACCOUNT_GROUP_APP_CONFIG).data(),
+    'b22a58d3-cc9e-4913-a06d-beee11afba60': ApplicationConfigFrame(**ACCOUNT_TYPE_APP_CONFIG).data(),
+    '37eb1961-8103-46c5-ad2e-236f3a6585f5': ApplicationConfigFrame(**INDUSTRY_APP_CONFIG).data(),
+
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(
         depend_follow_main=True,

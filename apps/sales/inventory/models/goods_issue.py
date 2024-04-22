@@ -1,5 +1,4 @@
 import json
-
 from django.db import models
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
@@ -122,6 +121,8 @@ class GoodsIssueProduct(MasterDataAbstractModel):
         max_length=1000,
         blank=True
     )
+    lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'old_quantity': ..., 'quantity': ...}]
+    sn_data = models.JSONField(default=list)  # [..., ..., ...]
     quantity = models.FloatField()
     unit_cost = models.FloatField()
     subtotal = models.FloatField()

@@ -317,6 +317,8 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_quotation(cls, value):
         try:
+            if value is None:
+                return None
             return Quotation.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,

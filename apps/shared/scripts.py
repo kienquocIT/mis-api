@@ -58,6 +58,7 @@ from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from ..sales.saleorder.utils import FinishHandler
 from ..sales.task.models import OpportunityTaskStatus
 
 
@@ -784,7 +785,7 @@ def re_init_available():
     # leave_available_map_employee
     LeaveAvailable.objects.all().delete()
     for obj in Company.objects.all():
-        for employee in Employee.objects.all():
+        for employee in Employee.objects.filter(company=obj):
             leave_available_map_employee(employee, obj)
 
 
@@ -1343,13 +1344,13 @@ def reset_and_run_reports_sale(run_type=0):
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SaleOrder.push_to_report_revenue(sale_order)
-            SaleOrder.push_to_report_product(sale_order)
-            SaleOrder.push_to_report_customer(sale_order)
+            FinishHandler.push_to_report_revenue(sale_order)
+            FinishHandler.push_to_report_product(sale_order)
+            FinishHandler.push_to_report_customer(sale_order)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SaleOrder.push_to_report_cashflow(sale_order)
+            FinishHandler.push_to_report_cashflow(sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
             PurchaseOrder.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
@@ -1404,7 +1405,7 @@ def reset_set_product_transaction_information():
         GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SaleOrder.update_product_wait_delivery_amount(instance=so)
+        FinishHandler.update_product_wait_delivery_amount(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliProductInformationHandle.main_handle(instance=deli_sub)
     # return

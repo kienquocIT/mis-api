@@ -250,13 +250,13 @@ class ReportInventoryDetailList(BaseListMixin):
             'period_mapped' in self.request.query_params,
             'sub_period_order' in self.request.query_params
         ]):
-            self.ser_context['all_report_inventory_by_month'] = ReportInventorySub.objects.filter(
+            self.ser_context['all_roots_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
                 report_inventory__period_mapped_id=self.request.query_params['period_mapped'],
                 report_inventory__sub_period_order=self.request.query_params['sub_period_order']
             ).select_related('warehouse')
         else:
-            self.ser_context['all_report_inventory_by_month'] = ReportInventorySub.objects.filter(
+            self.ser_context['all_roots_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         return self.list(request, *args, **kwargs)
