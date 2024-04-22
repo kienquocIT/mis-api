@@ -114,7 +114,6 @@ class PurchaseOrder(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            # code = 'PO0001-' + StringHandler.random_str(17)
             code = 'PO0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
@@ -204,7 +203,6 @@ class PurchaseOrder(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
             if not self.code:

@@ -87,7 +87,6 @@ class GoodsReceipt(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            # code = 'GR0001-' + StringHandler.random_str(17)
             code = 'GR0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
@@ -153,7 +152,6 @@ class GoodsReceipt(DataAbstractModel):
     def save(self, *args, **kwargs):
         SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
 
-        # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
             if not self.code:
