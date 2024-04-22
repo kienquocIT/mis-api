@@ -1,5 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.inventory.models import GoodsReceiptProduct, GoodsReceipt
+from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
