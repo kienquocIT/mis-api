@@ -1,10 +1,10 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
 )
-from apps.shared import SYSTEM_STATUS
 
 
 def create_inventory_adjustment_warehouses(obj, data):
@@ -46,9 +46,22 @@ def create_inventory_adjustment_items(obj, data):
     return True
 
 
+def update_inventory_adjustment_items(obj, data):
+    for item in data:
+        item_obj = obj.inventory_adjustment_item_mapped.filter(id=item['id']).first()
+        if item_obj:
+            item_obj.count = item['count']
+            item_obj.action_type = item['action_type']
+            item_obj.select_for_action = item['select_for_action']
+            item_obj.save(update_fields=['count', 'action_type', 'select_for_action'])
+        else:
+            raise serializers.ValidationError('Inventory Adjustment Item not exist')
+    return True
+
+
 class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
     warehouses = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
+    state = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustment
@@ -58,7 +71,7 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
             'title',
             'warehouses',
             'date_created',
-            'system_status'
+            'state'
         )
 
     @classmethod
@@ -76,16 +89,17 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
         return data
 
     @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
+    def get_state(cls, obj):
+        if obj.state:
+            return _("Finished")
+        return _("Opening")
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
     warehouses = serializers.SerializerMethodField()
     employees_in_charge = serializers.SerializerMethodField()
     inventory_adjustment_item_mapped = serializers.SerializerMethodField()
+    state = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustment
@@ -97,6 +111,7 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
             'employees_in_charge',
             'inventory_adjustment_item_mapped',
             'date_created',
+            'state'
         )
 
     @classmethod
@@ -134,6 +149,7 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
         for item in all_item:
             data.append(
                 {
+                    'id': item.id,
                     'product_warehouse_mapped': {
                         'id': item.product_warehouse_id,
                         'code': item.product_warehouse.code,
@@ -162,6 +178,12 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
             )
         return data
 
+    @classmethod
+    def get_state(cls, obj):
+        if obj.state:
+            return _('Finished')
+        return _('Opening')
+
 
 class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -178,7 +200,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'IA.000' + str(new_code)
 
-        obj = InventoryAdjustment.objects.create(**validated_data, code=new_code, system_status=3)
+        obj = InventoryAdjustment.objects.create(**validated_data, code=new_code)
         create_inventory_adjustment_warehouses(obj, self.initial_data.get('ia_warehouses_data', []))
         create_inventory_adjustment_employees_in_charge(obj, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(obj, self.initial_data.get('ia_items_data', []))
@@ -188,14 +210,15 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
 class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryAdjustment
-        fields = ('title',)
+        fields = ()
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
-        create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
+        update_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
+        instance.update_ia_state()
         return instance
 
 
@@ -292,4 +315,4 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
             'action_status': ia_product.action_status,
             'product_unit_price': 0,
             'product_subtotal_price': 0,
-        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2)]
+        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2, action_status=False)]

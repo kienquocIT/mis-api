@@ -163,7 +163,8 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-
+                if self.inventory_adjustment:
+                    self.inventory_adjustment.update_ia_state()
                 self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
@@ -265,6 +266,15 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
     )
+    ia_item = models.ForeignKey(
+        'inventory.InventoryAdjustmentItem',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='goods_receipt_product_ia_item'
+    )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Product'
@@ -347,6 +357,9 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
     quantity_import = models.FloatField(default=0)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
+    )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
     )
 
     class Meta:

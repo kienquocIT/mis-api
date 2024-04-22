@@ -10,10 +10,7 @@ from apps.sales.inventory.serializers.inventory_adjustment import (
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class InventoryAdjustmentList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class InventoryAdjustmentList(BaseListMixin, BaseCreateMixin):
     queryset = InventoryAdjustment.objects
     serializer_list = InventoryAdjustmentListSerializer
     serializer_create = InventoryAdjustmentCreateSerializer
@@ -26,8 +23,8 @@ class InventoryAdjustmentList(
         operation_description="Get Inventory Adjustment List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -38,17 +35,14 @@ class InventoryAdjustmentList(
         request_body=InventoryAdjustmentCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='inventoryadjustment', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='inventoryadjustment', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class InventoryAdjustmentDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class InventoryAdjustmentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = InventoryAdjustment.objects
     serializer_detail = InventoryAdjustmentDetailSerializer
     serializer_update = InventoryAdjustmentUpdateSerializer
@@ -68,8 +62,8 @@ class InventoryAdjustmentDetail(
         operation_description="Get Inventory Adjustment detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -80,8 +74,8 @@ class InventoryAdjustmentDetail(
         request_body=InventoryAdjustmentUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='inventoryadjustment', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='inventoryadjustment', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -113,9 +107,6 @@ class InventoryAdjustmentProductList(BaseListMixin):
 # Inventory adjustment list use for other apps
 class InventoryAdjustmentOtherList(BaseListMixin):
     queryset = InventoryAdjustment.objects
-    filterset_fields = {
-        'goods_receipt_ia': ['exact', 'isnull'],
-    }
     serializer_list = InventoryAdjustmentOtherListSerializer
     serializer_detail = InventoryAdjustmentOtherListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

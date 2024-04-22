@@ -1032,6 +1032,14 @@ msgid "Document was referenced by other documents"
 msgstr "Phiếu đã được tham chiếu bởi các phiếu khác"
 
 #
+msgid "Finished"
+msgstr "Đã hoàn thành"
+
+#
+msgid "Opening"
+msgstr "Đang mở"
+
+#
 msgid "Project"
 msgstr "Dự án"
 
