@@ -189,7 +189,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     quantity_import = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
-    ia_item = serializers.UUIDField(required=False)
+    ia_item = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = GoodsReceiptProduct
