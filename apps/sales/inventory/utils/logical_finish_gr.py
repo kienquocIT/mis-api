@@ -6,49 +6,48 @@ class GRFinishHandler:
     def update_gr_info_for_po(cls, instance):
         if instance.goods_receipt_type == 0:  # check type GR for PO
             for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
-                gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
-                gr_po_product.purchase_order_product.gr_completed_quantity = round(
-                    gr_po_product.purchase_order_product.gr_completed_quantity,
-                    2
-                )
-                gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
-                gr_po_product.purchase_order_product.gr_remain_quantity = round(
-                    gr_po_product.purchase_order_product.gr_remain_quantity,
-                    2
-                )
-                gr_po_product.purchase_order_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+                if gr_po_product.purchase_order_product:
+                    gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+                    gr_po_product.purchase_order_product.gr_completed_quantity = round(
+                        gr_po_product.purchase_order_product.gr_completed_quantity, 2
+                    )
+                    gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+                    gr_po_product.purchase_order_product.gr_remain_quantity = round(
+                        gr_po_product.purchase_order_product.gr_remain_quantity, 2
+                    )
+                    gr_po_product.purchase_order_product.save(update_fields=[
+                        'gr_completed_quantity', 'gr_remain_quantity'
+                    ])
             for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
-                gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
-                gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
-                    gr_pr_product.purchase_order_request_product.gr_completed_quantity,
-                    2
-                )
-                gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
-                gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
-                    gr_pr_product.purchase_order_request_product.gr_remain_quantity,
-                    2
-                )
-                gr_pr_product.purchase_order_request_product.save(update_fields=[
-                    'gr_completed_quantity',
-                    'gr_remain_quantity'
-                ])
+                if gr_pr_product.purchase_order_request_product:
+                    gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+                    gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
+                        gr_pr_product.purchase_order_request_product.gr_completed_quantity, 2
+                    )
+                    gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+                    gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
+                        gr_pr_product.purchase_order_request_product.gr_remain_quantity, 2
+                    )
+                    gr_pr_product.purchase_order_request_product.save(update_fields=[
+                        'gr_completed_quantity',
+                        'gr_remain_quantity'
+                    ])
         return True
 
     @classmethod
     def update_gr_info_for_ia(cls, instance):
         if instance.goods_receipt_type == 1:  # check type GR for IA
             for gr_ia_product in instance.goods_receipt_product_goods_receipt.all():
-                gr_ia_product.ia_item.gr_completed_quantity += gr_ia_product.quantity_import
-                gr_ia_product.ia_item.gr_completed_quantity = round(
-                    gr_ia_product.ia_item.gr_completed_quantity,
-                    2
-                )
-                gr_ia_product.ia_item.gr_remain_quantity -= gr_ia_product.quantity_import
-                gr_ia_product.ia_item.gr_remain_quantity = round(
-                    gr_ia_product.ia_item.gr_remain_quantity,
-                    2
-                )
-                gr_ia_product.ia_item.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+                if gr_ia_product.ia_item:
+                    gr_ia_product.ia_item.gr_completed_quantity += gr_ia_product.quantity_import
+                    gr_ia_product.ia_item.gr_completed_quantity = round(
+                        gr_ia_product.ia_item.gr_completed_quantity, 2
+                    )
+                    gr_ia_product.ia_item.gr_remain_quantity -= gr_ia_product.quantity_import
+                    gr_ia_product.ia_item.gr_remain_quantity = round(
+                        gr_ia_product.ia_item.gr_remain_quantity, 2
+                    )
+                    gr_ia_product.ia_item.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
         return True
 
     @classmethod
