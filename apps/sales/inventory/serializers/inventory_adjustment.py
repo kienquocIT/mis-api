@@ -33,12 +33,14 @@ def create_inventory_adjustment_employees_in_charge(obj, data):
 def create_inventory_adjustment_items(obj, data):
     bulk_info = []
     for item in data:
+        difference_quantity = int(item.get('count', 0)) - item.get('book_quantity', 0)
         bulk_info.append(
             InventoryAdjustmentItem(
                 **item,
                 inventory_adjustment_mapped=obj,
                 tenant=obj.tenant,
                 company=obj.company,
+                gr_remain_quantity=difference_quantity if difference_quantity > 0 else 0
             )
         )
     InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()

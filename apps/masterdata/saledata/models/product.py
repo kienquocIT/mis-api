@@ -242,10 +242,11 @@ class Product(DataAbstractModel):
         if 'quantity_purchase' in kwargs:
             instance.wait_receipt_amount += kwargs['quantity_purchase']
             del kwargs['quantity_purchase']
-        if 'quantity_receipt_po' in kwargs:
+        if 'quantity_receipt_po' in kwargs and 'quantity_receipt_actual' in kwargs:
             instance.wait_receipt_amount -= kwargs['quantity_receipt_po']
-            instance.stock_amount += kwargs['quantity_receipt_po']
+            instance.stock_amount += kwargs['quantity_receipt_actual']
             del kwargs['quantity_receipt_po']
+            del kwargs['quantity_receipt_actual']
         if 'quantity_receipt_ia' in kwargs:
             instance.stock_amount += kwargs['quantity_receipt_ia']
             del kwargs['quantity_receipt_ia']
