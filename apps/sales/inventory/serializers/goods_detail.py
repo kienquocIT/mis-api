@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
 from apps.sales.inventory.models import GoodsReceipt
 
 
@@ -56,3 +58,44 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
             ).order_by('lot_number')],
             'quantity_import': item.quantity_import
         } for item in obj.goods_receipt_product_goods_receipt.all()]
+
+
+class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = ()
+
+    def create(self, validated_data):
+        product_id = self.initial_data.get('product_id')
+        warehouse_id = self.initial_data.get('warehouse_id')
+        goods_receipt_id = self.initial_data.get('goods_receipt_id')
+        prd_wh = ProductWareHouse.objects.filter(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+            goods_receipt_id=goods_receipt_id
+        ).first()
+        if prd_wh:
+            all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
+            for item in self.initial_data.get('serial_data'):
+                serial_id = item.get('serial_id')
+                if serial_id:
+                    serial = all_serial.filter(id=serial_id).first()
+                    if serial:
+                        serial.vendor_serial_number = item.get('vendor_serial_number')
+                        serial.serial_number = item.get('serial_number')
+                        serial.expire_date = item.get('expire_date')
+                        serial.manufacture_date = item.get('manufacture_date')
+                        serial.warranty_start = item.get('warranty_start')
+                        serial.warranty_end = item.get('warranty_end')
+                        serial.save()
+                    else:
+                        raise serializers.ValidationError({"Serial": 'Serial is not exist.'})
+                else:
+                    ProductWareHouseSerial.objects.create(product_warehouse=prd_wh, **item)
+        return prd_wh
+
+
+class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = ('id',)

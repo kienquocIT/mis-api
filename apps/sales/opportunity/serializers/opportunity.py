@@ -454,7 +454,7 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
     for stage in stages:
         if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
             if stage.indicator in current_stage_indicator:
-                if stage.win_rate == 0 and is_deal_close:
+                if not stage.win_rate:
                     new_instance_current_stage[0]['current'] = 0
                     new_instance_current_stage.append({
                         'id': stage.id,
@@ -470,7 +470,7 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
                         'current': 1 if len(new_instance_current_stage) == 0 else 0
                     })
         else:
-            if stage.win_rate == 0 and is_deal_close:
+            if not stage.win_rate:
                 new_instance_current_stage[0]['current'] = 0
                 new_instance_current_stage.append({
                     'id': stage.id,
@@ -521,12 +521,17 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
-    is_deal_close = False
+
+        if stage['indicator'] == 'Deal Close' and instance.is_deal_close:
+            current_stage_indicator.append(stage['indicator'])
+            instance_current_stage.append({
+                'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+            })
+
     if len(instance_current_stage) > 0:
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
         if instance_current_stage[-1]['win_rate'] == 0:
             instance_current_stage[-1]['current'] = 1
-            is_deal_close = instance_current_stage[-1]['indicator'] == 'Deal Close'
         else:
             instance_current_stage[0]['current'] = 1
 
@@ -534,9 +539,13 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
             company_id=instance.company_id,
             win_rate__lte=instance_current_stage[0]['win_rate']
         ).order_by('-win_rate')
-        new_instance_current_stage = get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close)
+        new_instance_current_stage = get_instance_current_stage_range(
+            stages,
+            current_stage_indicator,
+            instance_current_stage[-1]['indicator'] == 'Deal Close'
+        )
 
-        return new_instance_current_stage, is_deal_close
+        return new_instance_current_stage
     raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
@@ -643,9 +652,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
-        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage, instance)
-        instance.is_deal_close = is_deal_close
-        instance.save(update_fields=['is_deal_close'])
+        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage, instance)
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
@@ -653,6 +660,11 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
             data_bulk.append(
                 OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
             )
+        if len(data_bulk) > 0:
+            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder.status=0' in instance_stage:
+                raise serializers.ValidationError(
+                    {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
+                )
         OpportunityStage.objects.bulk_create(data_bulk)
         return True
 

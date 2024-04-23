@@ -3,7 +3,7 @@ from django.urls import path
 from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail, \
     InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList, \
     GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn, \
-    GetDeliveryProductsDetail, GoodsReturnList, GoodsReturnDetail, GoodsDetailList
+    GetDeliveryProductsDetail, GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList
 
 urlpatterns = [
     # goods receipt
@@ -58,4 +58,5 @@ urlpatterns += [
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
+    path('update-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
 ]

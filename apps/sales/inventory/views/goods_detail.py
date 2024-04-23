@@ -1,6 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.masterdata.saledata.models import ProductWareHouse
 from apps.sales.inventory.models import GoodsReceipt
-from apps.sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
+from apps.sales.inventory.serializers.goods_detail import (
+    GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
 
@@ -27,3 +31,22 @@ class GoodsDetailList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class GoodsDetailDataList(BaseCreateMixin):
+    queryset = ProductWareHouse.objects
+    serializer_create = GoodsDetailDataCreateSerializer
+    serializer_detail = GoodsDetailDataDetailSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Create Goods Detail Product Warehouse",
+        operation_description="Create new Goods Detail Product Warehouse",
+        request_body=GoodsDetailDataCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='goodsreturn', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
