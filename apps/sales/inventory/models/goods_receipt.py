@@ -1,6 +1,6 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods
-from apps.sales.inventory.utils import FinishHandler
+from apps.sales.inventory.utils import GRFinishHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
@@ -169,10 +169,10 @@ class GoodsReceipt(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        FinishHandler.push_to_product_warehouse(self)
-                        FinishHandler.update_product_wait_receipt_amount(self)
-                        FinishHandler.update_gr_info_for_po(self)
-                        FinishHandler.update_is_all_receipted_po(self)
+                        GRFinishHandler.push_to_product_warehouse(self)
+                        GRFinishHandler.update_product_wait_receipt_amount(self)
+                        GRFinishHandler.update_gr_info_for_po(self)
+                        GRFinishHandler.update_is_all_receipted_po(self)
 
         # hit DB
         super().save(*args, **kwargs)

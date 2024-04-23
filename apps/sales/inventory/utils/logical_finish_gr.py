@@ -1,7 +1,7 @@
 from apps.masterdata.saledata.models import ProductWareHouse
 
 
-class FinishHandler:
+class GRFinishHandler:
     @classmethod
     def update_gr_info_for_po(cls, instance):
         if instance.goods_receipt_type == 0:  # GR for PO
@@ -76,6 +76,7 @@ class FinishHandler:
                         'quantity_import': lot.quantity_import * final_ratio,
                         'expire_date': lot.expire_date,
                         'manufacture_date': lot.manufacture_date,
+                        'goods_receipt_id': instance.id,
                     })
             for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
                 serial_data.append({
@@ -85,6 +86,7 @@ class FinishHandler:
                     'manufacture_date': serial.manufacture_date,
                     'warranty_start': serial.warranty_start,
                     'warranty_end': serial.warranty_end,
+                    'goods_receipt_id': instance.id,
                 })
             ProductWareHouse.push_from_receipt(
                 tenant_id=instance.tenant_id,
@@ -120,6 +122,7 @@ class FinishHandler:
                         'quantity_import': lot.quantity_import * final_ratio,
                         'expire_date': lot.expire_date,
                         'manufacture_date': lot.manufacture_date,
+                        'goods_receipt_id': instance.id,
                     })
             for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
                 serial_data.append({
@@ -129,6 +132,7 @@ class FinishHandler:
                     'manufacture_date': serial.manufacture_date,
                     'warranty_start': serial.warranty_start,
                     'warranty_end': serial.warranty_end,
+                    'goods_receipt_id': instance.id,
                 })
             ProductWareHouse.push_from_receipt(
                 tenant_id=instance.tenant_id,

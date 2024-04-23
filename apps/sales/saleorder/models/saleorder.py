@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.saleorder.utils import FinishHandler, DocumentChangeHandler
+from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
@@ -271,18 +271,18 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        FinishHandler.update_product_wait_delivery_amount(self)
+                        SOFinishHandler.update_product_wait_delivery_amount(self)
                         # opportunity
-                        FinishHandler.update_opportunity_stage_by_so(self)
+                        SOFinishHandler.update_opportunity_stage_by_so(self)
                         # customer
-                        FinishHandler.push_to_customer_activity(self)
+                        SOFinishHandler.push_to_customer_activity(self)
                         # reports
-                        FinishHandler.push_to_report_revenue(self)
-                        FinishHandler.push_to_report_product(self)
-                        FinishHandler.push_to_report_customer(self)
-                        FinishHandler.push_to_report_cashflow(self)
+                        SOFinishHandler.push_to_report_revenue(self)
+                        SOFinishHandler.push_to_report_product(self)
+                        SOFinishHandler.push_to_report_customer(self)
+                        SOFinishHandler.push_to_report_cashflow(self)
                         # final acceptance
-                        FinishHandler.push_to_final_acceptance(self)
+                        SOFinishHandler.push_to_final_acceptance(self)
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
 

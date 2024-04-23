@@ -26,7 +26,7 @@ from apps.sales.cashoutflow.models import (
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
-    ProductWareHouse,
+    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
 )
 from . import MediaForceAPI
 
@@ -45,6 +45,7 @@ from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, 
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn
 from ..sales.inventory.serializers import GReturnProductInformationHandle
+from ..sales.inventory.utils import GRFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -58,7 +59,7 @@ from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
-from ..sales.saleorder.utils import FinishHandler
+from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus
 
 
@@ -1344,13 +1345,13 @@ def reset_and_run_reports_sale(run_type=0):
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            FinishHandler.push_to_report_revenue(sale_order)
-            FinishHandler.push_to_report_product(sale_order)
-            FinishHandler.push_to_report_customer(sale_order)
+            SOFinishHandler.push_to_report_revenue(sale_order)
+            SOFinishHandler.push_to_report_product(sale_order)
+            SOFinishHandler.push_to_report_customer(sale_order)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            FinishHandler.push_to_report_cashflow(sale_order)
+            SOFinishHandler.push_to_report_cashflow(sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
             PurchaseOrder.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
@@ -1402,10 +1403,10 @@ def reset_set_product_transaction_information():
     for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
         PurchaseOrder.update_product_wait_receipt_amount(instance=po)
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GoodsReceipt.update_product_wait_receipt_amount(instance=gr)
+        GRFinishHandler.update_product_wait_receipt_amount(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        FinishHandler.update_product_wait_delivery_amount(instance=so)
+        SOFinishHandler.update_product_wait_delivery_amount(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliProductInformationHandle.main_handle(instance=deli_sub)
     # return
@@ -1427,7 +1428,7 @@ def reset_set_product_warehouse_stock():
     # input, output, provide
     # input
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GoodsReceipt.push_to_product_warehouse(instance=gr)
+        GRFinishHandler.push_to_product_warehouse(instance=gr)
     # output
     for deli_sub in OrderDeliverySub.objects.all():
         DeliProductWarehouseHandle.main_handle(instance=deli_sub)
@@ -1534,22 +1535,6 @@ def reset_run_customer_activity():
     print('reset_run_customer_activity done.')
 
 
-def update_date_due_date_payment():
-    current_date = timezone.now()
-    for so_payment in SaleOrderPaymentStage.objects.all():
-        if not so_payment.date:
-            so_payment.date = current_date
-            so_payment.save(update_fields=['date'])
-        if not so_payment.due_date:
-            so_payment.due_date = current_date
-            so_payment.save(update_fields=['due_date'])
-    for po_payment in PurchaseOrderPaymentStage.objects.all():
-        if not po_payment.due_date:
-            po_payment.due_date = current_date
-            po_payment.save(update_fields=['due_date'])
-    print('update_date_due_date_payment done.')
-
-
 def change_duplicate_group():
     from apps.core.hr.models import Group
 
@@ -1564,3 +1549,18 @@ def change_duplicate_group():
             item.save()
             print('Change:', item.id, old_code, 'TO', item.code)
     print('Function run successful')
+
+
+def update_gr_for_lot_serial():
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr_lot in gr.goods_receipt_lot_goods_receipt.all():
+            lot = ProductWareHouseLot.objects.filter(lot_number=gr_lot.lot_number).first()
+            if lot:
+                lot.goods_receipt = gr
+                lot.save(update_fields=['goods_receipt'])
+        for gr_serial in gr.goods_receipt_serial_goods_receipt.all():
+            serial = ProductWareHouseSerial.objects.filter(serial_number=gr_serial.serial_number).first()
+            if serial:
+                serial.goods_receipt = gr
+                serial.save(update_fields=['goods_receipt'])
+    print('update_gr_for_lot_serial done.')
