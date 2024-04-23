@@ -103,8 +103,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 serial.goods_receipt_id = goods_receipt_id
                 serial.save()
                 return True
-            raise serializers.ValidationError({'Serial': f"'Serial {item.get('serial_number')} is existed"})
-        raise serializers.ValidationError({'Serial': f"'Serial id {serial_id} is not existed"})
+            raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
+        raise serializers.ValidationError({'Serial': f"Serial id {serial_id} is not existed"})
 
     @classmethod
     def create_serial(cls, item, prd_wh, goods_receipt_id):
@@ -121,8 +121,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     tenant_id=prd_wh.tenant_id
                 )
                 return True
-            raise serializers.ValidationError({'Serial': f"'Serial {item.get('serial_number')} is existed"})
-        raise serializers.ValidationError({'Serial': f"'Missing vendor_serial_number or serial_number"})
+            raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
+        raise serializers.ValidationError({'Serial': "Missing vendor_serial_number or serial_number"})
 
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
@@ -143,7 +143,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         for item in lot_data:
             sum_quantity_import += float(item.get('quantity_import'))
         if sum_quantity_import > gr_quantity_import:
-            raise serializers.ValidationError({'Lot quantity': f"'Sum lot quantity > receipt quantity"})
+            raise serializers.ValidationError({'Lot quantity': "Sum lot quantity > receipt quantity"})
         return True
 
     @classmethod
@@ -157,8 +157,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 lot.goods_receipt_id = goods_receipt_id
                 lot.save()
                 return True
-            raise serializers.ValidationError({'Lot': f"'Lot {item.get('lot_number')} is existed"})
-        raise serializers.ValidationError({'Lot': f"'Lot {lot_id} is not existed"})
+            raise serializers.ValidationError({'Lot': f"Lot {item.get('lot_number')} is existed"})
+        raise serializers.ValidationError({'Lot': f"Lot {lot_id} is not existed"})
 
     @classmethod
     def create_lot(cls, item, prd_wh, goods_receipt_id):
@@ -173,8 +173,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     tenant_id=prd_wh.tenant_id
                 )
                 return True
-            raise serializers.ValidationError({'Lot': f"'Lot {item.get('lot_number')} is existed"})
-        raise serializers.ValidationError({'Lot': f"'Missing lot_number or quantity_import"})
+            raise serializers.ValidationError({'Lot': f"Lot {item.get('lot_number')} is existed"})
+        raise serializers.ValidationError({'Lot': "Missing lot_number or quantity_import"})
 
     @classmethod
     def for_lot(cls, lot_data, prd_wh, goods_receipt_id):
@@ -199,7 +199,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 self.check_lot_quantity(self.initial_data.get('gr_quantity_import'), self.initial_data.get('lot_data'))
                 self.for_lot(self.initial_data.get('lot_data'), prd_wh, goods_receipt_id)
             return prd_wh
-        raise serializers.ValidationError({'Product Warehouse': f"ProductWareHouse object is not exist"})
+        raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
 
 
 class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
