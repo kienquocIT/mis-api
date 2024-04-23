@@ -31,6 +31,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 'id': item.product_id,
                 'code': item.product.code,
                 'title': item.product.title,
+                'category': item.product.general_product_category,
                 'type': item.product.general_traceability_method
             } if item.product else {},
             'warehouse': {
@@ -112,8 +113,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 gr_quantity_import = float(self.initial_data.get('gr_quantity_import'))
                 sum_quantity_import = 0
                 for item in self.initial_data.get('lot_data'):
-                    if not item.get('lot_id'):
-                        sum_quantity_import += float(item.get('quantity_import'))
+                    sum_quantity_import += float(item.get('quantity_import'))
                 if sum_quantity_import > gr_quantity_import:
                     raise serializers.ValidationError({'Lot quantity': f"'Sum lot quantity > receipt quantity"})
 
