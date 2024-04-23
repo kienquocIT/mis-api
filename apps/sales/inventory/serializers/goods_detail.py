@@ -31,7 +31,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 'id': item.product_id,
                 'code': item.product.code,
                 'title': item.product.title,
-                'category': item.product.general_product_category,
+                'category': item.product.general_product_category_id,
                 'type': item.product.general_traceability_method
             } if item.product else {},
             'warehouse': {
