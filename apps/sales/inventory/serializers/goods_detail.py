@@ -87,6 +87,103 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         model = ProductWareHouse
         fields = ()
 
+    @classmethod
+    def update_serial(cls, item, all_serial, serial_id, goods_receipt_id):
+        serial = all_serial.filter(id=serial_id, is_delete=False).first()
+        if serial:
+            if not ProductWareHouseSerial.objects.filter(
+                serial_number=item.get('serial_number')
+            ).exclude(id=serial_id).exists():
+                serial.vendor_serial_number = item.get('vendor_serial_number')
+                serial.serial_number = item.get('serial_number')
+                serial.expire_date = item.get('expire_date')
+                serial.manufacture_date = item.get('manufacture_date')
+                serial.warranty_start = item.get('warranty_start')
+                serial.warranty_end = item.get('warranty_end')
+                serial.goods_receipt_id = goods_receipt_id
+                serial.save()
+                return True
+            raise serializers.ValidationError({'Serial': f"'Serial {item.get('serial_number')} is existed"})
+
+    @classmethod
+    def create_serial(cls, item, prd_wh, goods_receipt_id):
+        del item['serial_id']
+        if item.get('vendor_serial_number') and item.get('serial_number'):
+            if not ProductWareHouseSerial.objects.filter(
+                    serial_number=item.get('serial_number')
+            ).exists():
+                ProductWareHouseSerial.objects.create(
+                    **item,
+                    product_warehouse=prd_wh,
+                    goods_receipt_id=goods_receipt_id,
+                    company_id=prd_wh.company_id,
+                    tenant_id=prd_wh.tenant_id
+                )
+                return True
+            raise serializers.ValidationError(
+                {'Serial': f"'Serial {item.get('serial_number')} is existed"}
+            )
+
+    @classmethod
+    def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
+        all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
+        for item in serial_data:
+            serial_id = item.get('serial_id')
+            if serial_id:
+                cls.update_serial(item, all_serial, serial_id, goods_receipt_id)
+            else:
+                cls.create_serial(item, prd_wh, goods_receipt_id)
+        return True
+
+    @classmethod
+    def check_lot_quantity(cls, gr_quantity_import, lot_data):
+        # check quantity_import
+        gr_quantity_import = float(gr_quantity_import)
+        sum_quantity_import = 0
+        for item in lot_data:
+            sum_quantity_import += float(item.get('quantity_import'))
+        if sum_quantity_import > gr_quantity_import:
+            raise serializers.ValidationError({'Lot quantity': f"'Sum lot quantity > receipt quantity"})
+
+    @classmethod
+    def update_lot(cls, item, all_lot, lot_id, goods_receipt_id):
+        lot = all_lot.filter(id=lot_id).first()
+        if lot:
+            if not ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number')).exclude(id=lot_id).exists():
+                lot.lot_number = item.get('lot_number')
+                lot.expire_date = item.get('expire_date')
+                lot.manufacture_date = item.get('manufacture_date')
+                lot.goods_receipt_id = goods_receipt_id
+                lot.save()
+                return True
+            raise serializers.ValidationError({'Lot': f"'Lot {item.get('lot_number')} is existed"})
+
+    @classmethod
+    def create_lot(cls, item, prd_wh, goods_receipt_id):
+        del item['lot_id']
+        if item.get('lot_number') and item.get('quantity_import'):
+            if not ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number')).exists():
+                ProductWareHouseLot.objects.create(
+                    **item,
+                    product_warehouse=prd_wh,
+                    goods_receipt_id=goods_receipt_id,
+                    company_id=prd_wh.company_id,
+                    tenant_id=prd_wh.tenant_id
+                )
+                return True
+            raise serializers.ValidationError({'Lot': f"'Lot {item.get('lot_number')} is existed"})
+
+    @classmethod
+    def for_lot(cls, lot_data, prd_wh, goods_receipt_id):
+        all_lot = prd_wh.product_warehouse_lot_product_warehouse.all()
+        for item in lot_data:
+            lot_id = item.get('lot_id')
+            if lot_id:
+                cls.update_lot(item, all_lot, lot_id, goods_receipt_id)
+            else:
+                cls.create_lot(item, prd_wh, goods_receipt_id)
+        return True
+
     def create(self, validated_data):
         product_id = self.initial_data.get('product_id')
         warehouse_id = self.initial_data.get('warehouse_id')
@@ -94,84 +191,10 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
         if prd_wh:
             if self.initial_data.get('is_serial_update'):
-                all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
-                for item in self.initial_data.get('serial_data'):
-                    serial_id = item.get('serial_id')
-                    if serial_id:
-                        serial = all_serial.filter(id=serial_id, is_delete=False).first()
-                        if serial:
-                            if not ProductWareHouseSerial.objects.filter(
-                                serial_number=item.get('serial_number')
-                            ).exclude(id=serial_id).exists():
-                                serial.vendor_serial_number = item.get('vendor_serial_number')
-                                serial.serial_number = item.get('serial_number')
-                                serial.expire_date = item.get('expire_date')
-                                serial.manufacture_date = item.get('manufacture_date')
-                                serial.warranty_start = item.get('warranty_start')
-                                serial.warranty_end = item.get('warranty_end')
-                                serial.goods_receipt_id = goods_receipt_id
-                                serial.save()
-                            else:
-                                raise serializers.ValidationError(
-                                    {'Serial': f"'Serial {item.get('serial_number')} is existed"}
-                                )
-                    else:
-                        del item['serial_id']
-                        if item.get('vendor_serial_number') and item.get('serial_number'):
-                            if not ProductWareHouseSerial.objects.filter(serial_number=item.get('serial_number')).exists():
-                                ProductWareHouseSerial.objects.create(
-                                    **item,
-                                    product_warehouse=prd_wh,
-                                    goods_receipt_id=goods_receipt_id,
-                                    company_id=prd_wh.company_id,
-                                    tenant_id=prd_wh.tenant_id
-                                )
-                            else:
-                                raise serializers.ValidationError(
-                                    {'Serial': f"'Serial {item.get('serial_number')} is existed"}
-                                )
+                self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
             else:
-                # check quantity_import
-                gr_quantity_import = float(self.initial_data.get('gr_quantity_import'))
-                sum_quantity_import = 0
-                for item in self.initial_data.get('lot_data'):
-                    sum_quantity_import += float(item.get('quantity_import'))
-                if sum_quantity_import > gr_quantity_import:
-                    raise serializers.ValidationError({'Lot quantity': f"'Sum lot quantity > receipt quantity"})
-
-                all_lot = prd_wh.product_warehouse_lot_product_warehouse.all()
-                for item in self.initial_data.get('lot_data'):
-                    lot_id = item.get('lot_id')
-                    if lot_id:
-                        lot = all_lot.filter(id=lot_id).first()
-                        if lot:
-                            if not ProductWareHouseLot.objects.filter(
-                                lot_number=item.get('lot_number')
-                            ).exclude(id=lot_id).exists():
-                                lot.lot_number = item.get('lot_number')
-                                lot.expire_date = item.get('expire_date')
-                                lot.manufacture_date = item.get('manufacture_date')
-                                lot.goods_receipt_id = goods_receipt_id
-                                lot.save()
-                            else:
-                                raise serializers.ValidationError(
-                                    {'Lot': f"'Lot {item.get('lot_number')} is existed"}
-                                )
-                    else:
-                        del item['lot_id']
-                        if item.get('lot_number') and item.get('quantity_import'):
-                            if not ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number')).exists():
-                                ProductWareHouseLot.objects.create(
-                                    **item,
-                                    product_warehouse=prd_wh,
-                                    goods_receipt_id=goods_receipt_id,
-                                    company_id=prd_wh.company_id,
-                                    tenant_id=prd_wh.tenant_id
-                                )
-                            else:
-                                raise serializers.ValidationError(
-                                    {'Lot': f"'Lot {item.get('lot_number')} is existed"}
-                                )
+                self.check_lot_quantity(self.initial_data.get('gr_quantity_import'), self.initial_data.get('lot_data'))
+                self.for_lot(self.initial_data.get('lot_data'), prd_wh, goods_receipt_id)
         return prd_wh
 
 
