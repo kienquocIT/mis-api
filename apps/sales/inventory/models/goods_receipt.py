@@ -161,8 +161,8 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                if self.inventory_adjustment:
-                    self.inventory_adjustment.update_ia_state()
+                # if self.inventory_adjustment:
+                #     self.inventory_adjustment.update_ia_state()
                 self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
@@ -172,7 +172,9 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.push_to_product_warehouse(self)
                         GRFinishHandler.update_product_wait_receipt_amount(self)
                         GRFinishHandler.update_gr_info_for_po(self)
+                        GRFinishHandler.update_gr_info_for_ia(self)
                         GRFinishHandler.update_is_all_receipted_po(self)
+                        GRFinishHandler.update_is_all_receipted_ia(self)
 
         # hit DB
         super().save(*args, **kwargs)
