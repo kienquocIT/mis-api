@@ -449,7 +449,7 @@ def get_instance_stage(instance):
     return instance_stage
 
 
-def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close):
+def get_instance_current_stage_range(stages, current_stage_indicator):
     new_instance_current_stage = []
     for stage in stages:
         if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
@@ -541,8 +541,7 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
         ).order_by('-win_rate')
         new_instance_current_stage = get_instance_current_stage_range(
             stages,
-            current_stage_indicator,
-            instance_current_stage[-1]['indicator'] == 'Deal Close'
+            current_stage_indicator
         )
 
         return new_instance_current_stage
