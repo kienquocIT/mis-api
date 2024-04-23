@@ -219,7 +219,6 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            # code = 'SQ0001-' + StringHandler.random_str(17)
             code = 'SQ0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
@@ -255,6 +254,12 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                 date_activity=instance.date_approved,
                 revenue=instance.indicator_revenue,
             )
+        return True
+
+    @classmethod
+    def check_change_document(cls, instance):
+        if not instance:
+            return False
         return True
 
     def save(self, *args, **kwargs):

@@ -14,7 +14,7 @@ class DocHandler:
         return None
 
 
-class FinishHandler:
+class SOFinishHandler:
     @classmethod
     def update_product_wait_delivery_amount(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():

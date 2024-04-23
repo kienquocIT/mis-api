@@ -1,6 +1,6 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods
-from apps.sales.inventory.utils import FinishHandler
+from apps.sales.inventory.utils import GRFinishHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
@@ -87,7 +87,6 @@ class GoodsReceipt(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            # code = 'GR0001-' + StringHandler.random_str(17)
             code = 'GR0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
@@ -153,7 +152,6 @@ class GoodsReceipt(DataAbstractModel):
     def save(self, *args, **kwargs):
         SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
 
-        # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
             if not self.code:
@@ -171,10 +169,10 @@ class GoodsReceipt(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        FinishHandler.push_to_product_warehouse(self)
-                        FinishHandler.update_product_wait_receipt_amount(self)
-                        FinishHandler.update_gr_info_for_po(self)
-                        FinishHandler.update_is_all_receipted_po(self)
+                        GRFinishHandler.push_to_product_warehouse(self)
+                        GRFinishHandler.update_product_wait_receipt_amount(self)
+                        GRFinishHandler.update_gr_info_for_po(self)
+                        GRFinishHandler.update_is_all_receipted_po(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -272,6 +270,9 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         null=True,
         related_name='goods_receipt_product_ia_item'
     )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Product'
@@ -354,6 +355,9 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
     quantity_import = models.FloatField(default=0)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
+    )
+    is_added = models.BooleanField(
+        default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
     )
 
     class Meta:

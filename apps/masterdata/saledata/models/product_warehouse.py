@@ -285,29 +285,6 @@ class ProductWareHouse(MasterDataAbstractModel):
         permissions = ()
 
 
-# class ProductWareHousePeriod(MasterDataAbstractModel):
-#     product_warehouse = models.ForeignKey(
-#         ProductWareHouse,
-#         on_delete=models.CASCADE,
-#         verbose_name='Product WareHouse related',
-#     )
-#     opening_balance = models.FloatField()
-#     purchase_amount = models.FloatField()
-#     bought_amount = models.FloatField()
-#
-#     year = models.PositiveSmallIntegerField()
-#     order = models.PositiveSmallIntegerField()
-#     start_date = models.DateTimeField()
-#     end_date = models.DateTimeField()
-#
-#     class Meta:
-#         verbose_name = 'Product at WareHouse in Period'
-#         verbose_name_plural = 'Product at WareHouse in Period'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-
-
 class ProductWareHouseLot(MasterDataAbstractModel):
     product_warehouse = models.ForeignKey(
         ProductWareHouse,
@@ -319,6 +296,14 @@ class ProductWareHouseLot(MasterDataAbstractModel):
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="goods receipt",
+        related_name="product_wh_lot_goods_receipt",
+        help_text="To know this lot was imported by which GoodsReceipt",
+    )
 
     class Meta:
         verbose_name = 'Product Warehouse Lot'
@@ -357,6 +342,14 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
     manufacture_date = models.DateTimeField(null=True)
     warranty_start = models.DateTimeField(null=True)
     warranty_end = models.DateTimeField(null=True)
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="goods receipt",
+        related_name="product_wh_serial_goods_receipt",
+        help_text="To know this serial was imported by which GoodsReceipt"
+    )
 
     class Meta:
         verbose_name = 'Product Warehouse Serial'
