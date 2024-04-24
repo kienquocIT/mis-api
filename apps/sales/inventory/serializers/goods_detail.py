@@ -120,13 +120,6 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     company_id=prd_wh.company_id,
                     tenant_id=prd_wh.tenant_id
                 )
-
-                prd_wh.receipt_amount += 1
-                prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-                prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-
-                prd_wh.product.stock_amount += 1
-                prd_wh.product.save(update_fields=['stock_amount'])
             else:
                 raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
         return True
@@ -134,12 +127,20 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
         all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
+        amount_create = 0
         for item in serial_data:
             serial_id = item.get('serial_id')
             if serial_id:
                 cls.update_serial(item, all_serial, serial_id, goods_receipt_id)
             else:
+                amount_create += 1
                 cls.create_serial(item, prd_wh, goods_receipt_id)
+
+        prd_wh.receipt_amount += amount_create
+        prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+        prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+        prd_wh.product.stock_amount += amount_create
+        prd_wh.product.save(update_fields=['stock_amount'])
         return True
 
     @classmethod
@@ -179,13 +180,6 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     company_id=prd_wh.company_id,
                     tenant_id=prd_wh.tenant_id
                 )
-
-                prd_wh.receipt_amount += float(item.get('quantity_import'))
-                prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-                prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-
-                prd_wh.product.stock_amount += float(item.get('quantity_import'))
-                prd_wh.product.save(update_fields=['stock_amount'])
             else:
                 raise serializers.ValidationError({'Lot': f"Lot {item.get('lot_number')} is existed"})
         return True
@@ -193,12 +187,20 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def for_lot(cls, lot_data, prd_wh, goods_receipt_id):
         all_lot = prd_wh.product_warehouse_lot_product_warehouse.all()
+        amount_create = 0
         for item in lot_data:
             lot_id = item.get('lot_id')
             if lot_id:
                 cls.update_lot(item, all_lot, lot_id, goods_receipt_id)
             else:
+                amount_create += float(item.get('quantity_import'))
                 cls.create_lot(item, prd_wh, goods_receipt_id)
+
+        prd_wh.receipt_amount += amount_create
+        prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+        prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+        prd_wh.product.stock_amount += amount_create
+        prd_wh.product.save(update_fields=['stock_amount'])
         return True
 
     def create(self, validated_data):
