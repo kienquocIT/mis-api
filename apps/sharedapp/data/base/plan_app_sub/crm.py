@@ -1114,10 +1114,7 @@ GOODS_DETAIL_APP_CONFIG = {
     "model_code": "goodsdetail",
     "app_label": "inventory",
     "is_workflow": False,
-    "app_depend_on": [
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
-        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # Warehouse
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -1126,33 +1123,18 @@ GOODS_DETAIL_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
     },
     "allow_permit": True,
