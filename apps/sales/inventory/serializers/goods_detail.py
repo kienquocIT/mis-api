@@ -135,12 +135,12 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             else:
                 amount_create += 1
                 cls.create_serial(item, prd_wh, goods_receipt_id)
-
-        prd_wh.receipt_amount += amount_create
-        prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-        prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-        prd_wh.product.stock_amount += amount_create
-        prd_wh.product.save(update_fields=['stock_amount'])
+        if amount_create > 0:
+            prd_wh.receipt_amount += amount_create
+            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+            prd_wh.product.stock_amount += amount_create
+            prd_wh.product.save(update_fields=['stock_amount'])
         return True
 
     @classmethod
@@ -195,12 +195,12 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             else:
                 amount_create += float(item.get('quantity_import'))
                 cls.create_lot(item, prd_wh, goods_receipt_id)
-
-        prd_wh.receipt_amount += amount_create
-        prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-        prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-        prd_wh.product.stock_amount += amount_create
-        prd_wh.product.save(update_fields=['stock_amount'])
+        if amount_create > 0:
+            prd_wh.receipt_amount += amount_create
+            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+            prd_wh.product.stock_amount += amount_create
+            prd_wh.product.save(update_fields=['stock_amount'])
         return True
 
     def create(self, validated_data):
