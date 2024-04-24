@@ -120,9 +120,16 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     company_id=prd_wh.company_id,
                     tenant_id=prd_wh.tenant_id
                 )
-                return True
-            raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
-        raise serializers.ValidationError({'Serial': "Missing vendor_serial_number or serial_number"})
+
+                prd_wh.receipt_amount += 1
+                prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+                prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+
+                prd_wh.product.stock_amount += 1
+                prd_wh.product.save(update_fields=['stock_amount'])
+            else:
+                raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
+        return True
 
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
@@ -172,9 +179,16 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     company_id=prd_wh.company_id,
                     tenant_id=prd_wh.tenant_id
                 )
-                return True
-            raise serializers.ValidationError({'Lot': f"Lot {item.get('lot_number')} is existed"})
-        raise serializers.ValidationError({'Lot': "Missing lot_number or quantity_import"})
+
+                prd_wh.receipt_amount += float(item.get('quantity_import'))
+                prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+                prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+
+                prd_wh.product.stock_amount += float(item.get('quantity_import'))
+                prd_wh.product.save(update_fields=['stock_amount'])
+            else:
+                raise serializers.ValidationError({'Lot': f"Lot {item.get('lot_number')} is existed"})
+        return True
 
     @classmethod
     def for_lot(cls, lot_data, prd_wh, goods_receipt_id):

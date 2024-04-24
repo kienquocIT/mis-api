@@ -1107,6 +1107,57 @@ GOODS_RECEIPT_APP_CONFIG = {
     "allow_permit": True,
 }
 
+GOODS_DETAIL_APP_CONFIG = {
+    "id": "a943adf4-e00d-4cae-bb3e-78cca3efb09a",
+    "title": "Goods Detail",
+    "code": "goodsdetail",
+    "model_code": "goodsdetail",
+    "app_label": "inventory",
+    "is_workflow": False,
+    "app_depend_on": [
+        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
+        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # Warehouse
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 GOODS_TRANSFER_APP_CONFIG = {
     "id": "866f163d-b724-404d-942f-4bc44dc2e2ed",
     "title": "Goods Transfer",
@@ -1813,6 +1864,10 @@ Application_crm_data = {
         filtering_inheritor=False,
     ),
     "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "a943adf4-e00d-4cae-bb3e-78cca3efb09a": ApplicationConfigFrame(**GOODS_DETAIL_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),

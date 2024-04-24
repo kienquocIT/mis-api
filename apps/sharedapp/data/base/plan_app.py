@@ -214,6 +214,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "dd16a86c-4aef-46ec-9302-19f30b101cf5",  # Goods Receipt
     },
+    "a943adf4-e00d-4cae-bb3e-78cca3efb09a": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a943adf4-e00d-4cae-bb3e-78cca3efb09a",  # Goods Detail
+    },
     "866f163d-b724-404d-942f-4bc44dc2e2ed": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "866f163d-b724-404d-942f-4bc44dc2e2ed",  # Goods Transfer
