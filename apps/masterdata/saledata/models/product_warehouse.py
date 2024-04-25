@@ -209,24 +209,28 @@ class ProductWareHouse(MasterDataAbstractModel):
     @classmethod
     def pop_from_transfer(cls, product_warehouse_id, amount, data):
         try:
-            product_warehouse_obj = cls.objects.get(id=product_warehouse_id)
-            product_warehouse_obj.stock_amount -= amount
-            product_warehouse_obj.product.stock_amount -= amount
-            product_warehouse_obj.product.available_amount -= amount
-            product_warehouse_obj.save(update_fields=['stock_amount'])
-            product_warehouse_obj.product.save(update_fields=['stock_amount', 'available_amount'])
-            if product_warehouse_obj.product.general_traceability_method == 1:  # lot
+            prd_wh_obj = cls.objects.get(id=product_warehouse_id)
+
+            prd_wh_obj.sold_amount += amount
+            prd_wh_obj.stock_amount = prd_wh_obj.receipt_amount - prd_wh_obj.sold_amount
+            prd_wh_obj.save(update_fields=['sold_amount', 'stock_amount'])
+
+            prd_wh_obj.product.stock_amount -= amount
+            prd_wh_obj.product.available_amount -= amount
+            prd_wh_obj.product.save(update_fields=['stock_amount', 'available_amount'])
+
+            if prd_wh_obj.product.general_traceability_method == 1:  # lot
                 if len(data['lot_changes']) == 0:
                     raise ValueError('Lot data can not NULL')
                 for each in data['lot_changes']:
                     lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
-                    if lot and each['quantity'] > 0:
+                    if lot and each['old_quantity'] - each['quantity'] > 0:
                         if lot.quantity_import >= amount:
                             lot.quantity_import -= amount
                             lot.save(update_fields=['quantity_import'])
                         else:
                             raise ValueError('Lot quantity must be > 0')
-            elif product_warehouse_obj.product.general_traceability_method == 2:  # sn
+            elif prd_wh_obj.product.general_traceability_method == 2:  # sn
                 if len(data['sn_changes']) == 0:
                     raise ValueError('Serial data can not NULL')
                 sn_list = ProductWareHouseSerial.objects.filter(id__in=data['sn_changes'])
@@ -289,6 +293,7 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
+    raw_quantity_import = models.FloatField(default=0)
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
@@ -309,15 +314,10 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         permissions = ()
 
     @classmethod
-    def create(
-            cls,
-            tenant_id,
-            company_id,
-            product_warehouse_id,
-            lot_data,
-    ):
+    def create(cls, tenant_id, company_id, product_warehouse_id, lot_data):
         cls.objects.bulk_create([cls(
             **data,
+            raw_quantity_import=data.get('quantity_import', 0),
             tenant_id=tenant_id,
             company_id=company_id,
             product_warehouse_id=product_warehouse_id,
