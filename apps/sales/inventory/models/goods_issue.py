@@ -1,7 +1,6 @@
 import json
 from django.db import models
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse
-from apps.sales.inventory.models import InventoryAdjustmentItem
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
@@ -112,11 +111,11 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, item_id, value):
-        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
+    def update_status_inventory_adjustment_item(cls, ia_obj, item_id):
+        item = ia_obj.inventory_adjustment_item_mapped.filter(id=item_id).first()
         if item:
-            item.action_status = value
-            item.select_for_action = value
+            item.action_status = True
+            item.select_for_action = True
             item.save(update_fields=['action_status', 'select_for_action'])
         return True
 
@@ -137,12 +136,13 @@ class GoodsIssue(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                for item in self.goods_issue_datas:
-                    self.update_product_amount(item)
-                    if item['inventory_adjustment_item']:
-                        self.update_status_inventory_adjustment_item(item['inventory_adjustment_item'], True)
-
                 if self.inventory_adjustment:
+                    for item in self.goods_issue_datas:
+                        self.update_product_amount(item)
+                        self.update_status_inventory_adjustment_item(
+                            self.inventory_adjustment,
+                            item.get('inventory_adjustment_item'),
+                        )
                     self.inventory_adjustment.update_ia_state()
                 self.prepare_data_for_logging(self)
 
