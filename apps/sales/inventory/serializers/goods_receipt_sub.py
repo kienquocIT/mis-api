@@ -14,15 +14,6 @@ from apps.shared.translations.sales import InventoryMsg, SaleMsg
 
 class GoodsReceiptCommonCreate:
     @classmethod
-    def update_status_inventory_adjustment_item(cls, item_id, value):
-        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
-        if item:
-            item.action_status = value
-            item.select_for_action = value
-            item.save(update_fields=['action_status', 'select_for_action'])
-        return True
-
-    @classmethod
     def create_m2m_goods_receipt_pr(cls, purchase_requests, instance):
         GoodsReceiptPurchaseRequest.objects.bulk_create([GoodsReceiptPurchaseRequest(
             goods_receipt=instance,
@@ -42,11 +33,10 @@ class GoodsReceiptCommonCreate:
                 warehouse_gr_data = gr_product['warehouse_data']
                 del gr_product['warehouse_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
-            if new_gr_product.ia_item_id:
-                cls.update_status_inventory_adjustment_item(
-                    new_gr_product.ia_item_id,
-                    True
-                )
+            if new_gr_product.ia_item:
+                new_gr_product.ia_item.action_status = True
+                new_gr_product.ia_item.select_for_action = True
+                new_gr_product.ia_item.save(update_fields=['action_status', 'select_for_action'])
             # If PO have PR
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             for pr_product in purchase_request_products_data:
