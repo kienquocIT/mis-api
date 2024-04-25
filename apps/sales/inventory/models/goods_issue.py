@@ -111,8 +111,8 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, ia_obj, item_id):
-        item = ia_obj.inventory_adjustment_item_mapped.filter(id=item_id).first()
+    def update_status_inventory_adjustment_item(cls, ia_obj, ia_item_id):
+        item = ia_obj.inventory_adjustment_item_mapped.filter(id=ia_item_id).first()
         if item:
             item.action_status = True
             item.select_for_action = True
