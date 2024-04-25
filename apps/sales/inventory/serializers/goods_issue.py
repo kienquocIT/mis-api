@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 
@@ -7,7 +8,7 @@ __all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssue
 
 from apps.sales.report.models import ReportInventorySub
 
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS
+from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
 
@@ -128,7 +129,7 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
         return None
 
 
-class GoodsIssueDetailSerializer(serializers.ModelSerializer):
+class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     inventory_adjustment = serializers.SerializerMethodField()
     goods_issue_datas = serializers.SerializerMethodField()
 
@@ -159,6 +160,7 @@ class GoodsIssueDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_goods_issue_datas(cls, obj):
         return [{
+            'id': item.inventory_adjustment_item.id,
             'product_warehouse': {
                 'id': item.product_warehouse_id,
                 'product_mapped': {
@@ -200,6 +202,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
             'goods_issue_type',
             'inventory_adjustment',
             'goods_issue_datas',
+            'system_status'
         )
 
     @classmethod
@@ -212,24 +215,6 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
                     'inventory_adjustment': GIMsg.IA_NOT_EXIST
                 }
             )
-
-    @classmethod
-    def update_product_amount(cls, data):
-        ProductWareHouse.pop_from_transfer(
-            product_warehouse_id=data['product_warehouse']['id'],
-            amount=data['quantity'],
-            data=data
-        )
-        return True
-
-    @classmethod
-    def update_status_inventory_adjustment_item(cls, item_id, value):
-        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
-        if item:
-            item.action_status = value
-            item.select_for_action = value
-            item.save(update_fields=['action_status', 'select_for_action'])
-        return True
 
     @classmethod
     def common_create_sub_goods_issue(cls, instance, data):
@@ -255,74 +240,29 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
                 sn_data=item['sn_changes']
             )
             bulk_data.append(obj)
-            cls.update_product_amount(item)
-            if item['inventory_adjustment_item']:
-                cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'], True)
+        GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
         GoodsIssueProduct.objects.bulk_create(bulk_data)
-
         return True
 
-    @classmethod
-    def prepare_data_for_logging(cls, instance):
-        activities_data = []
-        for item in instance.goods_issue_product.all():
-            lot_data = []
-            prd_wh_lot = ProductWareHouseLot.objects.filter(
-                product_warehouse__product=item.product,
-                product_warehouse__warehouse=item.warehouse
-            ).first()
-            if prd_wh_lot:
-                lot_data.append({
-                    'lot_id': str(prd_wh_lot.id),
-                    'lot_number': prd_wh_lot.lot_number,
-                    'lot_quantity': item.quantity,
-                    'lot_value': item.unit_cost * item.quantity,
-                    'lot_expire_date': str(prd_wh_lot.expire_date)
-                })
-            activities_data.append({
-                'product': item.product,
-                'warehouse': item.warehouse,
-                'system_date': instance.date_created,
-                'posting_date': None,
-                'document_date': None,
-                'stock_type': -1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods issue',
-                'quantity': item.quantity,
-                'cost': item.unit_cost,
-                'value': item.unit_cost * item.quantity,
-                'lot_data': lot_data
-            })
-        ReportInventorySub.logging_when_stock_activities_happened(
-            instance,
-            instance.date_created,
-            activities_data
-        )
-        return True
-
+    @decorator_run_workflow
     def create(self, validated_data):
-        instance = GoodsIssue.objects.create(**validated_data, system_status=3)
+        instance = GoodsIssue.objects.create(**validated_data)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
-        if instance.inventory_adjustment:
-            instance.inventory_adjustment.update_ia_state()
-        self.prepare_data_for_logging(instance)
         return instance
 
 
 class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
-    goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer(), required=False)
-    inventory_adjustment = serializers.UUIDField(required=False)
     title = serializers.CharField(required=False)
     note = serializers.CharField(required=False, allow_blank=True)
+    goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer())
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
             'note',
-            'inventory_adjustment',
             'goods_issue_datas',
+            'system_status'
         )
 
     @classmethod
@@ -332,23 +272,10 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
         except InventoryAdjustment.DoesNotExist:
             raise serializers.ValidationError({'inventory_adjustment': GIMsg.IA_NOT_EXIST})
 
-    @classmethod
-    def revert_stock_amount(cls, instance):
-        objs = GoodsIssueProduct.objects.select_related('product_warehouse').filter(goods_issue=instance)
-        for item in objs:
-            item.product_warehouse.stock_amount += item.quantity
-            item.product_warehouse.save(update_fields=['stock_amount'])
-            if item.inventory_adjustment_item:
-                item.inventory_adjustment_item.action_status = False
-                item.inventory_adjustment_item.save(update_fields=['action_status'])
-        objs.delete()
-        return True
-
+    @decorator_run_workflow
     def update(self, instance, validated_data):
-        if 'goods_issue_datas' in validated_data:
-            self.revert_stock_amount(instance)
-            GoodsIssueCreateSerializer.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        GoodsIssueCreateSerializer.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
         return instance

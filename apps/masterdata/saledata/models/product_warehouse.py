@@ -224,7 +224,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                     raise ValueError('Lot data can not NULL')
                 for each in data['lot_changes']:
                     lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
-                    if lot and each['quantity'] > 0:
+                    if lot and each['old_quantity'] - each['quantity'] > 0:
                         if lot.quantity_import >= amount:
                             lot.quantity_import -= amount
                             lot.save(update_fields=['quantity_import'])
@@ -293,6 +293,7 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
+    raw_quantity_import = models.FloatField(default=0)
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
@@ -313,15 +314,10 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         permissions = ()
 
     @classmethod
-    def create(
-            cls,
-            tenant_id,
-            company_id,
-            product_warehouse_id,
-            lot_data,
-    ):
+    def create(cls, tenant_id, company_id, product_warehouse_id, lot_data):
         cls.objects.bulk_create([cls(
             **data,
+            raw_quantity_import=data.get('quantity_import', 0),
             tenant_id=tenant_id,
             company_id=company_id,
             product_warehouse_id=product_warehouse_id,

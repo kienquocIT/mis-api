@@ -97,6 +97,7 @@ MAP_FIELD_TITLE = {
     'assettools.assettoolsprovide': 'title',
     'assettools.assettoolsdelivery': 'title',
     'assettools.assettoolsreturn': 'title',
+    'inventory.goodsissue': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

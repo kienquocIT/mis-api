@@ -1,5 +1,9 @@
 import json
 from django.db import models
+
+from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse
+from apps.sales.inventory.models import InventoryAdjustmentItem
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -54,25 +58,95 @@ class GoodsIssue(DataAbstractModel):
     )
 
     class Meta:
-        verbose_name = 'Goods Transfer'
-        verbose_name_plural = 'Goods Transfer'
+        verbose_name = 'Goods Issue'
+        verbose_name_plural = 'Goods Issue'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        activities_data = []
+        for item in instance.goods_issue_product.all():
+            lot_data = []
+            prd_wh_lot = ProductWareHouseLot.objects.filter(
+                product_warehouse__product=item.product,
+                product_warehouse__warehouse=item.warehouse
+            ).first()
+            if prd_wh_lot:
+                lot_data.append({
+                    'lot_id': str(prd_wh_lot.id),
+                    'lot_number': prd_wh_lot.lot_number,
+                    'lot_quantity': item.quantity,
+                    'lot_value': item.unit_cost * item.quantity,
+                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                })
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.warehouse,
+                'system_date': instance.date_created,
+                'posting_date': None,
+                'document_date': None,
+                'stock_type': -1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods issue',
+                'quantity': item.quantity,
+                'cost': item.unit_cost,
+                'value': item.unit_cost * item.quantity,
+                'lot_data': lot_data
+            })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            activities_data
+        )
+        return True
+
+    @classmethod
+    def update_product_amount(cls, data):
+        ProductWareHouse.pop_from_transfer(
+            product_warehouse_id=data['product_warehouse']['id'],
+            amount=data['quantity'],
+            data=data
+        )
+        return True
+
+    @classmethod
+    def update_status_inventory_adjustment_item(cls, item_id, value):
+        item = InventoryAdjustmentItem.objects.filter(id=item_id).first()
+        if item:
+            item.action_status = value
+            item.select_for_action = value
+            item.save(update_fields=['action_status', 'select_for_action'])
+        return True
+
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        goods_issue = GoodsIssue.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "GI"
-        if not self.code:
-            temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
-        # hit DB
+        if self.system_status in [2, 3]:
+            if not self.code:
+                goods_issue = GoodsIssue.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "GI"
+                temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
+                code = f"{char}{temper}"
+                self.code = code
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
+                for item in self.goods_issue_datas:
+                    self.update_product_amount(item)
+                    if item['inventory_adjustment_item']:
+                        self.update_status_inventory_adjustment_item(item['inventory_adjustment_item'], True)
+
+                if self.inventory_adjustment:
+                    self.inventory_adjustment.update_ia_state()
+                self.prepare_data_for_logging(self)
+
         super().save(*args, **kwargs)
 
 

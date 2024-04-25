@@ -35,10 +35,11 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
             lot_data = []
             sum_lot_quantity = 0
             for lot in obj.product_wh_lot_goods_receipt.all().order_by('lot_number'):
-                sum_lot_quantity += lot.quantity_import
+                sum_lot_quantity += lot.raw_quantity_import
                 lot_data.append({
                     'id': lot.id,
                     'lot_number': lot.lot_number,
+                    'raw_quantity_import': lot.raw_quantity_import,
                     'quantity_import': lot.quantity_import,
                     'expire_date': lot.expire_date,
                     'manufacture_date': lot.manufacture_date,
@@ -175,6 +176,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             if not ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number')).exists():
                 ProductWareHouseLot.objects.create(
                     **item,
+                    raw_quantity_import=item.get('quantity_import', 0),
                     product_warehouse=prd_wh,
                     goods_receipt_id=goods_receipt_id,
                     company_id=prd_wh.company_id,
