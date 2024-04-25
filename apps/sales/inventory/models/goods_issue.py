@@ -1,6 +1,5 @@
 import json
 from django.db import models
-
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse
 from apps.sales.inventory.models import InventoryAdjustmentItem
 from apps.sales.report.models import ReportInventorySub
