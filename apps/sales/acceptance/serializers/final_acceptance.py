@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.acceptance.models import FinalAcceptance, FinalAcceptanceIndicator
 
 
@@ -129,14 +130,19 @@ class FinalAcceptanceUpdateSerializer(serializers.ModelSerializer):
         model = FinalAcceptance
         fields = (
             'final_acceptance_indicator',
+            'system_status',
         )
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
+        instance.system_status = validated_data.get('system_status', 0)
+        instance.save(update_fields=['system_status'])
         for key, value in validated_data.get('final_acceptance_indicator', {}).items():
-            fa_indicator = FinalAcceptanceIndicator.objects.filter(id=key).first()
+            fa_indicator = instance.fa_indicator_final_acceptance.filter(id=key).first()
             if fa_indicator:
                 fa_indicator.actual_value = value.get('actual_value', 0)
                 fa_indicator.different_value = value.get('different_value', 0)
                 fa_indicator.rate_value = value.get('rate_value', 0)
-                fa_indicator.save(update_fields=['actual_value', 'different_value', 'rate_value'])
+                fa_indicator.remark = value.get('remark', '')
+                fa_indicator.save(update_fields=['actual_value', 'different_value', 'rate_value', 'remark'])
         return instance
