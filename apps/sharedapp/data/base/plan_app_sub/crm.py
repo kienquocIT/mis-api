@@ -1687,6 +1687,51 @@ REPORT_INVENTORY_APP_CONFIG = {
     "allow_permit": True,
 }
 
+FINAL_ACCEPTANCE_APP_CONFIG = {
+    "id": "710c5a94-3a29-4e0e-973c-e6cace96c1e7",
+    "title": "Final Acceptance",
+    "code": "finalacceptance",
+    "model_code": "finalacceptance",
+    "app_label": "acceptance",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale order
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1904,5 +1949,9 @@ Application_crm_data = {
     "c22a9e96-e56e-4636-9083-8ee1c66cb1b2": ApplicationConfigFrame(**REPORT_INVENTORY_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
+    ),
+    "710c5a94-3a29-4e0e-973c-e6cace96c1e7": ApplicationConfigFrame(**FINAL_ACCEPTANCE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
     ),
 }
