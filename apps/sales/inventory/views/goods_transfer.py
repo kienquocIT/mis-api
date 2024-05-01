@@ -40,10 +40,7 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class GoodsTransferDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class GoodsTransferDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = GoodsTransfer.objects
     serializer_detail = GoodsTransferDetailSerializer
     serializer_update = GoodsTransferUpdateSerializer

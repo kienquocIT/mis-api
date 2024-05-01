@@ -46,9 +46,9 @@ class GoodsReturnSubSerializerForNonPicking:
             activities_data.append({
                 'product': instance.product,
                 'warehouse': instance.return_to_warehouse,
-                'system_date': instance.date_created,
-                'posting_date': None,
-                'document_date': None,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
                 'stock_type': 1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
@@ -62,7 +62,7 @@ class GoodsReturnSubSerializerForNonPicking:
             raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
-            instance.date_created,
+            instance.date_approved,
             activities_data
         )
         return True

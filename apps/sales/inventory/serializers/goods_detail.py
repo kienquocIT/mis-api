@@ -19,7 +19,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         for item in obj.goods_receipt_product_goods_receipt.all():
             gr_wh_gr_prd = item.goods_receipt_warehouse_gr_product.first()
             serial_data = []
-            for serial in obj.product_wh_serial_goods_receipt.all().order_by('serial_number'):
+            for serial in obj.product_wh_serial_goods_receipt.all().order_by('vendor_serial_number', 'serial_number'):
                 serial_data.append({
                     'id': serial.id,
                     'vendor_serial_number': serial.vendor_serial_number,
@@ -173,7 +173,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     def create_lot(cls, item, prd_wh, goods_receipt_id):
         del item['lot_id']
         if item.get('lot_number') and item.get('quantity_import'):
-            if not ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number')).exists():
+            lot_else = ProductWareHouseLot.objects.filter(lot_number=item.get('lot_number'))
+            if not lot_else.exists():
                 ProductWareHouseLot.objects.create(
                     **item,
                     raw_quantity_import=item.get('quantity_import', 0),
