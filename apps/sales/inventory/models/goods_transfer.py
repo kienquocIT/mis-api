@@ -191,7 +191,6 @@ class GoodsTransfer(DataAbstractModel):
                     if lot_src_obj and lot_src_obj.quantity_import > item.quantity:
                         lot_src_obj.quantity_import -= item.quantity
                         lot_src_obj.save(update_fields=['quantity_import'])
-
                         lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
                         if lot_des_obj:
                             lot_des_obj.quantity_import += item.quantity
@@ -217,7 +216,6 @@ class GoodsTransfer(DataAbstractModel):
                     if sn_src_obj and not sn_src_obj.is_delete:
                         sn_src_obj.is_delete = True
                         sn_src_obj.save(update_fields=['is_delete'])
-
                         ProductWareHouseSerial.objects.create(
                             tenant_id=instance.tenant_id,
                             company_id=instance.company_id,
