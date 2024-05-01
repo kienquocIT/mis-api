@@ -1,7 +1,5 @@
 import json
-
 from django.db import models
-
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
