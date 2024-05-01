@@ -136,7 +136,11 @@ urlpatterns += [
     ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
-    path('warehouses-products-for-goods-transfer', ProductWareHouseListForGoodsTransfer.as_view(), name='ProductWareHouseListForGoodsTransfer'),
+    path(
+        'warehouses-products-for-goods-transfer',
+        ProductWareHouseListForGoodsTransfer.as_view(),
+        name='ProductWareHouseListForGoodsTransfer'
+    ),
     path('warehouses-lots', ProductWareHouseLotList.as_view(), name='ProductWareHouseLotList'),
     path('warehouses-serials', ProductWareHouseSerialList.as_view(), name='ProductWareHouseSerialList'),
     path(

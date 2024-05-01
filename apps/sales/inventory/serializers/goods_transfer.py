@@ -1,15 +1,12 @@
 from rest_framework import serializers
-
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account
-from apps.sales.inventory.models import GoodsTransfer
+from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
+from apps.shared import WarehouseMsg, ProductMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.shared.translations.goods_transfer import GTMsg
 
 __all__ = ['GoodsTransferListSerializer', 'GoodsTransferCreateSerializer', 'GoodsTransferDetailSerializer',
            'GoodsTransferUpdateSerializer']
-
-from apps.sales.inventory.models import GoodsTransferProduct
-from apps.shared import WarehouseMsg, ProductMsg, GOODS_TRANSFER_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel
-from apps.shared.translations.goods_transfer import GTMsg
 
 
 class GoodsTransferProductSerializer(serializers.ModelSerializer):
