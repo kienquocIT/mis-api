@@ -15,7 +15,6 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
-
     @swagger_auto_schema(
         operation_summary="Goods transfer List",
         operation_description="Get Goods transfer List",
