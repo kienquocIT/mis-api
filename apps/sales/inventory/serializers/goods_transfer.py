@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account
+from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account, ProductWareHouseLot, \
+    ProductWareHouseSerial
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.shared import WarehouseMsg, ProductMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_transfer import GTMsg
@@ -245,37 +246,64 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         goods_transfer_datas = []
         for item in obj.goods_transfer.all():
             serial_detail = []
-            serial_exist = 0
-            for serial in item.warehouse_product.product_warehouse_serial_product_warehouse.filter(
-                    is_delete=False
-            ).order_by('vendor_serial_number', 'serial_number'):
-                serial_exist += 1 if str(serial.id) in item.sn_data else 0
-                serial_detail.append({
-                    'id': serial.id,
-                    'vendor_serial_number': serial.vendor_serial_number,
-                    'serial_number': serial.serial_number,
-                    'expire_date': serial.expire_date,
-                    'manufacture_date': serial.manufacture_date,
-                    'warranty_start': serial.warranty_start,
-                    'warranty_end': serial.warranty_end
-                })
-
             lot_detail = []
-            lot_is_lost = False
-            for lot in item.warehouse_product.product_warehouse_lot_product_warehouse.filter(
-                    quantity_import__gt=0
-            ).order_by('lot_number'):
-                for each in item.lot_data:
-                    if each['lot_id'] == str(lot.id):
-                        if each['quantity'] > lot.quantity_import:
-                            lot_is_lost = True
-                lot_detail.append({
-                    'id': lot.id,
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date
-                })
+
+            if obj.system_status not in [2, 3]:
+                serial_exist = 0
+                for serial in item.warehouse_product.product_warehouse_serial_product_warehouse.filter(
+                        is_delete=False
+                ).order_by('vendor_serial_number', 'serial_number'):
+                    serial_exist += 1 if str(serial.id) in item.sn_data else 0
+                    serial_detail.append({
+                        'id': serial.id,
+                        'vendor_serial_number': serial.vendor_serial_number,
+                        'serial_number': serial.serial_number,
+                        'expire_date': serial.expire_date,
+                        'manufacture_date': serial.manufacture_date,
+                        'warranty_start': serial.warranty_start,
+                        'warranty_end': serial.warranty_end
+                    })
+
+                lot_is_lost = False
+                for lot in item.warehouse_product.product_warehouse_lot_product_warehouse.filter(
+                        quantity_import__gt=0
+                ).order_by('lot_number'):
+                    for each in item.lot_data:
+                        if each['lot_id'] == str(lot.id):
+                            if each['quantity'] > lot.quantity_import:
+                                lot_is_lost = True
+                    lot_detail.append({
+                        'id': lot.id,
+                        'lot_number': lot.lot_number,
+                        'quantity_import': lot.quantity_import,
+                        'expire_date': lot.expire_date,
+                        'manufacture_date': lot.manufacture_date
+                    })
+            else:
+                serial_exist = len(item.sn_data)
+                all_sn = ProductWareHouseSerial.objects.filter(id__in=item.sn_data)
+                for each in all_sn:
+                    serial_detail.append({
+                        'id': each.id,
+                        'vendor_serial_number': each.vendor_serial_number,
+                        'serial_number': each.serial_number,
+                        'expire_date': each.expire_date,
+                        'manufacture_date': each.manufacture_date,
+                        'warranty_start': each.warranty_start,
+                        'warranty_end': each.warranty_end
+                    })
+
+                lot_is_lost = False
+                all_lot = ProductWareHouseLot.objects.filter(id__in=[lot['lot_id'] for lot in item.lot_data])
+                for each in all_lot:
+                    lot_detail.append({
+                        'id': each.id,
+                        'lot_number': each.lot_number,
+                        'quantity_import': each.quantity_import,
+                        'expire_date': each.expire_date,
+                        'manufacture_date': each.manufacture_date
+                    })
+
             goods_transfer_datas.append({
                 'product_warehouse': {
                     'id': item.warehouse_product_id,

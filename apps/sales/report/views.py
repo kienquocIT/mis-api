@@ -293,10 +293,10 @@ class ReportInventoryList(BaseListMixin):
     def create_this_sub_record(cls, tenant_id, company_id, product_id_list, period_mapped, sub_period_order):
         sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
         if not sub.run_report:
+            wh_id_list = set(
+                WareHouse.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
+            )
             for prd_id in product_id_list:
-                wh_id_list = set(WareHouse.objects.filter(
-                    tenant_id=tenant_id, company_id=company_id
-                ).values_list('id', flat=True))
                 for wh_id in wh_id_list:
                     this_sub_record = ReportInventoryProductWarehouse.objects.filter(
                         product_id=prd_id, warehouse=wh_id,
@@ -305,13 +305,13 @@ class ReportInventoryList(BaseListMixin):
                     if not this_sub_record:
                         sub_list = ReportInventorySub.objects.filter(
                             product_id=prd_id, warehouse_id=wh_id,
-                            report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
+                            report_inventory__period_mapped=period_mapped,
+                            report_inventory__sub_period_order__lt=sub_period_order
                         )
                         if sub_list.count() == 0:
                             sub_list = ReportInventorySub.objects.filter(
                                 product_id=prd_id, warehouse_id=wh_id,
-                                report_inventory__period_mapped=period_mapped,
-                                report_inventory__sub_period_order__lt=sub_period_order
+                                report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
                             )
                         latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
                         if latest_trans and int(sub_period_order) <= (

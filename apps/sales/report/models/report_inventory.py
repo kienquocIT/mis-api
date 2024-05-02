@@ -312,26 +312,25 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     ):
         """
         Opening tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
-            Nếu có sub tháng trước (đã khoá sổ): thì lấy ending của tháng trước
+            Mặc định là opening của tháng
         Ending của tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
+            Mặc định là opening của tháng
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
         # Begin get Opening
-        last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-        )
+        # last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
+        #     inventory_cost_data_list,
+        #     warehouse_id,
+        #     period_mapped_id,
+        #     sub_period_order
+        # )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
-        if last_inventory_cost_data:
-            opening_quantity = last_inventory_cost_data.ending_balance_quantity
-            opening_value = last_inventory_cost_data.ending_balance_value
-            opening_cost = last_inventory_cost_data.ending_balance_cost
+        # if last_inventory_cost_data:
+        #     opening_quantity = last_inventory_cost_data.ending_balance_quantity
+        #     opening_value = last_inventory_cost_data.ending_balance_value
+        #     opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending
