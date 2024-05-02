@@ -1,6 +1,6 @@
 import json
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial
+from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
@@ -127,49 +127,37 @@ class GoodsTransfer(DataAbstractModel):
         return True
 
     @classmethod
-    def update_source_destination_product_warehouse_obj(cls, item, instance):
+    def update_source_destination_product_warehouse_obj(cls, item, product_obj, instance):
         try:
-            source = item.product.product_warehouse_product.filter(
-                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item.warehouse
+            source = product_obj.product_warehouse_product.filter(
+                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse_id=item['warehouse']['id']
             ).first()
-            destination = item.product.product_warehouse_product.filter(
-                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item.end_warehouse
+            destination = product_obj.product_warehouse_product.filter(
+                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item['end_warehouse']['id']
             ).first()
             if not destination:
                 destination = ProductWareHouse.objects.create(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    product=item.product,
-                    uom=item.uom,
-                    warehouse=item.end_warehouse,
+                    product=product_obj,
+                    uom_id=item['uom']['id'],
+                    warehouse_id=item['end_warehouse']['id'],
                     tax=None,
-                    unit_price=item.unit_cost,
-                    stock_amount=item.quantity,
-                    receipt_amount=item.quantity,
+                    unit_price=item['unit_cost'],
+                    stock_amount=item['quantity'],
+                    receipt_amount=item['quantity'],
                     sold_amount=0,
                     picked_ready=0,
-                    product_data={
-                        'id': item.product_id,
-                        'code': item.product.code,
-                        'title': item.product.title
-                    },
-                    warehouse_data={
-                        'id': item.end_warehouse_id,
-                        'code': item.end_warehouse.code,
-                        'title': item.end_warehouse.title
-                    },
-                    uom_data={
-                        'id': item.uom_id,
-                        'code': item.uom.code,
-                        'title': item.uom.title
-                    },
+                    product_data=item['warehouse_product']['product_data'],
+                    warehouse_data=item['end_warehouse'],
+                    uom_data=item['uom'],
                     tax_data={}
                 )
-            source.sold_amount += item.quantity
+            source.sold_amount += item['quantity']
             source.stock_amount = source.receipt_amount - source.sold_amount
             source.save(update_fields=['sold_amount', 'stock_amount'])
 
-            destination.receipt_amount += item.quantity
+            destination.receipt_amount += item['quantity']
             destination.stock_amount = source.receipt_amount - source.sold_amount
             destination.save(update_fields=['receipt_amount', 'stock_amount'])
             return source, destination
@@ -179,19 +167,20 @@ class GoodsTransfer(DataAbstractModel):
     @classmethod
     def update_lot_serial_data_warehouse(cls, instance):
         for item in instance.goods_transfer_datas:
-            source, destination = cls.update_source_destination_product_warehouse_obj(item, instance)
-            if item.product.general_traceability_method == 1:  # lot
-                lot_data = item.lot_data
+            product_obj = Product.objects.get(id=item['warehouse_product']['product_data']['id'])
+            source, destination = cls.update_source_destination_product_warehouse_obj(item, product_obj, instance)
+            if product_obj.general_traceability_method == 1:  # lot
+                lot_data = item['lot_changes']
                 all_lot_src = source.product_warehouse_lot_product_warehouse.all()
                 all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
                 for lot_item in lot_data:
                     lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
-                    if lot_src_obj and lot_src_obj.quantity_import > item.quantity:
-                        lot_src_obj.quantity_import -= item.quantity
+                    if lot_src_obj and lot_src_obj.quantity_import > item['quantity']:
+                        lot_src_obj.quantity_import -= item['quantity']
                         lot_src_obj.save(update_fields=['quantity_import'])
                         lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
                         if lot_des_obj:
-                            lot_des_obj.quantity_import += item.quantity
+                            lot_des_obj.quantity_import += item['quantity']
                             lot_des_obj.save(update_fields=['quantity_import'])
                         else:
                             ProductWareHouseLot.objects.create(
@@ -199,15 +188,15 @@ class GoodsTransfer(DataAbstractModel):
                                 company_id=instance.company_id,
                                 product_warehouse=destination,
                                 lot_number=lot_src_obj.lot_number,
-                                quantity_import=item.quantity,
-                                raw_quantity_import=item.quantity,
+                                quantity_import=item['quantity'],
+                                raw_quantity_import=item['quantity'],
                                 expire_date=lot_src_obj.expire_date,
                                 manufacture_date=lot_src_obj.manufacture_date
                             )
                     else:
                         raise ValueError('Update Lot failed.')
-            elif item.product.general_traceability_method == 2:  # sn
-                sn_data = item.sn_data
+            elif product_obj.general_traceability_method == 2:  # sn
+                sn_data = item['sn_changes']
                 all_sn_src = source.product_warehouse_serial_product_warehouse.all()
                 for sn_id in sn_data:
                     sn_src_obj = all_sn_src.filter(id=sn_id).first()

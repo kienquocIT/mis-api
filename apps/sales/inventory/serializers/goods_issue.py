@@ -5,7 +5,12 @@ from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, Inventory
 from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
-__all__ = ['GoodsIssueListSerializer', 'GoodsIssueDetailSerializer', 'GoodsIssueCreateSerializer']
+__all__ = [
+    'GoodsIssueListSerializer',
+    'GoodsIssueCreateSerializer',
+    'GoodsIssueDetailSerializer',
+    'GoodsIssueUpdateSerializer'
+]
 
 
 class GoodsIssueProductSerializer(serializers.ModelSerializer):
@@ -125,66 +130,6 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
         return None
 
 
-class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
-    inventory_adjustment = serializers.SerializerMethodField()
-    goods_issue_datas = serializers.SerializerMethodField()
-
-    class Meta:
-        model = GoodsIssue
-        fields = (
-            'id',
-            'code',
-            'title',
-            'date_issue',
-            'note',
-            'goods_issue_type',
-            'goods_issue_datas',
-            'inventory_adjustment',
-            'system_status',
-        )
-
-    @classmethod
-    def get_inventory_adjustment(cls, obj):
-        if obj.inventory_adjustment:
-            return {
-                'id': obj.inventory_adjustment_id,
-                'title': obj.inventory_adjustment.title,
-                'code': obj.inventory_adjustment.code,
-            }
-        return {}
-
-    @classmethod
-    def get_goods_issue_datas(cls, obj):
-        return [{
-            'id': item.inventory_adjustment_item.id,
-            'product_warehouse': {
-                'id': item.product_warehouse_id,
-                'product_mapped': {
-                    'id': item.product_id,
-                    'code': item.product.code,
-                    'title': item.product.title,
-                    'description': item.product.description,
-                    'general_traceability_method': item.product.general_traceability_method
-                },
-                'uom_mapped': {
-                    'id': item.uom_id,
-                    'code': item.uom.code,
-                    'title': item.uom.title
-                },
-                'warehouse_mapped': {
-                    'id': item.warehouse_id,
-                    'code': item.warehouse.code,
-                    'title': item.warehouse.title
-                }
-            },
-            'quantity': item.quantity,
-            'unit_cost': item.unit_cost,
-            'subtotal': item.subtotal,
-            'lot_data': item.lot_data,
-            'sn_data': item.sn_data
-        } for item in obj.goods_issue_product.all()]
-
-
 class GoodsIssueCreateSerializer(serializers.ModelSerializer):
     goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer())
     inventory_adjustment = serializers.UUIDField(required=False)
@@ -245,6 +190,66 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
         instance = GoodsIssue.objects.create(**validated_data)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
         return instance
+
+
+class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
+    inventory_adjustment = serializers.SerializerMethodField()
+    goods_issue_datas = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GoodsIssue
+        fields = (
+            'id',
+            'code',
+            'title',
+            'date_issue',
+            'note',
+            'goods_issue_type',
+            'goods_issue_datas',
+            'inventory_adjustment',
+            'system_status',
+        )
+
+    @classmethod
+    def get_inventory_adjustment(cls, obj):
+        if obj.inventory_adjustment:
+            return {
+                'id': obj.inventory_adjustment_id,
+                'title': obj.inventory_adjustment.title,
+                'code': obj.inventory_adjustment.code,
+            }
+        return {}
+
+    @classmethod
+    def get_goods_issue_datas(cls, obj):
+        return [{
+            'id': item.inventory_adjustment_item.id,
+            'product_warehouse': {
+                'id': item.product_warehouse_id,
+                'product_mapped': {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title,
+                    'description': item.product.description,
+                    'general_traceability_method': item.product.general_traceability_method
+                },
+                'uom_mapped': {
+                    'id': item.uom_id,
+                    'code': item.uom.code,
+                    'title': item.uom.title
+                },
+                'warehouse_mapped': {
+                    'id': item.warehouse_id,
+                    'code': item.warehouse.code,
+                    'title': item.warehouse.title
+                }
+            },
+            'quantity': item.quantity,
+            'unit_cost': item.unit_cost,
+            'subtotal': item.subtotal,
+            'lot_data': item.lot_data,
+            'sn_data': item.sn_data
+        } for item in obj.goods_issue_product.all()]
 
 
 class GoodsIssueUpdateSerializer(serializers.ModelSerializer):

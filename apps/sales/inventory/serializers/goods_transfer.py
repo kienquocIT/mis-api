@@ -5,8 +5,12 @@ from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.shared import WarehouseMsg, ProductMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_transfer import GTMsg
 
-__all__ = ['GoodsTransferListSerializer', 'GoodsTransferCreateSerializer', 'GoodsTransferDetailSerializer',
-           'GoodsTransferUpdateSerializer']
+__all__ = [
+    'GoodsTransferListSerializer',
+    'GoodsTransferCreateSerializer',
+    'GoodsTransferDetailSerializer',
+    'GoodsTransferUpdateSerializer'
+]
 
 
 class GoodsTransferProductSerializer(serializers.ModelSerializer):
