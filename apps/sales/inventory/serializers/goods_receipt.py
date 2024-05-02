@@ -306,15 +306,14 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if 'product' in validate_data:
-            warehouse_data = []
             if 'warehouse_data' in validate_data:
                 warehouse_data = validate_data['warehouse_data']
+                self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
             if 'purchase_request_products_data' in validate_data:
                 for pr_product in validate_data['purchase_request_products_data']:
                     if 'warehouse_data' in pr_product:
                         warehouse_data = pr_product['warehouse_data']
                         self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
-            self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
         return validate_data
 
 
