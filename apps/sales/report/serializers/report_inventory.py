@@ -282,11 +282,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
-        print(obj.product.report_inventory_by_month_product.filter(
-            warehouse_id=obj.warehouse_id,
-            report_inventory__period_mapped_id=obj.period_mapped_id,
-            report_inventory__sub_period_order=obj.sub_period_order,
-        ).count())
         for log in obj.product.report_inventory_by_month_product.filter(
             warehouse_id=obj.warehouse_id,
             report_inventory__period_mapped_id=obj.period_mapped_id,
@@ -300,9 +295,9 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_quantity += log.quantity
                     sum_out_value += log.value
                 # lấy detail cho từng TH
-                if log.trans_title in ['Goods receipt', 'Goods return', 'Goods receipt (IA)']:
+                if log.trans_title in ['Goods receipt', 'Goods return', 'Goods receipt (IA)', 'Goods transfer (in)']:
                     data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity)
-                elif log.trans_title in ['Delivery', 'Goods issue']:
+                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
                     data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
 
         data_stock_activity = sorted(

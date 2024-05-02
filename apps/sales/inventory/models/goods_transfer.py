@@ -72,18 +72,16 @@ class GoodsTransfer(DataAbstractModel):
         activities_data_in = []
         for item in instance.goods_transfer.all():
             lot_data = []
-            prd_wh_lot = ProductWareHouseLot.objects.filter(
-                product_warehouse__product=item.product,
-                product_warehouse__warehouse=item.warehouse
-            ).first()
-            if prd_wh_lot:
-                lot_data.append({
-                    'lot_id': str(prd_wh_lot.id),
-                    'lot_number': prd_wh_lot.lot_number,
-                    'lot_quantity': item.quantity,
-                    'lot_value': item.unit_cost * item.quantity,
-                    'lot_expire_date': str(prd_wh_lot.expire_date)
-                })
+            for lot_item in item.lot_data:
+                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
+                if prd_wh_lot:
+                    lot_data.append({
+                        'lot_id': str(prd_wh_lot.id),
+                        'lot_number': prd_wh_lot.lot_number,
+                        'lot_quantity': lot_item['quantity'],
+                        'lot_value': item.unit_cost * lot_item['quantity'],
+                        'lot_expire_date': str(prd_wh_lot.expire_date)
+                    })
             activities_data_out.append({
                 'product': item.product,
                 'warehouse': item.warehouse,
@@ -93,7 +91,7 @@ class GoodsTransfer(DataAbstractModel):
                 'stock_type': -1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
-                'trans_title': 'Goods issue',
+                'trans_title': 'Goods transfer (out)',
                 'quantity': item.quantity,
                 'cost': item.unit_cost,
                 'value': item.unit_cost * item.quantity,
@@ -101,14 +99,14 @@ class GoodsTransfer(DataAbstractModel):
             })
             activities_data_in.append({
                 'product': item.product,
-                'warehouse': item.warehouse,
+                'warehouse': item.end_warehouse,
                 'system_date': instance.date_approved,
                 'posting_date': instance.date_approved,
                 'document_date': instance.date_approved,
                 'stock_type': 1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
-                'trans_title': 'Goods issue',
+                'trans_title': 'Goods transfer (in)',
                 'quantity': item.quantity,
                 'cost': item.unit_cost,
                 'value': item.unit_cost * item.quantity,
@@ -175,12 +173,12 @@ class GoodsTransfer(DataAbstractModel):
                 all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
                 for lot_item in lot_data:
                     lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
-                    if lot_src_obj and lot_src_obj.quantity_import > item['quantity']:
-                        lot_src_obj.quantity_import -= item['quantity']
+                    if lot_src_obj and lot_src_obj.quantity_import > lot_item['quantity']:
+                        lot_src_obj.quantity_import -= lot_item['quantity']
                         lot_src_obj.save(update_fields=['quantity_import'])
                         lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
                         if lot_des_obj:
-                            lot_des_obj.quantity_import += item['quantity']
+                            lot_des_obj.quantity_import += lot_item['quantity']
                             lot_des_obj.save(update_fields=['quantity_import'])
                         else:
                             ProductWareHouseLot.objects.create(
@@ -188,8 +186,8 @@ class GoodsTransfer(DataAbstractModel):
                                 company_id=instance.company_id,
                                 product_warehouse=destination,
                                 lot_number=lot_src_obj.lot_number,
-                                quantity_import=item['quantity'],
-                                raw_quantity_import=item['quantity'],
+                                quantity_import=lot_item['quantity'],
+                                raw_quantity_import=lot_item['quantity'],
                                 expire_date=lot_src_obj.expire_date,
                                 manufacture_date=lot_src_obj.manufacture_date
                             )

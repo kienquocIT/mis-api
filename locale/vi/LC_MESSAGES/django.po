@@ -1038,3 +1038,23 @@ msgstr "Đã hoàn thành"
 #
 msgid "Opening"
 msgstr "Đang mở"
+
+#
+msgid "Draft"
+msgstr "Nháp"
+
+#
+msgid "Created"
+msgstr "Đã tạo"
+
+#
+msgid "Added"
+msgstr "Đang thêm"
+
+#
+msgid "Finish"
+msgstr "Hoàn tất"
+
+#
+msgid "Cancel"
+msgstr "Huỷ bỏ"

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
@@ -107,6 +108,7 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
 class GoodsIssueListSerializer(serializers.ModelSerializer):
     goods_issue_type = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    raw_system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -116,7 +118,8 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
             'title',
             'date_issue',
             'goods_issue_type',
-            'system_status'
+            'system_status',
+            'raw_system_status'
         )
 
     @classmethod
@@ -125,9 +128,11 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
+        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
+
+    @classmethod
+    def get_raw_system_status(cls, obj):
+        return obj.system_status
 
 
 class GoodsIssueCreateSerializer(serializers.ModelSerializer):

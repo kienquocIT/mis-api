@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import WareHouse
 from apps.sales.delivery.models import OrderDeliverySub, DeliveryConfig
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile
@@ -14,6 +15,7 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     delivery = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    raw_system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -27,6 +29,7 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'system_status',
+            'raw_system_status',
             'date_created'
         )
 
@@ -57,9 +60,11 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
+        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
+
+    @classmethod
+    def get_raw_system_status(cls, obj):
+        return obj.system_status
 
 
 def create_files_mapped(gr_obj, file_id_list):

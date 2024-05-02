@@ -69,18 +69,16 @@ class GoodsIssue(DataAbstractModel):
         activities_data = []
         for item in instance.goods_issue_product.all():
             lot_data = []
-            prd_wh_lot = ProductWareHouseLot.objects.filter(
-                product_warehouse__product=item.product,
-                product_warehouse__warehouse=item.warehouse
-            ).first()
-            if prd_wh_lot:
-                lot_data.append({
-                    'lot_id': str(prd_wh_lot.id),
-                    'lot_number': prd_wh_lot.lot_number,
-                    'lot_quantity': item.quantity,
-                    'lot_value': item.unit_cost * item.quantity,
-                    'lot_expire_date': str(prd_wh_lot.expire_date)
-                })
+            for lot_item in item.lot_data:
+                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
+                if prd_wh_lot and lot_item['quantity'] > 0:
+                    lot_data.append({
+                        'lot_id': str(prd_wh_lot.id),
+                        'lot_number': prd_wh_lot.lot_number,
+                        'lot_quantity': lot_item['quantity'],
+                        'lot_value': item.unit_cost * lot_item['quantity'],
+                        'lot_expire_date': str(prd_wh_lot.expire_date)
+                    })
             activities_data.append({
                 'product': item.product,
                 'warehouse': item.warehouse,
