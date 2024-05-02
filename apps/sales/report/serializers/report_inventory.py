@@ -295,7 +295,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_quantity += log.quantity
                     sum_out_value += log.value
                 # lấy detail cho từng TH
-                if log.trans_title in ['Goods receipt', 'Goods return', 'Goods receipt (IA)', 'Goods transfer (in)']:
+                if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)']:
                     data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity)
                 elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
                     data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
