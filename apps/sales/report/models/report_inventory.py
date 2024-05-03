@@ -182,19 +182,24 @@ class ReportInventorySub(DataAbstractModel):
         [new_opening_quantity, new_opening_cost, new_opening_value] = [
             latest_trans.current_quantity, latest_trans.current_cost, latest_trans.current_value
         ] if latest_trans else [0, 0, 0]
-
         # check xem record quản lí giá cost theo kho trong kì này đã có chưa? chưa thì tạo mới
         cls.check_inventory_cost_data_by_warehouse_this_sub(
             log, period_mapped, sub_period_order,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # xử lí giá trị tồn kho hiện tại cho từng lần nhập-xuất
         value_list = cls.process_log_current_data(
             log,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # cập nhập giá trị tồn kho hiện tại cho log
         log.current_quantity = value_list['new_quantity']
         log.current_cost = value_list['new_cost']

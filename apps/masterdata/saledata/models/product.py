@@ -235,7 +235,13 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_unit_cost_by_warehouse(self, warehouse_id):
+    def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
+        """
+        get_type = 0: get quantity
+        get_type = 1: get unit_cost (default)
+        get_type = 2: get value
+        get_type = else except [0, 1, 2]: get list [quantity, unit_cost, value]
+        """
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id,
             company_id=self.company_id,
@@ -251,7 +257,9 @@ class Product(DataAbstractModel):
                     warehouse_id=warehouse_id,
                     report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
                 ).first()
-            return sub.current_cost if sub else 0
+            if get_type not in [0, 1, 2]:
+                return [sub.current_quantity, sub.current_cost, sub.current_value] if sub else [0, 0, 0]
+            return [sub.current_quantity, sub.current_cost, sub.current_value][get_type] if sub else 0
         return None
 
     def get_unit_cost_list_of_all_warehouse(self):
@@ -274,7 +282,12 @@ class Product(DataAbstractModel):
                         warehouse_id=warehouse_id,
                         report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
                     ).first()
-                unit_cost_list.append({'warehouse_id': warehouse_id, 'unit_cost': sub.current_cost if sub else 0})
+                unit_cost_list.append({
+                    'warehouse_id': warehouse_id,
+                    'quantity': sub.current_quantity if sub else 0,
+                    'unit_cost': sub.current_cost if sub else 0,
+                    'value': sub.current_value if sub else 0,
+                })
             return unit_cost_list
         return []
 

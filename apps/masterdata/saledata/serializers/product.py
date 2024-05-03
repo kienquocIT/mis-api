@@ -564,26 +564,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         product_warehouse = obj.product_warehouse_product.all().select_related(
             'warehouse', 'uom'
         ).order_by('warehouse__code')
-        cost_data = obj.report_inventory_by_month_product.filter(stock_type=1).values_list(
-            'warehouse_id', 'current_cost'
-        )
         for item in product_warehouse:
             uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
             uom_ratio_des = item.uom.ratio if item.uom else 0
             if uom_ratio_src and uom_ratio_des:
                 ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                cost_value = 0
-                for child in cost_data:
-                    if child[0] == item.warehouse_id:
-                        cost_value = child[1]
-                        break
                 result.append({
                     'id': item.id,
                     'warehouse': {
                         'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': ratio_convert * item.stock_amount,
-                    'cost': cost_value
+                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id)
                 })
         return result
 

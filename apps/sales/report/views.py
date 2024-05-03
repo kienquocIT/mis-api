@@ -1,18 +1,20 @@
 import datetime
-
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import WareHouse, Periods, Product, SubPeriods
 from apps.sales.opportunity.models import OpportunityStage
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
+from apps.sales.report.models import (
+    ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
-from apps.sales.report.serializers import (
-    ReportInventoryDetailListSerializer, BalanceInitializationListSerializer, ReportInventoryListSerializer
 )
-from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
-    ReportCustomerListSerializer, ReportPipelineListSerializer, ReportCashflowListSerializer, \
-    ReportGeneralListSerializer
+from apps.sales.report.serializers import (
+    ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
+    ReportInventoryListSerializer
+)
+from apps.sales.report.serializers.report_sales import (
+    ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
+    ReportPipelineListSerializer, ReportCashflowListSerializer, ReportGeneralListSerializer
+)
 from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
@@ -292,7 +294,7 @@ class ReportInventoryList(BaseListMixin):
     @classmethod
     def create_this_sub_record(cls, tenant_id, company_id, product_id_list, period_mapped, sub_period_order):
         sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        if not sub.run_report:
+        if not sub.run_report or True:  # or True when force run
             wh_id_list = set(
                 WareHouse.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
             )
