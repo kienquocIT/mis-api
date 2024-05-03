@@ -293,7 +293,7 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
-    raw_quantity_import = models.FloatField(default=0)  # ONLY add when input
+    raw_quantity_import = models.FloatField(default=0)  # ONLY add when input (for input after)
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
