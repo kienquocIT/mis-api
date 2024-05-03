@@ -1053,7 +1053,7 @@ msgstr "Đã tạo"
 
 #
 msgid "Added"
-msgstr "Đang thêm"
+msgstr "Đã thêm"
 
 #
 msgid "Finish"
