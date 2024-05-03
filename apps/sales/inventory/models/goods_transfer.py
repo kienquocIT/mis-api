@@ -165,57 +165,67 @@ class GoodsTransfer(DataAbstractModel):
             raise ValueError('Error when trying update source and destination product warehouse obj.')
 
     @classmethod
+    def update_for_lot(cls, item, source, destination, instance):
+        lot_data = item['lot_changes']
+        all_lot_src = source.product_warehouse_lot_product_warehouse.all()
+        all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
+        for lot_item in lot_data:
+            lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
+            if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
+                lot_src_obj.quantity_import -= lot_item['quantity']
+                lot_src_obj.save(update_fields=['quantity_import'])
+                lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
+                if lot_des_obj:
+                    lot_des_obj.quantity_import += lot_item['quantity']
+                    lot_des_obj.save(update_fields=['quantity_import'])
+                else:
+                    ProductWareHouseLot.objects.create(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product_warehouse=destination,
+                        lot_number=lot_src_obj.lot_number,
+                        quantity_import=lot_item['quantity'],
+                        raw_quantity_import=lot_item['quantity'],
+                        expire_date=lot_src_obj.expire_date,
+                        manufacture_date=lot_src_obj.manufacture_date
+                    )
+            else:
+                raise serializers.ValidationError({'Lot': 'Update Lot failed.'})
+        return True
+
+    @classmethod
+    def update_for_serial(cls, item, source, destination, instance):
+        sn_data = item['sn_changes']
+        all_sn_src = source.product_warehouse_serial_product_warehouse.all()
+        for sn_id in sn_data:
+            sn_src_obj = all_sn_src.filter(id=sn_id).first()
+            if sn_src_obj and not sn_src_obj.is_delete:
+                sn_src_obj.is_delete = True
+                sn_src_obj.save(update_fields=['is_delete'])
+                ProductWareHouseSerial.objects.create(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    product_warehouse=destination,
+                    vendor_serial_number=sn_src_obj.vendor_serial_number,
+                    serial_number=sn_src_obj.serial_number,
+                    expire_date=sn_src_obj.expire_date,
+                    manufacture_date=sn_src_obj.manufacture_date,
+                    warranty_start=sn_src_obj.warranty_start,
+                    warranty_end=sn_src_obj.warranty_end
+                )
+            else:
+                raise serializers.ValidationError({'Serial': 'Update Serial failed.'})
+        return True
+
+    @classmethod
     def update_lot_serial_data_warehouse(cls, instance):
         for item in instance.goods_transfer_datas:
             product_obj = Product.objects.get(id=item['warehouse_product']['product_data']['id'])
             source, destination = cls.update_source_destination_product_warehouse_obj(item, product_obj, instance)
             if product_obj.general_traceability_method == 1:  # lot
-                lot_data = item['lot_changes']
-                all_lot_src = source.product_warehouse_lot_product_warehouse.all()
-                all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
-                for lot_item in lot_data:
-                    lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
-                    if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
-                        lot_src_obj.quantity_import -= lot_item['quantity']
-                        lot_src_obj.save(update_fields=['quantity_import'])
-                        lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
-                        if lot_des_obj:
-                            lot_des_obj.quantity_import += lot_item['quantity']
-                            lot_des_obj.save(update_fields=['quantity_import'])
-                        else:
-                            ProductWareHouseLot.objects.create(
-                                tenant_id=instance.tenant_id,
-                                company_id=instance.company_id,
-                                product_warehouse=destination,
-                                lot_number=lot_src_obj.lot_number,
-                                quantity_import=lot_item['quantity'],
-                                raw_quantity_import=lot_item['quantity'],
-                                expire_date=lot_src_obj.expire_date,
-                                manufacture_date=lot_src_obj.manufacture_date
-                            )
-                    else:
-                        raise serializers.ValidationError({'Lot': 'Update Lot failed.'})
+                cls.update_for_lot(item, source, destination, instance)
             elif product_obj.general_traceability_method == 2:  # sn
-                sn_data = item['sn_changes']
-                all_sn_src = source.product_warehouse_serial_product_warehouse.all()
-                for sn_id in sn_data:
-                    sn_src_obj = all_sn_src.filter(id=sn_id).first()
-                    if sn_src_obj and not sn_src_obj.is_delete:
-                        sn_src_obj.is_delete = True
-                        sn_src_obj.save(update_fields=['is_delete'])
-                        ProductWareHouseSerial.objects.create(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product_warehouse=destination,
-                            vendor_serial_number=sn_src_obj.vendor_serial_number,
-                            serial_number=sn_src_obj.serial_number,
-                            expire_date=sn_src_obj.expire_date,
-                            manufacture_date=sn_src_obj.manufacture_date,
-                            warranty_start=sn_src_obj.warranty_start,
-                            warranty_end=sn_src_obj.warranty_end
-                        )
-                    else:
-                        raise serializers.ValidationError({'Serial': 'Update Serial failed.'})
+                cls.update_for_serial(item, source, destination, instance)
         return True
 
     def save(self, *args, **kwargs):

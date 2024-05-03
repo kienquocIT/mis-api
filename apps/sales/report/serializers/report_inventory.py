@@ -270,7 +270,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     def get_stock_activities(self, obj):
         date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
-        inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
         data_stock_activity = []
         sum_in_quantity = 0
         sum_out_quantity = 0
