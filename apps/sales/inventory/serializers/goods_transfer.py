@@ -242,6 +242,65 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
+    def get_goods_transfer_datas_finished(cls, item, lot_detail, serial_detail):
+        serial_exist = len(item.sn_data)
+        all_sn = ProductWareHouseSerial.objects.filter(id__in=item.sn_data)
+        for each in all_sn:
+            serial_detail.append({
+                'id': each.id,
+                'vendor_serial_number': each.vendor_serial_number,
+                'serial_number': each.serial_number,
+                'expire_date': each.expire_date,
+                'manufacture_date': each.manufacture_date,
+                'warranty_start': each.warranty_start,
+                'warranty_end': each.warranty_end
+            })
+        lot_is_lost = False
+        all_lot = ProductWareHouseLot.objects.filter(id__in=[lot['lot_id'] for lot in item.lot_data])
+        for each in all_lot:
+            lot_detail.append({
+                'id': each.id,
+                'lot_number': each.lot_number,
+                'quantity_import': each.quantity_import,
+                'expire_date': each.expire_date,
+                'manufacture_date': each.manufacture_date
+            })
+        return lot_is_lost, serial_exist
+
+    @classmethod
+    def get_goods_transfer_datas_not_finished(cls, item, lot_detail, serial_detail):
+        serial_exist = 0
+        for serial in item.warehouse_product.product_warehouse_serial_product_warehouse.filter(
+                is_delete=False
+        ).order_by('vendor_serial_number', 'serial_number'):
+            serial_exist += 1 if str(serial.id) in item.sn_data else 0
+            serial_detail.append({
+                'id': serial.id,
+                'vendor_serial_number': serial.vendor_serial_number,
+                'serial_number': serial.serial_number,
+                'expire_date': serial.expire_date,
+                'manufacture_date': serial.manufacture_date,
+                'warranty_start': serial.warranty_start,
+                'warranty_end': serial.warranty_end
+            })
+        lot_is_lost = False
+        for lot in item.warehouse_product.product_warehouse_lot_product_warehouse.filter(
+                quantity_import__gt=0
+        ).order_by('lot_number'):
+            for each in item.lot_data:
+                if each['lot_id'] == str(lot.id):
+                    if each['quantity'] > lot.quantity_import:
+                        lot_is_lost = True
+            lot_detail.append({
+                'id': lot.id,
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date
+            })
+        return lot_is_lost, serial_exist
+
+    @classmethod
     def get_goods_transfer_datas(cls, obj):
         goods_transfer_datas = []
         for item in obj.goods_transfer.all():
@@ -249,60 +308,9 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
             lot_detail = []
 
             if obj.system_status not in [2, 3]:
-                serial_exist = 0
-                for serial in item.warehouse_product.product_warehouse_serial_product_warehouse.filter(
-                        is_delete=False
-                ).order_by('vendor_serial_number', 'serial_number'):
-                    serial_exist += 1 if str(serial.id) in item.sn_data else 0
-                    serial_detail.append({
-                        'id': serial.id,
-                        'vendor_serial_number': serial.vendor_serial_number,
-                        'serial_number': serial.serial_number,
-                        'expire_date': serial.expire_date,
-                        'manufacture_date': serial.manufacture_date,
-                        'warranty_start': serial.warranty_start,
-                        'warranty_end': serial.warranty_end
-                    })
-
-                lot_is_lost = False
-                for lot in item.warehouse_product.product_warehouse_lot_product_warehouse.filter(
-                        quantity_import__gt=0
-                ).order_by('lot_number'):
-                    for each in item.lot_data:
-                        if each['lot_id'] == str(lot.id):
-                            if each['quantity'] > lot.quantity_import:
-                                lot_is_lost = True
-                    lot_detail.append({
-                        'id': lot.id,
-                        'lot_number': lot.lot_number,
-                        'quantity_import': lot.quantity_import,
-                        'expire_date': lot.expire_date,
-                        'manufacture_date': lot.manufacture_date
-                    })
+                lot_is_lost, serial_exist = cls.get_goods_transfer_datas_not_finished(item, lot_detail, serial_detail)
             else:
-                serial_exist = len(item.sn_data)
-                all_sn = ProductWareHouseSerial.objects.filter(id__in=item.sn_data)
-                for each in all_sn:
-                    serial_detail.append({
-                        'id': each.id,
-                        'vendor_serial_number': each.vendor_serial_number,
-                        'serial_number': each.serial_number,
-                        'expire_date': each.expire_date,
-                        'manufacture_date': each.manufacture_date,
-                        'warranty_start': each.warranty_start,
-                        'warranty_end': each.warranty_end
-                    })
-
-                lot_is_lost = False
-                all_lot = ProductWareHouseLot.objects.filter(id__in=[lot['lot_id'] for lot in item.lot_data])
-                for each in all_lot:
-                    lot_detail.append({
-                        'id': each.id,
-                        'lot_number': each.lot_number,
-                        'quantity_import': each.quantity_import,
-                        'expire_date': each.expire_date,
-                        'manufacture_date': each.manufacture_date
-                    })
+                lot_is_lost, serial_exist = cls.get_goods_transfer_datas_finished(item, lot_detail, serial_detail)
 
             goods_transfer_datas.append({
                 'product_warehouse': {
