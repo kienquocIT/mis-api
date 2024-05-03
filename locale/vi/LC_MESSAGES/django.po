@@ -98,6 +98,10 @@ msgstr "Nhân viên"
 msgid "Expense Item"
 msgstr "Chi phí"
 
+# 710c5a94-3a29-4e0e-973c-e6cace96c1e7
+msgid "Final Acceptance"
+msgstr "Quyết toán"
+
 # f26d7ce4-e990-420a-8ec6-2dc307467f2c
 msgid "Goods Issue"
 msgstr "Goods Issue"
