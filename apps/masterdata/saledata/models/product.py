@@ -1,5 +1,5 @@
-from datetime import datetime
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
@@ -245,7 +245,7 @@ class Product(DataAbstractModel):
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id,
             company_id=self.company_id,
-            fiscal_year=datetime.now().year
+            fiscal_year=timezone.now().year
         ).first()
         if this_period:
             sub = self.report_inventory_by_month_product.filter(
@@ -265,7 +265,7 @@ class Product(DataAbstractModel):
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id,
             company_id=self.company_id,
-            fiscal_year=datetime.now().year
+            fiscal_year=timezone.now().year
         ).first()
         unit_cost_list = []
         if this_period:
