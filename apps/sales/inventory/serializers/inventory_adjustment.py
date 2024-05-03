@@ -1,7 +1,5 @@
-from django.utils import timezone
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
@@ -325,14 +323,7 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost(cls, product_obj, warehouse_id):
-        current_date = timezone.now()
-        for period in product_obj.company.saledata_periods_belong_to_company.all():
-            if period.fiscal_year == current_date.year:
-                for product_inventory in product_obj.report_inventory_product_warehouse_product.all():
-                    if product_inventory.period_mapped:
-                        if product_inventory.period_mapped.fiscal_year == period.fiscal_year \
-                                and product_inventory.sub_period_order == (current_date.month - period.space_month):
-                            if product_inventory.warehouse_id == warehouse_id:
-                                return product_inventory.ending_balance_cost
-                break
+        for product_inventory in product_obj.report_inventory_by_month_product.all():
+            if product_inventory.warehouse_id == warehouse_id:
+                return product_inventory.current_cost
         return 0

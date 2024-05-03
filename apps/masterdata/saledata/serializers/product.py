@@ -1,6 +1,5 @@
 from datetime import datetime
 from django.utils.translation import gettext_lazy as _
-from django.utils import timezone
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
@@ -958,24 +957,20 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
-        result = []
-        current_date = timezone.now()
-        for period in obj.company.saledata_periods_belong_to_company.all():
-            if period.fiscal_year == current_date.year:
-                for product_inventory in obj.report_inventory_product_warehouse_product.all():
-                    if product_inventory.period_mapped:
-                        if product_inventory.period_mapped.fiscal_year == period.fiscal_year \
-                                and product_inventory.sub_period_order == (current_date.month - period.space_month):
-                            result.append({
-                                'warehouse': {
-                                    'id': str(product_inventory.warehouse_id),
-                                    'title': product_inventory.warehouse.title,
-                                    'code': product_inventory.warehouse.code
-                                } if product_inventory.warehouse else {},
-                                'cost': product_inventory.ending_balance_cost
-                            })
-                break
-        return result
+        wh_dict = {}
+        for product_inventory in obj.report_inventory_by_month_product.all():
+            if str(product_inventory.warehouse_id) not in wh_dict:
+                wh_dict.update({
+                    str(product_inventory.warehouse_id): {
+                        'warehouse': {
+                            'id': str(product_inventory.warehouse_id),
+                            'title': product_inventory.warehouse.title,
+                            'code': product_inventory.warehouse.code
+                        } if product_inventory.warehouse else {},
+                        'cost': product_inventory.current_cost
+                    }
+                })
+        return [value for key, value in wh_dict.items()]
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
