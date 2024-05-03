@@ -200,7 +200,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             lot_data_updated.append({
                 'lot_id': str(lot.id),
                 'lot_number': lot.lot_number,
-                'lot_quantity': lot.quantity_import,
+                'lot_quantity': lot.raw_quantity_import if lot.raw_quantity_import != 0 else lot.quantity_import,
                 'lot_value': 0,
                 'lot_expire_date': str(lot.expire_date)
             })
