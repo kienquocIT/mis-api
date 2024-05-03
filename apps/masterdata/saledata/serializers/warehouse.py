@@ -303,6 +303,7 @@ class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer
     uom = serializers.SerializerMethodField()
     serial_detail = serializers.SerializerMethodField()
     lot_detail = serializers.SerializerMethodField()
+    unit_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -317,6 +318,7 @@ class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer
             'picked_ready',
             'serial_detail',
             'lot_detail',
+            'unit_cost'
         )
 
     @classmethod
@@ -368,6 +370,10 @@ class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer
             'expire_date': lot.expire_date,
             'manufacture_date': lot.manufacture_date
         } for lot in obj.product_warehouse_lot_product_warehouse.filter(quantity_import__gt=0).order_by('lot_number')]
+
+    @classmethod
+    def get_unit_cost(cls, obj):
+        return obj.product.get_unit_cost_by_warehouse(obj.warehouse_id)
 
 
 class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):

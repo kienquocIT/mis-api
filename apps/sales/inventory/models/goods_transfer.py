@@ -1,5 +1,6 @@
 import json
 from django.db import models
+from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
@@ -151,13 +152,14 @@ class GoodsTransfer(DataAbstractModel):
                     uom_data=item['uom'],
                     tax_data={}
                 )
-            source.sold_amount += item['quantity']
-            source.stock_amount = source.receipt_amount - source.sold_amount
-            source.save(update_fields=['sold_amount', 'stock_amount'])
+            else:
+                destination.receipt_amount += item['quantity']
+                destination.stock_amount = destination.receipt_amount - destination.sold_amount
+                destination.save(update_fields=['receipt_amount', 'stock_amount'])
 
-            destination.receipt_amount += item['quantity']
-            destination.stock_amount = source.receipt_amount - source.sold_amount
-            destination.save(update_fields=['receipt_amount', 'stock_amount'])
+            source.receipt_amount -= item['quantity']
+            source.stock_amount = source.receipt_amount - source.sold_amount
+            source.save(update_fields=['receipt_amount', 'stock_amount'])
             return source, destination
         except cls.DoesNotExist:
             raise ValueError('Error when trying update source and destination product warehouse obj.')
@@ -173,7 +175,7 @@ class GoodsTransfer(DataAbstractModel):
                 all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
                 for lot_item in lot_data:
                     lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
-                    if lot_src_obj and lot_src_obj.quantity_import > lot_item['quantity']:
+                    if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
                         lot_src_obj.quantity_import -= lot_item['quantity']
                         lot_src_obj.save(update_fields=['quantity_import'])
                         lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
@@ -192,7 +194,7 @@ class GoodsTransfer(DataAbstractModel):
                                 manufacture_date=lot_src_obj.manufacture_date
                             )
                     else:
-                        raise ValueError('Update Lot failed.')
+                        raise serializers.ValidationError({'Lot': 'Update Lot failed.'})
             elif product_obj.general_traceability_method == 2:  # sn
                 sn_data = item['sn_changes']
                 all_sn_src = source.product_warehouse_serial_product_warehouse.all()
@@ -213,7 +215,7 @@ class GoodsTransfer(DataAbstractModel):
                             warranty_end=sn_src_obj.warranty_end
                         )
                     else:
-                        raise ValueError('Update Serial failed.')
+                        raise serializers.ValidationError({'Serial': 'Update Serial failed.'})
         return True
 
     def save(self, *args, **kwargs):

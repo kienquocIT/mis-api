@@ -302,14 +302,7 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
                 return inventory_cost_data
         return None
 
-    def get_inventory_cost_data_this_sub_period(
-            self,
-            data_stock_activity,
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-    ):
+    def get_inventory_cost_data_this_sub_period(self, data_stock_activity):
         """
         Opening tháng:
             Mặc định là opening của tháng
@@ -318,19 +311,9 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
         # Begin get Opening
-        # last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
-        #     inventory_cost_data_list,
-        #     warehouse_id,
-        #     period_mapped_id,
-        #     sub_period_order
-        # )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
-        # if last_inventory_cost_data:
-        #     opening_quantity = last_inventory_cost_data.ending_balance_quantity
-        #     opening_value = last_inventory_cost_data.ending_balance_value
-        #     opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending

@@ -5,6 +5,7 @@ from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
 )
+from apps.sales.report.models import ReportInventorySub
 
 
 def create_inventory_adjustment_warehouses(obj, data):
@@ -228,6 +229,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
     product_mapped = serializers.SerializerMethodField()
     warehouse_mapped = serializers.SerializerMethodField()
     uom_mapped = serializers.SerializerMethodField()
+    unit_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustmentItem
@@ -242,19 +244,18 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
             'warehouse_mapped',
             'uom_mapped',
             'action_status',
+            'unit_cost'
         )
 
     @classmethod
     def get_product_mapped(cls, obj):
-        if obj.product_mapped:
-            return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
-                'description': obj.product_mapped.description,
-                'general_traceability_method': obj.product_mapped.general_traceability_method,
-            }
-        return {}
+        return {
+            'id': obj.product_mapped_id,
+            'title': obj.product_mapped.title,
+            'code': obj.product_mapped.code,
+            'description': obj.product_mapped.description,
+            'general_traceability_method': obj.product_mapped.general_traceability_method,
+        } if obj.product_mapped else {}
 
     @classmethod
     def get_warehouse_mapped(cls, obj):
@@ -275,6 +276,10 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
                 'code': obj.uom_mapped.code,
             }
         return {}
+
+    @classmethod
+    def get_unit_cost(cls, obj):
+        return obj.product_mapped.get_unit_cost_by_warehouse(obj.warehouse_mapped_id)
 
 
 # Inventory adjustment list use for other apps

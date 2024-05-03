@@ -1,5 +1,8 @@
+from datetime import datetime
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.periods import Periods
+from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
@@ -231,6 +234,49 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def get_unit_cost_by_warehouse(self, warehouse_id):
+        this_period = Periods.objects.filter(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            fiscal_year=datetime.now().year
+        ).first()
+        if this_period:
+            sub = self.report_inventory_by_month_product.filter(
+                warehouse_id=warehouse_id,
+                report_inventory__period_mapped=this_period
+            ).first()
+            if not sub:
+                sub = self.report_inventory_by_month_product.filter(
+                    warehouse_id=warehouse_id,
+                    report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
+                ).first()
+            return sub.current_cost if sub else 0
+        return None
+
+    def get_unit_cost_list_of_all_warehouse(self):
+        warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
+        this_period = Periods.objects.filter(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            fiscal_year=datetime.now().year
+        ).first()
+        unit_cost_list = []
+        if this_period:
+            for warehouse in warehouse_list:
+                warehouse_id = warehouse.id
+                sub = self.report_inventory_by_month_product.filter(
+                    warehouse_id=warehouse_id,
+                    report_inventory__period_mapped=this_period
+                ).first()
+                if not sub:
+                    sub = self.report_inventory_by_month_product.filter(
+                        warehouse_id=warehouse_id,
+                        report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
+                    ).first()
+                unit_cost_list.append({'warehouse_id': warehouse_id, 'unit_cost': sub.current_cost if sub else 0})
+            return unit_cost_list
+        return []
 
     @classmethod
     def update_transaction_information(cls, instance, **kwargs):
