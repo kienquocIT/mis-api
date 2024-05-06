@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.inventory.models import GoodsTransfer
-from apps.sales.inventory.serializers import GoodsTransferListSerializer, GoodsTransferCreateSerializer, \
+from apps.sales.inventory.serializers import (
+    GoodsTransferListSerializer, GoodsTransferCreateSerializer,
     GoodsTransferDetailSerializer, GoodsTransferUpdateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
