@@ -182,19 +182,24 @@ class ReportInventorySub(DataAbstractModel):
         [new_opening_quantity, new_opening_cost, new_opening_value] = [
             latest_trans.current_quantity, latest_trans.current_cost, latest_trans.current_value
         ] if latest_trans else [0, 0, 0]
-
         # check xem record quản lí giá cost theo kho trong kì này đã có chưa? chưa thì tạo mới
         cls.check_inventory_cost_data_by_warehouse_this_sub(
             log, period_mapped, sub_period_order,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # xử lí giá trị tồn kho hiện tại cho từng lần nhập-xuất
         value_list = cls.process_log_current_data(
             log,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # cập nhập giá trị tồn kho hiện tại cho log
         log.current_quantity = value_list['new_quantity']
         log.current_cost = value_list['new_cost']
@@ -302,36 +307,18 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
                 return inventory_cost_data
         return None
 
-    def get_inventory_cost_data_this_sub_period(
-            self,
-            data_stock_activity,
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-    ):
+    def get_inventory_cost_data_this_sub_period(self, data_stock_activity):
         """
         Opening tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
-            Nếu có sub tháng trước (đã khoá sổ): thì lấy ending của tháng trước
+            Mặc định là opening của tháng
         Ending của tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
+            Mặc định là opening của tháng
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
         # Begin get Opening
-        last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-        )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
-        if last_inventory_cost_data:
-            opening_quantity = last_inventory_cost_data.ending_balance_quantity
-            opening_value = last_inventory_cost_data.ending_balance_value
-            opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending

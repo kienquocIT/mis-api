@@ -119,8 +119,8 @@ class GoodsReceipt(DataAbstractModel):
                     lot_data = [{
                         'lot_id': str(lot.id),
                         'lot_number': lot.lot_number,
-                        'lot_quantity': item.quantity_import,
-                        'lot_value': item.product_subtotal_price,
+                        'lot_quantity': lot.quantity_import,
+                        'lot_value': lot.quantity_import * item.product_unit_price,
                         'lot_expire_date': str(lot.expire_date)
                     } for lot in child.goods_receipt_lot_gr_warehouse.all()]
 
@@ -128,8 +128,8 @@ class GoodsReceipt(DataAbstractModel):
                         'product': item.product,
                         'warehouse': child.warehouse,
                         'system_date': instance.date_approved,
-                        'posting_date': None,
-                        'document_date': None,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
                         'stock_type': 1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,

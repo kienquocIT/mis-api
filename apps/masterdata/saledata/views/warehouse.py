@@ -1,7 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.serializers.warehouse import ProductWarehouseLotListSerializer, \
-    ProductWarehouseSerialListSerializer, ProductWarehouseAssetToolsListSerializer
+    ProductWarehouseSerialListSerializer, ProductWarehouseAssetToolsListSerializer, \
+    ProductWareHouseListSerializerForGoodsTransfer
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
@@ -138,6 +139,34 @@ class ProductWareHouseList(BaseListMixin):
         ).order_by('product__code')
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseListForGoodsTransfer(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWareHouseListSerializerForGoodsTransfer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    filterset_class = ProductWareHouseListFilter
+
+    def get_queryset(self):
+        if 'interact' in self.request.query_params:
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                return super().get_queryset().select_related(
+                    'product', 'warehouse', 'uom'
+                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
+        return super().get_queryset().select_related(
+            'product', 'warehouse', 'uom',
+        ).prefetch_related(
+            'product_warehouse_serial_product_warehouse',
+            'product_warehouse_lot_product_warehouse'
+        ).order_by('product__code')
+
+    @swagger_auto_schema(operation_summary='Product WareHouse For Goods Transfer')
     @mask_view(
         login_require=True, auth_require=False,
     )

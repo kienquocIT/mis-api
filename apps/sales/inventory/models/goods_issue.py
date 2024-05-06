@@ -50,6 +50,8 @@ class GoodsIssue(DataAbstractModel):
                     'description': 'xxx',
                     'unit_cost': 500000,
                     'subtotal_cost': 1000000,
+                    'lot_changes': [],
+                    'sn_changes': []
                 }
             ]
         )
@@ -67,24 +69,23 @@ class GoodsIssue(DataAbstractModel):
         activities_data = []
         for item in instance.goods_issue_product.all():
             lot_data = []
-            prd_wh_lot = ProductWareHouseLot.objects.filter(
-                product_warehouse__product=item.product,
-                product_warehouse__warehouse=item.warehouse
-            ).first()
-            if prd_wh_lot:
-                lot_data.append({
-                    'lot_id': str(prd_wh_lot.id),
-                    'lot_number': prd_wh_lot.lot_number,
-                    'lot_quantity': item.quantity,
-                    'lot_value': item.unit_cost * item.quantity,
-                    'lot_expire_date': str(prd_wh_lot.expire_date)
-                })
+            for lot_item in item.lot_data:
+                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
+                quantity = lot_item['old_quantity'] - lot_item['quantity']
+                if prd_wh_lot and quantity > 0:
+                    lot_data.append({
+                        'lot_id': str(prd_wh_lot.id),
+                        'lot_number': prd_wh_lot.lot_number,
+                        'lot_quantity': quantity,
+                        'lot_value': item.unit_cost * quantity,
+                        'lot_expire_date': str(prd_wh_lot.expire_date)
+                    })
             activities_data.append({
                 'product': item.product,
                 'warehouse': item.warehouse,
-                'system_date': instance.date_created,
-                'posting_date': None,
-                'document_date': None,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
                 'stock_type': -1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
@@ -96,7 +97,7 @@ class GoodsIssue(DataAbstractModel):
             })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
-            instance.date_created,
+            instance.date_approved,
             activities_data
         )
         return True
@@ -136,6 +137,7 @@ class GoodsIssue(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
+                self.prepare_data_for_logging(self)
                 if self.inventory_adjustment:
                     for item in self.goods_issue_datas:
                         self.update_product_amount(item)
@@ -144,7 +146,6 @@ class GoodsIssue(DataAbstractModel):
                             item.get('inventory_adjustment_item'),
                         )
                     self.inventory_adjustment.update_ia_state()
-                self.prepare_data_for_logging(self)
 
         super().save(*args, **kwargs)
 

@@ -75,13 +75,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period(
-                    data_stock_activity,
-                    inventory_cost_data_list,
-                    wh_id,
-                    obj.period_mapped_id,
-                    obj.sub_period_order
-                )
+                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period(data_stock_activity)
                 result.append({
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
@@ -276,17 +270,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     def get_stock_activities(self, obj):
         date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
-        inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
         data_stock_activity = []
         sum_in_quantity = 0
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
-        print(obj.product.report_inventory_by_month_product.filter(
-            warehouse_id=obj.warehouse_id,
-            report_inventory__period_mapped_id=obj.period_mapped_id,
-            report_inventory__sub_period_order=obj.sub_period_order,
-        ).count())
         for log in obj.product.report_inventory_by_month_product.filter(
             warehouse_id=obj.warehouse_id,
             report_inventory__period_mapped_id=obj.period_mapped_id,
@@ -300,22 +288,16 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_quantity += log.quantity
                     sum_out_value += log.value
                 # lấy detail cho từng TH
-                if log.trans_title in ['Goods receipt', 'Goods return', 'Goods receipt (IA)']:
+                if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)']:
                     data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity)
-                elif log.trans_title in ['Delivery', 'Goods issue']:
+                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
                     data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
         )
         # lấy inventory_cost_data của kì hiện tại
-        this_sub_value = obj.get_inventory_cost_data_this_sub_period(
-            data_stock_activity,
-            inventory_cost_data_list,
-            obj.warehouse_id,
-            obj.period_mapped_id,
-            obj.sub_period_order
-        )
+        this_sub_value = obj.get_inventory_cost_data_this_sub_period(data_stock_activity)
 
         result = {
             'sum_in_quantity': sum_in_quantity,
