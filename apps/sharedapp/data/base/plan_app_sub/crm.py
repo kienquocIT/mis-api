@@ -1732,6 +1732,45 @@ FINAL_ACCEPTANCE_APP_CONFIG = {
     "allow_permit": True,
 }
 
+REPORT_PURCHASING_APP_CONFIG = {
+    "id": "e696a636-0f36-4b20-970d-70035d6e1e37",
+    "title": "Report Purchasing",
+    "code": "reportpurchasing",
+    "model_code": "reportpurchasing",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1953,5 +1992,9 @@ Application_crm_data = {
     "710c5a94-3a29-4e0e-973c-e6cace96c1e7": ApplicationConfigFrame(**FINAL_ACCEPTANCE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
+    ),
+    "e696a636-0f36-4b20-970d-70035d6e1e37": ApplicationConfigFrame(**REPORT_PURCHASING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
     ),
 }

@@ -470,7 +470,7 @@ class PurchaseOrderListReport(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        label_code='report', model_code='reportpurchasing', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
