@@ -1,6 +1,5 @@
 import datetime
-from django.utils import timezone
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse, Periods, Product, SubPeriods
 from apps.sales.opportunity.models import OpportunityStage
@@ -442,12 +441,8 @@ class PurchaseOrderListReport(BaseListMixin):
         try:
             period_mapped = Periods.objects.filter(id=period_mapped_id).first()
             if sub_period_order and start_day and end_day:
-                filter_date_start = (
-                    f"{period_mapped.fiscal_year}{str(sub_period_order).zfill(2)}{str(start_day).zfill(2)}"
-                )
-                filter_date_end = (
-                    f"{period_mapped.fiscal_year}{str(sub_period_order).zfill(2)}{str(end_day).zfill(2)}"
-                )
+                start_date = datetime.date(period_mapped.fiscal_year, int(sub_period_order), int(start_day))
+                end_date = datetime.date(period_mapped.fiscal_year, int(sub_period_order), int(end_day))
                 return super().get_queryset().select_related(
                     "supplier", "employee_inherit"
                 ).prefetch_related(
@@ -455,8 +450,7 @@ class PurchaseOrderListReport(BaseListMixin):
                     "purchase_order_product_order__uom_order_actual",
                 ).filter(
                     system_status=3,
-                    delivered_date__gte=datetime.datetime.strptime(filter_date_start, '%Y%m%d').date(),
-                    delivered_date__lte=datetime.datetime.strptime(filter_date_end, '%Y%m%d').date()
+                    delivered_date__date__range=[start_date, end_date]
                 )
             return (super().get_queryset().select_related(
                 "supplier", "employee_inherit"
