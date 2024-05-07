@@ -3,25 +3,10 @@ from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLo
 from apps.sales.acceptance.models import FinalAcceptanceIndicator
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
-from apps.sales.inventory.models import GoodsReturnProductDetail
 from apps.sales.report.models import ReportInventorySub
 
 
 class GoodsReturnSubSerializerForNonPicking:
-    @classmethod
-    def create_delivery_product_detail_mapped(cls, goods_return, product_detail_list):
-        bulk_info = []
-        for item in product_detail_list:
-            bulk_info.append(
-                GoodsReturnProductDetail.objects.create(
-                    goods_return=goods_return,
-                    **item
-                )
-            )
-        GoodsReturnProductDetail.objects.filter(goods_return=goods_return).delete()
-        GoodsReturnProductDetail.objects.bulk_create(bulk_info)
-        return True
-
     @classmethod
     def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
         activities_data = []
@@ -429,7 +414,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def update_delivery(cls, goods_return, product_detail_list, for_picking=False):
+    def update_delivery(cls, goods_return, for_picking=False):
         """
         B1: Lấy phiếu Delivery đã chọn từ phiếu trả hàng
         B2: Có 2 TH:
@@ -441,7 +426,7 @@ class GoodsReturnSubSerializerForNonPicking:
         returned_delivery = goods_return.delivery
         return_quantity = 0
         redelivery_quantity = 0
-        for item in product_detail_list:
+        for item in goods_return.product_detail_list:
             if item.get('type') == 0:
                 return_quantity += item.get('default_return_number', 0)
                 redelivery_quantity += item.get('default_redelivery_number', 0)
@@ -456,7 +441,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 'Redelivery quantity':
                     f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
             })
-        cls.update_product_state(returned_delivery, product_detail_list)
+        cls.update_product_state(returned_delivery, goods_return.product_detail_list)
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = returned_delivery.order_delivery.sub
             ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
@@ -469,7 +454,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 'remaining_quantity', 'ready_quantity'
             ])
             cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product, for_picking)
-            cls.update_warehouse_prod(product_detail_list, goods_return, return_quantity)
+            cls.update_warehouse_prod(goods_return.product_detail_list, goods_return, return_quantity)
         elif goods_return.sale_order.delivery_status == 3:  # Done delivery
             if redelivery_quantity != 0:
                 delivery_sub_obj = returned_delivery.order_delivery.sub
@@ -501,7 +486,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 returned_delivery.order_delivery.save(update_fields=['sub'])
                 goods_return.sale_order.delivery_status = 2
                 goods_return.sale_order.save(update_fields=['delivery_status'])
-            cls.update_warehouse_prod(product_detail_list, goods_return, return_quantity)
+            cls.update_warehouse_prod(goods_return.product_detail_list, goods_return, return_quantity)
         return True
 
 
@@ -568,7 +553,7 @@ class GoodsReturnSubSerializerForPicking:
         return True
 
     @classmethod
-    def update_delivery(cls, goods_return, product_detail_list):
+    def update_delivery(cls, goods_return):
         """
         Có 2 TH:
         1) Nếu tất cả Picking đều Done: CREATE Picking mới > CREATE/UPDATE Delivery
@@ -576,7 +561,7 @@ class GoodsReturnSubSerializerForPicking:
         """
         return_quantity = 0
         redelivery_quantity = 0
-        for item in product_detail_list:
+        for item in goods_return.product_detail_list:
             if item.get('type') == 0:
                 return_quantity += item.get('default_return_number', 0)
                 redelivery_quantity += item.get('default_redelivery_number', 0)
@@ -596,7 +581,7 @@ class GoodsReturnSubSerializerForPicking:
             picking_obj.save(update_fields=['sub'])
         else:
             cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product)
-        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, product_detail_list, True)
+        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, True)
 
 
 # FUNCTIONS AFTER INSTANCE CREATED

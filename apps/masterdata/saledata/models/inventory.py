@@ -79,14 +79,6 @@ class WareHouse(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def check_interact_warehouse(cls, employee_obj, warehouse_id):
-        if hasattr(employee_obj, 'warehouse_employees_emp'):
-            interact = employee_obj.warehouse_employees_emp
-            if str(warehouse_id) not in interact.warehouse_list:
-                raise serializers.ValidationError({"Error": 'You are not allowed to interact with this warehouse.'})
-        return True
-
     def save(self, *args, **kwargs):
         # auto create code (temporary)
         warehouse = WareHouse.objects.filter_current(

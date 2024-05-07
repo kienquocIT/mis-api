@@ -1,7 +1,8 @@
 import json
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product
+from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product, \
+    SubPeriods
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
@@ -229,6 +230,12 @@ class GoodsTransfer(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
+
         if self.system_status in [2, 3]:
             if not self.code:
                 goods_transfer = GoodsTransfer.objects.filter_current(
