@@ -1,5 +1,4 @@
 from django.db import models
-from rest_framework import serializers
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, WAREHOUSE_TYPE
 
 __all__ = [
