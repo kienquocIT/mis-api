@@ -34,8 +34,8 @@ class PurchaseOrderListReportSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order(cls, obj):
         all_sale_order = []
-        for pr in PurchaseOrderRequest.objects.filter(purchase_order=obj):
-            all_sale_order.append(pr.purchase_request.sale_order_id)
+        for purchase_order_request in PurchaseOrderRequest.objects.filter(purchase_order=obj):
+            all_sale_order.append(purchase_order_request.purchase_request.sale_order_id)
         return all_sale_order
 
     @classmethod
