@@ -58,6 +58,10 @@ msgstr "Yêu cầu bàn giao"
 msgid "Asset, Tools Provide"
 msgstr "Yêu cầu cấp phát"
 
+# 08e41084-4379-4778-9e16-c09401f0a66e
+msgid "Asset, Tools Return"
+msgstr "Thu hồi tài sản"
+
 # 87ce1662-ca9d-403f-a32e-9553714ebc6d
 msgid "Business trip"
 msgstr "Công tác"
@@ -104,15 +108,19 @@ msgstr "Quyết toán"
 
 # f26d7ce4-e990-420a-8ec6-2dc307467f2c
 msgid "Goods Issue"
-msgstr "Goods Issue"
+msgstr "Xuất hàng"
 
 # dd16a86c-4aef-46ec-9302-19f30b101cf5
 msgid "Goods Receipt"
 msgstr "Nhập kho"
 
+# 0242ba77-8b02-4589-8ed9-239788083f2b
+msgid "Goods Return"
+msgstr "Đổi - trả hàng"
+
 # 866f163d-b724-404d-942f-4bc44dc2e2ed
 msgid "Goods Transfer"
-msgstr "Goods Transfer"
+msgstr "Điều chuyển hàng hoá"
 
 # e17b9123-8002-4c9b-921b-7722c3c9e3a5
 msgid "Group"
@@ -136,7 +144,7 @@ msgstr "Leave available"
 
 # 6078deaa-96b3-4743-97e3-5457454fa7aa
 msgid "Meeting Schedule"
-msgstr "Meeting Schedule"
+msgstr "Lịch họp"
 
 # 2fe959e3-9628-4f47-96a1-a2ef03e867e3
 msgid "Meetting With Customer"

@@ -320,4 +320,14 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
             'action_status': ia_product.action_status,
             'product_unit_price': 0,
             'product_subtotal_price': 0,
+            'product_cost_price': cls.get_cost(
+                product_obj=ia_product.product_mapped, warehouse_id=ia_product.warehouse_mapped_id
+            )
         } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2, action_status=False)]
+
+    @classmethod
+    def get_cost(cls, product_obj, warehouse_id):
+        for product_inventory in product_obj.report_inventory_by_month_product.all():
+            if product_inventory.warehouse_id == warehouse_id:
+                return product_inventory.current_cost
+        return 0
