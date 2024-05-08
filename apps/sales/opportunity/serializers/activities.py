@@ -783,11 +783,12 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
         } if obj.document else {}
 
     @classmethod
-    def get_doc_data(cls, obj):  # application: quotation, sale order, ...
+    def get_doc_data(cls, obj):  # application: quotation, sale order, advance, payment,...
         doc = None
-        model_cls = DisperseModel(app_model=obj.app_code).get_model()
-        if model_cls and hasattr(model_cls, 'objects'):
-            doc = model_cls.objects.filter(id=obj.doc_id).first()
+        if obj.app_code:
+            model_cls = DisperseModel(app_model=obj.app_code).get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                doc = model_cls.objects.filter(id=obj.doc_id).first()
         return {
             'id': doc.id,
             'title': doc.title,
