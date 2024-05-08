@@ -55,7 +55,7 @@ class GoodsReceiptLotListSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsReceiptLot
         fields = (
-            'id',
+            'lot_id',
             'lot_number',
             'quantity_import',
             'expire_date',
