@@ -324,10 +324,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.sale_order_opportunity.exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
         return True
 
     @classmethod
@@ -541,7 +541,11 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.sale_order_opportunity.exclude(id=self.instance.id).exists():
+                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    if opportunity.sale_order_opportunity.filter(
+                            system_status__in=[0, 1, 2, 3]
+                    ).exclude(id=self.instance.id).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
         return True
 

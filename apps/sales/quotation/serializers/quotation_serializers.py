@@ -293,13 +293,11 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.sale_order_opportunity.exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-                    quotation_invalid = opportunity.quotation_opportunity.filter(system_status__in=[2, 3, 4]).count()
-                    quotation_all = opportunity.quotation_opportunity.all().count()
-                    if quotation_invalid != quotation_all:
+                    if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
+                    if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return True
 
@@ -456,7 +454,11 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.quotation_opportunity.exclude(id=self.instance.id).exists():
+                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    if opportunity.quotation_opportunity.filter(
+                            system_status__in=[0, 1, 2, 3]
+                    ).exclude(id=self.instance.id).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
         return True
 

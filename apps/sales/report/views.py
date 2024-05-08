@@ -32,6 +32,7 @@ class ReportRevenueList(BaseListMixin):
         'sale_order__customer_id': ['exact', 'in'],
         'is_initial': ['exact'],
         'sale_order__system_status': ['exact'],
+        'group_inherit__is_delete': ['exact'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -67,6 +68,8 @@ class ReportProductList(BaseListMixin):
         'date_approved': ['lte', 'gte'],
         'product_id': ['exact', 'in'],
         'product__general_product_category_id': ['exact', 'in'],
+        'sale_order__system_status': ['exact'],
+        'group_inherit__is_delete': ['exact'],
     }
     serializer_list = ReportProductListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -100,6 +103,8 @@ class ReportCustomerList(BaseListMixin):
         'employee_inherit__group_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'customer_id': ['exact', 'in'],
+        'sale_order__system_status': ['exact'],
+        'group_inherit__is_delete': ['exact'],
     }
     serializer_list = ReportCustomerListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -176,6 +181,7 @@ class ReportCashflowList(BaseListMixin):
         'employee_inherit__group_id': ['exact', 'in'],
         'sale_order_id': ['exact', 'in'],
         'due_date': ['exact', 'gte', 'lte'],
+        'sale_order__system_status': ['exact'],
     }
     serializer_list = ReportCashflowListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
