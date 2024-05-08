@@ -87,6 +87,12 @@ class ReportRevenue(DataAbstractModel):
 
 # REPORT PRODUCT
 class ReportProduct(DataAbstractModel):
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        related_name='report_product_sale_order',
+        null=True,
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -107,6 +113,7 @@ class ReportProduct(DataAbstractModel):
             cls,
             tenant_id,
             company_id,
+            sale_order_id,
             product_id,
             employee_created_id,
             employee_inherit_id,
@@ -119,6 +126,7 @@ class ReportProduct(DataAbstractModel):
         cls.objects.create(
             tenant_id=tenant_id,
             company_id=company_id,
+            sale_order_id=sale_order_id,
             product_id=product_id,
             employee_created_id=employee_created_id,
             employee_inherit_id=employee_inherit_id,
@@ -140,6 +148,12 @@ class ReportProduct(DataAbstractModel):
 
 # REPORT CUSTOMER
 class ReportCustomer(DataAbstractModel):
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        related_name='report_customer_sale_order',
+        null=True,
+    )
     customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -160,6 +174,7 @@ class ReportCustomer(DataAbstractModel):
             cls,
             tenant_id,
             company_id,
+            sale_order_id,
             customer_id,
             employee_created_id,
             employee_inherit_id,
@@ -172,6 +187,7 @@ class ReportCustomer(DataAbstractModel):
         cls.objects.create(
             tenant_id=tenant_id,
             company_id=company_id,
+            sale_order_id=sale_order_id,
             customer_id=customer_id,
             employee_created_id=employee_created_id,
             employee_inherit_id=employee_inherit_id,

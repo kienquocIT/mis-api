@@ -920,8 +920,8 @@ msgid "Opportunity already has sale order"
 msgstr "Cơ hội kinh doanh đã có đơn hàng"
 
 #
-msgid "Opportunity has quotation is not finished"
-msgstr "Cơ hội kinh doanh có báo giá chưa hoàn tất"
+msgid "Opportunity already has quotation"
+msgstr "Cơ hội kinh doanh đã có báo giá"
 
 #
 msgid "Confirm"

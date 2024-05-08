@@ -1435,26 +1435,6 @@ def reset_set_product_warehouse_stock():
     print('reset_set_product_warehouse_stock done.')
 
 
-def update_quotation_so_json_data():
-    # quotation
-    for quotation in Quotation.objects.all():
-        update_fields = []
-        if quotation.payment_term and not quotation.payment_term_data:
-            quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
-            update_fields.append('payment_term_data')
-        if len(update_fields) > 0:
-            quotation.save(update_fields=update_fields)
-    # sale order
-    for so in SaleOrder.objects.all():
-        update_fields = []
-        if so.payment_term and not so.payment_term_data:
-            so.payment_term_data = PaymentTermListSerializer(so.payment_term).data
-            update_fields.append('payment_term_data')
-        if len(update_fields) > 0:
-            so.save(update_fields=update_fields)
-    print('update_so_json_data done.')
-
-
 def reset_opportunity_stage():
     for opp in Opportunity.objects.all():
         CommonOpportunityUpdate.update_opportunity_stage_for_list(opp)
