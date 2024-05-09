@@ -83,7 +83,7 @@ class WareHouse(MasterDataAbstractModel):
         warehouse = WareHouse.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
-            is_deleted=False
+            is_delete=False
         ).count()
         char = "W"
         if not self.code:
