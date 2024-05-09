@@ -346,8 +346,8 @@ class GoodsReturnSubSerializerForNonPicking:
                         warranty_start=serial.first().warranty_start,
                         warranty_end=serial.first().warranty_end
                     )
-                    product_wh.stock_amount += item.get('lot_return_number')
-                    product_wh.sold_amount -= item.get('lot_return_number')
+                    product_wh.stock_amount += 1
+                    product_wh.sold_amount -= 1
                     product_wh.save(update_fields=['stock_amount', 'sold_amount'])
                 else:
                     raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
@@ -387,10 +387,12 @@ class GoodsReturnSubSerializerForNonPicking:
     def update_product_state(cls, returned_delivery, product_detail_list):
         returned_product_by_sn = []
         returned_product_by_lot = []
+        default_item_id = None
         lot_return_number = 0
         default_return_number = 0
         for item in product_detail_list:
             if item.get('type') == 0:
+                default_item_id = item.get('default_item_id')
                 default_return_number = item.get('default_return_number')
             elif item.get('type') == 1:
                 returned_product_by_lot.append(item.get('lot_no_id'))
@@ -409,8 +411,9 @@ class GoodsReturnSubSerializerForNonPicking:
                     item.save(update_fields=['is_returned'])
         else:
             for item in returned_delivery.delivery_product_delivery_sub.all():
-                item.returned_quantity_default += default_return_number
-                item.save(update_fields=['returned_quantity_default'])
+                if str(item.id) == default_item_id:
+                    item.returned_quantity_default += default_return_number
+                    item.save(update_fields=['returned_quantity_default'])
         return True
 
     @classmethod

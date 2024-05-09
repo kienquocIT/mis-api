@@ -206,6 +206,7 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
         return [{
             'id': item.id,
             'type': item.type,
+            'default_item_id': item.default_item_id,
             'default_return_number': item.default_return_number,
             'default_redelivery_number': item.default_redelivery_number,
             'lot_no': {
@@ -320,7 +321,12 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
     @classmethod
     def get_details(cls, obj):
         return [{
-            'product_data': item.product_data,
+            'id': item.id,
+            'product_data': {
+                'id': item.product_id,
+                'code': item.product.code,
+                'title': item.product.title,
+            } if item.product else {},
             'uom_data': item.uom_data,
             'total_order': item.delivery_quantity,
             'delivered_quantity': item.picked_quantity,
@@ -328,6 +334,27 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
             'product_subtotal_price': item.product_subtotal_price,
             'product_general_traceability_method': item.product.general_traceability_method,
             'returned_quantity_default': item.returned_quantity_default,
+            'sn_data': [{
+                'id': serial.id,
+                'product': serial.delivery_product.product_data,
+                'uom': serial.delivery_product.uom_data,
+                'product_unit_price': serial.delivery_product.product_unit_price,
+                'product_subtotal_price': serial.delivery_product.product_subtotal_price,
+                'serial_id': serial.product_warehouse_serial_id,
+                'vendor_serial_number': serial.product_warehouse_serial.vendor_serial_number,
+                'serial_number': serial.product_warehouse_serial.serial_number,
+                'is_returned': serial.is_returned
+            } for serial in item.delivery_serial_delivery_product.all()],
+            'lot_data': [{
+                'id': lot.id,
+                'product': lot.delivery_product.product_data,
+                'uom': lot.delivery_product.uom_data,
+                'product_unit_price': lot.delivery_product.product_unit_price,
+                'lot_id': lot.product_warehouse_lot_id,
+                'lot_number': lot.product_warehouse_lot.lot_number,
+                'quantity_delivery': lot.quantity_delivery,
+                'returned_quantity': lot.returned_quantity
+            } for lot in item.delivery_lot_delivery_product.all()]
         } for item in obj.delivery_product_delivery_sub.all().select_related('product')]
 
     @classmethod

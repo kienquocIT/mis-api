@@ -67,6 +67,7 @@ class GoodsReturnProductDetail(DataAbstractModel):
     goods_return = models.ForeignKey(GoodsReturn, on_delete=models.CASCADE, related_name='goods_return_product_detail')
     type = models.SmallIntegerField(choices=((0, 'Default'), (1, 'LOT'), (2, 'Serial')), default=0)
 
+    default_item = models.ForeignKey('delivery.OrderDeliveryProduct', on_delete=models.CASCADE, null=True)
     default_return_number = models.FloatField(default=0)
     default_redelivery_number = models.FloatField(default=0)
 
