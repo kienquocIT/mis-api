@@ -28,11 +28,15 @@ class ReportInventory(DataAbstractModel):
     @classmethod
     def get_report_inventory(cls, activities_obj, product_obj, period_mapped, sub_period_order):
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        tenant_obj = activities_obj.tenant
+        company_obj = activities_obj.company
+        emp_inherit_obj = activities_obj.employee_inherit
+        emp_created_obj = activities_obj.employee_created if activities_obj.employee_created else emp_inherit_obj
         if sub_period_obj:
             # (obj này là root) - có thì return, chưa có thì tạo mới
             report_inventory_obj = cls.objects.filter(
-                tenant=activities_obj.tenant,
-                company=activities_obj.company,
+                tenant=tenant_obj,
+                company=company_obj,
                 product=product_obj,
                 period_mapped=period_mapped,
                 sub_period_order=sub_period_order,
@@ -40,10 +44,10 @@ class ReportInventory(DataAbstractModel):
             ).first()
             if not report_inventory_obj:
                 report_inventory_obj = cls.objects.create(
-                    tenant=activities_obj.tenant,
-                    company=activities_obj.company,
-                    employee_created=activities_obj.employee_created,
-                    employee_inherit=activities_obj.employee_inherit,
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    employee_created=emp_created_obj,
+                    employee_inherit=emp_inherit_obj,
                     product=product_obj,
                     period_mapped=period_mapped,
                     sub_period_order=sub_period_order,
