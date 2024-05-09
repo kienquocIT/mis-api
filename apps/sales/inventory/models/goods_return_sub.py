@@ -408,7 +408,7 @@ class GoodsReturnSubSerializerForNonPicking:
         )
 
     @classmethod
-    def update_product_state(cls, returned_delivery, product_detail_list):
+    def update_delivery_product_state(cls, returned_delivery, product_detail_list):
         (
             returned_product_by_lot,
             returned_product_by_sn,
@@ -461,7 +461,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 'Redelivery quantity':
                     f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
             })
-        cls.update_product_state(returned_delivery, goods_return.product_detail_list)
+        cls.update_delivery_product_state(returned_delivery, goods_return.product_detail_list)
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = returned_delivery.order_delivery.sub
             ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
