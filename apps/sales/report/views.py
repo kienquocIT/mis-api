@@ -434,15 +434,16 @@ class PurchaseOrderListReport(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        period_mapped_id = self.request.query_params.get('period_mapped')
-        sub_period_order = self.request.query_params.get('sub_period_order')
-        start_day = self.request.query_params.get('start_day')
-        end_day = self.request.query_params.get('end_day')
         try:
+            period_mapped_id = self.request.query_params.get('period_mapped')
+            sub_period_order = self.request.query_params.get('sub_period_order')
+            start_day = int(self.request.query_params.get('start_day'))
+            end_day = int(self.request.query_params.get('end_day'))
             period_mapped = Periods.objects.filter(id=period_mapped_id).first()
-            if sub_period_order and start_day and end_day:
-                start_date = datetime.date(period_mapped.fiscal_year, int(sub_period_order), int(start_day))
-                end_date = datetime.date(period_mapped.fiscal_year, int(sub_period_order), int(end_day))
+            if period_mapped and sub_period_order and start_day and end_day:
+                sub_period_order = int(sub_period_order) + period_mapped.space_month
+                start_date = datetime.date(period_mapped.fiscal_year, sub_period_order, start_day)
+                end_date = datetime.date(period_mapped.fiscal_year, sub_period_order, end_day)
                 return super().get_queryset().select_related(
                     "supplier", "employee_inherit"
                 ).prefetch_related(
