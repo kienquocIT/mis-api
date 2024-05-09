@@ -384,7 +384,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def update_product_state(cls, returned_delivery, product_detail_list):
+    def get_return_data(cls, product_detail_list):
         returned_product_by_sn = []
         returned_product_by_lot = []
         default_item_id = None
@@ -399,6 +399,23 @@ class GoodsReturnSubSerializerForNonPicking:
                 lot_return_number = item.get('lot_return_number')
             elif item.get('type') == 2:
                 returned_product_by_sn.append(item.get('serial_no_id'))
+        return (
+            returned_product_by_lot,
+            returned_product_by_sn,
+            default_item_id,
+            lot_return_number,
+            default_return_number
+        )
+
+    @classmethod
+    def update_product_state(cls, returned_delivery, product_detail_list):
+        (
+            returned_product_by_lot,
+            returned_product_by_sn,
+            default_item_id,
+            lot_return_number,
+            default_return_number
+        ) = cls.get_return_data(product_detail_list)
         if len(returned_product_by_lot) > 0:
             for item in returned_delivery.delivery_lot_delivery_sub.all():
                 if str(item.product_warehouse_lot_id) in returned_product_by_lot:
