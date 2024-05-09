@@ -196,7 +196,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
             new_code = 'IA.0001'
         else:
             latest_code = InventoryAdjustment.objects.filter_current(
-                fill__tenant=True, fill__company=True
+                fill__tenant=True, fill__company=True, is_deleted=False
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'IA.000' + str(new_code)

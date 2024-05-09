@@ -36,7 +36,7 @@ class GoodsReturn(DataAbstractModel):
         if self.system_status in [2, 3]:
             if not self.code:
                 count = GoodsReturn.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
+                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
                 ).count()
                 self.code = f"GRT00{count + 1}"
 
