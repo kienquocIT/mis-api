@@ -26,18 +26,31 @@ class ReportInventory(DataAbstractModel):
     )
 
     @classmethod
-    def create_report_inventory_item(cls, product_obj, period_mapped, sub_period_order):
-        obj = cls.objects.create(
-            tenant_id=product_obj.tenant_id,
-            company_id=product_obj.company_id,
-            employee_created_id=product_obj.employee_created_id,
-            employee_inherit_id=product_obj.employee_inherit_id,
-            product=product_obj,
-            period_mapped=period_mapped,
-            sub_period_order=sub_period_order,
-            sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
-        )
-        return obj
+    def get_report_inventory(cls, product_obj, period_mapped, sub_period_order):
+        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        if sub_period_obj:
+            # (obj này là root) - có thì return, chưa có thì tạo mới
+            report_inventory_obj = cls.objects.filter(
+                tenant=cls.tenant,
+                company=cls.company,
+                product=product_obj,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=sub_period_obj
+            ).first()
+            if not report_inventory_obj:
+                report_inventory_obj = cls.objects.create(
+                    tenant=cls.tenant,
+                    company=cls.company,
+                    employee_created_id=cls.employee_created,
+                    employee_inherit_id=cls.employee_inherit,
+                    product=product_obj,
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    sub_period=sub_period_obj
+                )
+            return report_inventory_obj
+        raise serializers.ValidationError({'Sub period missing': f'Sub period object does not exist.'})
 
     class Meta:
         verbose_name = 'Report Inventory'
@@ -85,26 +98,16 @@ class ReportInventorySub(DataAbstractModel):
     lot_data = models.JSONField(default=list)
 
     @classmethod
-    def create_new_log(cls, activities_data, period_mapped, sub_period_order):
-        # coi record root của spA trong kì này có hay chưa? chưa thì tạo root mới.
+    def create_new_log(cls, activities_data, period_mapped, activities_obj_date):
+        sub_period_order = activities_obj_date - period_mapped.space_month
         bulk_info = []
         for item in activities_data:
-            report_inventory_obj = ReportInventory.objects.filter(
-                product=item['product'],
-                period_mapped=period_mapped,
-                sub_period_order=sub_period_order - period_mapped.space_month
-            ).first()
-            if not report_inventory_obj:
-                report_inventory_obj = ReportInventory.create_report_inventory_item(
-                    product_obj=item['product'],
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order - period_mapped.space_month
-                )
-            # tạo record sub tương ứng
+            rp_inventory_obj = ReportInventory.get_report_inventory(item['product'], period_mapped, sub_period_order)
+            # tạo record sub tương ứng để ghi dữ liệu log của các phiếu
             new_log = cls(
-                tenant_id=period_mapped.tenant_id,
-                company_id=period_mapped.company_id,
-                report_inventory=report_inventory_obj,
+                tenant=cls.tenant,
+                company_id=cls.company,
+                report_inventory=rp_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
                 system_date=item['system_date'],
