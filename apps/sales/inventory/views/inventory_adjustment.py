@@ -107,6 +107,9 @@ class InventoryAdjustmentProductList(BaseListMixin):
 # Inventory adjustment list use for other apps
 class InventoryAdjustmentOtherList(BaseListMixin):
     queryset = InventoryAdjustment.objects
+    filterset_fields = {
+        'state': ['exact'],
+    }
     serializer_list = InventoryAdjustmentOtherListSerializer
     serializer_detail = InventoryAdjustmentOtherListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

@@ -84,7 +84,9 @@ class SaleOrderActiveDelivery(APIView):
     )
     def post(self, request, *args, pk, **kwargs):
         SubPeriods.check_open(
-            request.user.company_current_id, request.user.tenant_current_id, datetime.now()
+            request.user.company_current_id,
+            request.user.tenant_current_id,
+            datetime.now()
         )
 
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()

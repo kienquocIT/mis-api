@@ -26,18 +26,35 @@ class ReportInventory(DataAbstractModel):
     )
 
     @classmethod
-    def create_report_inventory_item(cls, product_obj, period_mapped, sub_period_order):
-        obj = cls.objects.create(
-            tenant_id=product_obj.tenant_id,
-            company_id=product_obj.company_id,
-            employee_created_id=product_obj.employee_created_id,
-            employee_inherit_id=product_obj.employee_inherit_id,
-            product=product_obj,
-            period_mapped=period_mapped,
-            sub_period_order=sub_period_order,
-            sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
-        )
-        return obj
+    def get_report_inventory(cls, activities_obj, product_obj, period_mapped, sub_period_order):
+        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        tenant_obj = activities_obj.tenant
+        company_obj = activities_obj.company
+        emp_inherit_obj = activities_obj.employee_inherit
+        emp_created_obj = activities_obj.employee_created if activities_obj.employee_created else emp_inherit_obj
+        if sub_period_obj:
+            # (obj này là root) - có thì return, chưa có thì tạo mới
+            report_inventory_obj = cls.objects.filter(
+                tenant=tenant_obj,
+                company=company_obj,
+                product=product_obj,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=sub_period_obj
+            ).first()
+            if not report_inventory_obj:
+                report_inventory_obj = cls.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    employee_created=emp_created_obj,
+                    employee_inherit=emp_inherit_obj,
+                    product=product_obj,
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    sub_period=sub_period_obj
+                )
+            return report_inventory_obj
+        raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
 
     class Meta:
         verbose_name = 'Report Inventory'
@@ -85,26 +102,18 @@ class ReportInventorySub(DataAbstractModel):
     lot_data = models.JSONField(default=list)
 
     @classmethod
-    def create_new_log(cls, activities_data, period_mapped, sub_period_order):
-        # coi record root của spA trong kì này có hay chưa? chưa thì tạo root mới.
+    def create_new_log(cls, activities_obj, activities_data, period_mapped, activities_obj_date):
+        sub_period_order = activities_obj_date - period_mapped.space_month
         bulk_info = []
         for item in activities_data:
-            report_inventory_obj = ReportInventory.objects.filter(
-                product=item['product'],
-                period_mapped=period_mapped,
-                sub_period_order=sub_period_order - period_mapped.space_month
-            ).first()
-            if not report_inventory_obj:
-                report_inventory_obj = ReportInventory.create_report_inventory_item(
-                    product_obj=item['product'],
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order - period_mapped.space_month
-                )
-            # tạo record sub tương ứng
+            rp_inventory_obj = ReportInventory.get_report_inventory(
+                activities_obj, item['product'], period_mapped, sub_period_order
+            )
+            # tạo record sub tương ứng để ghi dữ liệu log của các phiếu
             new_log = cls(
-                tenant_id=period_mapped.tenant_id,
-                company_id=period_mapped.company_id,
-                report_inventory=report_inventory_obj,
+                tenant=activities_obj.tenant,
+                company=activities_obj.company,
+                report_inventory=rp_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
                 system_date=item['system_date'],
@@ -182,19 +191,24 @@ class ReportInventorySub(DataAbstractModel):
         [new_opening_quantity, new_opening_cost, new_opening_value] = [
             latest_trans.current_quantity, latest_trans.current_cost, latest_trans.current_value
         ] if latest_trans else [0, 0, 0]
-
         # check xem record quản lí giá cost theo kho trong kì này đã có chưa? chưa thì tạo mới
         cls.check_inventory_cost_data_by_warehouse_this_sub(
             log, period_mapped, sub_period_order,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # xử lí giá trị tồn kho hiện tại cho từng lần nhập-xuất
         value_list = cls.process_log_current_data(
             log,
-            {'quantity': new_opening_quantity, 'cost': new_opening_cost, 'value': new_opening_value}
+            {
+                'quantity': new_opening_quantity,
+                'cost': new_opening_cost,
+                'value': new_opening_value
+            }
         )
-
         # cập nhập giá trị tồn kho hiện tại cho log
         log.current_quantity = value_list['new_quantity']
         log.current_cost = value_list['new_cost']
@@ -212,7 +226,9 @@ class ReportInventorySub(DataAbstractModel):
         sub_period_order = activities_obj_date.month - period_mapped.space_month
         if period_mapped:
             # tạo các log mới
-            new_logs, new_logs_id_list = cls.create_new_log(activities_data, period_mapped, activities_obj_date.month)
+            new_logs, new_logs_id_list = cls.create_new_log(
+                activities_obj, activities_data, period_mapped, activities_obj_date.month
+            )
             # cho từng log, cập nhập giá trị tồn kho
             for log in new_logs:
                 log_return = cls.update_inventory_value_for_log(log, new_logs_id_list, period_mapped, sub_period_order)
@@ -302,36 +318,18 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
                 return inventory_cost_data
         return None
 
-    def get_inventory_cost_data_this_sub_period(
-            self,
-            data_stock_activity,
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-    ):
+    def get_inventory_cost_data_this_sub_period(self, data_stock_activity):
         """
         Opening tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
-            Nếu có sub tháng trước (đã khoá sổ): thì lấy ending của tháng trước
+            Mặc định là opening của tháng
         Ending của tháng:
-            Mặc định là opening của tháng (có thể là số dư đầu kỳ được khai báo | 0)
+            Mặc định là opening của tháng
             Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
         """
         # Begin get Opening
-        last_inventory_cost_data = self.get_inventory_cost_data_last_sub_period(
-            inventory_cost_data_list,
-            warehouse_id,
-            period_mapped_id,
-            sub_period_order
-        )
         opening_quantity = self.opening_balance_quantity
         opening_value = self.opening_balance_value
         opening_cost = self.opening_balance_cost
-        if last_inventory_cost_data:
-            opening_quantity = last_inventory_cost_data.ending_balance_quantity
-            opening_value = last_inventory_cost_data.ending_balance_value
-            opening_cost = last_inventory_cost_data.ending_balance_cost
         # End
 
         # Begin get Ending

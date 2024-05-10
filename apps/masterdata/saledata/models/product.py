@@ -1,5 +1,8 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.periods import Periods
+from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
@@ -232,6 +235,59 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
+        """
+        get_type = 0: get quantity
+        get_type = 1: get unit_cost (default)
+        get_type = 2: get value
+        else: return 0
+        """
+        this_period = Periods.objects.filter(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            fiscal_year=timezone.now().year
+        ).first()
+        if this_period:
+            sub = self.report_inventory_by_month_product.filter(
+                warehouse_id=warehouse_id,
+                report_inventory__period_mapped=this_period
+            ).first()
+            if not sub:
+                sub = self.report_inventory_by_month_product.filter(
+                    warehouse_id=warehouse_id,
+                    report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
+                ).first()
+            return [sub.current_quantity, sub.current_cost, sub.current_value][get_type] if sub else 0
+        return 0
+
+    def get_unit_cost_list_of_all_warehouse(self):
+        warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
+        this_period = Periods.objects.filter(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            fiscal_year=timezone.now().year
+        ).first()
+        unit_cost_list = []
+        if this_period:
+            for warehouse in warehouse_list:
+                warehouse_id = warehouse.id
+                sub = self.report_inventory_by_month_product.filter(
+                    warehouse_id=warehouse_id,
+                    report_inventory__period_mapped=this_period
+                ).first()
+                if not sub:
+                    sub = self.report_inventory_by_month_product.filter(
+                        warehouse_id=warehouse_id,
+                        report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
+                    ).first()
+                unit_cost_list.append({
+                    'warehouse_id': warehouse_id,
+                    'quantity': sub.current_quantity if sub else 0,
+                    'unit_cost': sub.current_cost if sub else 0,
+                    'value': sub.current_value if sub else 0,
+                })
+        return unit_cost_list
+
     @classmethod
     def update_transaction_information(cls, instance, **kwargs):
         del kwargs['update_transaction_info']
@@ -242,10 +298,11 @@ class Product(DataAbstractModel):
         if 'quantity_purchase' in kwargs:
             instance.wait_receipt_amount += kwargs['quantity_purchase']
             del kwargs['quantity_purchase']
-        if 'quantity_receipt_po' in kwargs:
+        if 'quantity_receipt_po' in kwargs and 'quantity_receipt_actual' in kwargs:
             instance.wait_receipt_amount -= kwargs['quantity_receipt_po']
-            instance.stock_amount += kwargs['quantity_receipt_po']
+            instance.stock_amount += kwargs['quantity_receipt_actual']
             del kwargs['quantity_receipt_po']
+            del kwargs['quantity_receipt_actual']
         if 'quantity_receipt_ia' in kwargs:
             instance.stock_amount += kwargs['quantity_receipt_ia']
             del kwargs['quantity_receipt_ia']

@@ -148,7 +148,9 @@ class Payment(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                    records = Payment.objects.filter_current(
+                        fill__tenant=True, fill__company=True, is_delete=False, system_status=3
+                    )
                     self.code = 'PAYMENT.00' + str(records.count() + 1)
 
                 if 'update_fields' in kwargs:

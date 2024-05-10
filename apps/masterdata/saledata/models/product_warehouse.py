@@ -209,24 +209,28 @@ class ProductWareHouse(MasterDataAbstractModel):
     @classmethod
     def pop_from_transfer(cls, product_warehouse_id, amount, data):
         try:
-            product_warehouse_obj = cls.objects.get(id=product_warehouse_id)
-            product_warehouse_obj.stock_amount -= amount
-            product_warehouse_obj.product.stock_amount -= amount
-            product_warehouse_obj.product.available_amount -= amount
-            product_warehouse_obj.save(update_fields=['stock_amount'])
-            product_warehouse_obj.product.save(update_fields=['stock_amount', 'available_amount'])
-            if product_warehouse_obj.product.general_traceability_method == 1:  # lot
+            prd_wh_obj = cls.objects.get(id=product_warehouse_id)
+
+            prd_wh_obj.sold_amount += amount
+            prd_wh_obj.stock_amount = prd_wh_obj.receipt_amount - prd_wh_obj.sold_amount
+            prd_wh_obj.save(update_fields=['sold_amount', 'stock_amount'])
+
+            prd_wh_obj.product.stock_amount -= amount
+            prd_wh_obj.product.available_amount -= amount
+            prd_wh_obj.product.save(update_fields=['stock_amount', 'available_amount'])
+
+            if prd_wh_obj.product.general_traceability_method == 1:  # lot
                 if len(data['lot_changes']) == 0:
                     raise ValueError('Lot data can not NULL')
                 for each in data['lot_changes']:
                     lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
-                    if lot and each['quantity'] > 0:
+                    if lot and each['old_quantity'] - each['quantity'] > 0:
                         if lot.quantity_import >= amount:
                             lot.quantity_import -= amount
                             lot.save(update_fields=['quantity_import'])
                         else:
                             raise ValueError('Lot quantity must be > 0')
-            elif product_warehouse_obj.product.general_traceability_method == 2:  # sn
+            elif prd_wh_obj.product.general_traceability_method == 2:  # sn
                 if len(data['sn_changes']) == 0:
                     raise ValueError('Serial data can not NULL')
                 sn_list = ProductWareHouseSerial.objects.filter(id__in=data['sn_changes'])
@@ -281,29 +285,6 @@ class ProductWareHouse(MasterDataAbstractModel):
         permissions = ()
 
 
-# class ProductWareHousePeriod(MasterDataAbstractModel):
-#     product_warehouse = models.ForeignKey(
-#         ProductWareHouse,
-#         on_delete=models.CASCADE,
-#         verbose_name='Product WareHouse related',
-#     )
-#     opening_balance = models.FloatField()
-#     purchase_amount = models.FloatField()
-#     bought_amount = models.FloatField()
-#
-#     year = models.PositiveSmallIntegerField()
-#     order = models.PositiveSmallIntegerField()
-#     start_date = models.DateTimeField()
-#     end_date = models.DateTimeField()
-#
-#     class Meta:
-#         verbose_name = 'Product at WareHouse in Period'
-#         verbose_name_plural = 'Product at WareHouse in Period'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-
-
 class ProductWareHouseLot(MasterDataAbstractModel):
     product_warehouse = models.ForeignKey(
         ProductWareHouse,
@@ -312,9 +293,18 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
+    raw_quantity_import = models.FloatField(default=0)  # ONLY add when input (for input after)
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="goods receipt",
+        related_name="product_wh_lot_goods_receipt",
+        help_text="To know this lot was imported by which GoodsReceipt",
+    )
 
     class Meta:
         verbose_name = 'Product Warehouse Lot'
@@ -324,15 +314,10 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         permissions = ()
 
     @classmethod
-    def create(
-            cls,
-            tenant_id,
-            company_id,
-            product_warehouse_id,
-            lot_data,
-    ):
+    def create(cls, tenant_id, company_id, product_warehouse_id, lot_data):
         cls.objects.bulk_create([cls(
             **data,
+            raw_quantity_import=data.get('quantity_import', 0),
             tenant_id=tenant_id,
             company_id=company_id,
             product_warehouse_id=product_warehouse_id,
@@ -353,6 +338,14 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
     manufacture_date = models.DateTimeField(null=True)
     warranty_start = models.DateTimeField(null=True)
     warranty_end = models.DateTimeField(null=True)
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="goods receipt",
+        related_name="product_wh_serial_goods_receipt",
+        help_text="To know this serial was imported by which GoodsReceipt"
+    )
 
     class Meta:
         verbose_name = 'Product Warehouse Serial'

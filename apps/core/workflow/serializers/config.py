@@ -1,3 +1,5 @@
+from django.utils.translation import gettext_lazy as _
+
 from rest_framework import serializers
 
 from apps.core.base.models import Application
@@ -19,6 +21,7 @@ from apps.shared import WorkflowMsg
 # workflow of app
 class WorkflowOfAppListSerializer(serializers.ModelSerializer):
     workflow_currently = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
 
     @classmethod
     def get_workflow_currently(cls, obj):
@@ -26,6 +29,10 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
             'id': obj.workflow_currently_id,
             'title': obj.workflow_currently.title,
         } if obj.workflow_currently else {}
+
+    @classmethod
+    def get_title(cls, obj):
+        return _(obj.title)
 
     class Meta:
         model = WorkflowConfigOfApp

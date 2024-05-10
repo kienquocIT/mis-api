@@ -118,9 +118,10 @@ class APInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
+        number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_default=False).count() + 1
         ap_invoice = APInvoice.objects.create(
             **validated_data,
-            code=f'AP-00{APInvoice.objects.all().count()+1}'
+            code=f'AP-00{number}'
         )
 
         create_goods_receipt_mapped(ap_invoice, self.initial_data.get('goods_receipt_mapped_list', []))

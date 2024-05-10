@@ -14,7 +14,7 @@ class DocHandler:
         return None
 
 
-class FinishHandler:
+class SOFinishHandler:
     @classmethod
     def update_product_wait_delivery_amount(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
@@ -70,6 +70,7 @@ class FinishHandler:
             ReportProduct.push_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
+                sale_order_id=instance.id,
                 product_id=so_product.product_id,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
@@ -86,6 +87,7 @@ class FinishHandler:
         ReportCustomer.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
+            sale_order_id=instance.id,
             customer_id=instance.customer_id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,

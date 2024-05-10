@@ -9,7 +9,7 @@ class SaleMsg:
     OPPORTUNITY_QUOTATION_USED = _('Opportunity is already used for quotation')
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_HAS_SALE_ORDER = _('Opportunity already has sale order')
-    OPPORTUNITY_HAS_QUOTATION_NOT_DONE = _('Opportunity has quotation is not finished')
+    OPPORTUNITY_HAS_QUOTATION_NOT_DONE = _('Opportunity already has quotation')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
     SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')

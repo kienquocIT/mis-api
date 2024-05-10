@@ -298,7 +298,7 @@ class RuntimeAfterFinishHandler:
             cls,
             runtime_obj: Runtime,
             action_code: int,
-            # data_cr: dict,
+            remark='',
     ) -> bool:
         if runtime_obj:
             # WORKFLOW_ACTION = {
@@ -318,6 +318,7 @@ class RuntimeAfterFinishHandler:
                             stage_obj=runtime_obj.stage_currents,
                             actor_obj=runtime_obj.doc_employee_inherit,
                             is_system=False,
+                            remark=remark,
                         ).log_cancel_document()
                     DocHandler.force_reject(runtime_obj=runtime_obj)
                 case 3:  # save cr
@@ -370,7 +371,7 @@ class RuntimeAFLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': "Rejected by owner",
+                'msg': f'Canceled by owner ({self.remark})',
                 'task_workflow_id': None,
             },
         )
@@ -380,7 +381,7 @@ class RuntimeAFLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg="Canceled by creator",
+            msg=f'Canceled by owner ({self.remark})',
             is_system=self.is_system,
         )
 

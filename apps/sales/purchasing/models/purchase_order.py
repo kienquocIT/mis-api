@@ -114,7 +114,6 @@ class PurchaseOrder(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            # code = 'PO0001-' + StringHandler.random_str(17)
             code = 'PO0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
@@ -179,14 +178,6 @@ class PurchaseOrder(DataAbstractModel):
                         'po': str(po_product.purchase_order_id),
                         'quantity': po_product.product_quantity_order_actual,
                     }})
-            po_purchase_requests = instance.purchase_requests.filter(sale_order__isnull=False)
-            for purchase_request in po_purchase_requests:
-                so_rate = 0
-                for pr_product in purchase_request.purchase_request.all():
-                    if str(pr_product.product_id) in po_products_json:
-                        po_product_map = po_products_json[str(pr_product.product_id)]
-                        so_rate += (po_product_map.get('quantity', 0) / pr_product.quantity) * 100
-                so_rate = min(so_rate, 100)
             # payment
             bulk_data = [ReportCashflow(
                 tenant_id=instance.tenant_id,
@@ -197,14 +188,12 @@ class PurchaseOrder(DataAbstractModel):
                 employee_inherit_id=instance.employee_inherit_id,
                 group_inherit_id=instance.employee_inherit.group_id,
                 due_date=payment_stage.due_date,
-                # value_estimate_cost=payment_stage.value_before_tax * so_rate / 100,
                 value_estimate_cost=payment_stage.value_before_tax,
             ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
             ReportCashflow.push_from_so_po(bulk_data)
         return True
 
     def save(self, *args, **kwargs):
-        # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
             if not self.code:

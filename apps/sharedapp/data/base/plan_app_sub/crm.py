@@ -1107,6 +1107,39 @@ GOODS_RECEIPT_APP_CONFIG = {
     "allow_permit": True,
 }
 
+GOODS_DETAIL_APP_CONFIG = {
+    "id": "a943adf4-e00d-4cae-bb3e-78cca3efb09a",
+    "title": "Goods Detail",
+    "code": "goodsdetail",
+    "model_code": "goodsdetail",
+    "app_label": "inventory",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_permit": True,
+}
+
 GOODS_TRANSFER_APP_CONFIG = {
     "id": "866f163d-b724-404d-942f-4bc44dc2e2ed",
     "title": "Goods Transfer",
@@ -1654,6 +1687,90 @@ REPORT_INVENTORY_APP_CONFIG = {
     "allow_permit": True,
 }
 
+FINAL_ACCEPTANCE_APP_CONFIG = {
+    "id": "710c5a94-3a29-4e0e-973c-e6cace96c1e7",
+    "title": "Final Acceptance",
+    "code": "finalacceptance",
+    "model_code": "finalacceptance",
+    "app_label": "acceptance",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale order
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+REPORT_PURCHASING_APP_CONFIG = {
+    "id": "e696a636-0f36-4b20-970d-70035d6e1e37",
+    "title": "Report Purchasing",
+    "code": "reportpurchasing",
+    "model_code": "reportpurchasing",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 SALE_PROJECT = {
     "id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
     "title": "Project",
@@ -1874,6 +1991,10 @@ Application_crm_data = {
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
+    "a943adf4-e00d-4cae-bb3e-78cca3efb09a": ApplicationConfigFrame(**GOODS_DETAIL_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
     "866f163d-b724-404d-942f-4bc44dc2e2ed": ApplicationConfigFrame(**GOODS_TRANSFER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
@@ -1923,6 +2044,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c22a9e96-e56e-4636-9083-8ee1c66cb1b2": ApplicationConfigFrame(**REPORT_INVENTORY_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "710c5a94-3a29-4e0e-973c-e6cace96c1e7": ApplicationConfigFrame(**FINAL_ACCEPTANCE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "e696a636-0f36-4b20-970d-70035d6e1e37": ApplicationConfigFrame(**REPORT_PURCHASING_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
@@ -252,29 +251,52 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def check_lot_serial_exist(cls, warehouse_data, product_obj):
-        lot_number_list = []
         serial_number_list = []
-        for warehouse in warehouse_data:
-            for lot in warehouse.get('lot_data', []):
-                if 'lot' not in lot:
+        for wh_data in warehouse_data:
+            lot_number_list = []
+            for lot in wh_data.get('lot_data', []):
+                lot_obj = lot.get('lot', None)
+                if not lot_obj:
                     lot_number_list.append(lot.get('lot_number', None))
-            for serial in warehouse.get('serial_data', []):
+            # check lot
+            cls.check_lot_exist(
+                product_obj=product_obj, warehouse_obj=wh_data.get('warehouse', None), lot_number_list=lot_number_list
+            )
+            for serial in wh_data.get('serial_data', []):
                 serial_number_list.append(serial.get('serial_number', None))
-        # Check lot & serial
+        # check serial
+        cls.check_serial_exist(product_obj=product_obj, serial_number_list=serial_number_list)
+        return True
+
+    @classmethod
+    def check_lot_exist(cls, product_obj, warehouse_obj, lot_number_list):
+        # check unique in data submit (in same warehouse)
         if len(lot_number_list) != len(set(lot_number_list)):
             raise serializers.ValidationError({'lot_number': 'Lot number must be different.'})
+        # check unique in db
+        if product_obj and warehouse_obj:
+            for product_wh_lot in ProductWareHouseLot.objects.filter(
+                    tenant_id=product_obj.tenant_id,
+                    company_id=product_obj.company_id,
+                    lot_number__in=lot_number_list
+            ):
+                if product_wh_lot.product_warehouse:
+                    pwh = product_wh_lot.product_warehouse
+                    if pwh.product_id == product_obj.id and pwh.warehouse_id == warehouse_obj.id:
+                        raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+                    if pwh.product_id != product_obj.id:
+                        raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+        return True
+
+    @classmethod
+    def check_serial_exist(cls, product_obj, serial_number_list):
+        # check unique in data submit
         if len(serial_number_list) != len(set(serial_number_list)):
             raise serializers.ValidationError({'serial_number': 'Serial number must be different.'})
-        if ProductWareHouseLot.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                product_warehouse__product=product_obj,
-                lot_number__in=lot_number_list
-        ).exists():
-            raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
-        if ProductWareHouseSerial.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+        # check unique in db
+        if ProductWareHouseSerial.objects.filter(
+                tenant_id=product_obj.tenant_id,
+                company_id=product_obj.company_id,
                 product_warehouse__product=product_obj,
                 serial_number__in=serial_number_list
         ).exists():
@@ -283,15 +305,14 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if 'product' in validate_data:
-            warehouse_data = []
             if 'warehouse_data' in validate_data:
                 warehouse_data = validate_data['warehouse_data']
+                self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
             if 'purchase_request_products_data' in validate_data:
                 for pr_product in validate_data['purchase_request_products_data']:
                     if 'warehouse_data' in pr_product:
                         warehouse_data = pr_product['warehouse_data']
                         self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
-            self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
         return validate_data
 
 
