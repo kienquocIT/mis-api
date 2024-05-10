@@ -9,9 +9,9 @@ class POHandler:
                 DiagramSuffix.push_diagram_suffix(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    app_code_main=purchase_request.sale_order._meta.label_lower,
+                    app_code_main=purchase_request.sale_order.__class__.get_model_code(),
                     doc_id_main=purchase_request.sale_order.id,
-                    app_code=instance._meta.label_lower,
+                    app_code=instance.__class__.get_model_code(),
                     doc_id=instance.id,
                     doc_data={
                         'id': str(instance.id),
