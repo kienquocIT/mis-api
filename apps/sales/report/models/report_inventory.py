@@ -322,6 +322,36 @@ class LoggingSubFunction:
         return latest_trans
 
     @classmethod
+    def check_inventory_cost_data_by_warehouse_this_sub(cls, log, period_mapped, sub_period_order, value_list):
+        """ Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ? Chưa thì tạo mới"""
+        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        if sub_period_obj:
+            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
+                product=log.product,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=sub_period_obj
+            ).exists()
+            if not inventory_cost_data_item:
+                inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
+                    tenant_id=period_mapped.tenant_id,
+                    company_id=period_mapped.company_id,
+                    product=log.product,
+                    warehouse=log.warehouse,
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                    opening_balance_quantity=value_list['quantity'],
+                    opening_balance_cost=value_list['cost'],
+                    opening_balance_value=value_list['value']
+                )
+            return inventory_cost_data_item
+        raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
+
+    @classmethod
     def get_latest_trans_value_list_in_perpetual_inventory(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
         if log.company.companyconfig.definition_inventory_valuation == 0:
@@ -384,36 +414,6 @@ class LoggingSubFunction:
                 return value_list
             return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
         raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
-
-    @classmethod
-    def check_inventory_cost_data_by_warehouse_this_sub(cls, log, period_mapped, sub_period_order, value_list):
-        """ Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ? Chưa thì tạo mới"""
-        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
-        if sub_period_obj:
-            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
-                tenant_id=period_mapped.tenant_id,
-                company_id=period_mapped.company_id,
-                product=log.product,
-                warehouse=log.warehouse,
-                period_mapped=period_mapped,
-                sub_period_order=sub_period_order,
-                sub_period=sub_period_obj
-            ).exists()
-            if not inventory_cost_data_item:
-                inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
-                    tenant_id=period_mapped.tenant_id,
-                    company_id=period_mapped.company_id,
-                    product=log.product,
-                    warehouse=log.warehouse,
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order,
-                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
-                    opening_balance_quantity=value_list['quantity'],
-                    opening_balance_cost=value_list['cost'],
-                    opening_balance_value=value_list['value']
-                )
-            return inventory_cost_data_item
-        raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
 
     @classmethod
     def calculate_value_list_in_perpetual_inventory(cls, log, value_list):
