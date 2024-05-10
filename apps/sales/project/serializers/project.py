@@ -1,12 +1,13 @@
 __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailSerializers', 'ProjectUpdateSerializers',
+           'ProjectUpdateOrderSerializers'
            ]
 
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
 from ..extend_func import pj_get_alias_permit_from_app
-from ..models import Project, ProjectMapMember
-from apps.shared import HRMsg, FORMATTING
+from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups
+from apps.shared import HRMsg, FORMATTING, ProjectMsg
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
@@ -72,6 +73,7 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             member=project.employee_inherit,
             permit_add_member=True,
             permit_add_gaw=True,
+            permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
         return project
@@ -108,7 +110,8 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                         "date_from": FORMATTING.parse_datetime(item.group.gr_start_date),
                         "date_end": FORMATTING.parse_datetime(item.group.gr_end_date),
                         "order": item.group.order,
-                        "progress": item.group.gr_rate
+                        "progress": item.group.gr_rate,
+                        "weight": item.group.gr_weight
                     }
                 )
             return groups
@@ -131,6 +134,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                     "relationships_type": None,
                     "dependencies_parent": "",
                     "progress": item.work.w_rate,
+                    "weight": item.work.w_weight,
                 }
                 group_mw = item.work.project_groupmapwork_work.all()
                 if group_mw:
@@ -229,4 +233,48 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        return instance
+
+
+class ProjectUpdateOrderSerializers(serializers.ModelSerializer):
+    list_update = serializers.JSONField()
+
+    class Meta:
+        model = Project
+        fields = (
+            'list_update',
+        )
+
+    @classmethod
+    def work_update_order(cls, work_lst):
+        try:
+            lst_update = []
+            for work in work_lst:
+                crt_w = ProjectWorks.objects.get(id=work['id'])
+                crt_w.order = work['order']
+                lst_update.append(crt_w)
+            ProjectWorks.objects.bulk_update(lst_update, fields=['order'])
+        except ProjectWorks.DoesNotExist:
+            raise serializers.ValidationError({'detail': ProjectMsg.WORK_NOT_EXIST})
+
+    @classmethod
+    def group_update_order(cls, group_lst):
+        try:
+            lst_update = []
+            for group in group_lst:
+                crt_g = ProjectGroups.objects.get(id=group['id'])
+                crt_g.order = group['order']
+                lst_update.append(crt_g)
+            ProjectGroups.objects.bulk_update(lst_update, fields=['order'])
+        except ProjectGroups.DoesNotExist:
+            raise serializers.ValidationError({'detail': ProjectMsg.GROUP_NOT_EXIST})
+
+    def update(self, instance, validated_data):
+        list_update = validated_data.pop('list_update')
+        work_list = list_update.get('work', [])
+        group_list = list_update.get('group', [])
+        if work_list:
+            self.work_update_order(work_list)
+        if group_list:
+            self.group_update_order(group_list)
         return instance

@@ -141,7 +141,8 @@ class WorkDetailSerializers(serializers.ModelSerializer):
             'order',
             'work_dependencies_parent',
             'work_dependencies_type',
-            'group'
+            'group',
+            'work_status',
         )
 
     def validate(self, attrs):

@@ -105,9 +105,7 @@ class Project(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         self.before_save()
-        if self.system_status == 1:
-            self.code_generator()
-            self.system_status = 3
+        self.code_generator()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -402,8 +400,8 @@ class ProjectMapMember(MasterDataAbstractModel, PermissionAbstractModel):
         ...
 
     class Meta:
-        verbose_name = 'Project Team Member'
-        verbose_name_plural = 'Project Team Members'
+        verbose_name = 'Project team member'
+        verbose_name_plural = 'Project team members'
         default_permissions = ()
         permissions = ()
         unique_together = ('tenant', 'company', 'project', 'member')

@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
+from apps.sales.project.extend_func import pj_get_alias_permit_from_app
 from apps.sales.project.models import ProjectMapMember, PlanMemberProject
 from apps.shared import Caching, DisperseModel
 from apps.shared.permissions.util import PermissionController
@@ -14,7 +15,11 @@ class MemberOfProjectDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectMapMember
         fields = (
-            'date_modified', 'permit_view_this_project', 'permit_add_member', 'permit_add_gaw',
+            'id',
+            'date_modified',
+            'permit_view_this_project',
+            'permit_add_member',
+            'permit_add_gaw',
             'permission_by_configured',
         )
 
@@ -41,7 +46,12 @@ class MemberOfProjectUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectMapMember
-        fields = ('permit_view_this_project', 'permit_add_member', 'permission_by_configured', 'permit_add_gaw')
+        fields = (
+            'permit_view_this_project',
+            'permit_add_member',
+            'permit_add_gaw',
+            'permission_by_configured',
+        )
 
     def validate(self, validate_data):
         return validate_license_used(validate_data=validate_data)
@@ -125,7 +135,7 @@ class MemberOfProjectAddSerializer(serializers.Serializer):  # noqa
         raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_REQUIRED})
 
     def create(self, validated_data):
-        project_id = validated_data.get('project_id')
+        project_id = self.context.get('project_id', None)
         tenant_id = validated_data.get('tenant_id')
         company_id = validated_data.get('company_id')
         members = validated_data.pop('members')
@@ -135,6 +145,7 @@ class MemberOfProjectAddSerializer(serializers.Serializer):  # noqa
                 member=member_obj,
                 tenant_id=tenant_id,
                 company_id=company_id,
+                permission_by_configured=pj_get_alias_permit_from_app(employee_obj=member_obj)
             )
             for member_obj in members
         ]

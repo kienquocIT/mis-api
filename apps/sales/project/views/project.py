@@ -1,4 +1,5 @@
-__init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd', 'ProjectMemberDetail']
+__init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd', 'ProjectMemberDetail',
+            'ProjectUpdateOrder']
 
 from typing import Union
 
@@ -7,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.project.models import Project, ProjectMapMember
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
     ProjectUpdateSerializers, MemberOfProjectAddSerializer, MemberOfProjectDetailSerializer, \
-    MemberOfProjectUpdateSerializer
+    MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, TypeCheck, ResponseController
 
@@ -36,7 +37,7 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
         operation_description="get project list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -220,23 +221,25 @@ class ProjectMemberAdd(BaseCreateMixin):
     def post(self, request, *args, pk_pj, **kwargs):
         pj_obj = get_project_obj(pk_pj)
         if pj_obj:
+            self.ser_context = {
+                'project_id': str(pj_obj.id),
+            }
             if self.check_permit_add_member_pj(project_obj=pj_obj):
-                setattr(self, 'project_id', pj_obj.id)
+                setattr(self, 'project_id', str(pj_obj.id))
                 return self.create(request, *args, pk_pj, **kwargs)
             return ResponseController.forbidden_403()
         return ResponseController.notfound_404()
 
 
 class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
-    queryset = ProjectMapMember.objects # noqa
+    queryset = ProjectMapMember.objects
     serializer_detail = MemberOfProjectDetailSerializer
     serializer_update = MemberOfProjectUpdateSerializer
-
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, pj_obj):  # pylint: disable=R0912
+    def check_has_permit_of_space_all(self, pj_obj):
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
+        if config_data and isinstance(config_data, dict):
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
@@ -283,7 +286,7 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
-        if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+        if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
             return True
 
         obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
@@ -349,3 +352,36 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
             return self.destroy(request, *args, pk_pj, pk_member, is_purge=True, **kwargs)
         return ResponseController.notfound_404()
 
+
+class ProjectUpdateOrder(BaseUpdateMixin):
+    queryset = Project.objects
+    serializer_update = ProjectUpdateOrderSerializers
+    retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    def get_project_member_of_current_user(self, instance):
+        return ProjectMapMember.objects.filter_current(
+            project=instance,
+            member=self.cls_check.employee_attr.employee_current,
+            fill__tenant=True, fill__company=True
+        ).first()
+
+    def manual_check_obj_update(self, instance, body_data, **kwargs):
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
+        if emp_id and str(instance.employee_inherit_id) == str(emp_id):
+            return True
+
+        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        if obj_of_current_user:
+            return obj_of_current_user.permit_add_gaw
+        return False
+
+    @swagger_auto_schema(
+        operation_summary='Update order',
+        operation_description='Update order group and work',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        if TypeCheck.check_uuid(pk):
+            return self.update(request, *args, pk, **kwargs)
+        return ResponseController.notfound_404()

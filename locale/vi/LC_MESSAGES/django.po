@@ -1058,3 +1058,15 @@ msgstr "Công việc dự án"
 #
 msgid "Make sure date start larger than relationship work date end"
 msgstr "Ngày bắt đầu phải lớn hơn ngày kết thúc của công việc được liên kết"
+
+#
+msgid "Project do not exist"
+msgstr "Dự án không tồn tại"
+
+#
+msgid "Project is required"
+msgstr "Dự án là bắt buộc"
+
+#
+msgid "You do not have permission to perform this action"
+msgstr "Bạn không được cấp quyền để thực hiện thao tác này"
