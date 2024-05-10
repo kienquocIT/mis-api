@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler
+from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
@@ -285,7 +285,8 @@ class SaleOrder(DataAbstractModel):
                         SOFinishHandler.push_to_final_acceptance(self)
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
-
+        # diagram
+        SOHandler.push_diagram(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 

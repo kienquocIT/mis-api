@@ -79,6 +79,7 @@ INSTALLED_APPS = \
         'apps.core.attachments',  # all files data | link to file media
         'apps.core.printer',  # print templates & rules
         'apps.core.mailer',  # mail templates & rules
+        'apps.core.diagram',  # diagram for apps
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
