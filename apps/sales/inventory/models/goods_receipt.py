@@ -1,6 +1,7 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.utils import GRFinishHandler
+from apps.sales.inventory.utils.logical_gr import GRHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
@@ -176,6 +177,8 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_po(self)
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
+        # diagram
+        GRHandler.push_diagram(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 
