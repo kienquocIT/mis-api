@@ -206,7 +206,7 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
         return [{
             'id': item.id,
             'type': item.type,
-            'default_item_id': item.default_item_id,
+            'delivery_item_id': item.delivery_item_id,
             'default_return_number': item.default_return_number,
             'default_redelivery_number': item.default_redelivery_number,
             'lot_no': {
