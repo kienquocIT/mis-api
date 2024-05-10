@@ -308,7 +308,11 @@ class OrderDeliverySub(DataAbstractModel):
             self.code = code
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
 
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):

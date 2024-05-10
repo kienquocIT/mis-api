@@ -151,7 +151,11 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
 
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code

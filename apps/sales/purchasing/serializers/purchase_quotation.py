@@ -193,7 +193,7 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
             new_code = 'PQ.CODE.0001'
         else:
             latest_code = PurchaseQuotation.objects.filter_current(
-                fill__tenant=True, fill__company=True
+                fill__tenant=True, fill__company=True, is_delete=False
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'PQ.CODE.000' + str(new_code)

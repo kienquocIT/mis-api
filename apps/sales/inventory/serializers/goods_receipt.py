@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \

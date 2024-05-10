@@ -1,6 +1,6 @@
 import json
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse
+from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, SubPeriods
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
@@ -121,10 +121,16 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
+
         if self.system_status in [2, 3]:
             if not self.code:
                 goods_issue = GoodsIssue.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
+                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
                 ).count()
                 char = "GI"
                 temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209

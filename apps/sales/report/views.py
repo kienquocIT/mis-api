@@ -3,6 +3,7 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse, Periods, Product, SubPeriods
 from apps.sales.opportunity.models import OpportunityStage
+from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
@@ -11,6 +12,7 @@ from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
     ReportInventoryListSerializer
 )
+from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
     ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
     ReportPipelineListSerializer, ReportCashflowListSerializer, ReportGeneralListSerializer
@@ -230,12 +232,7 @@ class ReportInventoryDetailList(BaseListMixin):
                 'product__report_inventory_product_warehouse_product__period_mapped',
             ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
         except KeyError:
-            return super().get_queryset().select_related(
-                "product", "period_mapped",
-            ).prefetch_related(
-                'report_inventory_by_month',
-                'product__report_inventory_product_warehouse_product__period_mapped',
-            )
+            return super().get_queryset().none()
 
     @swagger_auto_schema(
         operation_summary="Report inventory Detail",
@@ -273,6 +270,7 @@ class ReportInventoryDetailList(BaseListMixin):
 class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
     queryset = ReportInventoryProductWarehouse.objects
     serializer_list = BalanceInitializationListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -371,12 +369,7 @@ class ReportInventoryList(BaseListMixin):
                 'product__report_inventory_by_month_product'
             ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
         except KeyError:
-            return super().get_queryset().select_related(
-                "product__inventory_uom", "warehouse", "period_mapped"
-            ).prefetch_related(
-                'product__report_inventory_product_warehouse_product',
-                'product__report_inventory_by_month_product__report_inventory'
-            )
+            return super().get_queryset().none()
 
     @swagger_auto_schema(
         operation_summary="Report inventory List",
@@ -433,4 +426,60 @@ class ReportGeneralList(BaseListMixin):
         label_code='report', model_code='reportrevenue', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT PURCHASING
+class PurchaseOrderListReport(BaseListMixin):
+    queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'supplier_id': ['exact'],
+        'contact_id': ['exact'],
+    }
+    serializer_list = PurchaseOrderListReportSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        try:
+            period_mapped_id = self.request.query_params.get('period_mapped')
+            sub_period_order = self.request.query_params.get('sub_period_order')
+            start_day = int(self.request.query_params.get('start_day'))
+            end_day = int(self.request.query_params.get('end_day'))
+            period_mapped = Periods.objects.filter(id=period_mapped_id).first()
+            if period_mapped and sub_period_order and start_day and end_day:
+                sub_period_order = int(sub_period_order) + period_mapped.space_month
+                start_date = datetime.date(period_mapped.fiscal_year, sub_period_order, start_day)
+                end_date = datetime.date(period_mapped.fiscal_year, sub_period_order, end_day)
+                return super().get_queryset().select_related(
+                    "supplier", "employee_inherit"
+                ).prefetch_related(
+                    "purchase_order_product_order__product",
+                    "purchase_order_product_order__uom_order_actual",
+                ).filter(
+                    system_status=3,
+                    delivered_date__date__range=[start_date, end_date]
+                )
+            return (super().get_queryset().select_related(
+                "supplier", "employee_inherit"
+            ).prefetch_related(
+                "purchase_order_product_order__product",
+                "purchase_order_product_order__uom_order_actual",
+            ).filter(
+                system_status=3,
+                delivered_date__year=period_mapped.fiscal_year
+            ))
+        except KeyError:
+            return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Purchase order List",
+        operation_description="Get Purchase order List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportpurchasing', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
