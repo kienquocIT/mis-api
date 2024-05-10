@@ -248,10 +248,12 @@ class LoggingSubFunction:
     @classmethod
     def update_inventory_value_for_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         """ Step 2: Hàm để cập nhập giá trị tồn kho cho từng log """
-        value_list = cls.get_latest_trans_value_list(log, new_logs_id_list, period_mapped, sub_period_order)
-        cls.check_inventory_cost_data_by_warehouse_this_sub(log, period_mapped, sub_period_order, value_list)
         if log.company.companyconfig.definition_inventory_valuation == 0:
-            new_value_list = cls.calculate_in_perpetual_inventory(log, value_list)
+            value_list = cls.get_latest_trans_value_list_in_perpetual_inventory(
+                log, new_logs_id_list, period_mapped, sub_period_order
+            )
+            cls.check_inventory_cost_data_by_warehouse_this_sub(log, period_mapped, sub_period_order, value_list)
+            new_value_list = cls.calculate_value_list_in_perpetual_inventory(log, value_list)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.current_quantity = new_value_list['quantity']
             log.current_cost = new_value_list['cost']
@@ -259,7 +261,11 @@ class LoggingSubFunction:
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
             return log
         if log.company.companyconfig.definition_inventory_valuation == 1:
-            new_value_list = cls.calculate_in_periodic_inventory(log, value_list)
+            value_list = cls.get_latest_trans_value_list_in_periodic_inventory(
+                log, new_logs_id_list, period_mapped, sub_period_order
+            )
+            cls.check_inventory_cost_data_by_warehouse_this_sub(log, period_mapped, sub_period_order, value_list)
+            new_value_list = cls.calculate_value_list_in_periodic_inventory(log, value_list)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.current_quantity = new_value_list['quantity']
             log.current_cost = new_value_list['cost']
@@ -316,7 +322,39 @@ class LoggingSubFunction:
         return latest_trans
 
     @classmethod
-    def get_latest_trans_value_list(cls, log, new_logs_id_list, period_mapped, sub_period_order):
+    def get_latest_trans_value_list_in_perpetual_inventory(cls, log, new_logs_id_list, period_mapped, sub_period_order):
+        """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
+        if log.company.companyconfig.definition_inventory_valuation == 0:
+            latest_trans = LoggingSubFunction.get_latest_trans(
+                log.product_id, log.warehouse_id, period_mapped, sub_period_order, False,
+                **{'exclude_list_by_id': new_logs_id_list}
+            )
+            if latest_trans:
+                value_list = {
+                    'quantity': latest_trans.current_quantity,
+                    'cost': latest_trans.current_cost,
+                    'value': latest_trans.current_value
+                }
+                return value_list
+            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
+        if log.company.companyconfig.definition_inventory_valuation == 1:
+            sub_list = ReportInventorySub.objects.filter(
+                product=log.product,
+                warehouse=log.warehouse
+            ).exclude(id__in=new_logs_id_list)
+            latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
+            if latest_trans:
+                value_list = {
+                    'quantity': latest_trans.current_quantity,
+                    'cost': latest_trans.current_cost,
+                    'value': latest_trans.current_value
+                }
+                return value_list
+            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
+        raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
+
+    @classmethod
+    def get_latest_trans_value_list_in_periodic_inventory(cls, log, new_logs_id_list, period_mapped, sub_period_order):
         """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
         if log.company.companyconfig.definition_inventory_valuation == 0:
             latest_trans = LoggingSubFunction.get_latest_trans(
@@ -378,7 +416,7 @@ class LoggingSubFunction:
         raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
 
     @classmethod
-    def calculate_in_perpetual_inventory(cls, log, value_list):
+    def calculate_value_list_in_perpetual_inventory(cls, log, value_list):
         """ Hàm tính toán cho Phương pháp Kê khai thường xuyên """
         if log.stock_type == 1:
             new_quantity = value_list['quantity'] + log.quantity
@@ -392,7 +430,7 @@ class LoggingSubFunction:
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def calculate_in_periodic_inventory(cls, log, value_list):
+    def calculate_value_list_in_periodic_inventory(cls, log, value_list):
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
         if log.stock_type == 1:
             new_quantity = value_list['quantity'] + log.quantity
