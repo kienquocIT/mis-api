@@ -258,7 +258,7 @@ class LoggingSubFunction:
             log.current_value = new_value_list['value']
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
             return log
-        elif log.company.companyconfig.definition_inventory_valuation == 1:
+        if log.company.companyconfig.definition_inventory_valuation == 1:
             new_value_list = cls.calculate_in_periodic_inventory(log, value_list)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.current_quantity = new_value_list['quantity']
@@ -331,7 +331,7 @@ class LoggingSubFunction:
                 }
                 return value_list
             return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
-        elif log.company.companyconfig.definition_inventory_valuation == 1:
+        if log.company.companyconfig.definition_inventory_valuation == 1:
             sub_list = ReportInventorySub.objects.filter(
                 product=log.product,
                 warehouse=log.warehouse
@@ -404,4 +404,3 @@ class LoggingSubFunction:
             new_cost = value_list['cost']
             new_value = new_cost * new_quantity
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
-
