@@ -6,7 +6,7 @@ from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
-    ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub
+    ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub, LoggingSubFunction
 )
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
@@ -309,18 +309,10 @@ class ReportInventoryList(BaseListMixin):
                     period_mapped=period_mapped, sub_period_order=sub_period_order
                 )
                 if not this_sub_record:
-                    sub_list = ReportInventorySub.objects.filter(
-                        product_id=prd_id, warehouse_id=wh_id,
-                        report_inventory__period_mapped=period_mapped,
-                        report_inventory__sub_period_order__lt=sub_period_order
+                    end_month_latest_trans = LoggingSubFunction.get_latest_trans(
+                        prd_id, wh_id, period_mapped, sub_period_order, True,
                     )
-                    if sub_list.count() == 0:
-                        sub_list = ReportInventorySub.objects.filter(
-                            product_id=prd_id, warehouse_id=wh_id,
-                            report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
-                        )
-                    latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
-                    if latest_trans and int(sub_period_order) <= (
+                    if end_month_latest_trans and int(sub_period_order) <= (
                             datetime.datetime.now().month - period_mapped.space_month
                     ):
                         ReportInventoryProductWarehouse.objects.create(
@@ -333,9 +325,9 @@ class ReportInventoryList(BaseListMixin):
                             sub_period=period_mapped.sub_periods_period_mapped.filter(
                                 order=sub_period_order
                             ).first(),
-                            opening_balance_quantity=latest_trans.current_quantity,
-                            opening_balance_cost=latest_trans.current_cost,
-                            opening_balance_value=latest_trans.current_value
+                            opening_balance_quantity=end_month_latest_trans.current_quantity,
+                            opening_balance_cost=end_month_latest_trans.current_cost,
+                            opening_balance_value=end_month_latest_trans.current_value
                         )
         sub.run_report = True
         sub.save(update_fields=['run_report'])

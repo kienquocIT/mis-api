@@ -387,12 +387,12 @@ class GoodsReturnSubSerializerForNonPicking:
     def get_return_data(cls, product_detail_list):
         returned_product_by_sn = []
         returned_product_by_lot = []
-        default_item_id = None
+        delivery_item_id = None
         lot_return_number = 0
         default_return_number = 0
         for item in product_detail_list:
             if item.get('type') == 0:
-                default_item_id = item.get('default_item_id')
+                delivery_item_id = item.get('delivery_item_id')
                 default_return_number = item.get('default_return_number')
             elif item.get('type') == 1:
                 returned_product_by_lot.append(item.get('lot_no_id'))
@@ -402,7 +402,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return (
             returned_product_by_lot,
             returned_product_by_sn,
-            default_item_id,
+            delivery_item_id,
             lot_return_number,
             default_return_number
         )
@@ -412,7 +412,7 @@ class GoodsReturnSubSerializerForNonPicking:
         (
             returned_product_by_lot,
             returned_product_by_sn,
-            default_item_id,
+            delivery_item_id,
             lot_return_number,
             default_return_number
         ) = cls.get_return_data(product_detail_list)
@@ -428,7 +428,7 @@ class GoodsReturnSubSerializerForNonPicking:
                     item.save(update_fields=['is_returned'])
         else:
             for item in returned_delivery.delivery_product_delivery_sub.all():
-                if str(item.id) == default_item_id:
+                if str(item.id) == delivery_item_id:
                     item.returned_quantity_default += default_return_number
                     item.save(update_fields=['returned_quantity_default'])
         return True
