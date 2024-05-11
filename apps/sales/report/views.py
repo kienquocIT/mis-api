@@ -6,7 +6,8 @@ from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
-    ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub, LoggingSubFunction
+    ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub,
+    LatestLogByProductWarehouse
 )
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
@@ -298,39 +299,44 @@ class ReportInventoryList(BaseListMixin):
     @classmethod
     def create_this_sub_record(cls, tenant_id, company_id, product_id_list, period_mapped, sub_period_order):
         sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        # if not sub.run_report:  # all below
-        wh_id_list = set(
-            WareHouse.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
-        )
-        for prd_id in product_id_list:
-            for wh_id in wh_id_list:
-                this_sub_record = ReportInventoryProductWarehouse.objects.filter(
-                    product_id=prd_id, warehouse=wh_id,
-                    period_mapped=period_mapped, sub_period_order=sub_period_order
-                )
-                if not this_sub_record:
-                    end_month_latest_trans = LoggingSubFunction.get_latest_trans(
-                        prd_id, wh_id, period_mapped, sub_period_order, True,
-                    )
-                    if end_month_latest_trans and int(sub_period_order) <= (
-                            datetime.datetime.now().month - period_mapped.space_month
-                    ):
-                        ReportInventoryProductWarehouse.objects.create(
-                            tenant_id=period_mapped.tenant_id,
-                            company_id=period_mapped.company_id,
-                            product_id=prd_id,
-                            warehouse_id=wh_id,
-                            period_mapped=period_mapped,
-                            sub_period_order=sub_period_order,
-                            sub_period=period_mapped.sub_periods_period_mapped.filter(
-                                order=sub_period_order
-                            ).first(),
-                            opening_balance_quantity=end_month_latest_trans.current_quantity,
-                            opening_balance_cost=end_month_latest_trans.current_cost,
-                            opening_balance_value=end_month_latest_trans.current_value
-                        )
-        sub.run_report = True
-        sub.save(update_fields=['run_report'])
+        if not sub.run_report:
+            wh_id_list = set(
+                WareHouse.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
+            )
+            all_this_sub_record = ReportInventoryProductWarehouse.objects.filter(
+                product_id__in=product_id_list, warehouse_id__in=wh_id_list,
+                period_mapped=period_mapped, sub_period_order=sub_period_order
+            )
+            for prd_id in product_id_list:
+                for wh_id in wh_id_list:
+                    this_sub_record = None
+                    for item in all_this_sub_record:
+                        if item.product_id == prd_id and item.warehouse_id == wh_id:
+                            this_sub_record = item
+                            break
+                    if not this_sub_record:
+                        latest_log_obj = LatestLogByProductWarehouse.objects.filter(
+                            product_id=prd_id, warehouse_id=wh_id,
+                        ).first()
+                        if latest_log_obj and int(sub_period_order) <= (
+                                datetime.datetime.now().month - period_mapped.space_month
+                        ):
+                            ReportInventoryProductWarehouse.objects.create(
+                                tenant_id=period_mapped.tenant_id,
+                                company_id=period_mapped.company_id,
+                                product_id=prd_id,
+                                warehouse_id=wh_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=period_mapped.sub_periods_period_mapped.filter(
+                                    order=sub_period_order
+                                ).first(),
+                                opening_balance_quantity=latest_log_obj.latest_log.current_quantity,
+                                opening_balance_cost=latest_log_obj.latest_log.current_cost,
+                                opening_balance_value=latest_log_obj.latest_log.current_value
+                            )
+            sub.run_report = True
+            sub.save(update_fields=['run_report'])
         return True
 
     def get_queryset(self):

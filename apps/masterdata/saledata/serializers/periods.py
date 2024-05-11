@@ -290,17 +290,24 @@ def update_balance_data(balance_data, instance):
             wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
 
             if prd_obj and wh_obj:
-                if ReportInventorySub.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+                if ReportInventorySub.objects.filter(
+                        tenant=instance.tenant,
+                        company=instance.company,
+                        product=prd_obj,
+                        warehouse=wh_obj
+                ).exists():
                     raise serializers.ValidationError(
                         {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
                     )
 
                 if ReportInventoryProductWarehouse.objects.filter(
-                    product=prd_obj,
-                    warehouse=wh_obj,
-                    period_mapped=instance,
-                    sub_period_order=sub_period_order_value
-                ).first():
+                        tenant=instance.tenant,
+                        company=instance.company,
+                        product=prd_obj,
+                        warehouse=wh_obj,
+                        period_mapped=instance,
+                        sub_period_order=sub_period_order_value
+                ).exists():
                     raise serializers.ValidationError(
                         {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
                     )
@@ -310,6 +317,8 @@ def update_balance_data(balance_data, instance):
                 prd_obj.save(update_fields=['stock_amount', 'available_amount'])
                 bulk_info_rp_prd_wh.append(
                     ReportInventoryProductWarehouse(
+                        tenant=instance.tenant,
+                        company=instance.company,
                         product=prd_obj,
                         warehouse=wh_obj,
                         period_mapped=instance,

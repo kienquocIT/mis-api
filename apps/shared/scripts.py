@@ -44,7 +44,7 @@ from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
 from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn
-from ..sales.inventory.serializers import GReturnProductInformationHandle
+from ..sales.inventory.models import GReturnProductInformationHandle
 from ..sales.inventory.utils import GRFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
@@ -54,7 +54,8 @@ from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
+    ReportInventoryProductWarehouse, LatestLogByProductWarehouse
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1544,3 +1545,98 @@ def update_gr_for_lot_serial():
                 serial.goods_receipt = gr
                 serial.save(update_fields=['goods_receipt'])
     print('update_gr_for_lot_serial done.')
+
+
+def get_latest_trans(log, period_mapped, sub_period_order):
+    # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
+    # 1: lấy records tháng này
+    # 2: lấy records các tháng trước (trong năm)
+    # 3: lấy records các năm trước
+    subs = ReportInventorySub.objects.filter(
+        product_id=log.product_id, warehouse_id=log.warehouse_id,
+        report_inventory__period_mapped=period_mapped,
+        report_inventory__sub_period_order=sub_period_order,
+        date_created__lt=log.date_created
+    )
+    if subs.count() == 0:
+        subs = ReportInventorySub.objects.filter(
+            product_id=log.product_id, warehouse_id=log.warehouse_id,
+            report_inventory__period_mapped=period_mapped,
+            report_inventory__sub_period_order__lt=sub_period_order,
+            date_created__lt=log.date_created
+        )
+        if subs.count() == 0:
+            subs = ReportInventorySub.objects.filter(
+                product_id=log.product_id, warehouse_id=log.warehouse_id,
+                report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year,
+                date_created__lt=log.date_created
+            )
+    latest_trans = subs.latest('date_created') if subs.count() > 0 else None
+    return latest_trans
+
+
+def run_inventory_report():
+    for log in ReportInventorySub.objects.all().order_by('date_created'):
+        period_mapped = log.report_inventory.period_mapped
+        sub_period_order = log.report_inventory.sub_period_order
+        latest_trans = get_latest_trans(log, period_mapped, sub_period_order)
+        if latest_trans:
+            latest_value_list = {
+                'quantity': latest_trans.current_quantity,
+                'cost': latest_trans.current_cost,
+                'value': latest_trans.current_value
+            }
+        else:
+            latest_value_list = {
+                'quantity': log.quantity,
+                'cost': log.cost,
+                'value': log.value
+            }
+
+        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        if sub_period_obj:
+            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
+                product=log.product,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=sub_period_obj
+            ).first()
+            if not inventory_cost_data_item:
+                ReportInventoryProductWarehouse.objects.create(
+                    tenant_id=period_mapped.tenant_id,
+                    company_id=period_mapped.company_id,
+                    product=log.product,
+                    warehouse=log.warehouse,
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                    opening_balance_quantity=latest_value_list['quantity'],
+                    opening_balance_cost=latest_value_list['cost'],
+                    opening_balance_value=latest_value_list['value'],
+                    ending_balance_quantity=log.current_quantity,
+                    ending_balance_cost=log.current_cost,
+                    ending_balance_value=log.current_value,
+                )
+            else:
+                inventory_cost_data_item.ending_balance_quantity = log.current_quantity
+                inventory_cost_data_item.ending_balance_cost = log.current_cost
+                inventory_cost_data_item.ending_balance_value = log.current_value
+                inventory_cost_data_item.save(update_fields=[
+                    'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
+                ])
+
+            latest_log_obj = LatestLogByProductWarehouse.objects.filter(
+                product=log.product, warehouse=log.warehouse
+            ).first()
+            if latest_log_obj:
+                latest_log_obj.latest_log = log
+                latest_log_obj.save(update_fields=['latest_log'])
+            else:
+                LatestLogByProductWarehouse.objects.create(
+                    product=log.product, warehouse=log.warehouse, latest_log=log
+                )
+    print('Done')
+    return True
