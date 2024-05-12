@@ -7,7 +7,7 @@ from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub,
-    LatestLogByProductWarehouse, LoggingSubFunction
+    LoggingSubFunction
 )
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,

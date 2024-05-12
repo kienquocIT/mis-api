@@ -260,6 +260,31 @@ def for_none(item, instance, prd_obj, wh_obj):
     raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
 
+def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
+    if ReportInventorySub.objects.filter(
+            tenant=instance.tenant,
+            company=instance.company,
+            product=prd_obj,
+            warehouse=wh_obj
+    ).exists():
+        raise serializers.ValidationError(
+            {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+        )
+
+    if ReportInventoryProductWarehouse.objects.filter(
+            tenant=instance.tenant,
+            company=instance.company,
+            product=prd_obj,
+            warehouse=wh_obj,
+            period_mapped=instance,
+            sub_period_order=sub_period_order_value
+    ).exists():
+        raise serializers.ValidationError(
+            {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
+        )
+    return True
+
+
 def update_balance_data(balance_data, instance):
     """
     Lấy thời gian sử dụng phần mềm
@@ -293,27 +318,7 @@ def update_balance_data(balance_data, instance):
                 wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
 
                 if prd_obj and wh_obj:
-                    if ReportInventorySub.objects.filter(
-                            tenant=instance.tenant,
-                            company=instance.company,
-                            product=prd_obj,
-                            warehouse=wh_obj
-                    ).exists():
-                        raise serializers.ValidationError(
-                            {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-                        )
-
-                    if ReportInventoryProductWarehouse.objects.filter(
-                            tenant=instance.tenant,
-                            company=instance.company,
-                            product=prd_obj,
-                            warehouse=wh_obj,
-                            period_mapped=instance,
-                            sub_period_order=sub_period_order_value
-                    ).exists():
-                        raise serializers.ValidationError(
-                            {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
-                        )
+                    check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
 
                     prd_obj.stock_amount += float(item.get('quantity'))
                     prd_obj.available_amount += float(item.get('quantity'))
