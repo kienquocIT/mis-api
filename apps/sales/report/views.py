@@ -267,6 +267,9 @@ class ReportInventoryDetailList(BaseListMixin):
             self.ser_context['all_logs_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
+        self.ser_context[
+            'definition_inventory_valuation'
+        ] = self.request.user.company_current.companyconfig.definition_inventory_valuation
         return self.list(request, *args, **kwargs)
 
 
@@ -386,6 +389,8 @@ class ReportInventoryList(BaseListMixin):
         if 'date_range' in request.query_params:
             self.ser_context = {
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')],
+                'definition_inventory_valuation':
+                    self.request.user.company_current.companyconfig.definition_inventory_valuation
             }
         return self.list(request, *args, **kwargs)
 
