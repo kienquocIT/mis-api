@@ -52,30 +52,31 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             ).first()
             if inventory_cost_data:
                 # lấy các hoạt động nhập-xuất
-                for root in self.context.get('all_roots_by_month', []).filter(
+                for log in self.context.get('all_logs_by_month', []).filter(
                     warehouse_id=wh_id, product_id=obj.product_id
                 ):
                     data_stock_activity.append({
-                        'system_date': root.system_date,
-                        'posting_date': root.posting_date,
-                        'document_date': root.document_date,
-                        'stock_type': root.stock_type,
-                        'trans_code': root.trans_code,
-                        'trans_title': root.trans_title,
-                        'quantity': root.quantity,
-                        'cost': root.cost,
-                        'value': root.value,
-                        'current_quantity': root.current_quantity,
-                        'current_cost': root.current_cost,
-                        'current_value': root.current_value,
+                        'system_date': log.system_date,
+                        'posting_date': log.posting_date,
+                        'document_date': log.document_date,
+                        'stock_type': log.stock_type,
+                        'trans_code': log.trans_code,
+                        'trans_title': log.trans_title,
+                        'quantity': log.quantity,
+                        'cost': log.cost,
+                        'value': log.value,
+                        'current_quantity': log.current_quantity,
+                        'current_cost': log.current_cost,
+                        'current_value': log.current_value,
+                        'log_order': log.log_order
                     })
                 # sắp xếp lại
                 data_stock_activity = sorted(
-                    data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
+                    data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period()
+                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period(data_stock_activity)
                 result.append({
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
@@ -210,7 +211,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'current_value': log.current_value,
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
-                    'expire_date': lot.get('lot_expire_date')
+                    'expire_date': lot.get('lot_expire_date'),
+                    'log_order': log.log_order
                 })
         else:
             data_stock_activity.append({
@@ -227,7 +229,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'system_date': log.system_date,
                 'lot_id': '',
                 'lot_number': '',
-                'expire_date': ''
+                'expire_date': '',
+                'log_order': log.log_order
             })
         return data_stock_activity
 
@@ -248,7 +251,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'current_value': log.current_value,
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
-                    'expire_date': lot.get('lot_expire_date')
+                    'expire_date': lot.get('lot_expire_date'),
+                    'log_order': log.log_order
                 })
         else:
             data_stock_activity.append({
@@ -264,7 +268,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'current_value': log.current_value,
                 'system_date': log.system_date,
                 'lot_number': '',
-                'expire_date': ''
+                'expire_date': '',
+                'log_order': log.log_order
             })
         return data_stock_activity
 
@@ -294,10 +299,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
 
         data_stock_activity = sorted(
-            data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
+            data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
         )
         # lấy inventory_cost_data của kì hiện tại
-        this_sub_value = obj.get_inventory_cost_data_this_sub_period()
+        this_sub_value = obj.get_inventory_cost_data_this_sub_period(data_stock_activity)
 
         result = {
             'sum_in_quantity': sum_in_quantity,

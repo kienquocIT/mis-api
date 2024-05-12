@@ -90,6 +90,7 @@ class ReportInventorySub(DataAbstractModel):
     trans_id = models.CharField(blank=True, max_length=100, null=True)
     trans_code = models.CharField(blank=True, max_length=100, null=True)
     trans_title = models.CharField(blank=True, max_length=100, null=True)
+    log_order = models.IntegerField(default=0)
 
     quantity = models.FloatField(default=0)
     cost = models.FloatField(default=0)
@@ -179,7 +180,7 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_inventory_cost_data_this_sub_period(self):
+    def get_inventory_cost_data_this_sub_period(self, data_stock_activity):
         """
         Opening tháng:
             Mặc định là opening của tháng
@@ -194,13 +195,10 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         # End
 
         # Begin get Ending
-        latest_log_obj = LatestLogByProductWarehouse.objects.filter(
-            product=self.product, warehouse=self.warehouse
-        ).first()
-        if latest_log_obj:
-            ending_quantity = latest_log_obj.latest_log.current_quantity
-            ending_cost = latest_log_obj.latest_log.current_cost
-            ending_value = latest_log_obj.latest_log.current_value
+        if len(data_stock_activity) > 0:
+            ending_quantity = data_stock_activity[-1]['current_quantity']
+            ending_cost = data_stock_activity[-1]['current_cost']
+            ending_value = data_stock_activity[-1]['current_value']
         else:
             ending_quantity = opening_quantity
             ending_cost = opening_cost
@@ -247,6 +245,7 @@ class LoggingSubFunction:
     def create_new_logs(cls, activities_obj, activities_data, period_mapped, sub_period_order):
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
+        log_order_number = 0
         for item in activities_data:
             rp_inventory_obj = ReportInventory.get_report_inventory(
                 activities_obj, item['product'], period_mapped, sub_period_order
@@ -268,9 +267,11 @@ class LoggingSubFunction:
                 quantity=item['quantity'],
                 cost=item['cost'],
                 value=item['value'],
-                lot_data=item.get('lot_data', [])
+                lot_data=item.get('lot_data', []),
+                log_order=log_order_number
             )
             bulk_info.append(new_log)
+            log_order_number += 1
         new_logs = ReportInventorySub.objects.bulk_create(bulk_info)
         return new_logs
 
@@ -305,7 +306,10 @@ class LoggingSubFunction:
 
     @classmethod
     def update_inventory_cost_data_by_warehouse_this_sub(cls, log, period_mapped, sub_period_order, latest_value_list):
-        """ Step 3: Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ? Chưa thì tạo mới"""
+        """
+        Step 3: Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ?
+        Chưa thì tạo mới - Có thì Update lại quantity-cost-value
+        """
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
@@ -380,24 +384,33 @@ class LoggingSubFunction:
             # 1: lấy records tháng này
             # 2: lấy records các tháng trước (trong năm)
             # 3: lấy records các năm trước
-            exclude_list_by_id = kwargs['exclude_list_by_id'] if 'exclude_list_by_id' in kwargs else []
-            subs = ReportInventorySub.objects.filter(
-                product_id=prd_id, warehouse_id=wh_id,
-                report_inventory__period_mapped=period_mapped,
-                report_inventory__sub_period_order=sub_period_order
-            ).exclude(id__in=exclude_list_by_id)
-            if subs.count() == 0:
-                subs = ReportInventorySub.objects.filter(
-                    product_id=prd_id, warehouse_id=wh_id,
-                    report_inventory__period_mapped=period_mapped,
-                    report_inventory__sub_period_order__lt=sub_period_order
-                ).exclude(id__in=exclude_list_by_id)
-                if subs.count() == 0:
-                    subs = ReportInventorySub.objects.filter(
-                        product_id=prd_id, warehouse_id=wh_id,
-                        report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
-                    ).exclude(id__in=exclude_list_by_id)
-            latest_trans = subs.latest('date_created') if subs.count() > 0 else None
+            # exclude_list_by_id = kwargs['exclude_list_by_id'] if 'exclude_list_by_id' in kwargs else []
+            # subs = ReportInventorySub.objects.filter(
+            #     product_id=prd_id, warehouse_id=wh_id,
+            #     report_inventory__period_mapped=period_mapped,
+            #     report_inventory__sub_period_order=sub_period_order
+            # ).exclude(id__in=exclude_list_by_id)
+            # if subs.count() == 0:
+            #     subs = ReportInventorySub.objects.filter(
+            #         product_id=prd_id, warehouse_id=wh_id,
+            #         report_inventory__period_mapped=period_mapped,
+            #         report_inventory__sub_period_order__lt=sub_period_order
+            #     ).exclude(id__in=exclude_list_by_id)
+            #     if subs.count() == 0:
+            #         subs = ReportInventorySub.objects.filter(
+            #             product_id=prd_id, warehouse_id=wh_id,
+            #             report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
+            #         ).exclude(id__in=exclude_list_by_id)
+            # latest_trans = subs.latest('date_created') if subs.count() > 0 else None
+
+            subs = LatestLogByProductWarehouse.objects.filter(
+                product_id=prd_id, warehouse_id=wh_id
+            ).order_by(
+                '-latest_log__report_inventory__period_mapped__fiscal_year',
+                '-latest_log__report_inventory__sub_period_order',
+            )
+            latest_trans = subs.first() if subs.count() > 0 else None
+
         return latest_trans
 
     @classmethod

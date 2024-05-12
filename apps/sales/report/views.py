@@ -7,7 +7,7 @@ from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportInventory, ReportInventoryProductWarehouse, ReportInventorySub,
-    LatestLogByProductWarehouse
+    LatestLogByProductWarehouse, LoggingSubFunction
 )
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
@@ -225,13 +225,15 @@ class ReportInventoryDetailList(BaseListMixin):
                 ).prefetch_related(
                     'report_inventory_by_month',
                     'product__report_inventory_product_warehouse_product__period_mapped',
-                ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list)
+                ).filter(
+                    period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
+                ).order_by('-product__code')
             return super().get_queryset().select_related(
                 "product", "period_mapped"
             ).prefetch_related(
                 'report_inventory_by_month',
                 'product__report_inventory_product_warehouse_product__period_mapped',
-            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
+            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order).order_by('-product__code')
         except KeyError:
             return super().get_queryset().none()
 
@@ -256,13 +258,13 @@ class ReportInventoryDetailList(BaseListMixin):
             'period_mapped' in self.request.query_params,
             'sub_period_order' in self.request.query_params
         ]):
-            self.ser_context['all_roots_by_month'] = ReportInventorySub.objects.filter(
+            self.ser_context['all_logs_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
                 report_inventory__period_mapped_id=self.request.query_params['period_mapped'],
                 report_inventory__sub_period_order=self.request.query_params['sub_period_order']
             ).select_related('warehouse')
         else:
-            self.ser_context['all_roots_by_month'] = ReportInventorySub.objects.filter(
+            self.ser_context['all_logs_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         return self.list(request, *args, **kwargs)
@@ -315,9 +317,9 @@ class ReportInventoryList(BaseListMixin):
                             this_sub_record = item
                             break
                     if not this_sub_record:
-                        latest_log_obj = LatestLogByProductWarehouse.objects.filter(
-                            product_id=prd_id, warehouse_id=wh_id,
-                        ).first()
+                        latest_log_obj = LoggingSubFunction.get_latest_trans(
+                            prd_id, wh_id, period_mapped, sub_period_order, by_month=True
+                        )
                         if latest_log_obj and int(sub_period_order) <= (
                                 datetime.datetime.now().month - period_mapped.space_month
                         ):
@@ -354,7 +356,9 @@ class ReportInventoryList(BaseListMixin):
                 ).prefetch_related(
                     'product__report_inventory_product_warehouse_product',
                     'product__report_inventory_by_month_product'
-                ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list)
+                ).filter(
+                    period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
+                ).order_by('-product__code')
 
             prd_id_list = set(
                 Product.objects.filter(tenant_id=tenant_id, company_id=company_id).values_list('id', flat=True)
@@ -365,7 +369,7 @@ class ReportInventoryList(BaseListMixin):
             ).prefetch_related(
                 'product__report_inventory_product_warehouse_product',
                 'product__report_inventory_by_month_product'
-            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order)
+            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order).order_by('-product__code')
         except KeyError:
             return super().get_queryset().none()
 
