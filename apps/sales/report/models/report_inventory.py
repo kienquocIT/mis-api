@@ -92,13 +92,21 @@ class ReportInventorySub(DataAbstractModel):
     trans_title = models.CharField(blank=True, max_length=100, null=True)
     log_order = models.IntegerField(default=0)
 
-    quantity = models.FloatField(default=0)
-    cost = models.FloatField(default=0)
-    value = models.FloatField(default=0)
+    quantity = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    cost = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    value = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
 
-    current_quantity = models.FloatField(default=0)
-    current_cost = models.FloatField(default=0)
-    current_value = models.FloatField(default=0)
+    current_quantity = models.FloatField(default=0, help_text='is quantity current in perpetual')
+    current_cost = models.FloatField(default=0, help_text='is cost current in perpetual')
+    current_value = models.FloatField(default=0, help_text='is value current in perpetual')
+
+    sum_input_quantity = models.FloatField(default=0, help_text='is sum input quantity in periodic')
+    sum_input_cost = models.FloatField(default=0, help_text='is sum cost quantity in periodic')
+    sum_input_value = models.FloatField(default=0, help_text='is sum value quantity in periodic')
+
+    periodic_current_quantity = models.FloatField(default=0, help_text='is quantity current in periodic')
+    periodic_current_cost = models.FloatField(default=0, help_text='is cost current in periodic')
+    periodic_current_value = models.FloatField(default=0, help_text='is value current in periodic')
 
     lot_data = models.JSONField(default=list)
 
@@ -167,11 +175,15 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     opening_balance_cost = models.FloatField(default=0)
     opening_balance_value = models.FloatField(default=0)
 
-    ending_balance_quantity = models.FloatField(default=0)
-    ending_balance_cost = models.FloatField(default=0)
-    ending_balance_value = models.FloatField(default=0)
+    ending_balance_quantity = models.FloatField(default=0, help_text='is ending balance quantity in perpetual')
+    ending_balance_cost = models.FloatField(default=0, help_text='is ending balance cost in perpetual')
+    ending_balance_value = models.FloatField(default=0, help_text='is ending balance value in perpetual')
 
-    for_balance = models.BooleanField(default=False)
+    periodic_ending_balance_quantity = models.FloatField(default=0, help_text='is ending balance quantity in periodic')
+    periodic_ending_balance_cost = models.FloatField(default=0, help_text='is ending balance cost in periodic')
+    periodic_ending_balance_value = models.FloatField(default=0, help_text='is ending balance value in periodic')
+
+    for_balance = models.BooleanField(default=False, help_text='is True if it has balance')
 
     class Meta:
         verbose_name = 'Report Inventory Product Warehouse'
