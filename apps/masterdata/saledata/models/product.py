@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import Company
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
@@ -242,7 +244,8 @@ class Product(DataAbstractModel):
         get_type = 2: get value
         else: return 0
         """
-        definition_inventory_valuation = self.company.companyconfig.definition_inventory_valuation
+        company_obj = Company.objects.get(id=self.company_id)
+        definition_inventory_valuation = company_obj.companyconfig.definition_inventory_valuation
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id,
             company_id=self.company_id,

@@ -303,7 +303,6 @@ def update_balance_data(balance_data, instance):
                     Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
         Else: raise lỗi
     """
-    definition_inventory_valuation = instance.company.companyconfig.definition_inventory_valuation
     sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
     bulk_info_rp_prd_wh = []
     bulk_info_inventory = []
@@ -323,7 +322,7 @@ def update_balance_data(balance_data, instance):
                     prd_obj.stock_amount += float(item.get('quantity'))
                     prd_obj.available_amount += float(item.get('quantity'))
                     prd_obj.save(update_fields=['stock_amount', 'available_amount'])
-                    if definition_inventory_valuation == 0:
+                    if instance.company.companyconfig.definition_inventory_valuation == 0:
                         bulk_info_rp_prd_wh.append(
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
