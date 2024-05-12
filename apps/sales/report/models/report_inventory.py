@@ -299,14 +299,22 @@ class LoggingSubFunction:
             )
             return True
         if log.company.companyconfig.definition_inventory_valuation == 1:
-            if log.stock_type == 1:
-                log.sum_input_quantity += log.quantity
-                log.sum_input_value += log.quantity * log.cost
-                log.save(update_fields=['sum_input_quantity', 'sum_input_value'])
-
             latest_value_list = cls.get_latest_trans_value_list_in_periodic_inventory(
                 log, period_mapped, sub_period_order
             )
+            if 'is_open' in latest_value_list:
+                log.sum_input_quantity = latest_value_list['quantity']
+                log.sum_input_value = latest_value_list['value']
+                log.save(update_fields=['sum_input_quantity', 'sum_input_value'])
+            if log.stock_type == 1:
+                log.sum_input_quantity = latest_value_list['sum_input_quantity'] + log.quantity
+                log.sum_input_value = latest_value_list['sum_input_value'] + log.quantity * log.cost
+                log.save(update_fields=['sum_input_quantity', 'sum_input_value'])
+            else:
+                log.sum_input_quantity = latest_value_list['sum_input_quantity']
+                log.sum_input_value = latest_value_list['sum_input_value']
+                log.save(update_fields=['sum_input_quantity', 'sum_input_value'])
+
             new_value_list = cls.calculate_value_list_in_periodic_inventory(log, latest_value_list)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.periodic_current_quantity = new_value_list['quantity']
@@ -336,29 +344,56 @@ class LoggingSubFunction:
                 sub_period_order=sub_period_order,
                 sub_period=sub_period_obj
             ).first()
-            if not inventory_cost_data_item:
-                inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
-                    tenant_id=log.tenant_id,
-                    company_id=log.company_id,
-                    product=log.product,
-                    warehouse=log.warehouse,
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order,
-                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
-                    opening_balance_quantity=latest_value_list['quantity'],
-                    opening_balance_cost=latest_value_list['cost'],
-                    opening_balance_value=latest_value_list['value'],
-                    ending_balance_quantity=log.current_quantity,
-                    ending_balance_cost=log.current_cost,
-                    ending_balance_value=log.current_value,
-                )
+            if log.company.companyconfig.definition_inventory_valuation == 0:
+                if not inventory_cost_data_item:
+                    inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
+                        tenant_id=log.tenant_id,
+                        company_id=log.company_id,
+                        product=log.product,
+                        warehouse=log.warehouse,
+                        period_mapped=period_mapped,
+                        sub_period_order=sub_period_order,
+                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                        opening_balance_quantity=latest_value_list['quantity'],
+                        opening_balance_cost=latest_value_list['cost'],
+                        opening_balance_value=latest_value_list['value'],
+                        ending_balance_quantity=log.current_quantity,
+                        ending_balance_cost=log.current_cost,
+                        ending_balance_value=log.current_value,
+                    )
+                else:
+                    inventory_cost_data_item.ending_balance_quantity = log.current_quantity
+                    inventory_cost_data_item.ending_balance_cost = log.current_cost
+                    inventory_cost_data_item.ending_balance_value = log.current_value
+                    inventory_cost_data_item.save(update_fields=[
+                        'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
+                    ])
             else:
-                inventory_cost_data_item.ending_balance_quantity = log.current_quantity
-                inventory_cost_data_item.ending_balance_cost = log.current_cost
-                inventory_cost_data_item.ending_balance_value = log.current_value
-                inventory_cost_data_item.save(update_fields=[
-                    'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
-                ])
+                if not inventory_cost_data_item:
+                    inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
+                        tenant_id=log.tenant_id,
+                        company_id=log.company_id,
+                        product=log.product,
+                        warehouse=log.warehouse,
+                        period_mapped=period_mapped,
+                        sub_period_order=sub_period_order,
+                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                        opening_balance_quantity=latest_value_list['quantity'],
+                        opening_balance_cost=latest_value_list['cost'],
+                        opening_balance_value=latest_value_list['value'],
+                        periodic_ending_balance_quantity=log.current_quantity,
+                        periodic_ending_balance_cost=log.current_cost,
+                        periodic_ending_balance_value=log.current_value,
+                    )
+                else:
+                    inventory_cost_data_item.periodic_ending_balance_quantity = log.periodic_current_quantity
+                    inventory_cost_data_item.periodic_ending_balance_cost = log.periodic_current_cost
+                    inventory_cost_data_item.periodic_ending_balance_value = log.periodic_current_value
+                    inventory_cost_data_item.save(update_fields=[
+                        'periodic_ending_balance_quantity',
+                        'periodic_ending_balance_cost',
+                        'periodic_ending_balance_value'
+                    ])
 
             latest_log_obj = log.product.latest_log_product.filter(warehouse=log.warehouse).first()
             if latest_log_obj:
@@ -464,7 +499,9 @@ class LoggingSubFunction:
                 value_list = {
                     'quantity': latest_trans.periodic_current_quantity,
                     'cost': latest_trans.periodic_current_cost,
-                    'value': latest_trans.periodic_current_value
+                    'value': latest_trans.periodic_current_value,
+                    'sum_input_quantity': latest_trans.sum_input_quantity,
+                    'sum_input_value': latest_trans.sum_input_value
                 }
                 return value_list
             opening_value_list_obj = ReportInventoryProductWarehouse.objects.filter(
@@ -474,12 +511,13 @@ class LoggingSubFunction:
             ).first()
             if opening_value_list_obj:
                 value_list = {
+                    'is_open': True,
                     'quantity': opening_value_list_obj.opening_balance_quantity,
                     'cost': opening_value_list_obj.opening_balance_cost,
                     'value': opening_value_list_obj.opening_balance_value
                 }
             else:
-                value_list = {'quantity': 0, 'cost': 0, 'value': 0}
+                value_list = {'quantity': 0, 'cost': 0, 'value': 0, 'sum_input_quantity': 0, 'sum_input_value': 0}
             return value_list
         raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 1.'})
 
@@ -501,6 +539,7 @@ class LoggingSubFunction:
     def calculate_value_list_in_periodic_inventory(cls, log, latest_value_list):
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
         if log.stock_type == 1:
+            # Lúc này sum nhập đã được cập nhập
             new_quantity = latest_value_list['quantity'] + log.quantity
             new_cost = log.sum_input_value / log.sum_input_quantity
             new_value = new_quantity * new_cost

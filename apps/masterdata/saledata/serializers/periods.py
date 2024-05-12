@@ -278,6 +278,7 @@ def update_balance_data(balance_data, instance):
                     Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
         Else: raise lỗi
     """
+    definition_inventory_valuation = instance.company.companyconfig.definition_inventory_valuation
     sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
     bulk_info_rp_prd_wh = []
     bulk_info_inventory = []
@@ -317,24 +318,44 @@ def update_balance_data(balance_data, instance):
                     prd_obj.stock_amount += float(item.get('quantity'))
                     prd_obj.available_amount += float(item.get('quantity'))
                     prd_obj.save(update_fields=['stock_amount', 'available_amount'])
-                    bulk_info_rp_prd_wh.append(
-                        ReportInventoryProductWarehouse(
-                            tenant=instance.tenant,
-                            company=instance.company,
-                            product=prd_obj,
-                            warehouse=wh_obj,
-                            period_mapped=instance,
-                            sub_period_order=sub_period_order_value,
-                            sub_period=sub_period_obj,
-                            opening_balance_quantity=float(item.get('quantity')),
-                            opening_balance_value=float(item.get('value')),
-                            opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                            ending_balance_quantity=float(item.get('quantity')),
-                            ending_balance_value=float(item.get('value')),
-                            ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                            for_balance=True
+                    if definition_inventory_valuation == 0:
+                        bulk_info_rp_prd_wh.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=instance.tenant,
+                                company=instance.company,
+                                product=prd_obj,
+                                warehouse=wh_obj,
+                                period_mapped=instance,
+                                sub_period_order=sub_period_order_value,
+                                sub_period=sub_period_obj,
+                                opening_balance_quantity=float(item.get('quantity')),
+                                opening_balance_value=float(item.get('value')),
+                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                ending_balance_quantity=float(item.get('quantity')),
+                                ending_balance_value=float(item.get('value')),
+                                ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                for_balance=True
+                            )
                         )
-                    )
+                    else:
+                        bulk_info_rp_prd_wh.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=instance.tenant,
+                                company=instance.company,
+                                product=prd_obj,
+                                warehouse=wh_obj,
+                                period_mapped=instance,
+                                sub_period_order=sub_period_order_value,
+                                sub_period=sub_period_obj,
+                                opening_balance_quantity=float(item.get('quantity')),
+                                opening_balance_value=float(item.get('value')),
+                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                periodic_ending_balance_quantity=float(item.get('quantity')),
+                                periodic_ending_balance_value=float(item.get('value')),
+                                periodic_ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                for_balance=True
+                            )
+                        )
 
                     if not ReportInventory.objects.filter(
                             tenant_id=instance.tenant_id,
