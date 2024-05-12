@@ -10,6 +10,7 @@ from apps.core.company.models import (
 )
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
@@ -97,6 +98,20 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         if attrs in [0, 1, 2, 3]:
             return attrs
         raise serializers.ValidationError({'default_inventory_value_method': CompanyMsg.DIV_METHOD_NOT_VALID})
+
+    def validate(self, validate_data):
+        tenant_obj = self.instance.company.tenant
+        company_obj = self.instance.company
+        has_trans = ReportInventorySub.objects.filter(
+            tenant=tenant_obj, company=company_obj,
+            report_inventory__period_mapped__fiscal_year=datetime.datetime.now().year
+        ).exists()
+        old_definition_inventory_valuation_config = company_obj.companyconfig.definition_inventory_valuation
+        if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
+            raise serializers.ValidationError({
+                'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
+            })
+        return validate_data
 
     class Meta:
         model = CompanyConfig

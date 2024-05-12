@@ -1,6 +1,13 @@
 from django.db import models
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+
+
+DEFINITION_INVENTORY_VALUATION_CHOICES = [
+    (0, _('Perpetual inventory')),
+    (1, _('Periodic inventory')),
+]
 
 
 class Periods(MasterDataAbstractModel):
@@ -9,6 +16,7 @@ class Periods(MasterDataAbstractModel):
     start_date = models.DateField(null=False)
     planned = models.BooleanField(default=False)
     sub_periods_type = models.IntegerField(choices=[(0, 'Month'), (1, 'Quarter'), (2, 'Year')], default=0)
+    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
 
     class Meta:
         verbose_name = 'Periods'
@@ -30,8 +38,7 @@ class SubPeriods(SimpleAbstractModel):
         help_text='Sub period end date',
     )
     locked = models.BooleanField(default=0)
-    run_report = models.BooleanField(default=False)
-    run_report_detail = models.BooleanField(default=False)
+    run_report_inventory = models.BooleanField(default=False)
 
     @classmethod
     def check_open(cls, company_id, tenant_id, date):
