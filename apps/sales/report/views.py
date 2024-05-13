@@ -392,7 +392,7 @@ class ReportInventoryList(BaseListMixin):
                 ).order_by('-product__code')
 
             prd_id_list = set(
-                Product.objects.filter(tenant_=tenant, company_id=company).values_list('id', flat=True)
+                Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
             )
             self.create_this_sub_record(tenant, company, prd_id_list, period_mapped, sub_period_order)
             return super().get_queryset().select_related(
