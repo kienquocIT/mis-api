@@ -405,6 +405,13 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_product",
         null=True
     )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="sale_order_cost_warehouse",
+        null=True
+    )
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

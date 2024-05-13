@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
-from apps.masterdata.saledata.models import Shipping, ExpenseItem
+from apps.masterdata.saledata.models import Shipping, ExpenseItem, WareHouse
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import Account, AccountShippingAddress, AccountBillingAddress
 from apps.masterdata.saledata.models.config import PaymentTerm
@@ -11,9 +11,10 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
-    QuotationIndicator
+    QuotationIndicator, QuotationAppConfig
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg, WarehouseMsg, \
+    DisperseModel
 from apps.shared.translations.expense import ExpenseMsg
 
 
@@ -325,25 +326,6 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
-    # @classmethod
-    # def validate_product(cls, value):
-    #     try:
-    #         if value is None:
-    #             return {}
-    #         product = Product.objects.get_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             id=value
-    #         )
-    #         return {
-    #             'id': str(product.id),
-    #             'title': product.title,
-    #             'code': product.code,
-    #             'product_choice': product.product_choice,
-    #         }
-    #     except Product.DoesNotExist:
-    #         raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
-
     @classmethod
     def validate_product(cls, value):
         try:
@@ -455,24 +437,6 @@ class QuotationCommonValidate:
             )
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
-
-    # @classmethod
-    # def validate_promotion(cls, value):
-    #     try:
-    #         if value is None:
-    #             return {}
-    #         promotion = Promotion.objects.get_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             id=value
-    #         )
-    #         return {
-    #             'id': str(promotion.id),
-    #             'title': promotion.title,
-    #             'code': promotion.code
-    #         }
-    #     except Promotion.DoesNotExist:
-    #         raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
     @classmethod
     def validate_promotion(cls, value):
@@ -586,6 +550,44 @@ class QuotationCommonValidate:
             ).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
+
+    @classmethod
+    def validate_warehouse(cls, value):
+        try:
+            if value is None:
+                return {}
+            warehouse = WareHouse.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(warehouse.id),
+                'title': warehouse.title,
+                'code': warehouse.code
+            }
+        except WareHouse.DoesNotExist:
+            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+
+
+class QuotationRuleValidate:
+    @classmethod
+    def validate_config_role(cls, validate_data):
+        if 'employee_inherit_id' in validate_data:
+            opportunity_id = validate_data.get('opportunity_id', None)
+            model_cls = DisperseModel(app_model="hr.employee").get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                employee = model_cls.objects.filter(id=validate_data['employee_inherit_id']).first()
+                if so_config and employee:
+                    ss_role = [role.id for role in so_config.ss_role.all()]
+                    ls_role = [role.id for role in so_config.ls_role.all()]
+                    for role in employee.role.all():
+                        if role.id in ss_role and opportunity_id:
+                            raise serializers.ValidationError({'detail': SaleMsg.SO_CONFIG_SS_ROLE_CHECK})
+                        if role.id in ls_role and not opportunity_id:
+                            raise serializers.ValidationError({'detail': SaleMsg.SO_CONFIG_LS_ROLE_CHECK})
+        return True
 
     @classmethod
     def validate_then_set_indicators_value(cls, validate_data):
@@ -797,23 +799,17 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
 
 
 class QuotationCostSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(
-        allow_null=True
-    )
-    unit_of_measure = serializers.UUIDField(
-        allow_null=True
-    )
-    tax = serializers.UUIDField(
-        required=False
-    )
-    shipping = serializers.UUIDField(
-        allow_null=True
-    )
+    product = serializers.UUIDField(allow_null=True)
+    unit_of_measure = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False)
+    shipping = serializers.UUIDField(allow_null=True)
+    warehouse = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = QuotationCost
         fields = (
             'product',
+            'warehouse',
             'unit_of_measure',
             'tax',
             # product information
@@ -848,6 +844,10 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_shipping(cls, value):
         return QuotationCommonValidate().validate_shipping(value=value)
+
+    @classmethod
+    def validate_warehouse(cls, value):
+        return QuotationCommonValidate().validate_warehouse(value=value)
 
 
 class QuotationCostsListSerializer(serializers.ModelSerializer):

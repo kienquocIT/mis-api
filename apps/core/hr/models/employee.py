@@ -267,6 +267,7 @@ class Employee(TenantAbstractModel):
             'avatar_img': self.avatar_img.url if self.avatar_img else None,
             'group': self.group_id,
             'is_admin_company': self.is_admin_company,
+            'role': [role.id for role in self.role.all()],
         }
 
     def get_full_name(self, order_arrange=2):

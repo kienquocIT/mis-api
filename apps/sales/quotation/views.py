@@ -144,6 +144,9 @@ class QuotationConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_detail = QuotationConfigDetailSerializer
     serializer_update = QuotationConfigUpdateSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("ss_role", "ls_role",)
+
     @swagger_auto_schema(
         operation_summary="Quotation Config Detail",
     )
