@@ -414,9 +414,9 @@ class LoggingSubFunction:
         Nếu tham số by_month == True: lấy giao dịch end month của tháng gần nhất.
         """
         if by_month:
-            # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
+            # ưu tiên theo thứ tự:
             # 1: lấy records các tháng trước (trong năm)
-            # 2: lấy records các năm trước
+            # 2: Nếu 1 không có, lấy records các năm trước
             end_month_subs = ReportInventorySub.objects.filter(
                 product_id=prd_id, warehouse_id=wh_id,
                 report_inventory__period_mapped=period_mapped,
@@ -429,32 +429,7 @@ class LoggingSubFunction:
                 )
             latest_trans = end_month_subs.latest('date_created') if end_month_subs.count() > 0 else None
         else:
-            # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
-            # 1: lấy records tháng này
-            # 2: lấy records các tháng trước (trong năm)
-            # 3: lấy records các năm trước
-
-            # exclude_list_by_id = kwargs['exclude_list_by_id'] if 'exclude_list_by_id' in kwargs else []
-            # subs = ReportInventorySub.objects.filter(
-            #     product_id=prd_id, warehouse_id=wh_id,
-            #     report_inventory__period_mapped=period_mapped,
-            #     report_inventory__sub_period_order=sub_period_order
-            # ).exclude(id__in=exclude_list_by_id)
-            # if subs.count() == 0:
-            #     subs = ReportInventorySub.objects.filter(
-            #         product_id=prd_id, warehouse_id=wh_id,
-            #         report_inventory__period_mapped=period_mapped,
-            #         report_inventory__sub_period_order__lt=sub_period_order
-            #     ).exclude(id__in=exclude_list_by_id)
-            #     if subs.count() == 0:
-            #         subs = ReportInventorySub.objects.filter(
-            #             product_id=prd_id, warehouse_id=wh_id,
-            #             report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
-            #         ).exclude(id__in=exclude_list_by_id)
-            # latest_trans = subs.latest('date_created') if subs.count() > 0 else None
-            latest_logs = LatestLogByProductWarehouse.objects.filter(
-                product_id=prd_id, warehouse_id=wh_id
-            ).first()
+            latest_logs = LatestLogByProductWarehouse.objects.filter(product_id=prd_id, warehouse_id=wh_id).first()
             latest_trans = latest_logs.latest_log if latest_logs else None
         return latest_trans
 
