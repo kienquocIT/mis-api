@@ -18,11 +18,25 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
     @classmethod
     def get_works(cls, obj):
-        return {}
+        work = {"all": 0, "completed": 0}
+        works = obj.project_projectmapwork_project.all()
+        if works:
+            for item in works:
+                if item.work.w_rate == 100:
+                    work['completed'] += 1
+            work['all'] = works.count()
+        return work
 
     @classmethod
     def get_tasks(cls, obj):
-        return {}
+        task = {"all": 0, "completed": 0}
+        tasks = obj.project_projectmaptasks_project.all()
+        if tasks:
+            for item in tasks:
+                if item.task.percent_completed == 100:
+                    task['completed'] += 1
+            task['all'] = tasks.count()
+        return task
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -49,6 +63,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'completion_rate',
             'works',
             'tasks',
+            'system_status',
         )
 
 

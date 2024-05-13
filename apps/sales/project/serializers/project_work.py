@@ -19,6 +19,13 @@ def validated_date_work(attrs):
     return attrs
 
 
+def update_completing(project, work):
+    if work.w_rate == 100:
+        all_work = ProjectMapWork.objects.filter(project=project).count()
+        project.completion_rate += round(100/all_work, 1)
+        project.save()
+
+
 class WorkListSerializers(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
 
@@ -84,6 +91,8 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         group = validated_data.pop('group', None)
         work = ProjectWorks.objects.create(**validated_data)
         ProjectMapWork.objects.create(project=project, work=work)
+
+        update_completing(project, work)
         if group:
             GroupMapWork.objects.create(group=group, work=work)
         return work
@@ -153,6 +162,10 @@ class WorkDetailSerializers(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        if instance.w_rate == 100:
+            project = ProjectMapWork.objects.filter(work=instance).first()
+            update_completing(project, instance)
         if group:
             GroupMapWork.objects.filter(work=instance).delete()
             GroupMapWork.objects.create(group=group, work=instance)
