@@ -302,7 +302,7 @@ class ReportInventoryList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @classmethod
-    def get_value_list_for_this_sub(cls, prd_id, wh_id, period_mapped, sub_period_order):
+    def update_value_list_for_this_sub(cls, tenant, company, sub, prd_id, wh_id, period_mapped, sub_period_order):
         quantity = None
         cost = None
         value = None
@@ -321,7 +321,30 @@ class ReportInventoryList(BaseListMixin):
                     quantity = opening_value_list_obj.opening_balance_quantity
                     cost = opening_value_list_obj.opening_balance_cost
                     value = opening_value_list_obj.opening_balance_value
-        return quantity, cost, value
+        if quantity and cost and value:
+            if company.companyconfig.definition_inventory_valuation == 0:
+                ReportInventoryProductWarehouse.objects.create(
+                    tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
+                    period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
+                    opening_balance_quantity=quantity,
+                    opening_balance_cost=cost,
+                    opening_balance_value=value,
+                    ending_balance_quantity=quantity,
+                    ending_balance_cost=cost,
+                    ending_balance_value=value
+                )
+            else:
+                ReportInventoryProductWarehouse.objects.create(
+                    tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
+                    period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
+                    opening_balance_quantity=quantity,
+                    opening_balance_cost=cost,
+                    opening_balance_value=value,
+                    periodic_ending_balance_quantity=quantity,
+                    periodic_ending_balance_cost=cost,
+                    periodic_ending_balance_value=value
+                )
+        return True
 
     @classmethod
     def create_this_sub_record(cls, tenant, company, product_id_list, period_mapped, sub_period_order):
@@ -342,32 +365,9 @@ class ReportInventoryList(BaseListMixin):
                             this_sub_record = item
                             break
                     if not this_sub_record:
-                        quantity, cost, value = cls.get_value_list_for_this_sub(
-                            prd_id, wh_id, period_mapped, sub_period_order
+                        cls.update_value_list_for_this_sub(
+                            tenant, company, sub, prd_id, wh_id, period_mapped, sub_period_order
                         )
-                        if quantity and cost and value:
-                            if company.companyconfig.definition_inventory_valuation == 0:
-                                ReportInventoryProductWarehouse.objects.create(
-                                    tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
-                                    period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
-                                    opening_balance_quantity=quantity,
-                                    opening_balance_cost=cost,
-                                    opening_balance_value=value,
-                                    ending_balance_quantity=quantity,
-                                    ending_balance_cost=cost,
-                                    ending_balance_value=value
-                                )
-                            else:
-                                ReportInventoryProductWarehouse.objects.create(
-                                    tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
-                                    period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
-                                    opening_balance_quantity=quantity,
-                                    opening_balance_cost=cost,
-                                    opening_balance_value=value,
-                                    periodic_ending_balance_quantity=quantity,
-                                    periodic_ending_balance_cost=cost,
-                                    periodic_ending_balance_value=value
-                                )
             sub.run_report_inventory = True
             sub.save(update_fields=['run_report_inventory'])
         return True
