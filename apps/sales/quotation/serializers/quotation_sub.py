@@ -289,11 +289,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_customer(cls, value):
         try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -302,33 +298,21 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return value
-            return Opportunity.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            ).id
+            return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
     def validate_contact(cls, value):
         try:
-            return Contact.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
     @classmethod
     def validate_sale_person(cls, value):
         try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
@@ -337,11 +321,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            product = Product.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return ProductForSaleListSerializer(product).data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
@@ -351,11 +331,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            uom = UnitOfMeasure.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            uom = UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(uom.id),
                 'title': uom.title,
@@ -367,11 +343,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_tax(cls, value):
         try:
-            tax = Tax.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            tax = Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(tax.id),
                 'title': tax.title,
@@ -386,11 +358,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            expense = Expense.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            expense = Expense.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(expense.id),
                 'title': expense.title,
@@ -404,11 +372,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            expense_item = ExpenseItem.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            expense_item = ExpenseItem.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(expense_item.id),
                 'title': expense_item.title,
@@ -420,11 +384,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_price_list(cls, value):
         if isinstance(value, list):
-            price_list = Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=value
-            )
+            price_list = Price.objects.filter_current(fill__tenant=True, fill__company=True, id__in=value)
             if price_list.count() == len(value):
                 return [
                     {'id': str(price.id), 'title': price.title, 'code': price.code}
@@ -436,11 +396,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_payment_term(cls, value):
         try:
-            return PaymentTerm.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
@@ -449,11 +405,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            promotion = Promotion.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            promotion = Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(promotion.id),
                 'title': promotion.title,
@@ -492,11 +444,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            shipping = Shipping.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            shipping = Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(shipping.id),
                 'title': shipping.title,
@@ -508,10 +456,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_indicator(cls, value):
         try:
-            indicator = QuotationIndicatorConfig.objects.get_current(
-                fill__company=True,
-                id=value
-            )
+            indicator = QuotationIndicatorConfig.objects.get_current(fill__company=True, id=value)
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
@@ -538,22 +483,14 @@ class QuotationCommonValidate:
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            ).id
+            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_next_node_collab_id(cls, value):
         try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            ).id
+            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
 
@@ -562,11 +499,7 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return {}
-            warehouse = WareHouse.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            warehouse = WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return {
                 'id': str(warehouse.id),
                 'title': warehouse.title,
