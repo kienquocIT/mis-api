@@ -395,13 +395,15 @@ class ReportInventoryList(BaseListMixin):
                     sum_input_value = inventory_cost_data_obj.sum_input_value
                     sum_output_quantity = inventory_cost_data_obj.sum_output_quantity
 
-                    quantity = sum_input_quantity - sum_output_quantity
-                    cost = sum_input_value / sum_input_quantity
-                    value = quantity * cost
+                    value_list = {
+                        'quantity': sum_input_quantity - sum_output_quantity,
+                        'cost': sum_input_value / sum_input_quantity,
+                        'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
+                    }
 
-                    inventory_cost_data_obj.periodic_ending_balance_quantity = quantity
-                    inventory_cost_data_obj.periodic_ending_balance_cost = cost
-                    inventory_cost_data_obj.periodic_ending_balance_value = value
+                    inventory_cost_data_obj.periodic_ending_balance_quantity = value_list['quantity']
+                    inventory_cost_data_obj.periodic_ending_balance_cost = value_list['cost']
+                    inventory_cost_data_obj.periodic_ending_balance_value = value_list['value']
                     inventory_cost_data_obj.periodic_closed = True
                     inventory_cost_data_obj.save(update_fields=[
                         'periodic_ending_balance_quantity',

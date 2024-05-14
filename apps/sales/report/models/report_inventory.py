@@ -491,11 +491,11 @@ class LoggingSubFunction:
         if opening_value_list_obj:
             if data_type == 0:
                 return opening_value_list_obj.opening_balance_quantity
-            elif data_type == 1:
+            if data_type == 1:
                 return opening_value_list_obj.opening_balance_cost
-            elif data_type == 2:
+            if data_type == 2:
                 return opening_value_list_obj.opening_balance_value
-            elif data_type == 3:
+            if data_type == 3:
                 return {
                     'quantity': opening_value_list_obj.opening_balance_quantity,
                     'cost': opening_value_list_obj.opening_balance_cost,
