@@ -9,6 +9,7 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
+from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
@@ -141,6 +142,18 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_warehouse',
             'cost_per_lot_batch'
         ])
+        this_period = Periods.objects.filter(
+            tenant=instance.company.tenant,
+            company=instance.company,
+            fiscal_year=datetime.datetime.now().year
+        ).first()
+        if this_period:
+            this_period.definition_inventory_valuation = instance.definition_inventory_valuation
+            this_period.save(update_fields=['definition_inventory_valuation'])
+        else:
+            raise serializers.ValidationError(
+                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+            )
 
         if sub_domain:
             instance.company.sub_domain = sub_domain
