@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods
-from apps.shared import DataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class ReportInventory(DataAbstractModel):
@@ -90,14 +90,19 @@ class ReportInventorySub(DataAbstractModel):
     trans_id = models.CharField(blank=True, max_length=100, null=True)
     trans_code = models.CharField(blank=True, max_length=100, null=True)
     trans_title = models.CharField(blank=True, max_length=100, null=True)
+    log_order = models.IntegerField(default=0)
 
-    quantity = models.FloatField(default=0)
-    cost = models.FloatField(default=0)
-    value = models.FloatField(default=0)
+    quantity = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    cost = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    value = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
 
-    current_quantity = models.FloatField(default=0)
-    current_cost = models.FloatField(default=0)
-    current_value = models.FloatField(default=0)
+    current_quantity = models.FloatField(default=0, help_text='is quantity current in perpetual')
+    current_cost = models.FloatField(default=0, help_text='is cost current in perpetual')
+    current_value = models.FloatField(default=0, help_text='is value current in perpetual')
+
+    periodic_current_quantity = models.FloatField(default=0, help_text='is quantity current in periodic')
+    periodic_current_cost = models.FloatField(default=0, help_text='is cost current in periodic')
+    periodic_current_value = models.FloatField(default=0, help_text='is value current in periodic')
 
     lot_data = models.JSONField(default=list)
 
@@ -107,6 +112,7 @@ class ReportInventorySub(DataAbstractModel):
         Hàm ghi lại các hoạt động tương tác với kho hàng
         Step 1: Tạo log
         Step 2: Cập nhập giá trị tồn kho cho log
+        Step 3: Cập nhập giá trị tồn cuối theo kho và update log gần nhất cho kho
         """
         tenant_obj = activities_obj.tenant
         company_obj = activities_obj.company
@@ -117,13 +123,8 @@ class ReportInventorySub(DataAbstractModel):
             new_logs = LoggingSubFunction.create_new_logs(
                 activities_obj, activities_data, period_mapped, sub_period_order
             )
-            new_logs_id_list = [obj.pk for obj in new_logs]
             for log in new_logs:
-                log_updated = LoggingSubFunction.update_inventory_value_for_log(
-                    log, new_logs_id_list, period_mapped, sub_period_order
-                )
-                # loại bỏ id của những log đã update rồi
-                new_logs_id_list = [log_id for log_id in new_logs_id_list if log_id != log_updated.id]
+                LoggingSubFunction.update_inventory_value_for_log(log, period_mapped, sub_period_order)
             return True
         raise serializers.ValidationError({'Period missing': f'Period of fiscal year {fiscal_year} does not exist.'})
 
@@ -165,12 +166,25 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     opening_balance_cost = models.FloatField(default=0)
     opening_balance_value = models.FloatField(default=0)
 
-    ending_balance_quantity = models.FloatField(default=0)
-    ending_balance_cost = models.FloatField(default=0)
-    ending_balance_value = models.FloatField(default=0)
+    ending_balance_quantity = models.FloatField(default=0, help_text='is ending balance quantity in perpetual')
+    ending_balance_cost = models.FloatField(default=0, help_text='is ending balance cost in perpetual')
+    ending_balance_value = models.FloatField(default=0, help_text='is ending balance value in perpetual')
 
-    for_balance = models.BooleanField(default=False)
-    wrong_cost = models.BooleanField(default=False)
+    periodic_ending_balance_quantity = models.FloatField(default=0, help_text='is ending balance quantity in periodic')
+    periodic_ending_balance_cost = models.FloatField(default=0, help_text='is ending balance cost in periodic')
+    periodic_ending_balance_value = models.FloatField(default=0, help_text='is ending balance value in periodic')
+
+    sum_input_quantity = models.FloatField(default=0, help_text='is sum input quantity in periodic')
+    sum_input_value = models.FloatField(default=0, help_text='is sum value quantity in periodic')
+    sum_output_quantity = models.FloatField(default=0, help_text='is sum output quantity in periodic')
+    periodic_closed = models.BooleanField(default=False, help_text='is True if sub has closed')
+
+    for_balance = models.BooleanField(default=False, help_text='is True if it has balance')
+    sub_latest_log = models.ForeignKey(
+        ReportInventorySub,
+        on_delete=models.CASCADE,
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'Report Inventory Product Warehouse'
@@ -179,38 +193,30 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_inventory_cost_data_this_sub_period(self, data_stock_activity):
-        """
-        Opening tháng:
-            Mặc định là opening của tháng
-        Ending của tháng:
-            Mặc định là opening của tháng
-            Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
-        """
-        # Begin get Opening
-        opening_quantity = self.opening_balance_quantity
-        opening_value = self.opening_balance_value
-        opening_cost = self.opening_balance_cost
-        # End
 
-        # Begin get Ending
-        ending_quantity = opening_quantity
-        ending_value = opening_value
-        ending_cost = opening_cost
-        if len(data_stock_activity) > 0:
-            ending_quantity = data_stock_activity[-1]['current_quantity']
-            ending_value = data_stock_activity[-1]['current_value']
-            ending_cost = data_stock_activity[-1]['current_cost']
-        # End
+class LatestSub(SimpleAbstractModel):
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='latest_log_product',
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='latest_log_warehouse',
+    )
+    latest_log = models.ForeignKey(
+        ReportInventorySub,
+        on_delete=models.CASCADE,
+        null=True,
+    )
 
-        return {
-            'opening_balance_quantity': opening_quantity,
-            'opening_balance_value': opening_value,
-            'opening_balance_cost': opening_cost,
-            'ending_balance_quantity': ending_quantity,
-            'ending_balance_value': ending_value,
-            'ending_balance_cost': ending_cost
-        }
+    class Meta:
+        verbose_name = 'Latest Log By Product Warehouse'
+        verbose_name_plural = 'Latest Logs By Product Warehouse'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
 class LoggingSubFunction:
@@ -218,15 +224,32 @@ class LoggingSubFunction:
     def create_new_logs(cls, activities_obj, activities_data, period_mapped, sub_period_order):
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
+        log_order_number = 0
         for item in activities_data:
-            rp_inventory_obj = ReportInventory.get_report_inventory(
+            report_inventory_obj = ReportInventory.get_report_inventory(
                 activities_obj, item['product'], period_mapped, sub_period_order
             )
+            div = activities_obj.company.companyconfig.definition_inventory_valuation
+            cost = item['cost']
+            if item['stock_type'] == -1:
+                # nếu tính cost thường xuyên
+                if div == 0:
+                    # lấy log gần nhất
+                    latest_trans = item['product'].latest_log_product.filter(warehouse=item['warehouse']).first()
+                    if latest_trans:
+                        # nếu có, lấy giá cost hiện tại
+                        cost = latest_trans.latest_log.current_cost
+                    else:
+                        # nếu không, tìm số dư đầu kì
+                        cost = cls.get_opening_balance_data(item['product'].id, item['warehouse'].id, period_mapped, 1)
+                else:
+                    # nếu tính cost định kì
+                    cost = 0
             # tạo record sub tương ứng để ghi dữ liệu log của các phiếu
             new_log = ReportInventorySub(
                 tenant=activities_obj.tenant,
                 company=activities_obj.company,
-                report_inventory=rp_inventory_obj,
+                report_inventory=report_inventory_obj,
                 product=item['product'],
                 warehouse=item['warehouse'],
                 system_date=item['system_date'],
@@ -237,208 +260,281 @@ class LoggingSubFunction:
                 trans_code=item['trans_code'],
                 trans_title=item['trans_title'],
                 quantity=item['quantity'],
-                cost=item['cost'],
-                value=item['value'],
-                lot_data=item.get('lot_data', [])
+                cost=cost,
+                value=cost * item['quantity'],
+                lot_data=item.get('lot_data', []),
+                log_order=log_order_number
             )
             bulk_info.append(new_log)
+            log_order_number += 1
         new_logs = ReportInventorySub.objects.bulk_create(bulk_info)
         return new_logs
 
     @classmethod
-    def update_inventory_value_for_log(cls, log, new_logs_id_list, period_mapped, sub_period_order):
-        """ Step 2: Hàm để cập nhập giá trị tồn kho cho từng log """
-        if log.company.companyconfig.definition_inventory_valuation == 0:
-            value_list = cls.get_latest_trans_value_list_in_perpetual_inventory(
-                log, new_logs_id_list, period_mapped, sub_period_order
-            )
-            cls.check_inventory_cost_data_by_warehouse_this_sub(log, period_mapped, sub_period_order, value_list)
-            new_value_list = cls.calculate_value_list_in_perpetual_inventory(log, value_list)
+    def update_inventory_value_for_log(cls, log, period_mapped, sub_period_order):
+        """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
+        div = log.company.companyconfig.definition_inventory_valuation
+        if div == 0:
+            # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
+            latest_value = cls.get_latest_value(log, period_mapped, div)
+            # tính toán value list mới
+            new_value_list = cls.calculate_new_value_list_in_perpetual_inventory(log, latest_value)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.current_quantity = new_value_list['quantity']
             log.current_cost = new_value_list['cost']
             log.current_value = new_value_list['value']
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
-            return log
-        if log.company.companyconfig.definition_inventory_valuation == 1:
-            value_list = cls.get_latest_trans_value_list_in_periodic_inventory(
-                log, new_logs_id_list, period_mapped, sub_period_order
+            cls.update_inventory_cost_data_by_warehouse_this_sub(
+                log, period_mapped, sub_period_order, latest_value, div
             )
-            cls.check_inventory_cost_data_by_warehouse_this_sub(log, period_mapped, sub_period_order, value_list)
-            new_value_list = cls.calculate_value_list_in_periodic_inventory(log, value_list)
+            return True
+        if div == 1:
+            # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
+            latest_value = cls.get_latest_value(log, period_mapped, div)
+            # tính toán value list mới
+            new_value_list = cls.calculate_new_value_list_in_periodic_inventory(log, latest_value)
             # cập nhập giá trị tồn kho hiện tại mới cho log
-            log.current_quantity = new_value_list['quantity']
-            log.current_cost = new_value_list['cost']
-            log.current_value = new_value_list['value']
-            log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
-            return log
+            log.periodic_current_quantity = new_value_list['quantity']
+            log.periodic_current_cost = new_value_list['cost']  # = 0
+            log.periodic_current_value = new_value_list['value']  # = 0
+            log.save(update_fields=['periodic_current_quantity', 'periodic_current_cost', 'periodic_current_value'])
+            cls.update_inventory_cost_data_by_warehouse_this_sub(
+                log, period_mapped, sub_period_order, latest_value, div
+            )
+            return True
         raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
 
     @classmethod
-    def get_latest_trans(cls, prd_id, wh_id, period_mapped, sub_period_order, by_month=False, **kwargs):
+    def update_inventory_cost_data_by_warehouse_this_sub(cls, log, period_mapped, sub_period_order, latest_value, div):
         """
-        Hàm để lấy giao dịch gần nhất (mặc định lấy gần nhất).
-        Nếu tham số by_month == True: lấy giao dịch end month của tháng gần nhất.
-        *** Parameter 'exclude_list_by_id' (list id các obj ReportInventorySub), để bỏ các obj sinh ra khi chưa save
+        Step 3: Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ?
+        Chưa thì tạo mới - Có thì Update lại quantity-cost-value
         """
-        if by_month:
-            # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
-            # 1: lấy records các tháng trước (trong năm)
-            # 2: lấy records các năm trước
-            end_month_subs = ReportInventorySub.objects.filter(
-                product_id=prd_id, warehouse_id=wh_id,
-                report_inventory__period_mapped=period_mapped,
-                report_inventory__sub_period_order__lt=sub_period_order
-            )
-            if end_month_subs.count() == 0:
-                end_month_subs = ReportInventorySub.objects.filter(
-                    product_id=prd_id, warehouse_id=wh_id,
-                    report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
-                )
-            latest_trans = end_month_subs.latest('date_created') if end_month_subs.count() > 0 else None
-        else:
-            # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
-            # 1: lấy records tháng này
-            # 2: lấy records các tháng trước (trong năm)
-            # 3: lấy records các năm trước
-            exclude_list_by_id = kwargs['exclude_list_by_id'] if 'exclude_list_by_id' in kwargs else []
-            subs = ReportInventorySub.objects.filter(
-                product_id=prd_id, warehouse_id=wh_id,
-                report_inventory__period_mapped=period_mapped,
-                report_inventory__sub_period_order=sub_period_order
-            ).exclude(id__in=exclude_list_by_id)
-            if subs.count() == 0:
-                subs = ReportInventorySub.objects.filter(
-                    product_id=prd_id, warehouse_id=wh_id,
-                    report_inventory__period_mapped=period_mapped,
-                    report_inventory__sub_period_order__lt=sub_period_order
-                ).exclude(id__in=exclude_list_by_id)
-                if subs.count() == 0:
-                    subs = ReportInventorySub.objects.filter(
-                        product_id=prd_id, warehouse_id=wh_id,
-                        report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year
-                    ).exclude(id__in=exclude_list_by_id)
-            latest_trans = subs.latest('date_created') if subs.count() > 0 else None
-        return latest_trans
-
-    @classmethod
-    def check_inventory_cost_data_by_warehouse_this_sub(cls, log, period_mapped, sub_period_order, value_list):
-        """ Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ? Chưa thì tạo mới"""
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
+            # tìm record
             inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
-                tenant_id=period_mapped.tenant_id,
-                company_id=period_mapped.company_id,
+                tenant_id=log.tenant_id,
+                company_id=log.company_id,
                 product=log.product,
                 warehouse=log.warehouse,
                 period_mapped=period_mapped,
                 sub_period_order=sub_period_order,
                 sub_period=sub_period_obj
-            ).exists()
-            if not inventory_cost_data_item:
-                inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
-                    tenant_id=period_mapped.tenant_id,
-                    company_id=period_mapped.company_id,
-                    product=log.product,
-                    warehouse=log.warehouse,
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order,
-                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
-                    opening_balance_quantity=value_list['quantity'],
-                    opening_balance_cost=value_list['cost'],
-                    opening_balance_value=value_list['value']
+            ).first()
+            # nếu kiểm kê thường xuyên
+            if div == 0:
+                if not inventory_cost_data_item:  # không có thì tạo, gán log
+                    inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
+                        tenant_id=log.tenant_id,
+                        company_id=log.company_id,
+                        product=log.product,
+                        warehouse=log.warehouse,
+                        period_mapped=period_mapped,
+                        sub_period_order=sub_period_order,
+                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                        opening_balance_quantity=latest_value['quantity'],
+                        opening_balance_cost=latest_value['cost'],
+                        opening_balance_value=latest_value['value'],
+                        ending_balance_quantity=log.current_quantity,
+                        ending_balance_cost=log.current_cost,
+                        ending_balance_value=log.current_value,
+                        sub_latest_log=log
+                    )
+                else:  # nếu có thì update giá cost, gán sub
+                    inventory_cost_data_item.ending_balance_quantity = log.current_quantity
+                    inventory_cost_data_item.ending_balance_cost = log.current_cost
+                    inventory_cost_data_item.ending_balance_value = log.current_value
+                    inventory_cost_data_item.sub_latest_log = log
+                    inventory_cost_data_item.save(update_fields=[
+                        'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value', 'sub_latest_log'
+                    ])
+            else:
+                # nếu kiểm kê định kì
+                if not inventory_cost_data_item:  # nếu không có thì tạo, gán log
+                    inventory_cost_data_item = ReportInventoryProductWarehouse.objects.create(
+                        tenant_id=log.tenant_id,
+                        company_id=log.company_id,
+                        product=log.product,
+                        warehouse=log.warehouse,
+                        period_mapped=period_mapped,
+                        sub_period_order=sub_period_order,
+                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                        opening_balance_quantity=latest_value['quantity'],
+                        opening_balance_cost=latest_value['cost'],
+                        opening_balance_value=latest_value['value'],
+                        periodic_ending_balance_quantity=log.current_quantity,
+                        periodic_ending_balance_cost=log.current_cost,
+                        periodic_ending_balance_value=log.current_value,
+                        sub_latest_log=log
+                    )
+                else:  # có thì cập nhập
+                    if log.stock_type == 1:
+                        # nếu là input thì cộng tổng SL nhập và tổng Value nhập
+                        inventory_cost_data_item.sum_input_quantity += log.quantity
+                        inventory_cost_data_item.sum_input_value = log.quantity * log.cost
+                    else:
+                        # nếu là xuất thì cập nhập SL xuất
+                        inventory_cost_data_item.sum_output_quantity += log.quantity
+
+                    # update giá cost
+                    inventory_cost_data_item.periodic_ending_balance_quantity = log.periodic_current_quantity
+                    inventory_cost_data_item.periodic_ending_balance_cost = log.periodic_current_cost
+                    inventory_cost_data_item.periodic_ending_balance_value = log.periodic_current_value
+                    # nếu kì đã đóng mà có giao dịch, mở lại, cost-value hiện tại trở về 0 (chưa chốt)
+                    if inventory_cost_data_item.periodic_closed:
+                        inventory_cost_data_item.periodic_closed = False
+                        inventory_cost_data_item.periodic_ending_balance_cost = 0
+                        inventory_cost_data_item.periodic_ending_balance_value = 0
+                    inventory_cost_data_item.save(update_fields=[
+                        'periodic_ending_balance_quantity',
+                        'periodic_ending_balance_cost',
+                        'periodic_ending_balance_value',
+                        'sum_output_quantity',
+                        'sum_input_quantity',
+                        'sum_input_value',
+                        'periodic_closed'
+                    ])
+
+            # cập nhập log mới nhất, không có thì tạo mới
+            latest_log_obj = log.product.latest_log_product.filter(warehouse=log.warehouse).first()
+            if latest_log_obj:
+                latest_log_obj.latest_log = log
+                latest_log_obj.save(update_fields=['latest_log'])
+            else:
+                LatestSub.objects.create(
+                    product=log.product, warehouse=log.warehouse, latest_log=log
                 )
+
             return inventory_cost_data_item
         raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
 
     @classmethod
-    def get_latest_trans_value_list_in_perpetual_inventory(cls, log, new_logs_id_list, period_mapped, sub_period_order):
-        """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
-        if log.company.companyconfig.definition_inventory_valuation == 0:
-            latest_trans = LoggingSubFunction.get_latest_trans(
-                log.product_id, log.warehouse_id, period_mapped, sub_period_order, False,
-                **{'exclude_list_by_id': new_logs_id_list}
-            )
-            if latest_trans:
-                value_list = {
-                    'quantity': latest_trans.current_quantity,
-                    'cost': latest_trans.current_cost,
-                    'value': latest_trans.current_value
-                }
-                return value_list
-            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
-        if log.company.companyconfig.definition_inventory_valuation == 1:
-            sub_list = ReportInventorySub.objects.filter(
-                product=log.product,
-                warehouse=log.warehouse
-            ).exclude(id__in=new_logs_id_list)
-            latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
-            if latest_trans:
-                value_list = {
-                    'quantity': latest_trans.current_quantity,
-                    'cost': latest_trans.current_cost,
-                    'value': latest_trans.current_value
-                }
-                return value_list
-            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
-        raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
+    def get_latest_trans(cls, prd_id, wh_id):
+        latest_logs = LatestSub.objects.filter(product_id=prd_id, warehouse_id=wh_id).first()
+        latest_trans = latest_logs.latest_log if latest_logs else None
+        return latest_trans
 
     @classmethod
-    def get_latest_trans_value_list_in_periodic_inventory(cls, log, new_logs_id_list, period_mapped, sub_period_order):
-        """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
-        if log.company.companyconfig.definition_inventory_valuation == 0:
-            latest_trans = LoggingSubFunction.get_latest_trans(
-                log.product_id, log.warehouse_id, period_mapped, sub_period_order, False,
-                **{'exclude_list_by_id': new_logs_id_list}
-            )
-            if latest_trans:
-                value_list = {
-                    'quantity': latest_trans.current_quantity,
-                    'cost': latest_trans.current_cost,
-                    'value': latest_trans.current_value
-                }
-                return value_list
-            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
-        if log.company.companyconfig.definition_inventory_valuation == 1:
-            sub_list = ReportInventorySub.objects.filter(
-                product=log.product,
-                warehouse=log.warehouse
-            ).exclude(id__in=new_logs_id_list)
-            latest_trans = sub_list.latest('date_created') if sub_list.count() > 0 else None
-            if latest_trans:
-                value_list = {
-                    'quantity': latest_trans.current_quantity,
-                    'cost': latest_trans.current_cost,
-                    'value': latest_trans.current_value
-                }
-                return value_list
-            return {'quantity': log.quantity, 'cost': log.cost, 'value': log.value}
-        raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
+    def get_latest_trans_by_month(cls, prd_id, wh_id, period_mapped, sub_period_order):
+        """
+        Hàm để lấy giao dịch cuối cùng của tháng trước.
+        """
+        # ưu tiên theo thứ tự:
+        # 1: lấy records các tháng trước (trong năm)
+        # 2: Nếu 1 không có, lấy records các năm trước
+        end_month_subs = ReportInventoryProductWarehouse.objects.filter(
+            product_id=prd_id, warehouse_id=wh_id, period_mapped=period_mapped, sub_period_order__lt=sub_period_order
+        ).first()
+        latest_trans = end_month_subs.sub_latest_log if end_month_subs else None
+        if end_month_subs:
+            end_month_subs = LatestSub.objects.filter(product_id=prd_id, warehouse_id=wh_id).first()
+            latest_trans = end_month_subs.latest_log if end_month_subs else None
+        return latest_trans
 
     @classmethod
-    def calculate_value_list_in_perpetual_inventory(cls, log, value_list):
+    def get_latest_value(cls, log, period_mapped, div):
+        """ Hàm tìm giao dịch gần nhất (theo sp và kho) """
+        latest_trans = LoggingSubFunction.get_latest_trans(log.product_id, log.warehouse_id)
+        if latest_trans:
+            value_list = {
+                'quantity': latest_trans.current_quantity,
+                'cost': latest_trans.current_cost,
+                'value': latest_trans.current_value
+            } if div == 0 else {
+                'quantity': latest_trans.periodic_current_quantity,
+                'cost': latest_trans.periodic_current_cost,
+                'value': latest_trans.periodic_current_value
+            }
+            return value_list
+        value_list = cls.get_opening_balance_data(log.product_id, log.warehouse_id, period_mapped, 3)
+        return value_list
+
+    @classmethod
+    def calculate_new_value_list_in_perpetual_inventory(cls, log, latest_value):
         """ Hàm tính toán cho Phương pháp Kê khai thường xuyên """
         if log.stock_type == 1:
-            new_quantity = value_list['quantity'] + log.quantity
-            sum_value = value_list['value'] + log.value
+            new_quantity = latest_value['quantity'] + log.quantity
+            sum_value = latest_value['value'] + log.value
             new_cost = sum_value / new_quantity
             new_value = sum_value
         else:
-            new_quantity = value_list['quantity'] - log.quantity
-            new_cost = value_list['cost']
+            new_quantity = latest_value['quantity'] - log.quantity
+            new_cost = latest_value['cost']
             new_value = new_cost * new_quantity
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def calculate_value_list_in_periodic_inventory(cls, log, value_list):
+    def calculate_new_value_list_in_periodic_inventory(cls, log, latest_value):
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
         if log.stock_type == 1:
-            new_quantity = value_list['quantity'] + log.quantity
-            sum_value = value_list['value'] + log.value
-            new_cost = sum_value / new_quantity
-            new_value = sum_value
+            # Lúc này sum nhập đã được cập nhập
+            new_quantity = latest_value['quantity'] + log.quantity
+            new_cost = 0
+            new_value = 0
         else:
-            new_quantity = value_list['quantity'] - log.quantity
-            new_cost = value_list['cost']
-            new_value = new_cost * new_quantity
+            new_quantity = latest_value['quantity'] - log.quantity
+            new_cost = 0
+            new_value = 0
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
+
+    @classmethod
+    def get_opening_balance_data(cls, product_id, warehouse_id, period_mapped, data_type=1):
+        """
+        Hàm để lấy Số dư đầu kì theo SP và KHO
+        (0-quantity, 1-cost, 2-value, 3-{'quantity':, 'cost':, 'value':}, else-return1)
+        """
+        # tìm số dư đầu kì
+        opening_value_list_obj = ReportInventoryProductWarehouse.objects.filter(
+            product_id=product_id, warehouse_id=warehouse_id, period_mapped=period_mapped, for_balance=True
+        ).first()
+        if opening_value_list_obj:
+            if data_type == 0:
+                return opening_value_list_obj.opening_balance_quantity
+            if data_type == 1:
+                return opening_value_list_obj.opening_balance_cost
+            if data_type == 2:
+                return opening_value_list_obj.opening_balance_value
+            if data_type == 3:
+                return {
+                    'quantity': opening_value_list_obj.opening_balance_quantity,
+                    'cost': opening_value_list_obj.opening_balance_cost,
+                    'value': opening_value_list_obj.opening_balance_value
+                }
+            return opening_value_list_obj.opening_balance_cost
+        return 0 if data_type != 3 else {'quantity': 0, 'cost': 0, 'value': 0}
+
+    @classmethod
+    def get_inventory_cost_data_this_sub_period(cls, inventory_cost_data_obj, data_stock_activity):
+        """
+        Opening tháng:
+            Mặc định là opening của tháng
+        Ending của tháng:
+            Mặc định là opening của tháng
+            Nếu có giao dịch trong tháng: thì lấy ending của giao dịch cuối cùng
+        """
+        # Begin get Opening
+        opening_quantity = inventory_cost_data_obj.opening_balance_quantity
+        opening_cost = inventory_cost_data_obj.opening_balance_cost
+        opening_value = inventory_cost_data_obj.opening_balance_value
+        # End
+
+        # Begin get Ending
+        if len(data_stock_activity) > 0:
+            ending_quantity = data_stock_activity[-1]['current_quantity']
+            ending_cost = data_stock_activity[-1]['current_cost']
+            ending_value = data_stock_activity[-1]['current_value']
+        else:
+            ending_quantity = opening_quantity
+            ending_cost = opening_cost
+            ending_value = opening_value
+        # End
+
+        return {
+            'opening_balance_quantity': opening_quantity,
+            'opening_balance_cost': opening_cost,
+            'opening_balance_value': opening_value,
+            'ending_balance_quantity': ending_quantity,
+            'ending_balance_cost': ending_cost,
+            'ending_balance_value': ending_value,
+        }

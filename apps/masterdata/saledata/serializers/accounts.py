@@ -633,7 +633,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     def validate_tax_code(self, value):
         if Account.objects.filter_current(
                 fill__tenant=True, fill__company=True, tax_code=value
-        ).exclude(code=self.instance.tax_code).count() > 0:
+        ).exclude(id=self.instance.id).count() > 0:
             raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
 
