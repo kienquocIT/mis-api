@@ -1070,3 +1070,15 @@ msgstr "Hoàn tất"
 #
 msgid "Cancel"
 msgstr "Huỷ bỏ"
+
+#
+msgid "Role can only in short sales or long sales"
+msgstr "Vai trò chỉ có thể thuộc bán hàng nhanh hoặc bán hàng dự án"
+
+#
+msgid "Opportunity is not allowed because employee in short sales roles"
+msgstr "CHKD không được phép vì nhân viên thuộc vai trò bán hàng nhanh"
+
+#
+msgid "Opportunity is required because employee in long sales roles"
+msgstr "CHKD là bắt buộc vì nhân viên thuộc vai trò bán hàng dự án"

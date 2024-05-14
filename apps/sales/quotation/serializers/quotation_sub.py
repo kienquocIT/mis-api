@@ -29,6 +29,7 @@ class QuotationCommonCreate:
         tax = {}
         promotion = {}
         shipping = {}
+        warehouse = {}
         if 'product' in dict_data:
             product = dict_data['product']
             del dict_data['product']
@@ -50,6 +51,9 @@ class QuotationCommonCreate:
         if 'shipping' in dict_data:
             shipping = dict_data['shipping']
             del dict_data['shipping']
+        if 'warehouse' in dict_data:
+            warehouse = dict_data['warehouse']
+            del dict_data['warehouse']
         if is_product is True:
             return {
                 'product': product,
@@ -71,7 +75,8 @@ class QuotationCommonCreate:
                 'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
-                'shipping': shipping
+                'shipping': shipping,
+                'warehouse': warehouse,
             }
         return {}
 
@@ -137,6 +142,7 @@ class QuotationCommonCreate:
                 QuotationCost.objects.create(
                     quotation=instance,
                     product_id=data['product'].get('id', None),
+                    warehouse_id=data['warehouse'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
                     shipping_id=data['shipping'].get('id', None),
@@ -570,6 +576,22 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
 
 
+class QuotationValueValidate:
+    @classmethod
+    def validate_quantity(cls, value):
+        if isinstance(value, float):
+            if value > 0:
+                return value
+        raise serializers.ValidationError({'product_quantity': SaleMsg.QUANTITY_VALID})
+
+    @classmethod
+    def validate_price(cls, value):
+        if isinstance(value, float):
+            if value > 0:
+                return value
+        raise serializers.ValidationError({'product_price': SaleMsg.PRICE_VALID})
+
+
 class QuotationRuleValidate:
     @classmethod
     def validate_config_role(cls, validate_data):
@@ -662,6 +684,14 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_shipping(cls, value):
         return QuotationCommonValidate().validate_shipping(value=value)
+
+    @classmethod
+    def validate_product_quantity(cls, value):
+        return QuotationValueValidate.validate_quantity(value=value)
+
+    @classmethod
+    def validate_product_unit_price(cls, value):
+        return QuotationValueValidate.validate_price(value=value)
 
 
 class QuotationProductsListSerializer(serializers.ModelSerializer):
@@ -848,6 +878,14 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_warehouse(cls, value):
         return QuotationCommonValidate().validate_warehouse(value=value)
+
+    @classmethod
+    def validate_product_quantity(cls, value):
+        return QuotationValueValidate.validate_quantity(value=value)
+
+    @classmethod
+    def validate_product_cost_price(cls, value):
+        return QuotationValueValidate.validate_price(value=value)
 
 
 class QuotationCostsListSerializer(serializers.ModelSerializer):

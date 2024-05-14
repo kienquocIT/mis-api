@@ -573,6 +573,22 @@ class SaleOrderCommonValidate:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
 
 
+class SaleOrderValueValidate:
+    @classmethod
+    def validate_quantity(cls, value):
+        if isinstance(value, float):
+            if value > 0:
+                return value
+        raise serializers.ValidationError({'product_quantity': SaleMsg.QUANTITY_VALID})
+
+    @classmethod
+    def validate_price(cls, value):
+        if isinstance(value, float):
+            if value > 0:
+                return value
+        raise serializers.ValidationError({'product_price': SaleMsg.PRICE_VALID})
+
+
 class SaleOrderRuleValidate:
     @classmethod
     def validate_config_role(cls, validate_data):
@@ -688,6 +704,14 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_shipping(cls, value):
         return SaleOrderCommonValidate().validate_shipping(value=value)
+
+    @classmethod
+    def validate_product_quantity(cls, value):
+        return SaleOrderValueValidate.validate_quantity(value=value)
+
+    @classmethod
+    def validate_product_unit_price(cls, value):
+        return SaleOrderValueValidate.validate_price(value=value)
 
 
 class SaleOrderProductsListSerializer(serializers.ModelSerializer):
@@ -822,6 +846,14 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_warehouse(cls, value):
         return SaleOrderCommonValidate().validate_warehouse(value=value)
+
+    @classmethod
+    def validate_product_quantity(cls, value):
+        return SaleOrderValueValidate.validate_quantity(value=value)
+
+    @classmethod
+    def validate_product_cost_price(cls, value):
+        return SaleOrderValueValidate.validate_price(value=value)
 
 
 class SaleOrderCostsListSerializer(serializers.ModelSerializer):
