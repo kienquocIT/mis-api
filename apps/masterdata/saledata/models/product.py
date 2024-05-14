@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -240,8 +242,9 @@ class Product(DataAbstractModel):
     def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
         """
         get_type = 0: get quantity
-        get_type = 1: get unit_cost (default)
+        get_type = 1: get cost (default)
         get_type = 2: get value
+        get_type = 3: get [quantity, cost, value]
         else: return 0
         """
         company_obj = Company.objects.filter(id=self.company_id).first()
@@ -261,24 +264,33 @@ class Product(DataAbstractModel):
                             latest_trans.latest_log.current_value
                         ]
                     else:
-                        value_list = [
-                            latest_trans.latest_log.periodic_current_quantity,
-                            latest_trans.latest_log.periodic_current_cost,
-                            latest_trans.latest_log.periodic_current_value
-                        ]
+                        opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
+                            warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                        ).first()
+                        if opening_value_list_obj:
+                            value_list = [
+                                opening_value_list_obj.opening_balance_quantity,
+                                opening_value_list_obj.opening_balance_cost,
+                                opening_value_list_obj.opening_balance_value
+                            ] if not opening_value_list_obj.periodic_closed else [
+                                opening_value_list_obj.ending_balance_quantity,
+                                opening_value_list_obj.ending_balance_cost,
+                                opening_value_list_obj.ending_balance_value
+                            ]
+                        else:
+                            value_list = [0, 0, 0]
                 else:
                     opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
                         warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
                     ).first()
-                    if opening_value_list_obj:
-                        value_list = [
-                            opening_value_list_obj.opening_balance_quantity,
-                            opening_value_list_obj.opening_balance_cost,
-                            opening_value_list_obj.opening_balance_value
-                        ]
-                    else:
-                        value_list = [0, 0, 0]
-                return value_list[get_type]
+                    value_list = [
+                        opening_value_list_obj.opening_balance_quantity,
+                        opening_value_list_obj.opening_balance_cost,
+                        opening_value_list_obj.opening_balance_value
+                    ] if opening_value_list_obj else [0, 0, 0]
+                if get_type != 3:
+                    return value_list[get_type]
+                return value_list
         return 0
 
     def get_unit_cost_list_of_all_warehouse(self):

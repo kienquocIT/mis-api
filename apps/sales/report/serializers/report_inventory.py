@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse
+from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction
 
 
 class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
@@ -77,7 +77,9 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period(data_stock_activity)
+                this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(
+                    inventory_cost_data, data_stock_activity
+                )
                 result.append({
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
@@ -304,7 +306,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
         )
         # lấy inventory_cost_data của kì hiện tại
-        this_sub_value = obj.get_inventory_cost_data_this_sub_period(data_stock_activity)
+        this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(obj, data_stock_activity)
 
         result = {
             'sum_in_quantity': sum_in_quantity,

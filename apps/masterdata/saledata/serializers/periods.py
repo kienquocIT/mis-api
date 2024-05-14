@@ -355,9 +355,13 @@ def update_balance_data(balance_data, instance):
                                 opening_balance_value=float(item.get('value')),
                                 opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
                                 periodic_ending_balance_quantity=float(item.get('quantity')),
-                                periodic_ending_balance_value=float(item.get('value')),
-                                periodic_ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                                for_balance=True
+                                periodic_ending_balance_value=0,
+                                periodic_ending_balance_cost=0,
+                                for_balance=True,
+                                sum_input_quantity=float(item.get('quantity')),
+                                sum_input_value=float(item.get('value')),
+                                sum_output_quantity=0,
+                                periodic_closed=False
                             )
                         )
 

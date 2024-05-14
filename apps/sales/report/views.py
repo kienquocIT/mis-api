@@ -303,25 +303,30 @@ class ReportInventoryList(BaseListMixin):
 
     @classmethod
     def update_value_list_for_this_sub(cls, tenant, company, sub, prd_id, wh_id, period_mapped, sub_period_order):
-        quantity = None
-        cost = None
-        value = None
+        quantity = 0
+        cost = 0
+        value = 0
         if int(sub_period_order) <= (datetime.datetime.now().month - period_mapped.space_month):
-            latest_trans = LoggingSubFunction.get_latest_trans(prd_id, wh_id, period_mapped, sub_period_order, True)
+            latest_trans = LoggingSubFunction.get_latest_trans_by_month(prd_id, wh_id, period_mapped, sub_period_order)
             if latest_trans:
-                quantity = latest_trans.latest_log.current_quantity
-                cost = latest_trans.latest_log.current_cost
-                value = latest_trans.latest_log.current_value
+                if company.companyconfig.definition_inventory_valuation == 0:
+                    quantity = latest_trans.current_quantity
+                    cost = latest_trans.current_cost
+                    value = latest_trans.current_value
+                else:
+                    quantity = latest_trans.periodic_current_quantity
+                    cost = latest_trans.periodic_current_cost
+                    value = latest_trans.periodic_current_value
             else:
                 opening_value_list_obj = ReportInventoryProductWarehouse.objects.filter(
-                    product_id=prd_id, warehouse_id=wh_id, sub_period_order__lt=sub_period_order,
-                    period_mapped=period_mapped, for_balance=True
+                    product_id=prd_id, warehouse_id=wh_id, period_mapped=period_mapped, for_balance=True
                 ).first()
                 if opening_value_list_obj:
-                    quantity = opening_value_list_obj.opening_balance_quantity
-                    cost = opening_value_list_obj.opening_balance_cost
-                    value = opening_value_list_obj.opening_balance_value
-        if quantity and cost and value:
+                    if opening_value_list_obj.sub_period_order < opening_value_list_obj:
+                        quantity = opening_value_list_obj.opening_balance_quantity
+                        cost = opening_value_list_obj.opening_balance_cost
+                        value = opening_value_list_obj.opening_balance_value
+
             if company.companyconfig.definition_inventory_valuation == 0:
                 ReportInventoryProductWarehouse.objects.create(
                     tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
@@ -372,6 +377,39 @@ class ReportInventoryList(BaseListMixin):
             sub.save(update_fields=['run_report_inventory'])
         return True
 
+    @classmethod
+    def calculate_ending_cumulative_value(cls, period_mapped, sub_period_order, product_id_list, tenant, company):
+        wh_id_list = set(
+            WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
+        )
+        for warehouse_id in wh_id_list:
+            for product_id in product_id_list:
+                inventory_cost_data_obj = ReportInventoryProductWarehouse.objects.filter(
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    product_id=product_id,
+                    warehouse_id=warehouse_id
+                )
+                if not inventory_cost_data_obj.periodic_closed:
+                    sum_input_quantity = inventory_cost_data_obj.sum_input_quantity
+                    sum_input_value = inventory_cost_data_obj.sum_input_value
+                    sum_output_quantity = inventory_cost_data_obj.sum_output_quantity
+
+                    quantity = sum_input_quantity - sum_output_quantity
+                    cost = sum_input_value / sum_input_quantity
+                    value = quantity * cost
+
+                    inventory_cost_data_obj.periodic_ending_balance_quantity = quantity
+                    inventory_cost_data_obj.periodic_ending_balance_cost = cost
+                    inventory_cost_data_obj.periodic_ending_balance_value = value
+                    inventory_cost_data_obj.periodic_closed = True
+                    inventory_cost_data_obj.save(update_fields=[
+                        'periodic_ending_balance_quantity',
+                        'periodic_ending_balance_cost',
+                        'periodic_ending_balance_value',
+                        'periodic_closed'
+                    ])
+
     def get_queryset(self):
         try:
             tenant = self.request.user.tenant_current
@@ -394,6 +432,11 @@ class ReportInventoryList(BaseListMixin):
             prd_id_list = set(
                 Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
             )
+
+            div = company.companyconfig.definition_inventory_valuation
+            if 'is_calculate' in self.request.query_params['period_mapped'] and div == 1:
+                self.calculate_ending_cumulative_value(period_mapped, sub_period_order, prd_id_list, tenant, company)
+
             self.create_this_sub_record(tenant, company, prd_id_list, period_mapped, sub_period_order)
             return super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
