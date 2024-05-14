@@ -2,10 +2,9 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
-from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
-    SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer,\
-    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer
+    SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
+    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
@@ -330,33 +329,11 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
         return True
 
-    @classmethod
-    def validate_total_payment_term(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['sale_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                date = payment_stage.get('date', '')
-                due_date = payment_stage.get('due_date', '')
-                if not date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
-        return True
-
     def validate(self, validate_data):
+        SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
-        self.validate_total_payment_term(validate_data=validate_data)
+        SaleOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -509,29 +486,6 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
-    @classmethod
-    def validate_total_payment_term(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['sale_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                date = payment_stage.get('date', '')
-                due_date = payment_stage.get('due_date', '')
-                if not date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
-        return True
-
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
@@ -558,9 +512,10 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         })
 
     def validate(self, validate_data):
+        SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        SaleOrderCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
-        self.validate_total_payment_term(validate_data=validate_data)
+        SaleOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
