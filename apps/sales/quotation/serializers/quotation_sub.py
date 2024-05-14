@@ -766,7 +766,7 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     unit_of_measure = serializers.UUIDField(allow_null=True)
     tax = serializers.UUIDField(required=False)
     shipping = serializers.UUIDField(allow_null=True)
-    warehouse = serializers.UUIDField(allow_null=True)
+    warehouse = serializers.UUIDField(allow_null=True, required=False)
 
     class Meta:
         model = QuotationCost

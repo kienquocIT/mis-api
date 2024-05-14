@@ -44,7 +44,7 @@ class ReportRevenueList(BaseListMixin):
             "sale_order",
             "sale_order__customer",
             "sale_order__employee_inherit",
-        )
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Report revenue List",
@@ -80,7 +80,7 @@ class ReportProductList(BaseListMixin):
         return super().get_queryset().select_related(
             "product",
             "product__general_product_category",
-        )
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Report product List",
@@ -116,7 +116,7 @@ class ReportCustomerList(BaseListMixin):
             "customer",
             "customer__industry",
             "employee_inherit"
-        )
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Report customer List",
@@ -192,7 +192,7 @@ class ReportCashflowList(BaseListMixin):
         return super().get_queryset().select_related(
             "sale_order",
             "purchase_order",
-        )
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Report cashflow list",
@@ -407,7 +407,7 @@ class ReportGeneralList(BaseListMixin):
                     'revenue_plan_mapped__period_mapped',
                 ),
             ),
-        )
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Report general List",
