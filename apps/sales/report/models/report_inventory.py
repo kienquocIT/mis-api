@@ -372,7 +372,7 @@ class LoggingSubFunction:
                     if log.stock_type == 1:
                         # nếu là input thì cộng tổng SL nhập và tổng Value nhập
                         inventory_cost_data_item.sum_input_quantity += log.quantity
-                        inventory_cost_data_item.sum_input_value = log.quantity * log.cost
+                        inventory_cost_data_item.sum_input_value += log.quantity * log.cost
                     else:
                         # nếu là xuất thì cập nhập SL xuất
                         inventory_cost_data_item.sum_output_quantity += log.quantity
@@ -521,9 +521,14 @@ class LoggingSubFunction:
 
         # Begin get Ending
         if len(data_stock_activity) > 0:
-            ending_quantity = data_stock_activity[-1]['current_quantity']
-            ending_cost = data_stock_activity[-1]['current_cost']
-            ending_value = data_stock_activity[-1]['current_value']
+            if inventory_cost_data_obj.company.companyconfig == 0:
+                ending_quantity = data_stock_activity[-1]['current_quantity']
+                ending_cost = data_stock_activity[-1]['current_cost']
+                ending_value = data_stock_activity[-1]['current_value']
+            else:
+                ending_quantity = inventory_cost_data_obj.periodic_ending_balance_quantity
+                ending_cost = inventory_cost_data_obj.periodic_ending_balance_cost
+                ending_value = inventory_cost_data_obj.periodic_ending_balance_value
         else:
             ending_quantity = opening_quantity
             ending_cost = opening_cost

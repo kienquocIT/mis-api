@@ -90,7 +90,8 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
                     'ending_balance_value': this_sub_value['ending_balance_value'],
                     'ending_balance_cost': this_sub_value['ending_balance_cost'],
-                    'data_stock_activity': data_stock_activity
+                    'data_stock_activity': data_stock_activity,
+                    'periodic_closed': inventory_cost_data.periodic_closed
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
 

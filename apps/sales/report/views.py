@@ -213,10 +213,56 @@ class ReportInventoryDetailList(BaseListMixin):
     serializer_list = ReportInventoryDetailListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    @classmethod
+    def calculate_ending_cumulative_value(cls, period_mapped, sub_period_order, tenant_obj, company_obj):
+        product_id_list = set(Product.objects.filter(
+            tenant=tenant_obj, company=company_obj
+        ).values_list('id', flat=True))
+        warehouse_id_list = set(WareHouse.objects.filter(
+            tenant=tenant_obj, company=company_obj
+        ).values_list('id', flat=True))
+        for warehouse_id in warehouse_id_list:
+            for product_id in product_id_list:
+                inventory_cost_data_obj = ReportInventoryProductWarehouse.objects.filter(
+                    period_mapped=period_mapped, sub_period_order=sub_period_order,
+                    product_id=product_id, warehouse_id=warehouse_id
+                ).first()
+                if inventory_cost_data_obj:
+                    if not inventory_cost_data_obj.periodic_closed:
+                        sum_input_quantity = inventory_cost_data_obj.sum_input_quantity
+                        sum_input_value = inventory_cost_data_obj.sum_input_value
+                        sum_output_quantity = inventory_cost_data_obj.sum_output_quantity
+
+                        value_list = {
+                            'quantity': sum_input_quantity - sum_output_quantity,
+                            'cost': sum_input_value / sum_input_quantity,
+                            'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
+                        }
+
+                        inventory_cost_data_obj.periodic_ending_balance_quantity = value_list['quantity']
+                        inventory_cost_data_obj.periodic_ending_balance_cost = value_list['cost']
+                        inventory_cost_data_obj.periodic_ending_balance_value = value_list['value']
+                        inventory_cost_data_obj.periodic_closed = True
+                        inventory_cost_data_obj.save(update_fields=[
+                            'periodic_ending_balance_quantity',
+                            'periodic_ending_balance_cost',
+                            'periodic_ending_balance_value',
+                            'periodic_closed'
+                        ])
+        return True
+
     def get_queryset(self):
         try:
             period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
             sub_period_order = self.request.query_params['sub_period_order']
+
+            tenant_obj = self.request.user.tenant_current
+            company_obj = self.request.user.company_current
+            div = self.request.user.company_current.companyconfig.definition_inventory_valuation
+            if 'is_calculate' in self.request.query_params and div == 1:
+                self.calculate_ending_cumulative_value(
+                    period_mapped, sub_period_order, tenant_obj, company_obj
+                )
 
             if self.request.query_params['product_id_list'] != '':
                 prd_id_list = self.request.query_params['product_id_list'].split(',')
@@ -377,41 +423,6 @@ class ReportInventoryList(BaseListMixin):
             sub.save(update_fields=['run_report_inventory'])
         return True
 
-    @classmethod
-    def calculate_ending_cumulative_value(cls, period_mapped, sub_period_order, product_id_list, tenant, company):
-        wh_id_list = set(
-            WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
-        )
-        for warehouse_id in wh_id_list:
-            for product_id in product_id_list:
-                inventory_cost_data_obj = ReportInventoryProductWarehouse.objects.filter(
-                    period_mapped=period_mapped,
-                    sub_period_order=sub_period_order,
-                    product_id=product_id,
-                    warehouse_id=warehouse_id
-                )
-                if not inventory_cost_data_obj.periodic_closed:
-                    sum_input_quantity = inventory_cost_data_obj.sum_input_quantity
-                    sum_input_value = inventory_cost_data_obj.sum_input_value
-                    sum_output_quantity = inventory_cost_data_obj.sum_output_quantity
-
-                    value_list = {
-                        'quantity': sum_input_quantity - sum_output_quantity,
-                        'cost': sum_input_value / sum_input_quantity,
-                        'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
-                    }
-
-                    inventory_cost_data_obj.periodic_ending_balance_quantity = value_list['quantity']
-                    inventory_cost_data_obj.periodic_ending_balance_cost = value_list['cost']
-                    inventory_cost_data_obj.periodic_ending_balance_value = value_list['value']
-                    inventory_cost_data_obj.periodic_closed = True
-                    inventory_cost_data_obj.save(update_fields=[
-                        'periodic_ending_balance_quantity',
-                        'periodic_ending_balance_cost',
-                        'periodic_ending_balance_value',
-                        'periodic_closed'
-                    ])
-
     def get_queryset(self):
         try:
             tenant = self.request.user.tenant_current
@@ -434,10 +445,6 @@ class ReportInventoryList(BaseListMixin):
             prd_id_list = set(
                 Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
             )
-
-            div = company.companyconfig.definition_inventory_valuation
-            if 'is_calculate' in self.request.query_params['period_mapped'] and div == 1:
-                self.calculate_ending_cumulative_value(period_mapped, sub_period_order, prd_id_list, tenant, company)
 
             self.create_this_sub_record(tenant, company, prd_id_list, period_mapped, sub_period_order)
             return super().get_queryset().select_related(
