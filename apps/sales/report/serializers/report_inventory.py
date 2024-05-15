@@ -47,9 +47,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             data_stock_activity = []
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = inventory_cost_data_list.filter(
-                warehouse_id=wh_id,
-                period_mapped_id=obj.period_mapped_id,
-                sub_period_order=obj.sub_period_order
+                warehouse_id=wh_id, period_mapped_id=obj.period_mapped_id, sub_period_order=obj.sub_period_order
             ).first()
             if inventory_cost_data:
                 # lấy các hoạt động nhập-xuất
