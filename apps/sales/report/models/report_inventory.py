@@ -120,6 +120,33 @@ class ReportInventorySub(DataAbstractModel):
         period_mapped = Periods.objects.filter(tenant=tenant_obj, company=company_obj, fiscal_year=fiscal_year).first()
         if period_mapped:
             sub_period_order = activities_obj_date.month - period_mapped.space_month
+
+            if company_obj.companyconfig.definition_inventory_valuation == 1:
+                if sub_period_order == 1:
+                    last_period = Periods.objects.filter(
+                        tenant=tenant_obj, company=company_obj,
+                        fiscal_year=period_mapped.fiscal_year - 1
+                    ).first()
+                    last_sub_record = ReportInventoryProductWarehouse.objects.filter(
+                        period_mapped=last_period,
+                        sub_period_order=12,
+                        periodic_closed=False
+                    ).exists()
+                    if last_sub_record:
+                        LoggingSubFunction.calculate_ending_cumulative_value(
+                            last_period, 12, tenant_obj, company_obj
+                        )
+                else:
+                    last_sub_record = ReportInventoryProductWarehouse.objects.filter(
+                        period_mapped=period_mapped,
+                        sub_period_order=sub_period_order - 1,
+                        periodic_closed=False
+                    ).exists()
+                    if last_sub_record:
+                        LoggingSubFunction.calculate_ending_cumulative_value(
+                            period_mapped, sub_period_order - 1, tenant_obj, company_obj
+                        )
+
             new_logs = cls.create_new_logs(activities_obj, activities_data, period_mapped, sub_period_order)
             for log in new_logs:
                 cls.update_inventory_value_for_log(log, period_mapped, sub_period_order)
