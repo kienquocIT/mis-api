@@ -307,6 +307,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         # lấy inventory_cost_data của kì hiện tại
         this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(obj, data_stock_activity)
 
+        if div:
+            sum_out_value = sum_out_quantity * this_sub_value['ending_balance_cost']
         result = {
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
@@ -318,6 +320,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
             'ending_balance_value': this_sub_value['ending_balance_value'],
             'ending_balance_cost': this_sub_value['ending_balance_cost'],
-            'data_stock_activity': data_stock_activity
+            'data_stock_activity': data_stock_activity,
+            'periodic_closed': obj.periodic_closed
         }
         return result

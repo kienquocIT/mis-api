@@ -120,8 +120,8 @@ class GoodsReceipt(DataAbstractModel):
                     lot_data = [{
                         'lot_id': str(lot.id),
                         'lot_number': lot.lot_number,
-                        'lot_quantity': lot.quantity_import,
-                        'lot_value': lot.quantity_import * item.product_unit_price,
+                        'lot_quantity': child.quantity_import,
+                        'lot_value': child.quantity_import * item.product_unit_price,
                         'lot_expire_date': str(lot.expire_date)
                     } for lot in child.goods_receipt_lot_gr_warehouse.all()]
 
@@ -135,14 +135,14 @@ class GoodsReceipt(DataAbstractModel):
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
                         'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
-                        'quantity': item.quantity_import,
+                        'quantity': child.quantity_import,
                         'cost': item.product_unit_price,
                         'value': item.product_subtotal_price,
                         'lot_data': lot_data
                     })
                 else:
-                    existed['quantity'] += item.quantity_import
-                    existed['value'] += item.product_unit_price * item.quantity_import
+                    existed['quantity'] += child.quantity_import
+                    existed['value'] += item.product_unit_price * child.quantity_import
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
