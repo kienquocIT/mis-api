@@ -166,10 +166,10 @@ class ReportInventorySub(DataAbstractModel):
             div = activities_obj.company.companyconfig.definition_inventory_valuation
             cost = LoggingSubFunction.get_latest_value(
                 item['product'].id, item['warehouse'].id, period_mapped, div
-            ) if item['stock_type'] == -1 else item['cost']
+            )['cost'] if item['stock_type'] == -1 else item['cost']
 
             # tạo log
-            new_log = ReportInventorySub(
+            new_log = cls(
                 tenant=activities_obj.tenant,
                 company=activities_obj.company,
                 report_inventory=report_inventory_obj,
@@ -190,7 +190,7 @@ class ReportInventorySub(DataAbstractModel):
             )
             bulk_info.append(new_log)
             log_order_number += 1
-        new_logs = ReportInventorySub.objects.bulk_create(bulk_info)
+        new_logs = cls.objects.bulk_create(bulk_info)
         return new_logs
 
     @classmethod
@@ -463,8 +463,7 @@ class LoggingSubFunction:
                 'value': latest_trans.periodic_current_value
             }
             return value_list
-        value_list = cls.get_opening_balance_data(product_id, warehouse_id, period_mapped, 3)
-        return value_list
+        return cls.get_opening_balance_data(product_id, warehouse_id, period_mapped, 3)
 
     @classmethod
     def calculate_new_value_list_in_perpetual_inventory(cls, log, latest_value):
