@@ -253,8 +253,7 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        create_item_mapped(instance
-                           )
+        create_item_mapped(instance)
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
