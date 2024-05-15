@@ -40,10 +40,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'rate_value',
             'remark',
             'order',
-            'is_indicator',
-            'is_plan',
-            'is_delivery',
-            'is_payment',
+            'acceptance_affect_by',
         )
 
     @classmethod

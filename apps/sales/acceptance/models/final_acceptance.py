@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, ACCEPTANCE_AFFECT_BY
 
 
 class FinalAcceptance(DataAbstractModel):
@@ -19,7 +19,7 @@ class FinalAcceptance(DataAbstractModel):
     )
 
     @classmethod
-    def create_final_acceptance_from_so(
+    def push_final_acceptance(
             cls,
             tenant_id,
             company_id,
@@ -121,17 +121,12 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
     actual_value_after_tax = models.FloatField(default=0)
     different_value = models.FloatField(default=0)
     rate_value = models.FloatField(default=0)
-    remark = models.CharField(
-        verbose_name='remark',
-        max_length=500,
-        blank=True,
-        null=True,
-    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True,)
     order = models.IntegerField(default=1)
-    is_indicator = models.BooleanField(default=False)
-    is_plan = models.BooleanField(default=False)
-    is_delivery = models.BooleanField(default=False)
-    is_payment = models.BooleanField(default=False)
+    acceptance_affect_by = models.SmallIntegerField(
+        default=1,
+        help_text='choices= ' + str(ACCEPTANCE_AFFECT_BY),
+    )
 
     @classmethod
     def create_final_acceptance_indicators(

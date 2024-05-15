@@ -58,7 +58,9 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'content_type',
             'properties',
             'opp_stage_operator',
-            'stage_compare_data'
+            'stage_compare_data',
+            'app_code_md',
+            'example',
         )
 
 

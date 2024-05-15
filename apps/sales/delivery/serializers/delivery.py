@@ -175,7 +175,7 @@ class DeliFinalAcceptanceHandle:
     def main_handle(cls, instance, validated_product):
         list_data_indicator = []
         for item in validated_product:
-            # config final acceptance
+            # setup final acceptance
             actual_value = 0
             if all(key in item for key in ('product_id', 'delivery_data')):
                 if Product.objects.filter(id=item['product_id']).exists():
@@ -195,16 +195,16 @@ class DeliFinalAcceptanceHandle:
                         'delivery_sub_id': instance.id,
                         'product_id': item['product_id'],
                         'actual_value': actual_value,
-                        'is_delivery': True,
+                        'acceptance_affect_by': 3,
                     })
-        FinalAcceptance.create_final_acceptance_from_so(
+        FinalAcceptance.push_final_acceptance(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             sale_order_id=instance.order_delivery.sale_order_id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
             opportunity_id=instance.order_delivery.sale_order.opportunity_id,
-            list_data_indicator=list_data_indicator
+            list_data_indicator=list_data_indicator,
         )
         return True
 

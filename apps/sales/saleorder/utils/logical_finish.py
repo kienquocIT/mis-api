@@ -127,18 +127,18 @@ class SOFinishHandler:
                 'different_value': 0 - so_ind.indicator_value,
                 'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
                 'order': so_ind.order,
-                'is_indicator': True,
+                'acceptance_affect_by': 1,
             }
             for so_ind in instance.sale_order_indicator_sale_order.all()
         ]
-        FinalAcceptance.create_final_acceptance_from_so(
+        FinalAcceptance.push_final_acceptance(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             sale_order_id=instance.id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
             opportunity_id=instance.opportunity_id,
-            list_data_indicator=list_data_indicator
+            list_data_indicator=list_data_indicator,
         )
         return True
 
