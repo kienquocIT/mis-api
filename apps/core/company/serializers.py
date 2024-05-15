@@ -9,7 +9,9 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
+from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
@@ -98,6 +100,20 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError({'default_inventory_value_method': CompanyMsg.DIV_METHOD_NOT_VALID})
 
+    def validate(self, validate_data):
+        tenant_obj = self.instance.company.tenant
+        company_obj = self.instance.company
+        has_trans = ReportInventorySub.objects.filter(
+            tenant=tenant_obj, company=company_obj,
+            report_inventory__period_mapped__fiscal_year=datetime.datetime.now().year
+        ).exists()
+        old_definition_inventory_valuation_config = company_obj.companyconfig.definition_inventory_valuation
+        if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
+            raise serializers.ValidationError({
+                'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
+            })
+        return validate_data
+
     class Meta:
         model = CompanyConfig
         fields = (
@@ -126,6 +142,18 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_warehouse',
             'cost_per_lot_batch'
         ])
+        this_period = Periods.objects.filter(
+            tenant=instance.company.tenant,
+            company=instance.company,
+            fiscal_year=datetime.datetime.now().year
+        ).first()
+        if this_period:
+            this_period.definition_inventory_valuation = instance.definition_inventory_valuation
+            this_period.save(update_fields=['definition_inventory_valuation'])
+        else:
+            raise serializers.ValidationError(
+                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+            )
 
         if sub_domain:
             instance.company.sub_domain = sub_domain
