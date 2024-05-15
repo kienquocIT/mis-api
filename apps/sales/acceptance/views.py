@@ -73,7 +73,7 @@ class FinalAcceptanceDetail(
         request_body=FinalAcceptanceUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='acceptance', model_code='finalacceptance', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):

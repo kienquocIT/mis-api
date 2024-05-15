@@ -112,7 +112,11 @@ class FinalAcceptanceListSerializer(serializers.ModelSerializer):
         model = FinalAcceptance
         fields = (
             'id',
+            'code',
             'final_acceptance_indicator',
+            'system_status',
+            'date_approved',
+            'workflow_runtime_id',
         )
 
     @classmethod
@@ -122,12 +126,17 @@ class FinalAcceptanceListSerializer(serializers.ModelSerializer):
 
 class FinalAcceptanceUpdateSerializer(serializers.ModelSerializer):
     final_acceptance_indicator = serializers.JSONField(required=False)
+    employee_inherit_id = serializers.UUIDField(
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = FinalAcceptance
         fields = (
             'final_acceptance_indicator',
             'system_status',
+            'employee_inherit_id',
         )
 
     @decorator_run_workflow
