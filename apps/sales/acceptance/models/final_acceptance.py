@@ -157,6 +157,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_product",
         null=True
     )
+    ar_invoice = models.ForeignKey(
+        'arinvoice.ARInvoice',
+        on_delete=models.CASCADE,
+        verbose_name="ar invoice",
+        related_name="fa_indicator_ar_invoice",
+        null=True,
+    )
     indicator_value = models.FloatField(default=0)
     actual_value = models.FloatField(default=0)
     actual_value_after_tax = models.FloatField(default=0)

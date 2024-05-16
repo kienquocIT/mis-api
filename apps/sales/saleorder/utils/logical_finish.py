@@ -115,7 +115,7 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def push_to_final_acceptance(cls, instance):
+    def push_final_acceptance_so(cls, instance):
         list_data_indicator = [
             {
                 'tenant_id': instance.tenant_id,

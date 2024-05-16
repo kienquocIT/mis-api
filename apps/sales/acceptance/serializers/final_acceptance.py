@@ -21,6 +21,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
     expense_item = serializers.SerializerMethodField()
     labor_item = serializers.SerializerMethodField()
     delivery_sub = serializers.SerializerMethodField()
+    ar_invoice = serializers.SerializerMethodField()
 
     class Meta:
         model = FinalAcceptanceIndicator
@@ -33,6 +34,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'expense_item',
             'labor_item',
             'delivery_sub',
+            'ar_invoice',
             'indicator_value',
             'actual_value',
             'actual_value_after_tax',
@@ -103,6 +105,14 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'title': obj.delivery_sub.title,
             'code': obj.delivery_sub.code,
         } if obj.delivery_sub else {}
+
+    @classmethod
+    def get_ar_invoice(cls, obj):
+        return {
+            'id': obj.ar_invoice_id,
+            'title': obj.ar_invoice.title,
+            'code': obj.ar_invoice.code,
+        } if obj.ar_invoice else {}
 
 
 class FinalAcceptanceListSerializer(serializers.ModelSerializer):

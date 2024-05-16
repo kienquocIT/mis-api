@@ -81,7 +81,7 @@ class Payment(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def create_final_acceptance(cls, instance):
+    def push_final_acceptance_payment(cls, instance):
         sale_order_id = None
         opportunity_id = None
         if instance.sale_order_mapped:
@@ -158,7 +158,7 @@ class Payment(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.create_final_acceptance(self)
+                self.push_final_acceptance_payment(self)
                 self.convert_ap_cost(self)
 
         super().save(*args, **kwargs)

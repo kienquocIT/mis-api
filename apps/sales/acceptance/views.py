@@ -29,6 +29,7 @@ class FinalAcceptanceList(BaseListMixin):
                     "expense_item",
                     "labor_item",
                     "delivery_sub",
+                    "ar_invoice",
                 )
             ),
         )

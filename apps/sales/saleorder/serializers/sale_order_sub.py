@@ -905,15 +905,11 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
-    # indicator = serializers.CharField(
-    #     max_length=550
-    # )
     quotation_indicator = serializers.UUIDField()
 
     class Meta:
         model = SaleOrderIndicator
         fields = (
-            # 'indicator',
             'quotation_indicator',
             'indicator_value',
             'indicator_rate',
@@ -922,10 +918,6 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
             'difference_indicator_value',
             'order',
         )
-
-    # @classmethod
-    # def validate_indicator(cls, value):
-    #     return SaleOrderCommonValidate().validate_indicator(value=value)
 
     @classmethod
     def validate_quotation_indicator(cls, value):
