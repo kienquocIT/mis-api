@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse
+from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction
 
 
 class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
@@ -35,6 +35,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     def get_stock_activities(self, obj):
+        div = self.context.get('definition_inventory_valuation')
         # danh sách dữ liệu giá cost hàng tồn kho của sản phẩm (cost_data)
         inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
         #                                    SP
@@ -46,36 +47,37 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             data_stock_activity = []
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = inventory_cost_data_list.filter(
-                warehouse_id=wh_id,
-                period_mapped_id=obj.period_mapped_id,
-                sub_period_order=obj.sub_period_order
+                warehouse_id=wh_id, period_mapped_id=obj.period_mapped_id, sub_period_order=obj.sub_period_order
             ).first()
             if inventory_cost_data:
                 # lấy các hoạt động nhập-xuất
-                for root in self.context.get('all_roots_by_month', []).filter(
+                for log in self.context.get('all_logs_by_month', []).filter(
                     warehouse_id=wh_id, product_id=obj.product_id
                 ):
                     data_stock_activity.append({
-                        'system_date': root.system_date,
-                        'posting_date': root.posting_date,
-                        'document_date': root.document_date,
-                        'stock_type': root.stock_type,
-                        'trans_code': root.trans_code,
-                        'trans_title': root.trans_title,
-                        'quantity': root.quantity,
-                        'cost': root.cost,
-                        'value': root.value,
-                        'current_quantity': root.current_quantity,
-                        'current_cost': root.current_cost,
-                        'current_value': root.current_value,
+                        'system_date': log.system_date,
+                        'posting_date': log.posting_date,
+                        'document_date': log.document_date,
+                        'stock_type': log.stock_type,
+                        'trans_code': log.trans_code,
+                        'trans_title': log.trans_title,
+                        'quantity': log.quantity,
+                        'cost': log.cost,
+                        'value': log.value,
+                        'current_quantity': log.current_quantity if div == 0 else log.periodic_current_quantity,
+                        'current_cost': log.current_cost if div == 0 else log.periodic_current_cost,
+                        'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                        'log_order': log.log_order
                     })
                 # sắp xếp lại
                 data_stock_activity = sorted(
-                    data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
+                    data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = inventory_cost_data.get_inventory_cost_data_this_sub_period(data_stock_activity)
+                this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(
+                    inventory_cost_data, data_stock_activity
+                )
                 result.append({
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
@@ -86,7 +88,8 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
                     'ending_balance_value': this_sub_value['ending_balance_value'],
                     'ending_balance_cost': this_sub_value['ending_balance_cost'],
-                    'data_stock_activity': data_stock_activity
+                    'data_stock_activity': data_stock_activity,
+                    'periodic_closed': inventory_cost_data.periodic_closed
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
 
@@ -194,7 +197,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
-    def get_data_stock_activity_for_in(cls, log, data_stock_activity):
+    def get_data_stock_activity_for_in(cls, log, data_stock_activity, div):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
                 data_stock_activity.append({
@@ -205,12 +208,13 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'in_value': lot.get('lot_value'),
                     'out_quantity': '',
                     'out_value': '',
-                    'current_quantity': log.current_quantity,
-                    'current_cost': log.current_cost,
-                    'current_value': log.current_value,
+                    'current_quantity': log.current_quantity if div == 0 else log.periodic_current_quantity,
+                    'current_cost': log.current_cost if div == 0 else log.periodic_current_cost,
+                    'current_value': log.current_value if div == 0 else log.periodic_current_value,
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
-                    'expire_date': lot.get('lot_expire_date')
+                    'expire_date': lot.get('lot_expire_date'),
+                    'log_order': log.log_order
                 })
         else:
             data_stock_activity.append({
@@ -221,18 +225,19 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'in_value': log.cost * log.quantity,
                 'out_quantity': '',
                 'out_value': '',
-                'current_quantity': log.current_quantity,
-                'current_cost': log.current_cost,
-                'current_value': log.current_value,
+                'current_quantity': log.current_quantity if div == 0 else log.periodic_current_quantity,
+                'current_cost': log.current_cost if div == 0 else log.periodic_current_cost,
+                'current_value': log.current_value if div == 0 else log.periodic_current_value,
                 'system_date': log.system_date,
                 'lot_id': '',
                 'lot_number': '',
-                'expire_date': ''
+                'expire_date': '',
+                'log_order': log.log_order
             })
         return data_stock_activity
 
     @classmethod
-    def get_data_stock_activity_for_out(cls, log, data_stock_activity):
+    def get_data_stock_activity_for_out(cls, log, data_stock_activity, div):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
                 data_stock_activity.append({
@@ -243,12 +248,13 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'in_value': '',
                     'out_quantity': lot.get('lot_quantity'),
                     'out_value': lot.get('lot_value'),
-                    'current_quantity': log.current_quantity,
-                    'current_cost': log.current_cost,
-                    'current_value': log.current_value,
+                    'current_quantity': log.current_quantity if div == 0 else log.periodic_current_quantity,
+                    'current_cost': log.current_cost if div == 0 else log.periodic_current_cost,
+                    'current_value': log.current_value if div == 0 else log.periodic_current_value,
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
-                    'expire_date': lot.get('lot_expire_date')
+                    'expire_date': lot.get('lot_expire_date'),
+                    'log_order': log.log_order
                 })
         else:
             data_stock_activity.append({
@@ -259,16 +265,18 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'in_value': '',
                 'out_quantity': log.quantity,
                 'out_value': log.cost * log.quantity,
-                'current_quantity': log.current_quantity,
-                'current_cost': log.current_cost,
-                'current_value': log.current_value,
+                'current_quantity': log.current_quantity if div == 0 else log.periodic_current_quantity,
+                'current_cost': log.current_cost if div == 0 else log.periodic_current_cost,
+                'current_value': log.current_value if div == 0 else log.periodic_current_value,
                 'system_date': log.system_date,
                 'lot_number': '',
-                'expire_date': ''
+                'expire_date': '',
+                'log_order': log.log_order
             })
         return data_stock_activity
 
     def get_stock_activities(self, obj):
+        div = self.context.get('definition_inventory_valuation')
         date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
         data_stock_activity = []
         sum_in_quantity = 0
@@ -289,16 +297,18 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_value += log.value
                 # lấy detail cho từng TH
                 if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)']:
-                    data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity)
+                    data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity, div)
                 elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
-                    data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity)
+                    data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity, div)
 
         data_stock_activity = sorted(
-            data_stock_activity, key=lambda key: (key['system_date'], key['current_quantity'])
+            data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
         )
         # lấy inventory_cost_data của kì hiện tại
-        this_sub_value = obj.get_inventory_cost_data_this_sub_period(data_stock_activity)
+        this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(obj, data_stock_activity)
 
+        if div:
+            sum_out_value = sum_out_quantity * this_sub_value['ending_balance_cost']
         result = {
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
@@ -310,6 +320,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
             'ending_balance_value': this_sub_value['ending_balance_value'],
             'ending_balance_cost': this_sub_value['ending_balance_cost'],
-            'data_stock_activity': data_stock_activity
+            'data_stock_activity': data_stock_activity,
+            'periodic_closed': obj.periodic_closed
         }
         return result

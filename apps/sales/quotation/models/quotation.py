@@ -23,6 +23,20 @@ class QuotationAppConfig(MasterDataAbstractModel):
         help_text="all config use for Quotation with Opportunity, data record in ConfigLongSale"
     )
     is_require_payment = models.BooleanField(default=False, help_text='flag to know require payment or not')
+    ss_role = models.ManyToManyField(
+        'hr.Role',
+        through="ConfigShortSaleRole",
+        symmetrical=False,
+        blank=True,
+        related_name='config_map_ss_role'
+    )
+    ls_role = models.ManyToManyField(
+        'hr.Role',
+        through="ConfigLongSaleRole",
+        symmetrical=False,
+        blank=True,
+        related_name='config_map_ls_role'
+    )
 
     class Meta:
         verbose_name = 'Quotation Config'
@@ -85,6 +99,48 @@ class ConfigLongSale(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Quotation Long Sale Config'
         verbose_name_plural = 'Quotation Long Sale Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigShortSaleRole(SimpleAbstractModel):
+    quotation_config = models.ForeignKey(
+        QuotationAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="quotation config",
+        related_name="ss_role_config"
+    )
+    role = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        verbose_name="role",
+        related_name="ss_role_role"
+    )
+
+    class Meta:
+        verbose_name = 'Short Sale Role'
+        verbose_name_plural = 'Short Sale Roles'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigLongSaleRole(SimpleAbstractModel):
+    quotation_config = models.ForeignKey(
+        QuotationAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="quotation config",
+        related_name="ls_role_config"
+    )
+    role = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        verbose_name="role",
+        related_name="ls_role_role"
+    )
+
+    class Meta:
+        verbose_name = 'Long Sale Role'
+        verbose_name_plural = 'Long Sale Roles'
         default_permissions = ()
         permissions = ()
 
@@ -463,6 +519,13 @@ class QuotationCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_cost_product",
+        null=True
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="quotation_cost_warehouse",
         null=True
     )
     unit_of_measure = models.ForeignKey(

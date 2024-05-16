@@ -10,11 +10,13 @@ class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
         activities_data = []
-        delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=instance.delivery,
-            product=instance.product
+        delivery_product = ReportInventorySub.objects.filter(
+            warehouse=instance.return_to_warehouse,
+            product=instance.product,
+            trans_id=str(instance.return_to_warehouse_id)
         ).first()
         if delivery_product:
+            delivery_product_cost = delivery_product.current_cost
             lot_data = []
             for lot in product_detail_list:
                 type_value = lot.get('type')
@@ -25,7 +27,7 @@ class GoodsReturnSubSerializerForNonPicking:
                             'lot_id': str(prd_wh_lot.id),
                             'lot_number': prd_wh_lot.lot_number,
                             'lot_quantity': lot['lot_return_number'],
-                            'lot_value': delivery_product.product_unit_price * lot['lot_return_number'],
+                            'lot_value': delivery_product_cost * lot['lot_return_number'],
                             'lot_expire_date': str(prd_wh_lot.expire_date)
                         })
             activities_data.append({
@@ -39,8 +41,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 'trans_code': instance.code,
                 'trans_title': 'Goods return',
                 'quantity': return_quantity,
-                'cost': delivery_product.product_unit_price,
-                'value': delivery_product.product_unit_price * return_quantity,
+                'cost': delivery_product_cost,
+                'value': delivery_product_cost * return_quantity,
                 'lot_data': lot_data
             })
         else:

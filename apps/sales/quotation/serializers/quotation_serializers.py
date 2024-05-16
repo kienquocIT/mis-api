@@ -4,8 +4,8 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
-    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer,\
-    QuotationExpenseSerializer, QuotationIndicatorSerializer
+    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
+    QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
@@ -302,8 +302,9 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         return True
 
     def validate(self, validate_data):
+        QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -471,8 +472,9 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         })
 
     def validate(self, validate_data):
+        QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

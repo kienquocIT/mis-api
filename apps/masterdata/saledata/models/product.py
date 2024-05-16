@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import Company
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
@@ -238,54 +240,101 @@ class Product(DataAbstractModel):
     def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
         """
         get_type = 0: get quantity
-        get_type = 1: get unit_cost (default)
+        get_type = 1: get cost (default)
         get_type = 2: get value
+        get_type = 3: get [quantity, cost, value]
         else: return 0
         """
-        this_period = Periods.objects.filter(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
-        if this_period:
-            sub = self.report_inventory_by_month_product.filter(
-                warehouse_id=warehouse_id,
-                report_inventory__period_mapped=this_period
+        company_obj = Company.objects.filter(id=self.company_id).first()
+        if company_obj:
+            this_period = Periods.objects.filter(
+                tenant_id=self.tenant_id,
+                company_id=self.company_id,
+                fiscal_year=timezone.now().year
             ).first()
-            if not sub:
-                sub = self.report_inventory_by_month_product.filter(
-                    warehouse_id=warehouse_id,
-                    report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
-                ).first()
-            return [sub.current_quantity, sub.current_cost, sub.current_value][get_type] if sub else 0
+            if this_period:
+                latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+                if latest_trans:
+                    if company_obj.companyconfig.definition_inventory_valuation == 0:
+                        value_list = [
+                            latest_trans.latest_log.current_quantity,
+                            latest_trans.latest_log.current_cost,
+                            latest_trans.latest_log.current_value
+                        ]
+                    else:
+                        opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
+                            warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                        ).first()
+                        if opening_value_list_obj:
+                            value_list = [
+                                opening_value_list_obj.opening_balance_quantity,
+                                opening_value_list_obj.opening_balance_cost,
+                                opening_value_list_obj.opening_balance_value
+                            ] if not opening_value_list_obj.periodic_closed else [
+                                opening_value_list_obj.ending_balance_quantity,
+                                opening_value_list_obj.ending_balance_cost,
+                                opening_value_list_obj.ending_balance_value
+                            ]
+                        else:
+                            value_list = [0, 0, 0]
+                else:
+                    opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
+                        warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                    ).first()
+                    value_list = [
+                        opening_value_list_obj.opening_balance_quantity,
+                        opening_value_list_obj.opening_balance_cost,
+                        opening_value_list_obj.opening_balance_value
+                    ] if opening_value_list_obj else [0, 0, 0]
+                if get_type != 3:
+                    return value_list[get_type]
+                return value_list
         return 0
 
     def get_unit_cost_list_of_all_warehouse(self):
-        warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
-        this_period = Periods.objects.filter(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
+        company_obj = Company.objects.filter(id=self.company_id).first()
         unit_cost_list = []
-        if this_period:
-            for warehouse in warehouse_list:
-                warehouse_id = warehouse.id
-                sub = self.report_inventory_by_month_product.filter(
-                    warehouse_id=warehouse_id,
-                    report_inventory__period_mapped=this_period
-                ).first()
-                if not sub:
-                    sub = self.report_inventory_by_month_product.filter(
-                        warehouse_id=warehouse_id,
-                        report_inventory__period_mapped__fiscal_year__lt=this_period.fiscal_year
-                    ).first()
-                unit_cost_list.append({
-                    'warehouse_id': warehouse_id,
-                    'quantity': sub.current_quantity if sub else 0,
-                    'unit_cost': sub.current_cost if sub else 0,
-                    'value': sub.current_value if sub else 0,
-                })
+        if company_obj:
+            warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
+            this_period = Periods.objects.filter(
+                tenant_id=self.tenant_id,
+                company_id=self.company_id,
+                fiscal_year=timezone.now().year
+            ).first()
+            if this_period:
+                for warehouse in warehouse_list:
+                    warehouse_id = warehouse.id
+                    latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+                    if latest_trans:
+                        if company_obj.companyconfig.definition_inventory_valuation == 0:
+                            unit_cost_list.append({
+                                'warehouse_id': warehouse_id,
+                                'quantity': latest_trans.current_quantity,
+                                'unit_cost': latest_trans.current_cost,
+                                'value': latest_trans.current_value,
+                            })
+                        else:
+                            unit_cost_list.append({
+                                'warehouse_id': warehouse_id,
+                                'quantity': latest_trans.periodic_current_quantity,
+                                'unit_cost': latest_trans.periodic_current_cost,
+                                'value': latest_trans.periodic_current_value,
+                            })
+                    else:
+                        opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
+                            warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                        ).first()
+                        if opening_value_list_obj:
+                            unit_cost_list.append({
+                                'warehouse_id': warehouse_id,
+                                'quantity': latest_trans.opening_balance_quantity,
+                                'unit_cost': latest_trans.opening_balance_cost,
+                                'value': latest_trans.opening_balance_value,
+                            })
+                        else:
+                            unit_cost_list.append(
+                                {'warehouse_id': warehouse_id, 'quantity': 0, 'unit_cost': 0, 'value': 0}
+                            )
         return unit_cost_list
 
     @classmethod

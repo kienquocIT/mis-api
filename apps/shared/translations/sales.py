@@ -25,6 +25,9 @@ class SaleMsg:
     DATE_REQUIRED = _('Date is required.')
     DUE_DATE_REQUIRED = _('Due date is required.')
     PAYMENT_REQUIRED_BY_CONFIG = _('Payment is required according to config.')
+    SO_CONFIG_ROLE_CHECK = _('Role can only in short sales or long sales')
+    SO_CONFIG_SS_ROLE_CHECK = _('Opportunity is not allowed because employee in short sales roles')
+    SO_CONFIG_LS_ROLE_CHECK = _('Opportunity is required because employee in long sales roles')
 
 
 class SaleTask:

@@ -260,6 +260,31 @@ def for_none(item, instance, prd_obj, wh_obj):
     raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
 
+def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
+    if ReportInventorySub.objects.filter(
+            tenant=instance.tenant,
+            company=instance.company,
+            product=prd_obj,
+            warehouse=wh_obj
+    ).exists():
+        raise serializers.ValidationError(
+            {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+        )
+
+    if ReportInventoryProductWarehouse.objects.filter(
+            tenant=instance.tenant,
+            company=instance.company,
+            product=prd_obj,
+            warehouse=wh_obj,
+            period_mapped=instance,
+            sub_period_order=sub_period_order_value
+    ).exists():
+        raise serializers.ValidationError(
+            {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
+        )
+    return True
+
+
 def update_balance_data(balance_data, instance):
     """
     Lấy thời gian sử dụng phần mềm
@@ -284,92 +309,111 @@ def update_balance_data(balance_data, instance):
     bulk_info_prd_wh = []
     bulk_info_sn = []
     bulk_info_lot = []
-    for item in balance_data:
-        if item.get('product_id') and item.get('warehouse_id'):
-            prd_obj = Product.objects.filter(id=item.get('product_id')).first()
-            wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+    sub_period_obj = instance.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
+    if sub_period_obj:
+        for item in balance_data:
+            if item.get('product_id') and item.get('warehouse_id'):
+                prd_obj = Product.objects.filter(id=item.get('product_id')).first()
+                wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
 
-            if prd_obj and wh_obj:
-                if ReportInventorySub.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
-                    raise serializers.ValidationError(
-                        {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-                    )
+                if prd_obj and wh_obj:
+                    check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
 
-                if ReportInventoryProductWarehouse.objects.filter(
-                    product=prd_obj,
-                    warehouse=wh_obj,
-                    period_mapped=instance,
-                    sub_period_order=sub_period_order_value
-                ).first():
-                    raise serializers.ValidationError(
-                        {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
-                    )
+                    prd_obj.stock_amount += float(item.get('quantity'))
+                    prd_obj.available_amount += float(item.get('quantity'))
+                    prd_obj.save(update_fields=['stock_amount', 'available_amount'])
+                    if instance.company.companyconfig.definition_inventory_valuation == 0:
+                        bulk_info_rp_prd_wh.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=instance.tenant,
+                                company=instance.company,
+                                product=prd_obj,
+                                warehouse=wh_obj,
+                                period_mapped=instance,
+                                sub_period_order=sub_period_order_value,
+                                sub_period=sub_period_obj,
+                                opening_balance_quantity=float(item.get('quantity')),
+                                opening_balance_value=float(item.get('value')),
+                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                ending_balance_quantity=float(item.get('quantity')),
+                                ending_balance_value=float(item.get('value')),
+                                ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                for_balance=True
+                            )
+                        )
+                    else:
+                        bulk_info_rp_prd_wh.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=instance.tenant,
+                                company=instance.company,
+                                product=prd_obj,
+                                warehouse=wh_obj,
+                                period_mapped=instance,
+                                sub_period_order=sub_period_order_value,
+                                sub_period=sub_period_obj,
+                                opening_balance_quantity=float(item.get('quantity')),
+                                opening_balance_value=float(item.get('value')),
+                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+                                periodic_ending_balance_quantity=float(item.get('quantity')),
+                                periodic_ending_balance_value=0,
+                                periodic_ending_balance_cost=0,
+                                for_balance=True,
+                                sum_input_quantity=float(item.get('quantity')),
+                                sum_input_value=float(item.get('value')),
+                                sum_output_quantity=0,
+                                periodic_closed=False
+                            )
+                        )
 
-                prd_obj.stock_amount += float(item.get('quantity'))
-                prd_obj.available_amount += float(item.get('quantity'))
-                prd_obj.save(update_fields=['stock_amount', 'available_amount'])
-                bulk_info_rp_prd_wh.append(
-                    ReportInventoryProductWarehouse(
-                        product=prd_obj,
-                        warehouse=wh_obj,
-                        period_mapped=instance,
-                        sub_period_order=sub_period_order_value,
-                        opening_balance_quantity=float(item.get('quantity')),
-                        opening_balance_value=float(item.get('value')),
-                        opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                        ending_balance_quantity=float(item.get('quantity')),
-                        ending_balance_value=float(item.get('value')),
-                        ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                        for_balance=True
-                    )
-                )
-
-                if not ReportInventory.objects.filter(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product=prd_obj,
-                        period_mapped=instance,
-                        sub_period_order=sub_period_order_value,
-                ).exists():
-                    bulk_info_inventory.append(
-                        ReportInventory(
+                    if not ReportInventory.objects.filter(
                             tenant_id=instance.tenant_id,
                             company_id=instance.company_id,
-                            employee_inherit=instance.employee_created,
-                            employee_created=instance.employee_created,
                             product=prd_obj,
                             period_mapped=instance,
                             sub_period_order=sub_period_order_value,
+                            sub_period=sub_period_obj,
+                    ).exists():
+                        bulk_info_inventory.append(
+                            ReportInventory(
+                                tenant_id=instance.tenant_id,
+                                company_id=instance.company_id,
+                                employee_inherit=instance.employee_created,
+                                employee_created=instance.employee_created,
+                                product=prd_obj,
+                                period_mapped=instance,
+                                sub_period_order=sub_period_order_value,
+                                sub_period=sub_period_obj,
+                            )
                         )
-                    )
 
-                # Nếu Số lượng = len(data_sn):
-                #     Kiểm tra thử Product P đã có trong Warehouse W chưa ?
-                #     Nếu chưa:
-                #         Tạo ProductWareHouse mới
-                #         Tạo các record ProductWareHouseSerial mới
-                #     Else: raise lỗi
-                # Else: raise lỗi
-                if len(item.get('data_sn', [])) > 0:
-                    sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
-                elif len(item.get('data_lot', [])) > 0:
-                    sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
-                elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
-                    sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
+                    # Nếu Số lượng = len(data_sn):
+                    #     Kiểm tra thử Product P đã có trong Warehouse W chưa ?
+                    #     Nếu chưa:
+                    #         Tạo ProductWareHouse mới
+                    #         Tạo các record ProductWareHouseSerial mới
+                    #     Else: raise lỗi
+                    # Else: raise lỗi
+                    if len(item.get('data_sn', [])) > 0:
+                        sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
+                    elif len(item.get('data_lot', [])) > 0:
+                        sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
+                    elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
+                        sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
+                    else:
+                        sub_prd_wh, sub_sn, sub_lot = [], [], []
+
+                    bulk_info_prd_wh += sub_prd_wh
+                    bulk_info_sn += sub_sn
+                    bulk_info_lot += sub_lot
                 else:
-                    sub_prd_wh, sub_sn, sub_lot = [], [], []
-
-                bulk_info_prd_wh += sub_prd_wh
-                bulk_info_sn += sub_sn
-                bulk_info_lot += sub_lot
-            else:
-                raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
-        ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
-        ReportInventory.objects.bulk_create(bulk_info_inventory)
-        ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
-        ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
-        ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
-    return True
+                    raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+            ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
+            ReportInventory.objects.bulk_create(bulk_info_inventory)
+            ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
+            ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
+            ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
+        return True
+    raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
 
 
 class PeriodsUpdateSerializer(serializers.ModelSerializer):
