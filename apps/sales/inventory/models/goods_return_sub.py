@@ -16,7 +16,7 @@ class GoodsReturnSubSerializerForNonPicking:
             trans_id=str(instance.return_to_warehouse_id)
         ).first()
         if delivery_product:
-            delivery_product_cost = delivery_product.current_cost
+            delivery_product_cost = delivery_product.cost
             lot_data = []
             for lot in product_detail_list:
                 type_value = lot.get('type')

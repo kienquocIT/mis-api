@@ -271,9 +271,9 @@ class Product(DataAbstractModel):
                                 opening_value_list_obj.opening_balance_cost,
                                 opening_value_list_obj.opening_balance_value
                             ] if not opening_value_list_obj.periodic_closed else [
-                                opening_value_list_obj.ending_balance_quantity,
-                                opening_value_list_obj.ending_balance_cost,
-                                opening_value_list_obj.ending_balance_value
+                                opening_value_list_obj.periodic_ending_balance_quantity,
+                                opening_value_list_obj.periodic_ending_balance_cost,
+                                opening_value_list_obj.periodic_ending_balance_value
                             ]
                         else:
                             value_list = [0, 0, 0]

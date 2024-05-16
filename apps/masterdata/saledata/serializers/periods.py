@@ -82,8 +82,9 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         period = Periods.objects.create(**validated_data)
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
             if not period.company.software_start_using_time:
-                period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
+                period.company.software_start_using_time = software_start_using_time_format
                 period.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
@@ -428,8 +429,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
-            if not instance.company.software_start_using_time:
-                instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            if (not instance.company.software_start_using_time or
+                    software_start_using_time_format == instance.company.software_start_using_time):
+                instance.company.software_start_using_time = software_start_using_time_format
                 instance.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
