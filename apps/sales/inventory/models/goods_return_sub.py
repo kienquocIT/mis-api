@@ -1,11 +1,9 @@
-import datetime
-
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, Periods
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
 from apps.sales.acceptance.models import FinalAcceptanceIndicator
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
-from apps.sales.report.models import ReportInventorySub, ReportInventoryProductWarehouse
+from apps.sales.report.models import ReportInventorySub
 
 
 class GoodsReturnSubSerializerForNonPicking:
