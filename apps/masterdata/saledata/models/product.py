@@ -311,18 +311,18 @@ class Product(DataAbstractModel):
                                 'warehouse_id': warehouse_id,
                                 'warehouse_code': warehouse.code,
                                 'warehouse_title': warehouse.title,
-                                'quantity': latest_trans.current_quantity,
-                                'unit_cost': latest_trans.current_cost,
-                                'value': latest_trans.current_value,
+                                'quantity': latest_trans.latest_log.current_quantity,
+                                'unit_cost': latest_trans.latest_log.current_cost,
+                                'value': latest_trans.latest_log.current_value,
                             })
                         else:
                             unit_cost_list.append({
                                 'warehouse_id': warehouse_id,
                                 'warehouse_code': warehouse.code,
                                 'warehouse_title': warehouse.title,
-                                'quantity': latest_trans.periodic_current_quantity,
-                                'unit_cost': latest_trans.periodic_current_cost,
-                                'value': latest_trans.periodic_current_value,
+                                'quantity': latest_trans.latest_log.periodic_current_quantity,
+                                'unit_cost': 0,
+                                'value': 0,
                             })
                     else:
                         opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
@@ -333,9 +333,9 @@ class Product(DataAbstractModel):
                                 'warehouse_id': warehouse_id,
                                 'warehouse_code': warehouse.code,
                                 'warehouse_title': warehouse.title,
-                                'quantity': latest_trans.opening_balance_quantity,
-                                'unit_cost': latest_trans.opening_balance_cost,
-                                'value': latest_trans.opening_balance_value,
+                                'quantity': opening_value_list_obj.opening_balance_quantity,
+                                'unit_cost': opening_value_list_obj.opening_balance_cost,
+                                'value': opening_value_list_obj.opening_balance_value,
                             })
                         else:
                             unit_cost_list.append(
