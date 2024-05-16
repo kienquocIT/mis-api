@@ -80,6 +80,8 @@ class GoodsReturnProductDetail(DataAbstractModel):
     is_return = models.BooleanField(default=False)
     is_redelivery = models.BooleanField(default=False)
 
+    cost_for_periodic = models.FloatField(default=0)
+
     class Meta:
         verbose_name = 'Goods Return Product Detail'
         verbose_name_plural = 'Goods Returns Products Detail'

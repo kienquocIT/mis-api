@@ -83,6 +83,8 @@ def create_files_mapped(gr_obj, file_id_list):
 def create_item_mapped(goods_return):
     bulk_info = []
     for item in goods_return.product_detail_list:
+        if not item['cost_for_periodic']:
+            raise serializers.ValidationError({"cost": 'Cost for periodic in not NULL.'})
         bulk_info.append(
             GoodsReturnProductDetail.objects.create(
                 goods_return=goods_return,
@@ -125,7 +127,6 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
         goods_return = GoodsReturn.objects.create(**validated_data)
 
         create_item_mapped(goods_return)
-
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(goods_return, attachment.strip().split(','))

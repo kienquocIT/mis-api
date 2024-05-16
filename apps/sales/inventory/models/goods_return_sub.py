@@ -1,52 +1,62 @@
+import datetime
+
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, Periods
 from apps.sales.acceptance.models import FinalAcceptanceIndicator
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportInventorySub, ReportInventoryProductWarehouse
 
 
 class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
         activities_data = []
-        delivery_product = ReportInventorySub.objects.filter(
-            warehouse=instance.return_to_warehouse,
-            product=instance.product,
-            trans_id=str(instance.return_to_warehouse_id)
-        ).first()
-        if delivery_product:
-            delivery_product_cost = delivery_product.cost
-            lot_data = []
-            for lot in product_detail_list:
-                type_value = lot.get('type')
-                if type_value == 1:  # is LOT
-                    prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
-                    if prd_wh_lot:
-                        lot_data.append({
-                            'lot_id': str(prd_wh_lot.id),
-                            'lot_number': prd_wh_lot.lot_number,
-                            'lot_quantity': lot['lot_return_number'],
-                            'lot_value': delivery_product_cost * lot['lot_return_number'],
-                            'lot_expire_date': str(prd_wh_lot.expire_date)
-                        })
-            activities_data.append({
-                'product': instance.product,
-                'warehouse': instance.return_to_warehouse,
-                'system_date': instance.date_created,
-                'posting_date': instance.date_created,
-                'document_date': instance.date_created,
-                'stock_type': 1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods return',
-                'quantity': return_quantity,
-                'cost': delivery_product_cost,
-                'value': delivery_product_cost * return_quantity,
-                'lot_data': lot_data
-            })
+        div = instance.company.companyconfig.definition_inventory_valuation
+        if div == 0:
+            delivery_product = ReportInventorySub.objects.filter(
+                warehouse=instance.return_to_warehouse,
+                product=instance.product,
+                trans_id=str(instance.return_to_warehouse_id)
+            ).first()
+            if delivery_product:
+                delivery_product_cost = delivery_product.cost
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         else:
-            raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+            goods_return_cost_input = instance.goods_return_product_detail.first()
+            if goods_return_cost_input:
+                delivery_product_cost = goods_return_cost_input.cost_for_periodic
+            else:
+                raise serializers.ValidationError({'Cost': 'Cost is not null.'})
+        lot_data = []
+        for lot in product_detail_list:
+            type_value = lot.get('type')
+            if type_value == 1:  # is LOT
+                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
+                if prd_wh_lot:
+                    lot_data.append({
+                        'lot_id': str(prd_wh_lot.id),
+                        'lot_number': prd_wh_lot.lot_number,
+                        'lot_quantity': lot['lot_return_number'],
+                        'lot_value': delivery_product_cost * lot['lot_return_number'],
+                        'lot_expire_date': str(prd_wh_lot.expire_date)
+                    })
+        activities_data.append({
+            'product': instance.product,
+            'warehouse': instance.return_to_warehouse,
+            'system_date': instance.date_created,
+            'posting_date': instance.date_created,
+            'document_date': instance.date_created,
+            'stock_type': 1,
+            'trans_id': str(instance.id),
+            'trans_code': instance.code,
+            'trans_title': 'Goods return',
+            'quantity': return_quantity,
+            'cost': delivery_product_cost,
+            'value': delivery_product_cost * return_quantity,
+            'lot_data': lot_data
+        })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_created,
