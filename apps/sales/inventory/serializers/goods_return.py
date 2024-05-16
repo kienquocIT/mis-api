@@ -87,10 +87,7 @@ def create_item_mapped(goods_return):
         if not item['cost_for_periodic'] and div == 1:
             raise serializers.ValidationError({"cost": 'Cost for periodic in not NULL.'})
         bulk_info.append(
-            GoodsReturnProductDetail.objects.create(
-                goods_return=goods_return,
-                **item
-            )
+            GoodsReturnProductDetail.objects.create(goods_return=goods_return, **item)
         )
     GoodsReturnProductDetail.objects.filter(goods_return=goods_return).delete()
     GoodsReturnProductDetail.objects.bulk_create(bulk_info)
