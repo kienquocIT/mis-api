@@ -7,6 +7,7 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
@@ -163,7 +164,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach', 'percent_completed')
+                  'log_time', 'attach', 'percent_completed', 'project')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -222,6 +223,19 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
+    @classmethod
+    def map_task_with_project(cls, task):
+        prj_obj = task.project
+        has_project = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
+        if prj_obj and has_project is not True:
+            ProjectMapTasks.objects.create(
+                project=prj_obj,
+                member=task.employee_inherit,
+                tenant_id=task.tenant_id,
+                company_id=task.company_id,
+                task=task
+            )
+
     def create(self, validated_data):
         user = self.context.get('user', None)
         task = OpportunityTask.objects.create(**validated_data)
@@ -244,6 +258,8 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 }
             )
 
+        if task.project:
+            self.map_task_with_project(task)
         return task
 
 
@@ -392,7 +408,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
                   'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed')
+                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed', 'project')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
@@ -402,7 +418,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity', 'percent_completed')
+                  'attach', 'opportunity', 'percent_completed', 'project')
 
     @classmethod
     def validate_title(cls, attrs):

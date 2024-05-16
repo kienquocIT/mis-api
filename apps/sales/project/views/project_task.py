@@ -1,7 +1,7 @@
 __all__ = ['ProjectTaskList']
 
 from typing import Union
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
@@ -16,9 +16,21 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
     serializer_create = ProjectTaskCreateSerializers
     serializer_detail = ProjectTaskDetailSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'work': ['exact', 'isnull'],
+    }
 
     def get_queryset(self):
-        return super().get_queryset().select_related("task")
+        return super().get_queryset().select_related("task", "task__employee_inherit")
+
+    def get_prj_has_view_this(self):
+        return [
+            str(item) for item in ProjectMapMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                member_id=self.cls_check.employee_attr.employee_current_id,
+                permit_view_this_project=True,
+            ).values_list('project_id', flat=True)
+        ]
 
     @property
     def filter_kwargs(self) -> dict[str, any]:
@@ -28,6 +40,15 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        # check permit config exists if from_app not calling...
+        prj_has_view_ids = self.get_prj_has_view_this()
+        if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
+            return self.filter_kwargs_q__from_config() | Q(id__in=prj_has_view_ids)
         return self.list_empty()
 
     @classmethod
@@ -68,6 +89,7 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='project', model_code='project', perm_code='view',
+        skip_filter_employee=True,
     )
     def get(self, request, *args, pk_pj, **kwargs):
         pj_obj = self.get_pj_obj(pk_pj)

@@ -118,7 +118,7 @@ class Project(DataAbstractModel):
 
 class ProjectGroups(DataAbstractModel):
     works = models.ManyToManyField(
-        'project.ProjectGroups',
+        'project.ProjectWorks',
         through='GroupMapWork',
         symmetrical=False,
         blank=True,

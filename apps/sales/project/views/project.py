@@ -3,7 +3,10 @@ __init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd',
 
 from typing import Union
 
+from django.conf import settings
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
 
 from apps.sales.project.models import Project, ProjectMapMember
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
@@ -32,12 +35,62 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
         'employee_created_id',
     ]
 
+    @classmethod
+    def get_prj_allowed(cls, item_data):
+        if item_data and isinstance(item_data, dict) and 'prj' in item_data and isinstance(item_data['prj'], dict):
+            ids = list(item_data['prj'].keys())
+            if TypeCheck.check_uuid_list(data=ids):
+                return item_data['prj'].keys()
+        return []
+
+    def get_prj_has_view_this(self):
+        return [
+            str(item) for item in ProjectMapMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                member_id=self.cls_check.employee_attr.employee_current_id,
+                permit_view_this_project=True,
+            ).values_list('project_id', flat=True)
+        ]
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        # check permit config exists if from_app not calling...
+        prj_has_view_ids = self.get_prj_has_view_this()
+        if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
+            return self.filter_kwargs_q__from_config() | Q(id__in=prj_has_view_ids)
+        return self.list_empty()
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        # permit_data = {"employee": [], "roles": []}
+        prj_ids = []
+        if arr_from_app and isinstance(arr_from_app, list) and len(arr_from_app) == 3:
+            permit_data = self.cls_check.permit_cls.config_data__by_code(
+                label_code=arr_from_app[0],
+                model_code=arr_from_app[1],
+                perm_code=arr_from_app[2],
+                has_roles=False,
+            )
+            if 'employee' in permit_data:
+                prj_ids += self.get_prj_allowed(item_data=permit_data['employee'])
+            if 'roles' in permit_data and isinstance(permit_data['roles'], list):
+                for item_data in permit_data['roles']:
+                    prj_ids += self.get_prj_allowed(item_data=item_data)
+            if settings.DEBUG_PERMIT:
+                print('=> prj_ids:                :', '[HAS FROM APP]', prj_ids)
+        return Q(id__in=list(set(prj_ids)))
+
     @swagger_auto_schema(
         operation_summary="Project list",
         operation_description="get project list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

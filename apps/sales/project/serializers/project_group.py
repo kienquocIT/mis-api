@@ -1,4 +1,4 @@
-__all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSerializers']
+__all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSerializers', 'GroupListDDSerializers']
 
 from rest_framework import serializers
 
@@ -31,7 +31,7 @@ class GroupCreateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         project = validated_data.pop('project', None)
         group = ProjectGroups.objects.create(**validated_data)
-        ProjectMapGroup.objects.create(project=project, group=group)
+        ProjectMapGroup.objects.create(project=project, group=group, tenant=group.tenant, company=group.company)
         return group
 
     class Meta:
@@ -91,3 +91,14 @@ class GroupDetailSerializers(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class GroupListDDSerializers(serializers.ModelSerializer):
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+
+    class Meta:
+        model = ProjectMapGroup
+        fields = (
+            'id',
+            'title',
+        )

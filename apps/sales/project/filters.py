@@ -1,4 +1,6 @@
-from django_filters.rest_framework import filters # noqa
+__all__ = ['ProjectGroupListFilter']
+
+from django_filters.rest_framework import filters  # noqa
 from rest_framework import exceptions
 
 from django.db.models import Q
@@ -14,7 +16,9 @@ class ProjectGroupListFilter(BastionFieldAbstractListFilter):
 
     class Meta:
         model = ProjectGroups
-        fields = {}
+        fields = {
+            'id': ['exact', 'in']
+        }
 
     def filter_by_project(self, queryset, name, value):
         user_obj = getattr(self.request, 'user', None)
@@ -22,7 +26,7 @@ class ProjectGroupListFilter(BastionFieldAbstractListFilter):
         if user_obj:
             filter_kwargs = Q()
             if 'project' in request_params:
-                filter_kwargs &= Q(**{'id__in': []})
+                filter_kwargs &= Q(**{'project_projectmapgroup_project__id': request_params['project']})
             if filter_kwargs is not None:
                 return queryset.filter(filter_kwargs)
             return queryset

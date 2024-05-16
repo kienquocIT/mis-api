@@ -1,9 +1,11 @@
-__all__ = ['ProjectGroupList', 'ProjectGroupDetail']
+__all__ = ['ProjectGroupList', 'ProjectGroupDetail', 'ProjectGroupListDD']
 
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.project.models import ProjectGroups, ProjectMapMember, Project
-from apps.sales.project.serializers import GroupListSerializers, GroupCreateSerializers, GroupDetailSerializers
+from apps.sales.project.filters import ProjectGroupListFilter
+from apps.sales.project.models import ProjectGroups, ProjectMapMember, Project, ProjectMapGroup
+from apps.sales.project.serializers import GroupListSerializers, GroupCreateSerializers, GroupDetailSerializers, \
+    GroupListDDSerializers
 from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, BaseCreateMixin
 
@@ -14,37 +16,34 @@ def get_project_obj(pk_idx):
     return None
 
 
+def get_project_member_of_current_user(employee_obj, project_obj):
+    return ProjectMapMember.objects.filter_current(
+        project=project_obj,
+        member=employee_obj,
+        fill__tenant=True, fill__company=True
+    ).first()
+
+
 class ProjectGroupList(BaseListMixin, BaseCreateMixin):
     queryset = ProjectGroups.objects
     serializer_list = GroupListSerializers
     serializer_create = GroupCreateSerializers
     serializer_detail = GroupDetailSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    search_fields = ['title']
-    create_hidden_field = [
-        'tenant_id', 'company_id',
-        'employee_created_id',
-    ]
-
-    # filterset_class = ProjectGroupListFilter
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    search_fields = ['title', "code"]
+    filterset_class = ProjectGroupListFilter
 
     @swagger_auto_schema(
         operation_summary="Project group list",
         operation_description="get project group list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='project', model_code='project', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='project', model_code='project', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
-
-    def get_project_member_of_current_user(self, project_obj):
-        return ProjectMapMember.objects.filter_current(
-            project=project_obj,
-            member=self.cls_check.employee_attr.employee_current,
-            fill__tenant=True, fill__company=True
-        ).first()
 
     def check_permit_add_gaw(self, project_obj) -> bool:
         # special case skip with True if current user is employee_inherit
@@ -52,7 +51,9 @@ class ProjectGroupList(BaseListMixin, BaseCreateMixin):
         if emp_id and str(project_obj.employee_inherit_id) == str(emp_id):
             return True
 
-        project_member_current_user = self.get_project_member_of_current_user(project_obj=project_obj)
+        project_member_current_user = get_project_member_of_current_user(
+            employee_obj=self.cls_check.employee_attr.employee_current, project_obj=project_obj
+        )
         if project_member_current_user:
             return project_member_current_user.permit_add_gaw
         return False
@@ -174,3 +175,24 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, is_purge=True, **kwargs)
+
+
+class ProjectGroupListDD(BaseListMixin):
+    queryset = ProjectMapGroup.objects
+    serializer_list = GroupListDDSerializers
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title', "code"]
+    filterset_fields = {
+        'project': ['in', 'exact']
+    }
+
+    @swagger_auto_schema(
+        operation_summary="Project group list DD",
+        operation_description="get project group list DD",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='project', model_code='project', perm_code='view', skip_filter_employee=True
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

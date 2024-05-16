@@ -25,6 +25,8 @@ def valid_user_create_update_delete(permit, user_crt, task_info):
 
 class ProjectTaskListSerializers(serializers.ModelSerializer):
     task = serializers.SerializerMethodField()
+    percent = serializers.SerializerMethodField()
+    assignee = serializers.SerializerMethodField()
 
     @classmethod
     def get_task(cls, obj):
@@ -33,12 +35,31 @@ class ProjectTaskListSerializers(serializers.ModelSerializer):
             'title': obj.task.title
         }
 
+    @classmethod
+    def get_percent(cls, obj):
+        percent = obj.task.percent_completed if obj.task.percent_completed > 0 else 0
+        return percent
+
+    @classmethod
+    def get_assignee(cls, obj):
+        assignee = {}
+        if obj.task.employee_inherit:
+            assignee = {
+                "id": str(obj.task.employee_inherit_id),
+                "full_name": obj.task.employee_inherit.get_full_name(),
+                "first_name": obj.task.employee_inherit.first_name,
+                "last_name": obj.task.employee_inherit.last_name
+            }
+        return assignee
+
     class Meta:
         model = ProjectMapTasks
         fields = (
             'id',
             'task',
-            'work'
+            'work',
+            'percent',
+            'assignee'
         )
 
 

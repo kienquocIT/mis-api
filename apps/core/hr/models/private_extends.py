@@ -243,7 +243,7 @@ class PermissionAbstractModel(models.Model):
 
     def append_permit_by_prj(self, tenant_id, prj_id, perm_config):
         if prj_id and tenant_id:
-            self.permission_by_project[prj_id] = perm_config
+            self.permission_by_project[str(prj_id)] = perm_config
             self._remove_prj_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_project', 'permissions_parsed'])
