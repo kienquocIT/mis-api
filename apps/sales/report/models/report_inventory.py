@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods, Product, WareHouse
+from apps.masterdata.saledata.models import Periods, Product, WareHouse, SubPeriods
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -575,11 +575,18 @@ class LoggingSubFunction:
                         sum_input_value = inventory_cost_data_obj.sum_input_value
                         sum_output_quantity = inventory_cost_data_obj.sum_output_quantity
 
-                        value_list = {
-                            'quantity': sum_input_quantity - sum_output_quantity,
-                            'cost': sum_input_value / sum_input_quantity,
-                            'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
-                        }
+                        if sum_input_quantity > 0:
+                            value_list = {
+                                'quantity': sum_input_quantity - sum_output_quantity,
+                                'cost': sum_input_value / sum_input_quantity,
+                                'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
+                            }
+                        else:
+                            value_list = {
+                                'quantity': inventory_cost_data_obj.opening_balance_quantity,
+                                'cost': inventory_cost_data_obj.opening_balance_quantity,
+                                'value': inventory_cost_data_obj.opening_balance_quantity
+                            }
 
                         inventory_cost_data_obj.periodic_ending_balance_quantity = value_list['quantity']
                         inventory_cost_data_obj.periodic_ending_balance_cost = value_list['cost']

@@ -330,7 +330,7 @@ class ReportInventoryList(BaseListMixin):
                     product_id=prd_id, warehouse_id=wh_id, period_mapped=period_mapped, for_balance=True
                 ).first()
                 if opening_value_list_obj:
-                    if opening_value_list_obj.sub_period_order < opening_value_list_obj:
+                    if opening_value_list_obj.sub_period_order < int(sub_period_order):
                         quantity = opening_value_list_obj.opening_balance_quantity
                         cost = opening_value_list_obj.opening_balance_cost
                         value = opening_value_list_obj.opening_balance_value
@@ -361,8 +361,10 @@ class ReportInventoryList(BaseListMixin):
 
     @classmethod
     def create_this_sub_record(cls, tenant, company, product_id_list, period_mapped, sub_period_order):
-        sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        if not sub.run_report_inventory:
+        sw_start_using_time_order = company.software_start_using_time.month - period_mapped.space_month
+        if int(sub_period_order) > sw_start_using_time_order:
+            sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
+            # if not sub.run_report_inventory:
             wh_id_list = set(
                 WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
             )
@@ -383,7 +385,7 @@ class ReportInventoryList(BaseListMixin):
                         )
             sub.run_report_inventory = True
             sub.save(update_fields=['run_report_inventory'])
-        return True
+            return True
 
     def get_queryset(self):
         try:
