@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods, Product, WareHouse, SubPeriods
+from apps.masterdata.saledata.models import Periods, Product, WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -579,7 +579,8 @@ class LoggingSubFunction:
                             value_list = {
                                 'quantity': sum_input_quantity - sum_output_quantity,
                                 'cost': sum_input_value / sum_input_quantity,
-                                'value': (sum_input_quantity - sum_output_quantity) * (sum_input_value / sum_input_quantity)
+                                'value': (sum_input_quantity - sum_output_quantity) *
+                                         (sum_input_value / sum_input_quantity)
                             }
                         else:
                             value_list = {

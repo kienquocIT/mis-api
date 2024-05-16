@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
-from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory, ReportInventorySub
+from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventorySub
 
 
 # Product Type

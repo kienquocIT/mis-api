@@ -385,7 +385,7 @@ class ReportInventoryList(BaseListMixin):
                         )
             sub.run_report_inventory = True
             sub.save(update_fields=['run_report_inventory'])
-            return True
+        return True
 
     def get_queryset(self):
         try:
