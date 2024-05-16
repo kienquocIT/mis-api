@@ -309,6 +309,8 @@ class Product(DataAbstractModel):
                         if company_obj.companyconfig.definition_inventory_valuation == 0:
                             unit_cost_list.append({
                                 'warehouse_id': warehouse_id,
+                                'warehouse_code': warehouse.code,
+                                'warehouse_title': warehouse.title,
                                 'quantity': latest_trans.current_quantity,
                                 'unit_cost': latest_trans.current_cost,
                                 'value': latest_trans.current_value,
@@ -316,6 +318,8 @@ class Product(DataAbstractModel):
                         else:
                             unit_cost_list.append({
                                 'warehouse_id': warehouse_id,
+                                'warehouse_code': warehouse.code,
+                                'warehouse_title': warehouse.title,
                                 'quantity': latest_trans.periodic_current_quantity,
                                 'unit_cost': latest_trans.periodic_current_cost,
                                 'value': latest_trans.periodic_current_value,
@@ -327,13 +331,22 @@ class Product(DataAbstractModel):
                         if opening_value_list_obj:
                             unit_cost_list.append({
                                 'warehouse_id': warehouse_id,
+                                'warehouse_code': warehouse.code,
+                                'warehouse_title': warehouse.title,
                                 'quantity': latest_trans.opening_balance_quantity,
                                 'unit_cost': latest_trans.opening_balance_cost,
                                 'value': latest_trans.opening_balance_value,
                             })
                         else:
                             unit_cost_list.append(
-                                {'warehouse_id': warehouse_id, 'quantity': 0, 'unit_cost': 0, 'value': 0}
+                                {
+                                    'warehouse_id': warehouse_id,
+                                    'warehouse_code': warehouse.code,
+                                    'warehouse_title': warehouse.title,
+                                    'quantity': 0,
+                                    'unit_cost': 0,
+                                    'value': 0
+                                }
                             )
         return unit_cost_list
 
