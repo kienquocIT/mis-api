@@ -305,11 +305,14 @@ class Product(DataAbstractModel):
                     warehouse_id = warehouse.id
                     latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
                     if latest_trans:
-                        if company_obj.companyconfig.definition_inventory_valuation == 0:
+                        if (company_obj.companyconfig.definition_inventory_valuation == 0 and
+                                latest_trans.latest_log.current_quantity > 0):
                             unit_cost_list.append({
-                                'warehouse_id': warehouse_id,
-                                'warehouse_code': warehouse.code,
-                                'warehouse_title': warehouse.title,
+                                'warehouse': {
+                                    'id': warehouse_id,
+                                    'code': warehouse.code,
+                                    'title': warehouse.title
+                                },
                                 'quantity': latest_trans.latest_log.current_quantity,
                                 'unit_cost': latest_trans.latest_log.current_cost,
                                 'value': latest_trans.latest_log.current_value,
@@ -318,11 +321,13 @@ class Product(DataAbstractModel):
                         opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
                             warehouse_id=warehouse_id, period_mapped=this_period, sub_period_order=sub_period_order
                         ).first()
-                        if opening_value_list_obj:
+                        if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity > 0:
                             unit_cost_list.append({
-                                'warehouse_id': warehouse_id,
-                                'warehouse_code': warehouse.code,
-                                'warehouse_title': warehouse.title,
+                                'warehouse': {
+                                    'id': warehouse_id,
+                                    'code': warehouse.code,
+                                    'title': warehouse.title
+                                },
                                 'quantity': opening_value_list_obj.opening_balance_quantity,
                                 'unit_cost': opening_value_list_obj.opening_balance_cost,
                                 'value': opening_value_list_obj.opening_balance_value,
