@@ -816,10 +816,6 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     def validate_product_quantity(cls, value):
         return QuotationValueValidate.validate_quantity(value=value)
 
-    @classmethod
-    def validate_product_cost_price(cls, value):
-        return QuotationValueValidate.validate_price(value=value)
-
 
 class QuotationCostsListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()

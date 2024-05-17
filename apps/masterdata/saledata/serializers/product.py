@@ -949,20 +949,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
-        wh_dict = {}
-        for product_inventory in obj.report_inventory_by_month_product.all():
-            if str(product_inventory.warehouse_id) not in wh_dict:
-                wh_dict.update({
-                    str(product_inventory.warehouse_id): {
-                        'warehouse': {
-                            'id': str(product_inventory.warehouse_id),
-                            'title': product_inventory.warehouse.title,
-                            'code': product_inventory.warehouse.code
-                        } if product_inventory.warehouse else {},
-                        'cost': product_inventory.current_cost
-                    }
-                })
-        return [value for key, value in wh_dict.items()]
+        return obj.get_unit_cost_list_of_all_warehouse()
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):

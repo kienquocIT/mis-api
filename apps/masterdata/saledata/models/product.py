@@ -294,15 +294,16 @@ class Product(DataAbstractModel):
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
         ).first()
-        sub_period_order = timezone.now().month - this_period.space_month
-        company_config = getattr(self.company, 'companyconfig')
         if this_period:
+            sub_period_order = timezone.now().month - this_period.space_month
+            company_config = getattr(self.company, 'companyconfig')
             for warehouse in warehouse_list:
                 latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
-                    if company_config.definition_inventory_valuation == 0 and latest_trans.latest_log.current_quantity:
+                    if company_config.definition_inventory_valuation == 0 and \
+                            latest_trans.latest_log.current_quantity > 0:
                         unit_cost_list.append({
-                            'warehouse': {'id': warehouse.id, 'code': warehouse.code, 'title': warehouse.title},
+                            'warehouse': {'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title},
                             'quantity': latest_trans.latest_log.current_quantity,
                             'unit_cost': latest_trans.latest_log.current_cost,
                             'value': latest_trans.latest_log.current_value,
@@ -311,9 +312,9 @@ class Product(DataAbstractModel):
                     opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
                         warehouse_id=warehouse.id, period_mapped=this_period, sub_period_order=sub_period_order
                     ).first()
-                    if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity:
+                    if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity > 0:
                         unit_cost_list.append({
-                            'warehouse': {'id': warehouse.id, 'code': warehouse.code, 'title': warehouse.title},
+                            'warehouse': {'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title},
                             'quantity': opening_value_list_obj.opening_balance_quantity,
                             'unit_cost': opening_value_list_obj.opening_balance_cost,
                             'value': opening_value_list_obj.opening_balance_value,

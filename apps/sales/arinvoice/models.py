@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
@@ -53,6 +54,42 @@ class ARInvoice(DataAbstractModel):
     customer_bank_number = models.CharField(max_length=250, null=True, blank=True)
 
     is_created_einvoice = models.BooleanField(default=False)
+
+    @classmethod
+    def push_final_acceptance_invoice(cls, instance):
+        sale_order_id = None
+        opportunity_id = None
+        if instance.sale_order_mapped:
+            sale_order_id = instance.sale_order_mapped_id
+            opportunity_id = instance.sale_order_mapped.opportunity_id
+        if sale_order_id:
+            list_data_indicator = []
+            for invoice_item in instance.ar_invoice_items.all():
+                list_data_indicator.append({
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'ar_invoice_id': instance.id,
+                    'product_id': invoice_item.product_id if invoice_item.product else None,
+                    'actual_value': invoice_item.product_subtotal,
+                    'actual_value_after_tax': invoice_item.product_subtotal_final,
+                    'acceptance_affect_by': 5,
+                })
+            FinalAcceptance.push_final_acceptance(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                sale_order_id=sale_order_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                opportunity_id=opportunity_id,
+                list_data_indicator=list_data_indicator,
+            )
+        return True
+
+    def save(self, *args, **kwargs):
+        if self.invoice_status == 1:  # published
+            self.push_final_acceptance_invoice(instance=self)
+        # hit DB
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'AR Invoice'

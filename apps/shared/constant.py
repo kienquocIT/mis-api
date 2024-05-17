@@ -274,6 +274,8 @@ ACCEPTANCE_AFFECT_BY = (
     (2, 'Plan value'),
     (3, 'Delivery'),
     (4, 'Payment'),
+    (5, 'Invoice'),
+    (6, 'Project'),
 )
 
 # Opportunity

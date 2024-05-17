@@ -53,6 +53,7 @@ from ..sales.opportunity.models import (
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
+from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
     ReportInventoryProductWarehouse, LatestSub
@@ -1354,7 +1355,7 @@ def reset_and_run_reports_sale(run_type=0):
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
             SOFinishHandler.push_to_report_cashflow(sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-            PurchaseOrder.push_to_report_cashflow(purchase_order)
+            POFinishHandler.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
 
 

@@ -282,7 +282,7 @@ class SaleOrder(DataAbstractModel):
                         SOFinishHandler.push_to_report_customer(self)
                         SOFinishHandler.push_to_report_cashflow(self)
                         # final acceptance
-                        SOFinishHandler.push_to_final_acceptance(self)
+                        SOFinishHandler.push_final_acceptance_so(self)
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
         # diagram
