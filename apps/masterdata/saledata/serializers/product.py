@@ -56,7 +56,6 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id': str(item.id),
             'title': item.title,
             'code': item.code,
-            'cost_list': obj.get_unit_cost_list_of_all_warehouse()
         } for item in obj.general_product_types_mapped.all()]
 
     @classmethod
