@@ -222,7 +222,7 @@ class ReportInventoryDetailList(BaseListMixin):
             company_obj = self.request.user.company_current
             div = self.request.user.company_current.companyconfig.definition_inventory_valuation
             if 'is_calculate' in self.request.query_params and div == 1:
-                LoggingSubFunction.calculate_ending_cumulative_value(
+                LoggingSubFunction.calculate_ending_cumulative_for_periodic(
                     period_mapped, sub_period_order, tenant_obj, company_obj
                 )
 
@@ -315,7 +315,7 @@ class ReportInventoryList(BaseListMixin):
         cost = 0
         value = 0
         if int(sub_period_order) <= (datetime.datetime.now().month - period_mapped.space_month):
-            latest_trans = LoggingSubFunction.get_latest_trans_by_month(prd_id, wh_id, period_mapped, sub_period_order)
+            latest_trans = LoggingSubFunction.get_latest_log_by_month(prd_id, wh_id, period_mapped, sub_period_order)
             if latest_trans:
                 if company.companyconfig.definition_inventory_valuation == 0:
                     quantity = latest_trans.current_quantity

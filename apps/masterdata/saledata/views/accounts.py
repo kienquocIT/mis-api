@@ -31,7 +31,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
         operation_description="AccountType list",
     )
     @mask_view(
-        login_require=True, auth_require=False
+        login_require=True, auth_require=True
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -43,7 +43,8 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -59,14 +60,17 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail AccountType')
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update AccountType", request_body=AccountTypeUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='edit'
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='edit'
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -84,7 +88,9 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
         operation_summary="AccountGroup list",
         operation_description="AccountGroup list",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -95,7 +101,8 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create'
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -111,14 +118,17 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail AccountGroup')
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update AccountGroup", request_body=AccountGroupUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='edit',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -136,7 +146,9 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
         operation_summary="Industry list",
         operation_description="Industry list",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -147,7 +159,8 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -163,14 +176,17 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail Industry')
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Industry", request_body=IndustryUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='edit',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
