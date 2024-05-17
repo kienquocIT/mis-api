@@ -294,9 +294,9 @@ class Product(DataAbstractModel):
         this_period = Periods.objects.filter(
             tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
         ).first()
-        sub_period_order = timezone.now().month - this_period.space_month
-        company_config = getattr(self.company, 'companyconfig')
         if this_period:
+            sub_period_order = timezone.now().month - this_period.space_month
+            company_config = getattr(self.company, 'companyconfig')
             for warehouse in warehouse_list:
                 latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
