@@ -260,7 +260,8 @@ class Product(DataAbstractModel):
                     ]
                 else:
                     opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
-                        warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                        warehouse_id=warehouse_id, period_mapped=this_period,
+                        # sub_period_order=timezone.now().month - this_period.space_month
                     ).first()
                     if opening_value_list_obj:
                         value_list = [

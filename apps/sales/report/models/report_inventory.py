@@ -124,7 +124,7 @@ class ReportInventorySub(DataAbstractModel):
             sub_period_order = activities_obj_date.month - period_mapped.space_month
 
             if company_obj.companyconfig.definition_inventory_valuation == 1:
-                if sub_period_order == 1:
+                if int(sub_period_order) == 1:
                     last_period = Periods.objects.filter(
                         tenant=tenant_obj, company=company_obj,
                         fiscal_year=period_mapped.fiscal_year - 1
@@ -141,12 +141,12 @@ class ReportInventorySub(DataAbstractModel):
                 else:
                     last_sub_record = ReportInventoryProductWarehouse.objects.filter(
                         period_mapped=period_mapped,
-                        sub_period_order=sub_period_order - 1,
+                        sub_period_order=int(sub_period_order) - 1,
                         periodic_closed=False
                     ).exists()
                     if last_sub_record:
                         LoggingSubFunction.calculate_ending_balance_for_periodic(
-                            period_mapped, sub_period_order - 1, tenant_obj, company_obj
+                            period_mapped, int(sub_period_order) - 1, tenant_obj, company_obj
                         )
 
             new_log_list = cls.create_new_log_list(activities_obj, activities_data, period_mapped, sub_period_order)
@@ -207,9 +207,14 @@ class ReportInventorySub(DataAbstractModel):
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_perpetual_inventory(log, latest_value_dict)
             # cập nhập giá trị tồn kho hiện tại mới cho log
-            log.current_quantity = new_value_list['quantity']
-            log.current_cost = new_value_list['cost']
-            log.current_value = new_value_list['value']
+            if new_value_list['quantity'] > 0:
+                log.current_quantity = new_value_list['quantity']
+                log.current_cost = new_value_list['cost']
+                log.current_value = new_value_list['value']
+            else:
+                log.current_quantity = 0
+                log.current_cost = 0
+                log.current_value = 0
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
             cls.update_this_record_value_dict(
                 log, period_mapped, sub_period_order, latest_value_dict, div
@@ -223,6 +228,7 @@ class ReportInventorySub(DataAbstractModel):
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_periodic_inventory(log, latest_value)
             # cập nhập giá trị tồn kho hiện tại mới cho log
+            # chỗ này k cần check SL = 0 -> cost = 0 vì mọi TH cost đều = 0
             log.periodic_current_quantity = new_value_list['quantity']
             log.periodic_current_cost = new_value_list['cost']  # = 0
             log.periodic_current_value = new_value_list['value']  # = 0
@@ -311,6 +317,7 @@ class ReportInventorySub(DataAbstractModel):
                     this_record.periodic_ending_balance_quantity = log.periodic_current_quantity
                     this_record.periodic_ending_balance_cost = log.periodic_current_cost
                     this_record.periodic_ending_balance_value = log.periodic_current_value
+                    this_record.sub_latest_log = log
                     # nếu kì đã đóng mà có giao dịch, mở lại, cost-value hiện tại trở về 0 (chưa chốt)
                     if this_record.periodic_closed:
                         this_record.periodic_closed = False
@@ -320,6 +327,7 @@ class ReportInventorySub(DataAbstractModel):
                         'periodic_ending_balance_quantity',
                         'periodic_ending_balance_cost',
                         'periodic_ending_balance_value',
+                        'sub_latest_log',
                         'sum_output_quantity',
                         'sum_input_quantity',
                         'sum_input_value',
@@ -444,7 +452,7 @@ class LoggingSubFunction:
         """
         Hàm để lấy Log cuối cùng của tháng trước theo sp và kho. Truyền vào tham số tháng này
         """
-        if sub_period_order == 1:
+        if int(sub_period_order) == 1:
             last_record = ReportInventoryProductWarehouse.objects.filter(
                 product_id=product_id, warehouse_id=warehouse_id,
                 period_mapped__fiscal_year=period_mapped.fiscal_year - 1, sub_period_order=12
@@ -452,7 +460,7 @@ class LoggingSubFunction:
         else:
             last_record = ReportInventoryProductWarehouse.objects.filter(
                 product_id=product_id, warehouse_id=warehouse_id,
-                period_mapped=period_mapped, sub_period_order=sub_period_order - 1
+                period_mapped=period_mapped, sub_period_order=int(sub_period_order) - 1
             ).first()
         return last_record.sub_latest_log if last_record else None
 
@@ -509,7 +517,7 @@ class LoggingSubFunction:
         # tìm tồn đầu kì này
         this_record = ReportInventoryProductWarehouse.objects.filter(
             product_id=product_id, warehouse_id=warehouse_id,
-            period_mapped=period_mapped, sub_period_order=datetime.datetime.now().month
+            period_mapped=period_mapped, sub_period_order=datetime.datetime.now().month - period_mapped.space_month
         ).first()
         if this_record:
             if data_type == 0:
@@ -545,9 +553,9 @@ class LoggingSubFunction:
                 ending_cost = this_record.sub_latest_log.current_cost
                 ending_value = this_record.sub_latest_log.current_value
             else:
-                ending_quantity = this_record.sub_latest_log.periodic_ending_balance_quantity
-                ending_cost = this_record.sub_latest_log.periodic_ending_balance_cost
-                ending_value = this_record.sub_latest_log.periodic_ending_balance_value
+                ending_quantity = this_record.periodic_ending_balance_quantity
+                ending_cost = this_record.periodic_ending_balance_cost
+                ending_value = this_record.periodic_ending_balance_value
         else:
             ending_quantity = opening_quantity
             ending_cost = opening_cost
@@ -574,29 +582,34 @@ class LoggingSubFunction:
                     product_id=product_id, warehouse_id=warehouse_id
                 ).first()
                 if this_record:
-                    if not this_record.periodic_closed:
-                        sum_input_quantity = this_record.sum_input_quantity
-                        sum_input_value = this_record.sum_input_value
-                        sum_output_quantity = this_record.sum_output_quantity
+                    # if not this_record.periodic_closed:
+                    sum_input_quantity = this_record.sum_input_quantity
+                    sum_input_value = this_record.sum_input_value
+                    sum_output_quantity = this_record.sum_output_quantity
 
-                        if sum_input_quantity > 0:
-                            quantity = sum_input_quantity - sum_output_quantity
-                            cost = sum_input_value / sum_input_quantity
-                            value = quantity * cost
-                        else:
-                            quantity = this_record.opening_balance_quantity
-                            cost = this_record.opening_balance_quantity
-                            value = this_record.opening_balance_quantity
+                    if sum_input_quantity > 0:
+                        quantity = sum_input_quantity - sum_output_quantity
+                        cost = sum_input_value / sum_input_quantity
+                        value = quantity * cost
+                    else:
+                        quantity = this_record.opening_balance_quantity
+                        cost = this_record.opening_balance_cost
+                        value = this_record.opening_balance_value
 
-                        value_list = {'quantity': quantity, 'cost': cost, 'value': value}
+                    value_list = {'quantity': quantity, 'cost': cost, 'value': value}
+                    if value_list['quantity'] > 0:
                         this_record.periodic_ending_balance_quantity = value_list['quantity']
                         this_record.periodic_ending_balance_cost = value_list['cost']
                         this_record.periodic_ending_balance_value = value_list['value']
-                        this_record.periodic_closed = True
-                        this_record.save(update_fields=[
-                            'periodic_ending_balance_quantity',
-                            'periodic_ending_balance_cost',
-                            'periodic_ending_balance_value',
-                            'periodic_closed'
-                        ])
+                    else:
+                        this_record.periodic_ending_balance_quantity = 0
+                        this_record.periodic_ending_balance_cost = 0
+                        this_record.periodic_ending_balance_value = 0
+                    this_record.periodic_closed = True
+                    this_record.save(update_fields=[
+                        'periodic_ending_balance_quantity',
+                        'periodic_ending_balance_cost',
+                        'periodic_ending_balance_value',
+                        'periodic_closed'
+                    ])
         return True

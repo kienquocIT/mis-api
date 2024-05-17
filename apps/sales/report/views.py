@@ -222,7 +222,7 @@ class ReportInventoryDetailList(BaseListMixin):
             company_obj = self.request.user.company_current
             div = self.request.user.company_current.companyconfig.definition_inventory_valuation
             if 'is_calculate' in self.request.query_params and div == 1:
-                LoggingSubFunction.calculate_ending_cumulative_for_periodic(
+                LoggingSubFunction.calculate_ending_balance_for_periodic(
                     period_mapped, sub_period_order, tenant_obj, company_obj
                 )
 
