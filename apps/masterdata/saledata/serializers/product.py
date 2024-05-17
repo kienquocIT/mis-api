@@ -55,7 +55,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         return [{
             'id': str(item.id),
             'title': item.title,
-            'code': item.code
+            'code': item.code,
         } for item in obj.general_product_types_mapped.all()]
 
     @classmethod

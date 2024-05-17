@@ -47,9 +47,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             data_stock_activity = []
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = inventory_cost_data_list.filter(
-                warehouse_id=wh_id,
-                period_mapped_id=obj.period_mapped_id,
-                sub_period_order=obj.sub_period_order
+                warehouse_id=wh_id, period_mapped_id=obj.period_mapped_id, sub_period_order=obj.sub_period_order
             ).first()
             if inventory_cost_data:
                 # lấy các hoạt động nhập-xuất
@@ -90,7 +88,8 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
                     'ending_balance_value': this_sub_value['ending_balance_value'],
                     'ending_balance_cost': this_sub_value['ending_balance_cost'],
-                    'data_stock_activity': data_stock_activity
+                    'data_stock_activity': data_stock_activity,
+                    'periodic_closed': inventory_cost_data.periodic_closed
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
 
@@ -308,6 +307,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         # lấy inventory_cost_data của kì hiện tại
         this_sub_value = LoggingSubFunction.get_inventory_cost_data_this_sub_period(obj, data_stock_activity)
 
+        if div:
+            sum_out_value = sum_out_quantity * this_sub_value['ending_balance_cost']
         result = {
             'sum_in_quantity': sum_in_quantity,
             'sum_out_quantity': sum_out_quantity,
@@ -319,6 +320,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'ending_balance_quantity': this_sub_value['ending_balance_quantity'],
             'ending_balance_value': this_sub_value['ending_balance_value'],
             'ending_balance_cost': this_sub_value['ending_balance_cost'],
-            'data_stock_activity': data_stock_activity
+            'data_stock_activity': data_stock_activity,
+            'periodic_closed': obj.periodic_closed
         }
         return result

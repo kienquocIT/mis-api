@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
-from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventory, ReportInventorySub
+from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventorySub
 
 
 # Product Type
@@ -82,8 +82,9 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         period = Periods.objects.create(**validated_data)
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
             if not period.company.software_start_using_time:
-                period.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
+                period.company.software_start_using_time = software_start_using_time_format
                 period.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
@@ -305,7 +306,6 @@ def update_balance_data(balance_data, instance):
     """
     sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
     bulk_info_rp_prd_wh = []
-    bulk_info_inventory = []
     bulk_info_prd_wh = []
     bulk_info_sn = []
     bulk_info_lot = []
@@ -365,27 +365,6 @@ def update_balance_data(balance_data, instance):
                             )
                         )
 
-                    if not ReportInventory.objects.filter(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product=prd_obj,
-                            period_mapped=instance,
-                            sub_period_order=sub_period_order_value,
-                            sub_period=sub_period_obj,
-                    ).exists():
-                        bulk_info_inventory.append(
-                            ReportInventory(
-                                tenant_id=instance.tenant_id,
-                                company_id=instance.company_id,
-                                employee_inherit=instance.employee_created,
-                                employee_created=instance.employee_created,
-                                product=prd_obj,
-                                period_mapped=instance,
-                                sub_period_order=sub_period_order_value,
-                                sub_period=sub_period_obj,
-                            )
-                        )
-
                     # Nếu Số lượng = len(data_sn):
                     #     Kiểm tra thử Product P đã có trong Warehouse W chưa ?
                     #     Nếu chưa:
@@ -408,7 +387,6 @@ def update_balance_data(balance_data, instance):
                 else:
                     raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
             ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
-            ReportInventory.objects.bulk_create(bulk_info_inventory)
             ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
             ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
             ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
@@ -428,8 +406,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
-            if not instance.company.software_start_using_time:
-                instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            if (not instance.company.software_start_using_time or
+                    software_start_using_time_format == instance.company.software_start_using_time):
+                instance.company.software_start_using_time = software_start_using_time_format
                 instance.company.save(update_fields=['software_start_using_time'])
             else:
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
