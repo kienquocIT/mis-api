@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -297,10 +299,9 @@ class Product(DataAbstractModel):
         if company_obj:
             warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
             this_period = Periods.objects.filter(
-                tenant_id=self.tenant_id,
-                company_id=self.company_id,
-                fiscal_year=timezone.now().year
+                tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
             ).first()
+            sub_period_order = timezone.now().month - this_period.space_month
             if this_period:
                 for warehouse in warehouse_list:
                     warehouse_id = warehouse.id
@@ -315,18 +316,9 @@ class Product(DataAbstractModel):
                                 'unit_cost': latest_trans.latest_log.current_cost,
                                 'value': latest_trans.latest_log.current_value,
                             })
-                        else:
-                            unit_cost_list.append({
-                                'warehouse_id': warehouse_id,
-                                'warehouse_code': warehouse.code,
-                                'warehouse_title': warehouse.title,
-                                'quantity': latest_trans.latest_log.periodic_current_quantity,
-                                'unit_cost': 0,
-                                'value': 0,
-                            })
                     else:
                         opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
-                            warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                            warehouse_id=warehouse_id, period_mapped=this_period, sub_period_order=sub_period_order
                         ).first()
                         if opening_value_list_obj:
                             unit_cost_list.append({
@@ -337,17 +329,6 @@ class Product(DataAbstractModel):
                                 'unit_cost': opening_value_list_obj.opening_balance_cost,
                                 'value': opening_value_list_obj.opening_balance_value,
                             })
-                        else:
-                            unit_cost_list.append(
-                                {
-                                    'warehouse_id': warehouse_id,
-                                    'warehouse_code': warehouse.code,
-                                    'warehouse_title': warehouse.title,
-                                    'quantity': 0,
-                                    'unit_cost': 0,
-                                    'value': 0
-                                }
-                            )
         return unit_cost_list
 
     @classmethod
