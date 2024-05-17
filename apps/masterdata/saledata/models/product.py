@@ -1,8 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
-from apps.core.company.models import Company
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
