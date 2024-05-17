@@ -248,33 +248,32 @@ class Product(DataAbstractModel):
             company_id=self.company_id,
             fiscal_year=timezone.now().year
         ).first()
-        value_list = [0, 0, 0]
         if this_period:
             latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
-            if latest_trans and self.company:
-                if self.company.companyconfig:
-                    if self.company.companyconfig.definition_inventory_valuation == 0:
+            company_config = getattr(self.company, 'companyconfig')
+            if latest_trans:
+                if company_config.definition_inventory_valuation == 0:
+                    value_list = [
+                        latest_trans.latest_log.current_quantity,
+                        latest_trans.latest_log.current_cost,
+                        latest_trans.latest_log.current_value
+                    ]
+                else:
+                    opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
+                        warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                    ).first()
+                    if opening_value_list_obj:
                         value_list = [
-                            latest_trans.latest_log.current_quantity,
-                            latest_trans.latest_log.current_cost,
-                            latest_trans.latest_log.current_value
+                            opening_value_list_obj.opening_balance_quantity,
+                            opening_value_list_obj.opening_balance_cost,
+                            opening_value_list_obj.opening_balance_value
+                        ] if not opening_value_list_obj.periodic_closed else [
+                            opening_value_list_obj.periodic_ending_balance_quantity,
+                            opening_value_list_obj.periodic_ending_balance_cost,
+                            opening_value_list_obj.periodic_ending_balance_value
                         ]
                     else:
-                        opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
-                            warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
-                        ).first()
-                        if opening_value_list_obj:
-                            value_list = [
-                                opening_value_list_obj.opening_balance_quantity,
-                                opening_value_list_obj.opening_balance_cost,
-                                opening_value_list_obj.opening_balance_value
-                            ] if not opening_value_list_obj.periodic_closed else [
-                                opening_value_list_obj.periodic_ending_balance_quantity,
-                                opening_value_list_obj.periodic_ending_balance_cost,
-                                opening_value_list_obj.periodic_ending_balance_value
-                            ]
-                        else:
-                            value_list = [0, 0, 0]
+                        value_list = [0, 0, 0]
             else:
                 opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
                     warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
@@ -296,24 +295,23 @@ class Product(DataAbstractModel):
             tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
         ).first()
         sub_period_order = timezone.now().month - this_period.space_month
+        company_config = getattr(self.company, 'companyconfig')
         if this_period:
             for warehouse in warehouse_list:
                 latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
-                if latest_trans and self.company:
-                    if self.company.companyconfig:
-                        if (self.company.companyconfig.definition_inventory_valuation == 0 and
-                                latest_trans.latest_log.current_quantity > 0):
-                            unit_cost_list.append({
-                                'warehouse': {'id': warehouse.id, 'code': warehouse.code, 'title': warehouse.title},
-                                'quantity': latest_trans.latest_log.current_quantity,
-                                'unit_cost': latest_trans.latest_log.current_cost,
-                                'value': latest_trans.latest_log.current_value,
-                            })
+                if latest_trans:
+                    if company_config.definition_inventory_valuation == 0 and latest_trans.latest_log.current_quantity:
+                        unit_cost_list.append({
+                            'warehouse': {'id': warehouse.id, 'code': warehouse.code, 'title': warehouse.title},
+                            'quantity': latest_trans.latest_log.current_quantity,
+                            'unit_cost': latest_trans.latest_log.current_cost,
+                            'value': latest_trans.latest_log.current_value,
+                        })
                 else:
                     opening_value_list_obj = self.report_inventory_product_warehouse_product.filter(
                         warehouse_id=warehouse.id, period_mapped=this_period, sub_period_order=sub_period_order
                     ).first()
-                    if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity > 0:
+                    if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity:
                         unit_cost_list.append({
                             'warehouse': {'id': warehouse.id, 'code': warehouse.code, 'title': warehouse.title},
                             'quantity': opening_value_list_obj.opening_balance_quantity,
