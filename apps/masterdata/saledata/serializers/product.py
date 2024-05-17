@@ -959,7 +959,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                             'title': product_inventory.warehouse.title,
                             'code': product_inventory.warehouse.code
                         } if product_inventory.warehouse else {},
-                        'cost': product_inventory.current_cost
+                        'cost': product_inventory.current_cost,
                     }
                 })
         return [value for key, value in wh_dict.items()]

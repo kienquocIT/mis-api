@@ -784,10 +784,6 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
     def validate_product_quantity(cls, value):
         return SaleOrderValueValidate.validate_quantity(value=value)
 
-    @classmethod
-    def validate_product_cost_price(cls, value):
-        return SaleOrderValueValidate.validate_price(value=value)
-
 
 class SaleOrderCostsListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
