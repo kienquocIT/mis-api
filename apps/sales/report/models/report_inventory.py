@@ -573,10 +573,8 @@ class LoggingSubFunction:
 
     @classmethod
     def calculate_ending_balance_for_periodic(cls, period_mapped, sub_period_order, tenant, company):
-        product_id_list = set(Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True))
-        warehouse_id_list = set(WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True))
-        for warehouse_id in warehouse_id_list:
-            for product_id in product_id_list:
+        for warehouse_id in set(WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)):
+            for product_id in set(Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)):
                 this_record = ReportInventoryProductWarehouse.objects.filter(
                     period_mapped=period_mapped, sub_period_order=sub_period_order,
                     product_id=product_id, warehouse_id=warehouse_id
