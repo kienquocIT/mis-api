@@ -58,16 +58,14 @@ class DeliFinishHandler:
             # setup final acceptance
             actual_value = 0
             if all(key in item for key in ('product_id', 'delivery_data')):
-                if Product.objects.filter(id=item['product_id']).exists():
+                product_obj = Product.objects.filter(id=item['product_id']).first()
+                if product_obj:
                     for data_deli in item['delivery_data']:
                         if all(key in data_deli for key in ('warehouse', 'stock')):
-                            pw_inventory = ReportInventorySub.objects.filter(
-                                report_inventory__tenant_id=instance.tenant_id,
-                                report_inventory__company_id=instance.company_id,
-                                product_id=item['product_id'],
-                                warehouse_id=data_deli['warehouse'],
-                            ).first()
-                            actual_value += pw_inventory.current_cost * data_deli['stock'] if pw_inventory else 0
+                            cost = product_obj.get_unit_cost_by_warehouse(
+                                warehouse_id=data_deli.get('warehouse', None), get_type=1
+                            )
+                            actual_value += cost * data_deli['stock']
                     list_data_indicator.append({
                         'tenant_id': instance.tenant_id,
                         'company_id': instance.company_id,
