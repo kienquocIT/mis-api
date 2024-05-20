@@ -393,6 +393,14 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     periodic_ending_balance_cost = models.FloatField(default=0, help_text='is ending balance cost in periodic')
     periodic_ending_balance_value = models.FloatField(default=0, help_text='is ending balance value in periodic')
 
+    periodic_adjustment_ending_quantity = models.FloatField(default=0)
+    ia_item_mapped = models.ForeignKey(
+        'inventory.InventoryAdjustmentItem',
+        on_delete=models.SET_NULL,
+        related_name='periodic_ia_item_mapped',
+        null=True
+    )
+
     sum_input_quantity = models.FloatField(default=0, help_text='is sum input quantity in periodic')
     sum_input_value = models.FloatField(default=0, help_text='is sum value quantity in periodic')
     sum_output_quantity = models.FloatField(default=0, help_text='is sum output quantity in periodic')

@@ -27,7 +27,7 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
         operation_description="Salutation list",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -56,7 +56,7 @@ class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Salutation')
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -83,7 +83,7 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
         operation_description="Interests list",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -112,7 +112,7 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Interest')
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)

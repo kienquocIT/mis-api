@@ -31,7 +31,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
         operation_description="AccountType list",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -61,7 +61,7 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail AccountType')
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -89,7 +89,7 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
         operation_description="AccountGroup list",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -119,7 +119,7 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail AccountGroup')
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -147,7 +147,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
         operation_description="Industry list",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -177,7 +177,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Industry')
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
