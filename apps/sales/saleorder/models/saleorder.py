@@ -241,6 +241,9 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def check_change_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
         if hasattr(instance, 'delivery_of_sale_order'):
             if not instance.delivery_of_sale_order.orderdeliverysub_set.filter(**{

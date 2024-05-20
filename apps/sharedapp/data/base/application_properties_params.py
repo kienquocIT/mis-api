@@ -130,7 +130,7 @@ Quotation_data__params = {
     'c6ed86ba-dbcb-4b87-93f8-92b9c7db2360': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Title',
-        'code': 'quotation_products_data___product_title',
+        'code': 'quotation_products_data___product__title',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -138,7 +138,7 @@ Quotation_data__params = {
     '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Description',
-        'code': 'quotation_products_data___product_description',
+        'code': 'quotation_products_data___product__description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -146,7 +146,7 @@ Quotation_data__params = {
     'd009e1de-a98c-4b06-a648-ccf53a8d9248': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Code',
-        'code': 'quotation_products_data___product_code',
+        'code': 'quotation_products_data___product__code',
         'remark': '',
         'type': 1,
         'is_print': True,
