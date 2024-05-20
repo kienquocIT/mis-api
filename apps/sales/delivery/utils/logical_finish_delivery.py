@@ -1,6 +1,5 @@
 from apps.masterdata.saledata.models import Product
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.report.models import ReportInventorySub
 
 
 class DeliFinishHandler:
