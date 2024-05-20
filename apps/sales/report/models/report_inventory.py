@@ -556,7 +556,7 @@ class LoggingSubFunction:
 
         # Begin get Ending
         if this_record.sub_latest_log:
-            if this_record.company.companyconfig == 0:
+            if this_record.company.companyconfig.definition_inventory_valuation == 0:
                 ending_quantity = this_record.sub_latest_log.current_quantity
                 ending_cost = this_record.sub_latest_log.current_cost
                 ending_value = this_record.sub_latest_log.current_value
