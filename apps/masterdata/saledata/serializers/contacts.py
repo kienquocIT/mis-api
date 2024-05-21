@@ -214,6 +214,12 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
 
     def create(self, validated_data):
+        if 'code' not in validated_data:
+            number = Contact.objects.filter(
+                tenant_id=validated_data['tenant_id'],
+                company_id=validated_data['company_id']
+            ).count()
+            validated_data['code'] = f"C00{number}"
         contact = Contact.objects.create(**validated_data)
         if contact.account_name:
             contact.account_name.owner = contact
