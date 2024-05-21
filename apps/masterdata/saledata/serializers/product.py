@@ -574,7 +574,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': ratio_convert * item.stock_amount,
-                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id)
+                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1)
                 })
         return result
 

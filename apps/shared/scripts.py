@@ -1548,7 +1548,7 @@ def update_gr_for_lot_serial():
     print('update_gr_for_lot_serial done.')
 
 
-def get_latest_trans(log, period_mapped, sub_period_order):
+def get_latest_log(log, period_mapped, sub_period_order):
     # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
     # 1: lấy records tháng này
     # 2: lấy records các tháng trước (trong năm)
@@ -1580,7 +1580,7 @@ def run_inventory_report():
     for log in ReportInventorySub.objects.all().order_by('date_created'):
         period_mapped = log.report_inventory.period_mapped
         sub_period_order = log.report_inventory.sub_period_order
-        latest_trans = get_latest_trans(log, period_mapped, sub_period_order)
+        latest_trans = get_latest_log(log, period_mapped, sub_period_order)
         if latest_trans:
             latest_value_list = {
                 'quantity': latest_trans.current_quantity,
