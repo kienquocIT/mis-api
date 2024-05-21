@@ -111,6 +111,7 @@ INSTALLED_APPS = \
         'apps.sales.revenue_plan',
         'apps.sales.arinvoice',
         'apps.sales.apinvoice',
+        'apps.sales.lead',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]
