@@ -71,12 +71,18 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             LeadNote.objects.create(lead=lead, note=note_content)
 
         # create config
-        LeadConfig.objects.create(lead=lead, **self.initial_data.get('config_data'))
+        if 'assign_to_sale' in validated_data:
+            LeadConfig.objects.create(lead=lead, assign_to_sale_config=validated_data['assign_to_sale'])
 
         return lead
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
+    industry = serializers.SerializerMethodField()
+    assign_to_sale = serializers.SerializerMethodField()
+    note_data = serializers.SerializerMethodField()
+    config_data = serializers.SerializerMethodField()
+
     class Meta:
         model = Lead
         fields = (
@@ -95,8 +101,44 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'source',
             'lead_status',
             'assign_to_sale',
-            'current_lead_stage'
+            'current_lead_stage',
+            'note_data',
+            'config_data'
         )
+
+    @classmethod
+    def get_industry(cls, obj):
+        return {
+            'id': obj.industry_id,
+            'code': obj.industry.code,
+            'title': obj.industry.title
+        } if obj.industry else {}
+
+    @classmethod
+    def get_assign_to_sale(cls, obj):
+        return {
+            'id': obj.assign_to_sale_id,
+            'code': obj.assign_to_sale.code,
+            'full_name': obj.assign_to_sale.get_full_name(2)
+        } if obj.assign_to_sale else {}
+
+    @classmethod
+    def get_note_data(cls, obj):
+        return [note_content.note for note_content in obj.lead_notes.all()]
+
+    @classmethod
+    def get_config_data(cls, obj):
+        return [{
+            'create_contact': config.create_contact,
+            'convert_opp': config.convert_opp,
+            'convert_opp_create': config.convert_opp_create,
+            'convert_opp_select': config.convert_opp_select,
+            'opp_select': config.opp_select,
+            'convert_account_create': config.convert_account_create,
+            'convert_account_select': config.convert_account_select,
+            'account_select': config.account_select,
+            'assign_to_sale_config': config.assign_to_sale_config
+        } for config in obj.lead_configs.all()]
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
