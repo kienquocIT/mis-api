@@ -128,17 +128,22 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_config_data(cls, obj):
-        return [{
+        config = obj.lead_configs.first()
+        return {
             'create_contact': config.create_contact,
             'convert_opp': config.convert_opp,
             'convert_opp_create': config.convert_opp_create,
             'convert_opp_select': config.convert_opp_select,
-            'opp_select': config.opp_select,
+            'opp_select': config.opp_select_id,
             'convert_account_create': config.convert_account_create,
             'convert_account_select': config.convert_account_select,
-            'account_select': config.account_select,
-            'assign_to_sale_config': config.assign_to_sale_config
-        } for config in obj.lead_configs.all()]
+            'account_select': config.account_select_id,
+            'assign_to_sale_config': {
+                'id': config.assign_to_sale_config_id,
+                'code': config.assign_to_sale_config.code,
+                'full_name': config.assign_to_sale_config.get_full_name(2),
+            }
+        } if config else {}
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
