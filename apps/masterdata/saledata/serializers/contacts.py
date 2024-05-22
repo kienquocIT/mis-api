@@ -218,7 +218,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             number = Contact.objects.filter(
                 tenant_id=validated_data['tenant_id'],
                 company_id=validated_data['company_id']
-            ).count()
+            ).count() + 1
             validated_data['code'] = f"C00{number}"
         contact = Contact.objects.create(**validated_data)
         if contact.account_name:
