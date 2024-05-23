@@ -101,6 +101,7 @@ MAP_FIELD_TITLE = {
     'acceptance.finalacceptance': 'title',
     'inventory.goodstransfer': 'title',
     'inventory.goodsreturn': 'title',
+    'lead.lead': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from apps.shared import AbstractDetailSerializerModel
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.lead.models import Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS
 
 __all__ = [
@@ -50,33 +52,35 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'revenue',
             'source',
             'lead_status',
-            'assign_to_sale'
+            'assign_to_sale',
+            'system_status'
         )
 
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         current_stage = LeadStage.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
         ).first()
-        number = Lead.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id']
-        ).count() + 1
-        lead = Lead.objects.create(**validated_data, code=f'L000{number}', current_lead_stage=current_stage)
+        if current_stage:
+            lead = Lead.objects.create(**validated_data, current_lead_stage=current_stage)
 
-        # create notes
-        for note_content in self.initial_data.get('note_data'):
-            LeadNote.objects.create(lead=lead, note=note_content)
+            # create notes
+            for note_content in self.initial_data.get('note_data'):
+                LeadNote.objects.create(lead=lead, note=note_content)
 
-        # create config
-        if 'assign_to_sale' in validated_data:
-            LeadConfig.objects.create(lead=lead, assign_to_sale_config=validated_data['assign_to_sale'])
+            # create config
+            if 'assign_to_sale' in validated_data:
+                LeadConfig.objects.create(lead=lead, assign_to_sale_config=validated_data['assign_to_sale'])
 
-        return lead
+            return lead
+        else:
+            raise serializers.ValidationError({'Lead stage': "Lead stage not found"})
 
 
-class LeadDetailSerializer(serializers.ModelSerializer):
+class LeadDetailSerializer(AbstractDetailSerializerModel):
     industry = serializers.SerializerMethodField()
     assign_to_sale = serializers.SerializerMethodField()
     note_data = serializers.SerializerMethodField()
@@ -142,7 +146,12 @@ class LeadDetailSerializer(serializers.ModelSerializer):
                 'id': config.assign_to_sale_config_id,
                 'code': config.assign_to_sale_config.code,
                 'full_name': config.assign_to_sale_config.get_full_name(2),
-            }
+            } if config.assign_to_sale_config else {},
+            'contact_mapped': {
+                'id': config.contact_mapped_id,
+                'code': config.contact_mapped.code,
+                'fullname': config.contact_mapped.fullname,
+            } if config.contact_mapped else {}
         } if config else {}
 
     @classmethod
@@ -169,12 +178,14 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             'revenue',
             'source',
             'lead_status',
-            'assign_to_sale'
+            'assign_to_sale',
+            'system_status'
         )
 
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -184,6 +195,11 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         LeadNote.objects.filter(lead=instance).delete()
         for note_content in self.initial_data.get('note_data'):
             LeadNote.objects.create(lead=instance, note=note_content)
+
+        # update config
+        LeadConfig.objects.filter(lead=instance).delete()
+        if 'assign_to_sale' in validated_data:
+            LeadConfig.objects.create(lead=instance, assign_to_sale_config=validated_data['assign_to_sale'])
 
         return instance
 

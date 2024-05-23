@@ -1771,6 +1771,65 @@ REPORT_PURCHASING_APP_CONFIG = {
     "allow_permit": True,
 }
 
+LEAD_APP_CONFIG = {
+    "id": "c04b2295-307f-49ed-80ab-1ca7f2b32d00",
+    "title": "Lead",
+    "code": "lead",
+    "model_code": "lead",
+    "app_label": "lead",
+    "is_workflow": True,
+    "app_depend_on": [
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+        "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
+        "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1994,6 +2053,10 @@ Application_crm_data = {
         filtering_inheritor=False,
     ),
     "e696a636-0f36-4b20-970d-70035d6e1e37": ApplicationConfigFrame(**REPORT_PURCHASING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c04b2295-307f-49ed-80ab-1ca7f2b32d00": ApplicationConfigFrame(**LEAD_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
