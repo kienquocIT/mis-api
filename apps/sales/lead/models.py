@@ -83,15 +83,15 @@ class LeadStage(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Lead stage'
         verbose_name_plural = 'Lead stages'
-        ordering = ()
+        ordering = ('level',)
         default_permissions = ()
         permissions = ()
 
 
 class LeadConfig(SimpleAbstractModel):
     lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE, related_name='lead_configs')
-    create_contact = models.BooleanField(default=True)
-    convert_opp = models.BooleanField(default=True)
+    create_contact = models.BooleanField(default=False)
+    convert_opp = models.BooleanField(default=False)
     convert_opp_create = models.BooleanField(default=True)
     convert_opp_select = models.BooleanField(default=False)
     opp_select = models.ForeignKey('opportunity.Opportunity', on_delete=models.CASCADE, null=True)
@@ -99,6 +99,8 @@ class LeadConfig(SimpleAbstractModel):
     convert_account_select = models.BooleanField(default=False)
     account_select = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
     assign_to_sale_config = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
+
+    contact_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Lead config'

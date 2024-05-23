@@ -1,13 +1,18 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.masterdata.saledata.models import Contact
+from apps.masterdata.saledata.serializers import ContactCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.lead.models import Lead
+from apps.sales.lead.models import Lead, LeadStage
 from apps.sales.lead.serializers import (
-    LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer
+    LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
+    LeadStageListSerializer
 )
 
 __all__ = [
     'LeadList',
-    'LeadDetail'
+    'LeadDetail',
+    'LeadStageList'
 ]
 
 
@@ -62,6 +67,38 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        if 'convert_contact' in self.request.query_params:
+            # convert to a new contact
+            lead = Lead.objects.get(pk=self.kwargs['pk'])
+            lead_configs = lead.lead_configs.first()
+            if lead_configs:
+                ContactCreateSerializer.validate_email(lead.email)
+                ContactCreateSerializer.validate_mobile(lead.mobile)
+                ContactCreateSerializer.validate_owner(self.request.user.employee_current)
+                number = Contact.objects.filter(
+                    tenant_id=self.request.user.tenant_current_id,
+                    company_id=self.request.user.company_current_id
+                ).count() + 1
+                contact_mapped = Contact.objects.create(
+                    code=f"C00{number}",
+                    email=lead.email,
+                    mobile=lead.mobile,
+                    fullname=lead.contact_name,
+                    job_title=lead.job_title,
+                    owner=self.request.user.employee_current,
+                    tenant_id=self.request.user.tenant_current_id,
+                    company_id=self.request.user.company_current_id
+                )
+                current_stage = LeadStage.objects.filter(
+                    tenant_id=self.request.user.tenant_current_id,
+                    company_id=self.request.user.company_current_id,
+                    level=2
+                ).first()
+                lead.current_lead_stage = current_stage
+                lead.save(update_fields=['current_lead_stage'])
+                lead_configs.contact_mapped = contact_mapped
+                lead_configs.create_contact = True
+                lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ARInvoice", request_body=LeadUpdateSerializer)
@@ -71,3 +108,18 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = LeadUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class LeadStageList(BaseListMixin):
+    queryset = LeadStage.objects
+    serializer_list = LeadStageListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Lead stage list",
+        operation_description="Lead stage list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

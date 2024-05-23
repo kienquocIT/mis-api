@@ -50,8 +50,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'revenue',
             'source',
             'lead_status',
-            'assign_to_sale',
-            'current_lead_stage'
+            'assign_to_sale'
         )
 
     def validate(self, validate_data):
@@ -82,6 +81,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     assign_to_sale = serializers.SerializerMethodField()
     note_data = serializers.SerializerMethodField()
     config_data = serializers.SerializerMethodField()
+    current_lead_stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -145,11 +145,32 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             }
         } if config else {}
 
+    @classmethod
+    def get_current_lead_stage(cls, obj):
+        return {
+            'title': obj.current_lead_stage.stage_title,
+            'level': obj.current_lead_stage.level,
+        }
+
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = '__all__'
+        fields = (
+            'title',
+            'contact_name',
+            'job_title',
+            'mobile',
+            'email',
+            'company_name',
+            'account_name',
+            'industry',
+            'total_employees',
+            'revenue',
+            'source',
+            'lead_status',
+            'assign_to_sale'
+        )
 
     def validate(self, validate_data):
         return validate_data
@@ -158,4 +179,20 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        # update notes
+        LeadNote.objects.filter(lead=instance).delete()
+        for note_content in self.initial_data.get('note_data'):
+            LeadNote.objects.create(lead=instance, note=note_content)
+
         return instance
+
+
+class LeadStageListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadStage
+        fields = (
+            'id',
+            'stage_title',
+            'level'
+        )
