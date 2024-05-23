@@ -1778,50 +1778,30 @@ LEAD_APP_CONFIG = {
     "model_code": "lead",
     "app_label": "lead",
     "is_workflow": True,
-    "app_depend_on": [
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
-        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
-        "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-            },
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-            },
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-            },
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },

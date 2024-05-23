@@ -10,6 +10,7 @@ from apps.masterdata.saledata.serializers.contacts import (
     ContactListSerializer, ContactCreateSerializer, ContactDetailSerializer,
     ContactUpdateSerializer, ContactListNotMapAccountSerializer,
 )
+from apps.sales.lead.models import Lead
 
 
 # Create your views here.
@@ -161,6 +162,19 @@ class ContactList(BaseListMixin, BaseCreateMixin):
         label_code='saledata', model_code='contact', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        if 'convert_contact' and 'lead_id' in request.data:
+            lead = Lead.objects.filter(id=request.data['lead_id'], system_status=3).first()
+            if lead:
+                request.data['email'] = lead.email
+                request.data['mobile'] = lead.mobile
+                request.data['fullname'] = lead.contact_name
+                request.data['job_title'] = lead.job_title
+                request.data['owner'] = str(self.request.user.employee_current_id)
+
+                self.ser_context = {
+                    'convert_contact': True,
+                    'lead_id': str(request.data['lead_id'])
+                }
         return self.create(request, *args, **kwargs)
 
 

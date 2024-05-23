@@ -109,8 +109,6 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        if 'convert_contact' in self.request.query_params:
-            self.convert_contact()
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Lead", request_body=LeadUpdateSerializer)
