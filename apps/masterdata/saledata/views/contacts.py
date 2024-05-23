@@ -172,7 +172,6 @@ class ContactList(BaseListMixin, BaseCreateMixin):
                 request.data['owner'] = str(self.request.user.employee_current_id)
 
                 self.ser_context = {
-                    'convert_contact': True,
                     'lead_id': str(request.data['lead_id'])
                 }
         return self.create(request, *args, **kwargs)

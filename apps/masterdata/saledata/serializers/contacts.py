@@ -243,7 +243,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             contact.account_name.owner = contact
             contact.account_name.save(update_fields=['owner'])
 
-        if 'convert_contact' and 'lead_id' in self.context:
+        if 'lead_id' in self.context:
             self.convert_contact(
                 self.context.get('lead_id'),
                 validated_data['tenant_id'],
