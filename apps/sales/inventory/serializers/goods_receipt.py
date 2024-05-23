@@ -505,6 +505,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
+    date_received = serializers.DateTimeField()
 
     class Meta:
         model = GoodsReceipt
