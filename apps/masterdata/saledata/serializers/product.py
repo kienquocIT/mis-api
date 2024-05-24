@@ -858,7 +858,6 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'general_information',
-            'description',
             'purchase_information',
             'sale_information',
             'purchase_information',

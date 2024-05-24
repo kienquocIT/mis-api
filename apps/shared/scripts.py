@@ -41,6 +41,7 @@ from ..eoffice.leave.models import LeaveAvailable
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle, \
     OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
@@ -1404,14 +1405,14 @@ def reset_set_product_transaction_information():
     # set input, output, return
     # input
     for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+        POFinishHandler.update_product_wait_receipt_amount(instance=po)
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
         GRFinishHandler.update_product_wait_receipt_amount(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
         SOFinishHandler.update_product_wait_delivery_amount(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductInformationHandle.main_handle(instance=deli_sub)
+        DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
     for return_obj in GoodsReturn.objects.all():
         GReturnProductInformationHandle.main_handle(instance=return_obj)
@@ -1434,7 +1435,7 @@ def reset_set_product_warehouse_stock():
         GRFinishHandler.push_to_product_warehouse(instance=gr)
     # output
     for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
+        DeliFinishHandler.push_product_warehouse(instance=deli_sub)
     print('reset_set_product_warehouse_stock done.')
 
 

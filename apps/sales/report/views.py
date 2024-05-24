@@ -185,6 +185,7 @@ class ReportCashflowList(BaseListMixin):
         'sale_order_id': ['exact', 'in'],
         'due_date': ['exact', 'gte', 'lte'],
         'sale_order__system_status': ['exact'],
+        'purchase_order__system_status': ['exact'],
     }
     serializer_list = ReportCashflowListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -193,7 +194,7 @@ class ReportCashflowList(BaseListMixin):
         return super().get_queryset().select_related(
             "sale_order",
             "purchase_order",
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Report cashflow list",

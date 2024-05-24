@@ -47,15 +47,7 @@ class POFinishHandler:
 
     @classmethod
     def push_to_report_cashflow(cls, instance):
-        po_products_json = {}
         if instance.tenant and instance.company and instance.employee_inherit:
-            po_products = instance.purchase_order_product_order.all()
-            for po_product in po_products:
-                if str(po_product.product_id) not in po_products_json:
-                    po_products_json.update({str(po_product.product_id): {
-                        'po': str(po_product.purchase_order_id),
-                        'quantity': po_product.product_quantity_order_actual,
-                    }})
             # payment
             bulk_data = [ReportCashflow(
                 tenant_id=instance.tenant_id,
