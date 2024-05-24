@@ -8,61 +8,6 @@ from apps.sales.report.models import ReportInventorySub
 
 class GoodsReturnSubSerializerForNonPicking:
     @classmethod
-    def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
-        activities_data = []
-        div = instance.company.companyconfig.definition_inventory_valuation
-        if div == 0:
-            delivery_product = ReportInventorySub.objects.filter(
-                warehouse=instance.return_to_warehouse,
-                product=instance.product,
-                trans_id=str(instance.return_to_warehouse_id)
-            ).first()
-            if delivery_product:
-                delivery_product_cost = delivery_product.cost
-            else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-        else:
-            goods_return_cost_input = instance.goods_return_product_detail.first()
-            if goods_return_cost_input:
-                delivery_product_cost = goods_return_cost_input.cost_for_periodic
-            else:
-                raise serializers.ValidationError({'Cost': 'Cost is not null.'})
-        lot_data = []
-        for lot in product_detail_list:
-            type_value = lot.get('type')
-            if type_value == 1:  # is LOT
-                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
-                if prd_wh_lot:
-                    lot_data.append({
-                        'lot_id': str(prd_wh_lot.id),
-                        'lot_number': prd_wh_lot.lot_number,
-                        'lot_quantity': lot['lot_return_number'],
-                        'lot_value': delivery_product_cost * lot['lot_return_number'],
-                        'lot_expire_date': str(prd_wh_lot.expire_date)
-                    })
-        activities_data.append({
-            'product': instance.product,
-            'warehouse': instance.return_to_warehouse,
-            'system_date': instance.date_created,
-            'posting_date': instance.date_created,
-            'document_date': instance.date_created,
-            'stock_type': 1,
-            'trans_id': str(instance.id),
-            'trans_code': instance.code,
-            'trans_title': 'Goods return',
-            'quantity': return_quantity,
-            'cost': delivery_product_cost,
-            'value': delivery_product_cost * return_quantity,
-            'lot_data': lot_data
-        })
-        ReportInventorySub.logging_when_stock_activities_happened(
-            instance,
-            instance.date_created,
-            activities_data
-        )
-        return True
-
-    @classmethod
     def create_prod(cls, new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, gr_product):
         """
         (TH delivery đã DONE hết)
@@ -390,7 +335,6 @@ class GoodsReturnSubSerializerForNonPicking:
                 cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
                 cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
-        cls.prepare_data_for_logging(gr_obj, return_quantity, product_detail_list)
         return True
 
     @classmethod

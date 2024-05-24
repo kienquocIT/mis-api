@@ -2,11 +2,12 @@ from django.db import models
 from rest_framework import serializers
 from apps.sales.delivery.models import DeliveryConfig
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import SubPeriods
+from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking,
     GReturnProductInformationHandle, GReturnFinalAcceptanceHandle
 )
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
 
@@ -26,6 +27,71 @@ class GoodsReturn(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        product_detail_list = instance.product_detail_list
+        return_quantity = 0
+        for item in product_detail_list:
+            if item.get('type') == 0:
+                return_quantity += item.get('default_return_number', 0)
+            elif item.get('type') == 1:
+                return_quantity += item.get('lot_return_number', 0)
+            elif item.get('type') == 2:
+                return_quantity += item.get('is_return', 0)
+
+        activities_data = []
+        div = instance.company.companyconfig.definition_inventory_valuation
+        if div == 0:
+            delivery_product = ReportInventorySub.objects.filter(
+                warehouse=instance.return_to_warehouse,
+                product=instance.product,
+                trans_id=str(instance.delivery_id)
+            ).first()
+            if delivery_product:
+                delivery_product_cost = delivery_product.cost
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        else:
+            goods_return_cost_input = instance.goods_return_product_detail.first()
+            if goods_return_cost_input:
+                delivery_product_cost = goods_return_cost_input.cost_for_periodic
+            else:
+                raise serializers.ValidationError({'Cost': 'Cost is not null.'})
+        lot_data = []
+        for lot in product_detail_list:
+            type_value = lot.get('type')
+            if type_value == 1:  # is LOT
+                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
+                if prd_wh_lot:
+                    lot_data.append({
+                        'lot_id': str(prd_wh_lot.id),
+                        'lot_number': prd_wh_lot.lot_number,
+                        'lot_quantity': lot['lot_return_number'],
+                        'lot_value': delivery_product_cost * lot['lot_return_number'],
+                        'lot_expire_date': str(prd_wh_lot.expire_date)
+                    })
+        activities_data.append({
+            'product': instance.product,
+            'warehouse': instance.return_to_warehouse,
+            'system_date': instance.date_created,
+            'posting_date': instance.date_created,
+            'document_date': instance.date_created,
+            'stock_type': 1,
+            'trans_id': str(instance.id),
+            'trans_code': instance.code,
+            'trans_title': 'Goods return',
+            'quantity': return_quantity,
+            'cost': delivery_product_cost,
+            'value': delivery_product_cost * return_quantity,
+            'lot_data': lot_data
+        })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            activities_data
+        )
+        return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -59,6 +125,8 @@ class GoodsReturn(DataAbstractModel):
             GReturnProductInformationHandle.main_handle(instance=self)
             # handle final acceptance
             GReturnFinalAcceptanceHandle.main_handle(instance=self)
+
+            self.prepare_data_for_logging(self)
 
         super().save(*args, **kwargs)
 

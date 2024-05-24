@@ -144,6 +144,7 @@ class GoodsIssue(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 self.prepare_data_for_logging(self)
+
                 if self.inventory_adjustment:
                     for item in self.goods_issue_datas:
                         self.update_product_amount(item)

@@ -41,9 +41,10 @@ from ..eoffice.leave.models import LeaveAvailable
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
-from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
+from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle, \
+    OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
 from ..sales.inventory.models import GReturnProductInformationHandle
 from ..sales.inventory.utils import GRFinishHandler
 from ..sales.opportunity.models import (
@@ -56,7 +57,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
-    ReportInventoryProductWarehouse, LatestSub
+    ReportInventoryProductWarehouse, LatestSub, ReportInventory
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1641,3 +1642,92 @@ def run_inventory_report():
                 )
     print('Done')
     return True
+
+
+def report_goods_receipt(company_id, start_month):
+    ReportInventorySub.objects.all().delete()
+    ReportInventoryProductWarehouse.objects.all().delete()
+    ReportInventory.objects.all().delete()
+    LatestSub.objects.all().delete()
+
+    all_delivery = OrderDeliverySub.objects.filter(
+        company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
+    ).order_by('date_done')
+
+    all_goods_issue = GoodsIssue.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_receipt = GoodsReceipt.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_return = GoodsReturn.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_transfer = GoodsTransfer.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_doc = []
+    for delivery in all_delivery:
+        all_doc.append({
+            'id': str(delivery.id), 'code': str(delivery.code),
+            'date_approved': str(delivery.date_done), 'type': 'delivery'
+        })
+    for goods_issue in all_goods_issue:
+        all_doc.append({
+            'id': str(goods_issue.id), 'code': str(goods_issue.code),
+            'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+        })
+    for goods_receipt in all_goods_receipt:
+        all_doc.append({
+            'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
+            'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+        })
+    for goods_return in all_goods_return:
+        all_doc.append({
+            'id': str(goods_return.id), 'code': str(goods_return.code),
+            'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+        })
+    for goods_transfer in all_goods_transfer:
+        all_doc.append({
+            'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
+            'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+        })
+
+    all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+    for doc in all_doc_sorted:
+        print(f"----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
+
+        if doc['type'] == 'delivery':
+            instance = OrderDeliverySub.objects.get(id=doc['id'])
+            products = instance.delivery_product_delivery_sub.all()
+            validated_product = []
+            for prd in products:
+                if prd.picked_quantity > 0:
+                    validated_product.append({
+                        'product_id': str(prd.product_id),
+                        'delivery_data': prd.delivery_data,
+                        'order': prd.order
+                    })
+            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance, validated_product)
+
+        if doc['type'] == 'goods_issue':
+            instance = GoodsIssue.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_receipt':
+            instance = GoodsReceipt.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_return':
+            instance = GoodsReturn.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_transfer':
+            instance = GoodsTransfer.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+    print('Done')

@@ -376,7 +376,7 @@ class ReportInventoryList(BaseListMixin):
                 for wh_id in wh_id_list:
                     this_sub_record = None
                     for item in all_this_sub_record:
-                        if item.product_id == prd_id and item.warehouse_id == wh_id:
+                        if str(item.product_id) == str(prd_id) and str(item.warehouse_id) == str(wh_id):
                             this_sub_record = item
                             break
                     if not this_sub_record:
