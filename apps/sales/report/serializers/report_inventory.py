@@ -76,7 +76,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         return data_stock_activity
 
     def get_stock_activities(self, obj):
-        div = self.context.get('definition_inventory_valuation')
         # danh sách dữ liệu giá cost hàng tồn kho của sản phẩm (cost_data)
         inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
         #                                    SP
@@ -91,7 +90,8 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             ).first()
             if inventory_cost_data:
                 data_stock_activity = self.get_stock_activities_detail(
-                    obj, self.context.get('all_logs_by_month', []), wh_id, div
+                    obj, self.context.get('all_logs_by_month', []), wh_id,
+                    self.context.get('definition_inventory_valuation')
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
