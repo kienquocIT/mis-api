@@ -5,7 +5,7 @@ class POHandler:
     @classmethod
     def push_diagram(cls, instance):
         data_push = {}
-        list_pr = []
+        list_reference = []
         for po_pr_product in instance.purchase_order_request_product_order.all():
             if po_pr_product.purchase_request_product and po_pr_product.purchase_order_product:
                 if po_pr_product.purchase_request_product.purchase_request:
@@ -24,11 +24,11 @@ class POHandler:
                             data_push[str(so_id)]['quantity'] += quantity
                             data_push[str(so_id)]['total'] += total
         for purchase_request in instance.purchase_requests.all():
-            list_pr.append(purchase_request.code)
-        list_pr.reverse()
-        detail = ", ".join(list_pr)
+            list_reference.append(purchase_request.code)
         for purchase_request in instance.purchase_requests.all():
             if purchase_request.sale_order:
+                list_reference.reverse()
+                reference = ", ".join(list_reference)
                 DiagramSuffix.push_diagram_suffix(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
@@ -45,7 +45,7 @@ class POHandler:
                         # custom
                         'quantity': data_push.get(str(purchase_request.sale_order_id), {}).get('quantity', 0),
                         'total': data_push.get(str(purchase_request.sale_order_id), {}).get('total', 0),
-                        'detail': detail,
+                        'reference': reference,
                     }
                 )
         return True
