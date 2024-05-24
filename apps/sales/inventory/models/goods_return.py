@@ -60,17 +60,15 @@ class GoodsReturn(DataAbstractModel):
                 raise serializers.ValidationError({'Cost': 'Cost is not null.'})
         lot_data = []
         for lot in product_detail_list:
-            type_value = lot.get('type')
-            if type_value == 1:  # is LOT
-                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
-                if prd_wh_lot:
-                    lot_data.append({
-                        'lot_id': str(prd_wh_lot.id),
-                        'lot_number': prd_wh_lot.lot_number,
-                        'lot_quantity': lot['lot_return_number'],
-                        'lot_value': delivery_product_cost * lot['lot_return_number'],
-                        'lot_expire_date': str(prd_wh_lot.expire_date)
-                    })
+            prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
+            if prd_wh_lot and lot.get('type') == 1:  # is LOT
+                lot_data.append({
+                    'lot_id': str(prd_wh_lot.id),
+                    'lot_number': prd_wh_lot.lot_number,
+                    'lot_quantity': lot['lot_return_number'],
+                    'lot_value': delivery_product_cost * lot['lot_return_number'],
+                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                })
         activities_data.append({
             'product': instance.product,
             'warehouse': instance.return_to_warehouse,

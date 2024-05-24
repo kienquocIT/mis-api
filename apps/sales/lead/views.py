@@ -100,8 +100,7 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
             lead_configs.create_contact = True
             lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
             return True
-        else:
-            raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
+        raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
 
     @swagger_auto_schema(operation_summary='Detail Lead')
     @mask_view(

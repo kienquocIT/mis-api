@@ -76,8 +76,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                 LeadConfig.objects.create(lead=lead, assign_to_sale_config=validated_data['assign_to_sale'])
 
             return lead
-        else:
-            raise serializers.ValidationError({'Lead stage': "Lead stage not found"})
+        raise serializers.ValidationError({'Lead stage': "Lead stage not found"})
 
 
 class LeadDetailSerializer(AbstractDetailSerializerModel):

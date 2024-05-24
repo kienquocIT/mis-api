@@ -228,8 +228,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             lead_configs.create_contact = True
             lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
             return True
-        else:
-            raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
+        raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
 
     def create(self, validated_data):
         if 'code' not in validated_data:
