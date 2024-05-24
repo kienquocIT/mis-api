@@ -70,6 +70,10 @@ class GoodsReturn(DataAbstractModel):
                     'lot_value': delivery_product_cost * lot['lot_return_number'],
                     'lot_expire_date': str(prd_wh_lot.expire_date)
                 })
+        casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+            instance.uom,
+            return_quantity
+        )
         activities_data.append({
             'product': instance.product,
             'warehouse': instance.return_to_warehouse,
@@ -80,9 +84,9 @@ class GoodsReturn(DataAbstractModel):
             'trans_id': str(instance.id),
             'trans_code': instance.code,
             'trans_title': 'Goods return',
-            'quantity': return_quantity,
-            'cost': delivery_product_cost,
-            'value': delivery_product_cost * return_quantity,
+            'quantity': casted_quantity,
+            'cost': delivery_product_cost / casted_quantity,
+            'value': delivery_product_cost,
             'lot_data': lot_data
         })
         ReportInventorySub.logging_when_stock_activities_happened(

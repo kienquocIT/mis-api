@@ -109,6 +109,18 @@ class ReportInventorySub(DataAbstractModel):
     lot_data = models.JSONField(default=list)
 
     @classmethod
+    def cast_quantity_to_unit(cls, log_uom, log_quantity):
+        return log_quantity * log_uom.ratio
+
+    @classmethod
+    def cast_quantity_to_inventory_uom(cls, inventory_uom, log_quantity):
+        return log_quantity / inventory_uom.ratio
+
+    @classmethod
+    def cast_quantity_ratio(cls, src_quantity, des_quantity):
+        return src_quantity / des_quantity if des_quantity > 0 else 1
+
+    @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
         """
         Hàm ghi lại các hoạt động tương tác với kho hàng

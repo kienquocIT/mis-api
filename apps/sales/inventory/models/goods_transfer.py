@@ -84,6 +84,11 @@ class GoodsTransfer(DataAbstractModel):
                         'lot_value': item.unit_cost * lot_item['quantity'],
                         'lot_expire_date': str(prd_wh_lot.expire_date)
                     })
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                item.uom,
+                item.quantity
+            )
+            casted_cost = item.unit_cost * item.quantity / casted_quantity
             activities_data_out.append({
                 'product': item.product,
                 'warehouse': item.warehouse,
@@ -94,11 +99,12 @@ class GoodsTransfer(DataAbstractModel):
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
                 'trans_title': 'Goods transfer (out)',
-                'quantity': item.quantity,
-                'cost': item.unit_cost,
-                'value': item.unit_cost * item.quantity,
+                'quantity': casted_quantity,
+                'cost': 0,  # theo gia cost
+                'value': 0,  # theo gia cost
                 'lot_data': lot_data
             })
+
             activities_data_in.append({
                 'product': item.product,
                 'warehouse': item.end_warehouse,
@@ -109,9 +115,9 @@ class GoodsTransfer(DataAbstractModel):
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
                 'trans_title': 'Goods transfer (in)',
-                'quantity': item.quantity,
-                'cost': item.unit_cost,
-                'value': item.unit_cost * item.quantity,
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_cost * casted_quantity,
                 'lot_data': lot_data
             })
         ReportInventorySub.logging_when_stock_activities_happened(

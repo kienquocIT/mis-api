@@ -456,6 +456,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                             })
                     warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
                     if warehouse:
+                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, delivery_item.get('stock'))
                         activities_data.append({
                             'product': item.product,
                             'warehouse': warehouse,
@@ -466,9 +467,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                             'trans_id': str(instance.id),
                             'trans_code': instance.code,
                             'trans_title': 'Delivery',
-                            'quantity': delivery_item.get('stock'),
-                            'cost': main_product_unit_price,
-                            'value': main_product_unit_price * delivery_item.get('stock'),
+                            'quantity': casted_quantity,
+                            'cost': 0,  # theo gia cost
+                            'value': 0,  # theo gia cost
                             'lot_data': lot_data
                         })
         ReportInventorySub.logging_when_stock_activities_happened(

@@ -125,6 +125,8 @@ class GoodsReceipt(DataAbstractModel):
                         'lot_expire_date': str(lot.expire_date)
                     } for lot in child.goods_receipt_lot_gr_warehouse.all()]
 
+                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, child.quantity_import)
+                    casted_cost = item.product_unit_price * child.quantity_import / casted_quantity
                     activities_data.append({
                         'product': item.product,
                         'warehouse': child.warehouse,
@@ -135,9 +137,9 @@ class GoodsReceipt(DataAbstractModel):
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
                         'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
-                        'quantity': child.quantity_import,
-                        'cost': item.product_unit_price,
-                        'value': item.product_subtotal_price,
+                        'quantity': casted_quantity,
+                        'cost': casted_cost,
+                        'value': casted_cost * casted_quantity,
                         'lot_data': lot_data
                     })
                 else:
