@@ -42,8 +42,7 @@ from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
 from ..sales.delivery.utils import DeliFinishHandler
-from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle, \
-    OrderDeliverySubUpdateSerializer
+from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
 from ..sales.inventory.models import GReturnProductInformationHandle

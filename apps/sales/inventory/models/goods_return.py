@@ -60,8 +60,9 @@ class GoodsReturn(DataAbstractModel):
                 raise serializers.ValidationError({'Cost': 'Cost is not null.'})
         lot_data = []
         for lot in product_detail_list:
-            prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
-            if prd_wh_lot and lot.get('type') == 1:  # is LOT
+            type = lot.get('type')
+            prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first() if type == 1 else None
+            if prd_wh_lot and type == 1:  # is LOT
                 lot_data.append({
                     'lot_id': str(prd_wh_lot.id),
                     'lot_number': prd_wh_lot.lot_number,
