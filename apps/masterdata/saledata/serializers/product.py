@@ -597,7 +597,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
     )
     general_product_category = serializers.UUIDField()
-    general_uom_group = serializers.UUIDField()
+    # general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
@@ -618,8 +618,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'product_choice',
             # General
             'general_product_category',
-            'general_uom_group',
-            'general_traceability_method',
+            # 'general_uom_group',
+            # 'general_traceability_method',
             'width',
             'height',
             'length',
@@ -658,12 +658,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         except ProductCategory.DoesNotExist:
             raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
-    @classmethod
-    def validate_general_uom_group(cls, value):
-        try:
-            return UnitOfMeasureGroup.objects.get(id=value)
-        except UnitOfMeasureGroup.DoesNotExist:
-            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+    # @classmethod
+    # def validate_general_uom_group(cls, value):
+    #     try:
+    #         return UnitOfMeasureGroup.objects.get(id=value)
+    #     except UnitOfMeasureGroup.DoesNotExist:
+    #         raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
