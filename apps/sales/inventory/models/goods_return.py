@@ -41,8 +41,7 @@ class GoodsReturn(DataAbstractModel):
                 return_quantity += item.get('is_return', 0)
 
         activities_data = []
-        div = instance.company.companyconfig.definition_inventory_valuation
-        if div == 0:
+        if instance.company.companyconfig.definition_inventory_valuation == 0:
             delivery_product = ReportInventorySub.objects.filter(
                 warehouse=instance.return_to_warehouse,
                 product=instance.product,
