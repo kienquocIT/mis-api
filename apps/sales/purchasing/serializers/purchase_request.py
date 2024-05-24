@@ -478,7 +478,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             },
             'description': obj.product.description,
             'product_choice': obj.product.product_choice,
-            'sale_cost': obj.product.sale_cost,
+            'sale_cost': None,
         }
 
     @classmethod

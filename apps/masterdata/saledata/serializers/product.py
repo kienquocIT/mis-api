@@ -226,7 +226,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'sale_tax',
             'sale_currency_using',
-            'sale_cost',
             'online_price_list',
             'available_notify',
             'available_notify_quantity',
@@ -335,14 +334,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 return Currency.objects.get(id=value)
             except Currency.DoesNotExist:
                 raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
-        return None
-
-    @classmethod
-    def validate_sale_cost(cls, value):
-        if value:
-            if float(value) < 0:
-                raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
-            return value
         return None
 
     @classmethod
@@ -505,7 +496,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     }
                 )
         result = {
-            'sale_product_cost': obj.sale_cost,
             'default_uom': {
                 'id': obj.sale_default_uom_id,
                 'title': obj.sale_default_uom.title,
@@ -639,7 +629,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'sale_tax',
             'sale_currency_using',
-            'sale_cost',
             'online_price_list',
             'available_notify',
             'available_notify_quantity',
@@ -755,14 +744,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_sale_cost(cls, value):
-        if value:
-            if float(value) < 0:
-                raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
-            return value
-        return None
-
-    @classmethod
     def validate_sale_tax(cls, value):
         if value:
             try:
@@ -863,7 +844,6 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'purchase_information',
             'price_list',
             'product_choice',
-            'sale_cost',
             'cost_list',
         )
 
