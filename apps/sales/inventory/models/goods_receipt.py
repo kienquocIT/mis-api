@@ -286,7 +286,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Receipt Product'
         verbose_name_plural = 'Goods Receipt Products'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
