@@ -88,7 +88,7 @@ class GoodsTransfer(DataAbstractModel):
                 item.uom,
                 item.quantity
             )
-            casted_cost = item.unit_cost * item.quantity / casted_quantity
+            casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
             activities_data_out.append({
                 'product': item.product,
                 'warehouse': item.warehouse,

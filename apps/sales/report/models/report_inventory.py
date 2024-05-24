@@ -114,11 +114,11 @@ class ReportInventorySub(DataAbstractModel):
 
     @classmethod
     def cast_quantity_to_inventory_uom(cls, inventory_uom, log_quantity):
-        return log_quantity / inventory_uom.ratio
+        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio > 0 else 1
 
     @classmethod
     def cast_quantity_ratio(cls, src_quantity, des_quantity):
-        return src_quantity / des_quantity if des_quantity > 0 else 1
+        return (src_quantity / des_quantity) if des_quantity > 0 else 1
 
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
@@ -506,7 +506,7 @@ class LoggingSubFunction:
         if log.stock_type == 1:
             new_quantity = latest_value['quantity'] + log.quantity
             sum_value = latest_value['value'] + log.value
-            new_cost = sum_value / new_quantity
+            new_cost = (sum_value / new_quantity) if new_quantity else 0
             new_value = sum_value
         else:
             new_quantity = latest_value['quantity'] - log.quantity
@@ -607,7 +607,7 @@ class LoggingSubFunction:
 
                     if sum_input_quantity > 0:
                         quantity = sum_input_quantity - sum_output_quantity
-                        cost = sum_input_value / sum_input_quantity
+                        cost = (sum_input_value / sum_input_quantity) if sum_input_quantity > 0 else 0
                         value = quantity * cost
                     else:
                         quantity = this_record.opening_balance_quantity

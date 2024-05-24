@@ -126,7 +126,9 @@ class GoodsReceipt(DataAbstractModel):
                     } for lot in child.goods_receipt_lot_gr_warehouse.all()]
 
                     casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, child.quantity_import)
-                    casted_cost = item.product_unit_price * child.quantity_import / casted_quantity
+                    casted_cost = (
+                            item.product_unit_price * child.quantity_import / casted_quantity
+                    ) if casted_quantity > 0 else 0
                     activities_data.append({
                         'product': item.product,
                         'warehouse': child.warehouse,

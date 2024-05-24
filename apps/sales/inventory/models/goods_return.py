@@ -74,6 +74,7 @@ class GoodsReturn(DataAbstractModel):
             instance.uom,
             return_quantity
         )
+        casted_cost = (delivery_product_cost * return_quantity / casted_quantity) if casted_quantity > 0 else 0
         activities_data.append({
             'product': instance.product,
             'warehouse': instance.return_to_warehouse,
@@ -85,8 +86,8 @@ class GoodsReturn(DataAbstractModel):
             'trans_code': instance.code,
             'trans_title': 'Goods return',
             'quantity': casted_quantity,
-            'cost': delivery_product_cost / casted_quantity,
-            'value': delivery_product_cost,
+            'cost': casted_cost,
+            'value': casted_quantity * casted_cost,
             'lot_data': lot_data
         })
         ReportInventorySub.logging_when_stock_activities_happened(
