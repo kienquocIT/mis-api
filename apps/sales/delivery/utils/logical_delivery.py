@@ -109,6 +109,7 @@ class DeliHandler:
     def push_diagram(cls, instance, validated_product):
         quantity = 0
         total = 0
+        list_reference = []
         for product in validated_product:
             if all(key in product for key in ('product_id', 'delivery_data', 'done')):
                 quantity += product.get('done', 0)
@@ -122,6 +123,9 @@ class DeliHandler:
                     total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
+                list_reference.append(instance.order_delivery.sale_order.code)
+                list_reference.reverse()
+                reference = ", ".join(list_reference)
                 DiagramSuffix.push_diagram_suffix(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
@@ -138,6 +142,7 @@ class DeliHandler:
                         # custom
                         'quantity': quantity,
                         'total': total,
+                        'reference': reference,
                     }
                 )
         return True
