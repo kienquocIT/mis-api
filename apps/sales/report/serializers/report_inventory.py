@@ -35,6 +35,46 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             'code': obj.period_mapped.code,
         } if obj.period_mapped else {}
 
+    @classmethod
+    def get_stock_activities_detail(cls, obj, all_logs_by_month, wh_id, div):
+        data_stock_activity = []
+        # lấy các hoạt động nhập-xuất
+        for log in all_logs_by_month.filter(warehouse_id=wh_id, product_id=obj.product_id):
+            casted_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
+                obj.product.inventory_uom, log.quantity
+            )
+            casted_cost = log.cost * ReportInventorySub.cast_quantity_ratio(log.quantity, casted_quantity)
+            casted_current_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
+                obj.product.inventory_uom, log.current_quantity
+            ) if div == 0 else ReportInventorySub.cast_quantity_to_inventory_uom(
+                obj.product.inventory_uom, log.periodic_current_quantity
+            )
+            casted_current_cost = (log.current_cost * ReportInventorySub.cast_quantity_ratio(
+                log.current_quantity, casted_current_quantity
+            )) if div == 0 else (log.periodic_current_cost * ReportInventorySub.cast_quantity_ratio(
+                log.periodic_current_quantity, casted_current_quantity
+            ))
+            data_stock_activity.append({
+                'system_date': log.system_date,
+                'posting_date': log.posting_date,
+                'document_date': log.document_date,
+                'stock_type': log.stock_type,
+                'trans_code': log.trans_code,
+                'trans_title': log.trans_title,
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': log.value,
+                'current_quantity': casted_current_quantity,
+                'current_cost': casted_current_cost,
+                'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                'log_order': log.log_order
+            })
+        # sắp xếp lại
+        data_stock_activity = sorted(
+            data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
+        )
+        return data_stock_activity
+
     def get_stock_activities(self, obj):
         div = self.context.get('definition_inventory_valuation')
         # danh sách dữ liệu giá cost hàng tồn kho của sản phẩm (cost_data)
@@ -45,48 +85,13 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             wh_id, wh_code, wh_title = warehouse_item
-            data_stock_activity = []
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = inventory_cost_data_list.filter(
                 warehouse_id=wh_id, period_mapped_id=obj.period_mapped_id, sub_period_order=obj.sub_period_order
             ).first()
             if inventory_cost_data:
-                # lấy các hoạt động nhập-xuất
-                for log in self.context.get('all_logs_by_month', []).filter(
-                    warehouse_id=wh_id, product_id=obj.product_id
-                ):
-                    casted_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                        obj.product.inventory_uom, log.quantity
-                    )
-                    casted_cost = log.cost * ReportInventorySub.cast_quantity_ratio(log.quantity, casted_quantity)
-                    casted_current_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                        obj.product.inventory_uom, log.current_quantity
-                    ) if div == 0 else ReportInventorySub.cast_quantity_to_inventory_uom(
-                        obj.product.inventory_uom, log.periodic_current_quantity
-                    )
-                    casted_current_cost = (log.current_cost * ReportInventorySub.cast_quantity_ratio(
-                        log.current_quantity, casted_current_quantity
-                    )) if div == 0 else (log.periodic_current_cost * ReportInventorySub.cast_quantity_ratio(
-                        log.periodic_current_quantity, casted_current_quantity
-                    ))
-                    data_stock_activity.append({
-                        'system_date': log.system_date,
-                        'posting_date': log.posting_date,
-                        'document_date': log.document_date,
-                        'stock_type': log.stock_type,
-                        'trans_code': log.trans_code,
-                        'trans_title': log.trans_title,
-                        'quantity': casted_quantity,
-                        'cost': casted_cost,
-                        'value': log.value,
-                        'current_quantity': casted_current_quantity,
-                        'current_cost': casted_current_cost,
-                        'current_value': log.current_value if div == 0 else log.periodic_current_value,
-                        'log_order': log.log_order
-                    })
-                # sắp xếp lại
-                data_stock_activity = sorted(
-                    data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
+                data_stock_activity = self.get_stock_activities_detail(
+                    obj, self.context.get('all_logs_by_month', []), wh_id, div
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
