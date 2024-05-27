@@ -67,5 +67,5 @@ class POFinishHandler:
         if product_obj.general_uom_group:
             uom_base = product_obj.general_uom_group.uom_reference
             if uom_base and uom_transaction:
-                return uom_transaction.ratio / uom_base.ratio
+                return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
         return 1
