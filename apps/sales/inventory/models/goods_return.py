@@ -4,9 +4,9 @@ from apps.sales.delivery.models import DeliveryConfig
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.models.goods_return_sub import (
-    GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking,
-    GReturnProductInformationHandle, GReturnFinalAcceptanceHandle
+    GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
+from apps.sales.inventory.utils import ReturnFinishHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
@@ -125,9 +125,9 @@ class GoodsReturn(DataAbstractModel):
                 raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
 
             # handle product information
-            GReturnProductInformationHandle.main_handle(instance=self)
+            ReturnFinishHandler.push_product_info(instance=self)
             # handle final acceptance
-            GReturnFinalAcceptanceHandle.main_handle(instance=self)
+            ReturnFinishHandler.update_final_acceptance(instance=self)
 
             self.prepare_data_for_logging(self)
 

@@ -274,7 +274,7 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        SOFinishHandler.update_product_wait_delivery_amount(self)
+                        SOFinishHandler.push_product_info(self)
                         # opportunity
                         SOFinishHandler.update_opportunity_stage_by_so(self)
                         # customer

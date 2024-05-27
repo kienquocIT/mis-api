@@ -25,15 +25,14 @@ class POFinishHandler:
         return True
 
     @classmethod
-    def update_product_wait_receipt_amount(cls, instance):
+    def push_product_info(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
-            uom_product_inventory = product_purchase.product.inventory_uom
-            uom_product_po = product_purchase.uom_order_actual
+            uom_transaction = product_purchase.uom_order_actual
             if product_purchase.uom_order_request:
-                uom_product_po = product_purchase.uom_order_request
-            final_ratio = 1
-            if uom_product_inventory and uom_product_po:
-                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
+                uom_transaction = product_purchase.uom_order_request
+            final_ratio = cls.get_final_uom(
+                product_obj=product_purchase.product, uom_transaction=uom_transaction
+            )
             product_quantity_order_request_final = product_purchase.product_quantity_order_actual * final_ratio
             if instance.purchase_requests.exists():
                 product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
@@ -62,3 +61,11 @@ class POFinishHandler:
             ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
             ReportCashflow.push_from_so_po(bulk_data)
         return True
+
+    @classmethod
+    def get_final_uom(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio
+        return 1

@@ -204,18 +204,16 @@ class GRFinishHandler:
         return True
 
     @classmethod
-    def update_product_wait_receipt_amount(cls, instance):
+    def push_product_info(cls, instance):
         if instance.purchase_order:  # GR for PO
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
                     if product_wh.is_additional is False:
                         quantity_receipt_actual += product_wh.quantity_import
-                uom_product_inventory = product_receipt.product.inventory_uom
-                uom_product_gr = product_receipt.uom
-                final_ratio = 1
-                if uom_product_inventory and uom_product_gr:
-                    final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                final_ratio = cls.get_final_uom(
+                    product_obj=product_receipt.product, uom_transaction=product_receipt.uom
+                )
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
                     'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
@@ -227,14 +225,20 @@ class GRFinishHandler:
                 quantity_receipt_actual = 0
                 if product_receipt.is_additional is False:
                     quantity_receipt_actual += product_receipt.quantity_import
-                uom_product_inventory = product_receipt.product.inventory_uom
-                uom_product_gr = product_receipt.uom
-                final_ratio = 1
-                if uom_product_inventory and uom_product_gr:
-                    final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                final_ratio = cls.get_final_uom(
+                    product_obj=product_receipt.product, uom_transaction=product_receipt.uom
+                )
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
                     'quantity_receipt_ia': quantity_receipt_actual * final_ratio,
                     'update_fields': ['available_amount', 'stock_amount']
                 })
         return True
+
+    @classmethod
+    def get_final_uom(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio
+        return 1

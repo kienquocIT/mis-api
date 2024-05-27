@@ -16,14 +16,12 @@ class DocHandler:
 
 class SOFinishHandler:
     @classmethod
-    def update_product_wait_delivery_amount(cls, instance):
+    def push_product_info(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
             if product_order.product:
-                uom_product_inventory = product_order.product.inventory_uom
-                uom_product_so = product_order.unit_of_measure
-                final_ratio = 1
-                if uom_product_inventory and uom_product_so:
-                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                final_ratio = cls.get_final_uom(
+                    product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
+                )
                 product_order.product.save(**{
                     'update_transaction_info': True,
                     'quantity_order': product_order.product_quantity * final_ratio,
@@ -176,6 +174,14 @@ class SOFinishHandler:
                 revenue=instance.indicator_revenue,
             )
         return True
+
+    @classmethod
+    def get_final_uom(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio
+        return 1
 
 
 class DocumentChangeHandler:

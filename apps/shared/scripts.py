@@ -45,8 +45,7 @@ from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
-from ..sales.inventory.models import GReturnProductInformationHandle
-from ..sales.inventory.utils import GRFinishHandler
+from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -1392,7 +1391,7 @@ def update_price_list():
     print('Done')
 
 
-def reset_set_product_transaction_information():
+def reset_and_run_product_info():
     # reset
     update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
     for product in Product.objects.all():
@@ -1404,17 +1403,17 @@ def reset_set_product_transaction_information():
     # set input, output, return
     # input
     for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        POFinishHandler.update_product_wait_receipt_amount(instance=po)
+        POFinishHandler.push_product_info(instance=po)
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.update_product_wait_receipt_amount(instance=gr)
+        GRFinishHandler.push_product_info(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SOFinishHandler.update_product_wait_delivery_amount(instance=so)
+        SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
     for return_obj in GoodsReturn.objects.all():
-        GReturnProductInformationHandle.main_handle(instance=return_obj)
+        ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_set_product_transaction_information done.')
 
 

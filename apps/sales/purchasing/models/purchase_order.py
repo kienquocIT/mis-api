@@ -146,7 +146,7 @@ class PurchaseOrder(DataAbstractModel):
                     if 'date_approved' in kwargs['update_fields']:
                         POFinishHandler.update_remain_and_status_purchase_request(self)
                         POFinishHandler.update_is_all_ordered_purchase_request(self)
-                        POFinishHandler.update_product_wait_receipt_amount(self)
+                        POFinishHandler.push_product_info(self)
                         # report
                         POFinishHandler.push_to_report_cashflow(self)
 
