@@ -178,7 +178,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        number = ARInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_default=False).count() + 1
+        number = ARInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False).count() + 1
         ar_invoice = ARInvoice.objects.create(**validated_data, code=f'AR-00{number}')
 
         create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))

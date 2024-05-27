@@ -13,9 +13,9 @@ class CommonCreateUpdateProduct:
                     product=product,
                     price_list_id=item.get('price_list_id', None),
                     price=float(item.get('price_list_value', None)),
-                    currency_using_id=validated_data.get('sale_currency_using', {}).id,
-                    uom_using_id=validated_data.get('sale_default_uom', {}).id,
-                    uom_group_using_id=validated_data.get('general_uom_group', {}).id,
+                    currency_using=validated_data.get('sale_currency_using'),
+                    uom_using=validated_data.get('sale_default_uom'),
+                    uom_group_using=validated_data.get('general_uom_group'),
                     get_price_from_source=item.get('is_auto_update', None) == 'true'
                 ))
                 if str(default_pr.id) == item.get('price_list_id', None):
@@ -24,7 +24,6 @@ class CommonCreateUpdateProduct:
             ProductPriceList.objects.bulk_create(objs)
             return True
         return False
-
 
     @classmethod
     def create_measure(cls, product, data_measure):

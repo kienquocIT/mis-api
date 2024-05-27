@@ -18,7 +18,7 @@ __all__ = [
 
 class LeadList(BaseListMixin, BaseCreateMixin):
     queryset = Lead.objects
-    search_fields = ['title']
+    search_fields = ['title', 'contact_name']
     serializer_list = LeadListSerializer
     serializer_create = LeadCreateSerializer
     serializer_detail = LeadDetailSerializer
@@ -117,6 +117,10 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         self.serializer_class = LeadUpdateSerializer
+        if 'goto_stage' in request.data:
+            self.ser_context = {
+                'goto_stage': True
+            }
         return self.update(request, *args, **kwargs)
 
 

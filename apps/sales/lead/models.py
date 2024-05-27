@@ -61,23 +61,6 @@ class Lead(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                number = Lead.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count() + 1
-                code = f'L000{number}'
-                self.code = code
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-        # hit DB
-        super().save(*args, **kwargs)
-
 
 class LeadNote(SimpleAbstractModel):
     lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE, related_name='lead_notes')
