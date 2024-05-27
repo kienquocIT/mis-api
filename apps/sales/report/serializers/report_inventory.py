@@ -22,7 +22,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
     def get_product(cls, obj):
         return {
             'id': obj.product_id,
-            'title': obj.product.title,
+            'title': f"{obj.product.title} ({obj.product.inventory_uom.title})",
             'code': obj.product.code,
             'description': obj.product.description,
         } if obj.product else {}
@@ -206,7 +206,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_product(cls, obj):
         return {
             'id': obj.product_id,
-            'title': obj.product.title,
+            'title': f"{obj.product.title} ({obj.product.inventory_uom.title})",
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
