@@ -12,8 +12,9 @@ from apps.sales.opportunity.models import (
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
     OpportunityConfigStage, OpportunityStage,
 )
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.report.models import ReportPipeline
-from apps.shared import AccountsMsg, HRMsg
+from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel
 from apps.shared.translations.opportunity import OpportunityMsg
 
 __all__ = [
@@ -147,6 +148,20 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
+    def validate_config_role(cls, validate_data):
+        if 'employee_inherit_id' in validate_data:
+            model_cls = DisperseModel(app_model="hr.employee").get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                employee = model_cls.objects.filter(id=validate_data['employee_inherit_id']).first()
+                if so_config and employee:
+                    ss_role = [role.id for role in so_config.ss_role.all()]
+                    for role in employee.role.all():
+                        if role.id in ss_role:
+                            raise serializers.ValidationError({'detail': SaleMsg.SO_CONFIG_SS_ROLE_CHECK})
+        return True
+
+    @classmethod
     def get_alias_permit_from_general(cls, employee_obj):
         # Le Dieu Hoa - 10/17 11:17 AM
         #   Task: tạo - xem - sửa - xóa (cho chính nó / mọi người)
@@ -221,6 +236,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             if has_4 is True:
                 result.append(data_tmp_for_4)
         return result
+
+    def validate(self, validate_data):
+        self.validate_config_role(validate_data=validate_data)
 
     def create(self, validated_data):
         # get data product_category
