@@ -420,6 +420,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     product_warehouse_detail = serializers.SerializerMethodField()
     product_variant_attribute_list = serializers.SerializerMethodField()
     product_variant_item_list = serializers.SerializerMethodField()
+    # cast mount
+    stock_amount = serializers.SerializerMethodField()
+    wait_delivery_amount = serializers.SerializerMethodField()
+    wait_receipt_amount = serializers.SerializerMethodField()
+    available_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -563,8 +568,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     'warehouse': {
                         'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
-                    'stock_amount': ratio_convert * item.stock_amount,
-                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1)
+                    'stock_amount': item.stock_amount / ratio_convert,
+                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1) * ratio_convert
                 })
         return result
 
@@ -589,6 +594,26 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'is_active': item.is_active,
         } for item in obj.product_variants.all()]
 
+    @classmethod
+    def get_stock_amount(cls, obj):
+        casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+        return casted_stock_amount
+
+    @classmethod
+    def get_wait_delivery_amount(cls, obj):
+        casted_wd_amount = obj.wait_delivery_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+        return casted_wd_amount
+
+    @classmethod
+    def get_wait_receipt_amount(cls, obj):
+        casted_wr_amount = obj.wait_receipt_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+        return casted_wr_amount
+
+    @classmethod
+    def get_available_amount(cls, obj):
+        casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+        return casted_avl_amount
+
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
@@ -597,7 +622,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
     )
     general_product_category = serializers.UUIDField()
-    # general_uom_group = serializers.UUIDField()
+    general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
@@ -618,7 +643,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'product_choice',
             # General
             'general_product_category',
-            # 'general_uom_group',
+            'general_uom_group',
             # 'general_traceability_method',
             'width',
             'height',
@@ -658,12 +683,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         except ProductCategory.DoesNotExist:
             raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
-    # @classmethod
-    # def validate_general_uom_group(cls, value):
-    #     try:
-    #         return UnitOfMeasureGroup.objects.get(id=value)
-    #     except UnitOfMeasureGroup.DoesNotExist:
-    #         raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+    @classmethod
+    def validate_general_uom_group(cls, value):
+        try:
+            return UnitOfMeasureGroup.objects.get(id=value)
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
@@ -796,6 +821,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def update(self, instance, validated_data):
+        if validated_data['general_uom_group'].id != instance.general_uom_group_id:
+            raise serializers.ValidationError({'general_uom_group': 'Can not update general uom group.'})
         validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
         validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
         validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
