@@ -597,28 +597,32 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stock_amount(cls, obj):
         if obj.inventory_uom:
-            casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+            casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
             return casted_stock_amount
         return None
 
     @classmethod
     def get_wait_delivery_amount(cls, obj):
         if obj.inventory_uom:
-            casted_wd_amount = obj.wait_delivery_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+            casted_wd_amount = obj.wait_delivery_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
             return casted_wd_amount
         return None
 
     @classmethod
     def get_wait_receipt_amount(cls, obj):
         if obj.inventory_uom:
-            casted_wr_amount = obj.wait_receipt_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+            casted_wr_amount = obj.wait_receipt_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
             return casted_wr_amount
         return None
 
     @classmethod
     def get_available_amount(cls, obj):
         if obj.inventory_uom:
-            casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio if obj.inventory_uom.ratio != 0 else None
+            casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
             return casted_avl_amount
         return None
 
