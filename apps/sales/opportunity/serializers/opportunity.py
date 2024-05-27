@@ -239,6 +239,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         self.validate_config_role(validate_data=validate_data)
+        return validate_data
 
     def create(self, validated_data):
         # get data product_category
