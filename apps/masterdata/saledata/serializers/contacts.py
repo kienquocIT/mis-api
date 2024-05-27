@@ -3,7 +3,7 @@ from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
 from apps.shared import (AccountsMsg,)
-from apps.sales.lead.models import Lead, LeadStage
+from apps.sales.lead.models import LeadStage
 
 
 # Salutation

@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
 from apps.sales.opportunity.models import Opportunity
-from apps.shared import AbstractDetailSerializerModel
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.lead.models import Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS
 
@@ -221,7 +219,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
                 instance.save()
             else:
                 raise serializers.ValidationError({
-                    'error': f'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
+                    'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
                 })
         else:
             for key, value in validated_data.items():
