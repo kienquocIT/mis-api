@@ -18,7 +18,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
     queryset = Quotation.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],

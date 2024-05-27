@@ -18,7 +18,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class SaleOrderList(BaseListMixin, BaseCreateMixin):
     queryset = SaleOrder.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
         'delivery_call': ['exact'],
         'system_status': ['in'],
