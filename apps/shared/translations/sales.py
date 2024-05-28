@@ -77,11 +77,3 @@ class InventoryMsg:
     GOODS_RECEIPT_NOT_EXIST = _('Goods receipt does not exist')
     INVENTORY_ADJUSTMENT_NOT_EXIST = _('Inventory adjustment does not exist')
     GOODS_RECEIPT_QUANTITY = _('Quantity import must be greater than 0')
-
-
-class ProjectMsg:
-    PROJECT = _('Project')
-    PROJECT_GROUP = _('Project group')
-    PROJECT_WORK = _('Project work')
-    PROJECT_WORK_ERROR_DATE = _('Make sure date start larger than relationship work date end')
-    PROJECT_WORK_ERROR_DATE2 = _('Date work is not followed with date group')

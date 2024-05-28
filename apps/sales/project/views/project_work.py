@@ -7,6 +7,7 @@ from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
+from apps.sales.project.extend_func import get_prj_mem_of_crt_user
 from apps.sales.project.models import ProjectWorks, ProjectMapMember, Project
 from apps.sales.project.serializers import WorkListSerializers, WorkCreateSerializers, WorkDetailSerializers
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, \
@@ -33,9 +34,6 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_inherit': ['exact', 'in'],
     }
-
-    def get_queryset(self):
-        return super().get_queryset()
 
     @classmethod
     def get_prj_allowed(cls, item_data):
@@ -130,8 +128,8 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         data = request.data
-        pk = data.get('project')
-        pj_obj = get_project_obj(pk)
+        prj_pk = data.get('project')
+        pj_obj = get_project_obj(prj_pk)
         if pj_obj:
             if self.check_permit_add_gaw(project_obj=pj_obj):
                 return self.create(request, *args, **kwargs)
@@ -148,9 +146,9 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     def get_queryset(self):
         return super().get_queryset().select_related('work_dependencies_parent')
 
-    def check_has_permit_of_space_all(self, opp_obj):
+    def check_has_permit_of_space_all(self, opp_obj):  # pylint: disable=R0912
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 if 'general' in config_data['employee']:
                     general_data = config_data['employee']['general']
@@ -175,41 +173,32 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
                                     return True
         return False
 
-    def get_project_member_of_current_user(self, instance):
-        project = instance.project_projectmapgroup_group.all().first().project
-        return ProjectMapMember.objects.filter_current(
-            project=project,
-            member=self.cls_check.employee_attr.employee_current,
-            fill__tenant=True, fill__company=True
-        ).first()
-
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
-        project_map_group = instance.project_projectmapwork_work.all().first()
-        if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
+        project_map_work = instance.project_projectmapwork_work.all().first()
+        if emp_id and str(project_map_work.project.employee_inherit_id) == str(emp_id):
             return True
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project_projectmapwork_work.all().first().project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
 
     def manual_check_obj_destroy(self, instance, **kwargs):
-        if instance.member_id == instance.project.employee_inherit_id:
-            return False
-
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
+        prj = instance.project_projectmapwork_work.all().first().project
+        emp = str(prj.employee_inherit_id)
 
-        if emp_id == instance.member_id:
-            # deny delete member is owner opp.
-            return False
-
-        if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
+        if str(emp_id) == emp:
             # owner auto allow in member
             return True
 
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project_projectmapwork_work.all().first().project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
@@ -244,7 +233,5 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         operation_summary='Remove work from project'
     )
     @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, pk_pj, pk_member, **kwargs):
-        if TypeCheck.check_uuid(pk_pj) and TypeCheck.check_uuid(pk_member):
-            return self.destroy(request, *args, pk_pj, pk_member, is_purge=True, **kwargs)
-        return ResponseController.notfound_404()
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)

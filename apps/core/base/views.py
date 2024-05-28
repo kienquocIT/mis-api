@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from unidecode import unidecode
 from rest_framework import generics

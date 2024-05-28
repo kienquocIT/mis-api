@@ -2,9 +2,8 @@ __all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSeriali
 
 from rest_framework import serializers
 
+from apps.shared import HRMsg, BaseMsg, ProjectMsg
 from ..models import Project, ProjectGroups, ProjectMapGroup
-from apps.shared import HRMsg, BaseMsg
-from apps.shared.translations.sales import ProjectMsg
 
 
 class GroupCreateSerializers(serializers.ModelSerializer):
@@ -19,12 +18,12 @@ class GroupCreateSerializers(serializers.ModelSerializer):
     @classmethod
     def validate_project(cls, value):
         try:
-            pj = Project.objects.get_current(
+            prj = Project.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
-            return pj
+            return prj
         except Project.DoesNotExist:
             raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
 
@@ -93,8 +92,20 @@ class GroupDetailSerializers(serializers.ModelSerializer):
 
 
 class GroupListDDSerializers(serializers.ModelSerializer):
-    id = serializers.UUIDField()
-    title = serializers.CharField()
+    id = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_id(cls, obj):
+        if obj.group:
+            return str(obj.group.id)
+        return ''
+
+    @classmethod
+    def get_title(cls, obj):
+        if obj.group:
+            return obj.group.title
+        return ''
 
     class Meta:
         model = ProjectMapGroup

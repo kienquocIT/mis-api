@@ -2,6 +2,7 @@ __all__ = ['ProjectGroupList', 'ProjectGroupDetail', 'ProjectGroupListDD']
 
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.sales.project.extend_func import get_prj_mem_of_crt_user
 from apps.sales.project.filters import ProjectGroupListFilter
 from apps.sales.project.models import ProjectGroups, ProjectMapMember, Project, ProjectMapGroup
 from apps.sales.project.serializers import GroupListSerializers, GroupCreateSerializers, GroupDetailSerializers, \
@@ -69,10 +70,10 @@ class ProjectGroupList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         data = request.data
-        pk = data.get('project')
-        pj_obj = get_project_obj(pk)
-        if pj_obj:
-            if self.check_permit_add_gaw(project_obj=pj_obj):
+        prj_pk = data.get('project')
+        prj_obj = get_project_obj(prj_pk)
+        if prj_obj:
+            if self.check_permit_add_gaw(project_obj=prj_obj):
                 return self.create(request, *args, **kwargs)
             return ResponseController.forbidden_403()
         return ResponseController.notfound_404()
@@ -84,9 +85,9 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     serializer_update = GroupDetailSerializers
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, pj_obj):
+    def check_has_permit_of_space_all(self, pj_obj):  # pylint: disable=R0912
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
@@ -111,21 +112,15 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
                                     return True
         return False
 
-    def get_project_member_of_current_user(self, instance):
-        project = instance.project_projectmapgroup_group.all().first().project
-        return ProjectMapMember.objects.filter_current(
-            project=project,
-            member=self.cls_check.employee_attr.employee_current,
-            fill__tenant=True, fill__company=True
-        ).first()
-
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
         project_map_group = instance.project_projectmapgroup_group.all().first()
         if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
             return True
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project_projectmapgroup_group.all().first().project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
@@ -137,7 +132,9 @@ class ProjectGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         if emp_id and str(project_map_group.project.employee_inherit_id) == str(emp_id):
             # owner auto allow in member
             return True
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project_projectmapgroup_group.all().first().project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
@@ -185,6 +182,9 @@ class ProjectGroupListDD(BaseListMixin):
     filterset_fields = {
         'project': ['in', 'exact']
     }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('group')
 
     @swagger_auto_schema(
         operation_summary="Project group list DD",

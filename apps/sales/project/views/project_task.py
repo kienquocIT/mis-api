@@ -1,20 +1,19 @@
-__all__ = ['ProjectTaskList']
+__all__ = ['ProjectTaskList', 'ProjectTaskDetail']
 
 from typing import Union
-from django.db.models import Q, Prefetch
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
+from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseUpdateMixin, BaseDestroyMixin
+from ..extend_func import get_prj_mem_of_crt_user
 from ..models import ProjectMapTasks, ProjectMapMember, Project
-from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseCreateMixin
-from ..serializers import ProjectTaskListSerializers, ProjectTaskCreateSerializers, ProjectTaskDetailSerializers
+from ..serializers import ProjectTaskListSerializers, ProjectTaskDetailSerializers
 
 
-class ProjectTaskList(BaseListMixin, BaseCreateMixin):
+class ProjectTaskList(BaseListMixin):
     queryset = ProjectMapTasks.objects
     serializer_list = ProjectTaskListSerializers
-    serializer_create = ProjectTaskCreateSerializers
-    serializer_detail = ProjectTaskDetailSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'work': ['exact', 'isnull'],
@@ -48,7 +47,7 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
         # check permit config exists if from_app not calling...
         prj_has_view_ids = self.get_prj_has_view_this()
         if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
-            return self.filter_kwargs_q__from_config() | Q(id__in=prj_has_view_ids)
+            return self.filter_kwargs_q__from_config() | Q(project_id__in=prj_has_view_ids)
         return self.list_empty()
 
     @classmethod
@@ -73,7 +72,7 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
 
         pj_member_current_user = self.get_pj_member_of_current_user(pj_obj=pj_obj)
         if pj_member_current_user:
-            self.ser_context["has_permit_add"] = pj_member_current_user.permit_add_gaw,
+            self.ser_context["has_permit_add"] = pj_member_current_user.permit_add_gaw
             return pj_member_current_user.permit_add_gaw
         return False
 
@@ -99,18 +98,34 @@ class ProjectTaskList(BaseListMixin, BaseCreateMixin):
             return ResponseController.forbidden_403()
         return ResponseController.notfound_404()
 
+
+class ProjectTaskDetail(BaseUpdateMixin, BaseDestroyMixin):
+    queryset = ProjectMapTasks.objects
+    serializer_detail = ProjectTaskDetailSerializers
+    serializer_update = ProjectTaskDetailSerializers
+    retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    def manual_check_obj_update(self, instance, body_data, **kwargs):
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
+        project_map_task = instance.project
+        if emp_id and str(project_map_task.employee_inherit_id) == str(emp_id):
+            return True
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            pj_obj=project_map_task, employee_current=self.cls_check.employee_attr
+        )
+        if obj_of_current_user:
+            return obj_of_current_user.permit_add_gaw
+        return False
+
     @swagger_auto_schema(
-        operation_summary="Project task create",
-        operation_description="create project map with task",)
+        operation_summary='Link task to work',
+        operation_description='Link abandoned task to work',
+    )
     @mask_view(login_require=True, auth_require=False)
-    def post(self, request, *args, pk_pj, **kwargs):
-        self.ser_context = {
-            "employee_current": request.user.employee_current_id
-        }
-        pj_obj = self.get_pj_obj(pk_pj)
-        if pj_obj:
-            if self.check_permit_add_member_pj(pj_obj=pj_obj):
-                setattr(self, 'project_id', pj_obj.id)
-                return self.create(request, *args, pj_obj, **kwargs)
-            return ResponseController.forbidden_403()
-        return ResponseController.notfound_404()
+    def put(self, request, *args, pk, **kwargs):
+        if request.data.get('unlink', None):
+            self.ser_context = {
+                "unlink_work": True
+            }
+        return self.update(request, *args, pk, **kwargs)

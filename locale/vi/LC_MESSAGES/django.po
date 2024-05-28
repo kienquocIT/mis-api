@@ -1114,3 +1114,7 @@ msgstr "Dự án là bắt buộc"
 #
 msgid "You do not have permission to perform this action"
 msgstr "Bạn không được cấp quyền để thực hiện thao tác này"
+
+#
+msgid "Date work is not followed with date group"
+msgstr "Ngày Công việc không khớp với ngày của Nhóm"

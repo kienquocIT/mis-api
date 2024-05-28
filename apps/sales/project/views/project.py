@@ -9,11 +9,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
 from apps.sales.project.models import Project, ProjectMapMember
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
     ProjectUpdateSerializers, MemberOfProjectAddSerializer, MemberOfProjectDetailSerializer, \
     MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
-    BaseDestroyMixin, TypeCheck, ResponseController
+from ..extend_func import get_prj_mem_of_crt_user
 
 
 # common function
@@ -290,9 +291,9 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     serializer_update = MemberOfProjectUpdateSerializer
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, pj_obj):
+    def check_has_permit_of_space_all(self, pj_obj):  # pylint: disable=R0912
         config_data = self.cls_check.permit_cls.config_data  # noqa
-        if config_data and isinstance(config_data, dict):
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
@@ -317,13 +318,6 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
                                     return True
         return False
 
-    def get_project_member_of_current_user(self, instance):
-        return ProjectMapMember.objects.filter_current(
-            project=instance.project,
-            member=self.cls_check.employee_attr.employee_current,
-            fill__tenant=True, fill__company=True
-        ).first()
-
     def manual_check_obj_retrieve(self, instance, **kwargs):
         state = self.check_has_permit_of_space_all(pj_obj=instance.project)
         if not state:
@@ -331,7 +325,9 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
             emp_id = self.cls_check.employee_attr.employee_current_id
             if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
                 return True
-            obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+            obj_of_current_user = get_prj_mem_of_crt_user(
+                instance.project, self.cls_check.employee_attr.employee_current
+            )
             if obj_of_current_user:
                 return obj_of_current_user.permit_view_this_project
         return state
@@ -342,7 +338,9 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         if emp_id and str(instance.project.employee_inherit_id) == str(emp_id):
             return True
 
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_member
         return False
@@ -362,7 +360,9 @@ class ProjectMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
             # owner auto allow in member
             return True
 
-        obj_of_current_user = self.get_project_member_of_current_user(instance=instance)
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            instance.project, self.cls_check.employee_attr.employee_current
+        )
         if obj_of_current_user:
             return obj_of_current_user.permit_view_this_project
         return False

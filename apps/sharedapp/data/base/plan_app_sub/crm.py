@@ -1782,12 +1782,14 @@ SALE_PROJECT = {
     "option_allowed": [1, 2, 3, 4],
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
     ],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1797,6 +1799,7 @@ SALE_PROJECT = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1806,6 +1809,7 @@ SALE_PROJECT = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1815,6 +1819,7 @@ SALE_PROJECT = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",

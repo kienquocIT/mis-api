@@ -20,7 +20,7 @@ class ProjectGroupListFilter(BastionFieldAbstractListFilter):
             'id': ['exact', 'in']
         }
 
-    def filter_by_project(self, queryset, name, value):
+    def filter_by_project(self, queryset):
         user_obj = getattr(self.request, 'user', None)
         request_params = self.request.query_params.dict()
         if user_obj:

@@ -7,13 +7,14 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.sales.project.extend_func import check_permit_add_member_pj
 from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
 from apps.sales.task.utils import task_create_opportunity_activity_log
 
-from apps.shared import HRMsg, BaseMsg, call_task_background
+from apps.shared import HRMsg, BaseMsg, call_task_background, ProjectMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
@@ -159,12 +160,13 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
 class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
+    work = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach', 'percent_completed', 'project')
+                  'log_time', 'attach', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -224,20 +226,30 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         return value
 
     @classmethod
-    def map_task_with_project(cls, task):
+    def map_task_with_project(cls, task, work):
         prj_obj = task.project
-        has_project = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
-        if prj_obj and has_project is not True:
+        has_prj_map = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
+        if prj_obj and has_prj_map is not True:
             ProjectMapTasks.objects.create(
                 project=prj_obj,
                 member=task.employee_inherit,
                 tenant_id=task.tenant_id,
                 company_id=task.company_id,
-                task=task
+                task=task,
+                work_id=str(work) if work else None
             )
+
+    def validate(self, attrs):
+        if attrs['project']:
+            employee_current = self.context.get('user', None).employee_current
+            check_permit = check_permit_add_member_pj(attrs, employee_current)
+            if check_permit:
+                return attrs
+        raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
 
     def create(self, validated_data):
         user = self.context.get('user', None)
+        project_work = validated_data.pop('work', None)
         task = OpportunityTask.objects.create(**validated_data)
         handle_attachment(user, task, validated_data.get('attach', None), True)
         if task and 'log_time' in validated_data:
@@ -259,7 +271,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             )
 
         if task.project:
-            self.map_task_with_project(task)
+            self.map_task_with_project(task, project_work)
         return task
 
 

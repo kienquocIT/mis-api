@@ -2,8 +2,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 
 from rest_framework import serializers
 
-from apps.shared import HRMsg, BaseMsg
-from apps.shared.translations.sales import ProjectMsg
+from apps.shared import HRMsg, BaseMsg, ProjectMsg
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -62,12 +61,12 @@ class WorkCreateSerializers(serializers.ModelSerializer):
     @classmethod
     def validate_project(cls, value):
         try:
-            pj = Project.objects.get_current(
+            prj = Project.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
-            return pj
+            return prj
         except Project.DoesNotExist:
             raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
 

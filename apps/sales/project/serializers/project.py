@@ -5,9 +5,9 @@ __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailS
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
+from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
 from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups
-from apps.shared import HRMsg, FORMATTING, ProjectMsg
 
 
 class ProjectListSerializers(serializers.ModelSerializer):

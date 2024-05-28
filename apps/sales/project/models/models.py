@@ -4,11 +4,11 @@ __all__ = ['Project', 'ProjectGroups', 'ProjectWorks', 'ProjectMapMember', 'Plan
 import json
 
 from django.utils import timezone
+from django.db import models
 
 from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, PROJECT_WORK_STT, \
     PROJECT_WORK_TYPE
-from django.db import models
 
 
 class Project(DataAbstractModel):

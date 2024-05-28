@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
-from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING, DisperseModel
+from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING
 from apps.shared.permissions.util import PermissionController
 
 from .common import (
