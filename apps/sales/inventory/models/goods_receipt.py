@@ -177,7 +177,7 @@ class GoodsReceipt(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        GRFinishHandler.push_to_product_warehouse(self)
+                        GRFinishHandler.push_to_warehouse_stock(self)
                         GRFinishHandler.push_product_info(self)
                         GRFinishHandler.update_gr_info_for_po(self)
                         GRFinishHandler.update_gr_info_for_ia(self)

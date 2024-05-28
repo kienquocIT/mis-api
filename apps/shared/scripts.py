@@ -41,7 +41,7 @@ from ..eoffice.leave.models import LeaveAvailable
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
-from ..sales.delivery.utils import DeliFinishHandler
+from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
@@ -1414,27 +1414,36 @@ def reset_and_run_product_info():
     # return
     for return_obj in GoodsReturn.objects.all():
         ReturnFinishHandler.push_product_info(instance=return_obj)
-    print('reset_set_product_transaction_information done.')
+    print('reset_and_run_product_info done.')
 
 
-def reset_set_product_warehouse_stock():
+def reset_and_run_warehouse_stock(run_type=0):
     # reset
-    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
-    for product_wh in ProductWareHouse.objects.all():
-        product_wh.stock_amount = 0
-        product_wh.receipt_amount = 0
-        product_wh.sold_amount = 0
-        product_wh.picked_ready = 0
-        product_wh.used_amount = 0
-        product_wh.save(update_fields=update_fields)
+    ProductWareHouseLot.objects.all().delete()
+    ProductWareHouseSerial.objects.all().delete()
+    ProductWareHouse.objects.all().delete()
     # input, output, provide
-    # input
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.push_to_product_warehouse(instance=gr)
-    # output
-    for deli_sub in OrderDeliverySub.objects.all():
-        DeliFinishHandler.push_product_warehouse(instance=deli_sub)
-    print('reset_set_product_warehouse_stock done.')
+    if run_type == 0:  # input
+        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+            GRFinishHandler.push_to_warehouse_stock(instance=gr)
+    if run_type == 1:  # output
+        for deli_sub in OrderDeliverySub.objects.all():
+            config = deli_sub.config_at_that_point
+            if not config:
+                get_config = DeliveryConfig.objects.filter(company_id=deli_sub.company_id).first()
+                if get_config:
+                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
+            for deli_product in deli_sub.delivery_product_delivery_sub.all():
+                if deli_product.product and deli_product.delivery_data:
+                    for data in deli_product.delivery_data:
+                        if all(key in data for key in ('warehouse', 'uom', 'stock')):
+                            product_warehouse = ProductWareHouse.objects.filter(
+                                tenant_id=deli_sub.tenant_id, company_id=deli_sub.company_id,
+                                product_id=deli_product.product_id, warehouse_id=data['warehouse'],
+                            )
+                            source = {"uom": data['uom'], "quantity": data['stock']}
+                            DeliHandler.minus_tock(source, product_warehouse, config)
+    print('reset_and_run_warehouse_stock done.')
 
 
 def reset_opportunity_stage():

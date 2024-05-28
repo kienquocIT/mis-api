@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramSuffix
@@ -15,18 +14,6 @@ class DeliHandler:
         # sản phẩm trong kho
         # target: object of warehouse has prod (all prod)
         # kiểm tra kho còn hàng và trừ kho nếu ko đủ return failure
-        source_uom = UnitOfMeasure.objects.filter(id=source['uom'])
-        if source_uom.exists():
-            source_uom = source_uom.first()
-            source_ratio = source_uom.ratio
-        else:
-            # return if source uom not found
-            raise ValueError(
-                {'detail': _('Products UoM not found please verify Sale Order or contact your admin')}
-            )
-        # số lượng prod đã quy đổi
-        mediate_number = source['quantity'] * source_ratio
-
         if 'is_fifo_lifo' in config and config['is_fifo_lifo']:
             target = target.reverse()
         is_done = False
@@ -35,32 +22,34 @@ class DeliHandler:
             if is_done:
                 # nếu trừ đủ update vào warehouse, return true
                 break
-            target_ratio = item.uom.ratio
+            final_ratio = 1
+            uom_base = item.uom
+            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom']).first()
+            if uom_base and uom_delivery:
+                if uom_base.ratio > 0:
+                    final_ratio = uom_delivery.ratio / uom_base.ratio
+            delivery_quantity = source['quantity'] * final_ratio
             if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
-                in_stock_unit = item.stock_amount * target_ratio
-                calc = in_stock_unit - mediate_number
-                # item_sold = 0
+                calc = item.stock_amount - delivery_quantity
                 if calc >= 0:
                     # đủ hàng
                     is_done = True
-                    item_sold = mediate_number / target_ratio
+                    item_sold = delivery_quantity
                     item.sold_amount += item_sold
                     item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
-                elif calc < 0:
-                    # else < 0 ko đù
-                    # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)
-                    # trừ kho tất cả của record này
-                    mediate_number = abs(calc)
-                    item.sold_amount += in_stock_unit
-                    # item_sold = in_stock_unit
-                    item.stock_amount = item.receipt_amount - item.sold_amount
-                    if config['is_picking']:
-                        item.picked_ready = item.picked_ready - in_stock_unit
-                    list_update.append(item)
+                # elif calc < 0:
+                #     # else < 0 ko đù
+                #     # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)
+                #     # trừ kho tất cả của record này
+                #     item.sold_amount += item.stock_amount
+                #     item.stock_amount = item.receipt_amount - item.sold_amount
+                #     if config['is_picking']:
+                #         item.picked_ready = item.picked_ready - item.stock_amount
+                #     list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
         return True
 

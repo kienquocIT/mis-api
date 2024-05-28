@@ -80,7 +80,7 @@ class GRFinishHandler:
     def push_by_po(cls, instance):
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
             if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
-                uom_product_inventory, final_ratio, lot_data, serial_data = cls.setup_data_push_by_po(
+                uom_base, final_ratio, lot_data, serial_data = cls.setup_data_push_by_po(
                     instance=instance,
                     gr_warehouse=gr_warehouse,
                 )
@@ -89,7 +89,7 @@ class GRFinishHandler:
                     company_id=instance.company_id,
                     product_id=gr_warehouse.goods_receipt_product.product_id,
                     warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_product_inventory.id,
+                    uom_id=uom_base.id,
                     tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
                     amount=gr_warehouse.quantity_import * final_ratio,
                     unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
@@ -100,7 +100,7 @@ class GRFinishHandler:
 
     @classmethod
     def setup_data_push_by_po(cls, instance, gr_warehouse):
-        uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
+        product_obj = gr_warehouse.goods_receipt_product.product
         uom_product_gr = gr_warehouse.goods_receipt_product.uom
         if gr_warehouse.goods_receipt_request_product:  # Case has PR
             if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
@@ -110,9 +110,10 @@ class GRFinishHandler:
                         uom_product_gr = pr_product.purchase_request_product.uom
                 else:  # Case PR is Stock
                     uom_product_gr = pr_product.uom_stock
-        final_ratio = 1
-        if uom_product_inventory and uom_product_gr:
-            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+        final_ratio = cls.get_final_uom_ratio(
+            product_obj=product_obj, uom_transaction=uom_product_gr
+        )
+        uom_base = cls.get_uom_base(product_obj=product_obj)
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
@@ -137,13 +138,13 @@ class GRFinishHandler:
                 'warranty_end': serial.warranty_end,
                 'goods_receipt_id': instance.id,
             })
-        return uom_product_inventory, final_ratio, lot_data, serial_data
+        return uom_base, final_ratio, lot_data, serial_data
 
     @classmethod
     def push_by_ia(cls, instance):
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
             if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
-                uom_product_inventory, final_ratio, lot_data, serial_data = cls.setup_data_push_by_ia(
+                uom_base, final_ratio, lot_data, serial_data = cls.setup_data_push_by_ia(
                     instance=instance,
                     gr_warehouse=gr_warehouse,
                 )
@@ -152,7 +153,7 @@ class GRFinishHandler:
                     company_id=instance.company_id,
                     product_id=gr_warehouse.goods_receipt_product.product_id,
                     warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_product_inventory.id,
+                    uom_id=uom_base.id,
                     tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
                     amount=gr_warehouse.goods_receipt_product.quantity_import * final_ratio,
                     unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
@@ -163,11 +164,12 @@ class GRFinishHandler:
 
     @classmethod
     def setup_data_push_by_ia(cls, instance, gr_warehouse):
-        uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
+        product_obj = gr_warehouse.goods_receipt_product.product
         uom_product_gr = gr_warehouse.goods_receipt_product.uom
-        final_ratio = 1
-        if uom_product_inventory and uom_product_gr:
-            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+        final_ratio = cls.get_final_uom_ratio(
+            product_obj=product_obj, uom_transaction=uom_product_gr
+        )
+        uom_base = cls.get_uom_base(product_obj=product_obj)
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
@@ -192,10 +194,10 @@ class GRFinishHandler:
                 'warranty_end': serial.warranty_end,
                 'goods_receipt_id': instance.id,
             })
-        return uom_product_inventory, final_ratio, lot_data, serial_data
+        return uom_base, final_ratio, lot_data, serial_data
 
     @classmethod
-    def push_to_product_warehouse(cls, instance):
+    def push_to_warehouse_stock(cls, instance):
         # push data to ProductWareHouse
         if instance.goods_receipt_type == 0:  # GR for PO
             cls.push_by_po(instance=instance)
@@ -211,7 +213,7 @@ class GRFinishHandler:
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
                     if product_wh.is_additional is False:
                         quantity_receipt_actual += product_wh.quantity_import
-                final_ratio = cls.get_final_uom(
+                final_ratio = cls.get_final_uom_ratio(
                     product_obj=product_receipt.product, uom_transaction=product_receipt.uom
                 )
                 product_receipt.product.save(**{
@@ -225,7 +227,7 @@ class GRFinishHandler:
                 quantity_receipt_actual = 0
                 if product_receipt.is_additional is False:
                     quantity_receipt_actual += product_receipt.quantity_import
-                final_ratio = cls.get_final_uom(
+                final_ratio = cls.get_final_uom_ratio(
                     product_obj=product_receipt.product, uom_transaction=product_receipt.uom
                 )
                 product_receipt.product.save(**{
@@ -236,9 +238,15 @@ class GRFinishHandler:
         return True
 
     @classmethod
-    def get_final_uom(cls, product_obj, uom_transaction):
+    def get_final_uom_ratio(cls, product_obj, uom_transaction):
         if product_obj.general_uom_group:
             uom_base = product_obj.general_uom_group.uom_reference
             if uom_base and uom_transaction:
                 return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
         return 1
+
+    @classmethod
+    def get_uom_base(cls, product_obj):
+        if product_obj.general_uom_group:
+            return product_obj.general_uom_group.uom_reference
+        return None

@@ -195,6 +195,8 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
 class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     products = ProductDeliveryUpdateSerializer(many=True)
     employee_inherit_id = serializers.UUIDField()
+    estimated_delivery_date = serializers.DateTimeField()
+    actual_delivery_date = serializers.DateTimeField()
 
     class Meta:
         model = OrderDeliverySub
@@ -219,11 +221,21 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     def validate_state(cls, value):
         if value < 2:
             return value
-        raise serializers.ValidationError(
-            {
-                'State': _('Can not update when status is Done!')
-            }
-        )
+        raise serializers.ValidationError({'State': _('Can not update when status is Done!')})
+
+    def validate(self, validate_data):
+        product_data = validate_data.get('products', [])
+        for product in product_data:
+            deli_product = OrderDeliveryProduct.objects.filter_current(
+                delivery_sub=self.instance, product_id=product.get('product_id', None)
+            ).first()
+            if deli_product:
+                deli_quantity = product.get('done', 0)
+                if deli_quantity > deli_product.remaining_quantity:
+                    raise serializers.ValidationError({
+                        'detail': _('Products must have picked quantity equal to or less than remaining quantity')
+                    })
+        return validate_data
 
     def handle_attach_file(self, instance, validate_data):
         attachments = validate_data.get('attachments', None)
