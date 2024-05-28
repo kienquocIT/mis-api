@@ -161,6 +161,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
     work = serializers.UUIDField(required=False)
+    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
@@ -240,12 +241,13 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             )
 
     def validate(self, attrs):
-        if attrs['project']:
+        if 'project' in attrs:
             employee_current = self.context.get('user', None).employee_current
             check_permit = check_permit_add_member_pj(attrs, employee_current)
             if check_permit:
                 return attrs
-        raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+            raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+        return attrs
 
     def create(self, validated_data):
         user = self.context.get('user', None)
