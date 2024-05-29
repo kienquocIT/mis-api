@@ -250,29 +250,51 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             tenant_id=instance.tenant_id, company_id=instance.company_id,
             fiscal_year=timezone.now().year
         ).first()
-        if str(this_period.id) == str(instance.period_mapped_id):
-            # update config
-            if 'goto_stage' in self.context:
-                stage_goto = LeadStage.objects.filter(company=instance.company, tenant=instance.tenant, level=3).first()
-                if instance.lead_status == 2 and stage_goto:
-                    instance.current_lead_stage = stage_goto
-                    instance.lead_status = 3
-                    instance.save()
+        config = instance.lead_configs.first()
+        if config.contact_mapped or config.convert_opp:
+            raise serializers.ValidationError(
+                {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
+            )
+        else:
+            if str(this_period.id) == str(instance.period_mapped_id):
+                # update config
+                if 'goto_stage' in self.context:
+                    stage_goto = LeadStage.objects.filter(company=instance.company, tenant=instance.tenant, level=3).first()
+                    if instance.lead_status == 2 and stage_goto:
+                        instance.current_lead_stage = stage_goto
+                        instance.lead_status = 3
+                    else:
+                        raise serializers.ValidationError({
+                            'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
+                        })
+                elif 'convert_opp' in self.context:
+                    if instance.current_lead_stage.level != 1:
+                        if config:
+                            config.convert_opp = True
+                            config.convert_opp_create = False
+                            config.convert_opp_select = True
+                            config.opp_mapped_id = self.context.get('opp_mapped_id')
+                            config.save(update_fields=[
+                                'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
+                            ])
+                            stage = LeadStage.objects.filter(
+                                company=instance.company, tenant=instance.tenant, level=4
+                            ).first()
+                            if stage:
+                                instance.current_lead_stage = stage
+                                instance.lead_status = 4
                 else:
-                    raise serializers.ValidationError({
-                        'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
-                    })
-            else:
-                for key, value in validated_data.items():
-                    setattr(instance, key, value)
-                instance.save()
+                    for key, value in validated_data.items():
+                        setattr(instance, key, value)
 
-                # update notes
-                LeadNote.objects.filter(lead=instance).delete()
-                for note_content in self.initial_data.get('note_data', []):
-                    LeadNote.objects.create(lead=instance, note=note_content)
-            return instance
-        raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
+                    # update notes
+                    LeadNote.objects.filter(lead=instance).delete()
+                    for note_content in self.initial_data.get('note_data', []):
+                        LeadNote.objects.create(lead=instance, note=note_content)
+
+                instance.save()
+                return instance
+            raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
 
 
 class LeadStageListSerializer(serializers.ModelSerializer):

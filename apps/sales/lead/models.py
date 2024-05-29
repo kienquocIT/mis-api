@@ -65,7 +65,6 @@ class Lead(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        LeadChartInformation.create_update_chart_information(self.tenant, self.company)
         super().save(*args, **kwargs)
 
 

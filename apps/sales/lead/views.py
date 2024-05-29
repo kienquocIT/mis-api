@@ -38,6 +38,9 @@ class LeadList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        LeadChartInformation.create_update_chart_information(
+            self.request.user.tenant_current, self.request.user.company_current
+        )
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -119,6 +122,11 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         if 'goto_stage' in request.data:
             self.ser_context = {'goto_stage': True}
+        if all(['convert_opp' in request.data, 'map_opp' in request.data]):
+            self.ser_context = {
+                'convert_opp': True,
+                'opp_mapped_id': request.data.get('opp_mapped_id')
+            }
         return self.update(request, *args, **kwargs)
 
 
