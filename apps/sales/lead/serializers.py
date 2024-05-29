@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from django.utils import timezone
 from apps.masterdata.saledata.models import Periods
-from apps.sales.opportunity.models import Opportunity
-from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.lead.models import Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS, \
+from apps.sales.lead.models import (
+    Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
     LeadChartInformation, LeadHint
+)
 
 __all__ = [
     'LeadListSerializer',

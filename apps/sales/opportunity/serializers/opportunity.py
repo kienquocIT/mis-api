@@ -249,7 +249,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             lead_configs = lead.lead_configs.first() if lead else None
             if lead_configs:
                 if not lead_configs.convert_opp:
-                    current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=4).first()
+                    current_stage = LeadStage.objects.filter(
+                        tenant_id=tenant_id, company_id=company_id, level=4
+                    ).first()
                     lead.current_lead_stage = current_stage
                     lead.lead_status = 4
                     lead.save(update_fields=['current_lead_stage', 'lead_status'])
