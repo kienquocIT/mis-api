@@ -101,16 +101,12 @@ class LeadConfig(SimpleAbstractModel):
     convert_opp = models.BooleanField(default=False)
     convert_opp_create = models.BooleanField(default=True)
     convert_opp_select = models.BooleanField(default=False)
-    opp_select = models.ForeignKey(
-        'opportunity.Opportunity', on_delete=models.CASCADE, null=True, related_name='lead_opp_select'
+    account_mapped = models.ForeignKey(
+        'saledata.Account', on_delete=models.CASCADE, null=True, related_name='lead_account_mapped'
     )
-    convert_account_create = models.BooleanField(default=True)
-    convert_account_select = models.BooleanField(default=False)
-    account_select = models.ForeignKey(
-        'saledata.Account', on_delete=models.CASCADE, null=True, related_name='lead_account_select'
+    assign_to_sale_config = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True, related_name='lead_assign_to_sale_config'
     )
-    assign_to_sale_config = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
-
     contact_mapped = models.ForeignKey(
         'saledata.Contact', on_delete=models.CASCADE, null=True, related_name='lead_contact_mapped'
     )

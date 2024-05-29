@@ -23,6 +23,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     bank_accounts_mapped = serializers.SerializerMethodField()
     revenue_information = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -41,7 +42,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             'contact_mapped',
             'bank_accounts_mapped',
             'revenue_information',
-            'billing_address'
+            'billing_address',
+            'industry'
         )
 
     @classmethod
@@ -126,6 +128,16 @@ class AccountListSerializer(serializers.ModelSerializer):
                 'is_default': item.is_default
             })
         return billing_address_list
+
+    @classmethod
+    def get_industry(cls, obj):
+        if obj.industry:
+            return {
+                'id': obj.industry_id,
+                'code': obj.industry.code,
+                'title': obj.industry.title,
+            }
+        return {}
 
 
 def create_employee_map_account(account):

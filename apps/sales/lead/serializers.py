@@ -152,14 +152,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'convert_opp': config.convert_opp,
             'convert_opp_create': config.convert_opp_create,
             'convert_opp_select': config.convert_opp_select,
-            'opp_select': config.opp_select_id,
-            'convert_account_create': config.convert_account_create,
-            'convert_account_select': config.convert_account_select,
-            'account_select': {
-                'id': config.account_select_id,
-                'code': config.account_select.code,
-                'name': config.account_select.name,
-            } if config.account_select else None,
+            'account_mapped': {
+                'id': config.account_mapped_id,
+                'code': config.account_mapped.code,
+                'name': config.account_mapped.name,
+            } if config.account_mapped else None,
             'assign_to_sale_config': {
                 'id': config.assign_to_sale_config_id,
                 'code': config.assign_to_sale_config.code,
