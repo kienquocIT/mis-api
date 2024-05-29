@@ -259,6 +259,7 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     serializer_list = SaleOrderPurchasingStaffListSerializer
     filterset_fields = {
         'employee_inherit': ['exact', 'in'],
+        'system_status': ['exact', 'in'],
     }
     list_hidden_field = ['tenant_id', 'company_id']
 

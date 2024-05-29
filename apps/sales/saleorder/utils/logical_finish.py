@@ -19,7 +19,7 @@ class SOFinishHandler:
     def push_product_info(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
             if product_order.product:
-                final_ratio = cls.get_final_uom(
+                final_ratio = cls.get_final_uom_ratio(
                     product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
                 )
                 product_order.product.save(**{
@@ -176,7 +176,7 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def get_final_uom(cls, product_obj, uom_transaction):
+    def get_final_uom_ratio(cls, product_obj, uom_transaction):
         if product_obj.general_uom_group:
             uom_base = product_obj.general_uom_group.uom_reference
             if uom_base and uom_transaction:
