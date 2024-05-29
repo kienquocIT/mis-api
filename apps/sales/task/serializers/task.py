@@ -63,6 +63,20 @@ def handle_attachment(user, instance, attachments, create_method):
     return True
 
 
+def map_task_with_project(task, work):
+    prj_obj = task.project
+    has_prj_map = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
+    if prj_obj and has_prj_map is not True:
+        ProjectMapTasks.objects.create(
+            project=prj_obj,
+            member=task.employee_inherit,
+            tenant_id=task.tenant_id,
+            company_id=task.company_id,
+            task=task,
+            work_id=str(work) if work else None
+        )
+
+
 class OpportunityTaskListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     checklist = serializers.SerializerMethodField()
@@ -226,20 +240,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
-    @classmethod
-    def map_task_with_project(cls, task, work):
-        prj_obj = task.project
-        has_prj_map = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
-        if prj_obj and has_prj_map is not True:
-            ProjectMapTasks.objects.create(
-                project=prj_obj,
-                member=task.employee_inherit,
-                tenant_id=task.tenant_id,
-                company_id=task.company_id,
-                task=task,
-                work_id=str(work) if work else None
-            )
-
     def validate(self, attrs):
         if 'project' in attrs:
             employee_current = self.context.get('user', None).employee_current
@@ -273,7 +273,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             )
 
         if task.project:
-            self.map_task_with_project(task, project_work)
+            map_task_with_project(task, project_work)
         return task
 
 
@@ -287,6 +287,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     attach = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     sub_task_list = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -406,6 +407,14 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
     @classmethod
+    def get_project(cls, obj):
+        return {
+            'id': str(obj.project_data['id']),
+            'title': obj.project_data['title'],
+            'code': obj.project_data['code']
+        } if obj.project else {}
+
+    @classmethod
     def get_sub_task_list(cls, obj):
         task_list = OpportunityTask.objects.filter_current(
             fill__company=True,
@@ -427,12 +436,14 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
+    work = serializers.UUIDField(required=False)
+    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity', 'percent_completed', 'project')
+                  'attach', 'opportunity', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -496,6 +507,15 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             {'system': SaleTask.NOT_CONFIG}
         )
 
+    def validate(self, attrs):
+        if 'project' in attrs:
+            employee_current = self.context.get('user', None).employee_current
+            check_permit = check_permit_add_member_pj(attrs, employee_current)
+            if check_permit:
+                return attrs
+            raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+        return attrs
+
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         opps_before = instance.opportunity
@@ -515,6 +535,10 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                     'task': str(instance.id)
                 }
             )
+
+        if instance.project:
+            project_work = validated_data.pop('work', None)
+            map_task_with_project(instance, project_work)
         return instance
 
 
