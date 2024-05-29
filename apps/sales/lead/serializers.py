@@ -245,6 +245,41 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
+    @classmethod
+    def goto_stage(cls, instance):
+        stage_goto = LeadStage.objects.filter(
+            company=instance.company, tenant=instance.tenant, level=3
+        ).first()
+        if instance.lead_status == 2 and stage_goto:
+            instance.current_lead_stage = stage_goto
+            instance.lead_status = 3
+        else:
+            raise serializers.ValidationError({
+                'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
+            })
+        instance.save()
+        return instance
+
+    @classmethod
+    def convert_opp(cls, instance, config, opp_mapped_id):
+        if instance.current_lead_stage.level != 1:
+            if config:
+                config.convert_opp = True
+                config.convert_opp_create = False
+                config.convert_opp_select = True
+                config.opp_mapped_id = opp_mapped_id
+                config.save(update_fields=[
+                    'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
+                ])
+                stage = LeadStage.objects.filter(
+                    company=instance.company, tenant=instance.tenant, level=4
+                ).first()
+                if stage:
+                    instance.current_lead_stage = stage
+                    instance.lead_status = 4
+        instance.save()
+        return instance
+
     def update(self, instance, validated_data):
         this_period = Periods.objects.filter(
             tenant_id=instance.tenant_id, company_id=instance.company_id,
@@ -255,46 +290,23 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
             )
-        else:
-            if str(this_period.id) == str(instance.period_mapped_id):
-                # update config
-                if 'goto_stage' in self.context:
-                    stage_goto = LeadStage.objects.filter(company=instance.company, tenant=instance.tenant, level=3).first()
-                    if instance.lead_status == 2 and stage_goto:
-                        instance.current_lead_stage = stage_goto
-                        instance.lead_status = 3
-                    else:
-                        raise serializers.ValidationError({
-                            'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
-                        })
-                elif 'convert_opp' in self.context:
-                    if instance.current_lead_stage.level != 1:
-                        if config:
-                            config.convert_opp = True
-                            config.convert_opp_create = False
-                            config.convert_opp_select = True
-                            config.opp_mapped_id = self.context.get('opp_mapped_id')
-                            config.save(update_fields=[
-                                'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
-                            ])
-                            stage = LeadStage.objects.filter(
-                                company=instance.company, tenant=instance.tenant, level=4
-                            ).first()
-                            if stage:
-                                instance.current_lead_stage = stage
-                                instance.lead_status = 4
-                else:
-                    for key, value in validated_data.items():
-                        setattr(instance, key, value)
-
-                    # update notes
-                    LeadNote.objects.filter(lead=instance).delete()
-                    for note_content in self.initial_data.get('note_data', []):
-                        LeadNote.objects.create(lead=instance, note=note_content)
-
+        if str(this_period.id) == str(instance.period_mapped_id):
+            if 'goto_stage' in self.context:
+                self.goto_stage(instance)
+            elif 'convert_opp' in self.context:
+                self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
+            else:
+                for key, value in validated_data.items():
+                    setattr(instance, key, value)
                 instance.save()
-                return instance
-            raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
+
+                # update notes
+                LeadNote.objects.filter(lead=instance).delete()
+                for note_content in self.initial_data.get('note_data', []):
+                    LeadNote.objects.create(lead=instance, note=note_content)
+
+            return instance
+        raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
 
 
 class LeadStageListSerializer(serializers.ModelSerializer):
