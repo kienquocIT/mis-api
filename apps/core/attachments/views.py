@@ -4,10 +4,11 @@ from rest_framework.parsers import MultiPartParser
 
 from apps.shared import BaseCreateMixin, mask_view, BaseListMixin
 
-from apps.core.attachments.models import Files, PublicFiles
+from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.core.attachments.serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
+    FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderFilesListSerializer,
 )
 
 
@@ -98,5 +99,60 @@ class ImageWebBuilderList(BaseListMixin):
 
     @swagger_auto_schema()
     @mask_view(login_require=True, auth_require=False, allow_admin_company=True)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# BEGIN FOLDER
+class FolderList(BaseListMixin, BaseCreateMixin):
+    queryset = Folder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'parent_n_id': ['exact', 'isnull'],
+    }
+    serializer_list = FolderListSerializer
+    serializer_create = FolderCreateSerializer
+    serializer_detail = FolderDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Folder List",
+        operation_description="Get Folder List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Folder",
+        operation_description="Create New Folder",
+        request_body=FolderCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class FolderFileList(BaseListMixin, BaseCreateMixin):
+    queryset = Files.objects
+    search_fields = ['file_name']
+    filterset_fields = {
+        'folder_id': ['exact', 'isnull'],
+    }
+    serializer_list = FolderFilesListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Folder File List",
+        operation_description="Get Folder File List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

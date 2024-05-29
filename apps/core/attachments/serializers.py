@@ -2,7 +2,7 @@ import magic
 
 from django.conf import settings
 from rest_framework import serializers
-from apps.core.attachments.models import Files, PublicFiles
+from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING
 
 
@@ -172,4 +172,52 @@ class DetailImageWebBuilderInPublicFileListSerializer(serializers.ModelSerialize
             'file_name',
             'file_type',
             'url',
+        )
+
+
+# BEGIN FOLDER
+class FolderListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Folder
+        fields = (
+            'id',
+            'title',
+            'parent_n_id',
+            'date_created',
+            'date_modified',
+        )
+
+
+class FolderDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+
+class FolderCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField()
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+
+class FolderFilesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Files
+        fields = (
+            'id',
+            'file_name',
+            'file_size',
+            'file_type',
+            'date_created',
+            'remarks',
         )
