@@ -7,6 +7,7 @@ from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeas
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
+from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
@@ -241,6 +242,31 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         self.validate_config_role(validate_data=validate_data)
         return validate_data
 
+    @classmethod
+    def convert_opportunity(cls, lead, tenant_id, company_id, opp_mapped, account_select):
+        # convert to a new opp (existed account)
+        lead_configs = lead.lead_configs.first() if lead else None
+        if lead_configs:
+            current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=4).first()
+            lead.current_lead_stage = current_stage
+            lead.lead_status = 4
+            lead.save(update_fields=['current_lead_stage', 'lead_status'])
+            lead_configs.opp_mapped = opp_mapped
+            lead_configs.account_select = account_select
+            lead_configs.convert_opp = True
+            lead_configs.convert_account_create = False
+            lead_configs.convert_account_select = True
+            lead_configs.save(update_fields=[
+                'opp_mapped',
+                'account_select',
+                'convert_opp',
+                'convert_account_create',
+                'convert_account_select'
+            ])
+            LeadChartInformation.create_update_chart_information(tenant_id, company_id)
+            return True
+        raise serializers.ValidationError({'not found': 'Lead config not found.'})
+
     def create(self, validated_data):
         # get data product_category
         product_categories = validated_data.pop('product_category', [])
@@ -306,6 +332,19 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 date_activity=opportunity.date_created,
                 revenue=None,
             )
+
+        if 'lead' in self.context:
+            self.convert_opportunity(
+                self.context.get('lead'),
+                validated_data['tenant_id'],
+                validated_data['company_id'],
+                opportunity,
+                opportunity.customer
+            )
+
+        LeadHint.check_and_create_lead_hint(
+            opportunity, opportunity.customer.phone, opportunity.customer.email, opportunity.customer_id
+        )
         return opportunity
 
 

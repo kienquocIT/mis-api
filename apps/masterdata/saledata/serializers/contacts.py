@@ -3,7 +3,7 @@ from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
 from apps.shared import (AccountsMsg,)
-from apps.sales.lead.models import LeadStage
+from apps.sales.lead.models import LeadStage, LeadChartInformation
 
 
 # Salutation
@@ -226,6 +226,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             lead_configs.contact_mapped = contact_mapped
             lead_configs.create_contact = True
             lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
+            LeadChartInformation.create_update_chart_information(tenant_id, company_id)
             return True
         raise serializers.ValidationError({'not found': 'Lead config not found.'})
 

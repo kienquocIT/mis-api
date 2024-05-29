@@ -1,13 +1,17 @@
 from rest_framework import serializers
+from django.utils import timezone
+from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import Opportunity
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.lead.models import Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS
+from apps.sales.lead.models import Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS, \
+    LeadChartInformation, LeadHint
 
 __all__ = [
     'LeadListSerializer',
     'LeadCreateSerializer',
     'LeadDetailSerializer',
-    'LeadUpdateSerializer'
+    'LeadUpdateSerializer',
+    'LeadStageListSerializer'
 ]
 
 
@@ -46,7 +50,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'mobile',
             'email',
             'company_name',
-            'account_name',
             'industry',
             'total_employees',
             'revenue',
@@ -58,7 +61,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
-    @decorator_run_workflow
     def create(self, validated_data):
         number = Lead.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], is_delete=False
@@ -67,8 +69,15 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         current_stage = LeadStage.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
         ).first()
-        if current_stage:
-            lead = Lead.objects.create(**validated_data, current_lead_stage=current_stage, code=code, system_status=1)
+        this_period = Periods.objects.filter(
+            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'],
+            fiscal_year=timezone.now().year
+        ).first()
+        if current_stage and this_period:
+            lead = Lead.objects.create(
+                **validated_data, current_lead_stage=current_stage, code=code, system_status=1,
+                period_mapped=this_period
+            )
 
             # create notes
             for note_content in self.initial_data.get('note_data', []):
@@ -89,6 +98,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     config_data = serializers.SerializerMethodField()
     current_lead_stage = serializers.SerializerMethodField()
     related_opps = serializers.SerializerMethodField()
+    related_leads = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -101,7 +111,6 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'mobile',
             'email',
             'company_name',
-            'account_name',
             'industry',
             'total_employees',
             'revenue',
@@ -111,7 +120,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'current_lead_stage',
             'note_data',
             'config_data',
-            'related_opps'
+            'related_opps',
+            'related_leads'
         )
 
     @classmethod
@@ -145,7 +155,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'opp_select': config.opp_select_id,
             'convert_account_create': config.convert_account_create,
             'convert_account_select': config.convert_account_select,
-            'account_select': config.account_select_id,
+            'account_select': {
+                'id': config.account_select_id,
+                'code': config.account_select.code,
+                'name': config.account_select.name,
+            } if config.account_select else None,
             'assign_to_sale_config': {
                 'id': config.assign_to_sale_config_id,
                 'code': config.assign_to_sale_config.code,
@@ -155,7 +169,12 @@ class LeadDetailSerializer(serializers.ModelSerializer):
                 'id': config.contact_mapped_id,
                 'code': config.contact_mapped.code,
                 'fullname': config.contact_mapped.fullname,
-            } if config.contact_mapped else {}
+            } if config.contact_mapped else {},
+            'opp_mapped': {
+                'id': config.opp_mapped_id,
+                'code': config.opp_mapped.code,
+                'title': config.opp_mapped.title,
+            } if config.opp_mapped else {}
         } if config else {}
 
     @classmethod
@@ -168,23 +187,44 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_related_opps(cls, obj):
         related_opps = []
-        sale_person_list = [obj.assign_to_sale_id]
         config = obj.lead_configs.first()
         if config:
             if config.convert_opp:
                 return []
-            sale_person_list.append(config.assign_to_sale_config_id)
-        for opp in Opportunity.objects.filter(
-            sale_person_id__in=sale_person_list
-        ):
-            opp_customer_contacts_mapped = opp.customer.contact_account_name.all()
-            filter_by_mobile = opp_customer_contacts_mapped.filter(mobile=obj.mobile).count()
-            filter_by_email = opp_customer_contacts_mapped.filter(email=obj.email).count()
-            if filter_by_mobile + filter_by_email > 0:
+        existed = []
+
+        all_hint = LeadHint.objects.all()
+        hints_by_mobile = all_hint.filter(customer_mobile=obj.mobile) if obj.mobile else []
+        hints_by_email = all_hint.filter(customer_email=obj.email) if obj.email else []
+        for hint in list(hints_by_mobile) + list(hints_by_email):
+            if str(hint.id) not in existed:
                 related_opps.append({
-                    'id': opp.id, 'code': opp.code, 'title': opp.title
+                    'id': str(hint.opportunity_id), 'code': hint.opportunity.code, 'title': hint.opportunity.title
                 })
+                existed.append(str(hint.opportunity_id))
         return related_opps
+
+    @classmethod
+    def get_related_leads(cls, obj):
+        related_leads = []
+        config = obj.lead_configs.first()
+        if config:
+            if config.convert_opp:
+                return []
+        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company)
+        existed = []
+        for lead in all_lead:
+            filer_by_contact_name = all_lead.filter(contact_name__icontains=lead.contact_name).count()
+            filer_by_mobile = all_lead.filter(mobile__icontains=lead.mobile).count()
+            filer_by_email = all_lead.filter(email__icontains=lead.email).count()
+            filer_by_company_name = all_lead.filter(company_name__icontains=lead.company_name).count()
+            if sum([filer_by_contact_name, filer_by_mobile, filer_by_email, filer_by_company_name]) > 0:
+                if str(lead.id) not in existed:
+                    related_leads.append({
+                        'id': lead.id, 'code': lead.code, 'title': lead.title
+                    })
+                    existed.append(str(lead.id))
+        return related_leads
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
@@ -197,7 +237,6 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             'mobile',
             'email',
             'company_name',
-            'account_name',
             'industry',
             'total_employees',
             'revenue',
@@ -210,28 +249,33 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
-        # update config
-        if 'goto_stage' in self.context:
-            stage_goto = LeadStage.objects.filter(company=instance.company, tenant=instance.tenant, level=3).first()
-            if instance.lead_status == 2 and stage_goto:
-                instance.current_lead_stage = stage_goto
-                instance.lead_status = 3
-                instance.save()
+        this_period = Periods.objects.filter(
+            tenant_id=instance.tenant_id, company_id=instance.company_id,
+            fiscal_year=timezone.now().year
+        ).first()
+        if str(this_period.id) == str(instance.period_mapped_id):
+            # update config
+            if 'goto_stage' in self.context:
+                stage_goto = LeadStage.objects.filter(company=instance.company, tenant=instance.tenant, level=3).first()
+                if instance.lead_status == 2 and stage_goto:
+                    instance.current_lead_stage = stage_goto
+                    instance.lead_status = 3
+                    instance.save()
+                else:
+                    raise serializers.ValidationError({
+                        'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
+                    })
             else:
-                raise serializers.ValidationError({
-                    'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
-                })
-        else:
-            for key, value in validated_data.items():
-                setattr(instance, key, value)
-            instance.save()
+                for key, value in validated_data.items():
+                    setattr(instance, key, value)
+                instance.save()
 
-            # update notes
-            LeadNote.objects.filter(lead=instance).delete()
-            for note_content in self.initial_data.get('note_data', []):
-                LeadNote.objects.create(lead=instance, note=note_content)
-
-        return instance
+                # update notes
+                LeadNote.objects.filter(lead=instance).delete()
+                for note_content in self.initial_data.get('note_data', []):
+                    LeadNote.objects.create(lead=instance, note=note_content)
+            return instance
+        raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
 
 
 class LeadStageListSerializer(serializers.ModelSerializer):
@@ -241,4 +285,15 @@ class LeadStageListSerializer(serializers.ModelSerializer):
             'id',
             'stage_title',
             'level'
+        )
+
+
+class LeadChartListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadChartInformation
+        fields = (
+            'id',
+            'status_amount_information',
+            'stage_amount_information',
+            'period_mapped'
         )
