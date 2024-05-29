@@ -7,7 +7,7 @@ from apps.sales.delivery.models import (
     OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
 from apps.shared.translations.sales import DeliverMsg
-from ..utils import CommonFunc
+from ..utils import DeliHandler
 
 __all__ = [
     'OrderPickingListSerializer',
@@ -351,7 +351,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
-        CommonFunc.check_update_prod_and_emp(instance, validated_data)
+        DeliHandler.check_update_prod_and_emp(instance, validated_data)
         print('check update pass')
 
         if 'products' in validated_data and len(validated_data['products']) > 0:

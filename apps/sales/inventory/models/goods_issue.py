@@ -80,6 +80,7 @@ class GoodsIssue(DataAbstractModel):
                         'lot_value': item.unit_cost * quantity,
                         'lot_expire_date': str(prd_wh_lot.expire_date)
                     })
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
             activities_data.append({
                 'product': item.product,
                 'warehouse': item.warehouse,
@@ -90,9 +91,9 @@ class GoodsIssue(DataAbstractModel):
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
                 'trans_title': 'Goods issue',
-                'quantity': item.quantity,
-                'cost': item.unit_cost,
-                'value': item.unit_cost * item.quantity,
+                'quantity': casted_quantity,
+                'cost': 0,  # theo gia cost
+                'value': 0,  # theo gia cost
                 'lot_data': lot_data
             })
         ReportInventorySub.logging_when_stock_activities_happened(
@@ -144,6 +145,7 @@ class GoodsIssue(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 self.prepare_data_for_logging(self)
+
                 if self.inventory_adjustment:
                     for item in self.goods_issue_datas:
                         self.update_product_amount(item)

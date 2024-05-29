@@ -124,6 +124,12 @@ class PurchaseOrder(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def check_change_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -140,7 +146,7 @@ class PurchaseOrder(DataAbstractModel):
                     if 'date_approved' in kwargs['update_fields']:
                         POFinishHandler.update_remain_and_status_purchase_request(self)
                         POFinishHandler.update_is_all_ordered_purchase_request(self)
-                        POFinishHandler.update_product_wait_receipt_amount(self)
+                        POFinishHandler.push_product_info(self)
                         # report
                         POFinishHandler.push_to_report_cashflow(self)
 

@@ -1771,6 +1771,45 @@ REPORT_PURCHASING_APP_CONFIG = {
     "allow_permit": True,
 }
 
+LEAD_APP_CONFIG = {
+    "id": "c04b2295-307f-49ed-80ab-1ca7f2b32d00",
+    "title": "Lead",
+    "code": "lead",
+    "model_code": "lead",
+    "app_label": "lead",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 SALE_PROJECT = {
     "id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
     "title": "Project",
@@ -2057,6 +2096,10 @@ Application_crm_data = {
         filtering_inheritor=False,
     ),
     "e696a636-0f36-4b20-970d-70035d6e1e37": ApplicationConfigFrame(**REPORT_PURCHASING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c04b2295-307f-49ed-80ab-1ca7f2b32d00": ApplicationConfigFrame(**LEAD_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

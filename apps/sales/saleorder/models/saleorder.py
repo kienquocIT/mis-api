@@ -241,6 +241,9 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def check_change_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
         if hasattr(instance, 'delivery_of_sale_order'):
             if not instance.delivery_of_sale_order.orderdeliverysub_set.filter(**{
@@ -271,7 +274,7 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        SOFinishHandler.update_product_wait_delivery_amount(self)
+                        SOFinishHandler.push_product_info(self)
                         # opportunity
                         SOFinishHandler.update_opportunity_stage_by_so(self)
                         # customer
@@ -282,7 +285,7 @@ class SaleOrder(DataAbstractModel):
                         SOFinishHandler.push_to_report_customer(self)
                         SOFinishHandler.push_to_report_cashflow(self)
                         # final acceptance
-                        SOFinishHandler.push_to_final_acceptance(self)
+                        SOFinishHandler.push_final_acceptance_so(self)
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
         # diagram

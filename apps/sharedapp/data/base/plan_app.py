@@ -278,6 +278,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "e696a636-0f36-4b20-970d-70035d6e1e37",  # Report Inventory
     },
+    "c04b2295-307f-49ed-80ab-1ca7f2b32d00": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c04b2295-307f-49ed-80ab-1ca7f2b32d00",  # Lead
+    },
     "49fe2eb9-39cd-44af-b74a-f690d7b61b67": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale
         "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",  # Projects

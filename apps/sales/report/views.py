@@ -185,6 +185,7 @@ class ReportCashflowList(BaseListMixin):
         'sale_order_id': ['exact', 'in'],
         'due_date': ['exact', 'gte', 'lte'],
         'sale_order__system_status': ['exact'],
+        'purchase_order__system_status': ['exact'],
     }
     serializer_list = ReportCashflowListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -193,7 +194,7 @@ class ReportCashflowList(BaseListMixin):
         return super().get_queryset().select_related(
             "sale_order",
             "purchase_order",
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Report cashflow list",
@@ -222,7 +223,7 @@ class ReportInventoryDetailList(BaseListMixin):
             company_obj = self.request.user.company_current
             div = self.request.user.company_current.companyconfig.definition_inventory_valuation
             if 'is_calculate' in self.request.query_params and div == 1:
-                LoggingSubFunction.calculate_ending_cumulative_value(
+                LoggingSubFunction.calculate_ending_balance_for_periodic(
                     period_mapped, sub_period_order, tenant_obj, company_obj
                 )
 
@@ -315,7 +316,7 @@ class ReportInventoryList(BaseListMixin):
         cost = 0
         value = 0
         if int(sub_period_order) <= (datetime.datetime.now().month - period_mapped.space_month):
-            latest_trans = LoggingSubFunction.get_latest_trans_by_month(prd_id, wh_id, period_mapped, sub_period_order)
+            latest_trans = LoggingSubFunction.get_latest_log_by_month(prd_id, wh_id, period_mapped, sub_period_order)
             if latest_trans:
                 if company.companyconfig.definition_inventory_valuation == 0:
                     quantity = latest_trans.current_quantity
@@ -330,7 +331,7 @@ class ReportInventoryList(BaseListMixin):
                     product_id=prd_id, warehouse_id=wh_id, period_mapped=period_mapped, for_balance=True
                 ).first()
                 if opening_value_list_obj:
-                    if opening_value_list_obj.sub_period_order < opening_value_list_obj:
+                    if opening_value_list_obj.sub_period_order < int(sub_period_order):
                         quantity = opening_value_list_obj.opening_balance_quantity
                         cost = opening_value_list_obj.opening_balance_cost
                         value = opening_value_list_obj.opening_balance_value
@@ -361,8 +362,10 @@ class ReportInventoryList(BaseListMixin):
 
     @classmethod
     def create_this_sub_record(cls, tenant, company, product_id_list, period_mapped, sub_period_order):
-        sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        if not sub.run_report_inventory:
+        sw_start_using_time_order = company.software_start_using_time.month - period_mapped.space_month
+        if int(sub_period_order) > sw_start_using_time_order:
+            sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
+            # if not sub.run_report_inventory:
             wh_id_list = set(
                 WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
             )
@@ -374,7 +377,7 @@ class ReportInventoryList(BaseListMixin):
                 for wh_id in wh_id_list:
                     this_sub_record = None
                     for item in all_this_sub_record:
-                        if item.product_id == prd_id and item.warehouse_id == wh_id:
+                        if str(item.product_id) == str(prd_id) and str(item.warehouse_id) == str(wh_id):
                             this_sub_record = item
                             break
                     if not this_sub_record:

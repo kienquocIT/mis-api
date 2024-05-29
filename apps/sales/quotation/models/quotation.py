@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.accounts import AccountActivity
+from apps.sales.quotation.utils import QuotationHandler
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 )
@@ -341,6 +342,8 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                         # customer
                         self.push_to_customer_activity(self)
 
+        # diagram
+        QuotationHandler.push_diagram(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 

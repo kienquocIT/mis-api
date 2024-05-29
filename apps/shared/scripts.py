@@ -41,11 +41,11 @@ from ..eoffice.leave.models import LeaveAvailable
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
-from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
+from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
+from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn
-from ..sales.inventory.models import GReturnProductInformationHandle
-from ..sales.inventory.utils import GRFinishHandler
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
+from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -53,9 +53,10 @@ from ..sales.opportunity.models import (
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
+from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
-    ReportInventoryProductWarehouse, LatestSub
+    ReportInventoryProductWarehouse, LatestSub, ReportInventory
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1354,7 +1355,7 @@ def reset_and_run_reports_sale(run_type=0):
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
             SOFinishHandler.push_to_report_cashflow(sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-            PurchaseOrder.push_to_report_cashflow(purchase_order)
+            POFinishHandler.push_to_report_cashflow(purchase_order)
     print('reset_and_run_reports_sale done.')
 
 
@@ -1390,7 +1391,7 @@ def update_price_list():
     print('Done')
 
 
-def reset_set_product_transaction_information():
+def reset_and_run_product_info():
     # reset
     update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
     for product in Product.objects.all():
@@ -1402,38 +1403,47 @@ def reset_set_product_transaction_information():
     # set input, output, return
     # input
     for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+        POFinishHandler.push_product_info(instance=po)
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.update_product_wait_receipt_amount(instance=gr)
+        GRFinishHandler.push_product_info(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SOFinishHandler.update_product_wait_delivery_amount(instance=so)
+        SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductInformationHandle.main_handle(instance=deli_sub)
+        DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
     for return_obj in GoodsReturn.objects.all():
-        GReturnProductInformationHandle.main_handle(instance=return_obj)
-    print('reset_set_product_transaction_information done.')
+        ReturnFinishHandler.push_product_info(instance=return_obj)
+    print('reset_and_run_product_info done.')
 
 
-def reset_set_product_warehouse_stock():
+def reset_and_run_warehouse_stock(run_type=0):
     # reset
-    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
-    for product_wh in ProductWareHouse.objects.all():
-        product_wh.stock_amount = 0
-        product_wh.receipt_amount = 0
-        product_wh.sold_amount = 0
-        product_wh.picked_ready = 0
-        product_wh.used_amount = 0
-        product_wh.save(update_fields=update_fields)
+    ProductWareHouseLot.objects.all().delete()
+    ProductWareHouseSerial.objects.all().delete()
+    ProductWareHouse.objects.all().delete()
     # input, output, provide
-    # input
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.push_to_product_warehouse(instance=gr)
-    # output
-    for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
-    print('reset_set_product_warehouse_stock done.')
+    if run_type == 0:  # input
+        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+            GRFinishHandler.push_to_warehouse_stock(instance=gr)
+    if run_type == 1:  # output
+        for deli_sub in OrderDeliverySub.objects.all():
+            config = deli_sub.config_at_that_point
+            if not config:
+                get_config = DeliveryConfig.objects.filter(company_id=deli_sub.company_id).first()
+                if get_config:
+                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
+            for deli_product in deli_sub.delivery_product_delivery_sub.all():
+                if deli_product.product and deli_product.delivery_data:
+                    for data in deli_product.delivery_data:
+                        if all(key in data for key in ('warehouse', 'uom', 'stock')):
+                            product_warehouse = ProductWareHouse.objects.filter(
+                                tenant_id=deli_sub.tenant_id, company_id=deli_sub.company_id,
+                                product_id=deli_product.product_id, warehouse_id=data['warehouse'],
+                            )
+                            source = {"uom": data['uom'], "quantity": data['stock']}
+                            DeliHandler.minus_tock(source, product_warehouse, config)
+    print('reset_and_run_warehouse_stock done.')
 
 
 def reset_opportunity_stage():
@@ -1547,7 +1557,7 @@ def update_gr_for_lot_serial():
     print('update_gr_for_lot_serial done.')
 
 
-def get_latest_trans(log, period_mapped, sub_period_order):
+def get_latest_log(log, period_mapped, sub_period_order):
     # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
     # 1: lấy records tháng này
     # 2: lấy records các tháng trước (trong năm)
@@ -1579,7 +1589,7 @@ def run_inventory_report():
     for log in ReportInventorySub.objects.all().order_by('date_created'):
         period_mapped = log.report_inventory.period_mapped
         sub_period_order = log.report_inventory.sub_period_order
-        latest_trans = get_latest_trans(log, period_mapped, sub_period_order)
+        latest_trans = get_latest_log(log, period_mapped, sub_period_order)
         if latest_trans:
             latest_value_list = {
                 'quantity': latest_trans.current_quantity,
@@ -1640,3 +1650,92 @@ def run_inventory_report():
                 )
     print('Done')
     return True
+
+
+def report_goods_receipt(company_id, start_month):
+    ReportInventorySub.objects.all().delete()
+    ReportInventoryProductWarehouse.objects.all().delete()
+    ReportInventory.objects.all().delete()
+    LatestSub.objects.all().delete()
+
+    all_delivery = OrderDeliverySub.objects.filter(
+        company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
+    ).order_by('date_done')
+
+    all_goods_issue = GoodsIssue.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_receipt = GoodsReceipt.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_return = GoodsReturn.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_transfer = GoodsTransfer.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_doc = []
+    for delivery in all_delivery:
+        all_doc.append({
+            'id': str(delivery.id), 'code': str(delivery.code),
+            'date_approved': str(delivery.date_done), 'type': 'delivery'
+        })
+    for goods_issue in all_goods_issue:
+        all_doc.append({
+            'id': str(goods_issue.id), 'code': str(goods_issue.code),
+            'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+        })
+    for goods_receipt in all_goods_receipt:
+        all_doc.append({
+            'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
+            'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+        })
+    for goods_return in all_goods_return:
+        all_doc.append({
+            'id': str(goods_return.id), 'code': str(goods_return.code),
+            'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+        })
+    for goods_transfer in all_goods_transfer:
+        all_doc.append({
+            'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
+            'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+        })
+
+    all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+    for doc in all_doc_sorted:
+        print(f"----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
+
+        if doc['type'] == 'delivery':
+            instance = OrderDeliverySub.objects.get(id=doc['id'])
+            products = instance.delivery_product_delivery_sub.all()
+            validated_product = []
+            for prd in products:
+                if prd.picked_quantity > 0:
+                    validated_product.append({
+                        'product_id': str(prd.product_id),
+                        'delivery_data': prd.delivery_data,
+                        'order': prd.order
+                    })
+            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance, validated_product)
+
+        if doc['type'] == 'goods_issue':
+            instance = GoodsIssue.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_receipt':
+            instance = GoodsReceipt.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_return':
+            instance = GoodsReturn.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_transfer':
+            instance = GoodsTransfer.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+    print('Done')

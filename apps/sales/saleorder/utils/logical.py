@@ -5,8 +5,13 @@ class SOHandler:
     @classmethod
     def push_diagram(cls, instance):
         quantity = 0
+        list_reference = []
+        if instance.quotation:
+            list_reference.append(instance.quotation.code)
         for so_product in instance.sale_order_product_sale_order.all():
             quantity += so_product.product_quantity
+        list_reference.reverse()
+        reference = ", ".join(list_reference)
         DiagramDocument.push_diagram_document(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
@@ -21,6 +26,7 @@ class SOHandler:
                 # custom
                 'quantity': quantity,
                 'total': instance.total_product_pretax_amount,
+                'reference': reference,
             }
         )
         if instance.quotation:

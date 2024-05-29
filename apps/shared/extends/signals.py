@@ -50,6 +50,7 @@ from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerialize
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
+from ...sales.lead.models import LeadStage
 from ...sales.project.models import ProjectMapMember
 
 logger = logging.getLogger(__name__)
@@ -436,6 +437,25 @@ class ConfigDefaultData:
         }
     ]
 
+    lead_stage_data = [
+        {
+            'stage_title': 'Marketing Acquired Lead',
+            'level': 1,
+        },
+        {
+            'stage_title': 'Marketing Qualified Lead',
+            'level': 2,
+        },
+        {
+            'stage_title': 'Sales Accepted Lead',
+            'level': 3,
+        },
+        {
+            'stage_title': 'Sales Qualified Lead',
+            'level': 4,
+        },
+    ]
+
     function_process_data = [
         {
             'function_id': 'e66cfb5a-b3ce-4694-a4da-47618f53de4c',
@@ -616,6 +636,14 @@ class ConfigDefaultData:
                     comparison_operator=condition['comparison_operator'],
                     compare_data=condition['compare_data']
                 )
+
+    def lead_stage(self):
+        for stage in self.lead_stage_data:
+            LeadStage.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                **stage
+            )
 
     def quotation_indicator_config(self):
         bulk_info = []
@@ -882,6 +910,7 @@ class ConfigDefaultData:
         self.sale_order_config()
         self.opportunity_config()
         self.opportunity_config_stage()
+        self.lead_stage()
         self.quotation_indicator_config()
         self.sale_order_indicator_config()
         self.task_config()

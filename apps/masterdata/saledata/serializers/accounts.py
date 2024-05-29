@@ -98,7 +98,9 @@ class AccountListSerializer(serializers.ModelSerializer):
             if period.fiscal_year == current_date.year:
                 start_date_str = str(period.start_date) + ' 00:00:00'
                 start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
-                for customer_revenue in obj.report_customer_customer.all():
+                for customer_revenue in obj.report_customer_customer.filter(
+                        group_inherit__is_delete=False, sale_order__system_status=3
+                ):
                     if customer_revenue.date_approved:
                         if start_date <= customer_revenue.date_approved <= current_date:
                             revenue_ytd += customer_revenue.revenue

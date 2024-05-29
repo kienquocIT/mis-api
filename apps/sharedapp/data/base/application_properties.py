@@ -431,6 +431,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total revenue of quotation',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total revenue after tax)',
     },
     '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -439,6 +440,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total cost of quotation',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total cost after tax)',
     },
     '78584833-3ad3-406a-8969-749e2c9b899c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -447,6 +449,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total expense of quotation',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total expense after tax)',
     },
     '9a8bef37-6812-4d8b-ba6a-dc5669e61029': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -455,6 +458,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total revenue before tax of quotation (after discount on total, apply promotion,...)',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total revenue before tax)',
     },
     'd1dcd149-6fc8-4234-870d-29497f8cfb88': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -463,6 +467,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total cost before tax of quotation',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total cost before tax)',
     },
     '490ecfee-30d2-468a-b075-84d44b8b150e': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -471,6 +476,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total expense before tax of quotation',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Total expense before tax)',
     },
     # field of tabs Product
     '89621079-c323-4ef8-8b67-a713e40e5680': {
@@ -480,6 +486,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Title product on quotation product line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Product title)',
     },
     '84c4e4c5-8d6b-4c0f-afa4-45163d4d4abb': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -488,14 +495,16 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Code product on quotation product line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Product code)',
     },
     'f329d568-87a7-4304-98e8-0a09b8996591': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Product unit title',
+        'title': 'Product uom title',
         'code': 'product_uom_title',
         'remark': 'Title product unit on quotation product line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Product uom price)',
     },
     '73a627ef-016a-4497-ae9f-0ba92e0f721d': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -504,6 +513,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Quantity product on quotation product line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Product quantity)',
     },
     '67100057-ee5b-46ef-958f-5c15e5c5e5e2': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -512,6 +522,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Price product on quotation product line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Product unit price)',
     },
     '016a8435-b564-45cb-99b6-dae38d2df5f2': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -520,6 +531,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Subtotal product on quotation product line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Product subtotal)',
     },
     # field of tabs Expense
     '3c5113e2-da79-4371-af0a-63df34262731': {
@@ -529,6 +541,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Title expense on quotation expense line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Expense title)',
     },
     'd26c8707-e014-4772-a9b6-ae5465a9832a': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -537,30 +550,36 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Code expense on quotation expense line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Expense code)',
     },
     '8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Expense type',
         'code': 'expense_type_title',
         'remark': 'Type expense on quotation expense line',
-        'type': 1,
+        'type': 5,
         'is_sale_indicator': True,
+        'app_code_md': 'saledata.expenseitem',
+        'example': 'prop(Expense type)=="Deployment expense"',
     },
     'af3d550c-8b22-481f-998b-35499f0df141': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Internal labor item',
         'code': 'expense_title',
         'remark': 'Internal labor item on quotation expense line',
-        'type': 1,
+        'type': 5,
         'is_sale_indicator': True,
+        'app_code_md': 'saledata.expense',
+        'example': 'prop(Internal labor item)=="Deployment manday"',
     },
     '2f468197-0132-44eb-9966-80deb69aa77a': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Expense unit title',
+        'title': 'Expense uom title',
         'code': 'expense_uom_title',
         'remark': 'Title expense unit on quotation expense line',
         'type': 1,
         'is_sale_indicator': True,
+        'example': 'prop(Expense uom title)',
     },
     '195479c7-cf10-463f-95fb-8784f47041df': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -569,6 +588,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Quantity expense on quotation expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Expense quantity)',
     },
     'ad5ca6e1-8788-40ce-acac-9850a49a6565': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -577,6 +597,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Price expense on quotation expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Expense unit price)',
     },
     'f0251c13-0480-4ac1-94d3-ebe03afb93bf': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -585,6 +606,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Subtotal before tax expense on quotation expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Expense subtotal before tax)',
     },
     '6c6af508-c5b0-4295-b92a-bfc53dfad9d3': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -593,6 +615,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Subtotal after tax expense on quotation expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'example': 'prop(Expense subtotal after tax)',
     },
     #
     **Quotation_data__params,

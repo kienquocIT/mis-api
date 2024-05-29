@@ -101,6 +101,7 @@ MAP_FIELD_TITLE = {
     'acceptance.finalacceptance': 'title',
     'inventory.goodstransfer': 'title',
     'inventory.goodsreturn': 'title',
+    'lead.lead': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -286,6 +287,8 @@ ACCEPTANCE_AFFECT_BY = (
     (2, 'Plan value'),
     (3, 'Delivery'),
     (4, 'Payment'),
+    (5, 'Invoice'),
+    (6, 'Project'),
 )
 
 # Opportunity

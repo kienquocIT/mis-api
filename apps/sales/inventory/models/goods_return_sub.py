@@ -1,59 +1,10 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
-from apps.sales.acceptance.models import FinalAcceptanceIndicator
 from apps.sales.delivery.models import OrderDeliveryProduct, OrderDeliverySub, OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
-from apps.sales.report.models import ReportInventorySub
 
 
 class GoodsReturnSubSerializerForNonPicking:
-    @classmethod
-    def prepare_data_for_logging(cls, instance, return_quantity, product_detail_list):
-        activities_data = []
-        delivery_product = ReportInventorySub.objects.filter(
-            warehouse=instance.return_to_warehouse,
-            product=instance.product,
-            trans_id=str(instance.return_to_warehouse_id)
-        ).first()
-        if delivery_product:
-            delivery_product_cost = delivery_product.current_cost
-            lot_data = []
-            for lot in product_detail_list:
-                type_value = lot.get('type')
-                if type_value == 1:  # is LOT
-                    prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first()
-                    if prd_wh_lot:
-                        lot_data.append({
-                            'lot_id': str(prd_wh_lot.id),
-                            'lot_number': prd_wh_lot.lot_number,
-                            'lot_quantity': lot['lot_return_number'],
-                            'lot_value': delivery_product_cost * lot['lot_return_number'],
-                            'lot_expire_date': str(prd_wh_lot.expire_date)
-                        })
-            activities_data.append({
-                'product': instance.product,
-                'warehouse': instance.return_to_warehouse,
-                'system_date': instance.date_created,
-                'posting_date': instance.date_created,
-                'document_date': instance.date_created,
-                'stock_type': 1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods return',
-                'quantity': return_quantity,
-                'cost': delivery_product_cost,
-                'value': delivery_product_cost * return_quantity,
-                'lot_data': lot_data
-            })
-        else:
-            raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-        ReportInventorySub.logging_when_stock_activities_happened(
-            instance,
-            instance.date_created,
-            activities_data
-        )
-        return True
-
     @classmethod
     def create_prod(cls, new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, gr_product):
         """
@@ -382,7 +333,6 @@ class GoodsReturnSubSerializerForNonPicking:
                 cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
             elif type_value == 2:  # SN
                 cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
-        cls.prepare_data_for_logging(gr_obj, return_quantity, product_detail_list)
         return True
 
     @classmethod
@@ -604,128 +554,3 @@ class GoodsReturnSubSerializerForPicking:
         else:
             cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product)
         return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, True)
-
-
-# FUNCTIONS AFTER INSTANCE CREATED
-class GReturnProductInformationHandle:
-
-    @classmethod
-    def main_handle(cls, instance):
-        for return_product in instance.goods_return_product_detail.all():
-            product = None
-            value = 0
-            is_redelivery = False
-            if return_product.type == 1:  # lot
-                product, value = cls.setup_by_lot(return_product=return_product)
-                if return_product.lot_redelivery_number > 0:  # redelivery
-                    is_redelivery = True
-            if return_product.type == 2:  # serial
-                product, value = cls.setup_by_serial(return_product=return_product)
-                if return_product.is_redelivery is True:  # redelivery
-                    is_redelivery = True
-            if product and is_redelivery is False:  # update product no redelivery
-                product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return': value,
-                    'update_fields': ['stock_amount', 'available_amount']
-                })
-            if product and is_redelivery is True:  # update product with redelivery
-                product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return_redelivery': value,
-                    'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
-                })
-        return True
-
-    @classmethod
-    def setup_by_lot(cls, return_product):
-        product = None
-        value = 0
-        if return_product.type == 1:  # lot
-            if return_product.lot_no:
-                if return_product.lot_no.product_warehouse:
-                    product = return_product.lot_no.product_warehouse.product
-                    value = return_product.lot_return_number
-        return product, value
-
-    @classmethod
-    def setup_by_serial(cls, return_product):
-        product = None
-        value = 0
-        if return_product.type == 2:  # serial
-            if return_product.serial_no:
-                if return_product.serial_no.product_warehouse:
-                    product = return_product.serial_no.product_warehouse.product
-                    value = 1
-        return product, value
-
-
-class GReturnFinalAcceptanceHandle:
-
-    @classmethod
-    def main_handle(cls, instance):
-        product_data_json = {}
-        for return_product in instance.goods_return_product_detail.all():
-            product_id = None
-            value = 0
-            if return_product.type == 1:  # lot
-                product_id, value = cls.setup_by_lot(instance=instance, return_product=return_product)
-            if return_product.type == 2:  # serial
-                product_id, value = cls.setup_by_serial(instance=instance, return_product=return_product)
-            if product_id:
-                if str(product_id) not in product_data_json:
-                    product_data_json.update({
-                        str(product_id): value
-                    })
-                else:
-                    product_data_json[str(product_id)] += value
-            cls.update_fa_delivery(instance=instance, product_data_json=product_data_json)
-        return True
-
-    @classmethod
-    def update_fa_delivery(cls, instance, product_data_json):
-        for fa_ind_delivery in FinalAcceptanceIndicator.objects.filter_current(
-                fill__tenant=True, fill__company=True,
-                sale_order_id=instance.sale_order_id, delivery_sub_id=instance.delivery_id,
-        ):
-            fa_ind_product_id = str(fa_ind_delivery.product_id)
-            if fa_ind_product_id in product_data_json:
-                fa_ind_delivery.actual_value = fa_ind_delivery.actual_value - product_data_json[fa_ind_product_id]
-                fa_ind_delivery.save(update_fields=['actual_value'])
-        return True
-
-    @classmethod
-    def setup_by_lot(cls, instance, return_product):
-        product_id = None
-        value = 0
-        if return_product.type == 1:  # lot
-            if return_product.lot_no:
-                if return_product.lot_no.product_warehouse:
-                    product_id = return_product.lot_no.product_warehouse.product_id
-                    warehouse_id = return_product.lot_no.product_warehouse.warehouse_id
-                    pw_inventory = ReportInventorySub.objects.filter(
-                        report_inventory__tenant_id=instance.tenant_id,
-                        report_inventory__company_id=instance.company_id,
-                        product_id=product_id,
-                        warehouse_id=warehouse_id,
-                    ).first()
-                    value = pw_inventory.current_cost * return_product.lot_return_number if pw_inventory else 0
-        return product_id, value
-
-    @classmethod
-    def setup_by_serial(cls, instance, return_product):
-        product_id = None
-        value = 0
-        if return_product.type == 2:  # serial
-            if return_product.serial_no:
-                if return_product.serial_no.product_warehouse:
-                    product_id = return_product.serial_no.product_warehouse.product_id
-                    warehouse_id = return_product.serial_no.product_warehouse.warehouse_id
-                    pw_inventory = ReportInventorySub.objects.filter(
-                        report_inventory__tenant_id=instance.tenant_id,
-                        report_inventory__company_id=instance.company_id,
-                        product_id=product_id,
-                        warehouse_id=warehouse_id,
-                    ).first()
-                    value = pw_inventory.current_cost if pw_inventory else 0
-        return product_id, value

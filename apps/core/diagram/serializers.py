@@ -2,11 +2,13 @@ from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramDocument, DiagramPrefix, DiagramSuffix
 
-
 DIAGRAM_APP_CONFIG = {
     'saleorder.saleorder': {
         'list_app_prefix': ['quotation.quotation'],
-        'list_app_suffix': ['purchasing.purchaserequest', 'purchasing.purchaseorder', 'inventory.goodsreceipt'],
+        'list_app_suffix': [
+            'purchasing.purchaserequest', 'purchasing.purchaseorder',
+            'inventory.goodsreceipt', 'delivery.orderdeliverysub',
+        ],
     }
 }
 

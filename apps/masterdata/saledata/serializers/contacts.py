@@ -3,6 +3,7 @@ from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
 from apps.shared import (AccountsMsg,)
+from apps.sales.lead.models import LeadStage
 
 
 # Salutation
@@ -213,11 +214,41 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
 
+    @classmethod
+    def convert_contact(cls, lead, tenant_id, company_id, contact_mapped):
+        # convert to a new contact
+        lead_configs = lead.lead_configs.first() if lead else None
+        if lead_configs:
+            current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=2).first()
+            lead.current_lead_stage = current_stage
+            lead.lead_status = 2
+            lead.save(update_fields=['current_lead_stage', 'lead_status'])
+            lead_configs.contact_mapped = contact_mapped
+            lead_configs.create_contact = True
+            lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
+            return True
+        raise serializers.ValidationError({'not found': 'Lead config not found.'})
+
     def create(self, validated_data):
+        if 'code' not in validated_data:
+            number = Contact.objects.filter(
+                tenant_id=validated_data['tenant_id'],
+                company_id=validated_data['company_id']
+            ).count() + 1
+            validated_data['code'] = f"C00{number}"
         contact = Contact.objects.create(**validated_data)
         if contact.account_name:
             contact.account_name.owner = contact
             contact.account_name.save(update_fields=['owner'])
+
+        if 'lead' in self.context:
+            self.convert_contact(
+                self.context.get('lead'),
+                validated_data['tenant_id'],
+                validated_data['company_id'],
+                contact
+            )
+
         return contact
 
 

@@ -55,7 +55,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         return [{
             'id': str(item.id),
             'title': item.title,
-            'code': item.code
+            'code': item.code,
         } for item in obj.general_product_types_mapped.all()]
 
     @classmethod
@@ -226,7 +226,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'sale_tax',
             'sale_currency_using',
-            'sale_cost',
             'online_price_list',
             'available_notify',
             'available_notify_quantity',
@@ -338,14 +337,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_sale_cost(cls, value):
-        if value:
-            if float(value) < 0:
-                raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
-            return value
-        return None
-
-    @classmethod
     def validate_online_price_list(cls, value):
         if value:
             try:
@@ -429,6 +420,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     product_warehouse_detail = serializers.SerializerMethodField()
     product_variant_attribute_list = serializers.SerializerMethodField()
     product_variant_item_list = serializers.SerializerMethodField()
+    # cast mount
+    stock_amount = serializers.SerializerMethodField()
+    wait_delivery_amount = serializers.SerializerMethodField()
+    wait_receipt_amount = serializers.SerializerMethodField()
+    available_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -505,7 +501,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     }
                 )
         result = {
-            'sale_product_cost': obj.sale_cost,
             'default_uom': {
                 'id': obj.sale_default_uom_id,
                 'title': obj.sale_default_uom.title,
@@ -573,8 +568,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     'warehouse': {
                         'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
-                    'stock_amount': ratio_convert * item.stock_amount,
-                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id)
+                    'stock_amount': item.stock_amount / ratio_convert,
+                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1) * ratio_convert
                 })
         return result
 
@@ -598,6 +593,38 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'variant_extra_price': item.variant_extra_price,
             'is_active': item.is_active,
         } for item in obj.product_variants.all()]
+
+    @classmethod
+    def get_stock_amount(cls, obj):
+        if obj.inventory_uom:
+            casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
+            return casted_stock_amount
+        return None
+
+    @classmethod
+    def get_wait_delivery_amount(cls, obj):
+        if obj.inventory_uom:
+            casted_wd_amount = obj.wait_delivery_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
+            return casted_wd_amount
+        return None
+
+    @classmethod
+    def get_wait_receipt_amount(cls, obj):
+        if obj.inventory_uom:
+            casted_wr_amount = obj.wait_receipt_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
+            return casted_wr_amount
+        return None
+
+    @classmethod
+    def get_available_amount(cls, obj):
+        if obj.inventory_uom:
+            casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio \
+                if obj.inventory_uom.ratio != 0 else None
+            return casted_avl_amount
+        return None
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -629,7 +656,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             # General
             'general_product_category',
             'general_uom_group',
-            'general_traceability_method',
+            # 'general_traceability_method',
             'width',
             'height',
             'length',
@@ -639,7 +666,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'sale_tax',
             'sale_currency_using',
-            'sale_cost',
             'online_price_list',
             'available_notify',
             'available_notify_quantity',
@@ -755,14 +781,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_sale_cost(cls, value):
-        if value:
-            if float(value) < 0:
-                raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
-            return value
-        return None
-
-    @classmethod
     def validate_sale_tax(cls, value):
         if value:
             try:
@@ -815,6 +833,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def update(self, instance, validated_data):
+        if validated_data['general_uom_group'].id != instance.general_uom_group_id:
+            raise serializers.ValidationError({'general_uom_group': 'Can not update general uom group.'})
         validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
         validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
         validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
@@ -858,13 +878,11 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'general_information',
-            'description',
             'purchase_information',
             'sale_information',
             'purchase_information',
             'price_list',
             'product_choice',
-            'sale_cost',
             'cost_list',
         )
 
@@ -949,20 +967,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
-        wh_dict = {}
-        for product_inventory in obj.report_inventory_by_month_product.all():
-            if str(product_inventory.warehouse_id) not in wh_dict:
-                wh_dict.update({
-                    str(product_inventory.warehouse_id): {
-                        'warehouse': {
-                            'id': str(product_inventory.warehouse_id),
-                            'title': product_inventory.warehouse.title,
-                            'code': product_inventory.warehouse.code
-                        } if product_inventory.warehouse else {},
-                        'cost': product_inventory.current_cost
-                    }
-                })
-        return [value for key, value in wh_dict.items()]
+        return obj.get_unit_cost_list_of_all_warehouse()
 
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):

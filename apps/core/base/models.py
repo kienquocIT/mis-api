@@ -340,6 +340,16 @@ class ApplicationProperty(CoreAbstractModel):
 
     system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
 
+    app_code_md = models.CharField(
+        max_length=100, verbose_name='Code of application',
+        help_text='{app_label}.{model}, use for property type master data', null=True,
+    )
+    example = models.CharField(
+        max_length=500, null=True, blank=True,
+        help_text='Example of sale indicator property that guide user how to config'
+    )
+
+
     class Meta:
         verbose_name = 'Application property'
         ordering = ('-date_created',)
