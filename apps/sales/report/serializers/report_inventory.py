@@ -3,6 +3,10 @@ from apps.sales.report.models import ReportInventory, ReportInventoryProductWare
     ReportInventorySub
 
 
+def cast_to_inv_quantity(inventory_uom, log_quantity):
+    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+
+
 class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
@@ -40,20 +44,16 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
         for log in all_logs_by_month.filter(warehouse_id=wh_id, product_id=obj.product_id):
-            casted_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                obj.product.inventory_uom, log.quantity
-            )
-            casted_cost = log.cost * ReportInventorySub.cast_quantity_ratio(log.quantity, casted_quantity)
-            casted_current_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                obj.product.inventory_uom, log.current_quantity
-            ) if div == 0 else ReportInventorySub.cast_quantity_to_inventory_uom(
-                obj.product.inventory_uom, log.periodic_current_quantity
-            )
-            casted_current_cost = (log.current_cost * ReportInventorySub.cast_quantity_ratio(
-                log.current_quantity, casted_current_quantity
-            )) if div == 0 else (log.periodic_current_cost * ReportInventorySub.cast_quantity_ratio(
-                log.periodic_current_quantity, casted_current_quantity
-            ))
+            casted_quantity = cast_to_inv_quantity(obj.product.inventory_uom, log.quantity)
+            casted_value = log.value
+            casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
+            casted_current_quantity = [
+                cast_to_inv_quantity(obj.product.inventory_uom, log.current_quantity),
+                cast_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
+            ][div]
+            casted_current_value = [log.current_value, log.periodic_current_value][div]
+            casted_current_cost = (casted_value / casted_current_quantity) if casted_current_quantity else 0
+
             data_stock_activity.append({
                 'system_date': log.system_date,
                 'posting_date': log.posting_date,
@@ -63,10 +63,10 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                 'trans_title': log.trans_title,
                 'quantity': casted_quantity,
                 'cost': casted_cost,
-                'value': log.value,
+                'value': casted_value,
                 'current_quantity': casted_current_quantity,
                 'current_cost': casted_current_cost,
-                'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                'current_value': casted_current_value,
                 'log_order': log.log_order
             })
         # sắp xếp lại
@@ -95,35 +95,24 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                 )
 
                 # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = LoggingSubFunction.get_balance_data_this_sub(inventory_cost_data)
-                casted_opening_balance_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                    obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
-                )
-                casted_opening_balance_cost = (
-                        this_sub_value['opening_balance_cost'] *
-                        ReportInventorySub.cast_quantity_ratio(
-                            this_sub_value['opening_balance_quantity'], casted_opening_balance_quantity
-                        )
-                )
-                casted_ending_balance_quantity = ReportInventorySub.cast_quantity_to_inventory_uom(
-                    obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
-                )
-                casted_ending_balance_cost = (
-                        this_sub_value['ending_balance_cost'] *
-                        ReportInventorySub.cast_quantity_ratio(
-                            this_sub_value['ending_balance_quantity'], casted_ending_balance_quantity
-                        )
-                )
+                this_balance = LoggingSubFunction.get_balance_data_this_sub(inventory_cost_data)
+                casted_obq = cast_to_inv_quantity(obj.product.inventory_uom, this_balance['opening_balance_quantity'])
+                casted_obv = this_balance['opening_balance_value']
+                casted_obc = casted_obv / casted_obq if casted_obq else 0
+                casted_ebq = cast_to_inv_quantity(obj.product.inventory_uom, this_balance['ending_balance_quantity'])
+                casted_ebv = this_balance['ending_balance_value']
+                casted_ebc = casted_ebv / casted_ebq if casted_ebq else 0
+
                 result.append({
                     'warehouse_id': wh_id,
                     'warehouse_code': wh_code,
                     'warehouse_title': wh_title,
-                    'opening_balance_quantity': casted_opening_balance_quantity,
-                    'opening_balance_value': this_sub_value['opening_balance_value'],
-                    'opening_balance_cost': casted_opening_balance_cost,
-                    'ending_balance_quantity': casted_ending_balance_quantity,
-                    'ending_balance_value': this_sub_value['ending_balance_value'],
-                    'ending_balance_cost': casted_ending_balance_cost,
+                    'opening_balance_quantity': casted_obq,
+                    'opening_balance_cost': casted_obc,
+                    'opening_balance_value': casted_obv,
+                    'ending_balance_quantity': casted_ebq,
+                    'ending_balance_cost': casted_ebc,
+                    'ending_balance_value': casted_ebv,
                     'data_stock_activity': data_stock_activity,
                     'periodic_closed': inventory_cost_data.periodic_closed
                 })
@@ -236,40 +225,42 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_in(cls, log, data_stock_activity, div, product):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
+                casted_in_quantity = cast_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+                casted_current_quantity = [
+                    cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                    cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                ][div]
                 data_stock_activity.append({
                     'trans_id': log.trans_id,
                     'trans_code': log.trans_code,
                     'trans_title': log.trans_title,
-                    'in_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                        product.inventory_uom, lot.get('lot_quantity')
-                    ),
+                    'in_quantity': casted_in_quantity,
                     'in_value': lot.get('lot_value'),
                     'out_quantity': '',
                     'out_value': '',
-                    'current_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                        product.inventory_uom, log.current_quantity if div == 0 else log.periodic_current_quantity
-                    ),
-                    'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                    'current_quantity': casted_current_quantity,
+                    'current_value': [log.current_value, log.periodic_current_value][div],
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
                     'expire_date': lot.get('lot_expire_date'),
                     'log_order': log.log_order
                 })
         else:
+            casted_in_quantity = cast_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_current_quantity = [
+                cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+            ][div]
             data_stock_activity.append({
                 'trans_id': log.trans_id,
                 'trans_code': log.trans_code,
                 'trans_title': log.trans_title,
-                'in_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                    product.inventory_uom, log.quantity
-                ),
-                'in_value': log.cost * log.quantity,
+                'in_quantity': casted_in_quantity,
+                'in_value': log.value,
                 'out_quantity': '',
                 'out_value': '',
-                'current_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                    product.inventory_uom, log.current_quantity if div == 0 else log.periodic_current_quantity
-                ),
-                'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                'current_quantity': casted_current_quantity,
+                'current_value': [log.current_value, log.periodic_current_value][div],
                 'system_date': log.system_date,
                 'lot_id': '',
                 'lot_number': '',
@@ -282,40 +273,42 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_out(cls, log, data_stock_activity, div, product):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
+                casted_out_quantity = cast_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+                casted_current_quantity = [
+                    cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                    cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                ][div]
                 data_stock_activity.append({
                     'trans_id': log.trans_id,
                     'trans_code': log.trans_code,
                     'trans_title': log.trans_title,
                     'in_quantity': '',
                     'in_value': '',
-                    'out_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                        product.inventory_uom, lot.get('lot_quantity')
-                    ),
+                    'out_quantity': casted_out_quantity,
                     'out_value': lot.get('lot_value'),
-                    'current_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                        product.inventory_uom, log.current_quantity if div == 0 else log.periodic_current_quantity
-                    ),
-                    'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                    'current_quantity': casted_current_quantity,
+                    'current_value': [log.current_value, log.periodic_current_value][div],
                     'system_date': log.system_date,
                     'lot_number': lot.get('lot_number'),
                     'expire_date': lot.get('lot_expire_date'),
                     'log_order': log.log_order
                 })
         else:
+            casted_out_quantity = cast_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_current_quantity = [
+                cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+            ][div]
             data_stock_activity.append({
                 'trans_id': log.trans_id,
                 'trans_code': log.trans_code,
                 'trans_title': log.trans_title,
                 'in_quantity': '',
                 'in_value': '',
-                'out_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                    product.inventory_uom, log.quantity
-                ),
-                'out_value': log.cost * log.quantity,
-                'current_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                    product.inventory_uom, log.current_quantity if div == 0 else log.periodic_current_quantity
-                ),
-                'current_value': log.current_value if div == 0 else log.periodic_current_value,
+                'out_quantity': casted_out_quantity,
+                'out_value': log.value,
+                'current_quantity': casted_current_quantity,
+                'current_value': [log.current_value, log.periodic_current_value][div],
                 'system_date': log.system_date,
                 'lot_number': '',
                 'expire_date': '',
@@ -363,19 +356,15 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             sum_out_value = sum_out_quantity * this_sub_value['ending_balance_cost']
 
         result = {
-            'sum_in_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                obj.product.inventory_uom, sum_in_quantity
-            ),
-            'sum_out_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
-                obj.product.inventory_uom, sum_out_quantity
-            ),
+            'sum_in_quantity': cast_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity),
+            'sum_out_quantity': cast_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity),
             'sum_in_value': sum_in_value,
             'sum_out_value': sum_out_value,
-            'opening_balance_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
+            'opening_balance_quantity': cast_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
             ),
             'opening_balance_value': this_sub_value['opening_balance_value'],
-            'ending_balance_quantity': ReportInventorySub.cast_quantity_to_inventory_uom(
+            'ending_balance_quantity': cast_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
             ),
             'ending_balance_value': this_sub_value['ending_balance_value'],

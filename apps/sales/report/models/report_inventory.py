@@ -113,12 +113,8 @@ class ReportInventorySub(DataAbstractModel):
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def cast_quantity_to_inventory_uom(cls, inventory_uom, log_quantity):
-        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio > 0 else 1
-
-    @classmethod
-    def cast_quantity_ratio(cls, src_quantity, des_quantity):
-        return (src_quantity / des_quantity) if des_quantity > 0 else 1
+    def cast_to_inv_quantity(cls, inventory_uom, log_quantity):
+        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
