@@ -558,6 +558,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         product_warehouse = obj.product_warehouse_product.all().select_related(
             'warehouse', 'uom'
         ).order_by('warehouse__code')
+        print(product_warehouse.count())
         for item in product_warehouse:
             uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
             uom_ratio_des = item.uom.ratio if item.uom else 0
