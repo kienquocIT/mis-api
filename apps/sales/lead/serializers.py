@@ -208,7 +208,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         if config:
             if config.convert_opp:
                 return []
-        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company)
+        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company).exclude(id=obj.id)
         existed = []
         for lead in all_lead:
             filer_by_contact_name = all_lead.filter(contact_name__icontains=lead.contact_name).count()
