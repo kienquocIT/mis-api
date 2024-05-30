@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction, \
-    ReportInventorySub
+from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction
 
 
 def cast_to_inv_quantity(inventory_uom, log_quantity):
@@ -76,8 +75,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         return data_stock_activity
 
     def get_stock_activities(self, obj):
-        # danh sách dữ liệu giá cost hàng tồn kho của sản phẩm (cost_data)
-        inventory_cost_data_list = obj.product.report_inventory_product_warehouse_product.all()
         #                                    SP
         #        Kho 1           -          Kho 2          -          Kho 3
         # (Các hđ nhập-xuất 1)   -   (Các hđ nhập-xuất 2)  -   (Các hđ nhập-xuất 3)
@@ -85,15 +82,10 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         for warehouse_item in self.context.get('wh_list', []):
             wh_id, wh_code, wh_title = warehouse_item
             # lọc lấy cost_data của sp đó theo kho + theo kì
-            inventory_cost_data = inventory_cost_data_list.filter(
+            inventory_cost_data = obj.product.report_inventory_product_warehouse_product.filter(
                 warehouse_id=wh_id, period_mapped_id=obj.period_mapped_id, sub_period_order=obj.sub_period_order
             ).first()
             if inventory_cost_data:
-                data_stock_activity = self.get_stock_activities_detail(
-                    obj, self.context.get('all_logs_by_month', []), wh_id,
-                    self.context.get('definition_inventory_valuation')
-                )
-
                 # lấy inventory_cost_data của kì hiện tại
                 this_balance = LoggingSubFunction.get_balance_data_this_sub(inventory_cost_data)
                 casted_obq = cast_to_inv_quantity(obj.product.inventory_uom, this_balance['opening_balance_quantity'])
@@ -113,7 +105,10 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     'ending_balance_quantity': casted_ebq,
                     'ending_balance_cost': casted_ebc,
                     'ending_balance_value': casted_ebv,
-                    'data_stock_activity': data_stock_activity,
+                    'data_stock_activity': self.get_stock_activities_detail(
+                        obj, self.context.get('all_logs_by_month', []), wh_id,
+                        self.context.get('definition_inventory_valuation')
+                    ),
                     'periodic_closed': inventory_cost_data.periodic_closed
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
