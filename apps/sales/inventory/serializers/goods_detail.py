@@ -19,7 +19,10 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         for item in obj.goods_receipt_product_goods_receipt.all():
             gr_wh_gr_prd = item.goods_receipt_warehouse_gr_product.first()
             serial_data = []
-            for serial in obj.product_wh_serial_goods_receipt.all().order_by('vendor_serial_number', 'serial_number'):
+            for serial in obj.product_wh_serial_goods_receipt.filter(
+                product_warehouse__product_id=item.product_id,
+                product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
+            ).order_by('vendor_serial_number', 'serial_number'):
                 serial_data.append({
                     'id': serial.id,
                     'vendor_serial_number': serial.vendor_serial_number,
@@ -34,7 +37,10 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
 
             lot_data = []
             sum_lot_quantity = 0
-            for lot in obj.product_wh_lot_goods_receipt.all().order_by('lot_number'):
+            for lot in obj.product_wh_lot_goods_receipt.filter(
+                product_warehouse__product_id=item.product_id,
+                product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
+            ).order_by('lot_number'):
                 sum_lot_quantity += lot.raw_quantity_import
                 lot_data.append({
                     'id': lot.id,
