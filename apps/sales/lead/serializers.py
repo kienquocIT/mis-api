@@ -286,16 +286,16 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             fiscal_year=timezone.now().year
         ).first()
         config = instance.lead_configs.first()
-        if config.contact_mapped or config.convert_opp:
-            raise serializers.ValidationError(
-                {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
-            )
         if str(this_period.id) == str(instance.period_mapped_id):
             if 'goto_stage' in self.context:
                 self.goto_stage(instance)
             elif 'convert_opp' in self.context:
                 self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
             else:
+                if config.contact_mapped or config.convert_opp:
+                    raise serializers.ValidationError(
+                        {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
+                    )
                 for key, value in validated_data.items():
                     setattr(instance, key, value)
                 instance.save()

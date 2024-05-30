@@ -62,6 +62,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                     'fullname': item.fullname,
                     'email': item.email
                 } for item in obj.customer.contact_account_name.all()],
+                'phone': obj.customer.phone,
+                'email': obj.customer.email,
             }
         return {}
 
