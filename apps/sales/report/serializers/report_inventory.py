@@ -52,7 +52,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                 cast_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
             ][div]
             casted_current_value = [log.current_value, log.periodic_current_value][div]
-            casted_current_cost = (casted_value / casted_current_quantity) if casted_current_quantity else 0
+            casted_current_cost = (casted_current_value / casted_current_quantity) if casted_current_quantity else 0
 
             data_stock_activity.append({
                 'system_date': log.system_date,

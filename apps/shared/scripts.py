@@ -1652,7 +1652,7 @@ def run_inventory_report():
     return True
 
 
-def report_goods_receipt(company_id, start_month):
+def report_rerun(company_id, start_month):
     ReportInventorySub.objects.all().delete()
     ReportInventoryProductWarehouse.objects.all().delete()
     ReportInventory.objects.all().delete()
