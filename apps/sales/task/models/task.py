@@ -70,6 +70,17 @@ class OpportunityTask(DataAbstractModel):
         verbose_name='opportunity backup',
         null=True
     )
+    project = models.ForeignKey(
+        'project.Project',
+        on_delete=models.CASCADE,
+        verbose_name='Project',
+        null=True,
+    )
+    project_data = models.JSONField(
+        default=dict,
+        verbose_name='project backup',
+        null=True
+    )
     priority = models.SmallIntegerField(
         choices=TASK_PRIORITY,
         default=0,
@@ -149,6 +160,12 @@ class OpportunityTask(DataAbstractModel):
                 "id": str(self.opportunity_id),
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
+            }
+        if self.project and not self.project_data:
+            self.project_data = {
+                "id": str(self.project_id),
+                "title": str(self.project.title),
+                "code": str(self.project.code),
             }
 
     def save(self, *args, **kwargs):

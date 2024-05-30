@@ -1082,3 +1082,39 @@ msgstr "CHKD không được phép vì nhân viên thuộc vai trò bán hàng n
 #
 msgid "Opportunity is required because employee in long sales roles"
 msgstr "CHKD là bắt buộc vì nhân viên thuộc vai trò bán hàng dự án"
+
+#
+msgid "Project"
+msgstr "Dự án"
+
+#
+msgid "do not exist."
+msgstr "không tồn tại."
+
+#
+msgid "Project group"
+msgstr "Nhóm dự án"
+
+#
+msgid "Project work"
+msgstr "Công việc dự án"
+
+#
+msgid "Make sure date start larger than relationship work date end"
+msgstr "Ngày bắt đầu phải lớn hơn ngày kết thúc của công việc được liên kết"
+
+#
+msgid "Project do not exist"
+msgstr "Dự án không tồn tại"
+
+#
+msgid "Project is required"
+msgstr "Dự án là bắt buộc"
+
+#
+msgid "You do not have permission to perform this action"
+msgstr "Bạn không được cấp quyền để thực hiện thao tác này"
+
+#
+msgid "Date work is not followed with date group"
+msgstr "Ngày Công việc không khớp với ngày của Nhóm"
