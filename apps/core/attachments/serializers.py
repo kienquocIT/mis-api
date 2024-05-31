@@ -201,6 +201,7 @@ class FolderDetailSerializer(serializers.ModelSerializer):
 
 class FolderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Folder
@@ -208,6 +209,43 @@ class FolderCreateSerializer(serializers.ModelSerializer):
             'title',
             'parent_n',
         )
+
+    @classmethod
+    def validate_parent_n(cls, value):
+        try:
+            return Folder.objects.get(id=value)
+        except Folder.DoesNotExist:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+
+    def create(self, validated_data):
+        folder = Folder.objects.create(**validated_data)
+        return folder
+
+
+class FolderUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False, allow_blank=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+    @classmethod
+    def validate_parent_n(cls, value):
+        try:
+            return Folder.objects.get(id=value)
+        except Folder.DoesNotExist:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+
+    def update(self, instance, validated_data):
+        # update instance
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
 
 
 class FolderFilesListSerializer(serializers.ModelSerializer):

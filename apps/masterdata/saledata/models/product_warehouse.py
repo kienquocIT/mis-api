@@ -5,7 +5,7 @@ __all__ = [
 ]
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 from .product import UnitOfMeasure
 
 
@@ -297,13 +297,12 @@ class ProductWareHouseLot(MasterDataAbstractModel):
     quantity_import = models.FloatField(default=0)
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
-    goods_receipt = models.ForeignKey(
+    goods_receipts = models.ManyToManyField(
         'inventory.GoodsReceipt',
-        on_delete=models.CASCADE,
-        null=True,
-        verbose_name="goods receipt",
-        related_name="product_wh_lot_goods_receipt",
-        help_text="To know this lot was imported by which GoodsReceipt",
+        through="ProductWareHouseLotGR",
+        symmetrical=False,
+        blank=True,
+        related_name='pw_lot_map_goods_receipt'
     )
 
     class Meta:
@@ -323,6 +322,30 @@ class ProductWareHouseLot(MasterDataAbstractModel):
             product_warehouse_id=product_warehouse_id,
         ) for data in lot_data])
         return True
+
+
+class ProductWareHouseLotGR(SimpleAbstractModel):
+    pw_lot = models.ForeignKey(
+        ProductWareHouseLot,
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse lot",
+        related_name="pw_lot_gr_pw_lot",
+    )
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="pw_lot_gr_goods_receipt",
+        help_text="To know this lot was imported by which GoodsReceipt",
+    )
+    quantity_import = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Product Warehouse Lot Goods Receipt'
+        verbose_name_plural = 'Product Warehouse Lot Goods Receipts'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
 class ProductWareHouseSerial(MasterDataAbstractModel):

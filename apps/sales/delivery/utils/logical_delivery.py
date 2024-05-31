@@ -99,13 +99,13 @@ class DeliHandler:
         quantity = 0
         total = 0
         list_reference = []
-        for product in validated_product:
+        for product in validated_product:  # for product
             if all(key in product for key in ('product_id', 'delivery_data', 'done')):
                 quantity += product.get('done', 0)
                 product_obj = Product.objects.filter(id=product.get('product_id', None)).first()
                 if product_obj:
                     total_all_wh = 0
-                    for data_deli in product['delivery_data']:
+                    for data_deli in product['delivery_data']:  # for warehouse
                         total_all_wh += product_obj.get_unit_cost_by_warehouse(
                             warehouse_id=data_deli.get('warehouse', None), get_type=1
                         )

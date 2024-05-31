@@ -2,13 +2,14 @@ from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.parsers import MultiPartParser
 
-from apps.shared import BaseCreateMixin, mask_view, BaseListMixin
+from apps.shared import BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.core.attachments.serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderFilesListSerializer,
+    FolderUpdateSerializer,
 )
 
 
@@ -109,6 +110,7 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'parent_n_id': ['exact', 'isnull'],
+        'id': ['exact', 'isnull'],
     }
     serializer_list = FolderListSerializer
     serializer_create = FolderCreateSerializer
@@ -136,6 +138,43 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class FolderDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    queryset = Folder.objects
+    serializer_detail = FolderDetailSerializer
+    serializer_update = FolderUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "parent_n",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Folder Detail",
+        operation_description="Get Folder Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Folder",
+        operation_description="Update Folder By ID",
+        request_body=FolderUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class FolderFileList(BaseListMixin, BaseCreateMixin):
