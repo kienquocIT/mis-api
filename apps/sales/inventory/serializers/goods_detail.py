@@ -52,6 +52,8 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 })
 
             status = 0
+            if item.product.general_traceability_method == 0:
+                status = 1
             if item.product.general_traceability_method == 1 and sum_lot_quantity == item.quantity_import:
                 status = 1
             if item.product.general_traceability_method == 2 and sum_serial_quantity == item.quantity_import:
