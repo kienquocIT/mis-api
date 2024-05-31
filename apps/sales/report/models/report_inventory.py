@@ -113,7 +113,7 @@ class ReportInventorySub(DataAbstractModel):
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def cast_to_inv_quantity(cls, inventory_uom, log_quantity):
+    def cast_unit_to_inv_quantity(cls, inventory_uom, log_quantity):
         return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
     @classmethod

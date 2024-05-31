@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction
 
 
-def cast_to_inv_quantity(inventory_uom, log_quantity):
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
     return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
 
@@ -43,12 +43,12 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
         for log in all_logs_by_month.filter(warehouse_id=wh_id, product_id=obj.product_id):
-            casted_quantity = cast_to_inv_quantity(obj.product.inventory_uom, log.quantity)
+            casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
             casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
             casted_current_quantity = [
-                cast_to_inv_quantity(obj.product.inventory_uom, log.current_quantity),
-                cast_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
+                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.current_quantity),
+                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
             ][div]
             casted_current_value = [log.current_value, log.periodic_current_value][div]
             casted_current_cost = (casted_current_value / casted_current_quantity) if casted_current_quantity else 0
@@ -88,10 +88,10 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             if inventory_cost_data:
                 # lấy inventory_cost_data của kì hiện tại
                 this_balance = LoggingSubFunction.get_balance_data_this_sub(inventory_cost_data)
-                casted_obq = cast_to_inv_quantity(obj.product.inventory_uom, this_balance['opening_balance_quantity'])
+                casted_obq = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_balance['opening_balance_quantity'])
                 casted_obv = this_balance['opening_balance_value']
                 casted_obc = casted_obv / casted_obq if casted_obq else 0
-                casted_ebq = cast_to_inv_quantity(obj.product.inventory_uom, this_balance['ending_balance_quantity'])
+                casted_ebq = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_balance['ending_balance_quantity'])
                 casted_ebv = this_balance['ending_balance_value']
                 casted_ebc = casted_ebv / casted_ebq if casted_ebq else 0
 
@@ -220,10 +220,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_in(cls, log, data_stock_activity, div, product):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
-                casted_in_quantity = cast_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+                casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
                 casted_current_quantity = [
-                    cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
-                    cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                    cast_unit_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                    cast_unit_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
                 ][div]
                 data_stock_activity.append({
                     'trans_id': log.trans_id,
@@ -241,10 +241,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'log_order': log.log_order
                 })
         else:
-            casted_in_quantity = cast_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
             casted_current_quantity = [
-                cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
-                cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                cast_unit_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                cast_unit_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
             ][div]
             data_stock_activity.append({
                 'trans_id': log.trans_id,
@@ -268,10 +268,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_out(cls, log, data_stock_activity, div, product):
         if len(log.lot_data) > 0:
             for lot in log.lot_data:
-                casted_out_quantity = cast_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+                casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
                 casted_current_quantity = [
-                    cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
-                    cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                    cast_unit_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                    cast_unit_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
                 ][div]
                 data_stock_activity.append({
                     'trans_id': log.trans_id,
@@ -289,10 +289,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     'log_order': log.log_order
                 })
         else:
-            casted_out_quantity = cast_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
             casted_current_quantity = [
-                cast_to_inv_quantity(product.inventory_uom, log.current_quantity),
-                cast_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
+                cast_unit_to_inv_quantity(product.inventory_uom, log.current_quantity),
+                cast_unit_to_inv_quantity(product.inventory_uom, log.periodic_current_quantity)
             ][div]
             data_stock_activity.append({
                 'trans_id': log.trans_id,
@@ -351,15 +351,15 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             sum_out_value = sum_out_quantity * this_sub_value['ending_balance_cost']
 
         result = {
-            'sum_in_quantity': cast_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity),
-            'sum_out_quantity': cast_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity),
+            'sum_in_quantity': cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity),
+            'sum_out_quantity': cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity),
             'sum_in_value': sum_in_value,
             'sum_out_value': sum_out_value,
-            'opening_balance_quantity': cast_to_inv_quantity(
+            'opening_balance_quantity': cast_unit_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
             ),
             'opening_balance_value': this_sub_value['opening_balance_value'],
-            'ending_balance_quantity': cast_to_inv_quantity(
+            'ending_balance_quantity': cast_unit_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
             ),
             'ending_balance_value': this_sub_value['ending_balance_value'],
