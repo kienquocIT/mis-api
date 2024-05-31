@@ -3,6 +3,7 @@ from apps.sales.report.models import ReportInventory, ReportInventoryProductWare
 
 
 def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    print(log_quantity, inventory_uom.ratio)
     return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
 
