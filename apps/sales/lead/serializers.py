@@ -217,9 +217,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             filter_by_company_name = all_lead.filter(company_name__icontains=lead.company_name).count()
             if sum([filter_by_contact_name, filter_by_mobile, filter_by_email, filter_by_company_name]) > 0:
                 if str(lead.id) not in existed:
-                    related_leads.append({
-                        'id': lead.id, 'code': lead.code, 'title': lead.title
-                    })
+                    related_leads.append({'id': lead.id, 'code': lead.code, 'title': lead.title})
                     existed.append(str(lead.id))
         return related_leads
 
