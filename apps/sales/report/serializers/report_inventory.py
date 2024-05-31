@@ -89,10 +89,14 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             if inventory_cost_data:
                 # lấy inventory_cost_data của kì hiện tại
                 this_balance = LoggingSubFunction.get_balance_data_this_sub(inventory_cost_data)
-                casted_obq = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_balance['opening_balance_quantity'])
+                casted_obq = cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, this_balance['opening_balance_quantity']
+                )
                 casted_obv = this_balance['opening_balance_value']
                 casted_obc = casted_obv / casted_obq if casted_obq else 0
-                casted_ebq = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_balance['ending_balance_quantity'])
+                casted_ebq = cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, this_balance['ending_balance_quantity']
+                )
                 casted_ebv = this_balance['ending_balance_value']
                 casted_ebc = casted_ebv / casted_ebq if casted_ebq else 0
 
