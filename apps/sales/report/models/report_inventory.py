@@ -12,6 +12,12 @@ class ReportInventory(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='report_inventory_product',
     )
+    lot_mapped = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.SET_NULL,
+        related_name='report_inventory_lot_mapped',
+        null=True
+    )
 
     period_mapped = models.ForeignKey(
         'saledata.Periods',
@@ -19,6 +25,7 @@ class ReportInventory(DataAbstractModel):
         related_name='report_inventory_period',
         null=True,
     )
+
     sub_period_order = models.IntegerField()
     sub_period = models.ForeignKey(
         'saledata.SubPeriods',
@@ -28,7 +35,7 @@ class ReportInventory(DataAbstractModel):
     )
 
     @classmethod
-    def get_report_inventory(cls, activities_obj, product_obj, period_mapped, sub_period_order):
+    def get_report_inventory(cls, activities_obj, product_obj, lot_id, period_mapped, sub_period_order):
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         tenant_obj = activities_obj.tenant
         company_obj = activities_obj.company
@@ -40,6 +47,7 @@ class ReportInventory(DataAbstractModel):
                 tenant=tenant_obj,
                 company=company_obj,
                 product=product_obj,
+                lot_mapped_id=lot_id,
                 period_mapped=period_mapped,
                 sub_period_order=sub_period_order,
                 sub_period=sub_period_obj
@@ -51,6 +59,7 @@ class ReportInventory(DataAbstractModel):
                     employee_created=emp_created_obj,
                     employee_inherit=emp_inherit_obj,
                     product=product_obj,
+                    lot_mapped_id=lot_id,
                     period_mapped=period_mapped,
                     sub_period_order=sub_period_order,
                     sub_period=sub_period_obj
@@ -76,6 +85,12 @@ class ReportInventorySub(DataAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name='report_inventory_by_month_product'
+    )
+    lot_mapped = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.SET_NULL,
+        related_name='report_inventory_by_month_lot_mapped',
+        null=True
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
@@ -111,10 +126,6 @@ class ReportInventorySub(DataAbstractModel):
     @classmethod
     def cast_quantity_to_unit(cls, log_uom, log_quantity):
         return log_quantity * log_uom.ratio
-
-    @classmethod
-    def cast_unit_to_inv_quantity(cls, inventory_uom, log_quantity):
-        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
     @classmethod
     def logging_when_stock_activities_happened(cls, activities_obj, activities_obj_date, activities_data):
@@ -169,37 +180,68 @@ class ReportInventorySub(DataAbstractModel):
         bulk_info = []
         log_order_number = 0
         for item in activities_data:
-            report_inventory_obj = ReportInventory.get_report_inventory(
-                activities_obj, item['product'], period_mapped, sub_period_order
-            )
-
             div = activities_obj.company.companyconfig.definition_inventory_valuation
-            cost = LoggingSubFunction.get_latest_log_value_dict(
-                item['product'].id, item['warehouse'].id, period_mapped, div
-            )['cost'] if item['stock_type'] == -1 else item['cost']
 
             # tạo log
-            new_log = cls(
-                tenant=activities_obj.tenant,
-                company=activities_obj.company,
-                report_inventory=report_inventory_obj,
-                product=item['product'],
-                warehouse=item['warehouse'],
-                system_date=item['system_date'],
-                posting_date=item['posting_date'],
-                document_date=item['document_date'],
-                stock_type=item['stock_type'],
-                trans_id=item['trans_id'],
-                trans_code=item['trans_code'],
-                trans_title=item['trans_title'],
-                quantity=item['quantity'],
-                cost=cost,
-                value=cost * item['quantity'],
-                lot_data=item.get('lot_data', []),
-                log_order=log_order_number
-            )
-            bulk_info.append(new_log)
-            log_order_number += 1
+            if len(item.get('lot_data', {})) == 0:
+                report_inventory_obj = ReportInventory.get_report_inventory(
+                    activities_obj, item['product'], None, period_mapped, sub_period_order
+                )
+                cost = LoggingSubFunction.get_latest_log_value_dict(
+                    item['product'].id, None, item['warehouse'].id, period_mapped, div
+                )['cost'] if item['stock_type'] == -1 else item['cost']
+
+                new_log = cls(
+                    tenant=activities_obj.tenant,
+                    company=activities_obj.company,
+                    report_inventory=report_inventory_obj,
+                    product=item['product'],
+                    warehouse=item['warehouse'],
+                    system_date=item['system_date'],
+                    posting_date=item['posting_date'],
+                    document_date=item['document_date'],
+                    stock_type=item['stock_type'],
+                    trans_id=item['trans_id'],
+                    trans_code=item['trans_code'],
+                    trans_title=item['trans_title'],
+                    quantity=item['quantity'],
+                    cost=cost,
+                    value=cost * item['quantity'],
+                    lot_data=item.get('lot_data', {}),
+                    log_order=log_order_number
+                )
+                bulk_info.append(new_log)
+                log_order_number += 1
+            else:
+                lot_mapped = item.get('lot_data', {})
+                report_inventory_obj = ReportInventory.get_report_inventory(
+                    activities_obj, item['product'], lot_mapped.get('lot_id'), period_mapped, sub_period_order
+                )
+                cost = LoggingSubFunction.get_latest_log_value_dict(
+                    item['product'].id, lot_mapped.get('lot_id'), item['warehouse'].id, period_mapped, div
+                )['cost'] if item['stock_type'] == -1 else item['cost']
+                new_log = cls(
+                    tenant=activities_obj.tenant,
+                    company=activities_obj.company,
+                    report_inventory=report_inventory_obj,
+                    product=item['product'],
+                    lot_mapped_id=lot_mapped.get('lot_id'),
+                    warehouse=item['warehouse'],
+                    system_date=item['system_date'],
+                    posting_date=item['posting_date'],
+                    document_date=item['document_date'],
+                    stock_type=item['stock_type'],
+                    trans_id=item['trans_id'],
+                    trans_code=item['trans_code'],
+                    trans_title=item['trans_title'],
+                    quantity=item['quantity'],
+                    cost=cost,
+                    value=cost * item['quantity'],
+                    lot_data=lot_mapped,
+                    log_order=log_order_number
+                )
+                bulk_info.append(new_log)
+                log_order_number += 1
         new_log_list = cls.objects.bulk_create(bulk_info)
         return new_log_list
 
@@ -210,7 +252,7 @@ class ReportInventorySub(DataAbstractModel):
         if div == 0:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
-                log.product_id, log.warehouse_id, period_mapped, div
+                log.product_id, log.lot_mapped_id, log.warehouse_id, period_mapped, div
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_perpetual_inventory(log, latest_value_dict)
@@ -231,7 +273,7 @@ class ReportInventorySub(DataAbstractModel):
         if div == 1:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value = LoggingSubFunction.get_latest_log_value_dict(
-                log.product_id, log.warehouse_id, period_mapped, div
+                log.product_id, log.lot_mapped_id, log.warehouse_id, period_mapped, div
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_periodic_inventory(log, latest_value)
@@ -260,6 +302,7 @@ class ReportInventorySub(DataAbstractModel):
                 tenant_id=log.tenant_id,
                 company_id=log.company_id,
                 product=log.product,
+                lot_mapped=log.lot_mapped,
                 warehouse=log.warehouse,
                 period_mapped=period_mapped,
                 sub_period_order=sub_period_order,
@@ -273,6 +316,7 @@ class ReportInventorySub(DataAbstractModel):
                         tenant_id=log.tenant_id,
                         company_id=log.company_id,
                         product=log.product,
+                        lot_mapped=log.lot_mapped,
                         warehouse=log.warehouse,
                         period_mapped=period_mapped,
                         sub_period_order=sub_period_order,
@@ -300,6 +344,7 @@ class ReportInventorySub(DataAbstractModel):
                         tenant_id=log.tenant_id,
                         company_id=log.company_id,
                         product=log.product,
+                        lot_mapped=log.lot_mapped,
                         warehouse=log.warehouse,
                         period_mapped=period_mapped,
                         sub_period_order=sub_period_order,
@@ -343,13 +388,15 @@ class ReportInventorySub(DataAbstractModel):
                     ])
 
             # cập nhập log mới nhất, không có thì tạo mới
-            latest_log_obj = log.product.latest_log_product.filter(warehouse=log.warehouse).first()
+            latest_log_obj = log.product.latest_log_product.filter(
+                lot_mapped=log.lot_mapped, warehouse=log.warehouse
+            ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
                 LatestSub.objects.create(
-                    product=log.product, warehouse=log.warehouse, latest_log=log
+                    product=log.product, lot_mapped=log.lot_mapped, warehouse=log.warehouse, latest_log=log
                 )
 
             return this_record
@@ -375,6 +422,13 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
         related_name='report_inventory_product_warehouse_warehouse',
         null=True
     )
+    lot_mapped = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.SET_NULL,
+        related_name='report_inventory_product_warehouse_lot_mapped',
+        null=True
+    )
+
     period_mapped = models.ForeignKey(
         'saledata.Periods',
         on_delete=models.CASCADE,
@@ -440,6 +494,12 @@ class LatestSub(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='latest_log_warehouse',
     )
+    lot_mapped = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.SET_NULL,
+        related_name='latest_log_lot_mapped',
+        null=True
+    )
     latest_log = models.ForeignKey(
         ReportInventorySub,
         on_delete=models.CASCADE,
@@ -456,11 +516,15 @@ class LatestSub(SimpleAbstractModel):
 
 class LoggingSubFunction:
     @classmethod
-    def get_latest_log(cls, product_id, warehouse_id):
+    def get_latest_log(cls, product_id, lot_mapped_id, warehouse_id):
         """
         Hàm lấy Log gần nhất theo sp và kho. Không có trả về None
         """
-        last_record = LatestSub.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
+        last_record = LatestSub.objects.filter(
+            product_id=product_id,
+            lot_mapped_id=lot_mapped_id,
+            warehouse_id=warehouse_id
+        ).first()
         return last_record.latest_log if last_record else None
 
     @classmethod
@@ -481,9 +545,9 @@ class LoggingSubFunction:
         return last_record.sub_latest_log if last_record else None
 
     @classmethod
-    def get_latest_log_value_dict(cls, product_id, warehouse_id, period_mapped, div):
+    def get_latest_log_value_dict(cls, product_id, lot_mapped_id, warehouse_id, period_mapped, div):
         """ Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại """
-        latest_trans = LoggingSubFunction.get_latest_log(product_id, warehouse_id)
+        latest_trans = LoggingSubFunction.get_latest_log(product_id, lot_mapped_id, warehouse_id)
         if latest_trans:
             return {
                 'quantity': latest_trans.current_quantity,
@@ -494,7 +558,7 @@ class LoggingSubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_balance_value_dict(product_id, warehouse_id, period_mapped, 3)
+        return cls.get_opening_balance_value_dict(product_id, lot_mapped_id, warehouse_id, period_mapped, 3)
 
     @classmethod
     def calculate_new_value_dict_in_perpetual_inventory(cls, log, latest_value):
@@ -525,14 +589,14 @@ class LoggingSubFunction:
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def get_opening_balance_value_dict(cls, product_id, warehouse_id, period_mapped, data_type=1):
+    def get_opening_balance_value_dict(cls, product_id, lot_mapped_id, warehouse_id, period_mapped, data_type=1):
         """
         Hàm để lấy Số dư đầu kì theo SP và KHO
         (0-quantity, 1-cost, 2-value, 3-{'quantity':, 'cost':, 'value':}, else-return1)
         """
         # tìm tồn đầu kì này
         this_record = ReportInventoryProductWarehouse.objects.filter(
-            product_id=product_id, warehouse_id=warehouse_id,
+            product_id=product_id, lot_mapped_id=lot_mapped_id, warehouse_id=warehouse_id,
             period_mapped=period_mapped, sub_period_order=datetime.datetime.now().month - period_mapped.space_month
         ).first()
         if this_record:

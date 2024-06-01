@@ -236,13 +236,15 @@ class ReportInventoryDetailList(BaseListMixin):
                     'product__report_inventory_product_warehouse_product__period_mapped',
                 ).filter(
                     period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
-                ).order_by('product__code')
+                ).order_by('product__code', 'lot_mapped__lot_number')
             return super().get_queryset().select_related(
                 "product", "period_mapped"
             ).prefetch_related(
                 'report_inventory_by_month',
                 'product__report_inventory_product_warehouse_product__period_mapped',
-            ).filter(period_mapped=period_mapped, sub_period_order=sub_period_order).order_by('product__code')
+            ).filter(
+                period_mapped=period_mapped, sub_period_order=sub_period_order
+            ).order_by('product__code', 'lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()
 
@@ -406,7 +408,7 @@ class ReportInventoryList(BaseListMixin):
                     'product__report_inventory_by_month_product'
                 ).filter(
                     period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
-                ).order_by('warehouse__code', '-product__code')
+                ).order_by('warehouse__code', '-product__code', '-lot_mapped__lot_number')
 
             prd_id_list = set(
                 Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
@@ -420,7 +422,7 @@ class ReportInventoryList(BaseListMixin):
                 'product__report_inventory_by_month_product'
             ).filter(
                 period_mapped=period_mapped, sub_period_order=sub_period_order
-            ).order_by('warehouse__code', '-product__code')
+            ).order_by('warehouse__code', '-product__code', '-lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()
 

@@ -116,33 +116,59 @@ class GoodsReceipt(DataAbstractModel):
             for child in warehouse_filter:
                 existed = cls.check_exist(item.product.id, child.warehouse.id, str(instance.id), activities_data)
                 if not existed:
-                    lot_data = [{
-                        'lot_id': str(lot.id),
-                        'lot_number': lot.lot_number,
-                        'lot_quantity': child.quantity_import,
-                        'lot_value': child.quantity_import * item.product_unit_price,
-                        'lot_expire_date': str(lot.expire_date)
-                    } for lot in child.goods_receipt_lot_gr_warehouse.all()]
-
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, child.quantity_import)
-                    casted_cost = (
-                            item.product_unit_price * child.quantity_import / casted_quantity
-                    ) if casted_quantity > 0 else 0
-                    activities_data.append({
-                        'product': item.product,
-                        'warehouse': child.warehouse,
-                        'system_date': instance.date_approved,
-                        'posting_date': instance.date_approved,
-                        'document_date': instance.date_approved,
-                        'stock_type': 1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
-                        'quantity': casted_quantity,
-                        'cost': casted_cost,
-                        'value': casted_cost * casted_quantity,
-                        'lot_data': lot_data
-                    })
+                    all_lot = child.goods_receipt_lot_gr_warehouse.all()
+                    if all_lot.count() > 0:
+                        for lot in all_lot:
+                            lot_obj = instance.product_wh_lot_goods_receipt.filter(lot_number=lot.lot_number).first()
+                            if lot_obj:
+                                lot_data = {
+                                    'lot_id': str(lot_obj.id),
+                                    'lot_number': lot.lot_number,
+                                    'lot_quantity': lot.quantity_import,
+                                    'lot_value': lot.quantity_import * item.product_unit_price,
+                                    'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
+                                }
+                                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                                    item.uom, lot.quantity_import
+                                )
+                                casted_cost = (
+                                        item.product_unit_price * lot.quantity_import / casted_quantity
+                                ) if casted_quantity > 0 else 0
+                                activities_data.append({
+                                    'product': item.product,
+                                    'warehouse': child.warehouse,
+                                    'system_date': instance.date_approved,
+                                    'posting_date': instance.date_approved,
+                                    'document_date': instance.date_approved,
+                                    'stock_type': 1,
+                                    'trans_id': str(instance.id),
+                                    'trans_code': instance.code,
+                                    'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
+                                    'quantity': casted_quantity,
+                                    'cost': casted_cost,
+                                    'value': casted_cost * casted_quantity,
+                                    'lot_data': lot_data
+                                })
+                    else:
+                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, child.quantity_import)
+                        casted_cost = (
+                                item.product_unit_price * child.quantity_import / casted_quantity
+                        ) if casted_quantity > 0 else 0
+                        activities_data.append({
+                            'product': item.product,
+                            'warehouse': child.warehouse,
+                            'system_date': instance.date_approved,
+                            'posting_date': instance.date_approved,
+                            'document_date': instance.date_approved,
+                            'stock_type': 1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
+                            'quantity': casted_quantity,
+                            'cost': casted_cost,
+                            'value': casted_cost * casted_quantity,
+                            'lot_data': {}
+                        })
                 else:
                     existed['quantity'] += child.quantity_import
                     existed['value'] += item.product_unit_price * child.quantity_import

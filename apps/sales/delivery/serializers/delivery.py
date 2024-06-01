@@ -453,37 +453,58 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             for child in validated_product:
                 if child.get('order') == item.order:
                     delivery_item = child.get('delivery_data')[0] if len(child.get('delivery_data')) > 0 else {}
-                    lot_data = []
-                    for lot in delivery_item.get('lot_data', []):
-                        prd_wh_lot = ProductWareHouseLot.objects.filter(
-                            id=lot.get('product_warehouse_lot_id')
-                        ).first()
-                        if prd_wh_lot:
-                            lot_data.append({
-                                'lot_id': str(prd_wh_lot.id),
-                                'lot_number': prd_wh_lot.lot_number,
-                                'lot_quantity': lot.get('quantity_delivery'),
-                                'lot_value': main_product_unit_price * lot.get('quantity_delivery'),
-                                'lot_expire_date': str(prd_wh_lot.expire_date)
+                    if len(delivery_item.get('lot_data', [])) > 0:
+                        for lot in delivery_item.get('lot_data', []):
+                            prd_wh_lot = ProductWareHouseLot.objects.filter(
+                                id=lot.get('product_warehouse_lot_id')
+                            ).first()
+                            if prd_wh_lot:
+                                lot_data = {
+                                    'lot_id': str(prd_wh_lot.id),
+                                    'lot_number': prd_wh_lot.lot_number,
+                                    'lot_quantity': lot.get('quantity_delivery'),
+                                    'lot_value': main_product_unit_price * lot.get('quantity_delivery'),
+                                    'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
+                                }
+                                warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
+                                if warehouse:
+                                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                                        item.uom, delivery_item.get('stock')
+                                    )
+                                    activities_data.append({
+                                        'product': item.product,
+                                        'warehouse': warehouse,
+                                        'system_date': instance.date_done,
+                                        'posting_date': instance.date_done,
+                                        'document_date': instance.date_done,
+                                        'stock_type': -1,
+                                        'trans_id': str(instance.id),
+                                        'trans_code': instance.code,
+                                        'trans_title': 'Delivery',
+                                        'quantity': casted_quantity,
+                                        'cost': 0,  # theo gia cost
+                                        'value': 0,  # theo gia cost
+                                        'lot_data': lot_data
+                                    })
+                    else:
+                        warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
+                        if warehouse:
+                            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, delivery_item.get('stock'))
+                            activities_data.append({
+                                'product': item.product,
+                                'warehouse': warehouse,
+                                'system_date': instance.date_done,
+                                'posting_date': instance.date_done,
+                                'document_date': instance.date_done,
+                                'stock_type': -1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Delivery',
+                                'quantity': casted_quantity,
+                                'cost': 0,  # theo gia cost
+                                'value': 0,  # theo gia cost
+                                'lot_data': {}
                             })
-                    warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
-                    if warehouse:
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, delivery_item.get('stock'))
-                        activities_data.append({
-                            'product': item.product,
-                            'warehouse': warehouse,
-                            'system_date': instance.date_done,
-                            'posting_date': instance.date_done,
-                            'document_date': instance.date_done,
-                            'stock_type': -1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Delivery',
-                            'quantity': casted_quantity,
-                            'cost': 0,  # theo gia cost
-                            'value': 0,  # theo gia cost
-                            'lot_data': lot_data
-                        })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,

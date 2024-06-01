@@ -57,18 +57,40 @@ class GoodsReturn(DataAbstractModel):
                 delivery_product_cost = goods_return_cost_input.cost_for_periodic
             else:
                 raise serializers.ValidationError({'Cost': 'Cost is not null.'})
-        lot_data = []
+
         for lot in product_detail_list:
             data_type = lot.get('type')
             prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot['lot_no_id']).first() if data_type == 1 else None
             if prd_wh_lot and data_type == 1:  # is LOT
-                lot_data.append({
+                lot_data = {
                     'lot_id': str(prd_wh_lot.id),
                     'lot_number': prd_wh_lot.lot_number,
                     'lot_quantity': lot['lot_return_number'],
                     'lot_value': delivery_product_cost * lot['lot_return_number'],
-                    'lot_expire_date': str(prd_wh_lot.expire_date)
+                    'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
+                }
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    instance.uom, lot['lot_return_number']
+                )
+                casted_cost = (
+                        delivery_product_cost * lot['lot_return_number'] / casted_quantity
+                ) if casted_quantity > 0 else 0
+                activities_data.append({
+                    'product': instance.product,
+                    'warehouse': instance.return_to_warehouse,
+                    'system_date': instance.date_created,
+                    'posting_date': instance.date_created,
+                    'document_date': instance.date_created,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_quantity * casted_cost,
+                    'lot_data': lot_data
                 })
+
         casted_quantity = ReportInventorySub.cast_quantity_to_unit(
             instance.uom,
             return_quantity
@@ -87,7 +109,7 @@ class GoodsReturn(DataAbstractModel):
             'quantity': casted_quantity,
             'cost': casted_cost,
             'value': casted_quantity * casted_cost,
-            'lot_data': lot_data
+            'lot_data': {}
         })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
