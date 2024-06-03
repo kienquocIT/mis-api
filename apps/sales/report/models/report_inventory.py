@@ -334,9 +334,25 @@ class ReportInventorySub(DataAbstractModel):
                     this_record.ending_balance_cost = log.current_cost
                     this_record.ending_balance_value = log.current_value
                     this_record.sub_latest_log = log
-                    this_record.save(update_fields=[
-                        'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value', 'sub_latest_log'
-                    ])
+
+                if log.stock_type == 1:
+                    # nếu là input thì cộng tổng SL nhập và tổng Value nhập
+                    this_record.sum_input_quantity += log.quantity
+                    this_record.sum_input_value += log.quantity * log.cost
+                else:
+                    # nếu là xuất thì cập nhập SL xuất
+                    this_record.sum_output_quantity += log.quantity
+                    this_record.sum_output_value += log.quantity * log.cost
+                this_record.save(update_fields=[
+                    'sum_input_quantity',
+                    'sum_input_value',
+                    'sum_output_quantity',
+                    'sum_output_value',
+                    'ending_balance_quantity',
+                    'ending_balance_cost',
+                    'ending_balance_value',
+                    'sub_latest_log'
+                ])
             else:
                 # nếu kiểm kê định kì
                 if not this_record:  # nếu không có thì tạo, gán log
@@ -357,16 +373,7 @@ class ReportInventorySub(DataAbstractModel):
                         periodic_ending_balance_value=log.current_value,
                         sub_latest_log=log
                     )
-                else:  # có thì cập nhập
-                    if log.stock_type == 1:
-                        # nếu là input thì cộng tổng SL nhập và tổng Value nhập
-                        this_record.sum_input_quantity += log.quantity
-                        this_record.sum_input_value += log.quantity * log.cost
-                    else:
-                        # nếu là xuất thì cập nhập SL xuất
-                        this_record.sum_output_quantity += log.quantity
-
-                    # update giá cost
+                else:  # có thì update giá cost, gán sub
                     this_record.periodic_ending_balance_quantity = log.periodic_current_quantity
                     this_record.periodic_ending_balance_cost = log.periodic_current_cost
                     this_record.periodic_ending_balance_value = log.periodic_current_value
@@ -376,16 +383,26 @@ class ReportInventorySub(DataAbstractModel):
                         this_record.periodic_closed = False
                         this_record.periodic_ending_balance_cost = 0
                         this_record.periodic_ending_balance_value = 0
-                    this_record.save(update_fields=[
-                        'periodic_ending_balance_quantity',
-                        'periodic_ending_balance_cost',
-                        'periodic_ending_balance_value',
-                        'sub_latest_log',
-                        'sum_output_quantity',
-                        'sum_input_quantity',
-                        'sum_input_value',
-                        'periodic_closed'
-                    ])
+
+                if log.stock_type == 1:
+                    # nếu là input thì cộng tổng SL nhập và tổng Value nhập
+                    this_record.sum_input_quantity += log.quantity
+                    this_record.sum_input_value += log.quantity * log.cost
+                else:
+                    # nếu là xuất thì cập nhập SL xuất
+                    this_record.sum_output_quantity += log.quantity
+                    this_record.sum_output_value += log.quantity * log.cost
+                this_record.save(update_fields=[
+                    'sum_input_quantity',
+                    'sum_input_value',
+                    'sum_output_quantity',
+                    'sum_output_value',
+                    'sub_latest_log',
+                    'periodic_ending_balance_quantity',
+                    'periodic_ending_balance_cost',
+                    'periodic_ending_balance_value',
+                    'periodic_closed'
+                ])
 
             # cập nhập log mới nhất, không có thì tạo mới
             latest_log_obj = log.product.latest_log_product.filter(
@@ -463,9 +480,11 @@ class ReportInventoryProductWarehouse(DataAbstractModel):
     #     null=True
     # )
 
-    sum_input_quantity = models.FloatField(default=0, help_text='is sum input quantity in periodic')
-    sum_input_value = models.FloatField(default=0, help_text='is sum value quantity in periodic')
-    sum_output_quantity = models.FloatField(default=0, help_text='is sum output quantity in periodic')
+    sum_input_quantity = models.FloatField(default=0)
+    sum_input_value = models.FloatField(default=0)
+    sum_output_quantity = models.FloatField(default=0)
+    sum_output_value = models.FloatField(default=0)
+
     periodic_closed = models.BooleanField(default=False, help_text='is True if sub has closed')
 
     for_balance = models.BooleanField(default=False, help_text='is True if it has balance')

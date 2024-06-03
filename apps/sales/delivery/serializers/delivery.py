@@ -489,7 +489,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     else:
                         warehouse = WareHouse.objects.filter(id=delivery_item.get('warehouse')).first()
                         if warehouse:
-                            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, delivery_item.get('stock'))
+                            casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                                item.uom, delivery_item.get('stock')
+                            )
                             activities_data.append({
                                 'product': item.product,
                                 'warehouse': warehouse,

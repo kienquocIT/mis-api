@@ -364,43 +364,95 @@ class ReportInventoryList(BaseListMixin):
         return True
 
     @classmethod
-    def create_this_sub_record(cls, tenant, company, product_id_list, period_mapped, sub_period_order):
+    def create_this_sub_record(cls, tenant, company, period_mapped, sub_period_order):
         sw_start_using_time_order = company.software_start_using_time.month - period_mapped.space_month
         if int(sub_period_order) > sw_start_using_time_order:
-            sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-            # if not sub.run_report_inventory:
-            wh_id_list = set(
-                WareHouse.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
+            if sub_period_order == 12:
+                last_sub_period_order = 1
+                last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()
+            else:
+                last_sub_period_order = int(sub_period_order) - 1
+                last_period_mapped = period_mapped
+
+            all_last_sub = ReportInventoryProductWarehouse.objects.filter(
+                tenant=tenant, company=company,
+                period_mapped=last_period_mapped, sub_period_order=last_sub_period_order
             )
-            all_this_sub_record = ReportInventoryProductWarehouse.objects.filter(
-                product_id__in=product_id_list, warehouse_id__in=wh_id_list,
+            all_this_sub = ReportInventoryProductWarehouse.objects.filter(
+                tenant=tenant, company=company,
                 period_mapped=period_mapped, sub_period_order=sub_period_order
             )
-            for prd_id in product_id_list:
-                for wh_id in wh_id_list:
-                    this_sub_record = None
-                    for item in all_this_sub_record:
-                        if str(item.product_id) == str(prd_id) and str(item.warehouse_id) == str(wh_id):
-                            this_sub_record = item
-                            break
-                    if not this_sub_record:
-                        cls.create_record_if_not_exist(
-                            tenant, company, sub, prd_id, wh_id, period_mapped, sub_period_order
-                        )
+            sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
+            div = company.companyconfig.definition_inventory_valuation
+            for last_item in all_last_sub:
+                if not all_this_sub.filter(
+                    product_id=last_item.product_id,
+                    warehouse_id=last_item.warehouse_id,
+                    lot_mapped_id=last_item.lot_mapped_id
+                ).exists():
+                    quantity = None
+                    cost = None
+                    value = None
+                    if div == 0:
+                        quantity = last_item.ending_balance_quantity
+                        cost = last_item.ending_balance_cost
+                        value = last_item.ending_balance_value
+                    if div == 1:
+                        quantity = last_item.periodic_ending_balance_quantity
+                        cost = last_item.periodic_ending_balance_cost
+                        value = last_item.periodic_ending_balance_value
+
+                    if quantity and cost and value:
+                        if div == 0:
+                            ReportInventoryProductWarehouse.objects.create(
+                                tenant=tenant, company=company,
+                                product_id=last_item.product_id,
+                                lot_mapped_id=last_item.lot_mapped_id,
+                                warehouse_id=last_item.warehouse_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=sub,
+                                opening_balance_quantity=quantity,
+                                opening_balance_cost=cost,
+                                opening_balance_value=value,
+                                ending_balance_quantity=quantity,
+                                ending_balance_cost=cost,
+                                ending_balance_value=value
+                            )
+                        if div == 1:
+                            ReportInventoryProductWarehouse.objects.create(
+                                tenant=tenant, company=company,
+                                product_id=last_item.product_id,
+                                lot_mapped_id=last_item.lot_mapped_id,
+                                warehouse_id=last_item.warehouse_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=sub,
+                                opening_balance_quantity=quantity,
+                                opening_balance_cost=cost,
+                                opening_balance_value=value,
+                                periodic_ending_balance_quantity=quantity,
+                                periodic_ending_balance_cost=cost,
+                                periodic_ending_balance_value=value
+                            )
             sub.run_report_inventory = True
             sub.save(update_fields=['run_report_inventory'])
         return True
 
     def get_queryset(self):
         try:
-            tenant = self.request.user.tenant_current
-            company = self.request.user.company_current
             period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
             sub_period_order = self.request.query_params['sub_period_order']
 
+            self.create_this_sub_record(
+                self.request.user.tenant_current,
+                self.request.user.company_current,
+                period_mapped,
+                sub_period_order
+            )
+
             if self.request.query_params['product_id_list'] != '':
                 prd_id_list = self.request.query_params['product_id_list'].split(',')
-                self.create_this_sub_record(tenant, company, prd_id_list, period_mapped, sub_period_order)
                 return super().get_queryset().select_related(
                     "product__inventory_uom", "warehouse", "period_mapped"
                 ).prefetch_related(
@@ -410,11 +462,6 @@ class ReportInventoryList(BaseListMixin):
                     period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
                 ).order_by('warehouse__code', '-product__code', '-lot_mapped__lot_number')
 
-            prd_id_list = set(
-                Product.objects.filter(tenant=tenant, company=company).values_list('id', flat=True)
-            )
-
-            self.create_this_sub_record(tenant, company, prd_id_list, period_mapped, sub_period_order)
             return super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
             ).prefetch_related(
