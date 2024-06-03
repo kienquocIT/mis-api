@@ -41,15 +41,6 @@ class DeliHandler:
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
-                # elif calc < 0:
-                #     # else < 0 ko đù
-                #     # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)
-                #     # trừ kho tất cả của record này
-                #     item.sold_amount += item.stock_amount
-                #     item.stock_amount = item.receipt_amount - item.sold_amount
-                #     if config['is_picking']:
-                #         item.picked_ready = item.picked_ready - item.stock_amount
-                #     list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
         return True
 
@@ -99,16 +90,12 @@ class DeliHandler:
         quantity = 0
         total = 0
         list_reference = []
-        for product in validated_product:  # for product
-            if all(key in product for key in ('product_id', 'delivery_data', 'done')):
-                quantity += product.get('done', 0)
-                product_obj = Product.objects.filter(id=product.get('product_id', None)).first()
+        for product_data in validated_product:  # for in product
+            if all(key in product_data for key in ('product_id', 'delivery_data', 'done')):
+                quantity += product_data.get('done', 0)
+                product_obj = Product.objects.filter(id=product_data.get('product_id', None)).first()
                 if product_obj:
-                    total_all_wh = 0
-                    for data_deli in product['delivery_data']:  # for warehouse
-                        total_all_wh += product_obj.get_unit_cost_by_warehouse(
-                            warehouse_id=data_deli.get('warehouse', None), get_type=1
-                        )
+                    total_all_wh = cls.diagram_get_total_cost_by_wh(product_obj=product_obj, product_data=product_data)
                     total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
@@ -135,3 +122,20 @@ class DeliHandler:
                     }
                 )
         return True
+
+    @classmethod
+    def diagram_get_total_cost_by_wh(cls, product_obj, product_data):
+        total_all_wh = 0
+        for data_deli in product_data['delivery_data']:  # for in warehouse to get cost of warehouse
+            lot_data = data_deli.get('lot_data', [])
+            serial_data = data_deli.get('serial_data', [])
+            quantity_deli = 0
+            if lot_data:
+                for lot in lot_data:
+                    quantity_deli += lot.get('quantity_delivery')
+            if serial_data:
+                quantity_deli = len(serial_data)
+            total_all_wh += product_obj.get_unit_cost_by_warehouse(
+                warehouse_id=data_deli.get('warehouse', None), get_type=1
+            ) * quantity_deli
+        return total_all_wh
