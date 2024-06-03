@@ -8,7 +8,7 @@ class SOHandler:
         list_reference = []
         if instance.quotation:
             list_reference.append(instance.quotation.code)
-        for so_product in instance.sale_order_product_sale_order.all():
+        for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
             quantity += so_product.product_quantity
         list_reference.reverse()
         reference = ", ".join(list_reference)

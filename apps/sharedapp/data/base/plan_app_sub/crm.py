@@ -1810,6 +1810,64 @@ LEAD_APP_CONFIG = {
     "allow_permit": True,
 }
 
+SALE_PROJECT = {
+    "id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+    "title": "Project",
+    "code": "project",
+    "model_code": "project",
+    "app_label": "project",
+    "is_workflow": False,
+    "option_permission": 0,
+    "option_allowed": [1, 2, 3, 4],
+    "app_depend_on": [
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+                "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1893,6 +1951,11 @@ Application_crm_data = {
     ),
 
     # Nhóm 2
+    "49fe2eb9-39cd-44af-b74a-f690d7b61b67": ApplicationConfigFrame(**SALE_PROJECT).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+        spacing_allow=["0", "1"],
+    ),
 
     # Nhóm 3
     "828b785a-8f57-4a03-9f90-e0edf96560d7": ApplicationConfigFrame(**CONTACT_APP_CONFIG).data(

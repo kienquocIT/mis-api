@@ -127,6 +127,14 @@ Quotation_data__params = {
         'type': 1,
         'is_print': True,
     },
+    'e26bd428-7acd-4f84-90f2-433f505fb411': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product - Group Title',
+        'code': 'quotation_products_data___group_title',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
     'c6ed86ba-dbcb-4b87-93f8-92b9c7db2360': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Title',

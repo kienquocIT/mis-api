@@ -117,17 +117,13 @@ class GRFinishHandler:
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-            if lot.lot:
-                lot.lot.quantity_import += lot.quantity_import * final_ratio
-                lot.lot.save(update_fields=['quantity_import'])
-            else:
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                    'goods_receipt_id': instance.id,
-                })
+            lot_data.append({
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import * final_ratio,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date,
+                'goods_receipt_id': instance.id,
+            })
         for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
             serial_data.append({
                 'vendor_serial_number': serial.vendor_serial_number,
@@ -173,17 +169,13 @@ class GRFinishHandler:
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-            if lot.lot:  # if GR for exist LOT => update quantity
-                lot.lot.quantity_import += lot.quantity_import * final_ratio
-                lot.lot.save(update_fields=['quantity_import'])
-            else:  # GR with new LOTS => setup data to create ProductWarehouseLot
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                    'goods_receipt_id': instance.id,
-                })
+            lot_data.append({
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import * final_ratio,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date,
+                'goods_receipt_id': instance.id,
+            })
         for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
             serial_data.append({
                 'vendor_serial_number': serial.vendor_serial_number,

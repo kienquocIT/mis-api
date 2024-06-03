@@ -14,3 +14,4 @@ class AttMsg:
     FILE_SUM_EXCEED_LIMIT = _("The file size exceeds the limit.")
     FILE_IS_NOT_IMAGE = _('The file is not images type.')
     WEB_BUILDER_USED_OVER_SIZE = _('This builder function has exhausted the allocated {used_size} license capacity')
+    FOLDER_NOT_EXIST = _('Folder does not exist.')

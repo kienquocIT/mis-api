@@ -239,11 +239,20 @@ class PermissionAbstractModel(models.Model):
     def _remove_prj_empty(self):
         for prj_id, permit_prj_data in dict(self.permission_by_project).items():
             if not permit_prj_data:
-                del self.permission_by_opp[prj_id]
+                del self.permission_by_project[prj_id]
 
     def append_permit_by_prj(self, tenant_id, prj_id, perm_config):
         if prj_id and tenant_id:
-            self.permission_by_project[prj_id] = perm_config
+            self.permission_by_project[str(prj_id)] = perm_config
+            self._remove_prj_empty()
+            self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
+            super().save(update_fields=['permission_by_project', 'permissions_parsed'])
+            self.call_sync()
+        return self
+
+    def remove_permit_by_prj(self, tenant_id, prj_id):
+        if prj_id and str(prj_id) in self.permission_by_project and tenant_id:
+            del self.permission_by_project[str(prj_id)]
             self._remove_prj_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_project', 'permissions_parsed'])

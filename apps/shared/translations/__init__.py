@@ -21,3 +21,4 @@ from .inventory import WarehouseMsg
 from .eoffices import *
 from .warehouse import *
 from .web_builder import *
+from .project import *

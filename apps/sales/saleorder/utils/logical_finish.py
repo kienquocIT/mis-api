@@ -17,7 +17,7 @@ class DocHandler:
 class SOFinishHandler:
     @classmethod
     def push_product_info(cls, instance):
-        for product_order in instance.sale_order_product_sale_order.all():
+        for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
             if product_order.product:
                 final_ratio = cls.get_final_uom_ratio(
                     product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
@@ -50,9 +50,7 @@ class SOFinishHandler:
         total_pretax = instance.total_product_pretax_amount
         total_discount = instance.total_product_discount
         total_discount_product = 0
-        for so_product in instance.sale_order_product_sale_order.filter(
-                is_promotion=False, is_shipping=False, is_group=False,
-        ):
+        for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
             price_ad = so_product.product_unit_price - so_product.product_discount_amount
             subtotal_ad = price_ad * so_product.product_quantity
             subtotal = so_product.product_unit_price * so_product.product_quantity
@@ -68,9 +66,7 @@ class SOFinishHandler:
         if instance.indicator_revenue > 0:
             gross_profit_rate = instance.indicator_gross_profit / instance.indicator_revenue
             net_income_rate = instance.indicator_net_income / instance.indicator_revenue
-        for so_product in instance.sale_order_product_sale_order.filter(
-                is_promotion=False, is_shipping=False, is_group=False,
-        ):
+        for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
             product_discount_diff = so_product.product_unit_price * discount_diff_rate / 100
             price_ad = so_product.product_unit_price - so_product.product_discount_amount - product_discount_diff
             revenue = price_ad * so_product.product_quantity
@@ -232,10 +228,10 @@ class DocumentChangeHandler:
     @classmethod
     def setup_data_product_change(cls, instance, doc_previous):
         data_product_change = {}
-        for so_product in doc_previous.sale_order_product_sale_order.all():
+        for so_product in doc_previous.sale_order_product_sale_order.filter(product__isnull=False):
             if so_product.product_id not in data_product_change:
                 data_product_change.update({str(so_product.product_id): so_product.product_quantity})
-            for so_product_change in instance.sale_order_product_sale_order.all():
+            for so_product_change in instance.sale_order_product_sale_order.filter(product__isnull=False):
                 if so_product_change.product_id == so_product.product_id:
                     quantity_change = so_product_change.product_quantity - so_product.product_quantity
                     data_product_change[str(so_product.product_id)] = quantity_change
