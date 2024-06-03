@@ -3,16 +3,17 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.serializers import ContactCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.lead.models import Lead, LeadStage
+from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
-    LeadStageListSerializer
+    LeadStageListSerializer, LeadChartListSerializer
 )
 
 __all__ = [
     'LeadList',
     'LeadDetail',
-    'LeadStageList'
+    'LeadStageList',
+    'LeadChartList'
 ]
 
 
@@ -37,6 +38,9 @@ class LeadList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        LeadChartInformation.create_update_chart_information(
+            self.request.user.tenant_current, self.request.user.company_current
+        )
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -116,10 +120,12 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='lead', model_code='lead', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        self.serializer_class = LeadUpdateSerializer
         if 'goto_stage' in request.data:
+            self.ser_context = {'goto_stage': True}
+        if all(['convert_opp' in request.data, 'map_opp' in request.data]):
             self.ser_context = {
-                'goto_stage': True
+                'convert_opp': True,
+                'opp_mapped_id': request.data.get('opp_mapped_id')
             }
         return self.update(request, *args, **kwargs)
 
@@ -127,6 +133,22 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class LeadStageList(BaseListMixin):
     queryset = LeadStage.objects
     serializer_list = LeadStageListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Lead stage list",
+        operation_description="Lead stage list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeadChartList(BaseListMixin):
+    queryset = LeadChartInformation.objects
+    serializer_list = LeadChartListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(

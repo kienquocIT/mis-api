@@ -51,6 +51,7 @@ from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from ...sales.lead.models import LeadStage
+from ...sales.project.models import ProjectMapMember
 
 logger = logging.getLogger(__name__)
 
@@ -1109,4 +1110,26 @@ def task_validate_user_otp(sender, instance, created, **kwargs):
             user_id=instance.user_id,
             otp_id=instance.id,
             otp=instance.otp,
+        )
+
+
+@receiver(post_save, sender=ProjectMapMember)
+def project_member_event_update(sender, instance, created, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.append_permit_by_prj(
+            tenant_id=instance.project.tenant_id,
+            prj_id=str(instance.project_id),
+            perm_config=instance.permission_by_configured,
+        )
+
+
+@receiver(post_delete, sender=ProjectMapMember)
+def project_member_event_destroy(sender, instance, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.remove_permit_by_prj(
+            tenant_id=instance.project.tenant_id, prj_id=instance.project_id
         )

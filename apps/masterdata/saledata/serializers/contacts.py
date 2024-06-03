@@ -3,7 +3,7 @@ from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
 from apps.shared import (AccountsMsg,)
-from apps.sales.lead.models import LeadStage
+from apps.sales.lead.models import LeadStage, LeadChartInformation
 
 
 # Salutation
@@ -219,14 +219,17 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         # convert to a new contact
         lead_configs = lead.lead_configs.first() if lead else None
         if lead_configs:
-            current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=2).first()
-            lead.current_lead_stage = current_stage
-            lead.lead_status = 2
-            lead.save(update_fields=['current_lead_stage', 'lead_status'])
-            lead_configs.contact_mapped = contact_mapped
-            lead_configs.create_contact = True
-            lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
-            return True
+            if not lead_configs.create_contact:
+                current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=2).first()
+                lead.current_lead_stage = current_stage
+                lead.lead_status = 2
+                lead.save(update_fields=['current_lead_stage', 'lead_status'])
+                lead_configs.contact_mapped = contact_mapped
+                lead_configs.create_contact = True
+                lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
+                LeadChartInformation.create_update_chart_information(tenant_id, company_id)
+                return True
+            raise serializers.ValidationError({'converted': 'Converted to contact.'})
         raise serializers.ValidationError({'not found': 'Lead config not found.'})
 
     def create(self, validated_data):

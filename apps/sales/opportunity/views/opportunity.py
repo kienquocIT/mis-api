@@ -1,11 +1,11 @@
 from typing import Union
-
 from django.conf import settings
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
 from apps.sales.opportunity.filters import OpportunityListFilters
+from apps.sales.lead.models import Lead
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
@@ -130,6 +130,15 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='opportunity', perm_code="create",
     )
     def post(self, request, *args, **kwargs):
+        if all(['convert_opp' in request.data, 'lead_id' in request.data]):
+            # create a new Opp with selected Customer
+            lead = Lead.objects.filter(id=request.data['lead_id']).first()
+            if lead:
+                request.data['title'] = f'Opportunity from {lead.code}'
+                request.data['customer'] = request.data.get('account_mapped')
+                request.data['employee_inherit_id'] = request.data.get('employee_inherit_id')
+
+                self.ser_context = {'lead': lead}
         return self.create(request, *args, **kwargs)
 
 

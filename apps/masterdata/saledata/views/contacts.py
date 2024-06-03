@@ -162,7 +162,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
         label_code='saledata', model_code='contact', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
-        if 'convert_contact' in request.data and 'lead_id' in request.data:
+        if all(['convert_contact' in request.data, 'lead_id' in request.data]):
             lead = Lead.objects.filter(id=request.data['lead_id']).first()
             if lead:
                 request.data['email'] = lead.email
@@ -171,9 +171,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
                 request.data['job_title'] = lead.job_title
                 request.data['owner'] = str(self.request.user.employee_current_id)
 
-                self.ser_context = {
-                    'lead': lead
-                }
+                self.ser_context = {'lead': lead}
         return self.create(request, *args, **kwargs)
 
 

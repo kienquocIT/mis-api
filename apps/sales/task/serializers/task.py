@@ -7,12 +7,14 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.sales.project.extend_func import check_permit_add_member_pj
+from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
 from apps.sales.task.utils import task_create_opportunity_activity_log
 
-from apps.shared import HRMsg, BaseMsg, call_task_background
+from apps.shared import HRMsg, BaseMsg, call_task_background, ProjectMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
@@ -59,6 +61,20 @@ def handle_attachment(user, instance, attachments, create_method):
             return True
         raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
     return True
+
+
+def map_task_with_project(task, work):
+    prj_obj = task.project
+    has_prj_map = ProjectMapTasks.objects.filter(project=prj_obj, task=task).exists()
+    if prj_obj and has_prj_map is not True:
+        ProjectMapTasks.objects.create(
+            project=prj_obj,
+            member=task.employee_inherit,
+            tenant_id=task.tenant_id,
+            company_id=task.company_id,
+            task=task,
+            work_id=str(work) if work else None
+        )
 
 
 class OpportunityTaskListSerializer(serializers.ModelSerializer):
@@ -158,12 +174,14 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
 class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
+    work = serializers.UUIDField(required=False)
+    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach', 'percent_completed')
+                  'log_time', 'attach', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -222,8 +240,18 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
+    def validate(self, attrs):
+        if 'project' in attrs:
+            employee_current = self.context.get('user', None).employee_current
+            check_permit = check_permit_add_member_pj(attrs, employee_current)
+            if check_permit:
+                return attrs
+            raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+        return attrs
+
     def create(self, validated_data):
         user = self.context.get('user', None)
+        project_work = validated_data.pop('work', None)
         task = OpportunityTask.objects.create(**validated_data)
         handle_attachment(user, task, validated_data.get('attach', None), True)
         if task and 'log_time' in validated_data:
@@ -244,6 +272,8 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 }
             )
 
+        if task.project:
+            map_task_with_project(task, project_work)
         return task
 
 
@@ -257,6 +287,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     attach = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     sub_task_list = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -376,6 +407,14 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
     @classmethod
+    def get_project(cls, obj):
+        return {
+            'id': str(obj.project_data['id']),
+            'title': obj.project_data['title'],
+            'code': obj.project_data['code']
+        } if obj.project else {}
+
+    @classmethod
     def get_sub_task_list(cls, obj):
         task_list = OpportunityTask.objects.filter_current(
             fill__company=True,
@@ -392,17 +431,19 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
                   'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed')
+                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed', 'project')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
+    work = serializers.UUIDField(required=False)
+    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity', 'percent_completed')
+                  'attach', 'opportunity', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -466,6 +507,15 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             {'system': SaleTask.NOT_CONFIG}
         )
 
+    def validate(self, attrs):
+        if 'project' in attrs:
+            employee_current = self.context.get('user', None).employee_current
+            check_permit = check_permit_add_member_pj(attrs, employee_current)
+            if check_permit:
+                return attrs
+            raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+        return attrs
+
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         opps_before = instance.opportunity
@@ -485,6 +535,10 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                     'task': str(instance.id)
                 }
             )
+
+        if instance.project:
+            project_work = validated_data.pop('work', None)
+            map_task_with_project(instance, project_work)
         return instance
 
 

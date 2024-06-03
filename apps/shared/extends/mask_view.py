@@ -701,7 +701,30 @@ class PermissionController:
                     return False
 
                 elif has_from == 'prj':
-                    return False  # upgrade when has project
+                    filter_kw_for_member['project_id'] = compare_main_id
+                    filter_kw_for_member['member_id__in'] = [employee_current_id, employee_inherit_id]
+
+                    cls_model = DisperseModel(app_model='project.ProjectMapMember').get_model()
+                    cls_objs = cls_model.objects.filter_current(**filter_kw_for_member)
+
+                    if cls_objs.count() == len({str(employee_current_id), str(employee_inherit_id)}):
+                        if '4' in data_permit and '1' in data_permit:
+                            # check member success -> pass with full range by 1 + 4
+                            return True
+                        elif '4' in data_permit:
+                            if str(employee_current_id) == str(employee_inherit_id):
+                                # not allow to create for themselves
+                                return False
+                            # allow to create for prj members
+                            return True
+                        elif '1' in data_permit:
+                            if str(employee_current_id) == str(employee_inherit_id):
+                                # allow to create only for themselves
+                                return True
+                            # not allow to create for prj members
+                            return False
+                    # not belong to one Prj | not support another range | another case
+                    return False
 
         return False
 

@@ -1,5 +1,7 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
@@ -26,7 +28,8 @@ LEAD_STATUS = [
     (2, _('Open - not contacted')),
     (3, _('Working')),
     (4, _('Opportunity created')),
-    (5, _('Not a target'))
+    (5, _('Disqualified')),
+    (6, _('Not a target'))
 ]
 
 
@@ -36,7 +39,6 @@ class Lead(DataAbstractModel):
     mobile = models.CharField(max_length=200, blank=True)
     email = models.CharField(max_length=200, blank=True)
     company_name = models.CharField(max_length=200, blank=True)
-    account_name = models.CharField(max_length=200, blank=True)
     industry = models.ForeignKey('saledata.Industry', on_delete=models.SET_NULL, null=True)
     total_employees = models.SmallIntegerField(
         choices=TOTAL_EMPLOYEES_SELECTION,
@@ -53,6 +55,7 @@ class Lead(DataAbstractModel):
     lead_status = models.SmallIntegerField(choices=LEAD_STATUS, default=0)
     assign_to_sale = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
     current_lead_stage = models.ForeignKey('lead.LeadStage', on_delete=models.SET_NULL, null=True)
+    period_mapped = models.ForeignKey('saledata.Periods', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         verbose_name = 'Lead'
@@ -94,13 +97,18 @@ class LeadConfig(SimpleAbstractModel):
     convert_opp = models.BooleanField(default=False)
     convert_opp_create = models.BooleanField(default=True)
     convert_opp_select = models.BooleanField(default=False)
-    opp_select = models.ForeignKey('opportunity.Opportunity', on_delete=models.CASCADE, null=True)
-    convert_account_create = models.BooleanField(default=True)
-    convert_account_select = models.BooleanField(default=False)
-    account_select = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
-    assign_to_sale_config = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
-
-    contact_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE, null=True)
+    account_mapped = models.ForeignKey(
+        'saledata.Account', on_delete=models.CASCADE, null=True, related_name='lead_account_mapped'
+    )
+    assign_to_sale_config = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True, related_name='lead_assign_to_sale_config'
+    )
+    contact_mapped = models.ForeignKey(
+        'saledata.Contact', on_delete=models.CASCADE, null=True, related_name='lead_contact_mapped'
+    )
+    opp_mapped = models.ForeignKey(
+        'opportunity.Opportunity', on_delete=models.CASCADE, null=True, related_name='lead_opp_mapped'
+    )
 
     class Meta:
         verbose_name = 'Lead config'
@@ -108,3 +116,115 @@ class LeadConfig(SimpleAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+
+class LeadChartInformation(SimpleAbstractModel):
+    tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
+    company = models.ForeignKey('company.Company', on_delete=models.CASCADE)
+    status_amount_information = models.JSONField(default=dict)
+    stage_amount_information = models.JSONField(default=dict)
+    period_mapped = models.ForeignKey('saledata.Periods', on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        verbose_name = 'Lead Chart Information'
+        verbose_name_plural = 'Lead Charts Information'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def get_chart_information(cls, tenant_id, company_id, this_period):
+        all_lead = Lead.objects.filter(
+            tenant_id=tenant_id, company_id=company_id, period_mapped=this_period
+        ).select_related('current_lead_stage')
+        status_amount_information = {}
+        stage_amount_information = {}
+        for lead in all_lead:
+            if lead.lead_status not in status_amount_information:
+                status_amount_information[lead.lead_status] = 1
+            else:
+                status_amount_information[lead.lead_status] += 1
+
+            if lead.current_lead_stage.stage_title not in stage_amount_information:
+                stage_amount_information[lead.current_lead_stage.stage_title] = 1
+            else:
+                stage_amount_information[lead.current_lead_stage.stage_title] += 1
+
+        new_status_amount_information = {}
+        for status in LEAD_STATUS:
+            amount = status_amount_information.get(int(status[0]))
+            new_status_amount_information[str(status[1])] = amount if amount else 0
+
+        new_stage_amount_information = {}
+        for stage in LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id):
+            amount = stage_amount_information.get(stage.stage_title)
+            new_stage_amount_information[stage.stage_title] = {
+                'amount': amount,
+                'level': stage.level
+            } if amount else {
+                'amount': 0,
+                'level': stage.level
+            }
+
+        return new_status_amount_information, new_stage_amount_information
+
+    @classmethod
+    def create_update_chart_information(cls, tenant_id, company_id):
+        this_period = Periods.objects.filter(
+            tenant_id=tenant_id, company_id=company_id, fiscal_year=timezone.now().year
+        ).first()
+        chart_info_obj = LeadChartInformation.objects.filter(
+            tenant_id=tenant_id, company_id=company_id, period_mapped=this_period
+        ).first()
+        if this_period:
+            status_amount_information, stage_amount_information = LeadChartInformation.get_chart_information(
+                tenant_id, company_id, this_period
+            )
+
+            if chart_info_obj:
+                chart_info_obj.status_amount_information = status_amount_information
+                chart_info_obj.stage_amount_information = stage_amount_information
+                chart_info_obj.save(update_fields=['status_amount_information', 'stage_amount_information'])
+            else:
+                LeadChartInformation.objects.create(
+                    tenant_id=tenant_id, company_id=company_id, period_mapped=this_period,
+                    status_amount_information=status_amount_information,
+                    stage_amount_information=stage_amount_information
+                )
+            return True
+        raise ValueError('This period not found. Can not update Lead chart information.')
+
+
+class LeadHint(SimpleAbstractModel):
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity', on_delete=models.CASCADE, null=True, related_name='lead_opp_hint'
+    )
+    customer = models.ForeignKey(
+        'saledata.Account', on_delete=models.CASCADE, null=True, related_name='lead_customer_hint'
+    )
+    customer_mobile = models.CharField(max_length=100, null=True)
+    customer_email = models.CharField(max_length=150, null=True)
+
+    class Meta:
+        verbose_name = 'Lead Hint'
+        verbose_name_plural = 'Lead Hints'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def check_and_create_lead_hint(cls, opportunity_obj, customer_mobile, customer_email, customer_id):
+        if opportunity_obj:
+            cls.objects.filter(opportunity=opportunity_obj).delete()
+            cls.objects.create(
+                opportunity_id=opportunity_obj.id,
+                customer_mobile=customer_mobile,
+                customer_email=customer_email,
+                customer_id=customer_id
+            )
+        else:
+            cls.objects.filter(customer_id=customer_id).update(
+                customer_mobile=customer_mobile,
+                customer_email=customer_email
+            )
+        return True
