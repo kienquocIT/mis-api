@@ -547,9 +547,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
         # create final acceptance
         DeliFinishHandler.push_final_acceptance(instance=instance, validated_product=validated_product)
+        # diagram
+        DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
+
         if instance.state == 2:
             self.prepare_data_for_logging(instance, validated_product)
 
-        # diagram
-        DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
         return instance

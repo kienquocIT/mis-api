@@ -135,7 +135,6 @@ class DeliHandler:
                     quantity_deli += lot.get('quantity_delivery')
             if serial_data:
                 quantity_deli = len(serial_data)
-            total_all_wh += product_obj.get_unit_cost_by_warehouse(
-                warehouse_id=data_deli.get('warehouse', None), get_type=1
-            ) * quantity_deli
+            cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
+            total_all_wh += cost * quantity_deli
         return total_all_wh
