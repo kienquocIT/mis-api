@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models.product import (
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
-    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer
+    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer, ProductForSaleDetailSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
@@ -355,7 +355,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-# Products use for sale applications
+# Products use for sale/ purchase/ inventory applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title']
@@ -377,19 +377,34 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),
             ),
-            Prefetch(
-                'report_inventory_by_month_product',
-                queryset=ReportInventorySub.objects.select_related('warehouse')
-            ),
         )
 
     @swagger_auto_schema(
-        operation_summary="Product for sale list",
-        operation_description="Product for sale list",
+        operation_summary="Product Sale list",
+        operation_description="Product Sale list",
     )
     @mask_view(login_require=True, auth_require=False, )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ProductForSaleDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    queryset = Product.objects
+    serializer_detail = ProductForSaleDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Product Sale Detail",
+        operation_description="Get Product Sale Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
 
 class UnitOfMeasureOfGroupLaborList(BaseListMixin):

@@ -862,13 +862,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Products use for sale/ purchase/ inventory applications
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
     sale_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
-    cost_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -883,7 +883,6 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'purchase_information',
             'price_list',
             'product_choice',
-            'cost_list',
         )
 
     @classmethod
@@ -964,6 +963,19 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_tax.code, 'rate': obj.purchase_tax.rate,
             } if obj.purchase_tax else {},
         }
+
+
+class ProductForSaleDetailSerializer(serializers.ModelSerializer):
+    cost_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'cost_list',
+        )
 
     @classmethod
     def get_cost_list(cls, obj):
