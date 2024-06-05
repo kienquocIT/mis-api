@@ -615,8 +615,7 @@ class LoggingSubFunction:
         """
         # tìm tồn đầu kì này
         this_record = ReportInventoryProductWarehouse.objects.filter(
-            product_id=product_id, lot_mapped_id=lot_mapped_id, warehouse_id=warehouse_id,
-            period_mapped=period_mapped, sub_period_order=datetime.datetime.now().month - period_mapped.space_month
+            product_id=product_id, lot_mapped_id=lot_mapped_id, warehouse_id=warehouse_id, for_balance=True
         ).first()
         if this_record:
             if data_type == 0:

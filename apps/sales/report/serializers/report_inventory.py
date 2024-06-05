@@ -29,12 +29,11 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        title = f"{obj.product.title} ({obj.product.inventory_uom.title})"
-        if obj.lot_mapped:
-            title = f"{title} - {obj.lot_mapped.lot_number}"
+        lot_number = obj.lot_mapped.lot_number if obj.lot_mapped else ''
         return {
             'id': obj.product_id,
-            'title': title,
+            'title': obj.product.title,
+            'lot_number': lot_number,
             'code': obj.product.code,
             'description': obj.product.description,
         } if obj.product else {}
@@ -215,10 +214,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
+        lot_number = obj.lot_mapped.lot_number if obj.lot_mapped else ''
         return {
             'id': obj.product_id,
             'title': obj.product.title,
-            'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
+            'lot_number': lot_number,
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {

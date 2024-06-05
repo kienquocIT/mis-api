@@ -345,4 +345,7 @@ OTP_TYPE = (
 TYPE_LOT_TRANSACTION = (
     (0, 'Goods receipt'),
     (1, 'Delivery'),
+    (2, 'Goods return'),
+    (3, 'Goods transfer'),
+    (4, 'Goods issue')
 )

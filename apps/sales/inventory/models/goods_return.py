@@ -19,7 +19,7 @@ class GoodsReturn(DataAbstractModel):
     uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
     return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
     product_detail_list = models.JSONField(default=list)
-    data_item = models.JSONField(default=list)
+    data_line_detail = models.JSONField(default=list, help_text="to_quick_load_Line_detail_tab")
 
     class Meta:
         verbose_name = 'Goods Return'
@@ -32,17 +32,20 @@ class GoodsReturn(DataAbstractModel):
     def prepare_data_for_logging(cls, instance):
         product_detail_list = instance.product_detail_list
         return_quantity = 0
+        lot_mapped_id = None
         for item in product_detail_list:
             if item.get('type') == 0:
                 return_quantity += item.get('default_return_number', 0)
             elif item.get('type') == 1:
                 return_quantity += item.get('lot_return_number', 0)
+                lot_mapped_id = item.get('lot_no_id')
             elif item.get('type') == 2:
                 return_quantity += item.get('is_return', 0)
 
         activities_data = []
         if instance.company.companyconfig.definition_inventory_valuation == 0:
             delivery_product = ReportInventorySub.objects.filter(
+                lot_mapped_id=lot_mapped_id,
                 warehouse=instance.return_to_warehouse,
                 product=instance.product,
                 trans_id=str(instance.delivery_id)
@@ -50,13 +53,15 @@ class GoodsReturn(DataAbstractModel):
             if delivery_product:
                 delivery_product_cost = delivery_product.cost
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                delivery_product_cost = 0
+                # raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         else:
             goods_return_cost_input = instance.goods_return_product_detail.first()
             if goods_return_cost_input:
                 delivery_product_cost = goods_return_cost_input.cost_for_periodic
             else:
-                raise serializers.ValidationError({'Cost': 'Cost is not null.'})
+                delivery_product_cost = 0
+                # raise serializers.ValidationError({'Cost': 'Cost is not null.'})
 
         for lot in product_detail_list:
             data_type = lot.get('type')
@@ -73,7 +78,7 @@ class GoodsReturn(DataAbstractModel):
                     instance.uom, lot['lot_return_number']
                 )
                 casted_cost = (
-                        delivery_product_cost * lot['lot_return_number'] / casted_quantity
+                    delivery_product_cost * lot['lot_return_number'] / casted_quantity
                 ) if casted_quantity > 0 else 0
                 activities_data.append({
                     'product': instance.product,

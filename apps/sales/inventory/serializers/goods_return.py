@@ -111,7 +111,7 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'return_to_warehouse',
             'system_status',
             'product_detail_list',
-            'data_item'
+            'data_line_detail'
         )
 
     @classmethod
@@ -156,7 +156,7 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
             'system_status',
             'date_created',
             'data_detail',
-            'data_item',
+            'data_line_detail',
             'attachment'
         )
 
@@ -243,7 +243,7 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
             'uom',
             'system_status',
             'product_detail_list',
-            'data_item'
+            'data_line_detail'
         )
 
     @decorator_run_workflow

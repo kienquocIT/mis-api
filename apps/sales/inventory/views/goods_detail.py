@@ -19,8 +19,7 @@ class GoodsDetailList(BaseListMixin, BaseCreateMixin):
         ).prefetch_related(
             'goods_receipt_product_goods_receipt__goods_receipt_warehouse_gr_product__warehouse',
             'goods_receipt_product_goods_receipt__product',
-            'product_wh_serial_goods_receipt',
-            'product_wh_lot_goods_receipt'
+            'product_wh_serial_goods_receipt'
         )
 
     @swagger_auto_schema(
