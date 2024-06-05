@@ -1,7 +1,7 @@
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.models import WareHouse, Periods, Product, SubPeriods
+from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
@@ -365,8 +365,7 @@ class ReportInventoryList(BaseListMixin):
 
     @classmethod
     def create_this_sub_record(cls, tenant, company, period_mapped, sub_period_order):
-        sw_start_using_time_order = company.software_start_using_time.month - period_mapped.space_month
-        if int(sub_period_order) > sw_start_using_time_order:
+        if int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month:
             if sub_period_order == 12:
                 last_sub_period_order = 1
                 last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()

@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods, Product, WareHouse
@@ -188,7 +186,7 @@ class ReportInventorySub(DataAbstractModel):
                     activities_obj, item['product'], None, period_mapped, sub_period_order
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
-                    item['product'].id, None, item['warehouse'].id, period_mapped, div
+                    item['product'].id, None, item['warehouse'].id, div
                 )['cost'] if item['stock_type'] == -1 else item['cost']
 
                 new_log = cls(
@@ -218,7 +216,7 @@ class ReportInventorySub(DataAbstractModel):
                     activities_obj, item['product'], lot_mapped.get('lot_id'), period_mapped, sub_period_order
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
-                    item['product'].id, lot_mapped.get('lot_id'), item['warehouse'].id, period_mapped, div
+                    item['product'].id, lot_mapped.get('lot_id'), item['warehouse'].id, div
                 )['cost'] if item['stock_type'] == -1 else item['cost']
                 new_log = cls(
                     tenant=activities_obj.tenant,
@@ -252,7 +250,7 @@ class ReportInventorySub(DataAbstractModel):
         if div == 0:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
-                log.product_id, log.lot_mapped_id, log.warehouse_id, period_mapped, div
+                log.product_id, log.lot_mapped_id, log.warehouse_id, div
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_perpetual_inventory(log, latest_value_dict)
@@ -273,7 +271,7 @@ class ReportInventorySub(DataAbstractModel):
         if div == 1:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value = LoggingSubFunction.get_latest_log_value_dict(
-                log.product_id, log.lot_mapped_id, log.warehouse_id, period_mapped, div
+                log.product_id, log.lot_mapped_id, log.warehouse_id, div
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_periodic_inventory(log, latest_value)
@@ -564,7 +562,7 @@ class LoggingSubFunction:
         return last_record.sub_latest_log if last_record else None
 
     @classmethod
-    def get_latest_log_value_dict(cls, product_id, lot_mapped_id, warehouse_id, period_mapped, div):
+    def get_latest_log_value_dict(cls, product_id, lot_mapped_id, warehouse_id, div):
         """ Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại """
         latest_trans = LoggingSubFunction.get_latest_log(product_id, lot_mapped_id, warehouse_id)
         if latest_trans:
@@ -577,7 +575,7 @@ class LoggingSubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_balance_value_dict(product_id, lot_mapped_id, warehouse_id, period_mapped, 3)
+        return cls.get_opening_balance_value_dict(product_id, lot_mapped_id, warehouse_id, 3)
 
     @classmethod
     def calculate_new_value_dict_in_perpetual_inventory(cls, log, latest_value):
@@ -608,12 +606,12 @@ class LoggingSubFunction:
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def get_opening_balance_value_dict(cls, product_id, lot_mapped_id, warehouse_id, period_mapped, data_type=1):
+    def get_opening_balance_value_dict(cls, product_id, lot_mapped_id, warehouse_id, data_type=1):
         """
         Hàm để lấy Số dư đầu kì theo SP và KHO
         (0-quantity, 1-cost, 2-value, 3-{'quantity':, 'cost':, 'value':}, else-return1)
         """
-        # tìm tồn đầu kì này
+        # tìm số dư đầu kì
         this_record = ReportInventoryProductWarehouse.objects.filter(
             product_id=product_id, lot_mapped_id=lot_mapped_id, warehouse_id=warehouse_id, for_balance=True
         ).first()

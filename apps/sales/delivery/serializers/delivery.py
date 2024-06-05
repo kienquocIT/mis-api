@@ -444,7 +444,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         order_delivery.save(update_fields=['sub', 'state'])
 
     @classmethod
-    def prepare_data_for_logging(cls, instance, validated_product):
+    def prepare_data_for_logging(cls, instance):
         activities_data = []
         so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
         for deli_item in instance.delivery_product_delivery_sub.all():
@@ -583,6 +583,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
         if instance.state == 2:
-            self.prepare_data_for_logging(instance, validated_product)
+            self.prepare_data_for_logging(instance)
 
         return instance

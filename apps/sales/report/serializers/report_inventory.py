@@ -1,8 +1,4 @@
-import datetime
-
 from rest_framework import serializers
-
-from apps.masterdata.saledata.models import ProductWareHouseLot
 from apps.sales.report.models import ReportInventory, ReportInventoryProductWarehouse, LoggingSubFunction
 
 

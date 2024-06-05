@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, ProductWareHouseLot
-from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
 from apps.sales.inventory.models import GoodsReceipt
-from apps.sales.report.models import ReportInventorySub, ReportInventory
 
 
 class GoodsDetailListSerializer(serializers.ModelSerializer):
