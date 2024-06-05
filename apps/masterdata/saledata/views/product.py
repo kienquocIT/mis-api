@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models.product import (
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
-    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer
+    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
@@ -303,6 +303,40 @@ class ProductList(BaseListMixin, BaseCreateMixin):
         operation_summary="Create Product",
         operation_description="Create new Product",
         request_body=ProductCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ProductQuickCreateList(BaseListMixin, BaseCreateMixin):
+    queryset = Product.objects
+    serializer_create = ProductQuickCreateSerializer
+    serializer_detail = ProductDetailSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'general_product_category',
+            'general_uom_group',
+            'sale_tax',
+            'sale_default_uom',
+            'inventory_uom',
+        ).prefetch_related(
+            'general_product_types_mapped',
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Quick Create Product",
+        operation_description="Quick Create new Product",
+        request_body=ProductQuickCreateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,

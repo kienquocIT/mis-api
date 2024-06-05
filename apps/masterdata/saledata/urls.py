@@ -14,7 +14,7 @@ from apps.masterdata.saledata.views.periods import PeriodsList, PeriodsDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
-    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList,
+    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductQuickCreateList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -76,6 +76,7 @@ urlpatterns += [
 
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
+    path('product-quick-create', ProductQuickCreateList.as_view(), name='ProductQuickCreateList'),
     path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
     path('products-sale', ProductForSaleList.as_view(), name='ProductForSaleList'),
