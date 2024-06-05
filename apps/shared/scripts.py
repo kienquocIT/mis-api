@@ -38,6 +38,7 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
@@ -45,7 +46,7 @@ from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
-from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
+from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -1657,6 +1658,84 @@ def report_rerun(company_id, start_month):
     ReportInventoryProductWarehouse.objects.all().delete()
     ReportInventory.objects.all().delete()
     LatestSub.objects.all().delete()
+
+    if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+        print('created balance')
+        company = Company.objects.get(id=company_id)
+        ProductWareHouseLotTransaction.objects.create(
+            pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
+            delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
+            quantity=2,
+            type_transaction=1
+        )
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(3),
+            opening_balance_value=float(30000000),
+            opening_balance_cost=float(3000000),
+            ending_balance_quantity=float(3),
+            ending_balance_value=float(30000000),
+            ending_balance_cost=float(3000000),
+            for_balance=True
+        )
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+            lot_mapped_id='12de4425e1-e341-a0bd-286e-44d78ec260',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(4),
+            opening_balance_value=float(160000000),
+            opening_balance_cost=float(40000000),
+            ending_balance_quantity=float(4),
+            ending_balance_value=float(160000000),
+            ending_balance_cost=float(40000000),
+            for_balance=True
+        )
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+            lot_mapped_id='144cc8d8-d20e-4d5d-ad03-74e11f52a499',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(6),
+            opening_balance_value=float(240000000),
+            opening_balance_cost=float(40000000),
+            ending_balance_quantity=float(6),
+            ending_balance_value=float(240000000),
+            ending_balance_cost=float(40000000),
+            for_balance=True
+        )
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+            lot_mapped_id='837ababb0cd14b5b8e0064e024d1aae9',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(3),
+            opening_balance_value=float(120000000),
+            opening_balance_cost=float(40000000),
+            ending_balance_quantity=float(3),
+            ending_balance_value=float(120000000),
+            ending_balance_cost=float(40000000),
+            for_balance=True
+        )
+
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month

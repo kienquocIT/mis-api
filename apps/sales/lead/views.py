@@ -39,7 +39,7 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         LeadChartInformation.create_update_chart_information(
-            self.request.user.tenant_current, self.request.user.company_current
+            self.request.user.tenant_current_id, self.request.user.company_current_id
         )
         return self.list(request, *args, **kwargs)
 

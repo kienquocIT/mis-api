@@ -14,13 +14,12 @@ class GoodsDetailList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(system_status=3).select_related(
             'employee_inherit',
         ).prefetch_related(
             'goods_receipt_product_goods_receipt__goods_receipt_warehouse_gr_product__warehouse',
             'goods_receipt_product_goods_receipt__product',
-            'product_wh_serial_goods_receipt',
-            'product_wh_lot_goods_receipt'
+            'product_wh_serial_goods_receipt'
         )
 
     @swagger_auto_schema(

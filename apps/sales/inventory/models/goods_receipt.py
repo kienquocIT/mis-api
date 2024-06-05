@@ -98,39 +98,20 @@ class GoodsReceipt(DataAbstractModel):
         return code
 
     @classmethod
-    def check_exist(cls, item_product_id, item_warehouse_id, item_trans_id, activities_data):
-        for obj in activities_data:
-            if all([
-                item_product_id == obj['product'].id,
-                item_warehouse_id == obj['warehouse'].id,
-                item_trans_id == obj['trans_id']
-            ]):
-                return obj
-        return None
-
-    @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
-        for item in instance.goods_receipt_product_goods_receipt.all():
-            warehouse_filter = item.goods_receipt_warehouse_gr_product.all()
-            for child in warehouse_filter:
-                existed = cls.check_exist(item.product.id, child.warehouse.id, str(instance.id), activities_data)
-                if not existed:
-                    lot_data = [{
-                        'lot_id': str(lot.id),
-                        'lot_number': lot.lot_number,
-                        'lot_quantity': child.quantity_import,
-                        'lot_value': child.quantity_import * item.product_unit_price,
-                        'lot_expire_date': str(lot.expire_date)
-                    } for lot in child.goods_receipt_lot_gr_warehouse.all()]
-
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, child.quantity_import)
+        for goods_receipt_item in instance.goods_receipt_product_goods_receipt.all():
+            if goods_receipt_item.product.general_traceability_method != 1:
+                for warehouses_item in instance.goods_receipt_warehouse_goods_receipt.all():
+                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                        goods_receipt_item.uom, warehouses_item.quantity_import
+                    )
                     casted_cost = (
-                            item.product_unit_price * child.quantity_import / casted_quantity
+                        goods_receipt_item.product_unit_price * warehouses_item.quantity_import / casted_quantity
                     ) if casted_quantity > 0 else 0
                     activities_data.append({
-                        'product': item.product,
-                        'warehouse': child.warehouse,
+                        'product': goods_receipt_item.product,
+                        'warehouse': warehouses_item.warehouse,
                         'system_date': instance.date_approved,
                         'posting_date': instance.date_approved,
                         'document_date': instance.date_approved,
@@ -141,11 +122,43 @@ class GoodsReceipt(DataAbstractModel):
                         'quantity': casted_quantity,
                         'cost': casted_cost,
                         'value': casted_cost * casted_quantity,
-                        'lot_data': lot_data
+                        'lot_data': {}
                     })
-                else:
-                    existed['quantity'] += child.quantity_import
-                    existed['value'] += item.product_unit_price * child.quantity_import
+            else:
+                lot_transact_list = instance.pw_lot_transact_goods_receipt.all().select_related(
+                    'pw_lot__product_warehouse__product'
+                )
+                for lot_transact in lot_transact_list.filter(
+                    pw_lot__product_warehouse__product=goods_receipt_item.product
+                ):
+                    lot_obj = lot_transact.pw_lot
+                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                        goods_receipt_item.uom, lot_transact.quantity
+                    )
+                    casted_cost = (
+                        goods_receipt_item.product_unit_price * lot_transact.quantity / casted_quantity
+                    ) if casted_quantity > 0 else 0
+                    activities_data.append({
+                        'product': goods_receipt_item.product,
+                        'warehouse': lot_obj.product_warehouse.warehouse,
+                        'system_date': instance.date_approved,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
+                        'stock_type': 1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
+                        'quantity': casted_quantity,
+                        'cost': casted_cost,
+                        'value': casted_cost * casted_quantity,
+                        'lot_data': {
+                            'lot_id': str(lot_obj.id),
+                            'lot_number': lot_obj.lot_number,
+                            'lot_quantity': casted_quantity,
+                            'lot_value': casted_quantity * goods_receipt_item.product_unit_price,
+                            'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
+                        }
+                    })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
@@ -171,7 +184,6 @@ class GoodsReceipt(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 # if self.inventory_adjustment:
                 #     self.inventory_adjustment.update_ia_state()
-                self.prepare_data_for_logging(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
@@ -183,6 +195,8 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_gr_info_for_ia(self)
                         GRFinishHandler.update_is_all_receipted_po(self)
                         GRFinishHandler.update_is_all_receipted_ia(self)
+
+            self.prepare_data_for_logging(self)
 
         # diagram
         GRHandler.push_diagram(instance=self)

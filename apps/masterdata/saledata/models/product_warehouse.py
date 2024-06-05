@@ -356,6 +356,31 @@ class ProductWareHouseLotTransaction(SimpleAbstractModel):
         help_text="To know this lot was delivered by which OrderDeliverySub",
         null=True,
     )
+    goods_return = models.ForeignKey(
+        'inventory.GoodsReturn',
+        on_delete=models.CASCADE,
+        verbose_name="goods return",
+        related_name="pw_lot_transact_goods_return",
+        help_text="To know this lot was returned by which GoodsReturn",
+        null=True,
+    )
+    goods_transfer = models.ForeignKey(
+        'inventory.GoodsTransfer',
+        on_delete=models.CASCADE,
+        verbose_name="goods transfer",
+        related_name="pw_lot_transact_goods_transfer",
+        help_text="To know this lot was transferred by which GoodsTransfer",
+        null=True,
+    )
+    transfer_type = models.BooleanField(null=True, help_text="transfer type: 1 is IN, 0 is OUT")
+    goods_issue = models.ForeignKey(
+        'inventory.GoodsIssue',
+        on_delete=models.CASCADE,
+        verbose_name="goods issue",
+        related_name="pw_lot_transact_goods_issue",
+        help_text="To know this lot was issued by which GoodsIssue",
+        null=True,
+    )
     quantity = models.FloatField(default=0)
     type_transaction = models.SmallIntegerField(
         default=0,
