@@ -8,7 +8,8 @@ from apps.masterdata.saledata.models.product import (
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
-    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer, ProductForSaleDetailSerializer
+    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
+    ProductForSaleDetailSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,

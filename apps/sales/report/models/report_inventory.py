@@ -288,6 +288,107 @@ class ReportInventorySub(DataAbstractModel):
         raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
 
     @classmethod
+    def update_this_record_value_dict_for_periodic_inventory(
+            cls, this_record, log, period_mapped, sub_period_order, latest_value_dict
+    ):
+        # nếu kiểm kê định kì
+        if not this_record:  # nếu không có thì tạo, gán log
+            this_record = ReportInventoryProductWarehouse.objects.create(
+                tenant_id=log.tenant_id,
+                company_id=log.company_id,
+                product=log.product,
+                lot_mapped=log.lot_mapped,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                opening_balance_quantity=latest_value_dict['quantity'],
+                opening_balance_cost=latest_value_dict['cost'],
+                opening_balance_value=latest_value_dict['value'],
+                periodic_ending_balance_quantity=log.current_quantity,
+                periodic_ending_balance_cost=log.current_cost,
+                periodic_ending_balance_value=log.current_value,
+                sub_latest_log=log
+            )
+        else:  # có thì update giá cost, gán sub
+            this_record.periodic_ending_balance_quantity = log.periodic_current_quantity
+            this_record.periodic_ending_balance_cost = log.periodic_current_cost
+            this_record.periodic_ending_balance_value = log.periodic_current_value
+            this_record.sub_latest_log = log
+            # nếu kì đã đóng mà có giao dịch, mở lại, cost-value hiện tại trở về 0 (chưa chốt)
+            if this_record.periodic_closed:
+                this_record.periodic_closed = False
+                this_record.periodic_ending_balance_cost = 0
+                this_record.periodic_ending_balance_value = 0
+
+        if log.stock_type == 1:
+            # nếu là input thì cộng tổng SL nhập và tổng Value nhập
+            this_record.sum_input_quantity += log.quantity
+            this_record.sum_input_value += log.quantity * log.cost
+        else:
+            # nếu là xuất thì cập nhập SL xuất
+            this_record.sum_output_quantity += log.quantity
+            this_record.sum_output_value += log.quantity * log.cost
+        this_record.save(update_fields=[
+            'sum_input_quantity',
+            'sum_input_value',
+            'sum_output_quantity',
+            'sum_output_value',
+            'sub_latest_log',
+            'periodic_ending_balance_quantity',
+            'periodic_ending_balance_cost',
+            'periodic_ending_balance_value',
+            'periodic_closed'
+        ])
+
+    @classmethod
+    def update_this_record_value_dict_for_perpetual_inventory(
+            cls, this_record, log, period_mapped, sub_period_order, latest_value_dict
+    ):
+        if not this_record:  # không có thì tạo, gán log
+            this_record = ReportInventoryProductWarehouse.objects.create(
+                tenant_id=log.tenant_id,
+                company_id=log.company_id,
+                product=log.product,
+                lot_mapped=log.lot_mapped,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                opening_balance_quantity=latest_value_dict['quantity'],
+                opening_balance_cost=latest_value_dict['cost'],
+                opening_balance_value=latest_value_dict['value'],
+                ending_balance_quantity=log.current_quantity,
+                ending_balance_cost=log.current_cost,
+                ending_balance_value=log.current_value,
+                sub_latest_log=log
+            )
+        else:  # nếu có thì update giá cost, gán sub
+            this_record.ending_balance_quantity = log.current_quantity
+            this_record.ending_balance_cost = log.current_cost
+            this_record.ending_balance_value = log.current_value
+            this_record.sub_latest_log = log
+
+        if log.stock_type == 1:
+            # nếu là input thì cộng tổng SL nhập và tổng Value nhập
+            this_record.sum_input_quantity += log.quantity
+            this_record.sum_input_value += log.quantity * log.cost
+        else:
+            # nếu là xuất thì cập nhập SL xuất
+            this_record.sum_output_quantity += log.quantity
+            this_record.sum_output_value += log.quantity * log.cost
+        this_record.save(update_fields=[
+            'sum_input_quantity',
+            'sum_input_value',
+            'sum_output_quantity',
+            'sum_output_value',
+            'ending_balance_quantity',
+            'ending_balance_cost',
+            'ending_balance_value',
+            'sub_latest_log'
+        ])
+
+    @classmethod
     def update_this_record_value_dict(cls, log, period_mapped, sub_period_order, latest_value_dict, div):
         """
         Step 3: Hàm kiểm tra record quản lí giá cost của sp theo từng kho trong kì nay đã có hay chưa ?
@@ -309,98 +410,13 @@ class ReportInventorySub(DataAbstractModel):
 
             # nếu kiểm kê thường xuyên
             if div == 0:
-                if not this_record:  # không có thì tạo, gán log
-                    this_record = ReportInventoryProductWarehouse.objects.create(
-                        tenant_id=log.tenant_id,
-                        company_id=log.company_id,
-                        product=log.product,
-                        lot_mapped=log.lot_mapped,
-                        warehouse=log.warehouse,
-                        period_mapped=period_mapped,
-                        sub_period_order=sub_period_order,
-                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
-                        opening_balance_quantity=latest_value_dict['quantity'],
-                        opening_balance_cost=latest_value_dict['cost'],
-                        opening_balance_value=latest_value_dict['value'],
-                        ending_balance_quantity=log.current_quantity,
-                        ending_balance_cost=log.current_cost,
-                        ending_balance_value=log.current_value,
-                        sub_latest_log=log
-                    )
-                else:  # nếu có thì update giá cost, gán sub
-                    this_record.ending_balance_quantity = log.current_quantity
-                    this_record.ending_balance_cost = log.current_cost
-                    this_record.ending_balance_value = log.current_value
-                    this_record.sub_latest_log = log
-
-                if log.stock_type == 1:
-                    # nếu là input thì cộng tổng SL nhập và tổng Value nhập
-                    this_record.sum_input_quantity += log.quantity
-                    this_record.sum_input_value += log.quantity * log.cost
-                else:
-                    # nếu là xuất thì cập nhập SL xuất
-                    this_record.sum_output_quantity += log.quantity
-                    this_record.sum_output_value += log.quantity * log.cost
-                this_record.save(update_fields=[
-                    'sum_input_quantity',
-                    'sum_input_value',
-                    'sum_output_quantity',
-                    'sum_output_value',
-                    'ending_balance_quantity',
-                    'ending_balance_cost',
-                    'ending_balance_value',
-                    'sub_latest_log'
-                ])
+                cls.update_this_record_value_dict_for_perpetual_inventory(
+                    this_record, log, period_mapped, sub_period_order, latest_value_dict
+                )
             else:
-                # nếu kiểm kê định kì
-                if not this_record:  # nếu không có thì tạo, gán log
-                    this_record = ReportInventoryProductWarehouse.objects.create(
-                        tenant_id=log.tenant_id,
-                        company_id=log.company_id,
-                        product=log.product,
-                        lot_mapped=log.lot_mapped,
-                        warehouse=log.warehouse,
-                        period_mapped=period_mapped,
-                        sub_period_order=sub_period_order,
-                        sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
-                        opening_balance_quantity=latest_value_dict['quantity'],
-                        opening_balance_cost=latest_value_dict['cost'],
-                        opening_balance_value=latest_value_dict['value'],
-                        periodic_ending_balance_quantity=log.current_quantity,
-                        periodic_ending_balance_cost=log.current_cost,
-                        periodic_ending_balance_value=log.current_value,
-                        sub_latest_log=log
-                    )
-                else:  # có thì update giá cost, gán sub
-                    this_record.periodic_ending_balance_quantity = log.periodic_current_quantity
-                    this_record.periodic_ending_balance_cost = log.periodic_current_cost
-                    this_record.periodic_ending_balance_value = log.periodic_current_value
-                    this_record.sub_latest_log = log
-                    # nếu kì đã đóng mà có giao dịch, mở lại, cost-value hiện tại trở về 0 (chưa chốt)
-                    if this_record.periodic_closed:
-                        this_record.periodic_closed = False
-                        this_record.periodic_ending_balance_cost = 0
-                        this_record.periodic_ending_balance_value = 0
-
-                if log.stock_type == 1:
-                    # nếu là input thì cộng tổng SL nhập và tổng Value nhập
-                    this_record.sum_input_quantity += log.quantity
-                    this_record.sum_input_value += log.quantity * log.cost
-                else:
-                    # nếu là xuất thì cập nhập SL xuất
-                    this_record.sum_output_quantity += log.quantity
-                    this_record.sum_output_value += log.quantity * log.cost
-                this_record.save(update_fields=[
-                    'sum_input_quantity',
-                    'sum_input_value',
-                    'sum_output_quantity',
-                    'sum_output_value',
-                    'sub_latest_log',
-                    'periodic_ending_balance_quantity',
-                    'periodic_ending_balance_cost',
-                    'periodic_ending_balance_value',
-                    'periodic_closed'
-                ])
+                cls.update_this_record_value_dict_for_periodic_inventory(
+                    this_record, log, period_mapped, sub_period_order, latest_value_dict
+                )
 
             # cập nhập log mới nhất, không có thì tạo mới
             latest_log_obj = log.product.latest_log_product.filter(
