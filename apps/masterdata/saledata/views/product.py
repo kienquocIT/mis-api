@@ -28,6 +28,9 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
 class ProductTypeList(BaseListMixin, BaseCreateMixin):
     queryset = ProductType.objects
     search_fields = ['title']
+    filterset_fields = {
+        'is_default': ['exact'],
+    }
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
