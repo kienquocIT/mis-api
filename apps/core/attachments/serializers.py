@@ -213,6 +213,8 @@ class FolderCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_parent_n(cls, value):
         try:
+            if value is None:
+                return value
             return Folder.objects.get(id=value)
         except Folder.DoesNotExist:
             raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
@@ -236,6 +238,8 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_parent_n(cls, value):
         try:
+            if value is None:
+                return value
             return Folder.objects.get(id=value)
         except Folder.DoesNotExist:
             raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})

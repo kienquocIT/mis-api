@@ -799,13 +799,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Products use for sale/ purchase/ inventory applications
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
     sale_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
-    cost_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -820,7 +820,6 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'purchase_information',
             'price_list',
             'product_choice',
-            'cost_list',
         )
 
     @classmethod
@@ -841,8 +840,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'id': str(price.price_list_id), 'title': price.price_list.title,
                 'value': price.price, 'is_default': price.price_list.is_default,
                 'price_status': cls.check_status_price(
-                    price.price_list.valid_time_start,
-                    price.price_list.valid_time_end
+                    price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
             }
             for price in obj.product_price_product.all()
@@ -852,8 +850,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': str(product_type.id), 'title': product_type.title,
-                'code': product_type.code
+                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': str(obj.general_product_category_id), 'title': obj.general_product_category.title,
@@ -882,9 +879,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'id': str(obj.sale_currency_using_id), 'title': obj.sale_currency_using.title,
                 'code': obj.sale_currency_using.code,
             } if obj.sale_currency_using else {},
-            'length': obj.length,
-            'width': obj.width,
-            'height': obj.height,
+            'length': obj.length, 'width': obj.width, 'height': obj.height,
         }
 
     @classmethod
@@ -901,6 +896,19 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_tax.code, 'rate': obj.purchase_tax.rate,
             } if obj.purchase_tax else {},
         }
+
+
+class ProductForSaleDetailSerializer(serializers.ModelSerializer):
+    cost_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'cost_list',
+        )
 
     @classmethod
     def get_cost_list(cls, obj):
@@ -923,9 +931,7 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_group(cls, obj):
         return {
-            'id': obj.group_id,
-            'title': obj.group.title,
-            'is_referenced_unit': obj.is_referenced_unit
+            'id': obj.group_id, 'title': obj.group.title, 'is_referenced_unit': obj.is_referenced_unit
         } if obj.group else {}
 
 
