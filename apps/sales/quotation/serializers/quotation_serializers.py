@@ -297,8 +297,10 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                     if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
-                    if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
+                    is_change = validate_data.get('is_change', False)
+                    if is_change is False:
+                        if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return True
 
     def validate(self, validate_data):
