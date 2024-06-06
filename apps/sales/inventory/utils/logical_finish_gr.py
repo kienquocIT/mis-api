@@ -81,21 +81,23 @@ class GRFinishHandler:
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
             if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
                 uom_base, final_ratio, lot_data, serial_data = cls.setup_data_push_by_po(
-                    instance=instance,
-                    gr_warehouse=gr_warehouse,
+                    instance=instance, gr_warehouse=gr_warehouse,
                 )
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_base.id,
-                    tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                    amount=gr_warehouse.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                    lot_data=lot_data,
-                    serial_data=serial_data,
-                )
+                gr_product = gr_warehouse.goods_receipt_product
+                if gr_product:
+                    if gr_product.product:
+                        ProductWareHouse.push_from_receipt(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_id=gr_product.product_id,
+                            warehouse_id=gr_warehouse.warehouse_id,
+                            uom_id=uom_base.id,
+                            tax_id=gr_product.product.purchase_tax_id,
+                            amount=gr_warehouse.quantity_import * final_ratio,
+                            unit_price=gr_product.product_unit_price,
+                            lot_data=lot_data,
+                            serial_data=serial_data,
+                        )
         return True
 
     @classmethod
@@ -144,18 +146,21 @@ class GRFinishHandler:
                     instance=instance,
                     gr_warehouse=gr_warehouse,
                 )
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_base.id,
-                    tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                    amount=gr_warehouse.goods_receipt_product.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                    lot_data=lot_data,
-                    serial_data=serial_data,
-                )
+                gr_product = gr_warehouse.goods_receipt_product
+                if gr_product:
+                    if gr_product.product:
+                        ProductWareHouse.push_from_receipt(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_id=gr_product.product_id,
+                            warehouse_id=gr_warehouse.warehouse_id,
+                            uom_id=uom_base.id,
+                            tax_id=gr_product.product.purchase_tax_id,
+                            amount=gr_product.quantity_import * final_ratio,
+                            unit_price=gr_product.product_unit_price,
+                            lot_data=lot_data,
+                            serial_data=serial_data,
+                        )
         return True
 
     @classmethod

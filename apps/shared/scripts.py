@@ -41,7 +41,7 @@ from ..eoffice.leave.models import LeaveAvailable
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
@@ -1416,6 +1416,7 @@ def reset_and_run_product_info():
     for return_obj in GoodsReturn.objects.all():
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
+    return True
 
 
 def reset_and_run_warehouse_stock(run_type=0):
@@ -1445,6 +1446,60 @@ def reset_and_run_warehouse_stock(run_type=0):
                             source = {"uom": data['uom'], "quantity": data['stock']}
                             DeliHandler.minus_tock(source, product_warehouse, config)
     print('reset_and_run_warehouse_stock done.')
+    return True
+
+
+def reset_and_run_pw_lot_transaction(run_type=0):
+    if run_type == 0:  # goods receipt
+        ProductWareHouseLotTransaction.objects.filter(type_transaction=0).delete()
+        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+            for gr_warehouse in gr.goods_receipt_warehouse_goods_receipt.all():
+                if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
+                    gr_product = gr_warehouse.goods_receipt_product
+                    uom_base, final_ratio, lot_data, serial_data = GRFinishHandler.setup_data_push_by_po(
+                        instance=gr, gr_warehouse=gr_warehouse,
+                    )
+                    if gr_product and lot_data:
+                        product_warehouse = ProductWareHouse.objects.filter(
+                            product_id=gr_product.product_id, warehouse_id=gr_warehouse.warehouse_id, uom_id=uom_base.id
+                        ).first()
+                        if product_warehouse:
+                            for lot in lot_data:
+                                pw_lot = ProductWareHouseLot.objects.filter(
+                                    tenant_id=gr.tenant_id, company_id=gr.company_id,
+                                    product_warehouse_id=product_warehouse.id, lot_number=lot.get('lot_number', ''),
+                                ).first()
+                                if pw_lot:
+                                    data = {
+                                        'pw_lot_id': pw_lot.id,
+                                        'goods_receipt_id': gr.id,
+                                        'delivery_id': None,
+                                        'quantity': lot.get('quantity_import', 0),
+                                        'type_transaction': 0,
+                                    }
+                                    ProductWareHouseLotTransaction.create(data=data)
+    if run_type == 1:  # delivery
+        ProductWareHouseLotTransaction.objects.filter(type_transaction=1).delete()
+        for deli_product in OrderDeliveryProduct.objects.all():
+            for lot in deli_product.delivery_lot_delivery_product.all():
+                final_ratio = 1
+                uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
+                if lot.product_warehouse_lot:
+                    product_warehouse = lot.product_warehouse_lot.product_warehouse
+                    if product_warehouse:
+                        uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                        if uom_wh_rate and uom_delivery_rate:
+                            final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
+                        data = {
+                            'pw_lot_id': lot.product_warehouse_lot.id,
+                            'goods_receipt_id': None,
+                            'delivery_id': deli_product.delivery_sub_id,
+                            'quantity': lot.quantity_delivery * final_ratio,
+                            'type_transaction': 1,
+                        }
+                        ProductWareHouseLotTransaction.create(data=data)
+    print('reset_and_run_pw_lot_transaction done.')
+    return True
 
 
 def reset_opportunity_stage():
@@ -1818,3 +1873,32 @@ def report_rerun(company_id, start_month):
             instance.prepare_data_for_logging(instance)
 
     print('Done')
+
+
+def update_product_warehouse_uom_base():
+    for product in Product.objects.filter(id="e12e4dd2-fb4e-479d-ae8a-c902f3dbc896"):
+        if product.general_uom_group:
+            uom_base = product.general_uom_group.uom_reference
+            if uom_base:
+                for pw_common_base in ProductWareHouse.objects.filter(
+                        product_id=product.id, uom_id=uom_base.id
+                ):
+                    total_receipt = 0
+                    total_sold = 0
+                    for product_warehouse in ProductWareHouse.objects.filter(
+                            product_id=product.id, warehouse=pw_common_base.warehouse_id
+                    ):
+                        final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+                        total_receipt += product_warehouse.receipt_amount * final_ratio
+                        total_sold += product_warehouse.sold_amount * final_ratio
+                        if product_warehouse.uom_id != pw_common_base.uom_id:
+                            product_warehouse.receipt_amount = 0
+                            product_warehouse.sold_amount = 0
+                            product_warehouse.stock_amount = 0
+                            product_warehouse.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+                    pw_common_base.receipt_amount = total_receipt
+                    pw_common_base.sold_amount = total_sold
+                    pw_common_base.stock_amount = total_receipt - total_sold
+                    pw_common_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+    print('update_product_warehouse_uom_base done.')
+    return True

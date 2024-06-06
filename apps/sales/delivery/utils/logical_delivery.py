@@ -64,24 +64,16 @@ class DeliHandler:
         if not config:
             get_config = DeliveryConfig.objects.filter(company_id=instance.company_id).first()
             if get_config:
-                config = {
-                    "is_picking": get_config.is_picking,
-                    "is_partial_ship": get_config.is_partial_ship
-                }
+                config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.delivery_data:
                 for data in deli_product.delivery_data:
                     if all(key in data for key in ('warehouse', 'uom', 'stock')):
                         product_warehouse = ProductWareHouse.objects.filter(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product_id=deli_product.product_id,
-                            warehouse_id=data['warehouse'],
+                            tenant_id=instance.tenant_id, company_id=instance.company_id,
+                            product_id=deli_product.product_id, warehouse_id=data['warehouse'],
                         )
-                        source = {
-                            "uom": data['uom'],
-                            "quantity": data['stock']
-                        }
+                        source = {"uom": data['uom'], "quantity": data['stock']}
                         DeliHandler.minus_tock(source, product_warehouse, config)
         return True
 
@@ -113,7 +105,7 @@ class DeliHandler:
                         'id': str(instance.id),
                         'title': instance.title,
                         'code': instance.code,
-                        'system_status': instance.system_status,
+                        'system_status': 3,
                         'date_created': str(instance.date_created),
                         # custom
                         'quantity': quantity,
