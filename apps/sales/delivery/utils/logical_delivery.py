@@ -105,7 +105,7 @@ class DeliHandler:
                         'id': str(instance.id),
                         'title': instance.title,
                         'code': instance.code,
-                        'system_status': instance.system_status,
+                        'system_status': 3,
                         'date_created': str(instance.date_created),
                         # custom
                         'quantity': quantity,
