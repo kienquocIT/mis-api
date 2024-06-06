@@ -21,7 +21,7 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery', 'return_to_warehouse'
+            'sale_order', 'delivery',
         )
 
     @swagger_auto_schema(
@@ -57,7 +57,7 @@ class GoodsReturnDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery', 'product', 'uom'
+            'sale_order', 'delivery',
         ).prefetch_related(
             'goods_return_product_detail__lot_no',
             'goods_return_product_detail__serial_no',

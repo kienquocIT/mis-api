@@ -15,11 +15,9 @@ class GoodsReturn(DataAbstractModel):
     sale_order = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE)
     note = models.TextField(blank=True)
     delivery = models.ForeignKey('delivery.OrderDeliverySub', on_delete=models.CASCADE, null=True)
-    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
-    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
-    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
-    product_detail_list = models.JSONField(default=list)
-    data_line_detail = models.JSONField(default=list, help_text="to_quick_load_Line_detail_tab")
+    product_detail_list = models.JSONField(default=list, help_text="data to create mapped items")
+
+    data_line_detail_table = models.JSONField(default=list, help_text="to_quick_load_line_detail_table")
 
     class Meta:
         verbose_name = 'Goods Return'
@@ -164,6 +162,10 @@ class GoodsReturn(DataAbstractModel):
 class GoodsReturnProductDetail(DataAbstractModel):
     goods_return = models.ForeignKey(GoodsReturn, on_delete=models.CASCADE, related_name='goods_return_product_detail')
     type = models.SmallIntegerField(choices=((0, 'Default'), (1, 'LOT'), (2, 'Serial')), default=0)
+
+    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
 
     delivery_item = models.ForeignKey('delivery.OrderDeliveryProduct', on_delete=models.CASCADE, null=True)
 

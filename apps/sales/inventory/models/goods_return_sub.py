@@ -6,7 +6,7 @@ from apps.sales.delivery.serializers import OrderDeliverySubUpdateSerializer
 
 class GoodsReturnSubSerializerForNonPicking:
     @classmethod
-    def create_prod(cls, new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, gr_product):
+    def create_prod(cls, new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, product):
         """
         (TH delivery đã DONE hết)
         Trả hàng 'gr_product':
@@ -20,8 +20,8 @@ class GoodsReturnSubSerializerForNonPicking:
         """
         prod_arr = []
         for obj in OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub_obj):
-            obj_return_quantity = return_quantity if obj.product == gr_product else 0
-            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            obj_return_quantity = return_quantity if obj.product == product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             new_prod = OrderDeliveryProduct(
                 delivery_sub=new_sub,
                 product=obj.product,
@@ -41,7 +41,7 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def update_prod(cls, ready_sub, return_quantity, redelivery_quantity, gr_product, for_picking):
+    def update_prod(cls, ready_sub, return_quantity, redelivery_quantity, product, for_picking):
         """
         (TH còn phiếu delivery chưa DONE)
         B0: 'ready_sub' là phiếu delivery hiện tại đang Ready
@@ -55,8 +55,8 @@ class GoodsReturnSubSerializerForNonPicking:
         B3: Done
         """
         for obj in OrderDeliveryProduct.objects.filter(delivery_sub=ready_sub):
-            obj_return_quantity = return_quantity if obj.product == gr_product else 0
-            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            obj_return_quantity = return_quantity if obj.product == product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             if obj_return_quantity > obj.delivery_quantity:
                 raise serializers.ValidationError({
                     'Return quantity':
@@ -77,19 +77,19 @@ class GoodsReturnSubSerializerForNonPicking:
         return True
 
     @classmethod
-    def create_product_warehouse_for_general(cls, gr_obj, return_quantity):
+    def create_product_warehouse_for_general(cls, goods_return, item, return_quantity):
         # get delivery product
         delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=gr_obj.delivery,
-            product=gr_obj.product
+            delivery_sub=goods_return.delivery,
+            product_id=item.product_id
         ).first()
         if delivery_product:
             ProductWareHouse.push_from_receipt(
-                tenant_id=gr_obj.tenant_id,
-                company_id=gr_obj.company_id,
-                product_id=gr_obj.product_id,
-                warehouse_id=gr_obj.return_to_warehouse_id,
-                uom_id=gr_obj.uom_id,
+                tenant_id=goods_return.tenant_id,
+                company_id=goods_return.company_id,
+                product_id=item.product_id,
+                warehouse_id=item.return_to_warehouse_id,
+                uom_id=item.uom_id,
                 tax_id=delivery_product.product.sale_tax_id,
                 amount=return_quantity,
                 unit_price=delivery_product.product_unit_price,
@@ -100,26 +100,26 @@ class GoodsReturnSubSerializerForNonPicking:
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
 
     @classmethod
-    def create_product_warehouse_for_lot(cls, gr_obj, return_quantity, sample_lot):
+    def create_product_warehouse_for_lot(cls, goods_return, item, return_quantity, sample_lot):
         # get delivery product
         delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=gr_obj.delivery,
-            product=gr_obj.product
+            delivery_sub=goods_return.delivery,
+            product_id=item.product_id
         ).first()
         if delivery_product:
             new_prd_wh = ProductWareHouse.objects.filter(
-                tenant_id=gr_obj.tenant_id,
-                company_id=gr_obj.company_id,
-                product=gr_obj.product,
-                warehouse=gr_obj.return_to_warehouse
+                tenant_id=goods_return.tenant_id,
+                company_id=goods_return.company_id,
+                product_id=item.product_id,
+                warehouse_id=item.return_to_warehouse_id
             ).first()
             if not new_prd_wh:
                 new_prd_wh = ProductWareHouse.objects.create(
-                    tenant_id=gr_obj.tenant_id,
-                    company_id=gr_obj.company_id,
-                    product=gr_obj.product,
-                    uom=gr_obj.uom,
-                    warehouse=gr_obj.return_to_warehouse,
+                    tenant_id=goods_return.tenant_id,
+                    company_id=goods_return.company_id,
+                    product_id=item.product_id,
+                    uom_id=item.uom_id,
+                    warehouse_id=item.return_to_warehouse_id,
                     tax=delivery_product.product.sale_tax,
                     unit_price=delivery_product.product_unit_price,
                     stock_amount=return_quantity,
@@ -127,19 +127,19 @@ class GoodsReturnSubSerializerForNonPicking:
                     sold_amount=0,
                     picked_ready=0,
                     product_data={
-                        'id': gr_obj.product_id,
-                        'code': gr_obj.product.code,
-                        'title': gr_obj.product.title
+                        'id': item.product_id,
+                        'code': item.product.code,
+                        'title': item.product.title
                     },
                     warehouse_data={
-                        'id': gr_obj.return_to_warehouse_id,
-                        'code': gr_obj.return_to_warehouse.code,
-                        'title': gr_obj.return_to_warehouse.title
+                        'id': item.return_to_warehouse_id,
+                        'code': item.return_to_warehouse.code,
+                        'title': item.return_to_warehouse.title
                     },
                     uom_data={
-                        'id': gr_obj.uom_id,
-                        'code': gr_obj.uom.code,
-                        'title': gr_obj.uom.title
+                        'id': item.uom_id,
+                        'code': item.uom.code,
+                        'title': item.uom.title
                     },
                     tax_data={
                         'id': delivery_product.product.sale_tax_id,
@@ -153,8 +153,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 new_prd_wh.sold_amount += return_quantity
                 new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
             ProductWareHouseLot.objects.create(
-                tenant_id=gr_obj.tenant_id,
-                company_id=gr_obj.company_id,
+                tenant_id=goods_return.tenant_id,
+                company_id=goods_return.company_id,
                 product_warehouse=new_prd_wh,
                 lot_number=sample_lot.lot_number,
                 quantity_import=return_quantity,
@@ -166,26 +166,26 @@ class GoodsReturnSubSerializerForNonPicking:
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
 
     @classmethod
-    def create_product_warehouse_for_sn(cls, gr_obj, return_quantity, sample_sn):
+    def create_product_warehouse_for_sn(cls, goods_return, item, return_quantity, sample_sn):
         # get delivery product
         delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=gr_obj.delivery,
-            product=gr_obj.product
+            delivery_sub=goods_return.delivery,
+            product_id=item.product_id
         ).first()
         if delivery_product:
             new_prd_wh = ProductWareHouse.objects.filter(
-                tenant_id=gr_obj.tenant_id,
-                company_id=gr_obj.company_id,
-                product=gr_obj.product,
-                warehouse=gr_obj.return_to_warehouse
+                tenant_id=goods_return.tenant_id,
+                company_id=goods_return.company_id,
+                product_id=item.product_id,
+                warehouse_id=item.return_to_warehouse_id
             ).first()
             if not new_prd_wh:
                 new_prd_wh = ProductWareHouse.objects.create(
-                    tenant_id=gr_obj.tenant_id,
-                    company_id=gr_obj.company_id,
-                    product=gr_obj.product,
-                    uom=gr_obj.uom,
-                    warehouse=gr_obj.return_to_warehouse,
+                    tenant_id=goods_return.tenant_id,
+                    company_id=goods_return.company_id,
+                    product_id=item.product_id,
+                    uom_id=item.uom_id,
+                    warehouse_id=item.return_to_warehouse_id,
                     tax=delivery_product.product.sale_tax,
                     unit_price=delivery_product.product_unit_price,
                     stock_amount=return_quantity,
@@ -193,19 +193,19 @@ class GoodsReturnSubSerializerForNonPicking:
                     sold_amount=0,
                     picked_ready=0,
                     product_data={
-                        'id': gr_obj.product_id,
-                        'code': gr_obj.product.code,
-                        'title': gr_obj.product.title
+                        'id': item.product_id,
+                        'code': item.product.code,
+                        'title': item.product.title
                     },
                     warehouse_data={
-                        'id': gr_obj.return_to_warehouse_id,
-                        'code': gr_obj.return_to_warehouse.code,
-                        'title': gr_obj.return_to_warehouse.title
+                        'id': item.return_to_warehouse_id,
+                        'code': item.return_to_warehouse.code,
+                        'title': item.return_to_warehouse.title
                     },
                     uom_data={
-                        'id': gr_obj.uom_id,
-                        'code': gr_obj.uom.code,
-                        'title': gr_obj.uom.title
+                        'id': item.uom_id,
+                        'code': item.uom.code,
+                        'title': item.uom.title
                     },
                     tax_data={
                         'id': delivery_product.product.sale_tax_id,
@@ -219,8 +219,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 new_prd_wh.sold_amount += 1
                 new_prd_wh.save(update_fields=['stock_amount', 'sold_amount'])
             ProductWareHouseSerial.objects.create(
-                tenant_id=gr_obj.tenant_id,
-                company_id=gr_obj.company_id,
+                tenant_id=goods_return.tenant_id,
+                company_id=goods_return.company_id,
                 product_warehouse=new_prd_wh,
                 vendor_serial_number=sample_sn.vendor_serial_number,
                 serial_number=sample_sn.serial_number,
@@ -233,51 +233,51 @@ class GoodsReturnSubSerializerForNonPicking:
         raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
 
     @classmethod
-    def update_warehouse_prod_type_general(cls, product_wh, item, gr_obj, return_quantity):
+    def update_warehouse_prod_type_general(cls, product_wh, item, goods_return, return_quantity):
         if product_wh:
-            product_wh.stock_amount += item.get('default_return_number')
-            product_wh.sold_amount -= item.get('default_return_number')
+            product_wh.stock_amount += item.default_return_number
+            product_wh.sold_amount -= item.default_return_number
             product_wh.save(update_fields=['stock_amount', 'sold_amount'])
         else:
-            cls.create_product_warehouse_for_general(gr_obj, return_quantity)
+            cls.create_product_warehouse_for_general(goods_return, item, return_quantity)
 
     @classmethod
-    def update_warehouse_prod_type_lot(cls, product_wh, item, gr_obj, return_quantity):
-        lot = ProductWareHouseLot.objects.filter(id=item.get('lot_no_id'))
+    def update_warehouse_prod_type_lot(cls, product_wh, item, goods_return, return_quantity):
+        lot = ProductWareHouseLot.objects.filter(id=item.lot_no_id)
         if product_wh:
             lot_wh = lot.filter(product_warehouse=product_wh).first()
             if lot_wh:
-                lot_wh.product_warehouse.stock_amount += item.get('lot_return_number')
-                lot_wh.product_warehouse.sold_amount -= item.get('lot_return_number')
-                lot_wh.quantity_import += item.get('lot_return_number')
+                lot_wh.product_warehouse.stock_amount += item.lot_return_number
+                lot_wh.product_warehouse.sold_amount -= item.lot_return_number
+                lot_wh.quantity_import += item.lot_return_number
                 lot_wh.save(update_fields=['quantity_import'])
                 lot_wh.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
             else:
                 if lot.first():
                     ProductWareHouseLot.objects.create(
-                        tenant_id=gr_obj.tenant_id,
-                        company_id=gr_obj.company_id,
+                        tenant_id=goods_return.tenant_id,
+                        company_id=goods_return.company_id,
                         product_warehouse=product_wh,
                         lot_number=lot.first().lot_number,
-                        quantity_import=item.get('lot_return_number'),
-                        raw_quantity_import=item.get('lot_return_number', 0),
+                        quantity_import=item.lot_return_number,
+                        raw_quantity_import=item.lot_return_number,
                         expire_date=lot.first().expire_date,
                         manufacture_date=lot.first().manufacture_date
                     )
-                    product_wh.stock_amount += item.get('lot_return_number')
-                    product_wh.sold_amount -= item.get('lot_return_number')
+                    product_wh.stock_amount += item.lot_return_number
+                    product_wh.sold_amount -= item.lot_return_number
                     product_wh.save(update_fields=['stock_amount', 'sold_amount'])
                 else:
                     raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
         else:
             if lot.first():
-                cls.create_product_warehouse_for_lot(gr_obj, return_quantity, lot.first())
+                cls.create_product_warehouse_for_lot(goods_return, item, return_quantity, lot.first())
             else:
                 raise serializers.ValidationError({'No LOT': 'This Lot is not found.'})
 
     @classmethod
-    def update_warehouse_prod_type_sn(cls, product_wh, item, gr_obj, return_quantity):
-        serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id'))
+    def update_warehouse_prod_type_sn(cls, product_wh, item, goods_return, return_quantity):
+        serial = ProductWareHouseSerial.objects.filter(id=item.serial_no_id)
         if product_wh:
             serial_wh = serial.filter(product_warehouse=product_wh).first()
             if serial_wh:
@@ -289,8 +289,8 @@ class GoodsReturnSubSerializerForNonPicking:
             else:
                 if serial.first():
                     ProductWareHouseSerial.objects.create(
-                        tenant_id=gr_obj.tenant_id,
-                        company_id=gr_obj.company_id,
+                        tenant_id=goods_return.tenant_id,
+                        company_id=goods_return.company_id,
                         product_warehouse=product_wh,
                         vendor_serial_number=serial.first().vendor_serial_number,
                         serial_number=serial.first().serial_number,
@@ -306,81 +306,67 @@ class GoodsReturnSubSerializerForNonPicking:
                     raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
         else:
             if serial.first():
-                cls.create_product_warehouse_for_sn(gr_obj, return_quantity, serial.first())
+                cls.create_product_warehouse_for_sn(goods_return, item, return_quantity, serial.first())
             else:
                 raise serializers.ValidationError({'No SN': 'This Serial is not found.'})
 
     @classmethod
-    def update_warehouse_prod(cls, product_detail_list, gr_obj, return_quantity):
+    def update_warehouse_prod(cls, item, goods_return, return_quantity):
         """
         Có 3 TH:
         1) Nếu product không có phương thức quản lí tồn kho: cập nhập trong ProductWareHouse
         2) Nếu product quản lí ồn kho = LOT: cập nhập trong ProductWareHouse & ProductWareHouseLot
         3) Nếu product quản lí ồn kho = SN: cập nhập trong ProductWareHouse & ProductWareHouseSerial
         """
-        gr_product = gr_obj.product
         product_wh = ProductWareHouse.objects.filter(
-            tenant_id=gr_obj.tenant_id,
-            company_id=gr_obj.company_id,
-            product=gr_product,
-            warehouse=gr_obj.return_to_warehouse
+            tenant_id=goods_return.tenant_id,
+            company_id=goods_return.company_id,
+            product_id=item.product_id,
+            warehouse_id=item.return_to_warehouse_id
         ).first()
-        for item in product_detail_list:
-            type_value = item.get('type')
-            if type_value == 0:  # General
-                cls.update_warehouse_prod_type_general(product_wh, item, gr_obj, return_quantity)
-            elif type_value == 1:  # LOT
-                cls.update_warehouse_prod_type_lot(product_wh, item, gr_obj, return_quantity)
-            elif type_value == 2:  # SN
-                cls.update_warehouse_prod_type_sn(product_wh, item, gr_obj, return_quantity)
+        type_value = item.type
+        if type_value == 0:  # General
+            cls.update_warehouse_prod_type_general(product_wh, item, goods_return, return_quantity)
+        elif type_value == 1:  # LOT
+            cls.update_warehouse_prod_type_lot(product_wh, item, goods_return, return_quantity)
+        elif type_value == 2:  # SN
+            cls.update_warehouse_prod_type_sn(product_wh, item, goods_return, return_quantity)
         return True
 
     @classmethod
-    def get_return_data(cls, product_detail_list):
-        returned_product_by_sn = []
-        returned_product_by_lot = []
-        delivery_item_id = None
+    def get_return_data(cls, item):
+        delivery_item_id = item.delivery_item_id
+        lot_return_id = None
+        sn_return_id = None
         lot_return_number = 0
         default_return_number = 0
-        for item in product_detail_list:
-            if item.get('type') == 0:
-                delivery_item_id = item.get('delivery_item_id')
-                default_return_number = item.get('default_return_number')
-            elif item.get('type') == 1:
-                returned_product_by_lot.append(item.get('lot_no_id'))
-                lot_return_number = item.get('lot_return_number')
-            elif item.get('type') == 2:
-                returned_product_by_sn.append(item.get('serial_no_id'))
-        return (
-            returned_product_by_lot,
-            returned_product_by_sn,
-            delivery_item_id,
-            lot_return_number,
-            default_return_number
-        )
+        if item.type == 0:
+            default_return_number = item.default_return_number
+        elif item.type == 1:
+            lot_return_id = item.lot_no_id
+            lot_return_number = item.lot_return_number
+        elif item.type == 2:
+            sn_return_id = item.serial_no_id
+        return delivery_item_id, lot_return_id, sn_return_id, lot_return_number, default_return_number
 
     @classmethod
-    def update_delivery_product_state(cls, returned_delivery, product_detail_list):
-        (
-            returned_product_by_lot,
-            returned_product_by_sn,
-            delivery_item_id,
-            lot_return_number,
-            default_return_number
-        ) = cls.get_return_data(product_detail_list)
-        if len(returned_product_by_lot) > 0:
+    def update_delivery_product_state(cls, returned_delivery, delivery_item):
+        delivery_item_id, lot_return_id, sn_return_id, lot_return_number, default_return_number = cls.get_return_data(
+            delivery_item
+        )
+        if lot_return_id:
             for item in returned_delivery.delivery_lot_delivery_sub.all():
-                if str(item.product_warehouse_lot_id) in returned_product_by_lot:
+                if str(item.product_warehouse_lot_id) == str(lot_return_id):
                     item.returned_quantity += lot_return_number
                     item.save(update_fields=['returned_quantity'])
-        elif len(returned_product_by_sn) > 0:
+        elif sn_return_id:
             for item in returned_delivery.delivery_serial_delivery_sub.all():
-                if str(item.product_warehouse_serial_id) in returned_product_by_sn:
+                if str(item.product_warehouse_serial_id) == str(sn_return_id):
                     item.is_returned = True
                     item.save(update_fields=['is_returned'])
         else:
             for item in returned_delivery.delivery_product_delivery_sub.all():
-                if str(item.id) == delivery_item_id:
+                if str(item.id) == str(delivery_item_id):
                     item.returned_quantity_default += default_return_number
                     item.save(update_fields=['returned_quantity_default'])
         return True
@@ -396,75 +382,76 @@ class GoodsReturnSubSerializerForNonPicking:
                + Nếu không giao lại: UPDATE product warehouse
         """
         returned_delivery = goods_return.delivery
-        return_quantity = 0
-        redelivery_quantity = 0
-        for item in goods_return.product_detail_list:
-            if item.get('type') == 0:
-                return_quantity += item.get('default_return_number', 0)
-                redelivery_quantity += item.get('default_redelivery_number', 0)
-            elif item.get('type') == 1:
-                return_quantity += item.get('lot_return_number', 0)
-                redelivery_quantity += item.get('lot_redelivery_number', 0)
-            elif item.get('type') == 2:
-                return_quantity += item.get('is_return', 0)
-                redelivery_quantity += item.get('is_redelivery', 0)
-        if redelivery_quantity > return_quantity:
-            raise serializers.ValidationError({
-                'Redelivery quantity':
-                    f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
-            })
-        cls.update_delivery_product_state(returned_delivery, goods_return.product_detail_list)
-        if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
-            ready_sub = returned_delivery.order_delivery.sub
-            ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
-            ready_sub.delivered_quantity_before -= return_quantity
-            ready_sub.remaining_quantity += redelivery_quantity
-            if not for_picking:
-                ready_sub.ready_quantity += redelivery_quantity
-            ready_sub.save(update_fields=[
-                'delivery_quantity', 'delivered_quantity_before',
-                'remaining_quantity', 'ready_quantity'
-            ])
-            cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product, for_picking)
-            cls.update_warehouse_prod(goods_return.product_detail_list, goods_return, return_quantity)
-        elif goods_return.sale_order.delivery_status == 3:  # Done delivery
-            if redelivery_quantity != 0:
-                delivery_sub_obj = returned_delivery.order_delivery.sub
-                new_sub = OrderDeliverySub.objects.create(
-                    company_id=delivery_sub_obj.company_id,
-                    tenant_id=delivery_sub_obj.tenant_id,
-                    order_delivery=delivery_sub_obj.order_delivery,
-                    date_done=None,
-                    code=OrderDeliverySubUpdateSerializer.create_new_code(),
-                    previous_step=delivery_sub_obj,
-                    times=delivery_sub_obj.times + 1,
-                    delivery_quantity=delivery_sub_obj.delivery_quantity - return_quantity + redelivery_quantity,
-                    delivered_quantity_before=delivery_sub_obj.delivery_quantity - return_quantity,
-                    remaining_quantity=redelivery_quantity,
-                    ready_quantity=redelivery_quantity,
-                    delivery_data=None,
-                    is_updated=False,
-                    state=1,  # ready
-                    sale_order_data=delivery_sub_obj.sale_order_data,
-                    estimated_delivery_date=delivery_sub_obj.estimated_delivery_date,
-                    actual_delivery_date=delivery_sub_obj.actual_delivery_date,
-                    customer_data=delivery_sub_obj.customer_data,
-                    contact_data=delivery_sub_obj.contact_data,
-                    config_at_that_point=delivery_sub_obj.config_at_that_point,
-                    employee_inherit=delivery_sub_obj.employee_inherit
-                )
-                cls.create_prod(new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, goods_return.product)
-                returned_delivery.order_delivery.sub = new_sub
-                returned_delivery.order_delivery.save(update_fields=['sub'])
-                goods_return.sale_order.delivery_status = 2
-                goods_return.sale_order.save(update_fields=['delivery_status'])
-            cls.update_warehouse_prod(goods_return.product_detail_list, goods_return, return_quantity)
+        for item in goods_return.goods_return_product_detail.all():
+            return_quantity = 0
+            redelivery_quantity = 0
+            if item.type == 0:
+                return_quantity = item.default_return_number
+                redelivery_quantity = item.default_redelivery_number
+            elif item.type == 1:
+                return_quantity = item.lot_return_number
+                redelivery_quantity = item.lot_redelivery_number
+            elif item.type == 2:
+                return_quantity = item.is_return
+                redelivery_quantity = item.is_redelivery
+
+            if redelivery_quantity > return_quantity:
+                raise serializers.ValidationError({
+                    'Redelivery quantity':
+                        f'Redelivery quantity ({redelivery_quantity}) > return quantity ({return_quantity}).'
+                })
+            cls.update_delivery_product_state(returned_delivery, item)
+            if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
+                ready_sub = returned_delivery.order_delivery.sub
+                ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
+                ready_sub.delivered_quantity_before -= return_quantity
+                ready_sub.remaining_quantity += redelivery_quantity
+                if not for_picking:
+                    ready_sub.ready_quantity += redelivery_quantity
+                ready_sub.save(update_fields=[
+                    'delivery_quantity', 'delivered_quantity_before',
+                    'remaining_quantity', 'ready_quantity'
+                ])
+                cls.update_prod(ready_sub, return_quantity, redelivery_quantity, item.product, for_picking)
+                cls.update_warehouse_prod(item, goods_return, return_quantity)
+            elif goods_return.sale_order.delivery_status == 3:  # Done delivery
+                if redelivery_quantity != 0:
+                    delivery_sub_obj = returned_delivery.order_delivery.sub
+                    new_sub = OrderDeliverySub.objects.create(
+                        company_id=delivery_sub_obj.company_id,
+                        tenant_id=delivery_sub_obj.tenant_id,
+                        order_delivery=delivery_sub_obj.order_delivery,
+                        date_done=None,
+                        code=OrderDeliverySubUpdateSerializer.create_new_code(),
+                        previous_step=delivery_sub_obj,
+                        times=delivery_sub_obj.times + 1,
+                        delivery_quantity=delivery_sub_obj.delivery_quantity - return_quantity + redelivery_quantity,
+                        delivered_quantity_before=delivery_sub_obj.delivery_quantity - return_quantity,
+                        remaining_quantity=redelivery_quantity,
+                        ready_quantity=redelivery_quantity,
+                        delivery_data=None,
+                        is_updated=False,
+                        state=1,  # ready
+                        sale_order_data=delivery_sub_obj.sale_order_data,
+                        estimated_delivery_date=delivery_sub_obj.estimated_delivery_date,
+                        actual_delivery_date=delivery_sub_obj.actual_delivery_date,
+                        customer_data=delivery_sub_obj.customer_data,
+                        contact_data=delivery_sub_obj.contact_data,
+                        config_at_that_point=delivery_sub_obj.config_at_that_point,
+                        employee_inherit=delivery_sub_obj.employee_inherit
+                    )
+                    cls.create_prod(new_sub, delivery_sub_obj, return_quantity, redelivery_quantity, item.product)
+                    returned_delivery.order_delivery.sub = new_sub
+                    returned_delivery.order_delivery.save(update_fields=['sub'])
+                    goods_return.sale_order.delivery_status = 2
+                    goods_return.sale_order.save(update_fields=['delivery_status'])
+                cls.update_warehouse_prod(item, goods_return, return_quantity)
         return True
 
 
 class GoodsReturnSubSerializerForPicking:
     @classmethod
-    def create_new_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, gr_product):
+    def create_new_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, product):
         new_sub = OrderPickingSub.objects.create(
             tenant_id=picking_obj_sub.tenant_id,
             company_id=picking_obj_sub.company_id,
@@ -484,8 +471,8 @@ class GoodsReturnSubSerializerForPicking:
         )
         bulk_info = []
         for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
-            obj_return_quantity = return_quantity if obj.product == gr_product else 0
-            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            obj_return_quantity = return_quantity if obj.product == product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             new_item = OrderPickingProduct(
                 product_data=obj.product_data,
                 uom_data=obj.uom_data,
@@ -505,7 +492,7 @@ class GoodsReturnSubSerializerForPicking:
         return new_sub
 
     @classmethod
-    def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, gr_product):
+    def update_picking(cls, picking_obj_sub, return_quantity, redelivery_quantity, product):
         picking_obj_sub.pickup_quantity = picking_obj_sub.pickup_quantity - return_quantity + redelivery_quantity
         picking_obj_sub.picked_quantity_before -= return_quantity
         picking_obj_sub.remaining_quantity += redelivery_quantity
@@ -513,8 +500,8 @@ class GoodsReturnSubSerializerForPicking:
             'pickup_quantity', 'picked_quantity_before', 'remaining_quantity'
         ])
         for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
-            obj_return_quantity = return_quantity if obj.product == gr_product else 0
-            obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            obj_return_quantity = return_quantity if obj.product == product else 0
+            obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
 
             obj.pickup_quantity = obj.pickup_quantity - obj_return_quantity + obj_redelivery_quantity
             obj.picked_quantity_before -= obj_return_quantity
@@ -531,26 +518,26 @@ class GoodsReturnSubSerializerForPicking:
         1) Nếu tất cả Picking đều Done: CREATE Picking mới > CREATE/UPDATE Delivery
         2) Nếu tồn tại Picking chưa Done: UPDATE Picking đó > UPDATE Delivery
         """
-        return_quantity = 0
-        redelivery_quantity = 0
-        for item in goods_return.product_detail_list:
-            if item.get('type') == 0:
-                return_quantity += item.get('default_return_number', 0)
-                redelivery_quantity += item.get('default_redelivery_number', 0)
-            elif item.get('type') == 1:
-                return_quantity += item.get('lot_return_number', 0)
-                redelivery_quantity += item.get('lot_redelivery_number', 0)
-            elif item.get('type') == 2:
-                return_quantity += item.get('is_return', 0)
-                redelivery_quantity += item.get('is_redelivery', 0)
+        for item in goods_return.goods_return_product_detail.all():
+            return_quantity = 0
+            redelivery_quantity = 0
+            if item.type == 0:
+                return_quantity = item.default_return_number
+                redelivery_quantity = item.default_redelivery_number
+            elif item.type == 1:
+                return_quantity = item.lot_return_number
+                redelivery_quantity = item.lot_redelivery_number
+            elif item.type == 2:
+                return_quantity = item.is_return
+                redelivery_quantity = item.is_redelivery
 
-        picking_obj = goods_return.sale_order.picking_of_sale_order
-        if picking_obj.sub.state == 1:
-            new_sub = cls.create_new_picking(
-                picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product
-            )
-            picking_obj.sub = new_sub
-            picking_obj.save(update_fields=['sub'])
-        else:
-            cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, goods_return.product)
-        return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, True)
+            picking_obj = goods_return.sale_order.picking_of_sale_order
+            if picking_obj.sub.state == 1:
+                new_sub = cls.create_new_picking(
+                    picking_obj.sub, return_quantity, redelivery_quantity, item.product
+                )
+                picking_obj.sub = new_sub
+                picking_obj.save(update_fields=['sub'])
+            else:
+                cls.update_picking(picking_obj.sub, return_quantity, redelivery_quantity, item.product)
+            return GoodsReturnSubSerializerForNonPicking.update_delivery(goods_return, True)
