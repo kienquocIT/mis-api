@@ -318,7 +318,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
 class ProductQuickCreateList(BaseListMixin, BaseCreateMixin):
     queryset = Product.objects
     serializer_create = ProductQuickCreateSerializer
-    serializer_detail = ProductDetailSerializer
+    serializer_detail = ProductForSaleListSerializer
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
