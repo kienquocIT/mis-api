@@ -45,7 +45,8 @@ from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliv
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
+    GoodsReturnProductDetail
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
@@ -1845,16 +1846,7 @@ def report_rerun(company_id, start_month):
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            products = instance.delivery_product_delivery_sub.all()
-            validated_product = []
-            for prd in products:
-                if prd.picked_quantity > 0:
-                    validated_product.append({
-                        'product_id': str(prd.product_id),
-                        'delivery_data': prd.delivery_data,
-                        'order': prd.order
-                    })
-            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance, validated_product)
+            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
@@ -1902,3 +1894,46 @@ def update_product_warehouse_uom_base():
                     pw_common_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
     print('update_product_warehouse_uom_base done.')
     return True
+
+
+def update_goods_return_items_nt():
+    data = [
+        {
+            'id': '26199d0c4ebb41199f13a5d215885c2f',
+            'prd': 'b01be7a525624897bb2226403f32c808',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': '1dc2a55dbdfb47e4bad7509a9d9f9984',
+            'prd': 'b01be7a525624897bb2226403f32c808',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': 'ff1cf130f20e4eccb12c7031195608ba',
+            'prd': '52e45d5bd91e4c048b2d7a09ee4820dd',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        },
+        {
+            'id': 'fd9169186424438087557a89efb037a5',
+            'prd': '317352890a2b4ae29e2d0940bc1010ec',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        }
+    ]
+
+    for item in data:
+        obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
+        obj.product_id = item.get('prd')
+        obj.return_to_warehouse_id = item.get('wh')
+        obj.uom_id = item.get('uom')
+        obj.save(update_fields=['product_id', 'return_to_warehouse_id', 'uom_id'])
+
+    GoodsReturn.objects.filter(id='b4a0f779-c326-4283-94b0-241c9438b9b6').delete()
+
+    obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
+    obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
+    obj.save(update_fields=['delivery_item_id'])
+    print('Done')
