@@ -27,6 +27,23 @@ class GoodsReturn(DataAbstractModel):
         permissions = ()
 
     @classmethod
+    def check_exists(cls, activities_data, data):
+        for item in activities_data:
+            if all([
+                data['product'] == item['product'], data['warehouse'] == item['warehouse'],
+                data['system_date'] == item['system_date'], data['posting_date'] == item['posting_date'],
+                data['document_date'] == item['document_date'], data['stock_type'] == item['stock_type'],
+                data['trans_id'] == item['trans_id'], data['trans_code'] == item['trans_code'],
+                data['trans_title'] == item['trans_title']
+            ]):
+                item['quantity'] += data['quantity']
+                item['value'] += item['quantity'] * item['cost']
+                return activities_data, True
+        return activities_data, False
+
+
+
+    @classmethod
     def prepare_data_for_logging(cls, instance):
         product_detail_list = instance.goods_return_product_detail.all()
         activities_data = []
@@ -38,7 +55,7 @@ class GoodsReturn(DataAbstractModel):
                     casted_cost = (
                         delivery_item.product_unit_price * item.default_return_number / casted_quantity
                     ) if casted_quantity > 0 else 0
-                    activities_data.append({
+                    data = {
                         'product': item.product,
                         'warehouse': item.return_to_warehouse,
                         'system_date': instance.date_approved,
@@ -52,7 +69,10 @@ class GoodsReturn(DataAbstractModel):
                         'cost': casted_cost,
                         'value': casted_quantity * casted_cost,
                         'lot_data': {}
-                    })
+                    }
+                    activities_data, is_append = cls.check_exists(activities_data, data)
+                    if not is_append:
+                        activities_data.append(data)
                 else:
                     raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
             for item in product_detail_list.filter(type=1):
@@ -62,7 +82,7 @@ class GoodsReturn(DataAbstractModel):
                     casted_cost = (
                         delivery_item.product_unit_price * item.lot_return_number / casted_quantity
                     ) if casted_quantity > 0 else 0
-                    activities_data.append({
+                    data = {
                         'product': item.product,
                         'warehouse': item.return_to_warehouse,
                         'system_date': instance.date_approved,
@@ -82,7 +102,10 @@ class GoodsReturn(DataAbstractModel):
                             'lot_value': casted_quantity * casted_cost,
                             'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
                         }
-                    })
+                    }
+                    activities_data, is_append = cls.check_exists(activities_data, data)
+                    if not is_append:
+                        activities_data.append(data)
                 else:
                     raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
             for item in product_detail_list.filter(type=2):
@@ -92,7 +115,7 @@ class GoodsReturn(DataAbstractModel):
                     casted_cost = (
                         delivery_item.product_unit_price * float(item.is_return) / casted_quantity
                     ) if casted_quantity > 0 else 0
-                    activities_data.append({
+                    data = {
                         'product': item.product,
                         'warehouse': item.return_to_warehouse,
                         'system_date': instance.date_approved,
@@ -106,7 +129,10 @@ class GoodsReturn(DataAbstractModel):
                         'cost': casted_cost,
                         'value': casted_quantity * casted_cost,
                         'lot_data': {}
-                    })
+                    }
+                    activities_data, is_append = cls.check_exists(activities_data, data)
+                    if not is_append:
+                        activities_data.append(data)
                 else:
                     raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         else:
