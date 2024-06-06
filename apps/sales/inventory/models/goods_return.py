@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import serializers
 from apps.sales.delivery.models import DeliveryConfig, OrderDeliveryProduct
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
+from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
@@ -41,107 +41,18 @@ class GoodsReturn(DataAbstractModel):
                 return activities_data, True
         return activities_data, False
 
-
-
     @classmethod
-    def prepare_data_for_logging(cls, instance):
+    def for_perpetual_inventory(cls, instance):
         product_detail_list = instance.goods_return_product_detail.all()
         activities_data = []
-        if instance.company.companyconfig.definition_inventory_valuation == 0:
-            for item in product_detail_list.filter(type=0):
-                delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
-                if delivery_item:
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
-                    casted_cost = (
-                        delivery_item.product_unit_price * item.default_return_number / casted_quantity
-                    ) if casted_quantity > 0 else 0
-                    data = {
-                        'product': item.product,
-                        'warehouse': item.return_to_warehouse,
-                        'system_date': instance.date_approved,
-                        'posting_date': instance.date_approved,
-                        'document_date': instance.date_approved,
-                        'stock_type': 1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Goods return',
-                        'quantity': casted_quantity,
-                        'cost': casted_cost,
-                        'value': casted_quantity * casted_cost,
-                        'lot_data': {}
-                    }
-                    activities_data, is_append = cls.check_exists(activities_data, data)
-                    if not is_append:
-                        activities_data.append(data)
-                else:
-                    raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-            for item in product_detail_list.filter(type=1):
-                delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
-                if delivery_item:
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
-                    casted_cost = (
-                        delivery_item.product_unit_price * item.lot_return_number / casted_quantity
-                    ) if casted_quantity > 0 else 0
-                    data = {
-                        'product': item.product,
-                        'warehouse': item.return_to_warehouse,
-                        'system_date': instance.date_approved,
-                        'posting_date': instance.date_approved,
-                        'document_date': instance.date_approved,
-                        'stock_type': 1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Goods return',
-                        'quantity': casted_quantity,
-                        'cost': casted_cost,
-                        'value': casted_quantity * casted_cost,
-                        'lot_data': {
-                            'lot_id': str(item.lot_no_id),
-                            'lot_number': item.lot_no.lot_number,
-                            'lot_quantity': casted_quantity,
-                            'lot_value': casted_quantity * casted_cost,
-                            'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
-                        }
-                    }
-                    activities_data, is_append = cls.check_exists(activities_data, data)
-                    if not is_append:
-                        activities_data.append(data)
-                else:
-                    raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-            for item in product_detail_list.filter(type=2):
-                delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
-                if delivery_item:
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
-                    casted_cost = (
-                        delivery_item.product_unit_price * float(item.is_return) / casted_quantity
-                    ) if casted_quantity > 0 else 0
-                    data = {
-                        'product': item.product,
-                        'warehouse': item.return_to_warehouse,
-                        'system_date': instance.date_approved,
-                        'posting_date': instance.date_approved,
-                        'document_date': instance.date_approved,
-                        'stock_type': 1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Goods return',
-                        'quantity': casted_quantity,
-                        'cost': casted_cost,
-                        'value': casted_quantity * casted_cost,
-                        'lot_data': {}
-                    }
-                    activities_data, is_append = cls.check_exists(activities_data, data)
-                    if not is_append:
-                        activities_data.append(data)
-                else:
-                    raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-        else:
-            for item in product_detail_list.filter(type=0):
+        for item in product_detail_list.filter(type=0):
+            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
-                    item.cost_for_periodic * item.default_return_number / casted_quantity
+                        delivery_item.product_unit_price * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
-                activities_data.append({
+                data = {
                     'product': item.product,
                     'warehouse': item.return_to_warehouse,
                     'system_date': instance.date_approved,
@@ -155,13 +66,20 @@ class GoodsReturn(DataAbstractModel):
                     'cost': casted_cost,
                     'value': casted_quantity * casted_cost,
                     'lot_data': {}
-                })
-            for item in product_detail_list.filter(type=1):
+                }
+                activities_data, is_append = cls.check_exists(activities_data, data)
+                if not is_append:
+                    activities_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        for item in product_detail_list.filter(type=1):
+            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
-                    item.cost_for_periodic * item.lot_return_number / casted_quantity
+                        delivery_item.product_unit_price * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
-                activities_data.append({
+                data = {
                     'product': item.product,
                     'warehouse': item.return_to_warehouse,
                     'system_date': instance.date_approved,
@@ -181,13 +99,20 @@ class GoodsReturn(DataAbstractModel):
                         'lot_value': casted_quantity * casted_cost,
                         'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
                     }
-                })
-            for item in product_detail_list.filter(type=2):
+                }
+                activities_data, is_append = cls.check_exists(activities_data, data)
+                if not is_append:
+                    activities_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        for item in product_detail_list.filter(type=2):
+            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
-                    item.cost_for_periodic * float(item.is_return) / casted_quantity
+                        delivery_item.product_unit_price * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
-                activities_data.append({
+                data = {
                     'product': item.product,
                     'warehouse': item.return_to_warehouse,
                     'system_date': instance.date_approved,
@@ -201,7 +126,92 @@ class GoodsReturn(DataAbstractModel):
                     'cost': casted_cost,
                     'value': casted_quantity * casted_cost,
                     'lot_data': {}
-                })
+                }
+                activities_data, is_append = cls.check_exists(activities_data, data)
+                if not is_append:
+                    activities_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        return activities_data
+
+    @classmethod
+    def for_periodic_inventory(cls, instance):
+        product_detail_list = instance.goods_return_product_detail.all()
+        activities_data = []
+        for item in product_detail_list.filter(type=0):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
+            casted_cost = (
+                    item.cost_for_periodic * item.default_return_number / casted_quantity
+            ) if casted_quantity > 0 else 0
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {}
+            })
+        for item in product_detail_list.filter(type=1):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
+            casted_cost = (
+                    item.cost_for_periodic * item.lot_return_number / casted_quantity
+            ) if casted_quantity > 0 else 0
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {
+                    'lot_id': str(item.lot_no_id),
+                    'lot_number': item.lot_no.lot_number,
+                    'lot_quantity': casted_quantity,
+                    'lot_value': casted_quantity * casted_cost,
+                    'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
+                }
+            })
+        for item in product_detail_list.filter(type=2):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
+            casted_cost = (
+                    item.cost_for_periodic * float(item.is_return) / casted_quantity
+            ) if casted_quantity > 0 else 0
+            activities_data.append({
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {}
+            })
+        return activities_data
+
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        if instance.company.companyconfig.definition_inventory_valuation == 0:
+            activities_data = cls.for_perpetual_inventory(instance)
+        else:
+            activities_data = cls.for_periodic_inventory(instance)
 
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
