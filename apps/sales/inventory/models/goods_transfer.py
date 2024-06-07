@@ -223,7 +223,6 @@ class GoodsTransfer(DataAbstractModel):
                         product_warehouse=destination,
                         lot_number=lot_src_obj.lot_number,
                         quantity_import=lot_item['quantity'],
-                        raw_quantity_import=lot_item['quantity'],
                         expire_date=lot_src_obj.expire_date,
                         manufacture_date=lot_src_obj.manufacture_date
                     )

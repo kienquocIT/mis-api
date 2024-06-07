@@ -158,7 +158,6 @@ class GoodsReturnSubSerializerForNonPicking:
                 product_warehouse=new_prd_wh,
                 lot_number=sample_lot.lot_number,
                 quantity_import=return_quantity,
-                raw_quantity_import=return_quantity,
                 expire_date=sample_lot.expire_date,
                 manufacture_date=sample_lot.manufacture_date
             )
@@ -260,7 +259,6 @@ class GoodsReturnSubSerializerForNonPicking:
                         product_warehouse=product_wh,
                         lot_number=lot.first().lot_number,
                         quantity_import=item.lot_return_number,
-                        raw_quantity_import=item.lot_return_number,
                         expire_date=lot.first().expire_date,
                         manufacture_date=lot.first().manufacture_date
                     )

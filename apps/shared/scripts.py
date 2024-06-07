@@ -1724,22 +1724,24 @@ def report_rerun(company_id, start_month):
             quantity=2,
             type_transaction=1
         )
+        # đầu kỳ SW
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
             product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=7,
+            sub_period_order=3,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(33000000),
-            opening_balance_cost=float(11000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(33000000),
-            ending_balance_cost=float(11000000),
+            opening_balance_quantity=float(7),
+            opening_balance_value=float(56000000),
+            opening_balance_cost=float(8000000),
+            ending_balance_quantity=float(7),
+            ending_balance_value=float(56000000),
+            ending_balance_cost=float(8000000),
             for_balance=True
         )
+        # đầu kỳ Vision
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
@@ -1791,7 +1793,24 @@ def report_rerun(company_id, start_month):
             ending_balance_cost=float(40000000),
             for_balance=True
         )
-
+        # đầu kỳ HP
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
+            lot_mapped=None,
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(2),
+            opening_balance_value=float(276000000),
+            opening_balance_cost=float(138000000),
+            ending_balance_quantity=float(2),
+            ending_balance_value=float(276000000),
+            ending_balance_cost=float(138000000),
+            for_balance=True
+        )
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -1932,6 +1951,7 @@ def update_goods_return_items_nt():
         obj.save(update_fields=['product_id', 'return_to_warehouse_id', 'uom_id'])
 
     GoodsReturn.objects.filter(id='b4a0f779-c326-4283-94b0-241c9438b9b6').delete()
+    ProductWareHouse.objects.filter(id='9b5817285f13406f9c3399ab88bd8f2e').delete()
 
     obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
     obj.delivery_item_id = '46e392194101478186ade7416fbbea65'

@@ -75,7 +75,6 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
-            print(item.product.code, item.lot_no.lot_number, str(item.delivery_item_id))
             delivery_item = ReportInventorySub.objects.filter(
                 product=item.product, lot_mapped=item.lot_no, trans_id=str(instance.delivery_id)
             ).first()
