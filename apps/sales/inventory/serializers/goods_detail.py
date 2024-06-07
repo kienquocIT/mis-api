@@ -14,7 +14,6 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product_data(cls, obj):
-        lots_import = obj.goods_receipt_lot_goods_receipt.all()
         product_data = []
         for item in obj.goods_receipt_product_goods_receipt.all():
             for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
@@ -35,29 +34,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                     })
                 sum_serial_quantity = len(serial_data)
 
-                lot_data = []
-                sum_lot_quantity = 0
-                for lot_trans in obj.pw_lot_transact_goods_receipt.filter(
-                    pw_lot__product_warehouse__product_id=item.product_id,
-                    pw_lot__product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
-                ).order_by('pw_lot__lot_number'):
-                    lot = lot_trans.pw_lot
-                    lot_quantity_import = lots_import.filter(lot_number=lot.lot_number).first()
-                    if lot_quantity_import:
-                        sum_lot_quantity += lot_quantity_import.quantity_import
-                        lot_data.append({
-                            'id': lot.id,
-                            'lot_number': lot.lot_number,
-                            'quantity_import': lot.quantity_import,
-                            'expire_date': lot.expire_date,
-                            'manufacture_date': lot.manufacture_date,
-                        })
-
                 status = 0
-                if item.product.general_traceability_method == 0:
-                    status = 1
-                if item.product.general_traceability_method == 1 and sum_lot_quantity == item.quantity_import:
-                    status = 1
                 if item.product.general_traceability_method == 2 and sum_serial_quantity == item.quantity_import:
                     status = 1
 
@@ -86,7 +63,6 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                         'title': gr_wh_gr_prd.warehouse.title
                     } if gr_wh_gr_prd else {},
                     'serial_list': serial_data,
-                    'lot_list': lot_data,
                     'quantity_import': gr_wh_gr_prd.quantity_import,
                     'status': status
                 })
