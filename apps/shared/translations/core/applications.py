@@ -56,3 +56,4 @@ class ApplicationName:
     account_user = _('User')
     saledata_warehouse = _('Warehouse')
     workflow_workflow = _('Workflow')
+    project_project = _('Project')

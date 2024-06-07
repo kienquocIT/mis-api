@@ -1,24 +1,20 @@
 import logging
-from copy import deepcopy
-from datetime import date, timedelta
-from uuid import uuid4
 
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
+from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
-from django.utils import translation, timezone
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from django_celery_results.models import TaskResult
 
-from apps.core.attachments.models import Files
 from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
 from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee, WorkflowConfigOfApp, Workflow
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
-from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
+from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
 from apps.sales.opportunity.models import (
     OpportunityConfig, OpportunityConfigStage, StageCondition,
     OpportunitySaleTeamMember,
@@ -27,7 +23,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, Application, PlanApplication
+from apps.core.base.models import Currency as BaseCurrency, PlanApplication
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
@@ -37,21 +33,18 @@ from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
     SaleOrderIndicatorConfig, ORIndicatorDefaultData,
 )
-from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
+from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus, OpportunityTask
 
 from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
-from ..media_cloud_apis import MediaForceAPI
-from apps.core.tenant.models import TenantPlan, Tenant
+from apps.core.tenant.models import TenantPlan
 from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
-from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from ...sales.lead.models import LeadStage
-from ...sales.project.models import ProjectMapMember
+from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
 
 logger = logging.getLogger(__name__)
 

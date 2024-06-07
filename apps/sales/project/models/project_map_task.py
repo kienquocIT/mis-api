@@ -57,4 +57,5 @@ class ProjectMapTasks(MasterDataAbstractModel):
         verbose_name_plural = 'Project map task'
         default_permissions = ()
         permissions = ()
+        ordering = ('-date_created',)
         unique_together = ('project', 'task')

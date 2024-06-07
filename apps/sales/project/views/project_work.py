@@ -9,7 +9,8 @@ from rest_framework.response import Response
 
 from apps.sales.project.extend_func import get_prj_mem_of_crt_user
 from apps.sales.project.models import ProjectWorks, ProjectMapMember, Project
-from apps.sales.project.serializers import WorkListSerializers, WorkCreateSerializers, WorkDetailSerializers
+from apps.sales.project.serializers import WorkListSerializers, WorkCreateSerializers, WorkDetailSerializers, \
+    WorkUpdateSerializers
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, \
     BaseUpdateMixin, BaseDestroyMixin
 
@@ -140,7 +141,7 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
 class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProjectWorks.objects
     serializer_detail = WorkDetailSerializers
-    serializer_update = WorkDetailSerializers
+    serializer_update = WorkUpdateSerializers
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
