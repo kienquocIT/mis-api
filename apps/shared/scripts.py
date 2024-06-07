@@ -1733,11 +1733,11 @@ def report_rerun(company_id, start_month):
             sub_period_order=7,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
             opening_balance_quantity=float(3),
-            opening_balance_value=float(30000000),
-            opening_balance_cost=float(3000000),
+            opening_balance_value=float(33000000),
+            opening_balance_cost=float(11000000),
             ending_balance_quantity=float(3),
-            ending_balance_value=float(30000000),
-            ending_balance_cost=float(3000000),
+            ending_balance_value=float(33000000),
+            ending_balance_cost=float(11000000),
             for_balance=True
         )
         ReportInventoryProductWarehouse.objects.create(
