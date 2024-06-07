@@ -23,8 +23,6 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
             'sale_order',
             'note',
             'delivery',
-            'product',
-            'uom',
             'system_status',
             'raw_system_status',
             'date_created'
@@ -86,9 +84,64 @@ def create_item_mapped(goods_return):
         div = goods_return.company.companyconfig.definition_inventory_valuation
         if not item.get('cost_for_periodic') and div == 1:
             raise serializers.ValidationError({"cost": 'Cost for periodic in not NULL.'})
-        bulk_info.append(
-            GoodsReturnProductDetail.objects.create(goods_return=goods_return, **item)
-        )
+        data_type = item.get('type')
+        default_return_number = 0
+        default_redelivery_number = 0
+        lot_return_number = 0
+        lot_redelivery_number = 0
+        is_return = False
+        is_redelivery = False
+        if data_type == 0:
+            default_return_number = float(item.get('is_return', 0))
+            default_redelivery_number = float(item.get('is_redelivery', 0))
+            lot_return_number = 0
+            lot_redelivery_number = 0
+            is_return = False
+            is_redelivery = False
+        elif data_type == 1:
+            default_return_number = 0
+            default_redelivery_number = 0
+            lot_return_number = float(item.get('is_return', 0))
+            lot_redelivery_number = float(item.get('is_redelivery', 0))
+            is_return = False
+            is_redelivery = False
+        elif data_type == 2:
+            default_return_number = 0
+            default_redelivery_number = 0
+            lot_return_number = 0
+            lot_redelivery_number = 0
+            is_return = item.get('is_return', False)
+            is_redelivery = item.get('is_redelivery', False)
+
+        if all([
+            item.get('return_to_warehouse_id'),
+            item.get('delivery_item_id'),
+            item.get('product_id'),
+            item.get('uom_id')
+        ]):
+            bulk_info.append(
+                GoodsReturnProductDetail.objects.create(
+                    goods_return=goods_return,
+                    type=data_type,
+                    product_id=item.get('product_id'),
+                    uom_id=item.get('uom_id'),
+                    return_to_warehouse_id=item.get('return_to_warehouse_id'),
+                    delivery_item_id=item.get('delivery_item_id'),
+                    # none
+                    default_return_number=default_return_number,
+                    default_redelivery_number=default_redelivery_number,
+                    # lot
+                    lot_no_id=item.get('lot_id'),
+                    lot_return_number=lot_return_number,
+                    lot_redelivery_number=lot_redelivery_number,
+                    # sn
+                    serial_no_id=item.get('serial_id'),
+                    is_return=is_return,
+                    is_redelivery=is_redelivery
+                )
+            )
+        else:
+            raise serializers.ValidationError({"error": 'Row is missing data.'})
     GoodsReturnProductDetail.objects.filter(goods_return=goods_return).delete()
     GoodsReturnProductDetail.objects.bulk_create(bulk_info)
     return True
@@ -96,7 +149,6 @@ def create_item_mapped(goods_return):
 
 class GoodsReturnCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150, required=True)
-    return_to_warehouse = serializers.UUIDField(required=True)
 
     class Meta:
         model = GoodsReturn
@@ -106,19 +158,10 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'sale_order',
             'note',
             'delivery',
-            'product',
-            'uom',
-            'return_to_warehouse',
             'system_status',
             'product_detail_list',
-            'data_line_detail'
+            'data_line_detail_table'
         )
-
-    @classmethod
-    def validate_return_to_warehouse(cls, attrs):
-        if not attrs:
-            raise serializers.ValidationError({"Warehouse": 'Please select return warehouse.'})
-        return WareHouse.objects.get(id=attrs)
 
     @decorator_run_workflow
     def create(self, validated_data):
@@ -135,11 +178,8 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
 class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
     sale_order = serializers.SerializerMethodField()
     delivery = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    uom = serializers.SerializerMethodField()
-    data_detail = serializers.SerializerMethodField()
+    data_line_detail_table = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
-    return_to_warehouse = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -150,13 +190,10 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
             'sale_order',
             'note',
             'delivery',
-            'product',
-            'uom',
-            'return_to_warehouse',
             'system_status',
             'date_created',
-            'data_detail',
-            'data_line_detail',
+            'product_detail_list',
+            'data_line_detail_table',
             'attachment'
         )
 
@@ -170,14 +207,6 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
         } if obj.sale_order else {}
 
     @classmethod
-    def get_return_to_warehouse(cls, obj):
-        return {
-            'id': obj.return_to_warehouse_id,
-            'code': obj.return_to_warehouse.code,
-            'title': obj.return_to_warehouse.title,
-        } if obj.return_to_warehouse else {}
-
-    @classmethod
     def get_delivery(cls, obj):
         return {
             'id': obj.delivery_id,
@@ -185,43 +214,16 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
         } if obj.delivery_id else {}
 
     @classmethod
-    def get_product(cls, obj):
-        return {
-            'id': obj.product_id,
-            'code': obj.product.code,
-            'title': obj.product.title,
-        } if obj.product else {}
-
-    @classmethod
-    def get_uom(cls, obj):
-        return {
-            'id': obj.uom_id,
-            'code': obj.uom.code,
-            'title': obj.uom.title,
-        } if obj.uom else {}
-
-    @classmethod
-    def get_data_detail(cls, obj):
-        return [{
-            'id': item.id,
-            'type': item.type,
-            'delivery_item_id': item.delivery_item_id,
-            'default_return_number': item.default_return_number,
-            'default_redelivery_number': item.default_redelivery_number,
-            'lot_no': {
-                'id': item.lot_no_id,
-                'lot_number': item.lot_no.lot_number
-            } if item.lot_no else {},
-            'lot_return_number': item.lot_return_number,
-            'lot_redelivery_number': item.lot_redelivery_number,
-            'serial_no': {
-                'id': item.serial_no_id,
-                'vendor_serial_number': item.serial_no.vendor_serial_number,
-                'serial_number': item.serial_no.serial_number,
-            } if item.serial_no else {},
-            'is_return': item.is_return,
-            'is_redelivery': item.is_redelivery
-        } for item in obj.goods_return_product_detail.all()]
+    def get_data_line_detail_table(cls, obj):
+        for row in obj.data_line_detail_table:
+            warehouse = WareHouse.objects.filter(id=row['return_to_warehouse_id']).first()
+            if warehouse:
+                row['return_to_warehouse'] = {
+                    'id': str(warehouse.id),
+                    'code': warehouse.code,
+                    'title': warehouse.title
+                }
+        return obj.data_line_detail_table
 
     @classmethod
     def get_attachment(cls, obj):
@@ -239,11 +241,9 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
             'sale_order',
             'note',
             'delivery',
-            'product',
-            'uom',
             'system_status',
             'product_detail_list',
-            'data_line_detail'
+            'data_line_detail_table'
         )
 
     @decorator_run_workflow

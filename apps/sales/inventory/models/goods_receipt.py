@@ -100,9 +100,14 @@ class GoodsReceipt(DataAbstractModel):
     @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
+        goods_receipt_warehouses = instance.goods_receipt_warehouse_goods_receipt.all().select_related(
+            'goods_receipt_product__product'
+        )
         for goods_receipt_item in instance.goods_receipt_product_goods_receipt.all():
             if goods_receipt_item.product.general_traceability_method != 1:
-                for warehouses_item in instance.goods_receipt_warehouse_goods_receipt.all():
+                for warehouses_item in goods_receipt_warehouses.filter(
+                        goods_receipt_product__product=goods_receipt_item.product
+                ):
                     casted_quantity = ReportInventorySub.cast_quantity_to_unit(
                         goods_receipt_item.uom, warehouses_item.quantity_import
                     )
