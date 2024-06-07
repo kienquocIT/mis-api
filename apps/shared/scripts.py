@@ -1886,8 +1886,8 @@ def report_rerun(company_id, start_month):
     print('Done')
 
 
-def update_product_warehouse_uom_base():
-    for product in Product.objects.filter(id="e12e4dd2-fb4e-479d-ae8a-c902f3dbc896"):
+def update_product_warehouse_uom_base(product_id):
+    for product in Product.objects.filter(id=product_id):
         if product.general_uom_group:
             uom_base = product.general_uom_group.uom_reference
             if uom_base:
@@ -1943,6 +1943,7 @@ def update_goods_return_items_nt():
         }
     ]
 
+    update_product_warehouse_uom_base("567d8692-56f3-4fb5-8815-13dae765e763")
     for item in data:
         obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
         obj.product_id = item.get('prd')
@@ -1951,7 +1952,38 @@ def update_goods_return_items_nt():
         obj.save(update_fields=['product_id', 'return_to_warehouse_id', 'uom_id'])
 
     GoodsReturn.objects.filter(id='b4a0f779-c326-4283-94b0-241c9438b9b6').delete()
-    ProductWareHouse.objects.filter(id='9b5817285f13406f9c3399ab88bd8f2e').delete()
+    ProductWareHouse.objects.filter(id__in=[
+        '9b5817285f13406f9c3399ab88bd8f2e',
+        'efd096351225461ca247e22ff444aa68',
+        'aac5e1c2498d4cbbb438e2aa2e3004c2'
+    ]).delete()
+    pro_wd_CHIVAS25 = ProductWareHouse.objects.filter(id='328ae65745644a66b90fb18e76dd2737').first()
+    if pro_wd_CHIVAS25:
+        pro_wd_CHIVAS25.stock_amount = 21
+        pro_wd_CHIVAS25.receipt_amount = 39
+        pro_wd_CHIVAS25.sold_amount = 17
+        pro_wd_CHIVAS25.picked_ready = 0
+        pro_wd_CHIVAS25.uom_id = '08dacbd3-0deb-479b-8118-702e800ca1e3'
+        pro_wd_CHIVAS25.save(update_fields=['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'uom_id'])
+
+    # OKSS
+    prd = Product.objects.filter(id='9e41fb1a75764ee885ee962217b7fc4f').first()
+    if prd:
+        prd.stock_amount = 1
+        prd.available_amount = -7
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # ROYAL24
+    prd = Product.objects.filter(id='567d8692-56f3-4fb5-8815-13dae765e763').first()
+    if prd:
+        prd.stock_amount = 5
+        prd.available_amount = 3
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # CHIVAS25
+    prd = Product.objects.filter(id='b01be7a5-2562-4897-bb22-26403f32c808').first()
+    if prd:
+        prd.stock_amount = 21
+        prd.available_amount = 19
+        prd.save(update_fields=['stock_amount', 'available_amount'])
 
     obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
     obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
