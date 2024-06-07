@@ -444,6 +444,61 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         order_delivery.save(update_fields=['sub', 'state'])
 
     @classmethod
+    def for_lot(cls, instance, deli_item, deli_data, activities_data, main_product_unit_price):
+        for lot in deli_data.get('lot_data', []):
+            lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
+            if lot_obj:
+                quantity_delivery = lot.get('quantity_delivery')
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    deli_item.uom, quantity_delivery
+                )
+                activities_data.append({
+                    'product': deli_item.product,
+                    'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+                    'system_date': instance.date_done,
+                    'posting_date': instance.date_done,
+                    'document_date': instance.date_done,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Delivery',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {
+                        'lot_id': str(lot_obj.id),
+                        'lot_number': lot_obj.lot_number,
+                        'lot_quantity': casted_quantity,
+                        'lot_value': main_product_unit_price * casted_quantity,
+                        'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
+                    }
+                })
+            else:
+                raise serializers.ValidationError({'Lot': 'Lot does not found.'})
+        return activities_data
+
+    @classmethod
+    def for_sn(cls, instance, deli_item, deli_data, activities_data):
+        quantity_delivery = len(deli_data.get('serial_data', []))
+        casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
+        activities_data.append({
+            'product': deli_item.product,
+            'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+            'system_date': instance.date_done,
+            'posting_date': instance.date_done,
+            'document_date': instance.date_done,
+            'stock_type': -1,
+            'trans_id': str(instance.id),
+            'trans_code': instance.code,
+            'trans_title': 'Delivery',
+            'quantity': casted_quantity,
+            'cost': 0,  # theo gia cost
+            'value': 0,  # theo gia cost
+            'lot_data': {}
+        })
+        return activities_data
+
+    @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
         so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
@@ -453,52 +508,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 main_product_unit_price = main_item.product_unit_price if main_item else 0
                 for deli_data in deli_item.delivery_data:
                     if len(deli_data.get('lot_data', [])) > 0:
-                        for lot in deli_data.get('lot_data', []):
-                            lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
-                            if lot_obj:
-                                quantity_delivery = lot.get('quantity_delivery')
-                                casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
-                                activities_data.append({
-                                    'product': deli_item.product,
-                                    'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
-                                    'system_date': instance.date_done,
-                                    'posting_date': instance.date_done,
-                                    'document_date': instance.date_done,
-                                    'stock_type': -1,
-                                    'trans_id': str(instance.id),
-                                    'trans_code': instance.code,
-                                    'trans_title': 'Delivery',
-                                    'quantity': casted_quantity,
-                                    'cost': 0,  # theo gia cost
-                                    'value': 0,  # theo gia cost
-                                    'lot_data': {
-                                        'lot_id': str(lot_obj.id),
-                                        'lot_number': lot_obj.lot_number,
-                                        'lot_quantity': casted_quantity,
-                                        'lot_value': main_product_unit_price * casted_quantity,
-                                        'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
-                                    }
-                                })
-                            else:
-                                raise serializers.ValidationError({'Lot': 'Lot does not found.'})
+                        activities_data = cls.for_lot(
+                            instance, deli_item, deli_data, activities_data, main_product_unit_price
+                        )
                     elif len(deli_data.get('serial_data', [])) > 0:
-                        quantity_delivery = len(deli_data.get('serial_data', []))
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
-                        activities_data.append({
-                            'product': deli_item.product,
-                            'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
-                            'system_date': instance.date_done,
-                            'posting_date': instance.date_done,
-                            'document_date': instance.date_done,
-                            'stock_type': -1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Delivery',
-                            'quantity': casted_quantity,
-                            'cost': 0,  # theo gia cost
-                            'value': 0,  # theo gia cost
-                            'lot_data': {}
-                        })
+                        activities_data = cls.for_sn(instance, deli_item, deli_data, activities_data)
 
             # for None
             if all([
