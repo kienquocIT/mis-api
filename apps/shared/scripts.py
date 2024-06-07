@@ -1730,7 +1730,7 @@ def report_rerun(company_id, start_month):
             product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
+            sub_period_order=7,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
             opening_balance_quantity=float(3),
             opening_balance_value=float(30000000),
