@@ -46,11 +46,13 @@ class GoodsReturn(DataAbstractModel):
         product_detail_list = instance.goods_return_product_detail.all()
         activities_data = []
         for item in product_detail_list.filter(type=0):
-            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, lot_mapped=item.lot_no, trans_id=str(instance.delivery_id)
+            ).first()
             if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
-                        delivery_item.product_unit_price * item.default_return_number / casted_quantity
+                    delivery_item.current_cost * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'product': item.product,
@@ -73,11 +75,14 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
-            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            print(item.product.code, item.lot_no.lot_number, str(item.delivery_item_id))
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, lot_mapped=item.lot_no, trans_id=str(instance.delivery_id)
+            ).first()
             if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
-                        delivery_item.product_unit_price * item.lot_return_number / casted_quantity
+                    delivery_item.current_cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'product': item.product,
@@ -106,11 +111,13 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=2):
-            delivery_item = OrderDeliveryProduct.objects.filter(id=item.delivery_item_id).first()
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, lot_mapped=item.lot_no, trans_id=str(instance.delivery_id)
+            ).first()
             if delivery_item:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
-                        delivery_item.product_unit_price * float(item.is_return) / casted_quantity
+                    delivery_item.current_cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'product': item.product,

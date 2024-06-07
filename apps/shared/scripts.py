@@ -1906,7 +1906,7 @@ def update_goods_return_items_nt():
         },
         {
             'id': '1dc2a55dbdfb47e4bad7509a9d9f9984',
-            'prd': 'b01be7a525624897bb2226403f32c808',
+            'prd': '567d869256f34fb5881513dae765e763',
             'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
             'uom': '08dacbd30deb479b8118702e800ca1e3'
         },
