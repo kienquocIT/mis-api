@@ -151,10 +151,13 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
 
-            # handle product information
+            # handle after finish
+            # product information
             ReturnFinishHandler.push_product_info(instance=self)
-            # handle final acceptance
+            # final acceptance
             ReturnFinishHandler.update_final_acceptance(instance=self)
+            # report
+            ReturnFinishHandler.update_report(instance=self)
 
             # self.prepare_data_for_logging(self)
 
