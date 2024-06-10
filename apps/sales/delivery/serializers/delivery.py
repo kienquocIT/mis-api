@@ -505,12 +505,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for deli_item in instance.delivery_product_delivery_sub.all():
             if deli_item.picked_quantity > 0:
                 main_item = so_products.filter(order=deli_item.order).first()
-                main_product_unit_price = main_item.product_unit_price if main_item else 0
+                unit_price = main_item.product_unit_price if main_item else 0
                 for deli_data in deli_item.delivery_data:
                     if len(deli_data.get('lot_data', [])) > 0:
-                        activities_data = cls.for_lot(
-                            instance, deli_item, deli_data, activities_data, main_product_unit_price
-                        )
+                        activities_data = cls.for_lot(instance, deli_item, deli_data, activities_data, unit_price)
                     elif len(deli_data.get('serial_data', [])) > 0:
                         activities_data = cls.for_sn(instance, deli_item, deli_data, activities_data)
 
