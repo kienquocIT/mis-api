@@ -1348,16 +1348,19 @@ def reset_and_run_reports_sale(run_type=0):
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SOFinishHandler.push_to_report_revenue(sale_order)
-            SOFinishHandler.push_to_report_product(sale_order)
-            SOFinishHandler.push_to_report_customer(sale_order)
+            SOFinishHandler.push_to_report_revenue(instance=sale_order)
+            SOFinishHandler.push_to_report_product(instance=sale_order)
+            SOFinishHandler.push_to_report_customer(instance=sale_order)
+        for g_return in GoodsReturn.objects.filter(system_status__in=[2, 3]):
+            ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SOFinishHandler.push_to_report_cashflow(sale_order)
+            SOFinishHandler.push_to_report_cashflow(instance=sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-            POFinishHandler.push_to_report_cashflow(purchase_order)
+            POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
+    return True
 
 
 def update_indicators_quotation_so_model():

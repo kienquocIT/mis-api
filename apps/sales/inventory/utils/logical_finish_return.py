@@ -10,6 +10,10 @@ class ReturnFinishHandler:
             product = None
             value = 0
             is_redelivery = False
+            if return_product.type == 0:  # no lot/serial
+                product, value = cls.setup_return_quantity(return_product=return_product)
+                if return_product.default_redelivery_number > 0:
+                    is_redelivery = True
             if return_product.type == 1:  # lot
                 product, value = cls.setup_return_quantity_by_lot(return_product=return_product)
                 if return_product.lot_redelivery_number > 0:  # redelivery
@@ -33,25 +37,32 @@ class ReturnFinishHandler:
         return True
 
     @classmethod
+    def setup_return_quantity(cls, return_product):
+        product = None
+        value = 0
+        if return_product.delivery_item:
+            product = return_product.delivery_item.product
+            value = return_product.default_return_number
+        return product, value
+
+    @classmethod
     def setup_return_quantity_by_lot(cls, return_product):
         product = None
         value = 0
-        if return_product.type == 1:  # lot
-            if return_product.lot_no:
-                if return_product.lot_no.product_warehouse:
-                    product = return_product.lot_no.product_warehouse.product
-                    value = return_product.lot_return_number
+        if return_product.lot_no:
+            if return_product.lot_no.product_warehouse:
+                product = return_product.lot_no.product_warehouse.product
+                value = return_product.lot_return_number
         return product, value
 
     @classmethod
     def setup_return_quantity_by_serial(cls, return_product):
         product = None
         value = 0
-        if return_product.type == 2:  # serial
-            if return_product.serial_no:
-                if return_product.serial_no.product_warehouse:
-                    product = return_product.serial_no.product_warehouse.product
-                    value = 1
+        if return_product.serial_no:
+            if return_product.serial_no.product_warehouse:
+                product = return_product.serial_no.product_warehouse.product
+                value = 1
         return product, value
 
     # FINAL ACCEPTANCE
@@ -61,6 +72,8 @@ class ReturnFinishHandler:
         for return_product in instance.goods_return_product_detail.all():
             product_id = None
             value = 0
+            if return_product.type == 0:  # no lot/serial
+                product_id, value = cls.setup_return_value(return_product=return_product, instance=instance)
             if return_product.type == 1:  # lot
                 product_id, value = cls.setup_return_value_by_lot(return_product=return_product)
             if return_product.type == 2:  # serial
@@ -86,32 +99,43 @@ class ReturnFinishHandler:
         return True
 
     @classmethod
+    def setup_return_value(cls, return_product, instance):
+        product_id = None
+        value = 0
+        if return_product.delivery_item:
+            if return_product.delivery_item.product and instance.return_to_warehouse:
+                product = return_product.delivery_item.product
+                warehouse = instance.return_to_warehouse
+                product_id = product.id
+                cost = product.get_unit_cost_by_warehouse(warehouse_id=warehouse.id, get_type=1)
+                value = cost * return_product.default_return_number
+        return product_id, value
+
+    @classmethod
     def setup_return_value_by_lot(cls, return_product):
         product_id = None
         value = 0
-        if return_product.type == 1:  # lot
-            if return_product.lot_no:
-                if return_product.lot_no.product_warehouse:
-                    product_obj = return_product.lot_no.product_warehouse.product
-                    product_id = return_product.lot_no.product_warehouse.product_id
-                    warehouse_id = return_product.lot_no.product_warehouse.warehouse_id
-                    if product_obj and product_id and warehouse_id:
-                        cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=warehouse_id, get_type=1)
-                        value = cost * return_product.lot_return_number
+        if return_product.lot_no:
+            if return_product.lot_no.product_warehouse:
+                product_obj = return_product.lot_no.product_warehouse.product
+                product_id = return_product.lot_no.product_warehouse.product_id
+                warehouse_id = return_product.lot_no.product_warehouse.warehouse_id
+                if product_obj and product_id and warehouse_id:
+                    cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=warehouse_id, get_type=1)
+                    value = cost * return_product.lot_return_number
         return product_id, value
 
     @classmethod
     def setup_return_value_by_serial(cls, return_product):
         product_id = None
         value = 0
-        if return_product.type == 2:  # serial
-            if return_product.serial_no:
-                if return_product.serial_no.product_warehouse:
-                    product_obj = return_product.serial_no.product_warehouse.product
-                    product_id = return_product.serial_no.product_warehouse.product_id
-                    warehouse_id = return_product.serial_no.product_warehouse.warehouse_id
-                    if product_obj and product_id and warehouse_id:
-                        value = product_obj.get_unit_cost_by_warehouse(warehouse_id=warehouse_id, get_type=1)
+        if return_product.serial_no:
+            if return_product.serial_no.product_warehouse:
+                product_obj = return_product.serial_no.product_warehouse.product
+                product_id = return_product.serial_no.product_warehouse.product_id
+                warehouse_id = return_product.serial_no.product_warehouse.warehouse_id
+                if product_obj and product_id and warehouse_id:
+                    value = product_obj.get_unit_cost_by_warehouse(warehouse_id=warehouse_id, get_type=1)
         return product_id, value
 
     # REPORT
@@ -122,6 +146,10 @@ class ReturnFinishHandler:
             for return_product in instance.goods_return_product_detail.all():
                 product = None
                 value = 0
+                if return_product.type == 0:  # no lot/serial
+                    product, value = cls.setup_return_quantity(return_product=return_product)
+                    if return_product.default_redelivery_number > 0:
+                        return True
                 if return_product.type == 1:  # lot
                     product, value = cls.setup_return_quantity_by_lot(return_product=return_product)
                     if return_product.lot_redelivery_number > 0:  # redelivery => not update report
