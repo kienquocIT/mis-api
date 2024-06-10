@@ -1,13 +1,4 @@
 from django.db import models
-from rest_framework import serializers
-from apps.sales.delivery.models import DeliveryConfig
-from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import SubPeriods
-from apps.sales.inventory.models.goods_return_sub import (
-    GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
-)
-from apps.sales.inventory.utils import ReturnFinishHandler
-from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
