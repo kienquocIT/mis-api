@@ -415,6 +415,7 @@ SALEORDER_APP_CONFIG = {
             },
         },
     },
+    "allow_print": True,
     "allow_permit": True,
 }
 

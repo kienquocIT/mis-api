@@ -64,7 +64,7 @@ class GoodsRegistrationLineDetail(SimpleAbstractModel):
 
 class GoodsRegistrationLot(SimpleAbstractModel):
     goods_registration_item = models.ForeignKey(
-        GoodsRegistrationLineDetail, on_delete=models.CASCADE, related_name='goods_registration_item_lot', null=True
+        GoodsRegistrationLineDetail, on_delete=models.CASCADE, related_name='goods_registration_item_lot'
     )
     lot_registered = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, related_name='goods_registration_lot_registered'
@@ -81,7 +81,7 @@ class GoodsRegistrationLot(SimpleAbstractModel):
 
 class GoodsRegistrationSerial(SimpleAbstractModel):
     goods_registration_item = models.ForeignKey(
-        GoodsRegistrationLineDetail, on_delete=models.CASCADE, related_name='goods_registration_item_serial', null=True
+        GoodsRegistrationLineDetail, on_delete=models.CASCADE, related_name='goods_registration_item_serial'
     )
     sn_registered = models.ForeignKey(
         'saledata.ProductWareHouseSerial', on_delete=models.CASCADE, related_name='goods_registration_sn_registered'
