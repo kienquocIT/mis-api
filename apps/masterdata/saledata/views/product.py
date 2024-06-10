@@ -2,14 +2,14 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
-from apps.sales.report.models import ReportInventorySub
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
-    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer
+    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
+    ProductForSaleDetailSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
@@ -29,6 +29,9 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
 class ProductTypeList(BaseListMixin, BaseCreateMixin):
     queryset = ProductType.objects
     search_fields = ['title']
+    filterset_fields = {
+        'is_default': ['exact'],
+    }
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
@@ -312,6 +315,40 @@ class ProductList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
+class ProductQuickCreateList(BaseListMixin, BaseCreateMixin):
+    queryset = Product.objects
+    serializer_create = ProductQuickCreateSerializer
+    serializer_detail = ProductForSaleListSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'general_product_category',
+            'general_uom_group',
+            'sale_tax',
+            'sale_default_uom',
+            'inventory_uom',
+        ).prefetch_related(
+            'general_product_types_mapped',
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Quick Create Product",
+        operation_description="Quick Create new Product",
+        request_body=ProductQuickCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
 class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Product.objects
     serializer_list = ProductListSerializer
@@ -355,7 +392,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-# Products use for sale applications
+# Products use for sale/ purchase/ inventory applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title']
@@ -377,19 +414,34 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),
             ),
-            Prefetch(
-                'report_inventory_by_month_product',
-                queryset=ReportInventorySub.objects.select_related('warehouse')
-            ),
         )
 
     @swagger_auto_schema(
-        operation_summary="Product for sale list",
-        operation_description="Product for sale list",
+        operation_summary="Product Sale list",
+        operation_description="Product Sale list",
     )
     @mask_view(login_require=True, auth_require=False, )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ProductForSaleDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    queryset = Product.objects
+    serializer_detail = ProductForSaleDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Product Sale Detail",
+        operation_description="Get Product Sale Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
 
 class UnitOfMeasureOfGroupLaborList(BaseListMixin):

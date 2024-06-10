@@ -2,7 +2,7 @@ import magic
 
 from django.conf import settings
 from rest_framework import serializers
-from apps.core.attachments.models import Files, PublicFiles
+from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING
 
 
@@ -172,4 +172,94 @@ class DetailImageWebBuilderInPublicFileListSerializer(serializers.ModelSerialize
             'file_name',
             'file_type',
             'url',
+        )
+
+
+# BEGIN FOLDER
+class FolderListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Folder
+        fields = (
+            'id',
+            'title',
+            'parent_n_id',
+            'date_created',
+            'date_modified',
+        )
+
+
+class FolderDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+
+class FolderCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField()
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+    @classmethod
+    def validate_parent_n(cls, value):
+        try:
+            if value is None:
+                return value
+            return Folder.objects.get(id=value)
+        except Folder.DoesNotExist:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+
+    def create(self, validated_data):
+        folder = Folder.objects.create(**validated_data)
+        return folder
+
+
+class FolderUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False, allow_blank=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Folder
+        fields = (
+            'title',
+            'parent_n',
+        )
+
+    @classmethod
+    def validate_parent_n(cls, value):
+        try:
+            if value is None:
+                return value
+            return Folder.objects.get(id=value)
+        except Folder.DoesNotExist:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+
+    def update(self, instance, validated_data):
+        # update instance
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+
+class FolderFilesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Files
+        fields = (
+            'id',
+            'file_name',
+            'file_size',
+            'file_type',
+            'date_created',
+            'remarks',
         )

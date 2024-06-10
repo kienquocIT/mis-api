@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import SubPeriods
+from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -464,13 +464,27 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         for lot in self.delivery_lot_delivery_product.all():
             final_ratio = 1
             uom_delivery_rate = self.uom.ratio if self.uom else 1
-            if lot.product_warehouse_lot.product_warehouse:
+            if lot.product_warehouse_lot:
                 product_warehouse = lot.product_warehouse_lot.product_warehouse
-                uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
-                if uom_wh_rate and uom_delivery_rate:
-                    final_ratio = uom_delivery_rate / uom_wh_rate
-            lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery * final_ratio
-            lot.product_warehouse_lot.save(update_fields=['quantity_import'])
+                if product_warehouse:
+                    uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                    if uom_wh_rate and uom_delivery_rate:
+                        final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
+                    # push ProductWareHouseLot
+                    lot_data = [{
+                        'lot_number': lot.product_warehouse_lot.lot_number,
+                        'quantity_import': lot.quantity_delivery * final_ratio,
+                        'expire_date': lot.product_warehouse_lot.expire_date,
+                        'manufacture_date': lot.product_warehouse_lot.manufacture_date,
+                        'delivery_id': self.delivery_sub_id,
+                    }]
+                    ProductWareHouseLot.push_pw_lot(
+                        tenant_id=self.delivery_sub.tenant_id,
+                        company_id=self.delivery_sub.company_id,
+                        product_warehouse_id=product_warehouse.id,
+                        lot_data=lot_data,
+                        type_transaction=1,
+                    )
         return True
 
     def update_product_warehouse_serial(self):
@@ -500,39 +514,6 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         permissions = ()
 
 
-# class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
-#     delivery = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery",
-#         related_name="delivery_product_warehouse_delivery",
-#         null=True,
-#     )
-#     delivery_product = models.ForeignKey(
-#         OrderDeliveryProduct,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery product",
-#         related_name="delivery_product_warehouse_delivery_product",
-#         null=True,
-#     )
-#     product_warehouse = models.ForeignKey(
-#         'saledata.ProductWareHouse',
-#         on_delete=models.CASCADE,
-#         verbose_name="product",
-#         related_name="delivery_product_warehouse_product_warehouse",
-#         null=True
-#     )
-#     quantity_delivery = models.FloatField(default=0)
-#     total_picking = models.FloatField(default=0)
-#
-#     class Meta:
-#         verbose_name = 'Order Delivery Product Warehouse'
-#         verbose_name_plural = 'Order Delivery Products Warehouse'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-#
-#
 class OrderDeliveryLot(MasterDataAbstractModel):
     delivery = models.ForeignKey(
         OrderDelivery,

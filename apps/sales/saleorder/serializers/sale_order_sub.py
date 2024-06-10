@@ -426,8 +426,8 @@ class SaleOrderCommonValidate:
                 'gift_method': promotion.gift_method,
                 'sale_order_used': [
                     {
-                        'customer_id': order_used[0],
-                        'date_created': order_used[1],
+                        'customer_id': str(order_used[0]),
+                        'date_created': str(order_used[1]),
                     } for order_used in promotion.sale_order_product_promotion.values_list(
                         'sale_order__customer_id',
                         'sale_order__date_created'

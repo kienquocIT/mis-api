@@ -208,18 +208,16 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         if config:
             if config.convert_opp:
                 return []
-        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company)
+        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company).exclude(id=obj.id)
         existed = []
         for lead in all_lead:
-            filer_by_contact_name = all_lead.filter(contact_name__icontains=lead.contact_name).count()
-            filer_by_mobile = all_lead.filter(mobile__icontains=lead.mobile).count()
-            filer_by_email = all_lead.filter(email__icontains=lead.email).count()
-            filer_by_company_name = all_lead.filter(company_name__icontains=lead.company_name).count()
-            if sum([filer_by_contact_name, filer_by_mobile, filer_by_email, filer_by_company_name]) > 0:
+            filter_by_contact_name = all_lead.filter(contact_name__icontains=lead.contact_name).count()
+            filter_by_mobile = all_lead.filter(mobile__icontains=lead.mobile).count()
+            filter_by_email = all_lead.filter(email__icontains=lead.email).count()
+            filter_by_company_name = all_lead.filter(company_name__icontains=lead.company_name).count()
+            if sum([filter_by_contact_name, filter_by_mobile, filter_by_email, filter_by_company_name]) > 0:
                 if str(lead.id) not in existed:
-                    related_leads.append({
-                        'id': lead.id, 'code': lead.code, 'title': lead.title
-                    })
+                    related_leads.append({'id': lead.id, 'code': lead.code, 'title': lead.title})
                     existed.append(str(lead.id))
         return related_leads
 
@@ -286,16 +284,16 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             fiscal_year=timezone.now().year
         ).first()
         config = instance.lead_configs.first()
-        if config.contact_mapped or config.convert_opp:
-            raise serializers.ValidationError(
-                {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
-            )
         if str(this_period.id) == str(instance.period_mapped_id):
             if 'goto_stage' in self.context:
                 self.goto_stage(instance)
             elif 'convert_opp' in self.context:
                 self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
             else:
+                if config.contact_mapped or config.convert_opp:
+                    raise serializers.ValidationError(
+                        {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
+                    )
                 for key, value in validated_data.items():
                     setattr(instance, key, value)
                 instance.save()

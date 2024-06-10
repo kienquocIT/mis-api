@@ -361,6 +361,7 @@ def update_balance_data(balance_data, instance):
                                 sum_input_quantity=float(item.get('quantity')),
                                 sum_input_value=float(item.get('value')),
                                 sum_output_quantity=0,
+                                sum_output_value=0,
                                 periodic_closed=False
                             )
                         )

@@ -340,3 +340,12 @@ OTP_TYPE = (
     (2, 'Application'),
     (4, 'Other'),
 )
+
+# ProductWarehouse
+TYPE_LOT_TRANSACTION = (
+    (0, 'Goods receipt'),
+    (1, 'Delivery'),
+    (2, 'Goods return'),
+    (3, 'Goods transfer'),
+    (4, 'Goods issue')
+)

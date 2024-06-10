@@ -68,34 +68,51 @@ class GoodsIssue(DataAbstractModel):
     def prepare_data_for_logging(cls, instance):
         activities_data = []
         for item in instance.goods_issue_product.all():
-            lot_data = []
-            for lot_item in item.lot_data:
-                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
-                quantity = lot_item['old_quantity'] - lot_item['quantity']
-                if prd_wh_lot and quantity > 0:
-                    lot_data.append({
-                        'lot_id': str(prd_wh_lot.id),
-                        'lot_number': prd_wh_lot.lot_number,
-                        'lot_quantity': quantity,
-                        'lot_value': item.unit_cost * quantity,
-                        'lot_expire_date': str(prd_wh_lot.expire_date)
-                    })
-            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
-            activities_data.append({
-                'product': item.product,
-                'warehouse': item.warehouse,
-                'system_date': instance.date_approved,
-                'posting_date': instance.date_approved,
-                'document_date': instance.date_approved,
-                'stock_type': -1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods issue',
-                'quantity': casted_quantity,
-                'cost': 0,  # theo gia cost
-                'value': 0,  # theo gia cost
-                'lot_data': lot_data
-            })
+            if len(item.lot_data) > 0:
+                for lot_item in item.lot_data:
+                    prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
+                    quantity = lot_item['old_quantity'] - lot_item['quantity']
+                    if prd_wh_lot and quantity > 0:
+                        lot_data = {
+                            'lot_id': str(prd_wh_lot.id),
+                            'lot_number': prd_wh_lot.lot_number,
+                            'lot_quantity': quantity,
+                            'lot_value': item.unit_cost * quantity,
+                            'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
+                        }
+                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, quantity)
+                        activities_data.append({
+                            'product': item.product,
+                            'warehouse': item.warehouse,
+                            'system_date': instance.date_approved,
+                            'posting_date': instance.date_approved,
+                            'document_date': instance.date_approved,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Goods issue',
+                            'quantity': casted_quantity,
+                            'cost': 0,  # theo gia cost
+                            'value': 0,  # theo gia cost
+                            'lot_data': lot_data
+                        })
+            else:
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
+                activities_data.append({
+                    'product': item.product,
+                    'warehouse': item.warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods issue',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {}
+                })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,

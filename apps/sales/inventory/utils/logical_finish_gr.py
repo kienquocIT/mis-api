@@ -81,21 +81,23 @@ class GRFinishHandler:
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
             if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
                 uom_base, final_ratio, lot_data, serial_data = cls.setup_data_push_by_po(
-                    instance=instance,
-                    gr_warehouse=gr_warehouse,
+                    instance=instance, gr_warehouse=gr_warehouse,
                 )
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_base.id,
-                    tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                    amount=gr_warehouse.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                    lot_data=lot_data,
-                    serial_data=serial_data,
-                )
+                gr_product = gr_warehouse.goods_receipt_product
+                if gr_product:
+                    if gr_product.product:
+                        ProductWareHouse.push_from_receipt(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_id=gr_product.product_id,
+                            warehouse_id=gr_warehouse.warehouse_id,
+                            uom_id=uom_base.id,
+                            tax_id=gr_product.product.purchase_tax_id,
+                            amount=gr_warehouse.quantity_import * final_ratio,
+                            unit_price=gr_product.product_unit_price,
+                            lot_data=lot_data,
+                            serial_data=serial_data,
+                        )
         return True
 
     @classmethod
@@ -117,17 +119,13 @@ class GRFinishHandler:
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-            if lot.lot:
-                lot.lot.quantity_import += lot.quantity_import * final_ratio
-                lot.lot.save(update_fields=['quantity_import'])
-            else:
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                    'goods_receipt_id': instance.id,
-                })
+            lot_data.append({
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import * final_ratio,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date,
+                'goods_receipt_id': instance.id,
+            })
         for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
             serial_data.append({
                 'vendor_serial_number': serial.vendor_serial_number,
@@ -148,18 +146,21 @@ class GRFinishHandler:
                     instance=instance,
                     gr_warehouse=gr_warehouse,
                 )
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_base.id,
-                    tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                    amount=gr_warehouse.goods_receipt_product.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                    lot_data=lot_data,
-                    serial_data=serial_data,
-                )
+                gr_product = gr_warehouse.goods_receipt_product
+                if gr_product:
+                    if gr_product.product:
+                        ProductWareHouse.push_from_receipt(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_id=gr_product.product_id,
+                            warehouse_id=gr_warehouse.warehouse_id,
+                            uom_id=uom_base.id,
+                            tax_id=gr_product.product.purchase_tax_id,
+                            amount=gr_product.quantity_import * final_ratio,
+                            unit_price=gr_product.product_unit_price,
+                            lot_data=lot_data,
+                            serial_data=serial_data,
+                        )
         return True
 
     @classmethod
@@ -173,17 +174,13 @@ class GRFinishHandler:
         lot_data = []
         serial_data = []
         for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-            if lot.lot:  # if GR for exist LOT => update quantity
-                lot.lot.quantity_import += lot.quantity_import * final_ratio
-                lot.lot.save(update_fields=['quantity_import'])
-            else:  # GR with new LOTS => setup data to create ProductWarehouseLot
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                    'goods_receipt_id': instance.id,
-                })
+            lot_data.append({
+                'lot_number': lot.lot_number,
+                'quantity_import': lot.quantity_import * final_ratio,
+                'expire_date': lot.expire_date,
+                'manufacture_date': lot.manufacture_date,
+                'goods_receipt_id': instance.id,
+            })
         for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
             serial_data.append({
                 'vendor_serial_number': serial.vendor_serial_number,

@@ -1,5 +1,4 @@
-from .application_properties_params import Quotation_data__params, Bastion_data_params
-
+from .application_properties_params import Quotation_data__params, Bastion_data_params, SaleOrder_data__params
 
 __all__ = ["ApplicationProperty_data"]
 
@@ -1283,6 +1282,8 @@ AppProp_SaleData_SaleOrder_data = {
         'type': 6,
         'is_sale_indicator': True,
     },
+    #
+    **SaleOrder_data__params,
 }
 
 AppProp_SaleData_Delivery_data = {

@@ -73,53 +73,84 @@ class GoodsTransfer(DataAbstractModel):
         activities_data_out = []
         activities_data_in = []
         for item in instance.goods_transfer.all():
-            lot_data = []
-            for lot_item in item.lot_data:
-                prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
-                if prd_wh_lot:
-                    lot_data.append({
-                        'lot_id': str(prd_wh_lot.id),
-                        'lot_number': prd_wh_lot.lot_number,
-                        'lot_quantity': lot_item['quantity'],
-                        'lot_value': item.unit_cost * lot_item['quantity'],
-                        'lot_expire_date': str(prd_wh_lot.expire_date)
-                    })
-            casted_quantity = ReportInventorySub.cast_quantity_to_unit(
-                item.uom,
-                item.quantity
-            )
-            casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
-            activities_data_out.append({
-                'product': item.product,
-                'warehouse': item.warehouse,
-                'system_date': instance.date_approved,
-                'posting_date': instance.date_approved,
-                'document_date': instance.date_approved,
-                'stock_type': -1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods transfer (out)',
-                'quantity': casted_quantity,
-                'cost': 0,  # theo gia cost
-                'value': 0,  # theo gia cost
-                'lot_data': lot_data
-            })
-
-            activities_data_in.append({
-                'product': item.product,
-                'warehouse': item.end_warehouse,
-                'system_date': instance.date_approved,
-                'posting_date': instance.date_approved,
-                'document_date': instance.date_approved,
-                'stock_type': 1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods transfer (in)',
-                'quantity': casted_quantity,
-                'cost': casted_cost,
-                'value': casted_cost * casted_quantity,
-                'lot_data': lot_data
-            })
+            if len(item.lot_data) > 0:
+                for lot_item in item.lot_data:
+                    prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
+                    if prd_wh_lot:
+                        lot_data = {
+                            'lot_id': str(prd_wh_lot.id),
+                            'lot_number': prd_wh_lot.lot_number,
+                            'lot_quantity': lot_item['quantity'],
+                            'lot_value': item.unit_cost * lot_item['quantity'],
+                            'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
+                        }
+                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, lot_item['quantity'])
+                        casted_cost = (
+                                item.unit_cost * lot_item['quantity'] / casted_quantity
+                        ) if lot_item['quantity'] > 0 else 0
+                        activities_data_out.append({
+                            'product': item.product,
+                            'warehouse': item.warehouse,
+                            'system_date': instance.date_approved,
+                            'posting_date': instance.date_approved,
+                            'document_date': instance.date_approved,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Goods transfer (out)',
+                            'quantity': casted_quantity,
+                            'cost': 0,  # theo gia cost
+                            'value': 0,  # theo gia cost
+                            'lot_data': lot_data
+                        })
+                        activities_data_in.append({
+                            'product': item.product,
+                            'warehouse': item.end_warehouse,
+                            'system_date': instance.date_approved,
+                            'posting_date': instance.date_approved,
+                            'document_date': instance.date_approved,
+                            'stock_type': 1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Goods transfer (in)',
+                            'quantity': casted_quantity,
+                            'cost': casted_cost,
+                            'value': casted_cost * casted_quantity,
+                            'lot_data': lot_data
+                        })
+            else:
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
+                activities_data_out.append({
+                    'product': item.product,
+                    'warehouse': item.warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods transfer (out)',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {}
+                })
+                activities_data_in.append({
+                    'product': item.product,
+                    'warehouse': item.end_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods transfer (in)',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_cost * casted_quantity,
+                    'lot_data': {}
+                })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
@@ -192,7 +223,6 @@ class GoodsTransfer(DataAbstractModel):
                         product_warehouse=destination,
                         lot_number=lot_src_obj.lot_number,
                         quantity_import=lot_item['quantity'],
-                        raw_quantity_import=lot_item['quantity'],
                         expire_date=lot_src_obj.expire_date,
                         manufacture_date=lot_src_obj.manufacture_date
                     )

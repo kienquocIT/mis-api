@@ -317,16 +317,14 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(cls, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-                    if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
+                    is_change = validate_data.get('is_change', False)
+                    if is_change is False:
+                        if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
         return True
 
     def validate(self, validate_data):
