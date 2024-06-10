@@ -16,56 +16,52 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
     def get_product_data(cls, obj):
         product_data = []
         for item in obj.goods_receipt_product_goods_receipt.all():
-            for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
-                serial_data = []
-                for serial in obj.product_wh_serial_goods_receipt.filter(
-                    product_warehouse__product_id=item.product_id,
-                    product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
-                ).order_by('vendor_serial_number', 'serial_number'):
-                    serial_data.append({
-                        'id': serial.id,
-                        'vendor_serial_number': serial.vendor_serial_number,
-                        'serial_number': serial.serial_number,
-                        'expire_date': serial.expire_date,
-                        'manufacture_date': serial.manufacture_date,
-                        'warranty_start': serial.warranty_start,
-                        'warranty_end': serial.warranty_end,
-                        'is_delete': serial.is_delete
+            if item.product.general_traceability_method == 2:
+                for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
+                    serial_data = []
+                    for serial in obj.product_wh_serial_goods_receipt.filter(
+                        product_warehouse__product_id=item.product_id,
+                        product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
+                    ).order_by('vendor_serial_number', 'serial_number'):
+                        serial_data.append({
+                            'id': serial.id,
+                            'vendor_serial_number': serial.vendor_serial_number,
+                            'serial_number': serial.serial_number,
+                            'expire_date': serial.expire_date,
+                            'manufacture_date': serial.manufacture_date,
+                            'warranty_start': serial.warranty_start,
+                            'warranty_end': serial.warranty_end,
+                            'is_delete': serial.is_delete
+                        })
+
+                    product_data.append({
+                        'goods_receipt': {
+                            'id': obj.id,
+                            'code': obj.code,
+                            'title': obj.title,
+                            'date_approved': obj.date_approved
+                        },
+                        'person_in_charge': {
+                            'id': obj.employee_inherit_id,
+                            'code': obj.employee_inherit.code,
+                            'full_name': obj.employee_inherit.get_full_name(2)
+                        } if obj.employee_inherit else {},
+                        'product': {
+                            'id': item.product_id,
+                            'code': item.product.code,
+                            'title': item.product.title,
+                            'category': item.product.general_product_category_id,
+                            'type': item.product.general_traceability_method
+                        } if item.product else {},
+                        'warehouse': {
+                            'id': gr_wh_gr_prd.warehouse_id,
+                            'code': gr_wh_gr_prd.warehouse.code,
+                            'title': gr_wh_gr_prd.warehouse.title
+                        } if gr_wh_gr_prd else {},
+                        'serial_list': serial_data,
+                        'quantity_import': gr_wh_gr_prd.quantity_import,
+                        'status': int(len(serial_data) == item.quantity_import)
                     })
-                sum_serial_quantity = len(serial_data)
-
-                status = 0
-                if item.product.general_traceability_method == 2 and sum_serial_quantity == item.quantity_import:
-                    status = 1
-
-                product_data.append({
-                    'goods_receipt': {
-                        'id': obj.id,
-                        'code': obj.code,
-                        'title': obj.title,
-                        'date_approved': obj.date_approved
-                    },
-                    'person_in_charge': {
-                        'id': obj.employee_inherit_id,
-                        'code': obj.employee_inherit.code,
-                        'full_name': obj.employee_inherit.get_full_name(2)
-                    } if obj.employee_inherit else {},
-                    'product': {
-                        'id': item.product_id,
-                        'code': item.product.code,
-                        'title': item.product.title,
-                        'category': item.product.general_product_category_id,
-                        'type': item.product.general_traceability_method
-                    } if item.product else {},
-                    'warehouse': {
-                        'id': gr_wh_gr_prd.warehouse_id,
-                        'code': gr_wh_gr_prd.warehouse.code,
-                        'title': gr_wh_gr_prd.warehouse.title
-                    } if gr_wh_gr_prd else {},
-                    'serial_list': serial_data,
-                    'quantity_import': gr_wh_gr_prd.quantity_import,
-                    'status': status
-                })
         return product_data
 
 
