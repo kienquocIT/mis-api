@@ -228,3 +228,15 @@ class LeadHint(SimpleAbstractModel):
                 customer_email=customer_email
             )
         return True
+
+
+class LeadOpportunity(DataAbstractModel):
+    lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE)
+    opportunity = models.ForeignKey('opportunity.Opportunity', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Leads Opportunity'
+        verbose_name_plural = 'Lead Opportunity'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()

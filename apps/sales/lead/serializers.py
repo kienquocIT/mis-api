@@ -3,7 +3,7 @@ from django.utils import timezone
 from apps.masterdata.saledata.models import Periods
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
-    LeadChartInformation, LeadHint
+    LeadChartInformation, LeadHint, LeadOpportunity
 )
 
 __all__ = [
@@ -11,7 +11,9 @@ __all__ = [
     'LeadCreateSerializer',
     'LeadDetailSerializer',
     'LeadUpdateSerializer',
-    'LeadStageListSerializer'
+    'LeadStageListSerializer',
+    'LeadChartListSerializer',
+    'LeadListForOpportunitySerializer'
 ]
 
 
@@ -194,9 +196,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         hints_by_mobile = all_hint.filter(customer_mobile=obj.mobile) if obj.mobile else []
         hints_by_email = all_hint.filter(customer_email=obj.email) if obj.email else []
         for hint in list(hints_by_mobile) + list(hints_by_email):
-            if str(hint.id) not in existed:
+            if str(hint.opportunity_id) not in existed:
                 related_opps.append({
-                    'id': str(hint.opportunity_id), 'code': hint.opportunity.code, 'title': hint.opportunity.title
+                    'id': str(hint.opportunity_id),
+                    'code': hint.opportunity.code,
+                    'title': hint.opportunity.title
                 })
                 existed.append(str(hint.opportunity_id))
         return related_opps
@@ -260,7 +264,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def convert_opp(cls, instance, config, opp_mapped_id):
-        if instance.current_lead_stage.level != 1:
+        if instance.lead_status != 1:
             if config:
                 config.convert_opp = True
                 config.convert_opp_create = False
@@ -269,14 +273,23 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
                 config.save(update_fields=[
                     'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
                 ])
+                LeadOpportunity.objects.create(
+                    company=instance.company, tenant=instance.tenant,
+                    lead=instance, opportunity_id=opp_mapped_id,
+                    employee_created=instance.employee_created,
+                    employee_inherit=instance.employee_inherit
+                )
                 stage = LeadStage.objects.filter(
                     company=instance.company, tenant=instance.tenant, level=4
                 ).first()
                 if stage:
                     instance.current_lead_stage = stage
                     instance.lead_status = 4
-        instance.save()
-        return instance
+            instance.save()
+            return instance
+        raise serializers.ValidationError({
+            'error': 'Can not convert to Opp because this Lead stage is "Marketing Acquired Lead".'
+        })
 
     def update(self, instance, validated_data):
         this_period = Periods.objects.filter(
@@ -326,3 +339,27 @@ class LeadChartListSerializer(serializers.ModelSerializer):
             'stage_amount_information',
             'period_mapped'
         )
+
+
+class LeadListForOpportunitySerializer(serializers.ModelSerializer):
+    lead = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeadOpportunity
+        fields = (
+            'id',
+            'lead',
+            'opportunity'
+        )
+
+    @classmethod
+    def get_lead(cls, obj):
+        return {
+            'id': obj.lead_id,
+            'code': obj.lead.code,
+            'title': obj.lead.title,
+            'contact_name': obj.lead.contact_name,
+            'source': str(dict(LEAD_SOURCE).get(obj.lead.source)),
+            'lead_status': str(dict(LEAD_STATUS).get(obj.lead.lead_status)),
+            'date_created': obj.lead.date_created
+        }
