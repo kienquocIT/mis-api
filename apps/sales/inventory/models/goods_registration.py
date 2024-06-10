@@ -14,6 +14,21 @@ class GoodsRegistration(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def create_goods_registration_when_sale_order_approved(cls, sale_order):
+        goods_registration = GoodsRegistration.objects.create(sale_order=sale_order)
+        bulk_info = []
+        for so_item in sale_order.sale_order_product_sale_order.all():
+            if 1 in so_item.product.product_choice:
+                bulk_info.append(
+                    GoodsRegistrationLineDetail(
+                        goods_registration=goods_registration,
+                        so_item=so_item,
+                        registered_quantity=0,
+                        registered_data={}
+                    )
+                )
+
 
 class GoodsRegistrationLineDetail(SimpleAbstractModel):
     goods_registration = models.ForeignKey(
@@ -24,20 +39,20 @@ class GoodsRegistrationLineDetail(SimpleAbstractModel):
     )
     registered_quantity = models.FloatField(default=0)
     registered_data = models.JSONField(default=dict)
-    registered_data_format = {
-        'goods_receipt_list': [
-            {
-                'id': ...,
-                'code': ...,
-                'title': ...,
-                'quantity': ...,
-                'warehouse_list': [{
-                    'warehouse': {'id': ..., 'code': ..., 'title': ...},
-                    'lot_data': [{'lot_id': ..., 'lot_number': ..., 'lot_quantity': ...}]
-                }]
-            }
-        ]
-    }
+    # registered_data_format = {
+    #     'goods_receipt_list': [
+    #         {
+    #             'id': ...,
+    #             'code': ...,
+    #             'title': ...,
+    #             'quantity': ...,
+    #             'warehouse_list': [{
+    #                 'warehouse': {'id': ..., 'code': ..., 'title': ...},
+    #                 'lot_data': [{'lot_id': ..., 'lot_number': ..., 'lot_quantity': ...}]
+    #             }]
+    #         }
+    #     ]
+    # }
 
     class Meta:
         verbose_name = 'Goods Registration Line Detail'
