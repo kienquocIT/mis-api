@@ -498,24 +498,32 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         'value': 0,  # theo gia cost
                         'lot_data': {}
                     })
-                if all([len(deli_data.get('lot_data', [])) == 0, len(deli_data.get('serial_data', [])) == 0]):
-                    quantity_delivery = deli_data.get('stock', 0)
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
-                    activities_data.append({
-                        'product': deli_item.product,
-                        'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
-                        'system_date': instance.date_done,
-                        'posting_date': instance.date_done,
-                        'document_date': instance.date_done,
-                        'stock_type': -1,
-                        'trans_id': str(instance.id),
-                        'trans_code': instance.code,
-                        'trans_title': 'Delivery',
-                        'quantity': casted_quantity,
-                        'cost': 0,  # theo gia cost
-                        'value': 0,  # theo gia cost
-                        'lot_data': {}
-                    })
+
+            # for None
+            if all([
+                deli_item.picked_quantity > 0,
+                len(deli_item.delivery_data) > 0,
+                deli_item.product.general_traceability_method == 0
+            ]):
+                lot_data = deli_item.delivery_data[0]
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    deli_item.uom, deli_item.picked_quantity
+                )
+                activities_data.append({
+                    'product': deli_item.product,
+                    'warehouse': WareHouse.objects.filter(id=lot_data.get('warehouse')).first(),
+                    'system_date': instance.date_done,
+                    'posting_date': instance.date_done,
+                    'document_date': instance.date_done,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Delivery',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {}
+                })
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,

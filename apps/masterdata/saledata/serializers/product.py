@@ -547,18 +547,21 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'warehouse', 'uom'
         ).order_by('warehouse__code')
         for item in product_warehouse:
+            print(item.id)
             uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
             uom_ratio_des = item.uom.ratio if item.uom else 0
             if uom_ratio_src and uom_ratio_des:
                 ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                result.append({
-                    'id': item.id,
-                    'warehouse': {
-                        'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
-                    } if item.warehouse else {},
-                    'stock_amount': item.stock_amount / ratio_convert,
-                    'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1) * ratio_convert
-                })
+                stock_amount = item.stock_amount / ratio_convert
+                if stock_amount > 0:
+                    result.append({
+                        'id': item.id,
+                        'warehouse': {
+                            'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
+                        } if item.warehouse else {},
+                        'stock_amount': stock_amount,
+                        'cost': obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=1) * ratio_convert
+                    })
         return result
 
     @classmethod

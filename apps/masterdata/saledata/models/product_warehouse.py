@@ -272,7 +272,6 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
-    raw_quantity_import = models.FloatField(default=0)  # ONLY add when input (for input after)
     quantity_import = models.FloatField(
         default=0,
         help_text='when GoodsReceipt this quantity +=, when Delivery this quantity -='
@@ -297,7 +296,6 @@ class ProductWareHouseLot(MasterDataAbstractModel):
                 product_warehouse_id=product_warehouse_id, lot_number=lot.get('lot_number', ''),
                 defaults={
                     'quantity_import': lot.get('quantity_import', 0),
-                    'raw_quantity_import': lot.get('quantity_import', 0),
                     'expire_date': lot.get('expire_date', None),
                     'manufacture_date': lot.get('manufacture_date', None),
                 }
@@ -305,8 +303,7 @@ class ProductWareHouseLot(MasterDataAbstractModel):
             if _created is False:  # created before => update
                 if type_transaction == 0:
                     obj.quantity_import += lot.get('quantity_import', 0)
-                    obj.raw_quantity_import += lot.get('quantity_import', 0)
-                    obj.save(update_fields=['quantity_import', 'raw_quantity_import'])
+                    obj.save(update_fields=['quantity_import'])
                 if type_transaction == 1:
                     obj.quantity_import -= lot.get('quantity_import', 0)
                     obj.save(update_fields=['quantity_import'])

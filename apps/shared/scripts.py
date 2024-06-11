@@ -45,7 +45,8 @@ from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliv
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
+    GoodsReturnProductDetail
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
@@ -1726,6 +1727,7 @@ def report_rerun(company_id, start_month):
             quantity=2,
             type_transaction=1
         )
+        # đầu kỳ SW
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
@@ -1734,14 +1736,15 @@ def report_rerun(company_id, start_month):
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
             sub_period_order=3,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(30000000),
-            opening_balance_cost=float(3000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(30000000),
-            ending_balance_cost=float(3000000),
+            opening_balance_quantity=float(7),
+            opening_balance_value=float(56000000),
+            opening_balance_cost=float(8000000),
+            ending_balance_quantity=float(7),
+            ending_balance_value=float(56000000),
+            ending_balance_cost=float(8000000),
             for_balance=True
         )
+        # đầu kỳ Vision
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
@@ -1793,7 +1796,24 @@ def report_rerun(company_id, start_month):
             ending_balance_cost=float(40000000),
             for_balance=True
         )
-
+        # đầu kỳ HP
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
+            lot_mapped=None,
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(2),
+            opening_balance_value=float(276000000),
+            opening_balance_cost=float(138000000),
+            ending_balance_quantity=float(2),
+            ending_balance_value=float(276000000),
+            ending_balance_cost=float(138000000),
+            for_balance=True
+        )
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -1848,16 +1868,7 @@ def report_rerun(company_id, start_month):
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            products = instance.delivery_product_delivery_sub.all()
-            validated_product = []
-            for prd in products:
-                if prd.picked_quantity > 0:
-                    validated_product.append({
-                        'product_id': str(prd.product_id),
-                        'delivery_data': prd.delivery_data,
-                        'order': prd.order
-                    })
-            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance, validated_product)
+            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
@@ -1878,8 +1889,8 @@ def report_rerun(company_id, start_month):
     print('Done')
 
 
-def update_product_warehouse_uom_base():
-    for product in Product.objects.filter(id="e12e4dd2-fb4e-479d-ae8a-c902f3dbc896"):
+def update_product_warehouse_uom_base(product_id):
+    for product in Product.objects.filter(id=product_id):
         if product.general_uom_group:
             uom_base = product.general_uom_group.uom_reference
             if uom_base:
@@ -1905,3 +1916,79 @@ def update_product_warehouse_uom_base():
                     pw_common_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
     print('update_product_warehouse_uom_base done.')
     return True
+
+
+def update_goods_return_items_nt():
+    data = [
+        {
+            'id': '26199d0c4ebb41199f13a5d215885c2f',
+            'prd': 'b01be7a525624897bb2226403f32c808',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': '1dc2a55dbdfb47e4bad7509a9d9f9984',
+            'prd': '567d869256f34fb5881513dae765e763',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': 'ff1cf130f20e4eccb12c7031195608ba',
+            'prd': '52e45d5bd91e4c048b2d7a09ee4820dd',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        },
+        {
+            'id': 'fd9169186424438087557a89efb037a5',
+            'prd': '317352890a2b4ae29e2d0940bc1010ec',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        }
+    ]
+
+    update_product_warehouse_uom_base("567d8692-56f3-4fb5-8815-13dae765e763")
+    for item in data:
+        obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
+        obj.product_id = item.get('prd')
+        obj.return_to_warehouse_id = item.get('wh')
+        obj.uom_id = item.get('uom')
+        obj.save(update_fields=['product_id', 'return_to_warehouse_id', 'uom_id'])
+
+    GoodsReturn.objects.filter(id='b4a0f779-c326-4283-94b0-241c9438b9b6').delete()
+    ProductWareHouse.objects.filter(id__in=[
+        '9b5817285f13406f9c3399ab88bd8f2e',
+        'efd096351225461ca247e22ff444aa68',
+        'aac5e1c2498d4cbbb438e2aa2e3004c2'
+    ]).delete()
+    pro_wd_CHIVAS25 = ProductWareHouse.objects.filter(id='328ae65745644a66b90fb18e76dd2737').first()
+    if pro_wd_CHIVAS25:
+        pro_wd_CHIVAS25.stock_amount = 21
+        pro_wd_CHIVAS25.receipt_amount = 39
+        pro_wd_CHIVAS25.sold_amount = 17
+        pro_wd_CHIVAS25.picked_ready = 0
+        pro_wd_CHIVAS25.uom_id = '08dacbd3-0deb-479b-8118-702e800ca1e3'
+        pro_wd_CHIVAS25.save(update_fields=['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'uom_id'])
+
+    # OKSS
+    prd = Product.objects.filter(id='9e41fb1a75764ee885ee962217b7fc4f').first()
+    if prd:
+        prd.stock_amount = 1
+        prd.available_amount = -7
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # ROYAL24
+    prd = Product.objects.filter(id='567d8692-56f3-4fb5-8815-13dae765e763').first()
+    if prd:
+        prd.stock_amount = 5
+        prd.available_amount = 3
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # CHIVAS25
+    prd = Product.objects.filter(id='b01be7a5-2562-4897-bb22-26403f32c808').first()
+    if prd:
+        prd.stock_amount = 21
+        prd.available_amount = 19
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+
+    obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
+    obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
+    obj.save(update_fields=['delivery_item_id'])
+    print('Done')

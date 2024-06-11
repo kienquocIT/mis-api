@@ -28,7 +28,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         lot_number = obj.lot_mapped.lot_number if obj.lot_mapped else ''
         return {
             'id': obj.product_id,
-            'title': obj.product.title,
+            'title': f"{obj.product.title} ({obj.product.inventory_uom.title})",
             'lot_number': lot_number,
             'code': obj.product.code,
             'description': obj.product.description,
