@@ -27,7 +27,7 @@ class GoodsRegistration(DataAbstractModel):
             system_status=1
         )
         bulk_info = []
-        for so_item in sale_order.sale_order_product_sale_order.all():
+        for so_item in sale_order.sale_order_product_sale_order.filter(product__isnull=False):
             if 1 in so_item.product.product_choice:
                 bulk_info.append(
                     GoodsRegistrationLineDetail(
