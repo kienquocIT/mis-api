@@ -6,8 +6,7 @@ from apps.masterdata.saledata.models import SubPeriods  # ProductWareHouseLot
 from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
-from apps.sales.inventory.utils import ReturnFinishHandler
-from apps.sales.inventory.utils.logical_return import ReturnHandler
+from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
 # from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
