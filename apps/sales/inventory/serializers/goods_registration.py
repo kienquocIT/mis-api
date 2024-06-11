@@ -75,6 +75,7 @@ class GoodsRegistrationDetailSerializer(AbstractDetailSerializerModel):
                         'id': item.so_item.product_id,
                         'code': item.so_item.product.code,
                         'title': item.so_item.product.title,
+                        'description': item.so_item.product.description,
                     } if item.so_item.product else {},
                     'uom': {
                         'id': item.so_item.unit_of_measure_id,
