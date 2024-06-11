@@ -16,7 +16,16 @@ class GoodsRegistration(DataAbstractModel):
 
     @classmethod
     def create_goods_registration_when_sale_order_approved(cls, sale_order):
-        goods_registration = GoodsRegistration.objects.create(sale_order=sale_order)
+        goods_registration = GoodsRegistration.objects.create(
+            code=f'GRe-{sale_order.code}',
+            title=f'{sale_order.code}-GoodsRegistration',
+            sale_order=sale_order,
+            employee_inherit_id=sale_order.employee_inherit_id,
+            employee_created_id=sale_order.employee_created_id,
+            company_id=sale_order.company_id,
+            tenant_id=sale_order.tenant_id,
+            system_status=1
+        )
         bulk_info = []
         for so_item in sale_order.sale_order_product_sale_order.all():
             if 1 in so_item.product.product_choice:
@@ -28,6 +37,8 @@ class GoodsRegistration(DataAbstractModel):
                         registered_data={}
                     )
                 )
+        GoodsRegistrationLineDetail.objects.bulk_create(bulk_info)
+        return goods_registration
 
 
 class GoodsRegistrationLineDetail(SimpleAbstractModel):
