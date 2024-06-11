@@ -3,17 +3,18 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.serializers import ContactCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation
+from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
-    LeadStageListSerializer, LeadChartListSerializer
+    LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer
 )
 
 __all__ = [
     'LeadList',
     'LeadDetail',
     'LeadStageList',
-    'LeadChartList'
+    'LeadChartList',
+    'LeadListForOpportunity'
 ]
 
 
@@ -159,4 +160,32 @@ class LeadChartList(BaseListMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeadListForOpportunity(BaseListMixin):
+    queryset = LeadOpportunity.objects
+    search_fields = ['lead__title']
+    serializer_list = LeadListForOpportunitySerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        if 'opp_id' in self.request.query_params:
+            return super().get_queryset().filter(
+                opportunity=self.request.query_params['opp_id']
+            ).prefetch_related().select_related()
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Lead list",
+        operation_description="Lead list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        LeadChartInformation.create_update_chart_information(
+            self.request.user.tenant_current_id, self.request.user.company_current_id
+        )
         return self.list(request, *args, **kwargs)
