@@ -8,6 +8,7 @@ DIAGRAM_APP_CONFIG = {
         'list_app_suffix': [
             'purchasing.purchaserequest', 'purchasing.purchaseorder',
             'inventory.goodsreceipt', 'delivery.orderdeliverysub',
+            'inventory.goodsreturn',
         ],
     }
 }

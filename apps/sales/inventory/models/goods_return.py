@@ -7,6 +7,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler
+from apps.sales.inventory.utils.logical_return import ReturnHandler
 # from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
@@ -161,6 +162,9 @@ class GoodsReturn(DataAbstractModel):
 
             # self.prepare_data_for_logging(self)
 
+        # diagram
+        ReturnHandler.push_diagram(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 
