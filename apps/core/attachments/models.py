@@ -1,6 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles',
+    'PublicFiles', 'Folder',
 ]
 
 import logging
