@@ -1,12 +1,10 @@
 from django.db import transaction
 from django.utils import timezone
-
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, ProductWareHouseLot
+from apps.masterdata.saledata.models import ProductWareHouse
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -14,8 +12,6 @@ from ..utils import DeliHandler, DeliFinishHandler
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
-
-from ...report.models import ReportInventorySub
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):

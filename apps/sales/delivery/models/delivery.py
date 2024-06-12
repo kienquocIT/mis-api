@@ -269,12 +269,12 @@ class OrderDelivery(DataAbstractModel):
         self.put_backup_data()
         self.create_code_delivery()
 
-        sub = OrderDeliverySub.objects.filter(
-            order_delivery_id=self.id
-        ).exclude(id=self.sub.id).order_by('-date_created').first()
-
-        if sub:
-            self.prepare_data_for_logging(sub)
+        if self.sub:
+            sub = OrderDeliverySub.objects.filter(
+                order_delivery_id=self.id
+            ).exclude(id=self.sub.id).order_by('-date_created').first()
+            if sub:
+                self.prepare_data_for_logging(sub)
 
         super().save(*args, **kwargs)
 
