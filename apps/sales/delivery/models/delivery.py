@@ -192,7 +192,7 @@ class OrderDelivery(DataAbstractModel):
                     }
                 })
             else:
-                raise serializers.ValidationError({'Lot': 'Lot does not found.'})
+                raise ValueError(_("Lot does not found."))
         return activities_data
 
     @classmethod
