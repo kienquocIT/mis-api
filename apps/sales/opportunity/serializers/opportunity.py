@@ -247,36 +247,32 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def convert_opportunity(cls, lead, tenant_id, company_id, opp_mapped, account_mapped):
         # convert to a new opp (existed account)
-        if lead.lead_status != 1:
-            lead_configs = lead.lead_configs.first() if lead else None
-            if lead_configs:
-                if not lead_configs.convert_opp:
-                    current_stage = LeadStage.objects.filter(
-                        tenant_id=tenant_id, company_id=company_id, level=4
-                    ).first()
-                    lead.current_lead_stage = current_stage
-                    lead.lead_status = 4
-                    lead.save(update_fields=['current_lead_stage', 'lead_status'])
-                    lead_configs.opp_mapped = opp_mapped
-                    lead_configs.account_mapped = account_mapped
-                    lead_configs.convert_opp = True
-                    lead_configs.assign_to_sale_config = opp_mapped.employee_inherit
-                    lead_configs.save(update_fields=[
-                        'opp_mapped', 'account_mapped', 'convert_opp', 'assign_to_sale_config'
-                    ])
-                    LeadOpportunity.objects.create(
-                        company=lead.company, tenant=lead.tenant,
-                        lead=lead, opportunity=lead_configs.opp_mapped,
-                        employee_created=lead.employee_created,
-                        employee_inherit=lead.employee_inherit
-                    )
-                    LeadChartInformation.create_update_chart_information(tenant_id, company_id)
-                    return True
-                raise serializers.ValidationError({'converted': 'Converted to opp.'})
-            raise serializers.ValidationError({'not found': 'Lead config not found.'})
-        raise serializers.ValidationError({
-            'error': 'Can not convert to Opp because this Lead stage is "Marketing Acquired Lead".'
-        })
+        lead_configs = lead.lead_configs.first() if lead else None
+        if lead_configs:
+            if not lead_configs.convert_opp:
+                current_stage = LeadStage.objects.filter(
+                    tenant_id=tenant_id, company_id=company_id, level=4
+                ).first()
+                lead.current_lead_stage = current_stage
+                lead.lead_status = 4
+                lead.save(update_fields=['current_lead_stage', 'lead_status'])
+                lead_configs.opp_mapped = opp_mapped
+                lead_configs.account_mapped = account_mapped
+                lead_configs.convert_opp = True
+                lead_configs.assign_to_sale_config = opp_mapped.employee_inherit
+                lead_configs.save(update_fields=[
+                    'opp_mapped', 'account_mapped', 'convert_opp', 'assign_to_sale_config'
+                ])
+                LeadOpportunity.objects.create(
+                    company=lead.company, tenant=lead.tenant,
+                    lead=lead, opportunity=lead_configs.opp_mapped,
+                    employee_created=lead.employee_created,
+                    employee_inherit=lead.employee_inherit
+                )
+                LeadChartInformation.create_update_chart_information(tenant_id, company_id)
+                return True
+            raise serializers.ValidationError({'converted': 'Converted to opp.'})
+        raise serializers.ValidationError({'not found': 'Lead config not found.'})
 
     def create(self, validated_data):
         # get data product_category

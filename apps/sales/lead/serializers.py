@@ -20,6 +20,7 @@ __all__ = [
 class LeadListSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField()
     lead_status = serializers.SerializerMethodField()
+    current_lead_stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -30,6 +31,7 @@ class LeadListSerializer(serializers.ModelSerializer):
             'contact_name',
             'source',
             'lead_status',
+            'current_lead_stage',
             'date_created'
         )
 
@@ -40,6 +42,13 @@ class LeadListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_lead_status(cls, obj):
         return str(dict(LEAD_STATUS).get(obj.lead_status))
+
+    @classmethod
+    def get_current_lead_stage(cls, obj):
+        return {
+            'title': obj.current_lead_stage.stage_title,
+            'level': obj.current_lead_stage.level,
+        }
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
@@ -264,32 +273,28 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def convert_opp(cls, instance, config, opp_mapped_id):
-        if instance.lead_status != 1:
-            if config:
-                config.convert_opp = True
-                config.convert_opp_create = False
-                config.convert_opp_select = True
-                config.opp_mapped_id = opp_mapped_id
-                config.save(update_fields=[
-                    'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
-                ])
-                LeadOpportunity.objects.create(
-                    company=instance.company, tenant=instance.tenant,
-                    lead=instance, opportunity_id=opp_mapped_id,
-                    employee_created=instance.employee_created,
-                    employee_inherit=instance.employee_inherit
-                )
-                stage = LeadStage.objects.filter(
-                    company=instance.company, tenant=instance.tenant, level=4
-                ).first()
-                if stage:
-                    instance.current_lead_stage = stage
-                    instance.lead_status = 4
-            instance.save()
-            return instance
-        raise serializers.ValidationError({
-            'error': 'Can not convert to Opp because this Lead stage is "Marketing Acquired Lead".'
-        })
+        if config:
+            config.convert_opp = True
+            config.convert_opp_create = False
+            config.convert_opp_select = True
+            config.opp_mapped_id = opp_mapped_id
+            config.save(update_fields=[
+                'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
+            ])
+            LeadOpportunity.objects.create(
+                company=instance.company, tenant=instance.tenant,
+                lead=instance, opportunity_id=opp_mapped_id,
+                employee_created=instance.employee_created,
+                employee_inherit=instance.employee_inherit
+            )
+            stage = LeadStage.objects.filter(
+                company=instance.company, tenant=instance.tenant, level=4
+            ).first()
+            if stage:
+                instance.current_lead_stage = stage
+                instance.lead_status = 4
+        instance.save()
+        return instance
 
     def update(self, instance, validated_data):
         this_period = Periods.objects.filter(

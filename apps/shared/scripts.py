@@ -1865,7 +1865,7 @@ def report_rerun(company_id, start_month):
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance)
+            instance.order_delivery.prepare_data_for_logging(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
