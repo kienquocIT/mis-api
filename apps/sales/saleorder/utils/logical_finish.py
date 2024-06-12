@@ -15,6 +15,7 @@ class DocHandler:
 
 
 class SOFinishHandler:
+    # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
         for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
@@ -29,6 +30,7 @@ class SOFinishHandler:
                 })
         return True
 
+    # REPORT
     @classmethod
     def push_to_report_revenue(cls, instance):
         ReportRevenue.push_from_so(

@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeas
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
-from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation
+from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
@@ -264,6 +264,12 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                     lead_configs.save(update_fields=[
                         'opp_mapped', 'account_mapped', 'convert_opp', 'assign_to_sale_config'
                     ])
+                    LeadOpportunity.objects.create(
+                        company=lead.company, tenant=lead.tenant,
+                        lead=lead, opportunity=lead_configs.opp_mapped,
+                        employee_created=lead.employee_created,
+                        employee_inherit=lead.employee_inherit
+                    )
                     LeadChartInformation.create_update_chart_information(tenant_id, company_id)
                     return True
                 raise serializers.ValidationError({'converted': 'Converted to opp.'})
