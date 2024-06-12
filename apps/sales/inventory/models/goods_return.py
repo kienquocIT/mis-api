@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
-from apps.sales.inventory.utils import ReturnFinishHandler
+from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
@@ -254,13 +254,19 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
 
-            # handle product information
+            # handle after finish
+            # product information
             ReturnFinishHandler.push_product_info(instance=self)
-            # handle final acceptance
+            # final acceptance
             ReturnFinishHandler.update_final_acceptance(instance=self)
+            # report
+            ReturnFinishHandler.update_report(instance=self)
 
             self.prepare_data_for_logging(self)
 
+        # diagram
+        ReturnHandler.push_diagram(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 

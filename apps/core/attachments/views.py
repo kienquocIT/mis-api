@@ -8,8 +8,8 @@ from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.core.attachments.serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
-    FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderFilesListSerializer,
-    FolderUpdateSerializer,
+    FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
+    FolderUploadFileSerializer,
 )
 
 
@@ -151,9 +151,7 @@ class FolderDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "parent_n",
-        )
+        return super().get_queryset().select_related("parent_n").prefetch_related('files_folder', 'folder_parent_n')
 
     @swagger_auto_schema(
         operation_summary="Folder Detail",
@@ -177,21 +175,31 @@ class FolderDetail(
         return self.update(request, *args, pk, **kwargs)
 
 
-class FolderFileList(BaseListMixin, BaseCreateMixin):
+class FolderUploadFileList(BaseCreateMixin):
+    parser_classes = [MultiPartParser]
     queryset = Files.objects
-    search_fields = ['file_name']
-    filterset_fields = {
-        'folder_id': ['exact', 'isnull'],
-    }
-    serializer_list = FolderFilesListSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    serializer_create = FolderUploadFileSerializer
+    serializer_detail = FilesDetailSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
-    @swagger_auto_schema(
-        operation_summary="Folder File List",
-        operation_description="Get Folder File List",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+    def write_log(self, *args, **kwargs):
+        doc_obj = kwargs['doc_obj']
+        change_partial: bool = kwargs.get('change_partial', False)
+        task_id = kwargs.get('task_id', None)
+        request_data = {
+            'id': str(doc_obj.id),
+            'file_name': doc_obj.file_name,
+            'file_type': doc_obj.file_type,
+            'file_size': doc_obj.file_size,
+        }
+        return super().write_log(
+            doc_obj=doc_obj, request_data=request_data, change_partial=change_partial, task_id=task_id
+        )
+
+    @swagger_auto_schema(request_body=FilesUploadSerializer)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_obj': self.request.user
+        }
+        return self.create(request, *args, **kwargs)
