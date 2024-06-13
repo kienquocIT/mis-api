@@ -1889,31 +1889,31 @@ def report_rerun(company_id, start_month):
     print('Done')
 
 
-def update_product_warehouse_uom_base(product_id):
-    for product in Product.objects.filter(id=product_id):
+def update_product_warehouse_uom_base():
+    for product in Product.objects.all():
         if product.general_uom_group:
             uom_base = product.general_uom_group.uom_reference
             if uom_base:
-                for pw_common_base in ProductWareHouse.objects.filter(
+                for pw_base in ProductWareHouse.objects.filter(
                         product_id=product.id, uom_id=uom_base.id
                 ):
                     total_receipt = 0
                     total_sold = 0
                     for product_warehouse in ProductWareHouse.objects.filter(
-                            product_id=product.id, warehouse=pw_common_base.warehouse_id
-                    ):
+                            product_id=product.id, warehouse=pw_base.warehouse_id
+                    ).exclude(uom_id=uom_base.id):
                         final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
                         total_receipt += product_warehouse.receipt_amount * final_ratio
                         total_sold += product_warehouse.sold_amount * final_ratio
-                        if product_warehouse.uom_id != pw_common_base.uom_id:
-                            product_warehouse.receipt_amount = 0
-                            product_warehouse.sold_amount = 0
-                            product_warehouse.stock_amount = 0
-                            product_warehouse.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
-                    pw_common_base.receipt_amount = total_receipt
-                    pw_common_base.sold_amount = total_sold
-                    pw_common_base.stock_amount = total_receipt - total_sold
-                    pw_common_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+
+                        ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
+                        ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
+                        product_warehouse.delete()
+
+                    pw_base.receipt_amount += total_receipt
+                    pw_base.sold_amount += total_sold
+                    pw_base.stock_amount += total_receipt - total_sold
+                    pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
     print('update_product_warehouse_uom_base done.')
     return True
 
