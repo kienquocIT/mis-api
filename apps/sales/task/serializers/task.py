@@ -261,16 +261,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 log_time['employee_created'] = employee
                 log_time['task'] = task
                 OpportunityLogWork.objects.create(**log_time)
-        # create activities logs if task has opps code
-        if task.opportunity:
-            call_task_background(
-                my_task=task_create_opportunity_activity_log,
-                **{
-                    'subject': str(task.title),
-                    'opps': str(task.opportunity.id),
-                    'task': str(task.id)
-                }
-            )
 
         if task.project:
             map_task_with_project(task, project_work)
@@ -524,17 +514,6 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         handle_attachment(user, instance, validated_data.get('attach', None), False)
         instance.save()
-
-        # create activities logs if task has opps code
-        if not opps_before and validated_data.get('opportunity', None):
-            call_task_background(
-                my_task=task_create_opportunity_activity_log,
-                **{
-                    'subject': str(instance.title),
-                    'opps': str(instance.opportunity.id),
-                    'task': str(instance.id)
-                }
-            )
 
         if instance.project:
             project_work = validated_data.pop('work', None)

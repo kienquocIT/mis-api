@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
@@ -346,16 +346,6 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             # update field sale_order
             sale_order.opportunity.sale_order = sale_order
             sale_order.opportunity.save(update_fields=['sale_order'])
-            # create activity log
-            OpportunityActivityLogs.create_opportunity_log_application(
-                tenant_id=sale_order.tenant_id,
-                company_id=sale_order.company_id,
-                opportunity_id=sale_order.opportunity_id,
-                employee_created_id=sale_order.employee_created_id,
-                app_code=str(sale_order.__class__.get_model_code()),
-                doc_id=sale_order.id,
-                title=sale_order.title,
-            )
         return sale_order
 
 

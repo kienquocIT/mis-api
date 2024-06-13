@@ -274,7 +274,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
     doc_data = models.JSONField(default=dict, help_text="data of related document: {'id', 'title', 'code',...}")
 
     @classmethod
-    def create_opportunity_log_application(
+    def push_opportunity_log(
             cls,
             tenant_id,
             company_id,
@@ -282,18 +282,22 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
             employee_created_id,
             app_code,
             doc_id,
-            title,
+            log_type,
+            doc_data,
     ):
-        cls.objects.create(
-            tenant_id=tenant_id,
-            company_id=company_id,
-            opportunity_id=opportunity_id,
-            employee_created_id=employee_created_id,
-            app_code=app_code,
-            doc_id=doc_id,
-            title=title,
-            log_type=0,
+        obj, _created = cls.objects.get_or_create(
+            tenant_id=tenant_id, company_id=company_id,
+            opportunity_id=opportunity_id, employee_created_id=employee_created_id,
+            app_code=app_code, doc_id=doc_id,
+            log_type=log_type,
+            defaults={
+                'doc_data': doc_data,
+            }
         )
+        if _created is True:  # create new record
+            return True
+        obj.doc_data = doc_data
+        obj.save(update_fields=['doc_data'])
         return True
 
     class Meta:

@@ -323,16 +323,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             quotation.opportunity.save(**{
                 'update_fields': ['quotation'],
             })
-            # create activity log
-            OpportunityActivityLogs.create_opportunity_log_application(
-                tenant_id=quotation.tenant_id,
-                company_id=quotation.company_id,
-                opportunity_id=quotation.opportunity_id,
-                employee_created_id=quotation.employee_created_id,
-                app_code=str(quotation.__class__.get_model_code()),
-                doc_id=quotation.id,
-                title=quotation.title,
-            )
         return quotation
 
 

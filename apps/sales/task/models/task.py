@@ -9,6 +9,8 @@ from .config import OpportunityTaskConfig
 
 __all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
 
+from ..utils import TaskHandler
+
 
 class OpportunityTaskStatus(MasterDataAbstractModel):
     title = models.CharField(verbose_name='Title Status', max_length=100)
@@ -170,6 +172,9 @@ class OpportunityTask(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         self.before_save()
+        # opportunity log
+        TaskHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
     class Meta:
