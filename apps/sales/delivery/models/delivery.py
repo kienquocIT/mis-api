@@ -678,9 +678,6 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         ) for data in lot_data])
         return True
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
 
 class OrderDeliverySerial(MasterDataAbstractModel):
     delivery = models.ForeignKey(
