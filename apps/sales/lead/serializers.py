@@ -201,15 +201,26 @@ class LeadDetailSerializer(serializers.ModelSerializer):
                 return []
         existed = []
 
-        all_hint = LeadHint.objects.all()
-        hints_by_mobile = all_hint.filter(customer_mobile=obj.mobile) if obj.mobile else []
-        hints_by_email = all_hint.filter(customer_email=obj.email) if obj.email else []
-        for hint in list(hints_by_mobile) + list(hints_by_email):
+        all_hint = LeadHint.objects.filter(opportunity__company=obj.company)
+        hints_by_phone = all_hint.filter(contact_phone=obj.mobile) if obj.mobile else []
+        hints_by_mobile = all_hint.filter(contact_mobile=obj.mobile) if obj.mobile else []
+        hints_by_email = all_hint.filter(contact_email=obj.email) if obj.email else []
+        for hint in list(hints_by_phone) + list(hints_by_mobile) + list(hints_by_email):
             if str(hint.opportunity_id) not in existed:
                 related_opps.append({
                     'id': str(hint.opportunity_id),
                     'code': hint.opportunity.code,
-                    'title': hint.opportunity.title
+                    'title': hint.opportunity.title,
+                    'customer': {
+                        'id': hint.opportunity.customer_id,
+                        'title': hint.opportunity.customer.name,
+                        'code': hint.opportunity.customer.code,
+                    } if hint.opportunity.customer else {},
+                    'sale_person': {
+                        'id': hint.opportunity.employee_inherit_id,
+                        'code': hint.opportunity.employee_inherit.code,
+                        'full_name': hint.opportunity.employee_inherit.get_full_name(2)
+                    } if hint.opportunity.employee_inherit else {}
                 })
                 existed.append(str(hint.opportunity_id))
         return related_opps

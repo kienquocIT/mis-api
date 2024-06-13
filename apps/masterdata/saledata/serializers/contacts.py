@@ -3,7 +3,7 @@ from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
 from apps.shared import (AccountsMsg,)
-from apps.sales.lead.models import LeadStage, LeadChartInformation
+from apps.sales.lead.models import LeadStage, LeadChartInformation, LeadHint
 
 
 # Salutation
@@ -504,6 +504,10 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        LeadHint.check_and_create_lead_hint(
+            None, instance.mobile, instance.phone, instance.email, instance.id
+        )
 
         return instance
 

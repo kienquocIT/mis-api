@@ -349,9 +349,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 opportunity.customer
             )
 
-        LeadHint.check_and_create_lead_hint(
-            opportunity, opportunity.customer.phone, opportunity.customer.email, opportunity.customer_id
-        )
         return opportunity
 
 
@@ -995,6 +992,10 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         CommonOpportunityUpdate.update_opportunity_stage_for_list(instance)
+
+        LeadHint.check_and_create_lead_hint(
+            instance, None, None, None, None,
+        )
         return instance
 
 

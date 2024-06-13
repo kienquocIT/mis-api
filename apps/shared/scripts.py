@@ -48,6 +48,7 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
+from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -1868,7 +1869,7 @@ def report_rerun(company_id, start_month):
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            instance.order_delivery.prepare_data_for_logging(instance)
+            instance.prepare_data_for_logging_run(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
@@ -1991,4 +1992,24 @@ def update_goods_return_items_nt():
     obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
     obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
     obj.save(update_fields=['delivery_item_id'])
+    print('Done')
+
+
+def load_hint():
+    LeadHint.objects.all().delete()
+    for opp in Opportunity.objects.all():
+        LeadHint.objects.filter(opportunity=opp).delete()
+        bulk_info = []
+        for contact_role in opp.opportunity_contact_role_opportunity.all():
+            contact = contact_role.contact
+            bulk_info.append(
+                LeadHint(
+                    opportunity_id=opp.id,
+                    contact_mobile=contact.mobile,
+                    contact_phone=contact.phone,
+                    contact_email=contact.email,
+                    contact_id=str(contact.id)
+                )
+            )
+        LeadHint.objects.bulk_create(bulk_info)
     print('Done')

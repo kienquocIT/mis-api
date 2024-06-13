@@ -211,19 +211,22 @@ class ReportInventorySub(DataAbstractModel):
                 bulk_info.append(new_log)
                 log_order_number += 1
             else:
-                lot_mapped = item.get('lot_data', {})
+                lot_data = item.get('lot_data', {})
                 report_inventory_obj = ReportInventory.get_report_inventory(
-                    activities_obj, item['product'], lot_mapped.get('lot_id'), period_mapped, sub_period_order
+                    activities_obj, item['product'], lot_data.get('lot_id'), period_mapped, sub_period_order
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
-                    item['product'].id, lot_mapped.get('lot_id'), item['warehouse'].id, div
+                    item['product'].id, lot_data.get('lot_id'), item['warehouse'].id, div
                 )['cost'] if item['stock_type'] == -1 else item['cost']
+
+                lot_data['lot_value'] = cost * item['quantity']  # update value vao Lot
+
                 new_log = cls(
                     tenant=activities_obj.tenant,
                     company=activities_obj.company,
                     report_inventory=report_inventory_obj,
                     product=item['product'],
-                    lot_mapped_id=lot_mapped.get('lot_id'),
+                    lot_mapped_id=lot_data.get('lot_id'),
                     warehouse=item['warehouse'],
                     system_date=item['system_date'],
                     posting_date=item['posting_date'],
@@ -235,7 +238,7 @@ class ReportInventorySub(DataAbstractModel):
                     quantity=item['quantity'],
                     cost=cost,
                     value=cost * item['quantity'],
-                    lot_data=lot_mapped,
+                    lot_data=lot_data,
                     log_order=log_order_number
                 )
                 bulk_info.append(new_log)
