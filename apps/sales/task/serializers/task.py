@@ -12,9 +12,7 @@ from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
-from apps.sales.task.utils import task_create_opportunity_activity_log
-
-from apps.shared import HRMsg, BaseMsg, call_task_background, ProjectMsg
+from apps.shared import HRMsg, BaseMsg, ProjectMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
@@ -508,7 +506,6 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
-        opps_before = instance.opportunity
         self.valid_config_task(instance, validated_data, user)
         for key, value in validated_data.items():
             setattr(instance, key, value)
