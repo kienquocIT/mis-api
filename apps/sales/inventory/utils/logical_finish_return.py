@@ -146,21 +146,21 @@ class ReturnFinishHandler:
                         product_data_json.update({str(product.id): value})
                     else:
                         product_data_json[str(product.id)] += value
-            cls.update_report_revenue(instance=instance, product_data_json=product_data_json)
+            cls.update_report_revenue(sale_order=instance.sale_order, product_data_json=product_data_json)
         return True
 
     @classmethod
-    def update_report_revenue(cls, instance, product_data_json):
+    def update_report_revenue(cls, sale_order, product_data_json):
         gross_profit_rate = 0
         net_income_rate = 0
         quo_dc_total_rate = 0
-        if instance.sale_order.quotation:
-            quo_dc_total_rate = instance.sale_order.quotation.total_product_discount_rate
+        if sale_order.quotation:
+            quo_dc_total_rate = sale_order.quotation.total_product_discount_rate
         return_revenue_total = 0
-        if instance.sale_order.indicator_revenue > 0:
-            gross_profit_rate = instance.sale_order.indicator_gross_profit / instance.sale_order.indicator_revenue
-            net_income_rate = instance.sale_order.indicator_net_income / instance.sale_order.indicator_revenue
-        for so_product in instance.sale_order.sale_order_product_sale_order.all():
+        if sale_order.indicator_revenue > 0:
+            gross_profit_rate = sale_order.indicator_gross_profit / sale_order.indicator_revenue
+            net_income_rate = sale_order.indicator_net_income / sale_order.indicator_revenue
+        for so_product in sale_order.sale_order_product_sale_order.all():
             if str(so_product.product_id) in product_data_json:
                 price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
                 price_dc_total = price_adc_row * quo_dc_total_rate / 100
@@ -169,7 +169,7 @@ class ReturnFinishHandler:
                 return_gross = return_revenue * gross_profit_rate
                 return_net = return_revenue * net_income_rate
                 cls.report_product(
-                    sale_order=instance.sale_order, product_id=so_product.product_id,
+                    sale_order=sale_order, product_id=so_product.product_id,
                     return_revenue=return_revenue, return_gross=return_gross,
                     return_net=return_net
                 )
@@ -177,11 +177,11 @@ class ReturnFinishHandler:
         return_gross_total = return_revenue_total * gross_profit_rate
         return_net_total = return_revenue_total * net_income_rate
         cls.report_revenue(
-            sale_order=instance.sale_order, return_revenue=return_revenue_total,
+            sale_order=sale_order, return_revenue=return_revenue_total,
             return_gross=return_gross_total, return_net=return_net_total
         )
         cls.report_customer(
-            sale_order=instance.sale_order, return_revenue=return_revenue_total,
+            sale_order=sale_order, return_revenue=return_revenue_total,
             return_gross=return_gross_total, return_net=return_net_total
         )
         return True
