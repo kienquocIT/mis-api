@@ -5,7 +5,6 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
 
 
@@ -214,19 +213,6 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             payment_obj,
             self.initial_data.get('payment_expense_valid_list', [])
         )
-
-        # create activity log for opportunity
-        if payment_obj.opportunity_mapped:
-            OpportunityActivityLogs.create_opportunity_log_application(
-                tenant_id=payment_obj.tenant_id,
-                company_id=payment_obj.company_id,
-                opportunity_id=payment_obj.opportunity_mapped_id,
-                employee_created_id=payment_obj.employee_created_id,
-                app_code=str(payment_obj.__class__.get_model_code()),
-                doc_id=payment_obj.id,
-                title=payment_obj.title,
-            )
-
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(payment_obj, attachment.strip().split(','))

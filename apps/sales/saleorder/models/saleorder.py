@@ -279,21 +279,23 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        SOFinishHandler.push_product_info(self)
+                        SOFinishHandler.push_product_info(instance=self)
                         # opportunity
-                        SOFinishHandler.update_opportunity_stage_by_so(self)
+                        SOFinishHandler.update_opportunity_stage_by_so(instance=self)
                         # customer
-                        SOFinishHandler.push_to_customer_activity(self)
+                        SOFinishHandler.push_to_customer_activity(instance=self)
                         # reports
-                        SOFinishHandler.push_to_report_revenue(self)
-                        SOFinishHandler.push_to_report_product(self)
-                        SOFinishHandler.push_to_report_customer(self)
-                        SOFinishHandler.push_to_report_cashflow(self)
+                        SOFinishHandler.push_to_report_revenue(instance=self)
+                        SOFinishHandler.push_to_report_product(instance=self)
+                        SOFinishHandler.push_to_report_customer(instance=self)
+                        SOFinishHandler.push_to_report_cashflow(instance=self)
                         # final acceptance
-                        SOFinishHandler.push_final_acceptance_so(self)
+                        SOFinishHandler.push_final_acceptance_so(instance=self)
                         # change document handle
-                        DocumentChangeHandler.change_handle(self)
+                        DocumentChangeHandler.change_handle(instance=self)
 
+        # opportunity log
+        SOHandler.push_opportunity_log(instance=self)
         # diagram
         SOHandler.push_diagram(instance=self)
         # hit DB

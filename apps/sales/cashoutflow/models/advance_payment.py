@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = ['AdvancePayment', 'AdvancePaymentCost', 'AdvancePaymentAttachmentFile']
@@ -102,6 +103,9 @@ class AdvancePayment(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 # self.update_money_gave(self)
 
+        # opportunity log
+        AdvanceHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 
