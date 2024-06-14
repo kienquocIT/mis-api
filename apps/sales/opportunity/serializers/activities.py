@@ -10,7 +10,7 @@ from apps.sales.opportunity.models import (
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
     OpportunityActivityLogs, OpportunitySaleTeamMember
 )
-from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor, DisperseModel
+from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor
 from apps.shared.translations.opportunity import OpportunityMsg
 from misapi import settings
 
@@ -733,7 +733,6 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
     meeting = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     document = serializers.SerializerMethodField()
-    doc_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_task(cls, obj):
@@ -781,20 +780,6 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'activity_name': 'Upload document',
             'activity_type': 'document',
         } if obj.document else {}
-
-    @classmethod
-    def get_doc_data(cls, obj):  # application: quotation, sale order, advance, payment,...
-        doc = None
-        if obj.app_code:
-            model_cls = DisperseModel(app_model=obj.app_code).get_model()
-            if model_cls and hasattr(model_cls, 'objects'):
-                doc = model_cls.objects.filter(id=obj.doc_id).first()
-        return {
-            'id': doc.id,
-            'title': doc.title,
-            'code': doc.code,
-            'system_status': doc.system_status,
-        } if doc else {}
 
     class Meta:
         model = OpportunityActivityLogs
