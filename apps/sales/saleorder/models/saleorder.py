@@ -270,6 +270,10 @@ class SaleOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                # create registration
+                GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
@@ -290,8 +294,6 @@ class SaleOrder(DataAbstractModel):
                         # change document handle
                         DocumentChangeHandler.change_handle(self)
 
-            # create registration
-            GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
         # diagram
         SOHandler.push_diagram(instance=self)
         # hit DB

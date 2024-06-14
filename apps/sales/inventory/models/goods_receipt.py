@@ -170,6 +170,31 @@ class GoodsReceipt(DataAbstractModel):
             instance.date_approved,
             activities_data
         )
+        return activities_data
+
+    @classmethod
+    def regis_stock_when_receipt(cls, instance, activities_data):
+        for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
+            sale_order = po_pr_mapped.purchase_request.sale_order
+            for item in activities_data:
+                if item.get('product') and item.get('warehouse') and len(item['lot_data']) > 0:
+                    if item['product'].general_traceability_method == 1:
+                        GoodsRegistration.update_registered_quantity_when_receipt(
+                            sale_order,
+                            {
+                                'product_id': str(item['product'].id),
+                                'registered_quantity': item['quantity'],
+                                'registered_data': [{
+                                    'goods_receipt_id': str(instance.id),
+                                    'warehouse_id': str(item['warehouse'].id),
+                                    'lot_data': {
+                                        'lot_id': item['lot_data']['lot_id'],
+                                        'lot_number': item['lot_data']['lot_number'],
+                                        'lot_quantity': item['lot_data']['lot_quantity']
+                                    }
+                                }]
+                            }
+                        )
         return True
 
     def save(self, *args, **kwargs):
@@ -202,44 +227,8 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_po(self)
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
-            self.prepare_data_for_logging(self)
-            for purchase_request in self.purchase_requests.all():
-                for so_item in purchase_request.purchase_request.filter(product__isnull=False):
-                    # if so_item.product.general_traceability_method == 1:  # lot
-                    #     for goods_receipt_item in self.goods_receipt_product_goods_receipt.all():
-                    #         lot_transact_list = self.pw_lot_transact_goods_receipt.all().select_related(
-                    #             'pw_lot__product_warehouse__product'
-                    #         )
-                    #         for lot_transact in lot_transact_list.filter(
-                    #                 pw_lot__product_warehouse__product=goods_receipt_item.product
-                    #         ):
-                    #             lot_obj = lot_transact.pw_lot
-                    #             goods_receipt_data = [{
-                    #                 'goods_receipt_id': str(self.id),
-                    #                 'goods_receipt_code': self.code,
-                    #                 'goods_receipt_title': self.title,
-                    #                 'quantity': ...,
-                    #                 'warehouse_list': [{
-                    #                     'warehouse': {'id': ..., 'code': ..., 'title': ...},
-                    #                     'lot_data': [{
-                    #                         'lot_id': str(lot_obj.id),
-                    #                         'lot_number': lot_obj.lot_number,
-                    #                         'lot_quantity': ReportInventorySub.cast_quantity_to_unit(
-                    #                             goods_receipt_item.uom, lot_transact.quantity
-                    #                         )
-                    #                     }]
-                    #                 }]
-                    #             }]
-                    # if so_item.product.general_traceability_method == 2:  # sn
-                    #     pass
-                    GoodsRegistration.update_registered_quantity_when_receipt(
-                        purchase_request.sale_order,
-                        {
-                            'product_id': so_item.product_id,
-                            'registered_quantity': so_item.quantity,
-                            'registered_data': {}
-                        }
-                    )
+            activities_data = self.prepare_data_for_logging(self)
+            self.regis_stock_when_receipt(self, activities_data)
 
         # diagram
         GRHandler.push_diagram(instance=self)

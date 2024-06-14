@@ -45,13 +45,21 @@ class GoodsRegistration(DataAbstractModel):
         gre = sale_order.goods_registration_so.first()
         if gre:
             so_items = sale_order.sale_order_product_sale_order.filter(product__isnull=False).select_related('product')
-            GoodsRegistrationLineDetail.objects.filter(
+            gre_line_detail = GoodsRegistrationLineDetail.objects.filter(
                 goods_registration=gre,
                 so_item=so_items.filter(product_id=product_data['product_id']).first(),
-            ).update(
-                registered_quantity=product_data['registered_quantity'],
-                registered_data=product_data['registered_data']
-            )
+            ).first()
+            if gre_line_detail:
+                gre_line_detail.registered_quantity += product_data['registered_quantity']
+                gre_line_detail.available_quantity += product_data['registered_quantity']
+                gre_line_detail.registered_data += product_data['registered_data']
+                gre_line_detail.save(update_fields=['registered_quantity', 'available_quantity', 'registered_data'])
+                if len(product_data['registered_data'][0]['lot_data']) > 0:
+                    GoodsRegistrationLot.objects.create(
+                        goods_registration_item=gre_line_detail,
+                        lot_registered=product_data['registered_data'][0]['lot_data']['lot_id'],
+                        lot_registered_quantity=product_data['registered_data'][0]['lot_data']['lot_quantity']
+                    )
         else:
             raise ValueError('Not Exist: Sale Order does not have Goods Registration')
 
@@ -64,15 +72,18 @@ class GoodsRegistrationLineDetail(SimpleAbstractModel):
         'saleorder.SaleOrderProduct', on_delete=models.CASCADE, related_name='goods_registration_line_detail_so_item'
     )
     registered_quantity = models.FloatField(default=0)
+    others_quantity = models.FloatField(default=0)
+    available_quantity = models.FloatField(default=0)
     registered_data = models.JSONField(default=list)
     # registered_data_format = [{
-    #     'goods_receipt_id': ...,
-    #     'goods_receipt_code': ...,
-    #     'goods_receipt_title': ...,
-    #     'quantity': ...,
-    #     'warehouse_list': [{
-    #         'warehouse': {'id': ..., 'code': ..., 'title': ...},
-    #         'lot_data': [{'lot_id': ..., 'lot_number': ..., 'lot_quantity': ...}]
+    #     'product_id': ...,
+    #     'registered_quantity': ...,
+    #     'registered_data': [{
+    #         'goods_receipt_id': ...,
+    #         'warehouse_id': ...,
+    #         'lot_data': {
+    #             'lot_id': ..., 'lot_number': ..., 'lot_quantity': ...
+    #         }
     #     }]
     # }]
 
