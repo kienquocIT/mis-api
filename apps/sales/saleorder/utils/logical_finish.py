@@ -60,8 +60,7 @@ class SOFinishHandler:
         for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
             price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
             price_dc_total = price_adc_row * quo_dc_total_rate / 100
-            price_ad = price_adc_row - price_dc_total
-            revenue = price_ad * so_product.product_quantity
+            revenue = (price_adc_row - price_dc_total) * so_product.product_quantity
             gross_profit = revenue * gross_profit_rate
             net_income = revenue * net_income_rate
             ReportProduct.push_from_so(

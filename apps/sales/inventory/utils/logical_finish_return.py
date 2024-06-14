@@ -1,5 +1,4 @@
 from apps.sales.acceptance.models import FinalAcceptanceIndicator
-from apps.sales.saleorder.utils import SOFinishHandler
 
 
 class ReturnFinishHandler:
@@ -164,8 +163,7 @@ class ReturnFinishHandler:
             if str(so_product.product_id) in product_data_json:
                 price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
                 price_dc_total = price_adc_row * quo_dc_total_rate / 100
-                price_ad = price_adc_row - price_dc_total
-                return_revenue = price_ad * product_data_json[str(so_product.product_id)]
+                return_revenue = (price_adc_row - price_dc_total) * product_data_json[str(so_product.product_id)]
                 return_gross = return_revenue * gross_profit_rate
                 return_net = return_revenue * net_income_rate
                 cls.report_product(
