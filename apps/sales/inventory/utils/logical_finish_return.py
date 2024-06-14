@@ -153,15 +153,18 @@ class ReturnFinishHandler:
     def update_report_revenue(cls, instance, product_data_json):
         gross_profit_rate = 0
         net_income_rate = 0
-        discount_diff_rate = SOFinishHandler.find_discount_diff(instance=instance.sale_order)
+        quo_dc_total_rate = 0
+        if instance.sale_order.quotation:
+            quo_dc_total_rate = instance.sale_order.quotation.total_product_discount_rate
         return_revenue_total = 0
         if instance.sale_order.indicator_revenue > 0:
             gross_profit_rate = instance.sale_order.indicator_gross_profit / instance.sale_order.indicator_revenue
             net_income_rate = instance.sale_order.indicator_net_income / instance.sale_order.indicator_revenue
         for so_product in instance.sale_order.sale_order_product_sale_order.all():
             if str(so_product.product_id) in product_data_json:
-                product_discount_diff = so_product.product_unit_price * discount_diff_rate / 100
-                price_ad = so_product.product_unit_price - so_product.product_discount_amount - product_discount_diff
+                price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
+                price_dc_total = price_adc_row * quo_dc_total_rate / 100
+                price_ad = price_adc_row - price_dc_total
                 return_revenue = price_ad * product_data_json[str(so_product.product_id)]
                 return_gross = return_revenue * gross_profit_rate
                 return_net = return_revenue * net_income_rate
