@@ -177,24 +177,28 @@ class GoodsReceipt(DataAbstractModel):
         for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
             sale_order = po_pr_mapped.purchase_request.sale_order
             for item in activities_data:
-                if item.get('product') and item.get('warehouse') and len(item['lot_data']) > 0:
-                    if item['product'].general_traceability_method == 1:
+                if item.get('product') and item.get('warehouse'):
+                    if item['product'].general_traceability_method == 0:
                         GoodsRegistration.update_registered_quantity_when_receipt(
                             sale_order,
                             {
-                                'product_id': str(item['product'].id),
+                                'product': {'id': str(item['product'].id), 'code': item['product'].code},
                                 'registered_quantity': item['quantity'],
                                 'registered_data': [{
-                                    'goods_receipt_id': str(instance.id),
-                                    'warehouse_id': str(item['warehouse'].id),
-                                    'lot_data': {
-                                        'lot_id': item['lot_data']['lot_id'],
-                                        'lot_number': item['lot_data']['lot_number'],
-                                        'lot_quantity': item['lot_data']['lot_quantity']
-                                    }
+                                    'goods_receipt': {
+                                        'id': str(instance.id),
+                                        'code': instance.code
+                                    },
+                                    'warehouse': {
+                                        'id': str(item['warehouse'].id),
+                                        'code': item['warehouse'].code
+                                    },
+                                    'lot_data': {}
                                 }]
                             }
                         )
+                    if item['product'].general_traceability_method == 1 and len(item['lot_data']) > 0:
+                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
         return True
 
     def save(self, *args, **kwargs):

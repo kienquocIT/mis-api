@@ -41,24 +41,60 @@ class GoodsRegistration(DataAbstractModel):
         return goods_registration
 
     @classmethod
-    def update_registered_quantity_when_receipt(cls, sale_order, product_data):
+    def update_registered_quantity_when_receipt(cls, sale_order, stock_info):
+        # 'product': goods_receipt_item.product,
+        # 'warehouse': lot_obj.product_warehouse.warehouse,
+        # 'system_date': instance.date_approved,
+        # 'posting_date': instance.date_approved,
+        # 'document_date': instance.date_approved,
+        # 'stock_type': 1,
+        # 'trans_id': str(instance.id),
+        # 'trans_code': instance.code,
+        # 'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
+        # 'quantity': casted_quantity,
+        # 'cost': casted_cost,
+        # 'value': casted_cost * casted_quantity,
+        # 'lot_data': {
+        #     'lot_id': str(lot_obj.id),
+        #     'lot_number': lot_obj.lot_number,
+        #     'lot_quantity': casted_quantity,
+        #     'lot_value': casted_quantity * goods_receipt_item.product_unit_price,
+        #     'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
+        # }
         gre = sale_order.goods_registration_so.first()
-        if gre:
-            so_items = sale_order.sale_order_product_sale_order.filter(product__isnull=False).select_related('product')
-            gre_line_detail = GoodsRegistrationLineDetail.objects.filter(
-                goods_registration=gre,
-                so_item=so_items.filter(product_id=product_data['product_id']).first(),
-            ).first()
-            if gre_line_detail:
-                gre_line_detail.registered_quantity += product_data['registered_quantity']
-                gre_line_detail.available_quantity += product_data['registered_quantity']
-                gre_line_detail.registered_data += product_data['registered_data']
-                gre_line_detail.save(update_fields=['registered_quantity', 'available_quantity', 'registered_data'])
-                if len(product_data['registered_data'][0]['lot_data']) > 0:
+        so_item = sale_order.sale_order_product_sale_order.filter(product=stock_info['product']).first()
+        if gre and so_item:
+            gre_item = GoodsRegistrationLineDetail.objects.filter(goods_registration=gre, so_item=so_item).first()
+            if gre_item:
+                gre_item.this_registered += stock_info['quantity'] * stock_info['quantity']
+                gre_item.this_registered_value += stock_info['value'] * stock_info['value']
+                gre_item.this_available = gre_item.this_registered - gre_item.this_others
+                gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
+                gre_item.registered_data += {
+                    'product_id': str(stock_info['product'].id),
+                    'warehouse_id': str(stock_info['warehouse'].id),
+                    'system_date': stock_info['system_date'],
+                    'posting_date': stock_info['posting_date'],
+                    'document_date': stock_info['document_date'],
+                    'stock_type': stock_info['stock_type'],
+                    'trans_id': stock_info['trans_id'],
+                    'trans_code': stock_info['trans_code'],
+                    'trans_title': stock_info['trans_title'],
+                    'quantity': stock_info['quantity'],
+                    'cost': stock_info['cost'],
+                    'value': stock_info['value'],
+                    'lot_data': stock_info['lot_data']
+                }
+                gre_item.save(update_fields=[
+                    'this_registered', 'this_registered_value',
+                    'this_available', 'this_available_value',
+                    'registered_data'
+                ])
+                if len(stock_info['lot_data']) > 0:
                     GoodsRegistrationLot.objects.create(
-                        goods_registration_item=gre_line_detail,
-                        lot_registered=product_data['registered_data'][0]['lot_data']['lot_id'],
-                        lot_registered_quantity=product_data['registered_data'][0]['lot_data']['lot_quantity']
+                        goods_registration_item=gre_item,
+                        lot_registered_id=stock_info['lot_data']['lot_id'],
+                        lot_registered_quantity=stock_info['lot_data']['lot_quantity']
                     )
         else:
             raise ValueError('Not Exist: Sale Order does not have Goods Registration')
@@ -71,21 +107,26 @@ class GoodsRegistrationLineDetail(SimpleAbstractModel):
     so_item = models.ForeignKey(
         'saleorder.SaleOrderProduct', on_delete=models.CASCADE, related_name='goods_registration_line_detail_so_item'
     )
-    registered_quantity = models.FloatField(default=0)
-    others_quantity = models.FloatField(default=0)
-    available_quantity = models.FloatField(default=0)
+
+    this_registered = models.FloatField(default=0)
+    this_registered_value = models.FloatField(default=0)
+
+    this_others = models.FloatField(default=0)
+    this_others_value = models.FloatField(default=0)
+
+    this_available = models.FloatField(default=0)
+    this_available_value = models.FloatField(default=0)
+
     registered_data = models.JSONField(default=list)
-    # registered_data_format = [{
-    #     'product_id': ...,
-    #     'registered_quantity': ...,
-    #     'registered_data': [{
-    #         'goods_receipt_id': ...,
-    #         'warehouse_id': ...,
-    #         'lot_data': {
-    #             'lot_id': ..., 'lot_number': ..., 'lot_quantity': ...
-    #         }
-    #     }]
-    # }]
+
+    out_registered = models.FloatField(default=0)
+    out_registered_value = models.FloatField(default=0)
+
+    out_delivered = models.FloatField(default=0)
+    out_delivered_value = models.FloatField(default=0)
+
+    out_remain = models.FloatField(default=0)
+    out_remain_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Registration Line Detail'

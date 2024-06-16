@@ -48,30 +48,19 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def find_discount_diff(cls, instance):
-        total_pretax = instance.total_product_pretax_amount
-        total_discount = instance.total_product_discount
-        total_discount_product = 0
-        for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
-            price_ad = so_product.product_unit_price - so_product.product_discount_amount
-            subtotal_ad = price_ad * so_product.product_quantity
-            subtotal = so_product.product_unit_price * so_product.product_quantity
-            total_discount_product += (subtotal - subtotal_ad)
-        total_discount_diff = total_discount - total_discount_product
-        return total_discount_diff / total_pretax * 100
-
-    @classmethod
     def push_to_report_product(cls, instance):
         gross_profit_rate = 0
         net_income_rate = 0
-        discount_diff_rate = cls.find_discount_diff(instance=instance)
+        quo_dc_total_rate = 0
+        if instance.quotation:
+            quo_dc_total_rate = instance.quotation.total_product_discount_rate
         if instance.indicator_revenue > 0:
             gross_profit_rate = instance.indicator_gross_profit / instance.indicator_revenue
             net_income_rate = instance.indicator_net_income / instance.indicator_revenue
         for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
-            product_discount_diff = so_product.product_unit_price * discount_diff_rate / 100
-            price_ad = so_product.product_unit_price - so_product.product_discount_amount - product_discount_diff
-            revenue = price_ad * so_product.product_quantity
+            price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
+            price_dc_total = price_adc_row * quo_dc_total_rate / 100
+            revenue = (price_adc_row - price_dc_total) * so_product.product_quantity
             gross_profit = revenue * gross_profit_rate
             net_income = revenue * net_income_rate
             ReportProduct.push_from_so(

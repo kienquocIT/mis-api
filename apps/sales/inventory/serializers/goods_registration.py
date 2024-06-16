@@ -69,6 +69,7 @@ class GoodsRegistrationDetailSerializer(AbstractDetailSerializerModel):
         data_line_detail = []
         for item in obj.goods_registration_line_detail.all().order_by('so_item__order'):
             data_line_detail.append({
+                'so_code': item.so_item.sale_order.code,
                 'so_item': {
                     'id': item.so_item_id,
                     'product': {
@@ -76,6 +77,7 @@ class GoodsRegistrationDetailSerializer(AbstractDetailSerializerModel):
                         'code': item.so_item.product.code,
                         'title': item.so_item.product.title,
                         'description': item.so_item.product.description,
+                        'type': item.so_item.product.general_traceability_method
                     } if item.so_item.product else {},
                     'uom': {
                         'id': item.so_item.unit_of_measure_id,
@@ -84,8 +86,19 @@ class GoodsRegistrationDetailSerializer(AbstractDetailSerializerModel):
                     } if item.so_item.unit_of_measure else {},
                     'total_order': item.so_item.product_quantity
                 } if item.so_item else {},
-                'registered_quantity': item.registered_quantity,
+                'this_registered': item.this_registered,
+                'this_others': item.this_others,
+                'this_available': item.this_available,
+                'this_registered_value': item.this_registered_value,
+                'this_others_value': item.this_others_value,
+                'this_available_value': item.this_available_value,
                 'registered_data': item.registered_data,
+                'out_registered': item.out_registered,
+                'out_delivered': item.out_delivered,
+                'out_remain': item.out_remain,
+                'out_registered_value': item.out_registered_value,
+                'out_delivered_value': item.out_delivered_value,
+                'out_remain_value': item.out_remain_value,
             })
         return data_line_detail
 
