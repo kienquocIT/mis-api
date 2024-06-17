@@ -139,11 +139,10 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def update_opportunity_stage_by_so(cls, instance):
+    def update_opportunity_stage(cls, instance):
         if instance.opportunity:
-            instance.opportunity.save(**{
-                'sale_order_status': instance.system_status,
-            })
+            instance.opportunity.sale_order = instance if instance.system_status == 3 else None
+            instance.opportunity.save(update_fields=['sale_order'])
         return True
 
     @classmethod

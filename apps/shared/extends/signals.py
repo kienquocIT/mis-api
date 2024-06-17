@@ -21,7 +21,7 @@ from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
 from apps.sales.opportunity.models import (
     OpportunityConfig, OpportunityConfigStage, StageCondition,
-    OpportunitySaleTeamMember,
+    OpportunitySaleTeamMember, Opportunity,
 )
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
@@ -1133,3 +1133,12 @@ def project_member_event_destroy(sender, instance, **kwargs):
         employee_permission.remove_permit_by_prj(
             tenant_id=instance.project.tenant_id, prj_id=instance.project_id
         )
+
+
+@receiver(post_save, sender=Opportunity)
+def handler_update_opportunity_stage(sender, instance, created, **kwargs):
+    if instance.check_config_auto_update_stage():
+        instance.win_rate = instance.auto_update_stage(
+            list_property=instance.parse_property_stage(obj=instance), obj=instance
+        )
+    return True

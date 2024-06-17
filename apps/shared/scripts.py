@@ -582,18 +582,6 @@ def update_data_product_of_purchase_request():
     print('Update Done!')
 
 
-def update_employee_inherit_quotation_sale_order():
-    for quotation in Quotation.objects.all():
-        if quotation.sale_person:
-            quotation.employee_inherit = quotation.sale_person
-            quotation.save(update_fields=['employee_inherit'])
-    for sale_order in SaleOrder.objects.all():
-        if sale_order.sale_person:
-            sale_order.employee_inherit = sale_order.sale_person
-            sale_order.save(update_fields=['employee_inherit'])
-    print('Update done.')
-
-
 def make_sure_function_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_function_config()
@@ -1037,55 +1025,6 @@ def update_inherit_po():
     print('update_inherit_po done.')
 
 
-def update_code_quotation_sale_order_indicator_config():
-    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
-        indicator.code = "IN000" + str(indicator.order)
-        indicator.tenant_id = indicator.company.tenant_id
-        indicator.save(update_fields=['code', 'tenant_id'])
-    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
-        indicator.code = "IN000" + str(indicator.order)
-        indicator.tenant_id = indicator.company.tenant_id
-        indicator.save(update_fields=['code', 'tenant_id'])
-    print('update_code_quotation_sale_order_indicator_config done.')
-
-
-def update_code_quotation_sale_order_indicator():
-    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
-        indicator.code = indicator.indicator.code
-        indicator.tenant_id = indicator.indicator.tenant_id
-        indicator.company_id = indicator.indicator.company_id
-        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
-    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
-        indicator.code = indicator.quotation_indicator.code
-        indicator.tenant_id = indicator.quotation_indicator.tenant_id
-        indicator.company_id = indicator.quotation_indicator.company_id
-        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
-    print('update_code_quotation_sale_order_indicator done.')
-
-
-def update_record_report_revenue():
-    ReportRevenue.objects.all().delete()
-    bulk_info = []
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False):
-        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        bulk_info.append(ReportRevenue(
-            tenant_id=so.tenant_id,
-            company_id=so.company_id,
-            sale_order_id=so.id,
-            employee_created_id=so.employee_created_id,
-            employee_inherit_id=so.employee_inherit_id,
-            group_inherit_id=so.employee_inherit.group_id,
-            date_approved=so.date_approved,
-            revenue=revenue_obj.indicator_value if revenue_obj else 0,
-            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
-            net_income=net_income_obj.indicator_value if net_income_obj else 0,
-        ))
-    ReportRevenue.objects.bulk_create(bulk_info)
-    print('update_record_report_revenue done.')
-
-
 def update_space_range_opp_member():
     for obj in OpportunitySaleTeamMember.objects.all():
         for item in obj.permission_by_configured:
@@ -1096,22 +1035,6 @@ def update_space_range_opp_member():
                 item['range'] = str(item['range'])
         obj.save()
     return True
-
-
-def update_date_approved_sales_apps():
-    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
-        quotation.date_approved = quotation.date_created
-        quotation.save(update_fields=['date_approved'])
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        so.date_approved = so.date_created
-        so.save(update_fields=['date_approved'])
-    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        po.date_approved = po.date_created
-        po.save(update_fields=['date_approved'])
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        gr.date_approved = gr.date_created
-        gr.save(update_fields=['date_approved'])
-    print('update_date_approved_sales_apps done.')
 
 
 def update_company_setting():
@@ -1182,14 +1105,6 @@ def update_product_general_price():
     return True
 
 
-def update_final_acceptance_indicator():
-    for ind in FinalAcceptanceIndicator.objects.all():
-        if ind.sale_order_indicator:
-            ind.indicator_id = ind.sale_order_indicator.quotation_indicator_id
-            ind.save(update_fields=['indicator_id'])
-    print('update_final_acceptance_indicator done.')
-
-
 def update_payment_cost():
     for item in PaymentCost.objects.all():
         item.opportunity_mapped = item.payment.opportunity_mapped
@@ -1197,18 +1112,6 @@ def update_payment_cost():
         item.sale_order_mapped = item.payment.sale_order_mapped
         item.save()
     print('update done')
-
-
-def update_tenant_quotation_so_config():
-    for quo_config in QuotationAppConfig.objects.all():
-        if quo_config.company:
-            quo_config.tenant = quo_config.company.tenant
-            quo_config.save(update_fields=['tenant'])
-    for so_config in SaleOrderAppConfig.objects.all():
-        if so_config.company:
-            so_config.tenant = so_config.company.tenant
-            so_config.save(update_fields=['tenant'])
-    print('update_tenant_quotation_so_config done.')
 
 
 def update_tenant_delivery_config():
@@ -1363,26 +1266,6 @@ def reset_and_run_reports_sale(run_type=0):
             POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
     return True
-
-
-def update_indicators_quotation_so_model():
-    for quotation in Quotation.objects.all():
-        revenue_obj = quotation.quotation_indicator_quotation.filter(code='IN0001').first()
-        gross_profit_obj = quotation.quotation_indicator_quotation.filter(code='IN0003').first()
-        net_income_obj = quotation.quotation_indicator_quotation.filter(code='IN0006').first()
-        quotation.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
-        quotation.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
-        quotation.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
-        quotation.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
-    for so in SaleOrder.objects.all():
-        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        so.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
-        so.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
-        so.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
-        so.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
-    print('update_indicators_quotation_so_model done.')
 
 
 def update_price_list():
@@ -2013,3 +1896,15 @@ def load_hint():
             )
         LeadHint.objects.bulk_create(bulk_info)
     print('Done')
+
+
+def update_opp_config_stage():
+    for config_stage in OpportunityConfigStage.objects.all():
+        if isinstance(config_stage.condition_datas, list):
+            for data in config_stage.condition_datas:
+                if 'compare_data' in data:
+                    if isinstance(data['compare_data'], str):
+                        data['compare_data'] = int(data['compare_data'])
+        config_stage.save(update_fields=['condition_datas'])
+    print('update_opp_config_stage done.')
+    return True

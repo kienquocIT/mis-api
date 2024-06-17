@@ -206,7 +206,7 @@ class Opportunity(DataAbstractModel):
                 'title': 'Customer'
             },
             'comparison_operator': '≠' if obj.customer else '=',
-            'compare_data': '0',
+            'compare_data': 0,
         }
         list_property.append(customer_data)
         if obj.customer:
@@ -227,7 +227,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product Category'
                 },
                 'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         # Budget
@@ -238,7 +238,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Budget'
                 },
                 'comparison_operator': '=' if obj.budget_value == 0 else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -248,7 +248,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Open Date'
                 },
                 'comparison_operator': '≠' if obj.open_date else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -258,7 +258,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Date'
                 },
                 'comparison_operator': '≠' if obj.close_date else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -268,7 +268,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Decision maker'
                 },
                 'comparison_operator': '≠' if obj.decision_maker else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -278,7 +278,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Lost By Other Reason'
                 },
                 'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -288,7 +288,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Competitor.Win'
                 },
                 'comparison_operator': '=' if not obj.lost_by_other_reason and obj.is_close_lost else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -298,7 +298,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product.Line.Detail'
                 },
                 'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         list_property.append(
@@ -308,173 +308,55 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Deal'
                 },
                 'comparison_operator': '=' if obj.is_deal_close else '≠',
-                'compare_data': '0',
+                'compare_data': 0,
             }
         )
         return list_property
 
     @classmethod
-    def check_property_stage_when_saving_quotation(cls, obj, is_quotation_confirm):
+    def parse_property_stage(cls, obj):
         list_property = cls.common_check_property_stage(obj)
-
+        quotation = obj.quotation
+        sale_order = obj.sale_order
+        check_quotation = '≠'
+        check_so = '≠'
+        check_delivery = '='
+        if quotation:
+            check_quotation = '=' if quotation.is_customer_confirm and quotation.system_status == 3 else '≠'
+        if sale_order:
+            check_so = '=' if sale_order.system_status == 3 else '≠'
+            check_delivery = '≠' if hasattr(sale_order, 'delivery_of_sale_order') else '='
         list_property.append(
             {
                 'condition_property': {
                     'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
                     'title': 'Quotation.confirm'
                 },
-                'comparison_operator': '=' if is_quotation_confirm and obj.quotation.system_status == 3 else '≠',
-                'compare_data': '0',
+                'comparison_operator': check_quotation,
+                'compare_data': 0,
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
                     'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
                     'title': 'SaleOrder.status'
                 },
-                'comparison_operator': '=' if obj.sale_order and obj.sale_order.system_status == 3 else '≠',
-                'compare_data': '0',
+                'comparison_operator': check_so,
+                'compare_data': 0,
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
                     'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
                     'title': 'SaleOrder.Delivery.Status'
                 },
-                'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': '0',
+                'comparison_operator': check_delivery,
+                'compare_data': 0,
             }
         )
         return list_property
-
-    @classmethod
-    def check_property_stage_when_saving_sale_order(cls, obj, sale_order_status):
-        list_property = cls.common_check_property_stage(obj)
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                    'title': 'SaleOrder.status'
-                },
-                'comparison_operator': '=' if sale_order_status == 3 else '≠',
-                'compare_data': '0',
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                    'title': 'Quotation.confirm'
-                },
-                'comparison_operator': '='
-                if obj.quotation and obj.quotation.system_status == 3 and obj.quotation.is_customer_confirm
-                else '≠',
-                'compare_data': '0',
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                    'title': 'SaleOrder.Delivery.Status'
-                },
-                'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': '0',
-            }
-        )
-        return list_property
-
-    @classmethod
-    def check_property_stage_when_saving_delivery(cls, obj, delivery_status):
-        list_property = cls.common_check_property_stage(obj)
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                    'title': 'SaleOrder.status'
-                },
-                'comparison_operator': '=',
-                'compare_data': '0',
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                    'title': 'SaleOrder.Delivery.Status'
-                },
-                'comparison_operator': '≠' if delivery_status else '=',
-                'compare_data': '0',
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                    'title': 'Quotation.confirm'
-                },
-                'comparison_operator': '='
-                if obj.quotation and obj.quotation.system_status == 3 and obj.quotation.is_customer_confirm
-                else '≠',
-                'compare_data': '0',
-            }
-        )
-        return list_property
-
-    # @classmethod
-    # def check_property_stage(cls, obj):
-    #     list_property = cls.common_check_property_stage(obj)
-    #     quotation = obj.quotation
-    #     sale_order = obj.sale_order
-    #     check_quotation = '≠'
-    #     check_so = '≠'
-    #     check_delivery = '≠'
-    #     if quotation:
-    #         check_quotation = '=' if quotation.is_customer_confirm and quotation.system_status == 3 else '≠'
-    #     if sale_order:
-    #         check_so = '=' if sale_order.system_status == 3 else '≠'
-    #         check_delivery = '≠' if sale_order.delivery_call else '='
-    #     list_property.append(
-    #         {
-    #             'condition_property': {
-    #                 'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-    #                 'title': 'Quotation.confirm'
-    #             },
-    #             'comparison_operator': check_quotation,
-    #             'compare_data': '0',
-    #         }
-    #     )
-    #     list_property.append(
-    #         {
-    #             'condition_property': {
-    #                 'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-    #                 'title': 'SaleOrder.status'
-    #             },
-    #             'comparison_operator': check_so,
-    #             'compare_data': '0',
-    #         }
-    #     )
-    #     list_property.append(
-    #         {
-    #             'condition_property': {
-    #                 'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-    #                 'title': 'SaleOrder.Delivery.Status'
-    #             },
-    #             'comparison_operator': check_delivery,
-    #             'compare_data': '0',
-    #         }
-    #     )
-    #     return list_property
 
     @classmethod
     def auto_update_stage(cls, list_property, obj):
@@ -546,33 +428,9 @@ class Opportunity(DataAbstractModel):
                 )
                 self.code = 'OPP.00' + str(records.count() + 1)
 
-        keys_condition = ('quotation_confirm', 'sale_order_status', 'delivery_status')
-        if any(key in kwargs for key in keys_condition) and not self.is_close_lost and not self.is_deal_close:
-            if 'quotation_confirm' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
-                        self
-                    )
-                del kwargs['quotation_confirm']
-            elif 'sale_order_status' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
-                        self
-                    )
-                del kwargs['sale_order_status']
-            elif 'delivery_status' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_delivery(self, kwargs['delivery_status']),
-                        self
-                    )
-                del kwargs['delivery_status']
-            if 'update_fields' in kwargs:
-                kwargs['update_fields'].append('win_rate')
-            else:
-                kwargs.update({'update_fields': ['win_rate']})
+        # update stages
+        # if self.check_config_auto_update_stage():
+        #     self.win_rate = self.auto_update_stage(list_property=self.parse_property_stage(obj=self), obj=self)
         super().save(*args, **kwargs)
 
 

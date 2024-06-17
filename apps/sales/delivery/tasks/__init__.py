@@ -17,6 +17,8 @@ __all__ = [
     'task_active_delivery_from_sale_order',
 ]
 
+from apps.sales.saleorder.utils import SOFinishHandler
+
 
 class SaleOrderActiveDeliverySerializer:
     def __init__(
@@ -198,7 +200,7 @@ class SaleOrderActiveDeliverySerializer:
                 self.check_has_prod_services:
             state = 1
 
-        return OrderDelivery.objects.create(
+        order_delivery = OrderDelivery.objects.create(
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             sale_order=self.order_obj,
@@ -241,6 +243,9 @@ class SaleOrderActiveDeliverySerializer:
             employee_inherit=self.config_obj.lead_delivery,
             system_status=1
         )
+        # update opp stage
+        SOFinishHandler.update_opportunity_stage(instance=self.order_obj)
+        return order_delivery
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
