@@ -107,7 +107,7 @@ class GoodsReceipt(DataAbstractModel):
         for goods_receipt_item in instance.goods_receipt_product_goods_receipt.all():
             if goods_receipt_item.product.general_traceability_method != 1:
                 for warehouses_item in goods_receipt_warehouses.filter(
-                        goods_receipt_product__product=goods_receipt_item.product
+                    goods_receipt_product__product=goods_receipt_item.product
                 ):
                     casted_quantity = ReportInventorySub.cast_quantity_to_unit(
                         goods_receipt_item.uom, warehouses_item.quantity_import
@@ -130,7 +130,7 @@ class GoodsReceipt(DataAbstractModel):
                         'value': casted_cost * casted_quantity,
                         'lot_data': {}
                     })
-            else:
+            else:  # lot
                 lot_transact_list = instance.pw_lot_transact_goods_receipt.all().select_related(
                     'pw_lot__product_warehouse__product'
                 )
@@ -176,29 +176,9 @@ class GoodsReceipt(DataAbstractModel):
     def regis_stock_when_receipt(cls, instance, activities_data):
         for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
             sale_order = po_pr_mapped.purchase_request.sale_order
-            for item in activities_data:
-                if item.get('product') and item.get('warehouse'):
-                    if item['product'].general_traceability_method == 0:
-                        GoodsRegistration.update_registered_quantity_when_receipt(
-                            sale_order,
-                            {
-                                'product': {'id': str(item['product'].id), 'code': item['product'].code},
-                                'registered_quantity': item['quantity'],
-                                'registered_data': [{
-                                    'goods_receipt': {
-                                        'id': str(instance.id),
-                                        'code': instance.code
-                                    },
-                                    'warehouse': {
-                                        'id': str(item['warehouse'].id),
-                                        'code': item['warehouse'].code
-                                    },
-                                    'lot_data': {}
-                                }]
-                            }
-                        )
-                    if item['product'].general_traceability_method == 1 and len(item['lot_data']) > 0:
-                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
+            if sale_order:
+                for item in activities_data:
+                    GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
         return True
 
     def save(self, *args, **kwargs):

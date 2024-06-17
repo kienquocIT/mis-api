@@ -32,9 +32,7 @@ class GoodsRegistration(DataAbstractModel):
                 bulk_info.append(
                     GoodsRegistrationLineDetail(
                         goods_registration=goods_registration,
-                        so_item=so_item,
-                        registered_quantity=0,
-                        registered_data={}
+                        so_item=so_item
                     )
                 )
         GoodsRegistrationLineDetail.objects.bulk_create(bulk_info)
@@ -42,62 +40,45 @@ class GoodsRegistration(DataAbstractModel):
 
     @classmethod
     def update_registered_quantity_when_receipt(cls, sale_order, stock_info):
-        # 'product': goods_receipt_item.product,
-        # 'warehouse': lot_obj.product_warehouse.warehouse,
-        # 'system_date': instance.date_approved,
-        # 'posting_date': instance.date_approved,
-        # 'document_date': instance.date_approved,
-        # 'stock_type': 1,
-        # 'trans_id': str(instance.id),
-        # 'trans_code': instance.code,
-        # 'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type == 1 else 'Goods receipt',
-        # 'quantity': casted_quantity,
-        # 'cost': casted_cost,
-        # 'value': casted_cost * casted_quantity,
-        # 'lot_data': {
-        #     'lot_id': str(lot_obj.id),
-        #     'lot_number': lot_obj.lot_number,
-        #     'lot_quantity': casted_quantity,
-        #     'lot_value': casted_quantity * goods_receipt_item.product_unit_price,
-        #     'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
-        # }
-        gre = sale_order.goods_registration_so.first()
-        so_item = sale_order.sale_order_product_sale_order.filter(product=stock_info['product']).first()
-        if gre and so_item:
-            gre_item = GoodsRegistrationLineDetail.objects.filter(goods_registration=gre, so_item=so_item).first()
-            if gre_item:
-                gre_item.this_registered += stock_info['quantity'] * stock_info['quantity']
-                gre_item.this_registered_value += stock_info['value'] * stock_info['value']
-                gre_item.this_available = gre_item.this_registered - gre_item.this_others
-                gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
-                gre_item.registered_data += {
-                    'product_id': str(stock_info['product'].id),
-                    'warehouse_id': str(stock_info['warehouse'].id),
-                    'system_date': stock_info['system_date'],
-                    'posting_date': stock_info['posting_date'],
-                    'document_date': stock_info['document_date'],
-                    'stock_type': stock_info['stock_type'],
-                    'trans_id': stock_info['trans_id'],
-                    'trans_code': stock_info['trans_code'],
-                    'trans_title': stock_info['trans_title'],
-                    'quantity': stock_info['quantity'],
-                    'cost': stock_info['cost'],
-                    'value': stock_info['value'],
-                    'lot_data': stock_info['lot_data']
-                }
-                gre_item.save(update_fields=[
-                    'this_registered', 'this_registered_value',
-                    'this_available', 'this_available_value',
-                    'registered_data'
-                ])
-                if len(stock_info['lot_data']) > 0:
-                    GoodsRegistrationLot.objects.create(
-                        goods_registration_item=gre_item,
-                        lot_registered_id=stock_info['lot_data']['lot_id'],
-                        lot_registered_quantity=stock_info['lot_data']['lot_quantity']
-                    )
-        else:
-            raise ValueError('Not Exist: Sale Order does not have Goods Registration')
+        if sale_order.opportunity:
+            gre = sale_order.goods_registration_so.first()
+            so_item = sale_order.sale_order_product_sale_order.filter(product=stock_info['product']).first()
+            if gre and so_item:
+                gre_item = GoodsRegistrationLineDetail.objects.filter(goods_registration=gre, so_item=so_item).first()
+                if gre_item:
+                    gre_item.this_registered += stock_info['quantity']
+                    gre_item.this_registered_value += stock_info['value']
+                    gre_item.this_available = gre_item.this_registered - gre_item.this_others
+                    gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
+                    gre_item.registered_data += [{
+                        'product_id': str(stock_info['product'].id),
+                        'product_code': stock_info['product'].code,
+                        'warehouse_id': str(stock_info['warehouse'].id),
+                        'warehouse_code': stock_info['warehouse'].code,
+                        'system_date': str(stock_info['system_date']),
+                        'posting_date': str(stock_info['posting_date']),
+                        'document_date': str(stock_info['document_date']),
+                        'stock_type': stock_info['stock_type'],
+                        'trans_id': stock_info['trans_id'],
+                        'trans_code': stock_info['trans_code'],
+                        'trans_title': stock_info['trans_title'],
+                        'quantity': stock_info['quantity'],
+                        'cost': stock_info['cost'],
+                        'value': stock_info['value'],
+                        'lot_data': stock_info['lot_data']
+                    }]
+                    gre_item.save(update_fields=[
+                        'this_registered', 'this_registered_value',
+                        'this_available', 'this_available_value',
+                        'registered_data'
+                    ])
+                    if len(stock_info['lot_data']) > 0:
+                        GoodsRegistrationLot.objects.create(
+                            goods_registration_item=gre_item,
+                            lot_registered_id=stock_info['lot_data']['lot_id'],
+                            lot_registered_quantity=stock_info['lot_data']['lot_quantity']
+                        )
+        return True
 
 
 class GoodsRegistrationLineDetail(SimpleAbstractModel):
