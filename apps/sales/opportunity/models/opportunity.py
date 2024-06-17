@@ -199,7 +199,6 @@ class Opportunity(DataAbstractModel):
     @classmethod
     def common_check_property_stage(cls, obj):
         list_property = []
-
         # customer
         customer_data = {
             'condition_property': {
@@ -207,10 +206,9 @@ class Opportunity(DataAbstractModel):
                 'title': 'Customer'
             },
             'comparison_operator': '≠' if obj.customer else '=',
-            'compare_data': 0,
+            'compare_data': '0',
         }
         list_property.append(customer_data)
-
         if obj.customer:
             customer_data = {
                 'condition_property': {
@@ -221,7 +219,6 @@ class Opportunity(DataAbstractModel):
                 'compare_data': obj.customer.annual_revenue,
             }
             list_property.append(customer_data)
-
         # Product category
         list_property.append(
             {
@@ -230,10 +227,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product Category'
                 },
                 'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         # Budget
         list_property.append(
             {
@@ -242,10 +238,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Budget'
                 },
                 'comparison_operator': '=' if obj.budget_value == 0 else '≠',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -253,10 +248,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Open Date'
                 },
                 'comparison_operator': '≠' if obj.open_date else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -264,10 +258,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Date'
                 },
                 'comparison_operator': '≠' if obj.close_date else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -275,10 +268,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Decision maker'
                 },
                 'comparison_operator': '≠' if obj.decision_maker else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -286,10 +278,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Lost By Other Reason'
                 },
                 'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -297,10 +288,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Competitor.Win'
                 },
                 'comparison_operator': '=' if not obj.lost_by_other_reason and obj.is_close_lost else '≠',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -308,10 +298,9 @@ class Opportunity(DataAbstractModel):
                     'title': 'Product.Line.Detail'
                 },
                 'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
-
         list_property.append(
             {
                 'condition_property': {
@@ -319,7 +308,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'Close Deal'
                 },
                 'comparison_operator': '=' if obj.is_deal_close else '≠',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
         return list_property
@@ -334,8 +323,8 @@ class Opportunity(DataAbstractModel):
                     'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
                     'title': 'Quotation.confirm'
                 },
-                'comparison_operator': '=' if is_quotation_confirm else '≠',
-                'compare_data': 0,
+                'comparison_operator': '=' if is_quotation_confirm and obj.quotation.system_status == 3 else '≠',
+                'compare_data': '0',
             }
         )
 
@@ -345,8 +334,8 @@ class Opportunity(DataAbstractModel):
                     'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
                     'title': 'SaleOrder.status'
                 },
-                'comparison_operator': '=' if obj.sale_order and obj.sale_order.system_status == 0 else '≠',
-                'compare_data': 0,
+                'comparison_operator': '=' if obj.sale_order and obj.sale_order.system_status == 3 else '≠',
+                'compare_data': '0',
             }
         )
 
@@ -357,7 +346,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
         return list_property
@@ -372,8 +361,8 @@ class Opportunity(DataAbstractModel):
                     'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
                     'title': 'SaleOrder.status'
                 },
-                'comparison_operator': '≠' if sale_order_status == 0 else '=',
-                'compare_data': 0,
+                'comparison_operator': '=' if sale_order_status == 3 else '≠',
+                'compare_data': '0',
             }
         )
 
@@ -383,10 +372,10 @@ class Opportunity(DataAbstractModel):
                     'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
                     'title': 'Quotation.confirm'
                 },
-                'comparison_operator':
-                    '=' if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
-                    else '≠',
-                'compare_data': 0,
+                'comparison_operator': '='
+                if obj.quotation and obj.quotation.system_status == 3 and obj.quotation.is_customer_confirm
+                else '≠',
+                'compare_data': '0',
             }
         )
 
@@ -397,7 +386,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
         return list_property
@@ -413,7 +402,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.status'
                 },
                 'comparison_operator': '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
 
@@ -424,7 +413,7 @@ class Opportunity(DataAbstractModel):
                     'title': 'SaleOrder.Delivery.Status'
                 },
                 'comparison_operator': '≠' if delivery_status else '=',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
 
@@ -435,12 +424,57 @@ class Opportunity(DataAbstractModel):
                     'title': 'Quotation.confirm'
                 },
                 'comparison_operator': '='
-                if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
+                if obj.quotation and obj.quotation.system_status == 3 and obj.quotation.is_customer_confirm
                 else '≠',
-                'compare_data': 0,
+                'compare_data': '0',
             }
         )
         return list_property
+
+    # @classmethod
+    # def check_property_stage(cls, obj):
+    #     list_property = cls.common_check_property_stage(obj)
+    #     quotation = obj.quotation
+    #     sale_order = obj.sale_order
+    #     check_quotation = '≠'
+    #     check_so = '≠'
+    #     check_delivery = '≠'
+    #     if quotation:
+    #         check_quotation = '=' if quotation.is_customer_confirm and quotation.system_status == 3 else '≠'
+    #     if sale_order:
+    #         check_so = '=' if sale_order.system_status == 3 else '≠'
+    #         check_delivery = '≠' if sale_order.delivery_call else '='
+    #     list_property.append(
+    #         {
+    #             'condition_property': {
+    #                 'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
+    #                 'title': 'Quotation.confirm'
+    #             },
+    #             'comparison_operator': check_quotation,
+    #             'compare_data': '0',
+    #         }
+    #     )
+    #     list_property.append(
+    #         {
+    #             'condition_property': {
+    #                 'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
+    #                 'title': 'SaleOrder.status'
+    #             },
+    #             'comparison_operator': check_so,
+    #             'compare_data': '0',
+    #         }
+    #     )
+    #     list_property.append(
+    #         {
+    #             'condition_property': {
+    #                 'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
+    #                 'title': 'SaleOrder.Delivery.Status'
+    #             },
+    #             'comparison_operator': check_delivery,
+    #             'compare_data': '0',
+    #         }
+    #     )
+    #     return list_property
 
     @classmethod
     def auto_update_stage(cls, list_property, obj):

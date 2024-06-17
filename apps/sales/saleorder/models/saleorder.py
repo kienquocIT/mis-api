@@ -292,6 +292,9 @@ class SaleOrder(DataAbstractModel):
 
             # create registration
             GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+        if self.system_status in [4]:  # cancel
+            # opportunity
+            SOFinishHandler.update_opportunity_stage_by_so(instance=self)
         # opportunity log
         SOHandler.push_opportunity_log(instance=self)
         # diagram
