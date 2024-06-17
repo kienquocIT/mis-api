@@ -174,7 +174,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                 if item.work.work_dependencies_parent:
                     temp['dependencies_parent'] = str(item.work.work_dependencies_parent.id)
                 works_list.append(temp)
-            return works_list
+            return sorted(works_list, key=lambda key: (key['order'], key['order']))
         return []
 
     def get_members(self, obj):
@@ -202,7 +202,6 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
         if obj.project_owner:
             return obj.project_owner_data
         return {}
-
 
     class Meta:
         model = Project
