@@ -197,30 +197,24 @@ class Opportunity(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def common_check_property_stage(cls, obj):
-        list_property = []
-        # customer
-        customer_data = {
-            'condition_property': {
-                'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
-                'title': 'Customer'
+    def common_property_stage(cls, obj):
+        return [
+            {
+                'condition_property': {
+                    'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
+                    'title': 'Customer'
+                },
+                'comparison_operator': '≠' if obj.customer else '=',
+                'compare_data': 0,
             },
-            'comparison_operator': '≠' if obj.customer else '=',
-            'compare_data': 0,
-        }
-        list_property.append(customer_data)
-        if obj.customer:
-            customer_data = {
+            {
                 'condition_property': {
                     'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
                     'title': 'Customer'
                 },
                 'comparison_operator': '=',
-                'compare_data': obj.customer.annual_revenue,
-            }
-            list_property.append(customer_data)
-        # Product category
-        list_property.append(
+                'compare_data': obj.customer.annual_revenue if obj.customer else None,
+            },
             {
                 'condition_property': {
                     'id': '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8',
@@ -228,10 +222,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
                 'compare_data': 0,
-            }
-        )
-        # Budget
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '36233e9a-8dc9-4a7c-a6ad-504bac91d4cb',
@@ -239,9 +230,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '=' if obj.budget_value == 0 else '≠',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '195440c2-41bc-43f1-b387-fc5cd26401df',
@@ -249,9 +238,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '≠' if obj.open_date else '=',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '43009b1a-a25d-43be-ab97-47540a2f00cb',
@@ -259,9 +246,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '≠' if obj.close_date else '=',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '35dbf6f2-78a8-4286-8cf3-b95de5c78873',
@@ -269,9 +254,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '≠' if obj.decision_maker else '=',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '92c8035a-5372-41c1-9a8e-4b048d8af406',
@@ -279,9 +262,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': 'c8fa79ae-2490-4286-af25-3407e129fedb',
@@ -289,9 +270,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '=' if not obj.lost_by_other_reason and obj.is_close_lost else '≠',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '39b50254-e32d-473b-8380-f3b7765af434',
@@ -299,9 +278,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': 'f436053d-f15a-4505-b368-9ccdf5afb5f6',
@@ -310,14 +287,10 @@ class Opportunity(DataAbstractModel):
                 'comparison_operator': '=' if obj.is_deal_close else '≠',
                 'compare_data': 0,
             }
-        )
-        return list_property
+        ]
 
     @classmethod
-    def parse_property_stage(cls, obj):
-        list_property = cls.common_check_property_stage(obj)
-        quotation = obj.quotation
-        sale_order = obj.sale_order
+    def get_comparison_operators(cls, quotation, sale_order):
         check_quotation = '≠'
         check_so = '≠'
         check_delivery = '='
@@ -326,7 +299,15 @@ class Opportunity(DataAbstractModel):
         if sale_order:
             check_so = '=' if sale_order.system_status == 3 else '≠'
             check_delivery = '≠' if hasattr(sale_order, 'delivery_of_sale_order') else '='
-        list_property.append(
+        return check_quotation, check_so, check_delivery
+
+    @classmethod
+    def parse_property_stage(cls, obj):
+        list_property = cls.common_property_stage(obj=obj)
+        check_quotation, check_so, check_delivery = cls.get_comparison_operators(
+            quotation=obj.quotation, sale_order=obj.sale_order
+        )
+        list_property.extend([
             {
                 'condition_property': {
                     'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
@@ -334,9 +315,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': check_quotation,
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
@@ -344,9 +323,7 @@ class Opportunity(DataAbstractModel):
                 },
                 'comparison_operator': check_so,
                 'compare_data': 0,
-            }
-        )
-        list_property.append(
+            },
             {
                 'condition_property': {
                     'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
@@ -355,7 +332,7 @@ class Opportunity(DataAbstractModel):
                 'comparison_operator': check_delivery,
                 'compare_data': 0,
             }
-        )
+        ])
         return list_property
 
     @classmethod
@@ -406,7 +383,7 @@ class Opportunity(DataAbstractModel):
                 is_current=False
             ) for item in list_stage[:index + 1]]
         bulk_data[-1].is_current = True
-        obj.stage.clear()
+        obj.opportunity_stage_opportunity.all().delete()
         OpportunityStage.objects.bulk_create(bulk_data)
         return win_rate
 
@@ -427,10 +404,7 @@ class Opportunity(DataAbstractModel):
                     fill__tenant=True, fill__company=True, is_delete=False
                 )
                 self.code = 'OPP.00' + str(records.count() + 1)
-
-        # update stages
-        # if self.check_config_auto_update_stage():
-        #     self.win_rate = self.auto_update_stage(list_property=self.parse_property_stage(obj=self), obj=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 
