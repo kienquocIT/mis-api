@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.inventory.models import GoodsRegistration
+# from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
