@@ -38,6 +38,7 @@ class GoodsRegistration(DataAbstractModel):
                     )
             GoodsRegistrationLineDetail.objects.bulk_create(bulk_info)
             return goods_registration
+        return None
 
     @classmethod
     def update_registered_quantity_when_receipt(cls, sale_order, stock_info):

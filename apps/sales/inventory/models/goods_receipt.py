@@ -249,6 +249,7 @@ class GoodsReceipt(DataAbstractModel):
                     for item in stock_data:
                         GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
             return True
+        return False
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
