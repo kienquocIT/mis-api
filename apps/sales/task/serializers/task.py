@@ -7,7 +7,7 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
-from apps.sales.project.extend_func import check_permit_add_member_pj
+from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task
 from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
@@ -173,7 +173,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
     work = serializers.UUIDField(required=False)
-    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
@@ -262,6 +261,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
         if task.project:
             map_task_with_project(task, project_work)
+            calc_update_task(task)
         return task
 
 
@@ -425,7 +425,6 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     work = serializers.UUIDField(required=False)
-    project = serializers.UUIDField(required=False)
 
     class Meta:
         model = OpportunityTask
@@ -515,6 +514,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if instance.project:
             project_work = validated_data.pop('work', None)
             map_task_with_project(instance, project_work)
+            calc_update_task(instance)
         return instance
 
 
@@ -558,7 +558,7 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
         task_status = validated_data['task_status']
         if task_status.task_kind == 2:
             self.check_sub_task(instance, task_status)
-            # self.check_task_complete(instance)
+            self.check_task_complete(instance)
 
         instance.task_status = task_status
         instance.save(update_fields=['task_status', 'percent_completed'])

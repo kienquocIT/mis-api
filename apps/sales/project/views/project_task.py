@@ -112,7 +112,7 @@ class ProjectTaskDetail(BaseUpdateMixin, BaseDestroyMixin):
         if emp_id and str(project_map_task.employee_inherit_id) == str(emp_id):
             return True
         obj_of_current_user = get_prj_mem_of_crt_user(
-            pj_obj=project_map_task, employee_current=self.cls_check.employee_attr
+            prj_obj=project_map_task, employee_current=self.cls_check.employee_attr
         )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw

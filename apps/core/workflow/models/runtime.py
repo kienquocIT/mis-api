@@ -19,6 +19,7 @@ __all__ = [
     'RuntimeStage',
     'RuntimeLog',
     'RuntimeAssignee',
+    'RuntimeViewer',
 ]
 
 from ...base.models import ApplicationProperty

@@ -131,9 +131,11 @@ class EmployeeStorageAppAllList(BaseListMixin):
             state = self.check_perm_by_obj_or_body_data(obj=employee_obj, auto_check=True)
 
         if state is True:
-            if self.__opportunity_id or self.__project_id:
+            if self.__opportunity_id:
                 # exclude app opportunity and project
-                return ~Q(app_id__in=['49fe2eb9-39cd-44af-b74a-f690d7b61b67', '296a1410-8d72-46a8-a0a1-1821f196e66c'])
+                return ~Q(app_id='49fe2eb9-39cd-44af-b74a-f690d7b61b67')
+            if self.__project_id:
+                return ~Q(app_id='296a1410-8d72-46a8-a0a1-1821f196e66c')
             return Q()
         return self.list_empty()
 

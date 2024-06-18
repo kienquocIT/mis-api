@@ -1,4 +1,4 @@
-__all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializers']
+__all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializers', 'WorkUpdateSerializers']
 
 from rest_framework import serializers
 
@@ -8,21 +8,17 @@ from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, Projec
 
 def validated_date_work(attrs):
     if 'work_dependencies_parent' in attrs:
-        work_type = attrs['work_dependencies_type']
+        work_type = attrs['work_dependencies_type'] if 'work_dependencies_type' in attrs else 0
         if work_type == 1 and attrs['work_dependencies_parent'].w_end_date > attrs['w_start_date']:
             # nếu loại bắt đầu là "finish to start" và ngày kết thúc lớn hơn ngày bắt đầu của work tạo
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE})
     if 'group' in attrs:
-        if attrs['w_start_date'] < attrs['group'].gr_start_date or attrs['w_end_date'] > attrs['group'].gr_end_date:
-            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE})
+        group_flt = ProjectGroups.objects.filter(id=attrs['group'])
+        if group_flt.exists():
+            group_obj = group_flt.first()
+            if attrs['w_start_date'] < group_obj.gr_start_date or attrs['w_end_date'] > group_obj.gr_end_date:
+                raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE2})
     return attrs
-
-
-def update_completing(project, work):
-    if work.w_rate == 100:
-        all_work = ProjectMapWork.objects.filter(project=project).count()
-        project.completion_rate += round(100/all_work, 1)
-        project.save()
 
 
 class WorkListSerializers(serializers.ModelSerializer):
@@ -70,18 +66,6 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         except Project.DoesNotExist:
             raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
 
-    @classmethod
-    def validate_group(cls, value):
-        try:
-            pj_group = ProjectGroups.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return pj_group
-        except Project.DoesNotExist:
-            raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT_GROUP} {BaseMsg.NOT_EXIST}'})
-
     def validate(self, attrs):
         return validated_date_work(attrs)
 
@@ -90,10 +74,8 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         group = validated_data.pop('group', None)
         work = ProjectWorks.objects.create(**validated_data)
         ProjectMapWork.objects.create(project=project, work=work)
-
-        update_completing(project, work)
         if group:
-            GroupMapWork.objects.create(group=group, work=work)
+            GroupMapWork.objects.create(group_id=group, work=work)
         return work
 
     class Meta:
@@ -153,6 +135,22 @@ class WorkDetailSerializers(serializers.ModelSerializer):
             'work_status',
         )
 
+
+class WorkUpdateSerializers(serializers.ModelSerializer):
+    group = serializers.UUIDField(required=False)
+
+    class Meta:
+        model = ProjectWorks
+        fields = (
+            'title',
+            'w_weight',
+            'w_start_date',
+            'w_end_date',
+            'work_dependencies_parent',
+            'work_dependencies_type',
+            'group',
+        )
+
     def validate(self, attrs):
         return validated_date_work(attrs)
 
@@ -161,11 +159,7 @@ class WorkDetailSerializers(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        if instance.w_rate == 100:
-            project = ProjectMapWork.objects.filter(work=instance).first()
-            update_completing(project, instance)
         if group:
             GroupMapWork.objects.filter(work=instance).delete()
-            GroupMapWork.objects.create(group=group, work=instance)
+            GroupMapWork.objects.create(group_id=group, work=instance)
         return instance

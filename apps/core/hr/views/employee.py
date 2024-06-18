@@ -24,6 +24,7 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
     EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer, EmployeeListAllSerializer,
 )
+from apps.sales.project.models import ProjectMapMember
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
     ResponseController, TypeCheck,
@@ -114,7 +115,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         if not exclude_data:
             exclude_data = {}
 
-        return []
+        return ProjectMapMember.objects.filter_current(
+            fill__tenant=True, fill__company=True, project_id=prj_id
+        ).exclude(**exclude_data).values_list('member_id', flat=True)
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:

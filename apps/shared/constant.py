@@ -188,8 +188,8 @@ TASK_KIND = (
 PROJECT_WORK_STT = (
     (0, 'To do'),
     (1, 'In progress'),
-    (2, 'Completed'),
-    (3, 'Pending')
+    (2, 'Pending'),
+    (3, 'Completed')
 )
 
 PROJECT_WORK_TYPE = (

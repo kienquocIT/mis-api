@@ -231,8 +231,8 @@ class ProjectUpdate(BaseUpdateMixin, BaseDestroyMixin):
         login_require=True, auth_require=False,
         label_code='project', model_code='project', perm_code="edit",
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class ProjectMemberAdd(BaseCreateMixin):

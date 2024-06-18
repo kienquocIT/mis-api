@@ -97,9 +97,9 @@ class Project(DataAbstractModel):
             }
         if self.project_owner:
             self.project_owner_data = {
-                "id": str(self.employee_inherit_id),
-                "full_name": self.employee_inherit.get_full_name(),
-                "code": self.employee_inherit.code
+                "id": str(self.project_owner_id),
+                "full_name": self.project_owner.get_full_name(),
+                "code": self.project_owner.code
             }
         return True
 

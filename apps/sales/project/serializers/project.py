@@ -4,7 +4,6 @@ __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailS
 
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
 from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups
@@ -76,10 +75,8 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return str(value)
 
-    def create(self, validated_data):
-        project = Project.objects.create(**validated_data)
-
-        # create project team member
+    @classmethod
+    def create_project_map_member(cls, project):
         permission_by_configured = pj_get_alias_permit_from_app(employee_obj=project.employee_inherit)
         ProjectMapMember.objects.create(
             tenant_id=project.tenant_id,
@@ -91,6 +88,23 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
+        if str(project.employee_inherit_id) != str(project.project_owner_id):
+            permission_by_configured_owner = pj_get_alias_permit_from_app(employee_obj=project.project_owner)
+            ProjectMapMember.objects.create(
+                tenant_id=project.tenant_id,
+                company_id=project.company_id,
+                project=project,
+                member=project.project_owner,
+                permit_add_member=True,
+                permit_add_gaw=True,
+                permit_view_this_project=True,
+                permission_by_configured=permission_by_configured_owner
+            )
+
+    def create(self, validated_data):
+        project = Project.objects.create(**validated_data)
+        # create project team member
+        self.create_project_map_member(project)
         return project
 
     class Meta:
@@ -160,7 +174,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                 if item.work.work_dependencies_parent:
                     temp['dependencies_parent'] = str(item.work.work_dependencies_parent.id)
                 works_list.append(temp)
-            return works_list
+            return sorted(works_list, key=lambda key: (key['order'], key['order']))
         return []
 
     def get_members(self, obj):
@@ -208,30 +222,18 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
 
 
 class ProjectUpdateSerializers(serializers.ModelSerializer):
-    employee_inherit_id = serializers.UUIDField(required=False)
-    project_owner = serializers.UUIDField(required=False)
 
     @classmethod
     def validate_project_owner(cls, value):
-        try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Employee.DoesNotExist:
+        if not value:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
+        return value
 
     @classmethod
-    def validate_employee_inherit_id(cls, value):
-        try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Employee.DoesNotExist:
+    def validate_employee_inherit(cls, value):
+        if not value:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
+        return value
 
     class Meta:
         model = Project
@@ -240,7 +242,7 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             'start_date',
             'finish_date',
             'project_owner',
-            'employee_inherit_id',
+            'employee_inherit',
             'system_status'
         )
 

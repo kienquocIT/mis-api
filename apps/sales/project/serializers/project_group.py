@@ -92,24 +92,21 @@ class GroupDetailSerializers(serializers.ModelSerializer):
 
 
 class GroupListDDSerializers(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    title = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
 
     @classmethod
-    def get_id(cls, obj):
+    def get_group(cls, obj):
         if obj.group:
-            return str(obj.group.id)
-        return ''
-
-    @classmethod
-    def get_title(cls, obj):
-        if obj.group:
-            return obj.group.title
-        return ''
+            return {
+                'id': str(obj.group.id),
+                'title': obj.group.title,
+            }
+        return {}
 
     class Meta:
         model = ProjectMapGroup
         fields = (
             'id',
             'title',
+            'group',
         )

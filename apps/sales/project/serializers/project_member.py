@@ -73,22 +73,16 @@ class MemberOfProjectUpdateSerializer(serializers.ModelSerializer):
                     plan_x_old.delete()
         if plan_app_data:
             for plan_app in plan_app_data:
-                plan_code = None
-                app_code_list = []
-                if 'plan' in plan_app:
-                    plan_code = plan_app['plan'].code if plan_app['plan'] else None
-                if 'application' in plan_app:
-                    app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
-                if plan_code and app_code_list:
-                    plan_application_dict.update({plan_code: app_code_list})
-                    bulk_info.append(
-                        cls_query(
-                            **{
-                                'plan': plan_app['plan'],
-                                'application': [str(app.id) for app in plan_app['application']]
-                            }
-                        )
-                    )
+                plan = plan_app.get('plan', None)
+                applications = plan_app.get('application', [])
+
+                if plan and applications:
+                    plan_code = plan.code
+                    app_codes = [app.code for app in applications]
+                    app_ids = [str(app.id) for app in applications]
+
+                    plan_application_dict[plan_code] = app_codes
+                    bulk_info.append(cls_query(plan=plan, application=app_ids))
         return plan_application_dict, plan_app_data, bulk_info
 
     @staticmethod
