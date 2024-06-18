@@ -272,7 +272,7 @@ class SaleOrder(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 # create registration
-                if self.opportunity and self.company.company_config.cost_per_project:  # Case 5
+                if self.opportunity:
                     GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
 
             # check if date_approved then call related functions

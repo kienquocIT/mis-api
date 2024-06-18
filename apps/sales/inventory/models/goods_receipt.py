@@ -242,12 +242,13 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def regis_stock_when_receipt(cls, instance, stock_data):
-        for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
-            sale_order = po_pr_mapped.purchase_request.sale_order
-            if sale_order:
-                for item in stock_data:
-                    GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
-        return True
+        if instance.company.company_config.cost_per_project:  # Case 5
+            for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
+                sale_order = po_pr_mapped.purchase_request.sale_order
+                if sale_order:
+                    for item in stock_data:
+                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
+            return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -280,8 +281,7 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
             stock_data = self.prepare_data_for_logging(self)
-            if self.company.company_config.cost_per_project:  # Case 5
-                self.regis_stock_when_receipt(self, stock_data)
+            self.regis_stock_when_receipt(self, stock_data)
 
         # diagram
         GRHandler.push_diagram(instance=self)
