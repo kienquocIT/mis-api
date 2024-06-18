@@ -48,6 +48,7 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
+from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -1868,7 +1869,7 @@ def report_rerun(company_id, start_month):
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            OrderDeliverySubUpdateSerializer.prepare_data_for_logging(instance)
+            instance.prepare_data_for_logging_run(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
@@ -1889,31 +1890,31 @@ def report_rerun(company_id, start_month):
     print('Done')
 
 
-def update_product_warehouse_uom_base(product_id):
-    for product in Product.objects.filter(id=product_id):
+def update_product_warehouse_uom_base():
+    for product in Product.objects.all():
         if product.general_uom_group:
             uom_base = product.general_uom_group.uom_reference
             if uom_base:
-                for pw_common_base in ProductWareHouse.objects.filter(
+                for pw_base in ProductWareHouse.objects.filter(
                         product_id=product.id, uom_id=uom_base.id
                 ):
                     total_receipt = 0
                     total_sold = 0
                     for product_warehouse in ProductWareHouse.objects.filter(
-                            product_id=product.id, warehouse=pw_common_base.warehouse_id
-                    ):
+                            product_id=product.id, warehouse=pw_base.warehouse_id
+                    ).exclude(uom_id=uom_base.id):
                         final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
                         total_receipt += product_warehouse.receipt_amount * final_ratio
                         total_sold += product_warehouse.sold_amount * final_ratio
-                        if product_warehouse.uom_id != pw_common_base.uom_id:
-                            product_warehouse.receipt_amount = 0
-                            product_warehouse.sold_amount = 0
-                            product_warehouse.stock_amount = 0
-                            product_warehouse.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
-                    pw_common_base.receipt_amount = total_receipt
-                    pw_common_base.sold_amount = total_sold
-                    pw_common_base.stock_amount = total_receipt - total_sold
-                    pw_common_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+
+                        ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
+                        ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
+                        product_warehouse.delete()
+
+                    pw_base.receipt_amount += total_receipt
+                    pw_base.sold_amount += total_sold
+                    pw_base.stock_amount += total_receipt - total_sold
+                    pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
     print('update_product_warehouse_uom_base done.')
     return True
 
@@ -1991,4 +1992,24 @@ def update_goods_return_items_nt():
     obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
     obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
     obj.save(update_fields=['delivery_item_id'])
+    print('Done')
+
+
+def load_hint():
+    LeadHint.objects.all().delete()
+    for opp in Opportunity.objects.all():
+        LeadHint.objects.filter(opportunity=opp).delete()
+        bulk_info = []
+        for contact_role in opp.opportunity_contact_role_opportunity.all():
+            contact = contact_role.contact
+            bulk_info.append(
+                LeadHint(
+                    opportunity_id=opp.id,
+                    contact_mobile=contact.mobile,
+                    contact_phone=contact.phone,
+                    contact_email=contact.email,
+                    contact_id=str(contact.id)
+                )
+            )
+        LeadHint.objects.bulk_create(bulk_info)
     print('Done')

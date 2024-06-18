@@ -280,6 +280,8 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
 
 
 class FolderUploadFileSerializer(serializers.ModelSerializer):
+    folder = serializers.UUIDField(required=False, allow_null=True)
+
     def validate_file(self, attrs):
         user_obj = self.context.get('user_obj', None)
         if user_obj:  # pylint: disable=R1702
@@ -307,6 +309,13 @@ class FolderUploadFileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'file': HrMsg.EMPLOYEE_REQUIRED})
         raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_REQUIRED})
 
+    @classmethod
+    def validate_folder(cls, value):
+        try:
+            return Folder.objects.get(id=value)
+        except Folder.DoesNotExist:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+
     def validate(self, attrs):
         file_memory = attrs['file']
         attrs['file_name'] = file_memory.name
@@ -315,9 +324,7 @@ class FolderUploadFileSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        instance = Files.objects.create(
-            **validated_data
-        )
+        instance = Files.objects.create(**validated_data)
         return instance
 
     class Meta:

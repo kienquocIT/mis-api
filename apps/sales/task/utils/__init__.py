@@ -34,3 +34,28 @@ def task_create_opportunity_activity_log(subject, opps, task):
             traceback.print_exc()
             print(f'Error on line {sys.exc_info()[-1].tb_lineno} with {str(err)}')
         return False, 'Task object not found'
+
+
+class TaskHandler:
+
+    # OPPORTUNITY LOG
+    @classmethod
+    def push_opportunity_log(cls, instance):
+        if instance.opportunity:
+            OpportunityActivityLogs.push_opportunity_log(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                opportunity_id=instance.opportunity_id,
+                employee_created_id=instance.employee_created_id,
+                app_code=str(instance.__class__.get_model_code()),
+                doc_id=instance.id,
+                log_type=1,
+                doc_data={
+                    'id': str(instance.id),
+                    'title': instance.title,
+                    'code': instance.code,
+                    'task_status': instance.task_status.title if instance.task_status else 'To do',
+                    'date_created': str(instance.date_created),
+                }
+            )
+        return True

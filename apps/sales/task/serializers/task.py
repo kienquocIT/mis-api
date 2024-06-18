@@ -12,9 +12,7 @@ from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
-from apps.sales.task.utils import task_create_opportunity_activity_log
-
-from apps.shared import HRMsg, BaseMsg, call_task_background, ProjectMsg
+from apps.shared import HRMsg, BaseMsg, ProjectMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
@@ -260,16 +258,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 log_time['employee_created'] = employee
                 log_time['task'] = task
                 OpportunityLogWork.objects.create(**log_time)
-        # create activities logs if task has opps code
-        if task.opportunity:
-            call_task_background(
-                my_task=task_create_opportunity_activity_log,
-                **{
-                    'subject': str(task.title),
-                    'opps': str(task.opportunity.id),
-                    'task': str(task.id)
-                }
-            )
 
         if task.project:
             map_task_with_project(task, project_work)
@@ -517,23 +505,11 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
-        opps_before = instance.opportunity
         self.valid_config_task(instance, validated_data, user)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         handle_attachment(user, instance, validated_data.get('attach', None), False)
         instance.save()
-
-        # create activities logs if task has opps code
-        if not opps_before and validated_data.get('opportunity', None):
-            call_task_background(
-                my_task=task_create_opportunity_activity_log,
-                **{
-                    'subject': str(instance.title),
-                    'opps': str(instance.opportunity.id),
-                    'task': str(instance.id)
-                }
-            )
 
         if instance.project:
             project_work = validated_data.pop('work', None)

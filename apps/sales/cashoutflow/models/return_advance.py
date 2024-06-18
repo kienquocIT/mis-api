@@ -8,6 +8,8 @@ from .advance_payment import AdvancePaymentCost
 
 __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 
+from ..utils import ReturnAdHandler
+
 RETURN_ADVANCE_METHOD = [
     (0, _('Cash')),
     (1, _('Bank Transfer')),
@@ -66,6 +68,9 @@ class ReturnAdvance(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 self.update_advance_payment_cost(self)
 
+        # opportunity log
+        ReturnAdHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 

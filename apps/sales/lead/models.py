@@ -199,11 +199,12 @@ class LeadHint(SimpleAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity', on_delete=models.CASCADE, null=True, related_name='lead_opp_hint'
     )
-    customer = models.ForeignKey(
-        'saledata.Account', on_delete=models.CASCADE, null=True, related_name='lead_customer_hint'
+    contact = models.ForeignKey(
+        'saledata.Contact', on_delete=models.CASCADE, null=True, related_name='lead_contact_hint'
     )
-    customer_mobile = models.CharField(max_length=100, null=True)
-    customer_email = models.CharField(max_length=150, null=True)
+    contact_mobile = models.CharField(max_length=100, null=True)
+    contact_phone = models.CharField(max_length=100, null=True)
+    contact_email = models.CharField(max_length=150, null=True)
 
     class Meta:
         verbose_name = 'Lead Hint'
@@ -213,19 +214,27 @@ class LeadHint(SimpleAbstractModel):
         permissions = ()
 
     @classmethod
-    def check_and_create_lead_hint(cls, opportunity_obj, customer_mobile, customer_email, customer_id):
+    def check_and_create_lead_hint(cls, opportunity_obj, contact_mobile, contact_phone, contact_email, contact_id):
         if opportunity_obj:
             cls.objects.filter(opportunity=opportunity_obj).delete()
-            cls.objects.create(
-                opportunity_id=opportunity_obj.id,
-                customer_mobile=customer_mobile,
-                customer_email=customer_email,
-                customer_id=customer_id
-            )
+            bulk_info = []
+            for contact_role in opportunity_obj.opportunity_contact_role_opportunity.all():
+                contact = contact_role.contact
+                bulk_info.append(
+                    cls(
+                        opportunity_id=opportunity_obj.id,
+                        contact_mobile=contact.mobile,
+                        contact_phone=contact.phone,
+                        contact_email=contact.email,
+                        contact_id=str(contact.id)
+                    )
+                )
+            cls.objects.bulk_create(bulk_info)
         else:
-            cls.objects.filter(customer_id=customer_id).update(
-                customer_mobile=customer_mobile,
-                customer_email=customer_email
+            cls.objects.filter(contact_id=contact_id).update(
+                contact_mobile=contact_mobile,
+                contact_phone=contact_phone,
+                contact_email=contact_email
             )
         return True
 

@@ -1,5 +1,6 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods
+from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
@@ -202,6 +203,43 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
             self.prepare_data_for_logging(self)
+            for purchase_request in self.purchase_requests.all():
+                for so_item in purchase_request.purchase_request.filter(product__isnull=False):
+                    # if so_item.product.general_traceability_method == 1:  # lot
+                    #     for goods_receipt_item in self.goods_receipt_product_goods_receipt.all():
+                    #         lot_transact_list = self.pw_lot_transact_goods_receipt.all().select_related(
+                    #             'pw_lot__product_warehouse__product'
+                    #         )
+                    #         for lot_transact in lot_transact_list.filter(
+                    #                 pw_lot__product_warehouse__product=goods_receipt_item.product
+                    #         ):
+                    #             lot_obj = lot_transact.pw_lot
+                    #             goods_receipt_data = [{
+                    #                 'goods_receipt_id': str(self.id),
+                    #                 'goods_receipt_code': self.code,
+                    #                 'goods_receipt_title': self.title,
+                    #                 'quantity': ...,
+                    #                 'warehouse_list': [{
+                    #                     'warehouse': {'id': ..., 'code': ..., 'title': ...},
+                    #                     'lot_data': [{
+                    #                         'lot_id': str(lot_obj.id),
+                    #                         'lot_number': lot_obj.lot_number,
+                    #                         'lot_quantity': ReportInventorySub.cast_quantity_to_unit(
+                    #                             goods_receipt_item.uom, lot_transact.quantity
+                    #                         )
+                    #                     }]
+                    #                 }]
+                    #             }]
+                    # if so_item.product.general_traceability_method == 2:  # sn
+                    #     pass
+                    GoodsRegistration.update_registered_quantity_when_receipt(
+                        purchase_request.sale_order,
+                        {
+                            'product_id': so_item.product_id,
+                            'registered_quantity': so_item.quantity,
+                            'registered_data': {}
+                        }
+                    )
 
         # diagram
         GRHandler.push_diagram(instance=self)

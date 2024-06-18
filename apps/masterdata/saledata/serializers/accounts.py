@@ -1,5 +1,4 @@
 import datetime
-
 from rest_framework import serializers
 from django.utils import timezone
 from apps.core.hr.models import Employee
@@ -10,7 +9,6 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.sales.lead.models import LeadHint
 from apps.shared import AccountsMsg, HRMsg
 
 
@@ -776,7 +774,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             except Contact.DoesNotExist:
                 raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
 
-        LeadHint.check_and_create_lead_hint(None, instance.phone, instance.email, instance.id)
         return instance
 
 

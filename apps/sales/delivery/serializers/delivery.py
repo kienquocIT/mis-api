@@ -1,12 +1,10 @@
 from django.db import transaction
 from django.utils import timezone
-
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, ProductWareHouseLot
+from apps.masterdata.saledata.models import ProductWareHouse, Product, WareHouse, UnitOfMeasure, ProductWareHouseLot
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
@@ -444,17 +442,16 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         order_delivery.save(update_fields=['sub', 'state'])
 
     @classmethod
-    def for_lot(cls, instance, deli_item, deli_data, activities_data, main_product_unit_price):
-        for lot in deli_data.get('lot_data', []):
+    def for_lot(cls, instance, lot_data, activities_data, product_obj, warehouse_obj, uom_obj):
+        for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
-            if lot_obj:
-                quantity_delivery = lot.get('quantity_delivery')
+            if lot_obj and lot.get('quantity_delivery'):
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(
-                    deli_item.uom, quantity_delivery
+                    uom_obj, lot.get('quantity_delivery')
                 )
                 activities_data.append({
-                    'product': deli_item.product,
-                    'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+                    'product': product_obj,
+                    'warehouse': warehouse_obj,
                     'system_date': instance.date_done,
                     'posting_date': instance.date_done,
                     'document_date': instance.date_done,
@@ -469,21 +466,18 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         'lot_id': str(lot_obj.id),
                         'lot_number': lot_obj.lot_number,
                         'lot_quantity': casted_quantity,
-                        'lot_value': main_product_unit_price * casted_quantity,
+                        'lot_value': 0,  # theo gia cost
                         'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
                     }
                 })
-            else:
-                raise serializers.ValidationError({'Lot': 'Lot does not found.'})
         return activities_data
 
     @classmethod
-    def for_sn(cls, instance, deli_item, deli_data, activities_data):
-        quantity_delivery = len(deli_data.get('serial_data', []))
-        casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
+    def for_sn(cls, instance, sn_data, activities_data, product_obj, warehouse_obj, uom_obj):
+        casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, len(sn_data))
         activities_data.append({
-            'product': deli_item.product,
-            'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+            'product': product_obj,
+            'warehouse': warehouse_obj,
             'system_date': instance.date_done,
             'posting_date': instance.date_done,
             'document_date': instance.date_done,
@@ -499,44 +493,39 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return activities_data
 
     @classmethod
-    def prepare_data_for_logging(cls, instance):
+    def prepare_data_for_logging(cls, instance, validated_delivery_data):
         activities_data = []
-        so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
-        for deli_item in instance.delivery_product_delivery_sub.all():
-            if deli_item.picked_quantity > 0:
-                main_item = so_products.filter(order=deli_item.order).first()
-                unit_price = main_item.product_unit_price if main_item else 0
-                for deli_data in deli_item.delivery_data:
-                    if len(deli_data.get('lot_data', [])) > 0:
-                        activities_data = cls.for_lot(instance, deli_item, deli_data, activities_data, unit_price)
-                    elif len(deli_data.get('serial_data', [])) > 0:
-                        activities_data = cls.for_sn(instance, deli_item, deli_data, activities_data)
-
-            # for None
-            if all([
-                deli_item.picked_quantity > 0,
-                len(deli_item.delivery_data) > 0,
-                deli_item.product.general_traceability_method == 0
-            ]):
-                lot_data = deli_item.delivery_data[0]
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
-                    deli_item.uom, deli_item.picked_quantity
-                )
-                activities_data.append({
-                    'product': deli_item.product,
-                    'warehouse': WareHouse.objects.filter(id=lot_data.get('warehouse')).first(),
-                    'system_date': instance.date_done,
-                    'posting_date': instance.date_done,
-                    'document_date': instance.date_done,
-                    'stock_type': -1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Delivery',
-                    'quantity': casted_quantity,
-                    'cost': 0,  # theo gia cost
-                    'value': 0,  # theo gia cost
-                    'lot_data': {}
-                })
+        for deli_item in validated_delivery_data:
+            product_obj = Product.objects.filter(id=deli_item.get('product_id')).first()
+            if product_obj and len(deli_item.get('delivery_data')) > 0:
+                delivery_data = deli_item.get('delivery_data')[0]
+                warehouse_obj = WareHouse.objects.filter(id=delivery_data.get('warehouse')).first()
+                uom_obj = UnitOfMeasure.objects.filter(id=delivery_data.get('uom')).first()
+                quantity = delivery_data.get('stock')
+                if warehouse_obj and uom_obj and quantity > 0:
+                    lot_data = delivery_data.get('lot_data')
+                    sn_data = delivery_data.get('serial_data')
+                    if product_obj.general_traceability_method == 0:  # None
+                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, quantity)
+                        activities_data.append({
+                            'product': product_obj,
+                            'warehouse': warehouse_obj,
+                            'system_date': instance.date_done,
+                            'posting_date': instance.date_done,
+                            'document_date': instance.date_done,
+                            'stock_type': -1,
+                            'trans_id': str(instance.id),
+                            'trans_code': instance.code,
+                            'trans_title': 'Delivery',
+                            'quantity': casted_quantity,
+                            'cost': 0,  # theo gia cost
+                            'value': 0,  # theo gia cost
+                            'lot_data': {}
+                        })
+                    if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
+                        cls.for_lot(instance, lot_data, activities_data, product_obj, warehouse_obj, uom_obj)
+                    if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
+                        cls.for_sn(instance, sn_data, activities_data, product_obj, warehouse_obj, uom_obj)
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,
@@ -566,6 +555,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
+        instance.save()
 
         if len(product_done) > 0:
             # update instance info
@@ -603,7 +593,12 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         # diagram
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
-        if instance.state == 2:
-            self.prepare_data_for_logging(instance)
+        self.prepare_data_for_logging(
+            instance,
+            [{
+                'product_id': item['product_id'],
+                'delivery_data': item['delivery_data']
+            } for item in validated_product]
+        )
 
         return instance

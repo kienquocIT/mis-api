@@ -15,6 +15,8 @@ __all__ = [
     'PaymentAttachmentFile'
 ]
 
+from ..utils import PaymentHandler
+
 SALE_CODE_TYPE = [
     (0, _('Sale')),
     (1, _('Purchase')),
@@ -161,6 +163,9 @@ class Payment(DataAbstractModel):
                 self.push_final_acceptance_payment(self)
                 self.convert_ap_cost(self)
 
+        # opportunity log
+        PaymentHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 
