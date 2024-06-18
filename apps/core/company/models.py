@@ -178,7 +178,7 @@ class Company(CoreAbstractModel):
 
 
 class CompanyConfig(SimpleAbstractModel):
-    company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='company_config')
     language = models.CharField(
         max_length=10,
         choices=settings.LANGUAGE_CHOICE,

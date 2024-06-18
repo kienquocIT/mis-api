@@ -280,7 +280,7 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
             stock_data = self.prepare_data_for_logging(self)
-            if self.company.companyconfig.cost_per_project:  # Case 5
+            if self.company.company_config.cost_per_project:  # Case 5
                 self.regis_stock_when_receipt(self, stock_data)
 
         # diagram

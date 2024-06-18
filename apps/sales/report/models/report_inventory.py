@@ -147,7 +147,7 @@ class ReportInventorySub(DataAbstractModel):  # rp2
         ).first()
         if period_obj:
             sub_period_order = stock_obj_date.month - period_obj.space_month
-            if stock_obj.company.companyconfig.definition_inventory_valuation == 1:
+            if stock_obj.company.company_config.definition_inventory_valuation == 1:
                 if int(sub_period_order) == 1:
                     last_period = Periods.objects.filter(
                         tenant=stock_obj.tenant,
@@ -203,7 +203,7 @@ class ReportInventorySub(DataAbstractModel):  # rp2
         bulk_info = []
         log_order_number = 0
         for item in stock_data:
-            div = stock_obj.company.companyconfig.definition_inventory_valuation
+            div = stock_obj.company.company_config.definition_inventory_valuation
             if len(item.get('lot_data', {})) == 0:
                 rp1 = ReportInventory.get_report_inventory(
                     stock_obj,
@@ -280,7 +280,7 @@ class ReportInventorySub(DataAbstractModel):  # rp2
     @classmethod
     def update_current_value_dict_for_log(cls, log, period_obj, sub_period_order):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
-        div = log.company.companyconfig.definition_inventory_valuation
+        div = log.company.company_config.definition_inventory_valuation
         if div == 0:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
@@ -743,7 +743,7 @@ class LoggingSubFunction:
 
         # Begin get Ending
         if this_record.sub_latest_log:
-            if this_record.company.companyconfig.definition_inventory_valuation == 0:
+            if this_record.company.company_config.definition_inventory_valuation == 0:
                 ending_quantity = this_record.sub_latest_log.current_quantity
                 ending_cost = this_record.sub_latest_log.current_cost
                 ending_value = this_record.sub_latest_log.current_value

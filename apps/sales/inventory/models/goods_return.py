@@ -219,7 +219,7 @@ class GoodsReturn(DataAbstractModel):
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
-        if instance.company.companyconfig.definition_inventory_valuation == 0:
+        if instance.company.company_config.definition_inventory_valuation == 0:
             stock_data = cls.for_perpetual_inventory(instance)
         else:
             stock_data = cls.for_periodic_inventory(instance)

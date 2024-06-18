@@ -81,7 +81,7 @@ def create_files_mapped(gr_obj, file_id_list):
 def create_item_mapped(goods_return):
     bulk_info = []
     for item in goods_return.product_detail_list:
-        div = goods_return.company.companyconfig.definition_inventory_valuation
+        div = goods_return.company.company_config.definition_inventory_valuation
         if not item.get('cost_for_periodic') and div == 1:
             raise serializers.ValidationError({"cost": 'Cost for periodic in not NULL.'})
         data_type = item.get('type')

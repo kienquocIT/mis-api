@@ -322,7 +322,7 @@ def update_balance_data(balance_data, instance):
                     prd_obj.stock_amount += float(item.get('quantity'))
                     prd_obj.available_amount += float(item.get('quantity'))
                     prd_obj.save(update_fields=['stock_amount', 'available_amount'])
-                    if instance.company.companyconfig.definition_inventory_valuation == 0:
+                    if instance.company.company_config.definition_inventory_valuation == 0:
                         bulk_info_rp_prd_wh.append(
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
