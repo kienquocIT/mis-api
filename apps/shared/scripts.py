@@ -46,7 +46,7 @@ from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnProductDetail
+    GoodsReturnProductDetail, GoodsReceiptLot
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
@@ -1120,14 +1120,16 @@ def update_company_setting():
         if vnd_currency:
             company_obj.definition_inventory_valuation = 0
             company_obj.default_inventory_value_method = 0
-            company_obj.cost_per_warehouse = False
-            company_obj.cost_per_lot_batch = False
+            company_obj.cost_per_warehouse = True
+            company_obj.cost_per_lot = False
+            company_obj.cost_per_project = False
             company_obj.primary_currency_id = str(vnd_currency.id)
             company_obj.save(update_fields=[
                 'definition_inventory_valuation',
                 'default_inventory_value_method',
                 'cost_per_warehouse',
-                'cost_per_lot_batch',
+                'cost_per_lot',
+                'cost_per_project',
                 'primary_currency_id'
             ])
     return True
@@ -1722,6 +1724,7 @@ def report_rerun(company_id, start_month):
     if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')
         company = Company.objects.get(id=company_id)
+        GoodsReceiptLot.objects.filter(id='ab1ad8663efa4f58a3bec378cfedc039').delete()
         ProductWareHouseLotTransaction.objects.create(
             pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
             delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
@@ -1750,50 +1753,15 @@ def report_rerun(company_id, start_month):
             tenant=company.tenant,
             company=company,
             product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-            lot_mapped_id='12de4425e1-e341-a0bd-286e-44d78ec260',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
+            sub_period_order=9,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(4),
-            opening_balance_value=float(160000000),
+            opening_balance_quantity=float(2),
+            opening_balance_value=float(80000000),
             opening_balance_cost=float(40000000),
-            ending_balance_quantity=float(4),
-            ending_balance_value=float(160000000),
-            ending_balance_cost=float(40000000),
-            for_balance=True
-        )
-        ReportInventoryProductWarehouse.objects.create(
-            tenant=company.tenant,
-            company=company,
-            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-            lot_mapped_id='144cc8d8-d20e-4d5d-ad03-74e11f52a499',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(6),
-            opening_balance_value=float(240000000),
-            opening_balance_cost=float(40000000),
-            ending_balance_quantity=float(6),
-            ending_balance_value=float(240000000),
-            ending_balance_cost=float(40000000),
-            for_balance=True
-        )
-        ReportInventoryProductWarehouse.objects.create(
-            tenant=company.tenant,
-            company=company,
-            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-            lot_mapped_id='837ababb0cd14b5b8e0064e024d1aae9',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(120000000),
-            opening_balance_cost=float(40000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(120000000),
+            ending_balance_quantity=float(2),
+            ending_balance_value=float(80000000),
             ending_balance_cost=float(40000000),
             for_balance=True
         )
@@ -1802,7 +1770,6 @@ def report_rerun(company_id, start_month):
             tenant=company.tenant,
             company=company,
             product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
-            lot_mapped=None,
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
             sub_period_order=3,

@@ -57,7 +57,8 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         )
 
 
@@ -124,7 +125,8 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         )
 
     def update(self, instance, validated_data):
@@ -140,7 +142,8 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         ])
         this_period = Periods.objects.filter(
             tenant=instance.company.tenant,
