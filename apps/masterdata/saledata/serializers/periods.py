@@ -327,6 +327,8 @@ def update_balance_data(balance_data, instance):
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
                                 company=instance.company,
+                                employee_created=instance.employee_created,
+                                employee_inherit=instance.employee_inherit,
                                 product=prd_obj,
                                 warehouse=wh_obj,
                                 period_mapped=instance,
@@ -338,7 +340,11 @@ def update_balance_data(balance_data, instance):
                                 ending_balance_quantity=float(item.get('quantity')),
                                 ending_balance_value=float(item.get('value')),
                                 ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                                for_balance=True
+                                for_balance=True,
+                                sum_input_quantity=float(item.get('quantity')),
+                                sum_input_value=float(item.get('value')),
+                                sum_output_quantity=0,
+                                sum_output_value=0
                             )
                         )
                     else:
@@ -346,6 +352,8 @@ def update_balance_data(balance_data, instance):
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
                                 company=instance.company,
+                                employee_created=instance.employee_created,
+                                employee_inherit=instance.employee_inherit,
                                 product=prd_obj,
                                 warehouse=wh_obj,
                                 period_mapped=instance,

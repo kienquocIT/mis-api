@@ -1598,26 +1598,43 @@ def run_inventory_report():
     return True
 
 
-def report_rerun(company_id, start_month):
+def report_rerun(company_id, start_month, run_fix_data=False):
     ReportInventorySub.objects.all().delete()
     ReportInventoryProductWarehouse.objects.all().delete()
     ReportInventory.objects.all().delete()
     LatestSub.objects.all().delete()
 
-    if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+    if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')
         company = Company.objects.get(id=company_id)
-        GoodsReceiptLot.objects.filter(id='ab1ad8663efa4f58a3bec378cfedc039').delete()
         ProductWareHouseLotTransaction.objects.create(
             pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
             delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
             quantity=2,
             type_transaction=1
         )
+        OrderDeliveryProduct.objects.filter(id='b8442325292042c1afa03d82505e7be6').update(delivery_data=[
+            {
+                "uom": "f77ab927-c430-4d61-bdc0-2519055b4204",
+                "stock": 1,
+                "lot_data": [
+                    {
+                        'quantity_initial': 1,
+                        'quantity_delivery': 1,
+                        'product_warehouse_lot_id': 'b1d4a1cfb72b41d0817d0514d49bd352'
+                    }
+                ],
+                "warehouse": "bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89",
+                "serial_data": []
+            }
+        ])
+
         # đầu kỳ SW
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
             product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
@@ -1635,6 +1652,8 @@ def report_rerun(company_id, start_month):
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
             product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
@@ -1652,6 +1671,8 @@ def report_rerun(company_id, start_month):
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
             company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
             product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
@@ -1715,7 +1736,7 @@ def report_rerun(company_id, start_month):
 
     all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
     for doc in all_doc_sorted:
-        print(f"----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
+        print(f"\n----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])

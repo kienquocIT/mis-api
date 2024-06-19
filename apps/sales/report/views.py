@@ -313,58 +313,7 @@ class ReportInventoryList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @classmethod
-    def create_record_if_not_exist(cls, tenant, company, sub, prd_id, wh_id, period_mapped, sub_period_order):
-        if int(sub_period_order) <= (datetime.datetime.now().month - period_mapped.space_month):
-            quantity = None
-            cost = None
-            value = None
-            latest_trans = LoggingSubFunction.get_latest_log_by_month(prd_id, wh_id, period_mapped, sub_period_order)
-            if latest_trans:
-                if company.company_config.definition_inventory_valuation == 0:
-                    quantity = latest_trans.current_quantity
-                    cost = latest_trans.current_cost
-                    value = latest_trans.current_value
-                else:
-                    quantity = latest_trans.periodic_current_quantity
-                    cost = latest_trans.periodic_current_cost
-                    value = latest_trans.periodic_current_value
-            else:
-                opening_value_list_obj = ReportInventoryProductWarehouse.objects.filter(
-                    product_id=prd_id, warehouse_id=wh_id, period_mapped=period_mapped, for_balance=True
-                ).first()
-                if opening_value_list_obj:
-                    if opening_value_list_obj.sub_period_order < int(sub_period_order):
-                        quantity = opening_value_list_obj.opening_balance_quantity
-                        cost = opening_value_list_obj.opening_balance_cost
-                        value = opening_value_list_obj.opening_balance_value
-
-            if quantity and cost and value:
-                if company.company_config.definition_inventory_valuation == 0:
-                    ReportInventoryProductWarehouse.objects.create(
-                        tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
-                        period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
-                        opening_balance_quantity=quantity,
-                        opening_balance_cost=cost,
-                        opening_balance_value=value,
-                        ending_balance_quantity=quantity,
-                        ending_balance_cost=cost,
-                        ending_balance_value=value
-                    )
-                else:
-                    ReportInventoryProductWarehouse.objects.create(
-                        tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
-                        period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
-                        opening_balance_quantity=quantity,
-                        opening_balance_cost=cost,
-                        opening_balance_value=value,
-                        periodic_ending_balance_quantity=quantity,
-                        periodic_ending_balance_cost=cost,
-                        periodic_ending_balance_value=value
-                    )
-        return True
-
-    @classmethod
-    def create_this_sub_record(cls, tenant, company, period_mapped, sub_period_order):
+    def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
         if int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month:
             if sub_period_order == 12:
                 last_sub_period_order = 1
@@ -404,7 +353,10 @@ class ReportInventoryList(BaseListMixin):
                     if quantity and cost and value:
                         if div == 0:
                             ReportInventoryProductWarehouse.objects.create(
-                                tenant=tenant, company=company,
+                                tenant=tenant,
+                                company=company,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
                                 product_id=last_item.product_id,
                                 lot_mapped_id=last_item.lot_mapped_id,
                                 warehouse_id=last_item.warehouse_id,
@@ -420,7 +372,10 @@ class ReportInventoryList(BaseListMixin):
                             )
                         if div == 1:
                             ReportInventoryProductWarehouse.objects.create(
-                                tenant=tenant, company=company,
+                                tenant=tenant,
+                                company=company,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
                                 product_id=last_item.product_id,
                                 lot_mapped_id=last_item.lot_mapped_id,
                                 warehouse_id=last_item.warehouse_id,
@@ -446,6 +401,7 @@ class ReportInventoryList(BaseListMixin):
             self.create_this_sub_record(
                 self.request.user.tenant_current,
                 self.request.user.company_current,
+                self.request.user.employee_current,
                 period_mapped,
                 sub_period_order
             )
