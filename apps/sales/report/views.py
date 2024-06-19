@@ -322,18 +322,20 @@ class ReportInventoryList(BaseListMixin):
                 last_sub_period_order = int(sub_period_order) - 1
                 last_period_mapped = period_mapped
 
-            all_last_sub = ReportInventoryProductWarehouse.objects.filter(
-                tenant=tenant, company=company,
-                period_mapped=last_period_mapped, sub_period_order=last_sub_period_order
-            )
-            all_this_sub = ReportInventoryProductWarehouse.objects.filter(
-                tenant=tenant, company=company,
-                period_mapped=period_mapped, sub_period_order=sub_period_order
-            )
+            all_subs = {
+                'last': ReportInventoryProductWarehouse.objects.filter(
+                    tenant=tenant, company=company,
+                    period_mapped=last_period_mapped, sub_period_order=last_sub_period_order
+                ),
+                'this': ReportInventoryProductWarehouse.objects.filter(
+                    tenant=tenant, company=company,
+                    period_mapped=period_mapped, sub_period_order=sub_period_order
+                )
+            }
             sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
             div = company.company_config.definition_inventory_valuation
-            for last_item in all_last_sub:
-                if not all_this_sub.filter(
+            for last_item in all_subs['last']:
+                if not all_subs['this'].filter(
                     product_id=last_item.product_id,
                     warehouse_id=last_item.warehouse_id,
                     lot_mapped_id=last_item.lot_mapped_id
