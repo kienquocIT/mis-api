@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
@@ -197,7 +196,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
             new_code = 'IA.0001'
         else:
             latest_code = InventoryAdjustment.objects.filter_current(
-                fill__tenant=True, fill__company=True
+                fill__tenant=True, fill__company=True, is_delete=False
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'IA.000' + str(new_code)
@@ -228,6 +227,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
     product_mapped = serializers.SerializerMethodField()
     warehouse_mapped = serializers.SerializerMethodField()
     uom_mapped = serializers.SerializerMethodField()
+    unit_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustmentItem
@@ -242,19 +242,18 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
             'warehouse_mapped',
             'uom_mapped',
             'action_status',
+            'unit_cost'
         )
 
     @classmethod
     def get_product_mapped(cls, obj):
-        if obj.product_mapped:
-            return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
-                'description': obj.product_mapped.description,
-                'general_traceability_method': obj.product_mapped.general_traceability_method,
-            }
-        return {}
+        return {
+            'id': obj.product_mapped_id,
+            'title': obj.product_mapped.title,
+            'code': obj.product_mapped.code,
+            'description': obj.product_mapped.description,
+            'general_traceability_method': obj.product_mapped.general_traceability_method,
+        } if obj.product_mapped else {}
 
     @classmethod
     def get_warehouse_mapped(cls, obj):
@@ -275,6 +274,10 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
                 'code': obj.uom_mapped.code,
             }
         return {}
+
+    @classmethod
+    def get_unit_cost(cls, obj):
+        return obj.product_mapped.get_unit_cost_by_warehouse(obj.warehouse_mapped_id)
 
 
 # Inventory adjustment list use for other apps
@@ -317,4 +320,7 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
             'action_status': ia_product.action_status,
             'product_unit_price': 0,
             'product_subtotal_price': 0,
+            'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+            )
         } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2, action_status=False)]

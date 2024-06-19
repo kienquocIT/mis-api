@@ -8,6 +8,8 @@ from .advance_payment import AdvancePaymentCost
 
 __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 
+from ..utils import ReturnAdHandler
+
 RETURN_ADVANCE_METHOD = [
     (0, _('Cash')),
     (1, _('Bank Transfer')),
@@ -54,8 +56,8 @@ class ReturnAdvance(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    records = ReturnAdvance.objects.filter_current(
-                        fill__tenant=True, fill__company=True, is_delete=False
+                    records = ReturnAdvance.objects.filter(
+                        company=self.company, tenant=self.tenant, is_delete=False, system_status=3
                     )
                     self.code = 'RP.00' + str(records.count() + 1)
 
@@ -66,6 +68,9 @@ class ReturnAdvance(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 self.update_advance_payment_cost(self)
 
+        # opportunity log
+        ReturnAdHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 

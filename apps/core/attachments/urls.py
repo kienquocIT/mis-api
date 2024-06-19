@@ -1,7 +1,7 @@
 from django.urls import path
 from apps.core.attachments.views import (
     FilesUpload, FilesUnused,
-    ImageWebBuilderUpload, ImageWebBuilderList,
+    ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList,
 )
 
 urlpatterns = [
@@ -9,4 +9,7 @@ urlpatterns = [
     path('upload', FilesUpload.as_view(), name='FilesUpload'),
     path('web-builder/upload', ImageWebBuilderUpload.as_view(), name='ImageWebBuilderUpload'),
     path('web-builder/list', ImageWebBuilderList.as_view(), name='ImageWebBuilderList'),
+    path('folder/list', FolderList.as_view(), name='FolderList'),
+    path('folder/<str:pk>', FolderDetail.as_view(), name='FolderDetail'),
+    path('folder-upload-file/list', FolderUploadFileList.as_view(), name='FolderUploadFileList'),
 ]

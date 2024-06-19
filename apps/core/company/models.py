@@ -178,7 +178,7 @@ class Company(CoreAbstractModel):
 
 
 class CompanyConfig(SimpleAbstractModel):
-    company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='company_config')
     language = models.CharField(
         max_length=10,
         choices=settings.LANGUAGE_CHOICE,
@@ -210,7 +210,8 @@ class CompanyConfig(SimpleAbstractModel):
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
     default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
     cost_per_warehouse = models.BooleanField(default=True)
-    cost_per_lot_batch = models.BooleanField(default=False)
+    cost_per_lot = models.BooleanField(default=False)
+    cost_per_project = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Currency was used by Company'

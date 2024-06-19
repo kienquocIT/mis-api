@@ -79,6 +79,7 @@ INSTALLED_APPS = \
         'apps.core.attachments',  # all files data | link to file media
         'apps.core.printer',  # print templates & rules
         'apps.core.mailer',  # mail templates & rules
+        'apps.core.diagram',  # diagram for apps
         'apps.core.forms',  # form
     ] + [  # application
         'apps.core.base',
@@ -111,6 +112,7 @@ INSTALLED_APPS = \
         'apps.sales.revenue_plan',
         'apps.sales.arinvoice',
         'apps.sales.apinvoice',
+        'apps.sales.lead',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]

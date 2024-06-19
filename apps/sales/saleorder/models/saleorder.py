@@ -1,7 +1,8 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler
+from apps.sales.inventory.models import GoodsRegistration
+from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
@@ -241,6 +242,9 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def check_change_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
         if hasattr(instance, 'delivery_of_sale_order'):
             if not instance.delivery_of_sale_order.orderdeliverysub_set.filter(**{
@@ -266,26 +270,38 @@ class SaleOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                # create registration
+                if self.opportunity:
+                    GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # product
-                        SOFinishHandler.update_product_wait_delivery_amount(self)
+                        SOFinishHandler.push_product_info(instance=self)
                         # opportunity
-                        SOFinishHandler.update_opportunity_stage_by_so(self)
+                        SOFinishHandler.update_opportunity_stage(instance=self)
                         # customer
-                        SOFinishHandler.push_to_customer_activity(self)
+                        SOFinishHandler.push_to_customer_activity(instance=self)
                         # reports
-                        SOFinishHandler.push_to_report_revenue(self)
-                        SOFinishHandler.push_to_report_product(self)
-                        SOFinishHandler.push_to_report_customer(self)
-                        SOFinishHandler.push_to_report_cashflow(self)
+                        SOFinishHandler.push_to_report_revenue(instance=self)
+                        SOFinishHandler.push_to_report_product(instance=self)
+                        SOFinishHandler.push_to_report_customer(instance=self)
+                        SOFinishHandler.push_to_report_cashflow(instance=self)
                         # final acceptance
-                        SOFinishHandler.push_to_final_acceptance(self)
+                        SOFinishHandler.push_final_acceptance_so(instance=self)
                         # change document handle
-                        DocumentChangeHandler.change_handle(self)
+                        DocumentChangeHandler.change_handle(instance=self)
 
+        if self.system_status in [4]:  # cancel
+            # opportunity
+            SOFinishHandler.update_opportunity_stage(instance=self)
+        # opportunity log
+        SOHandler.push_opportunity_log(instance=self)
+        # diagram
+        SOHandler.push_diagram(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 
@@ -402,6 +418,13 @@ class SaleOrderCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="product",
         related_name="sale_order_cost_product",
+        null=True
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="sale_order_cost_warehouse",
         null=True
     )
     unit_of_measure = models.ForeignKey(

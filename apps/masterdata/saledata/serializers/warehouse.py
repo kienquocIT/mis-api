@@ -297,6 +297,85 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
         return obj.warehouse.agency_id
 
 
+class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    serial_detail = serializers.SerializerMethodField()
+    lot_detail = serializers.SerializerMethodField()
+    unit_cost = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'warehouse',
+            'uom',
+            'stock_amount',
+            'receipt_amount',
+            'sold_amount',
+            'picked_ready',
+            'serial_detail',
+            'lot_detail',
+            'unit_cost'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_traceability_method': obj.product.general_traceability_method,
+        } if obj.product else {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
+
+    @classmethod
+    def get_serial_detail(cls, obj):
+        return [{
+            'id': serial.id,
+            'vendor_serial_number': serial.vendor_serial_number,
+            'serial_number': serial.serial_number,
+            'expire_date': serial.expire_date,
+            'manufacture_date': serial.manufacture_date,
+            'warranty_start': serial.warranty_start,
+            'warranty_end': serial.warranty_end
+        } for serial in obj.product_warehouse_serial_product_warehouse.filter(
+            is_delete=False
+        ).order_by('vendor_serial_number', 'serial_number')]
+
+    @classmethod
+    def get_lot_detail(cls, obj):
+        return [{
+            'id': lot.id,
+            'lot_number': lot.lot_number,
+            'quantity_import': lot.quantity_import,
+            'expire_date': lot.expire_date,
+            'manufacture_date': lot.manufacture_date
+        } for lot in obj.product_warehouse_lot_product_warehouse.filter(quantity_import__gt=0).order_by('lot_number')]
+
+    @classmethod
+    def get_unit_cost(cls, obj):
+        return obj.product.get_unit_cost_by_warehouse(obj.warehouse_id)
+
+
 class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):
     product_list = serializers.SerializerMethodField()
 

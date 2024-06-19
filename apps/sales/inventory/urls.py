@@ -1,9 +1,12 @@
 from django.urls import path
 
-from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail, \
-    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList, \
-    GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn, \
-    GetDeliveryProductsDetail, GoodsReturnList, GoodsReturnDetail, GoodsDetailList
+from apps.sales.inventory.views import (
+    GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail,
+    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList,
+    GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn,
+    GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList,
+    GoodsRegistrationList, GoodsRegistrationDetail
+)
 
 urlpatterns = [
     # goods receipt
@@ -48,14 +51,18 @@ urlpatterns += [
     path(
         'get-deliveries-for-goods-return',
         DeliveryListForGoodsReturn.as_view(),
-        name='DeliveryListForGoodsReturn'),
-    path(
-        'get-delivery-products-for-goods-return/<str:pk>',
-        GetDeliveryProductsDetail.as_view(),
-        name='GetDeliveryProductsDetail'),
+        name='DeliveryListForGoodsReturn'
+    ),
 ]
 
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
+    path('update-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
+]
+
+# goods registration
+urlpatterns += [
+    path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
+    path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
 ]

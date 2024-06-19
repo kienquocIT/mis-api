@@ -14,7 +14,7 @@ from apps.masterdata.saledata.views.periods import PeriodsList, PeriodsDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
-    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList,
+    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -27,7 +27,8 @@ from apps.masterdata.saledata.views import (
     RevenuePlanConfigList
 )
 from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
-    ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail
+    ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, \
+    ProductWareHouseListForGoodsTransfer
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -75,9 +76,11 @@ urlpatterns += [
 
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
+    path('product-quick-create', ProductQuickCreateList.as_view(), name='ProductQuickCreateList'),
     path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
-    path('products-sale', ProductForSaleList.as_view(), name='ProductForSaleList'),
+    path('products-sale/list', ProductForSaleList.as_view(), name='ProductForSaleList'),
+    path('products-sale/<str:pk>', ProductForSaleDetail.as_view(), name='ProductForSaleDetail'),
 ]
 
 urlpatterns += [
@@ -135,6 +138,11 @@ urlpatterns += [
     ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
+    path(
+        'warehouses-products-for-goods-transfer',
+        ProductWareHouseListForGoodsTransfer.as_view(),
+        name='ProductWareHouseListForGoodsTransfer'
+    ),
     path('warehouses-lots', ProductWareHouseLotList.as_view(), name='ProductWareHouseLotList'),
     path('warehouses-serials', ProductWareHouseSerialList.as_view(), name='ProductWareHouseSerialList'),
     path(

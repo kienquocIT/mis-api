@@ -214,6 +214,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "dd16a86c-4aef-46ec-9302-19f30b101cf5",  # Goods Receipt
     },
+    "a943adf4-e00d-4cae-bb3e-78cca3efb09a": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a943adf4-e00d-4cae-bb3e-78cca3efb09a",  # Goods Detail
+    },
     "866f163d-b724-404d-942f-4bc44dc2e2ed": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "866f163d-b724-404d-942f-4bc44dc2e2ed",  # Goods Transfer
@@ -265,6 +269,22 @@ _PlanApplication_sale_data = {
     "c22a9e96-e56e-4636-9083-8ee1c66cb1b2": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "c22a9e96-e56e-4636-9083-8ee1c66cb1b2",  # Report Inventory
+    },
+    "710c5a94-3a29-4e0e-973c-e6cace96c1e7": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "710c5a94-3a29-4e0e-973c-e6cace96c1e7",  # Final Acceptance
+    },
+    "e696a636-0f36-4b20-970d-70035d6e1e37": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "e696a636-0f36-4b20-970d-70035d6e1e37",  # Report Inventory
+    },
+    "c04b2295-307f-49ed-80ab-1ca7f2b32d00": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c04b2295-307f-49ed-80ab-1ca7f2b32d00",  # Lead
+    },
+    "49fe2eb9-39cd-44af-b74a-f690d7b61b67": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",  # Projects
     },
 }
 

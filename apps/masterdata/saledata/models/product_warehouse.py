@@ -5,7 +5,7 @@ __all__ = [
 ]
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION
 from .product import UnitOfMeasure
 
 
@@ -93,52 +93,31 @@ class ProductWareHouse(MasterDataAbstractModel):
             tax_id,
             amount: float,
             unit_price: float,
-            create_when_not_found: bool = True,
             lot_data=None,
             serial_data=None,
             **kwargs
     ):
-        if create_when_not_found:
-            obj, _created = cls.objects.get_or_create(
-                tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
-                uom_id=uom_id, defaults={
-                    'tax_id': tax_id,
-                    'stock_amount': amount,
-                    'receipt_amount': amount,
-                    'unit_price': unit_price,
-                }
-            )
-            if _created is True:
-                if lot_data and isinstance(lot_data, list):
-                    ProductWareHouseLot.create(
-                        tenant_id=tenant_id,
-                        company_id=company_id,
-                        product_warehouse_id=obj.id,
-                        lot_data=lot_data
-                    )
-                if serial_data and isinstance(serial_data, list):
-                    ProductWareHouseSerial.create(
-                        tenant_id=tenant_id,
-                        company_id=company_id,
-                        product_warehouse_id=obj.id,
-                        serial_data=serial_data
-                    )
-                return True
-        else:
-            try:
-                obj = cls.objects.get(
-                    tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
-                )
-            except cls.DoesNotExist:
-                raise ValueError('Product not found in warehouse with UOM')
-        obj.receipt_amount += amount
-        obj.stock_amount = obj.receipt_amount - obj.sold_amount
+        obj, _created = cls.objects.get_or_create(
+            tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
+            uom_id=uom_id, defaults={
+                'tax_id': tax_id,
+                'stock_amount': amount,
+                'receipt_amount': amount,
+                'unit_price': unit_price,
+            }
+        )
+        if _created is False:  # created before => updates
+            obj.receipt_amount += amount
+            obj.stock_amount = obj.receipt_amount - obj.sold_amount
+            obj.save(update_fields=['stock_amount', 'receipt_amount'])
+        # push ProductWareHouseLot, ProductWareHouseSerial
         if lot_data and isinstance(lot_data, list):
-            ProductWareHouseLot.create(
+            ProductWareHouseLot.push_pw_lot(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 product_warehouse_id=obj.id,
-                lot_data=lot_data
+                lot_data=lot_data,
+                type_transaction=0,
             )
         if serial_data and isinstance(serial_data, list):
             ProductWareHouseSerial.create(
@@ -147,7 +126,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                 product_warehouse_id=obj.id,
                 serial_data=serial_data
             )
-        obj.save(update_fields=['stock_amount', 'receipt_amount'])
+
         return True
 
     @classmethod
@@ -209,24 +188,28 @@ class ProductWareHouse(MasterDataAbstractModel):
     @classmethod
     def pop_from_transfer(cls, product_warehouse_id, amount, data):
         try:
-            product_warehouse_obj = cls.objects.get(id=product_warehouse_id)
-            product_warehouse_obj.stock_amount -= amount
-            product_warehouse_obj.product.stock_amount -= amount
-            product_warehouse_obj.product.available_amount -= amount
-            product_warehouse_obj.save(update_fields=['stock_amount'])
-            product_warehouse_obj.product.save(update_fields=['stock_amount', 'available_amount'])
-            if product_warehouse_obj.product.general_traceability_method == 1:  # lot
+            prd_wh_obj = cls.objects.get(id=product_warehouse_id)
+
+            prd_wh_obj.sold_amount += amount
+            prd_wh_obj.stock_amount = prd_wh_obj.receipt_amount - prd_wh_obj.sold_amount
+            prd_wh_obj.save(update_fields=['sold_amount', 'stock_amount'])
+
+            prd_wh_obj.product.stock_amount -= amount
+            prd_wh_obj.product.available_amount -= amount
+            prd_wh_obj.product.save(update_fields=['stock_amount', 'available_amount'])
+
+            if prd_wh_obj.product.general_traceability_method == 1:  # lot
                 if len(data['lot_changes']) == 0:
                     raise ValueError('Lot data can not NULL')
                 for each in data['lot_changes']:
                     lot = ProductWareHouseLot.objects.filter(id=each['lot_id']).first()
-                    if lot and each['quantity'] > 0:
+                    if lot and each['old_quantity'] - each['quantity'] > 0:
                         if lot.quantity_import >= amount:
                             lot.quantity_import -= amount
                             lot.save(update_fields=['quantity_import'])
                         else:
                             raise ValueError('Lot quantity must be > 0')
-            elif product_warehouse_obj.product.general_traceability_method == 2:  # sn
+            elif prd_wh_obj.product.general_traceability_method == 2:  # sn
                 if len(data['sn_changes']) == 0:
                     raise ValueError('Serial data can not NULL')
                 sn_list = ProductWareHouseSerial.objects.filter(id__in=data['sn_changes'])
@@ -289,17 +272,55 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         related_name="product_warehouse_lot_product_warehouse",
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
-    quantity_import = models.FloatField(default=0)
+    quantity_import = models.FloatField(
+        default=0,
+        help_text='when GoodsReceipt this quantity +=, when Delivery this quantity -='
+    )
     expire_date = models.DateTimeField(null=True)
     manufacture_date = models.DateTimeField(null=True)
-    goods_receipt = models.ForeignKey(
-        'inventory.GoodsReceipt',
-        on_delete=models.CASCADE,
-        null=True,
-        verbose_name="goods receipt",
-        related_name="product_wh_lot_goods_receipt",
-        help_text="To know this lot was imported by which GoodsReceipt",
-    )
+
+    @classmethod
+    def push_pw_lot(
+            cls,
+            tenant_id,
+            company_id,
+            product_warehouse_id,
+            lot_data,
+            type_transaction,
+    ):
+        for lot in lot_data:
+            goods_receipt_id = None
+            delivery_id = None
+            obj, _created = cls.objects.get_or_create(
+                tenant_id=tenant_id, company_id=company_id,
+                product_warehouse_id=product_warehouse_id, lot_number=lot.get('lot_number', ''),
+                defaults={
+                    'quantity_import': lot.get('quantity_import', 0),
+                    'expire_date': lot.get('expire_date', None),
+                    'manufacture_date': lot.get('manufacture_date', None),
+                }
+            )
+            if _created is False:  # created before => update
+                if type_transaction == 0:
+                    obj.quantity_import += lot.get('quantity_import', 0)
+                    obj.save(update_fields=['quantity_import'])
+                if type_transaction == 1:
+                    obj.quantity_import -= lot.get('quantity_import', 0)
+                    obj.save(update_fields=['quantity_import'])
+            # create ProductWareHouseLotTransaction
+            if type_transaction == 0:
+                goods_receipt_id = lot.get('goods_receipt_id', None)
+            if type_transaction == 1:
+                delivery_id = lot.get('delivery_id', None)
+            data = {
+                'pw_lot_id': obj.id,
+                'goods_receipt_id': goods_receipt_id,
+                'delivery_id': delivery_id,
+                'quantity': lot.get('quantity_import', 0),
+                'type_transaction': type_transaction,
+            }
+            ProductWareHouseLotTransaction.create(data=data)
+        return True
 
     class Meta:
         verbose_name = 'Product Warehouse Lot'
@@ -308,21 +329,72 @@ class ProductWareHouseLot(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
+class ProductWareHouseLotTransaction(SimpleAbstractModel):
+    pw_lot = models.ForeignKey(
+        ProductWareHouseLot,
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse lot",
+        related_name="pw_lot_transact_pw_lot",
+    )
+    goods_receipt = models.ForeignKey(
+        'inventory.GoodsReceipt',
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="pw_lot_transact_goods_receipt",
+        help_text="To know this lot was receipted by which GoodsReceipt",
+        null=True,
+    )
+    delivery = models.ForeignKey(
+        'delivery.OrderDeliverySub',
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="pw_lot_transact_delivery",
+        help_text="To know this lot was delivered by which OrderDeliverySub",
+        null=True,
+    )
+    goods_return = models.ForeignKey(
+        'inventory.GoodsReturn',
+        on_delete=models.CASCADE,
+        verbose_name="goods return",
+        related_name="pw_lot_transact_goods_return",
+        help_text="To know this lot was returned by which GoodsReturn",
+        null=True,
+    )
+    goods_transfer = models.ForeignKey(
+        'inventory.GoodsTransfer',
+        on_delete=models.CASCADE,
+        verbose_name="goods transfer",
+        related_name="pw_lot_transact_goods_transfer",
+        help_text="To know this lot was transferred by which GoodsTransfer",
+        null=True,
+    )
+    transfer_type = models.BooleanField(null=True, help_text="transfer type: 1 is IN, 0 is OUT")
+    goods_issue = models.ForeignKey(
+        'inventory.GoodsIssue',
+        on_delete=models.CASCADE,
+        verbose_name="goods issue",
+        related_name="pw_lot_transact_goods_issue",
+        help_text="To know this lot was issued by which GoodsIssue",
+        null=True,
+    )
+    quantity = models.FloatField(default=0)
+    type_transaction = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(TYPE_LOT_TRANSACTION),
+    )
+
     @classmethod
-    def create(
-            cls,
-            tenant_id,
-            company_id,
-            product_warehouse_id,
-            lot_data,
-    ):
-        cls.objects.bulk_create([cls(
-            **data,
-            tenant_id=tenant_id,
-            company_id=company_id,
-            product_warehouse_id=product_warehouse_id,
-        ) for data in lot_data])
+    def create(cls, data):
+        cls.objects.create(**data)
         return True
+
+    class Meta:
+        verbose_name = 'Product Warehouse Lot Transaction'
+        verbose_name_plural = 'Product Warehouse Lot Transactions'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
 class ProductWareHouseSerial(MasterDataAbstractModel):

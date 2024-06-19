@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import SubPeriods
+from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -307,8 +308,117 @@ class OrderDeliverySub(DataAbstractModel):
             code = f"{char}{temper:03d}"
             self.code = code
 
+    @classmethod
+    def for_lot(cls, instance, deli_item, deli_data, stock_data, main_product_unit_price):
+        for lot in deli_data.get('lot_data', []):
+            lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
+            if lot_obj:
+                quantity_delivery = lot.get('quantity_delivery')
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    deli_item.uom, quantity_delivery
+                )
+                stock_data.append({
+                    'sale_order': instance.order_delivery.sale_order,
+                    'product': deli_item.product,
+                    'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+                    'system_date': instance.date_done,
+                    'posting_date': instance.date_done,
+                    'document_date': instance.date_done,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Delivery',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {
+                        'lot_id': str(lot_obj.id),
+                        'lot_number': lot_obj.lot_number,
+                        'lot_quantity': casted_quantity,
+                        'lot_value': main_product_unit_price * casted_quantity,
+                        'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
+                    }
+                })
+            else:
+                raise ValueError(_("Lot does not found."))
+        return stock_data
+
+    @classmethod
+    def for_sn(cls, instance, deli_item, deli_data, stock_data):
+        quantity_delivery = len(deli_data.get('serial_data', []))
+        casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
+        stock_data.append({
+            'sale_order': instance.order_delivery.sale_order,
+            'product': deli_item.product,
+            'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
+            'system_date': instance.date_done,
+            'posting_date': instance.date_done,
+            'document_date': instance.date_done,
+            'stock_type': -1,
+            'trans_id': str(instance.id),
+            'trans_code': instance.code,
+            'trans_title': 'Delivery',
+            'quantity': casted_quantity,
+            'cost': 0,  # theo gia cost
+            'value': 0,  # theo gia cost
+            'lot_data': {}
+        })
+        return stock_data
+
+    @classmethod
+    def prepare_data_for_logging_run(cls, instance):
+        stock_data = []
+        so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
+        for deli_item in instance.delivery_product_delivery_sub.all():
+            if deli_item.picked_quantity > 0:
+                main_item = so_products.filter(order=deli_item.order).first()
+                main_product_unit_price = main_item.product_unit_price if main_item else 0
+                for deli_data in deli_item.delivery_data:
+                    if len(deli_data.get('lot_data', [])) > 0:
+                        stock_data = cls.for_lot(
+                            instance, deli_item, deli_data, stock_data, main_product_unit_price
+                        )
+                    elif len(deli_data.get('serial_data', [])) > 0:
+                        stock_data = cls.for_sn(instance, deli_item, deli_data, stock_data)
+            # for None
+            if all([
+                deli_item.picked_quantity > 0,
+                len(deli_item.delivery_data) > 0,
+                deli_item.product.general_traceability_method == 0
+            ]):
+                lot_data = deli_item.delivery_data[0]
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    deli_item.uom, deli_item.picked_quantity
+                )
+                stock_data.append({
+                    'sale_order': instance.order_delivery.sale_order,
+                    'product': deli_item.product,
+                    'warehouse': WareHouse.objects.filter(id=lot_data.get('warehouse')).first(),
+                    'system_date': instance.date_done,
+                    'posting_date': instance.date_done,
+                    'document_date': instance.date_done,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Delivery',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {}
+                })
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_done,
+            stock_data
+        )
+        return True
+
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
 
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
@@ -316,6 +426,7 @@ class OrderDeliverySub(DataAbstractModel):
                 'times', flat=True
             )
             self.times = (max(times_arr) + 1) if len(times_arr) > 0 else 1
+
         super().save(*args, **kwargs)
 
     class Meta:
@@ -460,13 +571,27 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         for lot in self.delivery_lot_delivery_product.all():
             final_ratio = 1
             uom_delivery_rate = self.uom.ratio if self.uom else 1
-            if lot.product_warehouse_lot.product_warehouse:
+            if lot.product_warehouse_lot:
                 product_warehouse = lot.product_warehouse_lot.product_warehouse
-                uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
-                if uom_wh_rate and uom_delivery_rate:
-                    final_ratio = uom_delivery_rate / uom_wh_rate
-            lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery * final_ratio
-            lot.product_warehouse_lot.save(update_fields=['quantity_import'])
+                if product_warehouse:
+                    uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                    if uom_wh_rate and uom_delivery_rate:
+                        final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
+                    # push ProductWareHouseLot
+                    lot_data = [{
+                        'lot_number': lot.product_warehouse_lot.lot_number,
+                        'quantity_import': lot.quantity_delivery * final_ratio,
+                        'expire_date': lot.product_warehouse_lot.expire_date,
+                        'manufacture_date': lot.product_warehouse_lot.manufacture_date,
+                        'delivery_id': self.delivery_sub_id,
+                    }]
+                    ProductWareHouseLot.push_pw_lot(
+                        tenant_id=self.delivery_sub.tenant_id,
+                        company_id=self.delivery_sub.company_id,
+                        product_warehouse_id=product_warehouse.id,
+                        lot_data=lot_data,
+                        type_transaction=1,
+                    )
         return True
 
     def update_product_warehouse_serial(self):
@@ -496,39 +621,6 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         permissions = ()
 
 
-# class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
-#     delivery = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery",
-#         related_name="delivery_product_warehouse_delivery",
-#         null=True,
-#     )
-#     delivery_product = models.ForeignKey(
-#         OrderDeliveryProduct,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery product",
-#         related_name="delivery_product_warehouse_delivery_product",
-#         null=True,
-#     )
-#     product_warehouse = models.ForeignKey(
-#         'saledata.ProductWareHouse',
-#         on_delete=models.CASCADE,
-#         verbose_name="product",
-#         related_name="delivery_product_warehouse_product_warehouse",
-#         null=True
-#     )
-#     quantity_delivery = models.FloatField(default=0)
-#     total_picking = models.FloatField(default=0)
-#
-#     class Meta:
-#         verbose_name = 'Order Delivery Product Warehouse'
-#         verbose_name_plural = 'Order Delivery Products Warehouse'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-#
-#
 class OrderDeliveryLot(MasterDataAbstractModel):
     delivery = models.ForeignKey(
         OrderDelivery,

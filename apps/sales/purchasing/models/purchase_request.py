@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.purchasing.utils import PRHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
@@ -112,6 +113,8 @@ class PurchaseRequest(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
                 self.update_remain_for_purchase_request_so(self)
+        # diagram
+        PRHandler.push_diagram(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 

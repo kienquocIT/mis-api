@@ -38,14 +38,17 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable
+from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub
-from ..sales.delivery.serializers.delivery import DeliProductInformationHandle, DeliProductWarehouseHandle
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
+from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
+from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn
-from ..sales.inventory.serializers import GReturnProductInformationHandle
-from ..sales.inventory.utils import GRFinishHandler
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
+    GoodsReturnProductDetail, GoodsReceiptLot
+from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
+from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
@@ -53,8 +56,10 @@ from ..sales.opportunity.models import (
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
+from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
+    ReportInventoryProductWarehouse, LatestSub, ReportInventory
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -577,18 +582,6 @@ def update_data_product_of_purchase_request():
     print('Update Done!')
 
 
-def update_employee_inherit_quotation_sale_order():
-    for quotation in Quotation.objects.all():
-        if quotation.sale_person:
-            quotation.employee_inherit = quotation.sale_person
-            quotation.save(update_fields=['employee_inherit'])
-    for sale_order in SaleOrder.objects.all():
-        if sale_order.sale_person:
-            sale_order.employee_inherit = sale_order.sale_person
-            sale_order.save(update_fields=['employee_inherit'])
-    print('Update done.')
-
-
 def make_sure_function_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_function_config()
@@ -1032,55 +1025,6 @@ def update_inherit_po():
     print('update_inherit_po done.')
 
 
-def update_code_quotation_sale_order_indicator_config():
-    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
-        indicator.code = "IN000" + str(indicator.order)
-        indicator.tenant_id = indicator.company.tenant_id
-        indicator.save(update_fields=['code', 'tenant_id'])
-    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
-        indicator.code = "IN000" + str(indicator.order)
-        indicator.tenant_id = indicator.company.tenant_id
-        indicator.save(update_fields=['code', 'tenant_id'])
-    print('update_code_quotation_sale_order_indicator_config done.')
-
-
-def update_code_quotation_sale_order_indicator():
-    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
-        indicator.code = indicator.indicator.code
-        indicator.tenant_id = indicator.indicator.tenant_id
-        indicator.company_id = indicator.indicator.company_id
-        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
-    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
-        indicator.code = indicator.quotation_indicator.code
-        indicator.tenant_id = indicator.quotation_indicator.tenant_id
-        indicator.company_id = indicator.quotation_indicator.company_id
-        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
-    print('update_code_quotation_sale_order_indicator done.')
-
-
-def update_record_report_revenue():
-    ReportRevenue.objects.all().delete()
-    bulk_info = []
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False):
-        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        bulk_info.append(ReportRevenue(
-            tenant_id=so.tenant_id,
-            company_id=so.company_id,
-            sale_order_id=so.id,
-            employee_created_id=so.employee_created_id,
-            employee_inherit_id=so.employee_inherit_id,
-            group_inherit_id=so.employee_inherit.group_id,
-            date_approved=so.date_approved,
-            revenue=revenue_obj.indicator_value if revenue_obj else 0,
-            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
-            net_income=net_income_obj.indicator_value if net_income_obj else 0,
-        ))
-    ReportRevenue.objects.bulk_create(bulk_info)
-    print('update_record_report_revenue done.')
-
-
 def update_space_range_opp_member():
     for obj in OpportunitySaleTeamMember.objects.all():
         for item in obj.permission_by_configured:
@@ -1093,36 +1037,22 @@ def update_space_range_opp_member():
     return True
 
 
-def update_date_approved_sales_apps():
-    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
-        quotation.date_approved = quotation.date_created
-        quotation.save(update_fields=['date_approved'])
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        so.date_approved = so.date_created
-        so.save(update_fields=['date_approved'])
-    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        po.date_approved = po.date_created
-        po.save(update_fields=['date_approved'])
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        gr.date_approved = gr.date_created
-        gr.save(update_fields=['date_approved'])
-    print('update_date_approved_sales_apps done.')
-
-
 def update_company_setting():
     vnd_currency = BaseCurrency.objects.filter(code='VND').first()
     for company_obj in Company.objects.all():
         if vnd_currency:
             company_obj.definition_inventory_valuation = 0
             company_obj.default_inventory_value_method = 0
-            company_obj.cost_per_warehouse = False
-            company_obj.cost_per_lot_batch = False
+            company_obj.cost_per_warehouse = True
+            company_obj.cost_per_lot = False
+            company_obj.cost_per_project = False
             company_obj.primary_currency_id = str(vnd_currency.id)
             company_obj.save(update_fields=[
                 'definition_inventory_valuation',
                 'default_inventory_value_method',
                 'cost_per_warehouse',
-                'cost_per_lot_batch',
+                'cost_per_lot',
+                'cost_per_project',
                 'primary_currency_id'
             ])
     return True
@@ -1177,14 +1107,6 @@ def update_product_general_price():
     return True
 
 
-def update_final_acceptance_indicator():
-    for ind in FinalAcceptanceIndicator.objects.all():
-        if ind.sale_order_indicator:
-            ind.indicator_id = ind.sale_order_indicator.quotation_indicator_id
-            ind.save(update_fields=['indicator_id'])
-    print('update_final_acceptance_indicator done.')
-
-
 def update_payment_cost():
     for item in PaymentCost.objects.all():
         item.opportunity_mapped = item.payment.opportunity_mapped
@@ -1192,18 +1114,6 @@ def update_payment_cost():
         item.sale_order_mapped = item.payment.sale_order_mapped
         item.save()
     print('update done')
-
-
-def update_tenant_quotation_so_config():
-    for quo_config in QuotationAppConfig.objects.all():
-        if quo_config.company:
-            quo_config.tenant = quo_config.company.tenant
-            quo_config.save(update_fields=['tenant'])
-    for so_config in SaleOrderAppConfig.objects.all():
-        if so_config.company:
-            so_config.tenant = so_config.company.tenant
-            so_config.save(update_fields=['tenant'])
-    print('update_tenant_quotation_so_config done.')
 
 
 def update_tenant_delivery_config():
@@ -1345,36 +1255,19 @@ def reset_and_run_reports_sale(run_type=0):
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SOFinishHandler.push_to_report_revenue(sale_order)
-            SOFinishHandler.push_to_report_product(sale_order)
-            SOFinishHandler.push_to_report_customer(sale_order)
+            SOFinishHandler.push_to_report_revenue(instance=sale_order)
+            SOFinishHandler.push_to_report_product(instance=sale_order)
+            SOFinishHandler.push_to_report_customer(instance=sale_order)
+        for g_return in GoodsReturn.objects.filter(system_status__in=[2, 3]):
+            ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
         for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
-            SOFinishHandler.push_to_report_cashflow(sale_order)
+            SOFinishHandler.push_to_report_cashflow(instance=sale_order)
         for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-            PurchaseOrder.push_to_report_cashflow(purchase_order)
+            POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
-
-
-def update_indicators_quotation_so_model():
-    for quotation in Quotation.objects.all():
-        revenue_obj = quotation.quotation_indicator_quotation.filter(code='IN0001').first()
-        gross_profit_obj = quotation.quotation_indicator_quotation.filter(code='IN0003').first()
-        net_income_obj = quotation.quotation_indicator_quotation.filter(code='IN0006').first()
-        quotation.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
-        quotation.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
-        quotation.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
-        quotation.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
-    for so in SaleOrder.objects.all():
-        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
-        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
-        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        so.indicator_revenue = revenue_obj.indicator_value if revenue_obj else 0
-        so.indicator_gross_profit = gross_profit_obj.indicator_value if gross_profit_obj else 0
-        so.indicator_net_income = net_income_obj.indicator_value if net_income_obj else 0
-        so.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
-    print('update_indicators_quotation_so_model done.')
+    return True
 
 
 def update_price_list():
@@ -1389,7 +1282,7 @@ def update_price_list():
     print('Done')
 
 
-def reset_set_product_transaction_information():
+def reset_and_run_product_info():
     # reset
     update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
     for product in Product.objects.all():
@@ -1401,58 +1294,102 @@ def reset_set_product_transaction_information():
     # set input, output, return
     # input
     for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
-        PurchaseOrder.update_product_wait_receipt_amount(instance=po)
+        POFinishHandler.push_product_info(instance=po)
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.update_product_wait_receipt_amount(instance=gr)
+        GRFinishHandler.push_product_info(instance=gr)
     # output
     for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
-        SOFinishHandler.update_product_wait_delivery_amount(instance=so)
+        SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductInformationHandle.main_handle(instance=deli_sub)
+        DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
     for return_obj in GoodsReturn.objects.all():
-        GReturnProductInformationHandle.main_handle(instance=return_obj)
-    print('reset_set_product_transaction_information done.')
+        ReturnFinishHandler.push_product_info(instance=return_obj)
+    print('reset_and_run_product_info done.')
+    return True
 
 
-def reset_set_product_warehouse_stock():
+def reset_and_run_warehouse_stock(run_type=0):
     # reset
-    update_fields = ['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'used_amount']
-    for product_wh in ProductWareHouse.objects.all():
-        product_wh.stock_amount = 0
-        product_wh.receipt_amount = 0
-        product_wh.sold_amount = 0
-        product_wh.picked_ready = 0
-        product_wh.used_amount = 0
-        product_wh.save(update_fields=update_fields)
+    ProductWareHouseLot.objects.all().delete()
+    ProductWareHouseSerial.objects.all().delete()
+    ProductWareHouse.objects.all().delete()
     # input, output, provide
-    # input
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        GRFinishHandler.push_to_product_warehouse(instance=gr)
-    # output
-    for deli_sub in OrderDeliverySub.objects.all():
-        DeliProductWarehouseHandle.main_handle(instance=deli_sub)
-    print('reset_set_product_warehouse_stock done.')
+    if run_type == 0:  # input
+        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+            GRFinishHandler.push_to_warehouse_stock(instance=gr)
+    if run_type == 1:  # output
+        for deli_sub in OrderDeliverySub.objects.all():
+            config = deli_sub.config_at_that_point
+            if not config:
+                get_config = DeliveryConfig.objects.filter(company_id=deli_sub.company_id).first()
+                if get_config:
+                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
+            for deli_product in deli_sub.delivery_product_delivery_sub.all():
+                if deli_product.product and deli_product.delivery_data:
+                    for data in deli_product.delivery_data:
+                        if all(key in data for key in ('warehouse', 'uom', 'stock')):
+                            product_warehouse = ProductWareHouse.objects.filter(
+                                tenant_id=deli_sub.tenant_id, company_id=deli_sub.company_id,
+                                product_id=deli_product.product_id, warehouse_id=data['warehouse'],
+                            )
+                            source = {"uom": data['uom'], "quantity": data['stock']}
+                            DeliHandler.minus_tock(source, product_warehouse, config)
+    print('reset_and_run_warehouse_stock done.')
+    return True
 
 
-def update_quotation_so_json_data():
-    # quotation
-    for quotation in Quotation.objects.all():
-        update_fields = []
-        if quotation.payment_term and not quotation.payment_term_data:
-            quotation.payment_term_data = PaymentTermListSerializer(quotation.payment_term).data
-            update_fields.append('payment_term_data')
-        if len(update_fields) > 0:
-            quotation.save(update_fields=update_fields)
-    # sale order
-    for so in SaleOrder.objects.all():
-        update_fields = []
-        if so.payment_term and not so.payment_term_data:
-            so.payment_term_data = PaymentTermListSerializer(so.payment_term).data
-            update_fields.append('payment_term_data')
-        if len(update_fields) > 0:
-            so.save(update_fields=update_fields)
-    print('update_so_json_data done.')
+def reset_and_run_pw_lot_transaction(run_type=0):
+    if run_type == 0:  # goods receipt
+        ProductWareHouseLotTransaction.objects.filter(type_transaction=0).delete()
+        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+            for gr_warehouse in gr.goods_receipt_warehouse_goods_receipt.all():
+                if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
+                    gr_product = gr_warehouse.goods_receipt_product
+                    uom_base, final_ratio, lot_data, serial_data = GRFinishHandler.setup_data_push_by_po(
+                        instance=gr, gr_warehouse=gr_warehouse,
+                    )
+                    if gr_product and lot_data:
+                        product_warehouse = ProductWareHouse.objects.filter(
+                            product_id=gr_product.product_id, warehouse_id=gr_warehouse.warehouse_id, uom_id=uom_base.id
+                        ).first()
+                        if product_warehouse:
+                            for lot in lot_data:
+                                pw_lot = ProductWareHouseLot.objects.filter(
+                                    tenant_id=gr.tenant_id, company_id=gr.company_id,
+                                    product_warehouse_id=product_warehouse.id, lot_number=lot.get('lot_number', ''),
+                                ).first()
+                                if pw_lot:
+                                    data = {
+                                        'pw_lot_id': pw_lot.id,
+                                        'goods_receipt_id': gr.id,
+                                        'delivery_id': None,
+                                        'quantity': lot.get('quantity_import', 0),
+                                        'type_transaction': 0,
+                                    }
+                                    ProductWareHouseLotTransaction.create(data=data)
+    if run_type == 1:  # delivery
+        ProductWareHouseLotTransaction.objects.filter(type_transaction=1).delete()
+        for deli_product in OrderDeliveryProduct.objects.all():
+            for lot in deli_product.delivery_lot_delivery_product.all():
+                final_ratio = 1
+                uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
+                if lot.product_warehouse_lot:
+                    product_warehouse = lot.product_warehouse_lot.product_warehouse
+                    if product_warehouse:
+                        uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                        if uom_wh_rate and uom_delivery_rate:
+                            final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
+                        data = {
+                            'pw_lot_id': lot.product_warehouse_lot.id,
+                            'goods_receipt_id': None,
+                            'delivery_id': deli_product.delivery_sub_id,
+                            'quantity': lot.quantity_delivery * final_ratio,
+                            'type_transaction': 1,
+                        }
+                        ProductWareHouseLotTransaction.create(data=data)
+    print('reset_and_run_pw_lot_transaction done.')
+    return True
 
 
 def reset_opportunity_stage():
@@ -1564,3 +1501,377 @@ def update_gr_for_lot_serial():
                 serial.goods_receipt = gr
                 serial.save(update_fields=['goods_receipt'])
     print('update_gr_for_lot_serial done.')
+
+
+def get_latest_log(log, period_mapped, sub_period_order):
+    # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
+    # 1: lấy records tháng này
+    # 2: lấy records các tháng trước (trong năm)
+    # 3: lấy records các năm trước
+    subs = ReportInventorySub.objects.filter(
+        product_id=log.product_id, warehouse_id=log.warehouse_id,
+        report_inventory__period_mapped=period_mapped,
+        report_inventory__sub_period_order=sub_period_order,
+        date_created__lt=log.date_created
+    )
+    if subs.count() == 0:
+        subs = ReportInventorySub.objects.filter(
+            product_id=log.product_id, warehouse_id=log.warehouse_id,
+            report_inventory__period_mapped=period_mapped,
+            report_inventory__sub_period_order__lt=sub_period_order,
+            date_created__lt=log.date_created
+        )
+        if subs.count() == 0:
+            subs = ReportInventorySub.objects.filter(
+                product_id=log.product_id, warehouse_id=log.warehouse_id,
+                report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year,
+                date_created__lt=log.date_created
+            )
+    latest_trans = subs.latest('date_created') if subs.count() > 0 else None
+    return latest_trans
+
+
+def run_inventory_report():
+    for log in ReportInventorySub.objects.all().order_by('date_created'):
+        period_mapped = log.report_inventory.period_mapped
+        sub_period_order = log.report_inventory.sub_period_order
+        latest_trans = get_latest_log(log, period_mapped, sub_period_order)
+        if latest_trans:
+            latest_value_list = {
+                'quantity': latest_trans.current_quantity,
+                'cost': latest_trans.current_cost,
+                'value': latest_trans.current_value
+            }
+        else:
+            latest_value_list = {
+                'quantity': log.quantity,
+                'cost': log.cost,
+                'value': log.value
+            }
+
+        sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        if sub_period_obj:
+            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
+                tenant_id=period_mapped.tenant_id,
+                company_id=period_mapped.company_id,
+                product=log.product,
+                warehouse=log.warehouse,
+                period_mapped=period_mapped,
+                sub_period_order=sub_period_order,
+                sub_period=sub_period_obj
+            ).first()
+            if not inventory_cost_data_item:
+                ReportInventoryProductWarehouse.objects.create(
+                    tenant_id=period_mapped.tenant_id,
+                    company_id=period_mapped.company_id,
+                    product=log.product,
+                    warehouse=log.warehouse,
+                    period_mapped=period_mapped,
+                    sub_period_order=sub_period_order,
+                    sub_period=period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first(),
+                    opening_balance_quantity=latest_value_list['quantity'],
+                    opening_balance_cost=latest_value_list['cost'],
+                    opening_balance_value=latest_value_list['value'],
+                    ending_balance_quantity=log.current_quantity,
+                    ending_balance_cost=log.current_cost,
+                    ending_balance_value=log.current_value,
+                )
+            else:
+                inventory_cost_data_item.ending_balance_quantity = log.current_quantity
+                inventory_cost_data_item.ending_balance_cost = log.current_cost
+                inventory_cost_data_item.ending_balance_value = log.current_value
+                inventory_cost_data_item.save(update_fields=[
+                    'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
+                ])
+
+            latest_log_obj = LatestSub.objects.filter(
+                product=log.product, warehouse=log.warehouse
+            ).first()
+            if latest_log_obj:
+                latest_log_obj.latest_log = log
+                latest_log_obj.save(update_fields=['latest_log'])
+            else:
+                LatestSub.objects.create(
+                    product=log.product, warehouse=log.warehouse, latest_log=log
+                )
+    print('Done')
+    return True
+
+
+def report_rerun(company_id, start_month):
+    ReportInventorySub.objects.all().delete()
+    ReportInventoryProductWarehouse.objects.all().delete()
+    ReportInventory.objects.all().delete()
+    LatestSub.objects.all().delete()
+
+    if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+        print('created balance')
+        company = Company.objects.get(id=company_id)
+        GoodsReceiptLot.objects.filter(id='ab1ad8663efa4f58a3bec378cfedc039').delete()
+        ProductWareHouseLotTransaction.objects.create(
+            pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
+            delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
+            quantity=2,
+            type_transaction=1
+        )
+        # đầu kỳ SW
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(7),
+            opening_balance_value=float(56000000),
+            opening_balance_cost=float(8000000),
+            ending_balance_quantity=float(7),
+            ending_balance_value=float(56000000),
+            ending_balance_cost=float(8000000),
+            for_balance=True
+        )
+        # đầu kỳ Vision
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=9,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(2),
+            opening_balance_value=float(80000000),
+            opening_balance_cost=float(40000000),
+            ending_balance_quantity=float(2),
+            ending_balance_value=float(80000000),
+            ending_balance_cost=float(40000000),
+            for_balance=True
+        )
+        # đầu kỳ HP
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(2),
+            opening_balance_value=float(276000000),
+            opening_balance_cost=float(138000000),
+            ending_balance_quantity=float(2),
+            ending_balance_value=float(276000000),
+            ending_balance_cost=float(138000000),
+            for_balance=True
+        )
+
+    all_delivery = OrderDeliverySub.objects.filter(
+        company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
+    ).order_by('date_done')
+
+    all_goods_issue = GoodsIssue.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_receipt = GoodsReceipt.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_return = GoodsReturn.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_goods_transfer = GoodsTransfer.objects.filter(
+        company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
+    ).order_by('date_approved')
+
+    all_doc = []
+    for delivery in all_delivery:
+        all_doc.append({
+            'id': str(delivery.id), 'code': str(delivery.code),
+            'date_approved': str(delivery.date_done), 'type': 'delivery'
+        })
+    for goods_issue in all_goods_issue:
+        all_doc.append({
+            'id': str(goods_issue.id), 'code': str(goods_issue.code),
+            'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+        })
+    for goods_receipt in all_goods_receipt:
+        all_doc.append({
+            'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
+            'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+        })
+    for goods_return in all_goods_return:
+        all_doc.append({
+            'id': str(goods_return.id), 'code': str(goods_return.code),
+            'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+        })
+    for goods_transfer in all_goods_transfer:
+        all_doc.append({
+            'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
+            'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+        })
+
+    all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+    for doc in all_doc_sorted:
+        print(f"----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
+
+        if doc['type'] == 'delivery':
+            instance = OrderDeliverySub.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging_run(instance)
+
+        if doc['type'] == 'goods_issue':
+            instance = GoodsIssue.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_receipt':
+            instance = GoodsReceipt.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_return':
+            instance = GoodsReturn.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+        if doc['type'] == 'goods_transfer':
+            instance = GoodsTransfer.objects.get(id=doc['id'])
+            instance.prepare_data_for_logging(instance)
+
+    print('Done')
+
+
+def update_product_warehouse_uom_base():
+    for product in Product.objects.all():
+        if product.general_uom_group:
+            uom_base = product.general_uom_group.uom_reference
+            if uom_base:
+                for pw_base in ProductWareHouse.objects.filter(
+                        product_id=product.id, uom_id=uom_base.id
+                ):
+                    total_receipt = 0
+                    total_sold = 0
+                    for product_warehouse in ProductWareHouse.objects.filter(
+                            product_id=product.id, warehouse=pw_base.warehouse_id
+                    ).exclude(uom_id=uom_base.id):
+                        final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+                        total_receipt += product_warehouse.receipt_amount * final_ratio
+                        total_sold += product_warehouse.sold_amount * final_ratio
+
+                        ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
+                        ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
+                        product_warehouse.delete()
+
+                    pw_base.receipt_amount += total_receipt
+                    pw_base.sold_amount += total_sold
+                    pw_base.stock_amount += total_receipt - total_sold
+                    pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+    print('update_product_warehouse_uom_base done.')
+    return True
+
+
+def update_goods_return_items_nt():
+    data = [
+        {
+            'id': '26199d0c4ebb41199f13a5d215885c2f',
+            'prd': 'b01be7a525624897bb2226403f32c808',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': '1dc2a55dbdfb47e4bad7509a9d9f9984',
+            'prd': '567d869256f34fb5881513dae765e763',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '08dacbd30deb479b8118702e800ca1e3'
+        },
+        {
+            'id': 'ff1cf130f20e4eccb12c7031195608ba',
+            'prd': '52e45d5bd91e4c048b2d7a09ee4820dd',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        },
+        {
+            'id': 'fd9169186424438087557a89efb037a5',
+            'prd': '317352890a2b4ae29e2d0940bc1010ec',
+            'wh': 'bbac9cfcdf1b4ed497c9a57ac5c94f89',
+            'uom': '1366ad1e2ac64a959118701b8b68fb5c'
+        }
+    ]
+
+    update_product_warehouse_uom_base("567d8692-56f3-4fb5-8815-13dae765e763")
+    for item in data:
+        obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
+        obj.product_id = item.get('prd')
+        obj.return_to_warehouse_id = item.get('wh')
+        obj.uom_id = item.get('uom')
+        obj.save(update_fields=['product_id', 'return_to_warehouse_id', 'uom_id'])
+
+    GoodsReturn.objects.filter(id='b4a0f779-c326-4283-94b0-241c9438b9b6').delete()
+    ProductWareHouse.objects.filter(id__in=[
+        '9b5817285f13406f9c3399ab88bd8f2e',
+        'efd096351225461ca247e22ff444aa68',
+        'aac5e1c2498d4cbbb438e2aa2e3004c2'
+    ]).delete()
+    pro_wd_CHIVAS25 = ProductWareHouse.objects.filter(id='328ae65745644a66b90fb18e76dd2737').first()
+    if pro_wd_CHIVAS25:
+        pro_wd_CHIVAS25.stock_amount = 21
+        pro_wd_CHIVAS25.receipt_amount = 39
+        pro_wd_CHIVAS25.sold_amount = 17
+        pro_wd_CHIVAS25.picked_ready = 0
+        pro_wd_CHIVAS25.uom_id = '08dacbd3-0deb-479b-8118-702e800ca1e3'
+        pro_wd_CHIVAS25.save(update_fields=['stock_amount', 'receipt_amount', 'sold_amount', 'picked_ready', 'uom_id'])
+
+    # OKSS
+    prd = Product.objects.filter(id='9e41fb1a75764ee885ee962217b7fc4f').first()
+    if prd:
+        prd.stock_amount = 1
+        prd.available_amount = -7
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # ROYAL24
+    prd = Product.objects.filter(id='567d8692-56f3-4fb5-8815-13dae765e763').first()
+    if prd:
+        prd.stock_amount = 5
+        prd.available_amount = 3
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+    # CHIVAS25
+    prd = Product.objects.filter(id='b01be7a5-2562-4897-bb22-26403f32c808').first()
+    if prd:
+        prd.stock_amount = 21
+        prd.available_amount = 19
+        prd.save(update_fields=['stock_amount', 'available_amount'])
+
+    obj = GoodsReturnProductDetail.objects.get(id='ff1cf130f20e4eccb12c7031195608ba')
+    obj.delivery_item_id = '46e392194101478186ade7416fbbea65'
+    obj.save(update_fields=['delivery_item_id'])
+    print('Done')
+
+
+def load_hint():
+    LeadHint.objects.all().delete()
+    for opp in Opportunity.objects.all():
+        LeadHint.objects.filter(opportunity=opp).delete()
+        bulk_info = []
+        for contact_role in opp.opportunity_contact_role_opportunity.all():
+            contact = contact_role.contact
+            bulk_info.append(
+                LeadHint(
+                    opportunity_id=opp.id,
+                    contact_mobile=contact.mobile,
+                    contact_phone=contact.phone,
+                    contact_email=contact.email,
+                    contact_id=str(contact.id)
+                )
+            )
+        LeadHint.objects.bulk_create(bulk_info)
+    print('Done')
+
+
+def update_opp_config_stage():
+    for config_stage in OpportunityConfigStage.objects.all():
+        if isinstance(config_stage.condition_datas, list):
+            for data in config_stage.condition_datas:
+                if 'compare_data' in data:
+                    if isinstance(data['compare_data'], str):
+                        data['compare_data'] = int(data['compare_data'])
+        config_stage.save(update_fields=['condition_datas'])
+    print('update_opp_config_stage done.')
+    return True

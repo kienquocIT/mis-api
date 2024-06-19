@@ -9,6 +9,8 @@ from .config import OpportunityTaskConfig
 
 __all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
 
+from ..utils import TaskHandler
+
 
 class OpportunityTaskStatus(MasterDataAbstractModel):
     title = models.CharField(verbose_name='Title Status', max_length=100)
@@ -68,6 +70,17 @@ class OpportunityTask(DataAbstractModel):
     opportunity_data = models.JSONField(
         default=dict,
         verbose_name='opportunity backup',
+        null=True
+    )
+    project = models.ForeignKey(
+        'project.Project',
+        on_delete=models.CASCADE,
+        verbose_name='Project',
+        null=True,
+    )
+    project_data = models.JSONField(
+        default=dict,
+        verbose_name='project backup',
         null=True
     )
     priority = models.SmallIntegerField(
@@ -150,9 +163,18 @@ class OpportunityTask(DataAbstractModel):
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
             }
+        if self.project and not self.project_data:
+            self.project_data = {
+                "id": str(self.project_id),
+                "title": str(self.project.title),
+                "code": str(self.project.code),
+            }
 
     def save(self, *args, **kwargs):
         self.before_save()
+        # opportunity log
+        TaskHandler.push_opportunity_log(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
     class Meta:

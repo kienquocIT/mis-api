@@ -1,6 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles',
+    'PublicFiles', 'Folder',
 ]
 
 import logging
@@ -143,6 +143,13 @@ class Files(BastionFiles):
     """
 
     file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
+    folder = models.ForeignKey(
+        'attachments.Folder',
+        on_delete=models.CASCADE,
+        verbose_name='folder of file',
+        related_name='files_folder',
+        null=True,
+    )
 
     @classmethod
     def check_available_size_employee(cls, employee_id, new_size=None) -> (bool, str, str):
@@ -469,3 +476,26 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
         abstract = True
         ordering = ('-date_created',)
         default_permissions = ()
+
+
+# BEGIN FOLDER
+class Folder(MasterDataAbstractModel):
+    parent_n = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        verbose_name="parent folder",
+        related_name="folder_parent_n",
+        null=True,
+    )
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='folder_employee_inherit',
+    )
+
+    class Meta:
+        verbose_name = 'Folder'
+        verbose_name_plural = 'Folders'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

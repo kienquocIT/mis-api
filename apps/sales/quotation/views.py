@@ -18,7 +18,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
     queryset = Quotation.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],
@@ -143,6 +143,9 @@ class QuotationConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = QuotationAppConfig.objects
     serializer_detail = QuotationConfigDetailSerializer
     serializer_update = QuotationConfigUpdateSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("ss_role", "ls_role",)
 
     @swagger_auto_schema(
         operation_summary="Quotation Config Detail",

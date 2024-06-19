@@ -794,4 +794,5 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'doc_id',
             'title',
             'log_type',
+            'doc_data',
         )

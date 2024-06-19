@@ -2,11 +2,11 @@ from .accounts import *
 from .config import *
 from .contacts import *
 from .price import *
+from .periods import *
 from .product import *
 from .shipping import *
 from .inventory import *
 from .good_receipt import *
 from .product_warehouse import *
 from .expense_item import *
-from .periods import *
 from .revenue_plan_config import *

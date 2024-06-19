@@ -97,6 +97,11 @@ MAP_FIELD_TITLE = {
     'assettools.assettoolsprovide': 'title',
     'assettools.assettoolsdelivery': 'title',
     'assettools.assettoolsreturn': 'title',
+    'inventory.goodsissue': 'title',
+    'acceptance.finalacceptance': 'title',
+    'inventory.goodstransfer': 'title',
+    'inventory.goodsreturn': 'title',
+    'lead.lead': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -178,6 +183,18 @@ TASK_KIND = (
     (1, 'To do'),
     (2, 'Completed'),
     (3, 'Pending')
+)
+
+PROJECT_WORK_STT = (
+    (0, 'To do'),
+    (1, 'In progress'),
+    (2, 'Pending'),
+    (3, 'Completed')
+)
+
+PROJECT_WORK_TYPE = (
+    (0, 'Start to start'),
+    (1, 'Finish to start')
 )
 
 # permissions
@@ -270,6 +287,8 @@ ACCEPTANCE_AFFECT_BY = (
     (2, 'Plan value'),
     (3, 'Delivery'),
     (4, 'Payment'),
+    (5, 'Invoice'),
+    (6, 'Project'),
 )
 
 # Opportunity
@@ -320,4 +339,13 @@ OTP_TYPE = (
     (2, 'Call'),
     (2, 'Application'),
     (4, 'Other'),
+)
+
+# ProductWarehouse
+TYPE_LOT_TRANSACTION = (
+    (0, 'Goods receipt'),
+    (1, 'Delivery'),
+    (2, 'Goods return'),
+    (3, 'Goods transfer'),
+    (4, 'Goods issue')
 )

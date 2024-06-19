@@ -9,7 +9,7 @@ class SaleMsg:
     OPPORTUNITY_QUOTATION_USED = _('Opportunity is already used for quotation')
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_HAS_SALE_ORDER = _('Opportunity already has sale order')
-    OPPORTUNITY_HAS_QUOTATION_NOT_DONE = _('Opportunity has quotation is not finished')
+    OPPORTUNITY_HAS_QUOTATION_NOT_DONE = _('Opportunity already has quotation')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
     SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')
@@ -25,6 +25,9 @@ class SaleMsg:
     DATE_REQUIRED = _('Date is required.')
     DUE_DATE_REQUIRED = _('Due date is required.')
     PAYMENT_REQUIRED_BY_CONFIG = _('Payment is required according to config.')
+    SO_CONFIG_ROLE_CHECK = _('Role can only in short sales or long sales')
+    SO_CONFIG_SS_ROLE_CHECK = _('Opportunity is not allowed because employee in short sales roles')
+    SO_CONFIG_LS_ROLE_CHECK = _('Opportunity is required because employee in long sales roles')
 
 
 class SaleTask:

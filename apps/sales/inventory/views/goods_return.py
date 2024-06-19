@@ -3,7 +3,7 @@ from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.inventory.models import GoodsReturn
 from apps.sales.saleorder.models import SaleOrder
 from apps.sales.inventory.serializers import (
-    SaleOrderListSerializerForGoodsReturn, DeliveryListSerializerForGoodsReturn, GetDeliveryProductsDeliveredSerializer,
+    SaleOrderListSerializerForGoodsReturn, DeliveryListSerializerForGoodsReturn,
     GoodsReturnListSerializer, GoodsReturnCreateSerializer, GoodsReturnDetailSerializer, GoodsReturnUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -21,7 +21,7 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery', 'return_to_warehouse'
+            'sale_order', 'delivery',
         )
 
     @swagger_auto_schema(
@@ -57,7 +57,7 @@ class GoodsReturnDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery', 'product', 'uom'
+            'sale_order', 'delivery',
         ).prefetch_related(
             'goods_return_product_detail__lot_no',
             'goods_return_product_detail__serial_no',
@@ -148,29 +148,3 @@ class DeliveryListForGoodsReturn(BaseListMixin):
         self.kwargs['sale_order_data__id'] = request.GET.get('sale_order_id')
         self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
-
-
-class GetDeliveryProductsDetail(BaseRetrieveMixin):
-    queryset = OrderDeliverySub.objects
-    serializer_detail = GetDeliveryProductsDeliveredSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
-
-    def get_queryset(self):
-        return super().get_queryset().select_related().prefetch_related(
-            'delivery_serial_delivery_sub__product_warehouse_serial',
-            'delivery_serial_delivery_sub__delivery_product',
-            'delivery_lot_delivery_sub__product_warehouse_lot',
-            'delivery_lot_delivery_sub__delivery_product'
-        )
-
-    @swagger_auto_schema(
-        operation_summary='Get Delivery Products',
-        operation_description="Get Delivery Products by ID",
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
-    )
-    def get(self, request, *args, pk, **kwargs):
-        return self.retrieve(request, *args, pk, **kwargs)

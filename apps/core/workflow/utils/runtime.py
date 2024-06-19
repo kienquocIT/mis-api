@@ -67,9 +67,10 @@ class DocHandler:
             if obj.is_change is False:
                 setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
                 update_fields.append('document_root_id')
-        obj.save(update_fields=update_fields)
-        # cancel document root or previous document
+        # cancel document root or previous document before finish new document
         DocHandler.force_cancel_doc_previous(document_change=obj)
+        # save finish
+        obj.save(update_fields=update_fields)
         return True
 
     @classmethod
@@ -350,12 +351,13 @@ class RuntimeHandler:
                     # Update flag done
                     RuntimeLogHandler(
                         stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
-                        is_system=False,
+                        is_system=False, remark=remark,
                     ).log_approval_task(action_number=2)
                     rt_assignee.is_done = True
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
-                    rt_assignee.save(update_fields=['is_done', 'action_perform'])
+                    rt_assignee.remark = remark
+                    rt_assignee.save(update_fields=['is_done', 'action_perform', 'remark'])
                     # update doc to reject
                     DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
                     # handle next stage
@@ -891,7 +893,7 @@ class RuntimeLogHandler:
     def log_approval_task(self, action_number):
         action_choices = {
             1: 'Approved',
-            2: 'Rejected',
+            2: f'Rejected ({self.remark})',
         }
         # msg choice in: ['Approved']
         call_task_background(

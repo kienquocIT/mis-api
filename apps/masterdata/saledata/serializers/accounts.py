@@ -1,5 +1,4 @@
 import datetime
-
 from rest_framework import serializers
 from django.utils import timezone
 from apps.core.hr.models import Employee
@@ -22,6 +21,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     bank_accounts_mapped = serializers.SerializerMethodField()
     revenue_information = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -40,7 +40,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             'contact_mapped',
             'bank_accounts_mapped',
             'revenue_information',
-            'billing_address'
+            'billing_address',
+            'industry'
         )
 
     @classmethod
@@ -98,7 +99,9 @@ class AccountListSerializer(serializers.ModelSerializer):
             if period.fiscal_year == current_date.year:
                 start_date_str = str(period.start_date) + ' 00:00:00'
                 start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
-                for customer_revenue in obj.report_customer_customer.all():
+                for customer_revenue in obj.report_customer_customer.filter(
+                        group_inherit__is_delete=False, sale_order__system_status=3
+                ):
                     if customer_revenue.date_approved:
                         if start_date <= customer_revenue.date_approved <= current_date:
                             revenue_ytd += customer_revenue.revenue
@@ -123,6 +126,16 @@ class AccountListSerializer(serializers.ModelSerializer):
                 'is_default': item.is_default
             })
         return billing_address_list
+
+    @classmethod
+    def get_industry(cls, obj):
+        if obj.industry:
+            return {
+                'id': obj.industry_id,
+                'code': obj.industry.code,
+                'title': obj.industry.title,
+            }
+        return {}
 
 
 def create_employee_map_account(account):
@@ -633,7 +646,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     def validate_tax_code(self, value):
         if Account.objects.filter_current(
                 fill__tenant=True, fill__company=True, tax_code=value
-        ).exclude(code=self.instance.tax_code).count() > 0:
+        ).exclude(id=self.instance.id).count() > 0:
             raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
 
@@ -760,6 +773,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                     instance.save()
             except Contact.DoesNotExist:
                 raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
+
         return instance
 
 

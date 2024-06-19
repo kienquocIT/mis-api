@@ -1,33 +1,29 @@
 import logging
-from copy import deepcopy
-from datetime import date, timedelta
-from uuid import uuid4
 
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
+from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
-from django.utils import translation, timezone
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from django_celery_results.models import TaskResult
 
-from apps.core.attachments.models import Files
 from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
 from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee, WorkflowConfigOfApp, Workflow
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
-from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
+from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
 from apps.sales.opportunity.models import (
     OpportunityConfig, OpportunityConfigStage, StageCondition,
-    OpportunitySaleTeamMember,
+    OpportunitySaleTeamMember, Opportunity,
 )
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, Application, PlanApplication
+from apps.core.base.models import Currency as BaseCurrency, PlanApplication
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
@@ -37,19 +33,18 @@ from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
     SaleOrderIndicatorConfig, ORIndicatorDefaultData,
 )
-from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
+from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus, OpportunityTask
 
 from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
-from ..media_cloud_apis import MediaForceAPI
-from apps.core.tenant.models import TenantPlan, Tenant
+from apps.core.tenant.models import TenantPlan
 from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
-from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
+from apps.sales.lead.models import LeadStage
+from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
 from apps.core.forms.models import Form
 
 logger = logging.getLogger(__name__)
@@ -436,6 +431,25 @@ class ConfigDefaultData:
         }
     ]
 
+    lead_stage_data = [
+        {
+            'stage_title': 'Marketing Acquired Lead',
+            'level': 1,
+        },
+        {
+            'stage_title': 'Marketing Qualified Lead',
+            'level': 2,
+        },
+        {
+            'stage_title': 'Sales Accepted Lead',
+            'level': 3,
+        },
+        {
+            'stage_title': 'Sales Qualified Lead',
+            'level': 4,
+        },
+    ]
+
     function_process_data = [
         {
             'function_id': 'e66cfb5a-b3ce-4694-a4da-47618f53de4c',
@@ -616,6 +630,14 @@ class ConfigDefaultData:
                     comparison_operator=condition['comparison_operator'],
                     compare_data=condition['compare_data']
                 )
+
+    def lead_stage(self):
+        for stage in self.lead_stage_data:
+            LeadStage.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                **stage
+            )
 
     def quotation_indicator_config(self):
         bulk_info = []
@@ -882,6 +904,7 @@ class ConfigDefaultData:
         self.sale_order_config()
         self.opportunity_config()
         self.opportunity_config_stage()
+        self.lead_stage()
         self.quotation_indicator_config()
         self.sale_order_indicator_config()
         self.task_config()
@@ -1082,6 +1105,37 @@ def task_validate_user_otp(sender, instance, created, **kwargs):
             otp_id=instance.id,
             otp=instance.otp,
         )
+
+
+@receiver(post_save, sender=ProjectMapMember)
+def project_member_event_update(sender, instance, created, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.append_permit_by_prj(
+            tenant_id=instance.project.tenant_id,
+            prj_id=str(instance.project_id),
+            perm_config=instance.permission_by_configured,
+        )
+
+
+@receiver(post_delete, sender=ProjectMapMember)
+def project_member_event_destroy(sender, instance, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.remove_permit_by_prj(
+            tenant_id=instance.project.tenant_id, prj_id=instance.project_id
+        )
+
+
+@receiver(post_save, sender=Opportunity)
+def handler_update_opportunity_stage(sender, instance, created, **kwargs):
+    if instance.check_config_auto_update_stage():
+        instance.win_rate = instance.auto_update_stage(
+            list_property=instance.parse_property_stage(obj=instance), obj=instance
+        )
+    return True
 
 
 @receiver(post_save, sender=Form)

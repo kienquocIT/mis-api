@@ -28,9 +28,15 @@ class AllApplicationOfEmployeeSerializer(serializers.ModelSerializer):
     def get_permit_mapping(cls, obj):
         return obj.app.permit_mapping
 
+    spacing_allow = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_spacing_allow(cls, obj):
+        return obj.app.spacing_allow
+
     class Meta:
         model = DistributionApplication
-        fields = ('id', 'title', 'code', 'permit_mapping')
+        fields = ('id', 'title', 'code', 'permit_mapping', 'spacing_allow',)
 
 
 class AppParsedDetailSerializer(serializers.Serializer):  # noqa

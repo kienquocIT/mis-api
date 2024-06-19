@@ -16,6 +16,7 @@ from apps.core.hr.serializers.app_of_employee import (
     AllApplicationOfEmployeeSerializer,
     SummaryApplicationOfEmployeeSerializer,
 )
+from apps.sales.project.models import ProjectMapMember
 from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseMixin
 
 from apps.sales.opportunity.models import OpportunitySaleTeamMember
@@ -91,9 +92,38 @@ class EmployeeStorageAppAllList(BaseListMixin):
             #
             # update check permit for Project in here!
             #
-            if self.cls_check.employee_attr.employee_current_id:
-                ...
             state = False
+            if self.cls_check.employee_attr.employee_current_id:
+                member_ids = list({str(self.cls_check.employee_attr.employee_current_id), str(employee_obj.id)})
+                pj_member_objs = ProjectMapMember.objects.filter_current(
+                    fill__tenant=True, fill__company=True,
+                    project_id=self.__project_id, member_id__in=member_ids
+                )
+                if len(member_ids) == 1 and pj_member_objs.count() == 1:
+                    pj_member = pj_member_objs.first()
+                    state = (
+                            pj_member.permit_view_this_project is True
+                            or pj_member.permit_add_member is True
+                            or (
+                                    self.cls_check.employee_attr.employee_current_id ==
+                                    pj_member.project.employee_inherit_id
+                            )
+                    )
+                elif len(member_ids) == 2 and pj_member_objs.count() == 2:
+                    pj_member = None
+                    for obj in pj_member_objs:
+                        if str(obj.member_id) == str(self.cls_check.employee_attr.employee_current_id):
+                            pj_member = obj
+                            break
+                    if pj_member:
+                        state = (
+                                pj_member.permit_view_this_project is True
+                                or pj_member.permit_add_member is True
+                                or (
+                                        self.cls_check.employee_attr.employee_current_id ==
+                                        pj_member.project.employee_inherit_id
+                                )
+                        )
         else:
             #
             # auto check permit general in Employee Obj (hr.employee.view)
@@ -102,11 +132,10 @@ class EmployeeStorageAppAllList(BaseListMixin):
 
         if state is True:
             if self.__opportunity_id:
-                # exclude app opportunity
-                return ~Q(app_id='296a1410-8d72-46a8-a0a1-1821f196e66c')
+                # exclude app opportunity and project
+                return ~Q(app_id='49fe2eb9-39cd-44af-b74a-f690d7b61b67')
             if self.__project_id:
-                # exclude app project
-                ...
+                return ~Q(app_id='296a1410-8d72-46a8-a0a1-1821f196e66c')
             return Q()
         return self.list_empty()
 

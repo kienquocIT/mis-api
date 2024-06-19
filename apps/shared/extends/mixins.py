@@ -912,6 +912,9 @@ class BaseListMixin(BaseMixin):
                     print('#  - SQL                   :', self.convert_sql_str(queryset.query))
             except EmptyResultSet:
                 print('#  - SQL                   :', 'EMPTY')
+            except Exception as error:
+                print('bien loi:     ', str(error))
+                raise error
 
         page = self.paginate_queryset(queryset)
         if page is not None:

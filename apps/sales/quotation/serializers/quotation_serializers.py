@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
-    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer,\
-    QuotationExpenseSerializer, QuotationIndicatorSerializer
+    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
+    QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
@@ -293,19 +293,20 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.sale_order_opportunity.exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-                    quotation_invalid = opportunity.quotation_opportunity.filter(system_status__in=[2, 3, 4]).count()
-                    quotation_all = opportunity.quotation_opportunity.all().count()
-                    if quotation_invalid != quotation_all:
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
+                    if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
+                    is_change = validate_data.get('is_change', False)
+                    if is_change is False:
+                        if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return True
 
     def validate(self, validate_data):
+        QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -322,16 +323,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             quotation.opportunity.save(**{
                 'update_fields': ['quotation'],
             })
-            # create activity log
-            OpportunityActivityLogs.create_opportunity_log_application(
-                tenant_id=quotation.tenant_id,
-                company_id=quotation.company_id,
-                opportunity_id=quotation.opportunity_id,
-                employee_created_id=quotation.employee_created_id,
-                app_code=str(quotation.__class__.get_model_code()),
-                doc_id=quotation.id,
-                title=quotation.title,
-            )
         return quotation
 
 
@@ -456,7 +447,11 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.quotation_opportunity.exclude(id=self.instance.id).exists():
+                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    if opportunity.quotation_opportunity.filter(
+                            system_status__in=[0, 1, 2, 3]
+                    ).exclude(id=self.instance.id).exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
         return True
 
@@ -469,8 +464,9 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         })
 
     def validate(self, validate_data):
+        QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        QuotationCommonValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow

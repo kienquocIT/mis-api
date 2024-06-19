@@ -7,13 +7,15 @@ from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeas
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
+from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
     OpportunityConfigStage, OpportunityStage,
 )
+from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.report.models import ReportPipeline
-from apps.shared import AccountsMsg, HRMsg
+from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel
 from apps.shared.translations.opportunity import OpportunityMsg
 
 __all__ = [
@@ -60,6 +62,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                     'fullname': item.fullname,
                     'email': item.email
                 } for item in obj.customer.contact_account_name.all()],
+                'phone': obj.customer.phone,
+                'email': obj.customer.email,
             }
         return {}
 
@@ -147,6 +151,20 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
+    def validate_config_role(cls, validate_data):
+        if 'employee_inherit_id' in validate_data:
+            model_cls = DisperseModel(app_model="hr.employee").get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                employee = model_cls.objects.filter(id=validate_data['employee_inherit_id']).first()
+                if so_config and employee:
+                    ss_role = [role.id for role in so_config.ss_role.all()]
+                    for role in employee.role.all():
+                        if role.id in ss_role:
+                            raise serializers.ValidationError({'detail': SaleMsg.SO_CONFIG_SS_ROLE_CHECK})
+        return True
+
+    @classmethod
     def get_alias_permit_from_general(cls, employee_obj):
         # Le Dieu Hoa - 10/17 11:17 AM
         #   Task: tạo - xem - sửa - xóa (cho chính nó / mọi người)
@@ -222,6 +240,40 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 result.append(data_tmp_for_4)
         return result
 
+    def validate(self, validate_data):
+        self.validate_config_role(validate_data=validate_data)
+        return validate_data
+
+    @classmethod
+    def convert_opportunity(cls, lead, tenant_id, company_id, opp_mapped, account_mapped):
+        # convert to a new opp (existed account)
+        lead_configs = lead.lead_configs.first() if lead else None
+        if lead_configs:
+            if not lead_configs.convert_opp:
+                current_stage = LeadStage.objects.filter(
+                    tenant_id=tenant_id, company_id=company_id, level=4
+                ).first()
+                lead.current_lead_stage = current_stage
+                lead.lead_status = 4
+                lead.save(update_fields=['current_lead_stage', 'lead_status'])
+                lead_configs.opp_mapped = opp_mapped
+                lead_configs.account_mapped = account_mapped
+                lead_configs.convert_opp = True
+                lead_configs.assign_to_sale_config = opp_mapped.employee_inherit
+                lead_configs.save(update_fields=[
+                    'opp_mapped', 'account_mapped', 'convert_opp', 'assign_to_sale_config'
+                ])
+                LeadOpportunity.objects.create(
+                    company=lead.company, tenant=lead.tenant,
+                    lead=lead, opportunity=lead_configs.opp_mapped,
+                    employee_created=lead.employee_created,
+                    employee_inherit=lead.employee_inherit
+                )
+                LeadChartInformation.create_update_chart_information(tenant_id, company_id)
+                return True
+            raise serializers.ValidationError({'converted': 'Converted to opp.'})
+        raise serializers.ValidationError({'not found': 'Lead config not found.'})
+
     def create(self, validated_data):
         # get data product_category
         product_categories = validated_data.pop('product_category', [])
@@ -287,6 +339,16 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 date_activity=opportunity.date_created,
                 revenue=None,
             )
+
+        if 'lead' in self.context:
+            self.convert_opportunity(
+                self.context.get('lead'),
+                validated_data['tenant_id'],
+                validated_data['company_id'],
+                opportunity,
+                opportunity.customer
+            )
+
         return opportunity
 
 
@@ -449,12 +511,12 @@ def get_instance_stage(instance):
     return instance_stage
 
 
-def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close):
+def get_instance_current_stage_range(stages, current_stage_indicator):
     new_instance_current_stage = []
     for stage in stages:
         if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
             if stage.indicator in current_stage_indicator:
-                if stage.win_rate == 0 and is_deal_close:
+                if not stage.win_rate:
                     new_instance_current_stage[0]['current'] = 0
                     new_instance_current_stage.append({
                         'id': stage.id,
@@ -470,7 +532,7 @@ def get_instance_current_stage_range(stages, current_stage_indicator, is_deal_cl
                         'current': 1 if len(new_instance_current_stage) == 0 else 0
                     })
         else:
-            if stage.win_rate == 0 and is_deal_close:
+            if not stage.win_rate:
                 new_instance_current_stage[0]['current'] = 0
                 new_instance_current_stage.append({
                     'id': stage.id,
@@ -521,12 +583,17 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
                 instance_current_stage.append({
                     'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                 })
-    is_deal_close = False
+
+        if stage['indicator'] == 'Deal Close' and instance.is_deal_close:
+            current_stage_indicator.append(stage['indicator'])
+            instance_current_stage.append({
+                'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+            })
+
     if len(instance_current_stage) > 0:
         instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
         if instance_current_stage[-1]['win_rate'] == 0:
             instance_current_stage[-1]['current'] = 1
-            is_deal_close = instance_current_stage[-1]['indicator'] == 'Deal Close'
         else:
             instance_current_stage[0]['current'] = 1
 
@@ -534,9 +601,12 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
             company_id=instance.company_id,
             win_rate__lte=instance_current_stage[0]['win_rate']
         ).order_by('-win_rate')
-        new_instance_current_stage = get_instance_current_stage_range(stages, current_stage_indicator, is_deal_close)
+        new_instance_current_stage = get_instance_current_stage_range(
+            stages,
+            current_stage_indicator
+        )
 
-        return new_instance_current_stage, is_deal_close
+        return new_instance_current_stage
     raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
@@ -643,9 +713,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage(instance)
         instance_stage = get_instance_stage(instance)
-        instance_current_stage, is_deal_close = get_instance_current_stage(opp_config_stage, instance_stage, instance)
-        instance.is_deal_close = is_deal_close
-        instance.save(update_fields=['is_deal_close'])
+        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage, instance)
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
@@ -653,6 +721,11 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
             data_bulk.append(
                 OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
             )
+        if len(data_bulk) > 0:
+            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder.status=0' in instance_stage:
+                raise serializers.ValidationError(
+                    {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
+                )
         OpportunityStage.objects.bulk_create(data_bulk)
         return True
 
@@ -919,6 +992,10 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         CommonOpportunityUpdate.update_opportunity_stage_for_list(instance)
+
+        LeadHint.check_and_create_lead_hint(
+            instance, None, None, None, None,
+        )
         return instance
 
 

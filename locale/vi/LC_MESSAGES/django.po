@@ -58,6 +58,10 @@ msgstr "Yêu cầu bàn giao"
 msgid "Asset, Tools Provide"
 msgstr "Yêu cầu cấp phát"
 
+# 08e41084-4379-4778-9e16-c09401f0a66e
+msgid "Asset, Tools Return"
+msgstr "Thu hồi tài sản"
+
 # 87ce1662-ca9d-403f-a32e-9553714ebc6d
 msgid "Business trip"
 msgstr "Công tác"
@@ -98,17 +102,25 @@ msgstr "Nhân viên"
 msgid "Expense Item"
 msgstr "Chi phí"
 
+# 710c5a94-3a29-4e0e-973c-e6cace96c1e7
+msgid "Final Acceptance"
+msgstr "Quyết toán"
+
 # f26d7ce4-e990-420a-8ec6-2dc307467f2c
 msgid "Goods Issue"
-msgstr "Goods Issue"
+msgstr "Xuất hàng"
 
 # dd16a86c-4aef-46ec-9302-19f30b101cf5
 msgid "Goods Receipt"
 msgstr "Nhập kho"
 
+# 0242ba77-8b02-4589-8ed9-239788083f2b
+msgid "Goods Return"
+msgstr "Đổi - trả hàng"
+
 # 866f163d-b724-404d-942f-4bc44dc2e2ed
 msgid "Goods Transfer"
-msgstr "Goods Transfer"
+msgstr "Điều chuyển hàng hoá"
 
 # e17b9123-8002-4c9b-921b-7722c3c9e3a5
 msgid "Group"
@@ -132,7 +144,7 @@ msgstr "Leave available"
 
 # 6078deaa-96b3-4743-97e3-5457454fa7aa
 msgid "Meeting Schedule"
-msgstr "Meeting Schedule"
+msgstr "Lịch họp"
 
 # 2fe959e3-9628-4f47-96a1-a2ef03e867e3
 msgid "Meetting With Customer"
@@ -908,8 +920,8 @@ msgid "Opportunity already has sale order"
 msgstr "Cơ hội kinh doanh đã có đơn hàng"
 
 #
-msgid "Opportunity has quotation is not finished"
-msgstr "Cơ hội kinh doanh có báo giá chưa hoàn tất"
+msgid "Opportunity already has quotation"
+msgstr "Cơ hội kinh doanh đã có báo giá"
 
 #
 msgid "Confirm"
@@ -1038,3 +1050,71 @@ msgstr "Đã hoàn thành"
 #
 msgid "Opening"
 msgstr "Đang mở"
+
+#
+msgid "Draft"
+msgstr "Nháp"
+
+#
+msgid "Created"
+msgstr "Đã tạo"
+
+#
+msgid "Added"
+msgstr "Đã thêm"
+
+#
+msgid "Finish"
+msgstr "Hoàn tất"
+
+#
+msgid "Cancel"
+msgstr "Huỷ bỏ"
+
+#
+msgid "Role can only in short sales or long sales"
+msgstr "Vai trò chỉ có thể thuộc bán hàng nhanh hoặc bán hàng dự án"
+
+#
+msgid "Opportunity is not allowed because employee in short sales roles"
+msgstr "CHKD không được phép vì nhân viên thuộc vai trò bán hàng nhanh"
+
+#
+msgid "Opportunity is required because employee in long sales roles"
+msgstr "CHKD là bắt buộc vì nhân viên thuộc vai trò bán hàng dự án"
+
+#
+msgid "Project"
+msgstr "Dự án"
+
+#
+msgid "do not exist."
+msgstr "không tồn tại."
+
+#
+msgid "Project group"
+msgstr "Nhóm dự án"
+
+#
+msgid "Project work"
+msgstr "Công việc dự án"
+
+#
+msgid "Make sure date start larger than relationship work date end"
+msgstr "Ngày bắt đầu phải lớn hơn ngày kết thúc của công việc được liên kết"
+
+#
+msgid "Project do not exist"
+msgstr "Dự án không tồn tại"
+
+#
+msgid "Project is required"
+msgstr "Dự án là bắt buộc"
+
+#
+msgid "You do not have permission to perform this action"
+msgstr "Bạn không được cấp quyền để thực hiện thao tác này"
+
+#
+msgid "Date work is not followed with date group"
+msgstr "Ngày Công việc không khớp với ngày của Nhóm"

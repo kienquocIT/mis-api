@@ -84,17 +84,23 @@ def diff_months_counter(dt_now, dt_begin):
     return (dt_now.year - dt_begin.year) * 12 - (dt_begin.month - dt_now.month) - 1
 
 
+def calc_added_day_by_senior_year(year_senior):
+    added_days = 0
+    year_compare = round(year_senior)
+    for item in LEAVE_YEARS_SENIORITY:
+        if item['from_range'] <= year_compare <= item['to_range']:
+            added_days = item['added']
+        elif item['to_range'] == 34 and year_compare > 34:
+            added_days = item['added']
+    return added_days
+
+
 # return number of added days for current month
 def leave_months_calc(dt_now, dt_begin, an_number):
     # năm thâm niên
     year_senior = (dt_now.date() - dt_begin.date()) / timedelta(days=365)
     # tính ngày added theo thâm niên
-    added_days = 0
-    for item in LEAVE_YEARS_SENIORITY:
-        if item['from_range'] <= year_senior <= item['to_range']:
-            added_days = item['added']
-        elif item['to_range'] == 34 and year_senior > 34:
-            added_days = item['added']
+    added_days = calc_added_day_by_senior_year(year_senior)
 
     # tính tháng làm việc thực tế CỦA năm tài chính hiện tại đang lấy năm theo phép AN
     start_new_finance_year = dt_now.replace(month=1, day=1)

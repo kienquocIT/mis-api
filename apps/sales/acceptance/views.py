@@ -29,6 +29,7 @@ class FinalAcceptanceList(BaseListMixin):
                     "expense_item",
                     "labor_item",
                     "delivery_sub",
+                    "ar_invoice",
                 )
             ),
         )
@@ -38,7 +39,7 @@ class FinalAcceptanceList(BaseListMixin):
         operation_description="Get final acceptance List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='acceptance', model_code='finalacceptance', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

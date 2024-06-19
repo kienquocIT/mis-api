@@ -15,15 +15,14 @@ class DocHandler:
 
 
 class SOFinishHandler:
+    # PRODUCT INFO
     @classmethod
-    def update_product_wait_delivery_amount(cls, instance):
-        for product_order in instance.sale_order_product_sale_order.all():
+    def push_product_info(cls, instance):
+        for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
             if product_order.product:
-                uom_product_inventory = product_order.product.inventory_uom
-                uom_product_so = product_order.unit_of_measure
-                final_ratio = 1
-                if uom_product_inventory and uom_product_so:
-                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                final_ratio = cls.get_final_uom_ratio(
+                    product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
+                )
                 product_order.product.save(**{
                     'update_transaction_info': True,
                     'quantity_order': product_order.product_quantity * final_ratio,
@@ -31,6 +30,7 @@ class SOFinishHandler:
                 })
         return True
 
+    # REPORT
     @classmethod
     def push_to_report_revenue(cls, instance):
         ReportRevenue.push_from_so(
@@ -51,25 +51,22 @@ class SOFinishHandler:
     def push_to_report_product(cls, instance):
         gross_profit_rate = 0
         net_income_rate = 0
-        # total_pretax = instance.total_product_pretax_amount
-        # total_discount = instance.total_product_discount
+        quo_dc_total_rate = 0
+        if instance.quotation:
+            quo_dc_total_rate = instance.quotation.total_product_discount_rate
         if instance.indicator_revenue > 0:
             gross_profit_rate = instance.indicator_gross_profit / instance.indicator_revenue
             net_income_rate = instance.indicator_net_income / instance.indicator_revenue
-        # if total_pretax > 0:
-        for so_product in instance.sale_order_product_sale_order.filter(
-                is_promotion=False, is_shipping=False, is_group=False,
-        ):
-            # subtotal = so_product.product_unit_price * so_product.product_quantity
-            # ratio = subtotal / total_pretax
-            # discount = total_discount * ratio
-            # revenue = subtotal - discount
-            revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
+        for so_product in instance.sale_order_product_sale_order.filter(product__isnull=False):
+            price_adc_row = so_product.product_unit_price - so_product.product_discount_amount
+            price_dc_total = price_adc_row * quo_dc_total_rate / 100
+            revenue = (price_adc_row - price_dc_total) * so_product.product_quantity
             gross_profit = revenue * gross_profit_rate
             net_income = revenue * net_income_rate
             ReportProduct.push_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
+                sale_order_id=instance.id,
                 product_id=so_product.product_id,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
@@ -86,6 +83,7 @@ class SOFinishHandler:
         ReportCustomer.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
+            sale_order_id=instance.id,
             customer_id=instance.customer_id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
@@ -113,7 +111,7 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def push_to_final_acceptance(cls, instance):
+    def push_final_acceptance_so(cls, instance):
         list_data_indicator = [
             {
                 'tenant_id': instance.tenant_id,
@@ -125,27 +123,26 @@ class SOFinishHandler:
                 'different_value': 0 - so_ind.indicator_value,
                 'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
                 'order': so_ind.order,
-                'is_indicator': True,
+                'acceptance_affect_by': 1,
             }
             for so_ind in instance.sale_order_indicator_sale_order.all()
         ]
-        FinalAcceptance.create_final_acceptance_from_so(
+        FinalAcceptance.push_final_acceptance(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             sale_order_id=instance.id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
             opportunity_id=instance.opportunity_id,
-            list_data_indicator=list_data_indicator
+            list_data_indicator=list_data_indicator,
         )
         return True
 
     @classmethod
-    def update_opportunity_stage_by_so(cls, instance):
+    def update_opportunity_stage(cls, instance):
         if instance.opportunity:
-            instance.opportunity.save(**{
-                'sale_order_status': instance.system_status,
-            })
+            instance.opportunity.sale_order = instance if instance.system_status == 3 else None
+            instance.opportunity.save(update_fields=['sale_order'])
         return True
 
     @classmethod
@@ -155,7 +152,7 @@ class SOFinishHandler:
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 account_id=instance.customer_id,
-                app_code=instance._meta.label_lower,
+                app_code=instance.__class__.get_model_code(),
                 document_id=instance.id,
                 title=instance.title,
                 code=instance.code,
@@ -163,6 +160,14 @@ class SOFinishHandler:
                 revenue=instance.indicator_revenue,
             )
         return True
+
+    @classmethod
+    def get_final_uom_ratio(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+        return 1
 
 
 class DocumentChangeHandler:
@@ -213,10 +218,10 @@ class DocumentChangeHandler:
     @classmethod
     def setup_data_product_change(cls, instance, doc_previous):
         data_product_change = {}
-        for so_product in doc_previous.sale_order_product_sale_order.all():
+        for so_product in doc_previous.sale_order_product_sale_order.filter(product__isnull=False):
             if so_product.product_id not in data_product_change:
                 data_product_change.update({str(so_product.product_id): so_product.product_quantity})
-            for so_product_change in instance.sale_order_product_sale_order.all():
+            for so_product_change in instance.sale_order_product_sale_order.filter(product__isnull=False):
                 if so_product_change.product_id == so_product.product_id:
                     quantity_change = so_product_change.product_quantity - so_product.product_quantity
                     data_product_change[str(so_product.product_id)] = quantity_change

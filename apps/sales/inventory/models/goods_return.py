@@ -1,7 +1,13 @@
 from django.db import models
-
+from rest_framework import serializers
+from apps.sales.delivery.models import DeliveryConfig
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods
+from apps.sales.inventory.models.goods_return_sub import (
+    GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
+)
+from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel
 
 
@@ -9,9 +15,9 @@ class GoodsReturn(DataAbstractModel):
     sale_order = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE)
     note = models.TextField(blank=True)
     delivery = models.ForeignKey('delivery.OrderDeliverySub', on_delete=models.CASCADE, null=True)
-    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
-    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
-    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
+    product_detail_list = models.JSONField(default=list, help_text="data to create mapped items")
+
+    data_line_detail_table = models.JSONField(default=list, help_text="to_quick_load_line_detail_table")
 
     class Meta:
         verbose_name = 'Goods Return'
@@ -20,15 +26,264 @@ class GoodsReturn(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        SubPeriods.check_open(self.company_id, self.tenant_id, self.date_created)
+    @classmethod
+    def check_exists(cls, stock_data, data):
+        for item in stock_data:
+            if all([
+                data['product'] == item['product'], data['warehouse'] == item['warehouse'],
+                data['system_date'] == item['system_date'], data['posting_date'] == item['posting_date'],
+                data['document_date'] == item['document_date'], data['stock_type'] == item['stock_type'],
+                data['trans_id'] == item['trans_id'], data['trans_code'] == item['trans_code'],
+                data['trans_title'] == item['trans_title']
+            ]):
+                item['quantity'] += data['quantity']
+                item['value'] += item['quantity'] * item['cost']
+                return stock_data, True
+        return stock_data, False
 
+    @classmethod
+    def for_perpetual_inventory(cls, instance):
+        product_detail_list = instance.goods_return_product_detail.all()
+        stock_data = []
+        for item in product_detail_list.filter(type=0):
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, trans_id=str(instance.delivery_id)
+            ).first()
+            if delivery_item:
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
+                casted_cost = (
+                    delivery_item.current_cost * item.default_return_number / casted_quantity
+                ) if casted_quantity > 0 else 0
+                data = {
+                    'sale_order': instance.delivery.order_delivery.sale_order,
+                    'product': item.product,
+                    'warehouse': item.return_to_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_quantity * casted_cost,
+                    'lot_data': {}
+                }
+                stock_data, is_append = cls.check_exists(stock_data, data)
+                if not is_append:
+                    stock_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        for item in product_detail_list.filter(type=1):
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, trans_id=str(instance.delivery_id)
+            ).first()
+            if delivery_item:
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
+                casted_cost = (
+                    delivery_item.current_cost * item.lot_return_number / casted_quantity
+                ) if casted_quantity > 0 else 0
+                data = {
+                    'sale_order': instance.delivery.order_delivery.sale_order,
+                    'product': item.product,
+                    'warehouse': item.return_to_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_quantity * casted_cost,
+                    'lot_data': {
+                        'lot_id': str(item.lot_no_id),
+                        'lot_number': item.lot_no.lot_number,
+                        'lot_quantity': casted_quantity,
+                        'lot_value': casted_quantity * casted_cost,
+                        'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
+                    }
+                }
+                stock_data, is_append = cls.check_exists(stock_data, data)
+                if not is_append:
+                    stock_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        for item in product_detail_list.filter(type=2):
+            delivery_item = ReportInventorySub.objects.filter(
+                product=item.product, trans_id=str(instance.delivery_id)
+            ).first()
+            if delivery_item:
+                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
+                casted_cost = (
+                    delivery_item.current_cost * float(item.is_return) / casted_quantity
+                ) if casted_quantity > 0 else 0
+                data = {
+                    'product': item.product,
+                    'warehouse': item.return_to_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_quantity * casted_cost,
+                    'lot_data': {}
+                }
+                stock_data, is_append = cls.check_exists(stock_data, data)
+                if not is_append:
+                    stock_data.append(data)
+            else:
+                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        return stock_data
+
+    @classmethod
+    def for_periodic_inventory(cls, instance):
+        product_detail_list = instance.goods_return_product_detail.all()
+        stock_data = []
+        for item in product_detail_list.filter(type=0):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
+            casted_cost = (
+                    item.cost_for_periodic * item.default_return_number / casted_quantity
+            ) if casted_quantity > 0 else 0
+            stock_data.append({
+                'sale_order': instance.delivery.order_delivery.sale_order,
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {}
+            })
+        for item in product_detail_list.filter(type=1):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
+            casted_cost = (
+                    item.cost_for_periodic * item.lot_return_number / casted_quantity
+            ) if casted_quantity > 0 else 0
+            stock_data.append({
+                'sale_order': instance.delivery.order_delivery.sale_order,
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {
+                    'lot_id': str(item.lot_no_id),
+                    'lot_number': item.lot_no.lot_number,
+                    'lot_quantity': casted_quantity,
+                    'lot_value': casted_quantity * casted_cost,
+                    'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
+                }
+            })
+        for item in product_detail_list.filter(type=2):
+            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
+            casted_cost = (
+                    item.cost_for_periodic * float(item.is_return) / casted_quantity
+            ) if casted_quantity > 0 else 0
+            stock_data.append({
+                'sale_order': instance.delivery.order_delivery.sale_order,
+                'product': item.product,
+                'warehouse': item.return_to_warehouse,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
+                'stock_type': 1,
+                'trans_id': str(instance.id),
+                'trans_code': instance.code,
+                'trans_title': 'Goods return',
+                'quantity': casted_quantity,
+                'cost': casted_cost,
+                'value': casted_quantity * casted_cost,
+                'lot_data': {}
+            })
+        return stock_data
+
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        if instance.company.company_config.definition_inventory_valuation == 0:
+            stock_data = cls.for_perpetual_inventory(instance)
+        else:
+            stock_data = cls.for_periodic_inventory(instance)
+
+        ReportInventorySub.logging_when_stock_activities_happened(
+            instance,
+            instance.date_created,
+            stock_data
+        )
+        return True
+
+    def save(self, *args, **kwargs):
+        SubPeriods.check_open(
+            self.company_id,
+            self.tenant_id,
+            self.date_approved if self.date_approved else self.date_created
+        )
+        if self.system_status in [2, 3]:
+            if not self.code:
+                count = GoodsReturn.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
+                ).count()
+                self.code = f"GRT00{count + 1}"
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
+            config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+            if config:
+                if config.is_picking is True:
+                    GoodsReturnSubSerializerForPicking.update_delivery(self)
+                else:
+                    GoodsReturnSubSerializerForNonPicking.update_delivery(self)
+            else:
+                raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
+
+            # handle after finish
+            # product information
+            ReturnFinishHandler.push_product_info(instance=self)
+            # final acceptance
+            ReturnFinishHandler.update_final_acceptance(instance=self)
+            # report
+            ReturnFinishHandler.update_report(instance=self)
+
+            self.prepare_data_for_logging(self)
+
+        # diagram
+        ReturnHandler.push_diagram(instance=self)
+        # hit DB
         super().save(*args, **kwargs)
 
 
 class GoodsReturnProductDetail(DataAbstractModel):
     goods_return = models.ForeignKey(GoodsReturn, on_delete=models.CASCADE, related_name='goods_return_product_detail')
     type = models.SmallIntegerField(choices=((0, 'Default'), (1, 'LOT'), (2, 'Serial')), default=0)
+
+    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
+
+    delivery_item = models.ForeignKey('delivery.OrderDeliveryProduct', on_delete=models.CASCADE, null=True)
 
     default_return_number = models.FloatField(default=0)
     default_redelivery_number = models.FloatField(default=0)
@@ -40,6 +295,8 @@ class GoodsReturnProductDetail(DataAbstractModel):
     serial_no = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
     is_return = models.BooleanField(default=False)
     is_redelivery = models.BooleanField(default=False)
+
+    cost_for_periodic = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Return Product Detail'

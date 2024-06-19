@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.inventory.models import GoodsTransfer
-from apps.sales.inventory.serializers import GoodsTransferListSerializer, GoodsTransferCreateSerializer, \
+from apps.sales.inventory.serializers import (
+    GoodsTransferListSerializer, GoodsTransferCreateSerializer,
     GoodsTransferDetailSerializer, GoodsTransferUpdateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -14,7 +15,6 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
     serializer_detail = GoodsTransferDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-
 
     @swagger_auto_schema(
         operation_summary="Goods transfer List",
@@ -40,10 +40,7 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class GoodsTransferDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class GoodsTransferDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = GoodsTransfer.objects
     serializer_detail = GoodsTransferDetailSerializer
     serializer_update = GoodsTransferUpdateSerializer
