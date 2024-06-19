@@ -249,8 +249,9 @@ class Product(DataAbstractModel):
         ).first()
         if this_period:
             latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+            company_config = getattr(self.company, 'company_config')
             if latest_trans:
-                if self.company.company_config.definition_inventory_valuation == 0:
+                if company_config.definition_inventory_valuation == 0:
                     value_list = [
                         latest_trans.latest_log.current_quantity,
                         latest_trans.latest_log.current_cost,
@@ -295,10 +296,11 @@ class Product(DataAbstractModel):
         ).first()
         if this_period:
             sub_period_order = timezone.now().month - this_period.space_month
+            company_config = getattr(self.company, 'company_config')
             for warehouse in warehouse_list:
                 latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
-                    if self.company.company_config.definition_inventory_valuation == 0 and \
+                    if company_config.definition_inventory_valuation == 0 and \
                             latest_trans.latest_log.current_quantity > 0:
                         unit_cost_list.append({
                             'warehouse': {'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title},
