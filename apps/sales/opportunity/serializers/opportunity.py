@@ -996,6 +996,9 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         LeadHint.check_and_create_lead_hint(
             instance, None, None, None, None,
         )
+
+        # handle stage & win_rate
+        instance.handle_stage_win_rate(obj=instance)
         return instance
 
 

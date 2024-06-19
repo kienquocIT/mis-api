@@ -215,7 +215,7 @@ class Opportunity(DataAbstractModel):
                         'title': condition_title,
                     },
                     'comparison_operator': '=',
-                    'compare_data': obj.customer.annual_revenue if obj.customer else None,
+                    'compare_data': int(obj.customer.annual_revenue) if obj.customer else None,
                 }
             ]
         if condition_title == 'Product Category':
@@ -448,6 +448,13 @@ class Opportunity(DataAbstractModel):
         config = OpportunityConfig.objects.filter_current(fill__company=True).first()
         if config.is_select_stage:
             return False
+        return True
+
+    @classmethod
+    def handle_stage_win_rate(cls, obj):
+        if obj.check_config_auto_update_stage():
+            obj.win_rate = obj.update_stage(obj=obj)
+            obj.save(update_fields=['win_rate'])
         return True
 
     def save(self, *args, **kwargs):

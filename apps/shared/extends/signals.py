@@ -1126,10 +1126,3 @@ def project_member_event_destroy(sender, instance, **kwargs):
         employee_permission.remove_permit_by_prj(
             tenant_id=instance.project.tenant_id, prj_id=instance.project_id
         )
-
-
-@receiver(post_save, sender=Opportunity)
-def handler_update_opportunity_stage(sender, instance, created, **kwargs):
-    if instance.check_config_auto_update_stage():
-        instance.win_rate = instance.update_stage(obj=instance)
-    return True
