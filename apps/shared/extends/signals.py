@@ -1131,7 +1131,5 @@ def project_member_event_destroy(sender, instance, **kwargs):
 @receiver(post_save, sender=Opportunity)
 def handler_update_opportunity_stage(sender, instance, created, **kwargs):
     if instance.check_config_auto_update_stage():
-        instance.win_rate = instance.auto_update_stage(
-            list_property=instance.parse_property_stage(obj=instance), obj=instance
-        )
+        instance.win_rate = instance.update_stage(obj=instance)
     return True
