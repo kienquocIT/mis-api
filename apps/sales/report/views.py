@@ -221,7 +221,7 @@ class ReportInventoryDetailList(BaseListMixin):
 
             tenant_obj = self.request.user.tenant_current
             company_obj = self.request.user.company_current
-            div = self.request.user.company_current.companyconfig.definition_inventory_valuation
+            div = self.request.user.company_current.company_config.definition_inventory_valuation
             if 'is_calculate' in self.request.query_params and div == 1:
                 LoggingSubFunction.calculate_ending_balance_for_periodic(
                     period_mapped, sub_period_order, tenant_obj, company_obj
@@ -280,7 +280,7 @@ class ReportInventoryDetailList(BaseListMixin):
             ).select_related('warehouse')
         self.ser_context[
             'definition_inventory_valuation'
-        ] = self.request.user.company_current.companyconfig.definition_inventory_valuation
+        ] = self.request.user.company_current.company_config.definition_inventory_valuation
         return self.list(request, *args, **kwargs)
 
 
@@ -320,7 +320,7 @@ class ReportInventoryList(BaseListMixin):
             value = None
             latest_trans = LoggingSubFunction.get_latest_log_by_month(prd_id, wh_id, period_mapped, sub_period_order)
             if latest_trans:
-                if company.companyconfig.definition_inventory_valuation == 0:
+                if company.company_config.definition_inventory_valuation == 0:
                     quantity = latest_trans.current_quantity
                     cost = latest_trans.current_cost
                     value = latest_trans.current_value
@@ -339,7 +339,7 @@ class ReportInventoryList(BaseListMixin):
                         value = opening_value_list_obj.opening_balance_value
 
             if quantity and cost and value:
-                if company.companyconfig.definition_inventory_valuation == 0:
+                if company.company_config.definition_inventory_valuation == 0:
                     ReportInventoryProductWarehouse.objects.create(
                         tenant=tenant, company=company, product_id=prd_id, warehouse_id=wh_id,
                         period_mapped=period_mapped, sub_period_order=sub_period_order, sub_period=sub,
@@ -382,7 +382,7 @@ class ReportInventoryList(BaseListMixin):
                 period_mapped=period_mapped, sub_period_order=sub_period_order
             )
             sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-            div = company.companyconfig.definition_inventory_valuation
+            div = company.company_config.definition_inventory_valuation
             for last_item in all_last_sub:
                 if not all_this_sub.filter(
                     product_id=last_item.product_id,
@@ -486,7 +486,7 @@ class ReportInventoryList(BaseListMixin):
             self.ser_context = {
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')],
                 'definition_inventory_valuation':
-                    self.request.user.company_current.companyconfig.definition_inventory_valuation
+                    self.request.user.company_current.company_config.definition_inventory_valuation
             }
         return self.list(request, *args, **kwargs)
 

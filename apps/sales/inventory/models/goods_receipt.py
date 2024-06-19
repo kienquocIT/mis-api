@@ -105,7 +105,7 @@ class GoodsReceipt(DataAbstractModel):
         return all_lots
 
     @classmethod
-    def for_goods_receipt_has_purchase_request(cls, instance, activities_data, all_lots):
+    def for_goods_receipt_has_no_purchase_request(cls, instance, stock_data, all_lots):
         goods_receipt_warehouses = instance.goods_receipt_warehouse_goods_receipt.all()
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             if gr_item.product.general_traceability_method != 1:  # None + Sn
@@ -116,7 +116,7 @@ class GoodsReceipt(DataAbstractModel):
                     casted_cost = (
                         gr_item.product_unit_price * gr_prd_wh.quantity_import / casted_quantity
                     ) if casted_quantity > 0 else 0
-                    activities_data.append({
+                    stock_data.append({
                         'product': gr_item.product,
                         'warehouse': gr_prd_wh.warehouse,
                         'system_date': instance.date_approved,
@@ -138,7 +138,7 @@ class GoodsReceipt(DataAbstractModel):
                         casted_cost = (
                             gr_item.product_unit_price * lot.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
-                        activities_data.append({
+                        stock_data.append({
                             'product': gr_item.product,
                             'warehouse': gr_prd_wh.warehouse,
                             'system_date': instance.date_approved,
@@ -159,10 +159,10 @@ class GoodsReceipt(DataAbstractModel):
                                 'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                             }
                         })
-        return activities_data
+        return stock_data
 
     @classmethod
-    def for_goods_receipt_has_no_purchase_request(cls, instance, activities_data, all_lots):
+    def for_goods_receipt_has_purchase_request(cls, instance, stock_data, all_lots):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             for pr_product in gr_item.goods_receipt_request_product_gr_product.all():
                 purchase_request = None
@@ -176,8 +176,8 @@ class GoodsReceipt(DataAbstractModel):
                         casted_cost = (
                             gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
-                        activities_data.append({
-                            'purchase_request': purchase_request,
+                        stock_data.append({
+                            'sale_order': purchase_request.sale_order if purchase_request else None,
                             'product': gr_item.product,
                             'warehouse': prd_wh.warehouse,
                             'system_date': instance.date_approved,
@@ -200,8 +200,8 @@ class GoodsReceipt(DataAbstractModel):
                             casted_cost = (
                                 gr_item.product_unit_price * lot.quantity_import / casted_quantity
                             ) if casted_quantity > 0 else 0
-                            activities_data.append({
-                                'purchase_request': purchase_request,
+                            stock_data.append({
+                                'sale_order': purchase_request.sale_order if purchase_request else None,
                                 'product': gr_item.product,
                                 'warehouse': prd_wh.warehouse,
                                 'system_date': instance.date_approved,
@@ -223,31 +223,33 @@ class GoodsReceipt(DataAbstractModel):
                                     'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                                 }
                             })
-        return activities_data
+        return stock_data
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
         all_lots = cls.get_all_lots(instance)
-        activities_data = []
+        stock_data = []
         if instance.goods_receipt_pr_goods_receipt.count() == 0:
-            activities_data = cls.for_goods_receipt_has_purchase_request(instance, activities_data, all_lots)
+            stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
         else:
-            activities_data = cls.for_goods_receipt_has_no_purchase_request(instance, activities_data, all_lots)
+            stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
-            activities_data
+            stock_data
         )
-        return activities_data
+        return stock_data
 
     @classmethod
-    def regis_stock_when_receipt(cls, instance, activities_data):
-        for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
-            sale_order = po_pr_mapped.purchase_request.sale_order
-            if sale_order:
-                for item in activities_data:
-                    GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
-        return True
+    def regis_stock_when_receipt(cls, instance, stock_data):
+        if instance.company.company_config.cost_per_project:  # Case 5
+            for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
+                sale_order = po_pr_mapped.purchase_request.sale_order
+                if sale_order:
+                    for item in stock_data:
+                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
+            return True
+        return False
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -279,8 +281,8 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_po(self)
                         GRFinishHandler.update_is_all_receipted_ia(self)
 
-            self.prepare_data_for_logging(self)
-            # self.regis_stock_when_receipt(self, activities_data)
+            stock_data = self.prepare_data_for_logging(self)
+            self.regis_stock_when_receipt(self, stock_data)
 
         # diagram
         GRHandler.push_diagram(instance=self)

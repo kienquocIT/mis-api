@@ -11,6 +11,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
     lot_mapped = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportInventory
@@ -18,6 +19,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             'id',
             'product',
             'lot_mapped',
+            'sale_order',
             'period_mapped',
             'sub_period_order',
             'stock_activities'
@@ -42,6 +44,14 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         } if obj.lot_mapped else {}
 
     @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'code': obj.sale_order.code,
+            'title': obj.sale_order.title
+        } if obj.sale_order else {}
+
+    @classmethod
     def get_period_mapped(cls, obj):
         return {
             'id': obj.period_mapped_id,
@@ -55,7 +65,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         # lấy các hoạt động nhập-xuất
         for log in all_logs_by_month.filter(
             product_id=obj.product_id,
-            lot_mapped=obj.lot_mapped,
             warehouse_id=wh_id,
         ):
             casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
@@ -98,7 +107,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             wh_id, wh_code, wh_title = warehouse_item
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = obj.product.report_inventory_product_warehouse_product.filter(
-                lot_mapped=obj.lot_mapped,
                 warehouse_id=wh_id,
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order
@@ -307,7 +315,6 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         sum_in_value = 0
         sum_out_value = 0
         for log in obj.product.report_inventory_by_month_product.filter(
-            lot_mapped_id=obj.lot_mapped_id,
             warehouse_id=obj.warehouse_id,
             report_inventory__period_mapped_id=obj.period_mapped_id,
             report_inventory__sub_period_order=obj.sub_period_order,

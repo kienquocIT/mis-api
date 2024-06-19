@@ -386,7 +386,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             delivery_data=None,
             is_updated=False,
             state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
-            sale_order_data=instance.sale_order_data,
+            sale_order_data=instance.order_delivery.sale_order_data,
             estimated_delivery_date=instance.estimated_delivery_date,
             actual_delivery_date=instance.actual_delivery_date,
             customer_data=instance.customer_data,
@@ -442,14 +442,15 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         order_delivery.save(update_fields=['sub', 'state'])
 
     @classmethod
-    def for_lot(cls, instance, lot_data, activities_data, product_obj, warehouse_obj, uom_obj):
+    def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(
                     uom_obj, lot.get('quantity_delivery')
                 )
-                activities_data.append({
+                stock_data.append({
+                    'sale_order': instance.order_delivery.sale_order,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
                     'system_date': instance.date_done,
@@ -470,12 +471,13 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
                     }
                 })
-        return activities_data
+        return stock_data
 
     @classmethod
-    def for_sn(cls, instance, sn_data, activities_data, product_obj, warehouse_obj, uom_obj):
+    def for_sn(cls, instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj):
         casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, len(sn_data))
-        activities_data.append({
+        stock_data.append({
+            'sale_order': instance.order_delivery.sale_order,
             'product': product_obj,
             'warehouse': warehouse_obj,
             'system_date': instance.date_done,
@@ -490,11 +492,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             'value': 0,  # theo gia cost
             'lot_data': {}
         })
-        return activities_data
+        return stock_data
 
     @classmethod
     def prepare_data_for_logging(cls, instance, validated_delivery_data):
-        activities_data = []
+        stock_data = []
         for deli_item in validated_delivery_data:
             product_obj = Product.objects.filter(id=deli_item.get('product_id')).first()
             if product_obj and len(deli_item.get('delivery_data')) > 0:
@@ -507,7 +509,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     sn_data = delivery_data.get('serial_data')
                     if product_obj.general_traceability_method == 0:  # None
                         casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, quantity)
-                        activities_data.append({
+                        stock_data.append({
+                            'sale_order': instance.order_delivery.sale_order,
                             'product': product_obj,
                             'warehouse': warehouse_obj,
                             'system_date': instance.date_done,
@@ -523,13 +526,13 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                             'lot_data': {}
                         })
                     if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
-                        cls.for_lot(instance, lot_data, activities_data, product_obj, warehouse_obj, uom_obj)
+                        cls.for_lot(instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj)
                     if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                        cls.for_sn(instance, sn_data, activities_data, product_obj, warehouse_obj, uom_obj)
+                        cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,
-            activities_data
+            stock_data
         )
         return True
 
