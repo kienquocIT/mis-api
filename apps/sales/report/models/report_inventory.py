@@ -39,21 +39,9 @@ class ReportInventory(DataAbstractModel):  # rp_inventory
     )
 
     @classmethod
-    def get_report_inventory(cls, **kwargs):
-        """
-        * kwargs_format:
-            - required: [tenant_obj, company_obj, employee_created_obj, employee_inherit_obj,
-                        product_obj, period_obj, sub_period_order]
-            - optional: []
-        """
-        tenant_obj = kwargs.get('tenant_obj')
-        company_obj = kwargs.get('company_obj')
-        employee_created_obj = kwargs.get('employee_created_obj')
-        employee_inherit_obj = kwargs.get('employee_inherit_obj')
-        product_obj = kwargs.get('product_obj')
-        period_obj = kwargs.get('period_obj')
-        sub_period_order = kwargs.get('sub_period_order')
-
+    def get_report_inventory(
+            cls, tenant_obj, company_obj, emp_created_obj, emp_inherit_obj, period_obj, sub_period_order, product_obj
+    ):
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             # (obj này là root) - có thì return, chưa có thì tạo mới
@@ -69,8 +57,8 @@ class ReportInventory(DataAbstractModel):  # rp_inventory
                 rp_inventory = cls.objects.create(
                     tenant=tenant_obj,
                     company=company_obj,
-                    employee_created=employee_created_obj if employee_created_obj else employee_inherit_obj,
-                    employee_inherit=employee_inherit_obj,
+                    employee_created=emp_created_obj if emp_created_obj else emp_inherit_obj,
+                    employee_inherit=emp_inherit_obj if emp_inherit_obj else emp_created_obj,
                     product=product_obj,
                     period_mapped=period_obj,
                     sub_period_order=sub_period_order,
@@ -219,20 +207,20 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             div = stock_obj.company.company_config.definition_inventory_valuation
             if len(item.get('lot_data', {})) == 0:
                 rp_inventory = ReportInventory.get_report_inventory(
-                    **{
-                        'tenant_obj': stock_obj.tenant,
-                        'company_obj': stock_obj.company,
-                        'employee_created_obj': stock_obj.employee_created,
-                        'employee_inherit_obj': stock_obj.employee_inherit,
-                        'product_obj': item['product'],
-                        'period_obj': period_obj,
-                        'sub_period_order': sub_period_order
-                    }
+                    stock_obj.tenant,
+                    stock_obj.company,
+                    stock_obj.employee_created,
+                    stock_obj.employee_inherit,
+                    period_obj,
+                    sub_period_order,
+                    item['product']
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
+                    div,
                     item['product'].id,
-                    item['warehouse'].id,
-                    div
+                    **{
+                        'warehouse_id': item['warehouse'].id
+                    }
                 )['cost'] if item['stock_type'] == -1 else item['cost']
                 new_log = cls(
                     tenant=stock_obj.tenant,
@@ -263,20 +251,20 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             else:
                 lot_data = item.get('lot_data', {})
                 rp_inventory = ReportInventory.get_report_inventory(
-                    **{
-                        'tenant_obj': stock_obj.tenant,
-                        'company_obj': stock_obj.company,
-                        'employee_created_obj': stock_obj.employee_created,
-                        'employee_inherit_obj': stock_obj.employee_inherit,
-                        'product_obj': item['product'],
-                        'period_obj': period_obj,
-                        'sub_period_order': sub_period_order
-                    }
+                    stock_obj.tenant,
+                    stock_obj.company,
+                    stock_obj.employee_created,
+                    stock_obj.employee_inherit,
+                    period_obj,
+                    sub_period_order,
+                    item['product']
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
+                    div,
                     item['product'].id,
-                    item['warehouse'].id,
-                    div
+                    **{
+                        'warehouse_id': item['warehouse'].id
+                    }
                 )['cost'] if item['stock_type'] == -1 else item['cost']
 
                 lot_data['lot_value'] = cost * item['quantity']  # update value vao Lot
@@ -315,9 +303,11 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         if div == 0:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
             latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
+                div,
                 log.product_id,
-                log.warehouse_id,
-                div
+                ** {
+                    'warehouse_id': log.warehouse_id
+                }
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_perpetual_inventory(
@@ -344,15 +334,17 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             return True
         if div == 1:
             # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
-            latest_value = LoggingSubFunction.get_latest_log_value_dict(
+            latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
+                div,
                 log.product_id,
-                log.warehouse_id,
-                div
+                **{
+                    'warehouse_id': log.warehouse_id
+                }
             )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_periodic_inventory(
                 log,
-                latest_value
+                latest_value_dict
             )
             # cập nhập giá trị tồn kho hiện tại mới cho log
             # chỗ này k cần check SL = 0 -> cost = 0 vì mọi TH cost đều = 0
@@ -364,7 +356,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                 log,
                 period_obj,
                 sub_period_order,
-                latest_value,
+                latest_value_dict,
                 div
             )
             return True
@@ -655,43 +647,56 @@ class LatestSub(SimpleAbstractModel):
 
 class LoggingSubFunction:
     @classmethod
-    def get_latest_log(cls, product_id, warehouse_id):
+    def get_latest_log(cls, product_id, **kwargs):
         """
+        * kwargs_format:
+        - required: []
+        - optional: [warehouse_id]
         Hàm lấy Log gần nhất theo sp và kho. Không có trả về None
         """
         last_record = LatestSub.objects.filter(
             product_id=product_id,
-            warehouse_id=warehouse_id
+            warehouse_id=kwargs.get('warehouse_id')
         ).first()
         return last_record.latest_log if last_record else None
 
     @classmethod
-    def get_latest_log_by_month(cls, product_id, warehouse_id, period_obj, sub_period_order):
+    def get_latest_log_by_month(cls, period_obj, sub_period_order, product_id, **kwargs):
         """
+        * kwargs_format:
+        - required: []
+        - optional: [warehouse_id]
         Hàm để lấy Log cuối cùng của tháng trước theo sp và kho. Truyền vào tham số tháng này
         """
         if int(sub_period_order) == 1:
             last_rp_prd_wh = ReportInventoryProductWarehouse.objects.filter(
                 product_id=product_id,
-                warehouse_id=warehouse_id,
+                warehouse_id=kwargs.get('warehouse_id'),
                 period_mapped__fiscal_year=period_obj.fiscal_year - 1,
                 sub_period_order=12
             ).first()
         else:
             last_rp_prd_wh = ReportInventoryProductWarehouse.objects.filter(
                 product_id=product_id,
-                warehouse_id=warehouse_id,
+                warehouse_id=kwargs.get('warehouse_id'),
                 period_mapped=period_obj,
                 sub_period_order=int(sub_period_order) - 1
             ).first()
         return last_rp_prd_wh.sub_latest_log if last_rp_prd_wh else None
 
     @classmethod
-    def get_latest_log_value_dict(cls, product_id, warehouse_id, div):
-        """ Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại """
+    def get_latest_log_value_dict(cls, div, product_id, **kwargs):
+        """
+        * kwargs_format:
+        - required: []
+        - optional: [warehouse_id]
+        Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại
+        """
         latest_trans = LoggingSubFunction.get_latest_log(
             product_id,
-            warehouse_id
+            **{
+                'warehouse_id': kwargs.get('warehouse_id')
+            }
         )
         if latest_trans:
             return {
@@ -705,48 +710,53 @@ class LoggingSubFunction:
             }
         return cls.get_opening_balance_value_dict(
             product_id,
-            warehouse_id,
-            3
+            3,
+            **{
+                'warehouse_id': kwargs.get('warehouse_id')
+            }
         )
 
     @classmethod
-    def calculate_new_value_dict_in_perpetual_inventory(cls, log, latest_value):
+    def calculate_new_value_dict_in_perpetual_inventory(cls, log, latest_value_dict):
         """ Hàm tính toán cho Phương pháp Kê khai thường xuyên """
         if log.stock_type == 1:
-            new_quantity = latest_value['quantity'] + log.quantity
-            sum_value = latest_value['value'] + log.value
+            new_quantity = latest_value_dict['quantity'] + log.quantity
+            sum_value = latest_value_dict['value'] + log.value
             new_cost = (sum_value / new_quantity) if new_quantity else 0
             new_value = sum_value
         else:
-            new_quantity = latest_value['quantity'] - log.quantity
-            new_cost = latest_value['cost']
+            new_quantity = latest_value_dict['quantity'] - log.quantity
+            new_cost = latest_value_dict['cost']
             new_value = new_cost * new_quantity
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def calculate_new_value_dict_in_periodic_inventory(cls, log, latest_value):
+    def calculate_new_value_dict_in_periodic_inventory(cls, log, latest_value_dict):
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
         if log.stock_type == 1:
             # Lúc này sum nhập đã được cập nhập
-            new_quantity = latest_value['quantity'] + log.quantity
+            new_quantity = latest_value_dict['quantity'] + log.quantity
             new_cost = 0
             new_value = 0
         else:
-            new_quantity = latest_value['quantity'] - log.quantity
+            new_quantity = latest_value_dict['quantity'] - log.quantity
             new_cost = 0
             new_value = 0
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def get_opening_balance_value_dict(cls, product_id, warehouse_id, data_type=1):
+    def get_opening_balance_value_dict(cls, product_id, data_type=1, **kwargs):
         """
+        * kwargs_format:
+        - required: []
+        - optional: [warehouse_id]
         Hàm để lấy Số dư đầu kì theo SP và KHO
         (0-quantity, 1-cost, 2-value, 3-{'quantity':, 'cost':, 'value':}, else-return1)
         """
         # tìm số dư đầu kì
         this_record = ReportInventoryProductWarehouse.objects.filter(
             product_id=product_id,
-            warehouse_id=warehouse_id,
+            warehouse_id=kwargs.get('warehouse_id'),
             for_balance=True
         ).first()
         if this_record:
@@ -766,26 +776,26 @@ class LoggingSubFunction:
         return 0 if data_type != 3 else {'quantity': 0, 'cost': 0, 'value': 0}
 
     @classmethod
-    def get_balance_data_this_sub(cls, this_record):
+    def get_balance_data_this_sub(cls, this_rp_prd_wh):
         """
         Hàm lấy opening và ending của kỳ này
         """
         # Begin get Opening
-        opening_quantity = this_record.opening_balance_quantity
-        opening_cost = this_record.opening_balance_cost
-        opening_value = this_record.opening_balance_value
+        opening_quantity = this_rp_prd_wh.opening_balance_quantity
+        opening_cost = this_rp_prd_wh.opening_balance_cost
+        opening_value = this_rp_prd_wh.opening_balance_value
         # End
 
         # Begin get Ending
-        if this_record.sub_latest_log:
-            if this_record.company.company_config.definition_inventory_valuation == 0:
-                ending_quantity = this_record.sub_latest_log.current_quantity
-                ending_cost = this_record.sub_latest_log.current_cost
-                ending_value = this_record.sub_latest_log.current_value
+        if this_rp_prd_wh.sub_latest_log:
+            if this_rp_prd_wh.company.company_config.definition_inventory_valuation == 0:
+                ending_quantity = this_rp_prd_wh.sub_latest_log.current_quantity
+                ending_cost = this_rp_prd_wh.sub_latest_log.current_cost
+                ending_value = this_rp_prd_wh.sub_latest_log.current_value
             else:
-                ending_quantity = this_record.periodic_ending_balance_quantity
-                ending_cost = this_record.periodic_ending_balance_cost
-                ending_value = this_record.periodic_ending_balance_value
+                ending_quantity = this_rp_prd_wh.periodic_ending_balance_quantity
+                ending_cost = this_rp_prd_wh.periodic_ending_balance_cost
+                ending_value = this_rp_prd_wh.periodic_ending_balance_value
         else:
             ending_quantity = opening_quantity
             ending_cost = opening_cost
