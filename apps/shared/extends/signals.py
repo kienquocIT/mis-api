@@ -50,6 +50,7 @@ from apps.eoffice.businesstrip.serializers import BusinessRequestUpdateSerialize
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
+from apps.core.forms.models import Form
 
 logger = logging.getLogger(__name__)
 
@@ -1081,3 +1082,9 @@ def task_validate_user_otp(sender, instance, created, **kwargs):
             otp_id=instance.id,
             otp=instance.otp,
         )
+
+
+@receiver(post_save, sender=Form)
+def form_post_save(sender, instance, created, **kwargs):
+    if created is True:
+        instance.get_or_create_publish()

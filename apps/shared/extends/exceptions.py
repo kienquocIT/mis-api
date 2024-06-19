@@ -12,11 +12,19 @@ from .push_notify import TeleBotPushNotify
 logger = logging.getLogger()
 
 
+def get_exception_handler_opts(context):
+    return {
+        'LIST_CONVERT_TO': getattr(context['view'], 'LIST_CONVERT_TO', 'STR'),  # 'FIRST', 'LIST_STR', 'STR'
+        'LIST_STR_JOIN_CHAR': getattr(context['view'], 'LIST_STR_JOIN_CHAR', '. '),
+        'DATA_ALWAYS_LIST': getattr(context['view'], 'DATA_ALWAYS_LIST', False),  # "a" => ["a"]
+    }
+
+
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is not None:
-        response.data = convert_errors(response.data, response.status_code)
+        response.data = convert_errors(response.data, response.status_code, get_exception_handler_opts(context))
     return response
 
 

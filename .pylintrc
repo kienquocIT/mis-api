@@ -30,4 +30,4 @@ disable=
     W0237, # arguments-renamed
     R0801, # duplicate-code
     F0002, # astroid-error
-good-names=id
+good-names=id,js

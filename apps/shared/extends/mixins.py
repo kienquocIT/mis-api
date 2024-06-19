@@ -540,6 +540,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             return True
         return False
 
+    def get_state_transaction(self):
+        return True
+
     class Meta:
         abstract = True
 
@@ -1107,15 +1110,20 @@ class BaseDestroyMixin(BaseMixin):
                     hidden_field=self.retrieve_hidden_field,
                 )
             if state_check is True:
-                self.perform_destroy(instance, is_purge)
+                self.perform_destroy(instance, is_purge, self.get_state_transaction())
                 return ResponseController.no_content_204()
             return ResponseController.forbidden_403()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod
-    def perform_destroy(instance, is_purge=False):
+    def perform_destroy(instance, is_purge, state_transaction):
         try:
-            with transaction.atomic():
+            if state_transaction:
+                with transaction.atomic():
+                    if is_purge is True:
+                        ...
+                    return instance.delete()
+            else:
                 if is_purge is True:
                     ...
                 return instance.delete()

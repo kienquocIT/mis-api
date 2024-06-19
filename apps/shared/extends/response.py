@@ -1,3 +1,4 @@
+from rest_framework.exceptions import ErrorDetail
 from rest_framework.response import Response
 
 KEY_NOT_CONVERT_EXCEPTIONS = ['id_list']
@@ -5,7 +6,50 @@ KEY_NOT_CONVERT_EXCEPTIONS = ['id_list']
 KEY_NOT_EXCEPTIONS = ['result', 'status', 'results', 'error_data']
 
 
-def convert_errors(dict_error, status_code=None):  # pylint: disable=R0912
+def convert_errors(dict_error, status_code=None, opts=None):  # pylint: disable=R0912
+    if opts is None:
+        opts = {}
+    opts = {
+        'LIST_CONVERT_TO': 'STR',  # 'FIRST', 'LIST_STR', 'STR'
+        'LIST_STR_JOIN_CHAR': '. ',
+        'DATA_ALWAYS_LIST': False,  # "a" => ["a"]
+        **opts
+    }
+
+    errors = {}
+    for field, value in dict_error.items():  # pylint: disable=R1702
+        if value:
+            if field in KEY_NOT_CONVERT_EXCEPTIONS:
+                errors.update({field: value})
+            elif field not in KEY_NOT_EXCEPTIONS:
+                if isinstance(value, str or ErrorDetail):
+                    errors.update({field: str(value)})
+                elif isinstance(value, list):
+                    if opts['LIST_CONVERT_TO'] == 'FIRST':
+                        errors.update({field: str(value[0])})
+                    elif opts['LIST_CONVERT_TO'] == 'LIST_STR':
+                        errors.update({field: [str(item) for item in value]})
+                    elif opts['LIST_CONVERT_TO'] == 'STR':
+                        errors.update({field: opts['LIST_STR_JOIN_CHAR'].join([str(item) for item in value])})
+                elif isinstance(value, dict):
+                    for key_dict, value_dict in value.items():
+                        if isinstance(value, str or ErrorDetail):
+                            errors.update({field: str(value)})
+                        elif isinstance(value, list):
+                            if opts['LIST_CONVERT_TO'] == 'FIRST':
+                                errors.update({field: str(value[0])})
+                            elif opts['LIST_CONVERT_TO'] == 'LIST_STR':
+                                errors.update({field: [str(item) for item in value]})
+                            elif opts['LIST_CONVERT_TO'] == 'STR':
+                                errors.update({field: ", ".join([str(item) for item in value])})
+                        else:
+                            errors.update({key_dict: str(value_dict)})
+    if status_code:
+        return {"status": status_code, "errors": errors}
+    return {"errors": errors}
+
+
+def convert_errors1(dict_error, status_code=None):  # pylint: disable=R0912
     data = {"errors": {}}
     for field, value in dict_error.items():  # pylint: disable=R1702
         if field in KEY_NOT_CONVERT_EXCEPTIONS:
