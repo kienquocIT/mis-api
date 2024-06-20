@@ -121,6 +121,7 @@ class GoodsReturn(DataAbstractModel):
                     delivery_item.current_cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
+                    'sale_order': instance.delivery.order_delivery.sale_order,
                     'product': item.product,
                     'warehouse': item.return_to_warehouse,
                     'system_date': instance.date_approved,
