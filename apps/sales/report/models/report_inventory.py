@@ -651,7 +651,7 @@ class LoggingSubFunction:
         """
         * kwargs_format:
         - required: []
-        - optional: [warehouse_id]
+        - optional 1: [warehouse_id]
         Hàm lấy Log gần nhất theo sp và kho. Không có trả về None
         """
         last_record = LatestSub.objects.filter(
@@ -665,7 +665,7 @@ class LoggingSubFunction:
         """
         * kwargs_format:
         - required: []
-        - optional: [warehouse_id]
+        - optional 1: [warehouse_id]
         Hàm để lấy Log cuối cùng của tháng trước theo sp và kho. Truyền vào tham số tháng này
         """
         if int(sub_period_order) == 1:
@@ -689,7 +689,7 @@ class LoggingSubFunction:
         """
         * kwargs_format:
         - required: []
-        - optional: [warehouse_id]
+        - optional 1: [warehouse_id]
         Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại
         """
         latest_trans = LoggingSubFunction.get_latest_log(
@@ -749,7 +749,7 @@ class LoggingSubFunction:
         """
         * kwargs_format:
         - required: []
-        - optional: [warehouse_id]
+        - optional 1: [warehouse_id]
         Hàm để lấy Số dư đầu kì theo SP và KHO
         (0-quantity, 1-cost, 2-value, 3-{'quantity':, 'cost':, 'value':}, else-return1)
         """
