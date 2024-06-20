@@ -1,12 +1,10 @@
-from django.db.models import Q
-from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer, \
     PromotionDetailSerializer, PromotionUpdateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin,\
-    BaseDestroyMixin, TypeCheck
+    BaseDestroyMixin
 
 __all__ = ['PromotionList', 'PromotionDetail', 'PromotionCheckList']
 
