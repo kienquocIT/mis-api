@@ -21,7 +21,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
         'delivery_call': ['exact'],
-        'system_status': ['in'],
+        'system_status': ['exact', 'in'],
         'quotation_id': ['exact'],
         'customer_id': ['exact'],
         'employee_inherit_id': ['exact', 'in'],
