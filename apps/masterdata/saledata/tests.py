@@ -702,7 +702,7 @@ class UoMTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response1.data['errors'],
-            ['non_field_errors'],
+            ['detail'],
             check_sum_second=True,
         )
 
@@ -2992,7 +2992,7 @@ class PriceListTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response5.data['errors'],
-            ['non_field_errors'],
+            ['detail'],
             check_sum_second=True,
         )
 

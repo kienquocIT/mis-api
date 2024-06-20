@@ -43,8 +43,9 @@ from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
-from ...sales.lead.models import LeadStage
+from apps.sales.lead.models import LeadStage
 from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
+from apps.core.forms.models import Form
 
 logger = logging.getLogger(__name__)
 
@@ -1128,10 +1129,7 @@ def project_member_event_destroy(sender, instance, **kwargs):
         )
 
 
-@receiver(post_save, sender=Opportunity)
-def handler_update_opportunity_stage(sender, instance, created, **kwargs):
-    if instance.check_config_auto_update_stage():
-        instance.win_rate = instance.auto_update_stage(
-            list_property=instance.parse_property_stage(obj=instance), obj=instance
-        )
-    return True
+@receiver(post_save, sender=Form)
+def form_post_save(sender, instance, created, **kwargs):
+    if created is True:
+        instance.get_or_create_publish()

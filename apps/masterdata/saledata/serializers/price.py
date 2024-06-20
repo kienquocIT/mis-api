@@ -289,12 +289,18 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             price_type = validate_data['price_list_type']
 
             if price_source.price_list_type != price_type:
-                raise serializers.ValidationError(PriceMsg.DIFFERENT_PRICE_LIST_TYPE)
+                raise serializers.ValidationError({
+                    'detail': PriceMsg.DIFFERENT_PRICE_LIST_TYPE,
+                })
             if validate_data.get('auto_update') is False and validate_data.get('can_delete') is True:
-                raise serializers.ValidationError(PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE)
+                raise serializers.ValidationError({
+                    'detail': PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE,
+                })
         else:
             if validate_data.get('auto_update') is True and validate_data.get('can_delete') is True:
-                raise serializers.ValidationError(PriceMsg.AUTO_UPDATE_CAN_DELETE_ARE_FALSE)
+                raise serializers.ValidationError({
+                    'detail': PriceMsg.AUTO_UPDATE_CAN_DELETE_ARE_FALSE,
+                })
         return validate_data
 
     @classmethod

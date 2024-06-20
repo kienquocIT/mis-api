@@ -203,7 +203,8 @@ class MailTemplateSystem(MasterDataAbstractModel):
         return obj
 
     def save(self, *args, **kwargs):
-        self.contents = HTMLController(html_str=self.contents).clean()
+        if not HTMLController.detect_escape(self.contents):
+            self.contents = HTMLController(html_str=self.contents).clean()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -246,7 +247,8 @@ class MailTemplate(MasterDataAbstractModel):
         if self.is_default is True:
             self.is_active = True
             self.confirm_unique_using()
-        self.contents = HTMLController(html_str=self.contents).clean()
+        if not HTMLController.detect_escape(self.contents):
+            self.contents = HTMLController(html_str=self.contents).clean()
         super().save(*args, **kwargs)
 
     class Meta:

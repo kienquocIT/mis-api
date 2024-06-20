@@ -311,12 +311,12 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # opportunity
-                        QuotationFinishHandler.update_opportunity_stage(instance=self)
+                        QuotationFinishHandler.update_opportunity(instance=self)
                         # customer
                         QuotationFinishHandler.push_to_customer_activity(instance=self)
         if self.system_status in [4]:  # cancel
             # opportunity
-            QuotationFinishHandler.update_opportunity_stage(instance=self)
+            QuotationFinishHandler.update_opportunity(instance=self)
         # opportunity log
         QuotationHandler.push_opportunity_log(instance=self)
         # diagram

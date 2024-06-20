@@ -4,7 +4,7 @@ from drf_yasg import openapi
 from rest_framework import serializers, status
 
 from .controllers import ResponseController
-from .exceptions import convert_errors
+from .exceptions import ConvertErrors
 
 __all__ = [
     'get_response_schema',
@@ -89,7 +89,7 @@ def get_response_schema(
                 description='Unauthorized',
                 schema=Http401RespSerializer(),
                 examples={
-                    'application/json': convert_errors(
+                    'application/json': ConvertErrors().convert(
                         ResponseController.unauthorized_401().data,
                         status.HTTP_401_UNAUTHORIZED
                     ),
@@ -101,7 +101,7 @@ def get_response_schema(
                 description='Forbidden',
                 schema=Http403RespSerializer(),
                 examples={
-                    'application/json': convert_errors(
+                    'application/json': ConvertErrors().convert(
                         ResponseController.forbidden_403().data,
                         status.HTTP_403_FORBIDDEN
                     ),
@@ -113,7 +113,7 @@ def get_response_schema(
                 description='Server Error',
                 schema=Http500RespSerializer(),
                 examples={
-                    'application/json': convert_errors(
+                    'application/json': ConvertErrors().convert(
                         ResponseController.internal_server_error_500().data,
                         status.HTTP_500_INTERNAL_SERVER_ERROR
                     ),
@@ -125,7 +125,7 @@ def get_response_schema(
                 description='Server Error',
                 schema=Http400RespSerializer(),
                 examples={
-                    'application/json': convert_errors(
+                    'application/json': ConvertErrors().convert(
                         {'field_a': ['This field is required']},
                         status.HTTP_400_BAD_REQUEST
                     ),

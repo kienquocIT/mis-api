@@ -282,7 +282,7 @@ class SaleOrder(DataAbstractModel):
                         # product
                         SOFinishHandler.push_product_info(instance=self)
                         # opportunity
-                        SOFinishHandler.update_opportunity_stage(instance=self)
+                        SOFinishHandler.update_opportunity(instance=self)
                         # customer
                         SOFinishHandler.push_to_customer_activity(instance=self)
                         # reports
@@ -297,7 +297,7 @@ class SaleOrder(DataAbstractModel):
 
         if self.system_status in [4]:  # cancel
             # opportunity
-            SOFinishHandler.update_opportunity_stage(instance=self)
+            SOFinishHandler.update_opportunity(instance=self)
         # opportunity log
         SOHandler.push_opportunity_log(instance=self)
         # diagram

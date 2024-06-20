@@ -243,8 +243,9 @@ class SaleOrderActiveDeliverySerializer:
             employee_inherit=self.config_obj.lead_delivery,
             system_status=1
         )
-        # update opp stage
-        SOFinishHandler.update_opportunity_stage(instance=self.order_obj)
+        # handle opp stage & win_rate
+        if self.order_obj.opportunity:
+            self.order_obj.opportunity.handle_stage_win_rate(obj=self.order_obj.opportunity)
         return order_delivery
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):

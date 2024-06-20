@@ -655,6 +655,23 @@ class ViewAttribute:
             ctx.update(ctx_after)
         return ctx
 
+    def header_language(self):
+        if self.request:
+            head_lang = self.request.headers.get('Accept-Language', '').lower()
+            if head_lang:
+                if ',' in head_lang:
+                    head_lang = head_lang.split(",")[0]
+
+                if ';' in head_lang:
+                    head_lang = head_lang.split(";")
+
+                if '-' in head_lang:
+                    head_lang = head_lang.split('-')[0]
+
+                if head_lang in settings.LANGUAGE_CHOICE_CODE:
+                    return head_lang
+        return settings.LANGUAGE_CODE
+
 
 class PermissionController:
     @classmethod
@@ -1920,9 +1937,10 @@ def mask_view(**parent_kwargs):
                         if settings.DEBUG_PERMIT:
                             print(
                                 'active language [mask_view]:',
-                                self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE)
+                                self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE),
+                                _cls_attr.header_language()
                             )
-                        translation.activate(self.request.headers.get('Accept-Language', settings.LANGUAGE_CODE))
+                        translation.activate(_cls_attr.header_language())
 
                     # call view when access login and auth permission | Data returned is three case:
                     #   1. ValidateError from valid --> convert to HTTP 400
