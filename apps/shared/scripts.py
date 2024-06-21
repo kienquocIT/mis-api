@@ -1629,6 +1629,11 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             }
         ])
 
+        ProductWareHouse.objects.filter(id__in=[
+            '1554f02491394d4793c259aa7be051d8',
+            '328ae65745644a66b90fb18e76dd2737',
+        ]).delete()
+
         # đầu kỳ SW
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
@@ -1640,14 +1645,29 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
             sub_period_order=3,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(7),
-            opening_balance_value=float(56000000),
+            opening_balance_quantity=float(3),
+            opening_balance_value=float(24000000),
             opening_balance_cost=float(8000000),
-            ending_balance_quantity=float(7),
-            ending_balance_value=float(56000000),
+            ending_balance_quantity=float(3),
+            ending_balance_value=float(24000000),
             ending_balance_cost=float(8000000),
             for_balance=True
         )
+        ProductWareHouse.objects.filter(id='5da687717c6049a1905a6193e3f41c51').update(
+            stock_amount=7,
+            receipt_amount=7
+        )
+        ProductWareHouse.objects.filter(id='b7b6a84e-f38e-492e-bf9a-7b03cbe02b52').update(
+            stock_amount=12,
+            receipt_amount=24
+        )
+        prd_wh = ProductWareHouse.objects.filter(id='025e7896fd874c80befda6f18ed148b1').first()
+        if prd_wh:
+            for sn in ProductWareHouseSerial.objects.filter(product_warehouse=prd_wh):
+                sn.product_warehouse_id = '5da687717c6049a1905a6193e3f41c51'
+                sn.save(update_fields=['product_warehouse_id'])
+            prd_wh.delete()
+        ProductWareHouse.objects.filter(id='8d34b13a63c8464daeb4afb53348003a').delete()
         # đầu kỳ Vision
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
@@ -1657,15 +1677,32 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=9,
+            sub_period_order=3,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(2),
-            opening_balance_value=float(80000000),
+            opening_balance_quantity=float(5),
+            opening_balance_value=float(200000000),
             opening_balance_cost=float(40000000),
-            ending_balance_quantity=float(2),
-            ending_balance_value=float(80000000),
+            ending_balance_quantity=float(5),
+            ending_balance_value=float(200000000),
             ending_balance_cost=float(40000000),
             for_balance=True
+        )
+        ProductWareHouseLot.objects.filter(id='9b310c99-f2bb-4f78-8f9b-8ec4abdf9023').update(
+            product_warehouse_id='5c296dbf-1885-47b1-aada-b318724d6859'
+        )
+        ProductWareHouseLot.objects.filter(id='12de4425-e1e3-41a0-bd28-6e44d78ec260').update(
+            quantity_import=2
+        )
+        ProductWareHouseLot.objects.filter(id='153cb1a1-7004-4fbd-a08a-61fc9b172a1d').update(
+            quantity_import=3
+        )
+        ProductWareHouse.objects.filter(id='5c296dbf-1885-47b1-aada-b318724d6859').update(
+            sold_amount=12,
+            stock_amount=3
+        )
+        ProductWareHouse.objects.filter(id='52614125-cebd-405c-a59a-a0c4890abfed').update(
+            stock_amount=3,
+            receipt_amount=3
         )
         # đầu kỳ HP
         ReportInventoryProductWarehouse.objects.create(
@@ -1686,6 +1723,59 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             ending_balance_cost=float(138000000),
             for_balance=True
         )
+        prd_wh = ProductWareHouse.objects.filter(
+            product_id="e12e4dd2-fb4e-479d-ae8a-c902f3dbc896"
+        ).first()
+        if prd_wh:
+            prd_wh.stock_amount = 5
+            prd_wh.receipt_amount = 28
+            prd_wh.save(update_fields=['stock_amount', 'receipt_amount'])
+            if ProductWareHouseSerial.objects.filter(vendor_serial_number='hp-dk').count() == 0:
+                new_sn = [
+                    ProductWareHouseSerial(
+                        tenant=company.tenant,
+                        company=company,
+                        vendor_serial_number='hp-dk',
+                        serial_number='hp-dk-01',
+                        product_warehouse=prd_wh
+                    ),
+                    ProductWareHouseSerial(
+                        tenant=company.tenant,
+                        company=company,
+                        vendor_serial_number='hp-dk',
+                        serial_number='hp-dk-02',
+                        product_warehouse=prd_wh
+                    )
+                ]
+                ProductWareHouseSerial.objects.bulk_create(new_sn)
+                prd_wh.product.stock_amount = 5
+                prd_wh.product.available_amount = -24
+                prd_wh.product.save(update_fields=['stock_amount', 'available_amount'])
+        # đầu kỳ Transceiver
+        ReportInventoryProductWarehouse.objects.create(
+            tenant=company.tenant,
+            company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            product_id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(4),
+            opening_balance_value=float(32000000),
+            opening_balance_cost=float(8000000),
+            ending_balance_quantity=float(4),
+            ending_balance_value=float(32000000),
+            ending_balance_cost=float(8000000),
+            for_balance=True
+        )
+        ProductWareHouse.objects.filter(id='a0401285-454e-484b-a54a-5795284f19cd').update(stock_amount=10)
+        Product.objects.filter(id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c').update(stock_amount=16, available_amount=1)
+        lot = ProductWareHouseLot.objects.filter(id='d3d5116b56fa4171a78b71ed53b1cce6').first()
+        if lot:
+            lot.quantity_import = 0
+            lot.save(update_fields=['quantity_import'])
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
