@@ -417,7 +417,7 @@ class ReportInventoryList(BaseListMixin):
                     'product__report_inventory_by_month_product'
                 ).filter(
                     period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
-                ).order_by('warehouse__code', '-product__code', '-lot_mapped__lot_number')
+                ).order_by('warehouse__code', 'product__code', 'lot_mapped__lot_number')
 
             return super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
@@ -426,7 +426,7 @@ class ReportInventoryList(BaseListMixin):
                 'product__report_inventory_by_month_product'
             ).filter(
                 period_mapped=period_mapped, sub_period_order=sub_period_order
-            ).order_by('warehouse__code', '-product__code', '-lot_mapped__lot_number')
+            ).order_by('warehouse__code', 'product__code', 'lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()
 
