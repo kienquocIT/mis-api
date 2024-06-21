@@ -261,7 +261,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'system_date': log.system_date,
                 'lot_number': lot.get('lot_number'),
                 'expire_date': lot.get('lot_expire_date'),
-                'log_order': log.log_order
+                'log_order': log.log_order,
+                'trans_title': log.trans_title
             })
         else:
             casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
@@ -273,7 +274,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'system_date': log.system_date,
                 'lot_number': '',
                 'expire_date': '',
-                'log_order': log.log_order
+                'log_order': log.log_order,
+                'trans_title': log.trans_title
             })
         return data_stock_activity
 
@@ -290,7 +292,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'system_date': log.system_date,
                 'lot_number': lot.get('lot_number'),
                 'expire_date': lot.get('lot_expire_date'),
-                'log_order': log.log_order
+                'log_order': log.log_order,
+                'trans_title': log.trans_title
             })
         else:
             casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
@@ -302,7 +305,8 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 'system_date': log.system_date,
                 'lot_number': '',
                 'expire_date': '',
-                'log_order': log.log_order
+                'log_order': log.log_order,
+                'trans_title': log.trans_title
             })
         return data_stock_activity
 
