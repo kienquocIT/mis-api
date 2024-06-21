@@ -256,6 +256,16 @@ class SaleOrder(DataAbstractModel):
                 return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
+        # check delivery (if SO was used for OrderDelivery => can't reject)
+        if hasattr(instance, 'delivery_of_sale_order'):
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
