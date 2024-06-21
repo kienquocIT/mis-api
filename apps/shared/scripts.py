@@ -1654,13 +1654,21 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             for_balance=True
         )
         ProductWareHouse.objects.filter(id='5da687717c6049a1905a6193e3f41c51').update(
-            stock_amount=7,
-            receipt_amount=7
+            stock_amount=5,
+            receipt_amount=5
         )
         ProductWareHouse.objects.filter(id='b7b6a84e-f38e-492e-bf9a-7b03cbe02b52').update(
-            stock_amount=12,
-            receipt_amount=24
+            stock_amount=14,
+            receipt_amount=26
         )
+
+        for sn in ProductWareHouseSerial.objects.filter(id__in=[
+            '78275273-0b24-40ee-8f53-c353f640fb12',
+            '8c322c95-116d-4ee4-893c-bb337a0656e1'
+        ]):
+            sn.product_warehouse_id = 'b7b6a84e-f38e-492e-bf9a-7b03cbe02b52'
+            sn.save(update_fields=['product_warehouse_id'])
+
         prd_wh = ProductWareHouse.objects.filter(id='025e7896fd874c80befda6f18ed148b1').first()
         if prd_wh:
             for sn in ProductWareHouseSerial.objects.filter(product_warehouse=prd_wh):
@@ -1770,11 +1778,21 @@ def report_rerun(company_id, start_month, run_fix_data=False):
             ending_balance_cost=float(8000000),
             for_balance=True
         )
-        ProductWareHouse.objects.filter(id='a0401285-454e-484b-a54a-5795284f19cd').update(stock_amount=10)
+        ProductWareHouse.objects.filter(id='a0401285-454e-484b-a54a-5795284f19cd').update(stock_amount=13)
         Product.objects.filter(id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c').update(stock_amount=16, available_amount=1)
         lot = ProductWareHouseLot.objects.filter(id='d3d5116b56fa4171a78b71ed53b1cce6').first()
         if lot:
             lot.quantity_import = 0
+            lot.save(update_fields=['quantity_import'])
+        lot = ProductWareHouseLot.objects.filter(id='b1d4a1cf-b72b-41d0-817d-0514d49bd352').first()
+        if lot:
+            lot.quantity_import = 13
+            lot.save(update_fields=['quantity_import'])
+
+        ProductWareHouse.objects.filter(id='78fdd83e-6cea-415c-9879-d7dbd6d4a224').update(stock_amount=3)
+        lot = ProductWareHouseLot.objects.filter(id='449f5026-b9dc-4cb0-ade8-4cda3b32018b').first()
+        if lot:
+            lot.quantity_import = 3
             lot.save(update_fields=['quantity_import'])
 
     all_delivery = OrderDeliverySub.objects.filter(
