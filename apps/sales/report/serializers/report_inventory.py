@@ -66,6 +66,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         for log in all_logs_by_month.filter(
             product_id=obj.product_id,
             warehouse_id=wh_id,
+            # lot_mapped=obj.lot_mapped,
         ):
             casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
@@ -108,6 +109,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
             # lọc lấy cost_data của sp đó theo kho + theo kì
             inventory_cost_data = obj.product.report_inventory_product_warehouse_product.filter(
                 warehouse_id=wh_id,
+                # lot_mapped=obj.lot_mapped,
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order
             ).first()
@@ -320,10 +322,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         sum_out_value = 0
         for log in obj.product.report_inventory_by_month_product.filter(
             warehouse_id=obj.warehouse_id,
+            # lot_mapped_id=obj.lot_mapped_id,
             report_inventory__period_mapped_id=obj.period_mapped_id,
             report_inventory__sub_period_order=obj.sub_period_order,
         ):
-            if log.date_created.day in list(range(date_range[0], date_range[1] + 1)):
+            if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                 if log.stock_type == 1:
                     sum_in_quantity += log.quantity
                     sum_in_value += log.value
@@ -344,19 +347,31 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         # lấy inventory_cost_data của kì hiện tại
         this_sub_value = LoggingSubFunction.get_balance_data_this_sub(obj)
 
+        ob_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_sub_value['opening_balance_quantity'])
+        ob_value = this_sub_value['opening_balance_value']
+        eb_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_sub_value['ending_balance_quantity'])
+        eb_value = this_sub_value['ending_balance_value']
+
+        if div == 0:
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+            sum_in_value = sum_in_value
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
+            sum_out_value = sum_out_value
+        else:
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+            sum_in_value = obj.sum_input_value
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+            sum_out_value = obj.sum_output_value
+
         result = {
-            'opening_balance_quantity': cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
-            ),
-            'opening_balance_value': this_sub_value['opening_balance_value'],
-            'sum_in_quantity': cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity),
-            'sum_out_quantity': cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity),
-            'sum_in_value': obj.sum_input_value,
-            'sum_out_value': [obj.sum_output_value, obj.sum_output_value * this_sub_value['ending_balance_cost']][div],
-            'ending_balance_quantity': cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
-            ),
-            'ending_balance_value': this_sub_value['ending_balance_value'],
+            'opening_balance_quantity': ob_quantity,
+            'opening_balance_value': ob_value,
+            'sum_in_quantity': sum_in_quantity,
+            'sum_in_value': sum_in_value,
+            'sum_out_quantity': sum_out_quantity,
+            'sum_out_value': sum_out_value,
+            'ending_balance_quantity': eb_quantity,
+            'ending_balance_value': eb_value,
             'data_stock_activity': data_stock_activity,
             'periodic_closed': obj.periodic_closed
         }
