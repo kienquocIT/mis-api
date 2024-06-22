@@ -347,31 +347,30 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         # lấy inventory_cost_data của kì hiện tại
         this_sub_value = LoggingSubFunction.get_balance_data_this_sub(obj)
 
-        ob_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_sub_value['opening_balance_quantity'])
-        ob_value = this_sub_value['opening_balance_value']
-        eb_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, this_sub_value['ending_balance_quantity'])
-        eb_value = this_sub_value['ending_balance_value']
-
         if div == 0:
             sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
-            sum_in_value = sum_in_value
             sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
-            sum_out_value = sum_out_value
         else:
             sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
-            sum_in_value = obj.sum_input_value
             sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+            sum_in_value = obj.sum_input_value
             sum_out_value = obj.sum_output_value
 
         result = {
-            'opening_balance_quantity': ob_quantity,
-            'opening_balance_value': ob_value,
+            'opening_balance_quantity': cast_unit_to_inv_quantity(
+                obj.product.inventory_uom,
+                this_sub_value['opening_balance_quantity']
+            ),
+            'opening_balance_value': this_sub_value['opening_balance_value'],
             'sum_in_quantity': sum_in_quantity,
             'sum_in_value': sum_in_value,
             'sum_out_quantity': sum_out_quantity,
             'sum_out_value': sum_out_value,
-            'ending_balance_quantity': eb_quantity,
-            'ending_balance_value': eb_value,
+            'ending_balance_quantity': cast_unit_to_inv_quantity(
+                obj.product.inventory_uom,
+                this_sub_value['ending_balance_quantity']
+            ),
+            'ending_balance_value': this_sub_value['ending_balance_value'],
             'data_stock_activity': data_stock_activity,
             'periodic_closed': obj.periodic_closed
         }

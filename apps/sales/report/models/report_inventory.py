@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods, Product, WareHouse
+from apps.masterdata.saledata.models import Periods
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -233,7 +233,6 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
         log_order_number = 0
-        div = stock_obj.company.company_config.definition_inventory_valuation
 
         for item in stock_data:
             kw_parameter = {}
@@ -256,7 +255,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                     **kw_parameter
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
-                    div,
+                    stock_obj.company.company_config.definition_inventory_valuation,
                     item['product'].id,
                     **kw_parameter
                 )['cost'] if item['stock_type'] == -1 else item['cost']
@@ -299,7 +298,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                     **kw_parameter
                 )
                 cost = LoggingSubFunction.get_latest_log_value_dict(
-                    div,
+                    stock_obj.company.company_config.definition_inventory_valuation,
                     item['product'].id,
                     **kw_parameter
                 )['cost'] if item['stock_type'] == -1 else item['cost']
