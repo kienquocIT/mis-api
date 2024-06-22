@@ -74,7 +74,7 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
 class PromotionCheckList(BaseListMixin):
     queryset = Promotion.objects
-    search_fields = ['title', 'code', 'customer__name']
+    search_fields = ['title', 'code']
     filterset_fields = {
         'customer_type': ['exact'],
         'customers_map_promotion__id': ['exact'],

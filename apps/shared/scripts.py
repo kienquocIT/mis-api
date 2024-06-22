@@ -32,6 +32,7 @@ from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
+from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
@@ -2003,4 +2004,18 @@ def update_opp_config_stage():
                         data['compare_data'] = int(data['compare_data'])
         config_stage.save(update_fields=['condition_datas'])
     print('update_opp_config_stage done.')
+    return True
+
+
+def init_folder():
+    for employee in Employee.objects.all():
+        Folder.objects.bulk_create([
+            Folder(
+                tenant_id=employee.tenant_id, company_id=employee.company_id,
+                title=title, is_system=True,
+                employee_inherit_id=employee.id,
+            )
+            for title in ["System", "Personal", "Shared with me"]
+        ])
+    print("init_folder done.")
     return True

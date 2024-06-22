@@ -224,9 +224,15 @@ class WFSupportFunctionsHandler:
 class WFValidateHandler:
 
     @classmethod
-    def is_possible_change_cancel(cls, obj):
-        app_label_current = obj._meta.label_lower
+    def is_possible_change_cancel(cls, obj, type_action):
+        app_label_current = obj.__class__.get_model_code()
         model_current = DisperseModel(app_model=app_label_current).get_model()
-        if model_current and all(hasattr(model_current, attr) for attr in ('objects', 'check_change_document')):
-            return getattr(model_current, 'check_change_document')(instance=obj)
+        func_check = None
+        if type_action == 0:
+            func_check = 'check_change_document'
+        if type_action == 1:
+            func_check = 'check_reject_document'
+        if func_check:
+            if model_current and all(hasattr(model_current, attr) for attr in ('objects', func_check)):
+                return getattr(model_current, func_check)(instance=obj)
         return False
