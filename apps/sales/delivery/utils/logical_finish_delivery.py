@@ -42,15 +42,6 @@ class DeliFinishHandler:
         return True
 
     @classmethod
-    def push_opp_stage(cls, instance):
-        if instance.order_delivery.sale_order and instance.order_delivery.state == 2:
-            if instance.order_delivery.sale_order.opportunity:
-                instance.order_delivery.sale_order.opportunity.save(**{
-                    'delivery_status': instance.order_delivery.state,
-                })
-        return True
-
-    @classmethod
     def push_final_acceptance(cls, instance, validated_product):
         list_data_indicator = []
         for item in validated_product:

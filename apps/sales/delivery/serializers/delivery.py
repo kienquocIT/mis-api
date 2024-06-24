@@ -587,8 +587,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
         # update sale order
         DeliFinishHandler.push_so_status(instance=instance)
-        # update opportunity
-        DeliFinishHandler.push_opp_stage(instance=instance)
         # update product
         DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
         # create final acceptance
