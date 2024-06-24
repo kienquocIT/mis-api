@@ -233,7 +233,6 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
         log_order_number = 0
-
         for item in stock_data:
             kw_parameter = {}
             if 1 in config_inventory_management:
@@ -660,6 +659,7 @@ class LatestSub(SimpleAbstractModel):
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='latest_log_warehouse',
+        null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',

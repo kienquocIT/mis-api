@@ -260,6 +260,7 @@ class ReportInventoryDetailList(BaseListMixin):
         self.pagination_class.page_size = -1
         tenant_id = self.request.user.tenant_current_id
         company_id = self.request.user.company_current_id
+        company_config = self.request.user.company_current.company_config
         self.ser_context = {
             'wh_list': set(WareHouse.objects.filter(
                 tenant_id=tenant_id, company_id=company_id
@@ -278,9 +279,10 @@ class ReportInventoryDetailList(BaseListMixin):
             self.ser_context['all_logs_by_month'] = ReportInventorySub.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
-        self.ser_context[
-            'definition_inventory_valuation'
-        ] = self.request.user.company_current.company_config.definition_inventory_valuation
+        self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
+        self.ser_context['config_inventory_management'] = ReportInventorySub.get_config_inventory_management(
+            company_config
+        )
         return self.list(request, *args, **kwargs)
 
 
@@ -440,12 +442,15 @@ class ReportInventoryList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        company_config = self.request.user.company_current.company_config
         if 'date_range' in request.query_params:
             self.ser_context = {
-                'date_range': [int(num) for num in request.query_params['date_range'].split('-')],
-                'definition_inventory_valuation':
-                    self.request.user.company_current.company_config.definition_inventory_valuation
+                'date_range': [int(num) for num in request.query_params['date_range'].split('-')]
             }
+        self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
+        self.ser_context['config_inventory_management'] = ReportInventorySub.get_config_inventory_management(
+            company_config
+        )
         return self.list(request, *args, **kwargs)
 
 
