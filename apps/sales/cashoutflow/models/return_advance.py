@@ -56,8 +56,8 @@ class ReturnAdvance(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    records = ReturnAdvance.objects.filter_current(
-                        fill__tenant=True, fill__company=True, is_delete=False, system_status=3
+                    records = ReturnAdvance.objects.filter(
+                        company=self.company, tenant=self.tenant, is_delete=False, system_status=3
                     )
                     self.code = 'RP.00' + str(records.count() + 1)
 

@@ -73,13 +73,6 @@ class GoodsIssue(DataAbstractModel):
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     quantity = lot_item['old_quantity'] - lot_item['quantity']
                     if prd_wh_lot and quantity > 0:
-                        lot_data = {
-                            'lot_id': str(prd_wh_lot.id),
-                            'lot_number': prd_wh_lot.lot_number,
-                            'lot_quantity': quantity,
-                            'lot_value': item.unit_cost * quantity,
-                            'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
-                        }
                         casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, quantity)
                         activities_data.append({
                             'product': item.product,
@@ -94,7 +87,13 @@ class GoodsIssue(DataAbstractModel):
                             'quantity': casted_quantity,
                             'cost': 0,  # theo gia cost
                             'value': 0,  # theo gia cost
-                            'lot_data': lot_data
+                            'lot_data': {
+                                'lot_id': str(prd_wh_lot.id),
+                                'lot_number': prd_wh_lot.lot_number,
+                                'lot_quantity': quantity,
+                                'lot_value': item.unit_cost * quantity,
+                                'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
+                            }
                         })
             else:
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)

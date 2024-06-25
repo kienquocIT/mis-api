@@ -232,7 +232,9 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             is_referenced_unit=True
         ).exists()
         if has_referenced_unit and validate_data.get('is_referenced_unit', None):
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE)
+            raise serializers.ValidationError({
+                'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE
+            })
         return validate_data
 
     def create(self, validated_data):

@@ -309,7 +309,7 @@ class OrderDeliverySub(DataAbstractModel):
             self.code = code
 
     @classmethod
-    def for_lot(cls, instance, deli_item, deli_data, activities_data, main_product_unit_price):
+    def for_lot(cls, instance, deli_item, deli_data, stock_data, main_product_unit_price):
         for lot in deli_data.get('lot_data', []):
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj:
@@ -317,7 +317,8 @@ class OrderDeliverySub(DataAbstractModel):
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(
                     deli_item.uom, quantity_delivery
                 )
-                activities_data.append({
+                stock_data.append({
+                    'sale_order': instance.order_delivery.sale_order,
                     'product': deli_item.product,
                     'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
                     'system_date': instance.date_done,
@@ -340,13 +341,14 @@ class OrderDeliverySub(DataAbstractModel):
                 })
             else:
                 raise ValueError(_("Lot does not found."))
-        return activities_data
+        return stock_data
 
     @classmethod
-    def for_sn(cls, instance, deli_item, deli_data, activities_data):
+    def for_sn(cls, instance, deli_item, deli_data, stock_data):
         quantity_delivery = len(deli_data.get('serial_data', []))
         casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
-        activities_data.append({
+        stock_data.append({
+            'sale_order': instance.order_delivery.sale_order,
             'product': deli_item.product,
             'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
             'system_date': instance.date_done,
@@ -361,11 +363,11 @@ class OrderDeliverySub(DataAbstractModel):
             'value': 0,  # theo gia cost
             'lot_data': {}
         })
-        return activities_data
+        return stock_data
 
     @classmethod
     def prepare_data_for_logging_run(cls, instance):
-        activities_data = []
+        stock_data = []
         so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
         for deli_item in instance.delivery_product_delivery_sub.all():
             if deli_item.picked_quantity > 0:
@@ -373,12 +375,11 @@ class OrderDeliverySub(DataAbstractModel):
                 main_product_unit_price = main_item.product_unit_price if main_item else 0
                 for deli_data in deli_item.delivery_data:
                     if len(deli_data.get('lot_data', [])) > 0:
-                        activities_data = cls.for_lot(
-                            instance, deli_item, deli_data, activities_data, main_product_unit_price
+                        stock_data = cls.for_lot(
+                            instance, deli_item, deli_data, stock_data, main_product_unit_price
                         )
                     elif len(deli_data.get('serial_data', [])) > 0:
-                        activities_data = cls.for_sn(instance, deli_item, deli_data, activities_data)
-
+                        stock_data = cls.for_sn(instance, deli_item, deli_data, stock_data)
             # for None
             if all([
                 deli_item.picked_quantity > 0,
@@ -389,7 +390,8 @@ class OrderDeliverySub(DataAbstractModel):
                 casted_quantity = ReportInventorySub.cast_quantity_to_unit(
                     deli_item.uom, deli_item.picked_quantity
                 )
-                activities_data.append({
+                stock_data.append({
+                    'sale_order': instance.order_delivery.sale_order,
                     'product': deli_item.product,
                     'warehouse': WareHouse.objects.filter(id=lot_data.get('warehouse')).first(),
                     'system_date': instance.date_done,
@@ -407,7 +409,7 @@ class OrderDeliverySub(DataAbstractModel):
         ReportInventorySub.logging_when_stock_activities_happened(
             instance,
             instance.date_done,
-            activities_data
+            stock_data
         )
         return True
 

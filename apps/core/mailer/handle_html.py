@@ -4,6 +4,7 @@ import re
 from copy import deepcopy
 from html import unescape
 
+import minify_html
 import nh3
 from bs4 import BeautifulSoup
 
@@ -30,6 +31,20 @@ class ManualNH3:
     # Ref: https://nh3.readthedocs.io/en/latest/
     soup: BeautifulSoup
 
+    nh3_tags: set[str] = None
+
+    def nh3_get_tags(self, append_tags: set[str] = None) -> set[str] or ValueError:
+        if not self.nh3_tags:
+            tags = deepcopy(nh3.ALLOWED_TAGS)  # pylint: disable=E1101
+            if isinstance(tags, set):
+                if append_tags and isinstance(append_tags, set):
+                    tags = tags.union(append_tags)
+
+                self.nh3_tags = tags
+                return tags
+            raise ValueError('NH3.ALLOWED_ATTRIBUTES return should be "dict[str, set[str]]"')
+        return self.nh3_tags
+
     # @staticmethod
     # def nh3_attribute_filter(element, attr_name, attr_value, *args, **kwargs):
     #     # return None was remove attribute it!
@@ -38,8 +53,8 @@ class ManualNH3:
 
     nh3_attributes: dict[str, set[str]] = None
 
-    def nh3_get_attributes(self) -> dict[str, set[str]] or ValueError:
-        if not self.nh3_attributes:
+    def nh3_get_attributes(self, append_attrs: dict[str, set[str]] = None) -> dict[str, set[str]] or ValueError:
+        if not self.nh3_attributes:  # pylint: disable=R1702
             attributes = deepcopy(nh3.ALLOWED_ATTRIBUTES)  # pylint: disable=E1101
             if isinstance(attributes, dict):
                 # all tag element
@@ -57,16 +72,37 @@ class ManualNH3:
                     attributes['span'] = set({})
                 attributes['span'] = attributes['span'].union({'data-code'})
 
+                if append_attrs:
+                    for key, value in append_attrs.items():
+                        if isinstance(key, str) and isinstance(value, set):
+                            if key in attributes:
+                                attributes[key] = attributes[key].union(value)
+                            else:
+                                attributes[key] = value
                 self.nh3_attributes = attributes
                 return attributes
             raise ValueError('NH3.ALLOWED_ATTRIBUTES return should be "dict[str, set[str]]"')
         return self.nh3_attributes
 
-    def nh3_clean(self):
+    def nh3_clean(self, append_tags, append_attrs, **kwargs):
         return nh3.clean(  # pylint: disable=E1101
             self.soup.prettify(),
-            attributes=self.nh3_get_attributes(),
+            tags=self.nh3_get_tags(append_tags),
+            attributes=self.nh3_get_attributes(append_attrs),
+            **kwargs,
         )
+
+    @classmethod
+    def soup_clean_input(cls, html_str: str, allowed_names: list[str]):
+        if html_str and allowed_names:
+            soup = BeautifulSoup(html_str, "html.parser")
+            inputs = soup.find_all('input')
+            for input_tag in inputs:
+                name_value = input_tag.get('name')
+                if name_value not in allowed_names:
+                    input_tag.decompose()
+            return soup.prettify()
+        return html_str
 
     @classmethod
     def nh3_clean_text(cls, data):
@@ -78,6 +114,20 @@ class ManualNH3:
 
 
 class HTMLController(ManualNH3, ManualBleach):
+    @staticmethod
+    def minify(data):
+        return minify_html.minify(data)  # pylint: disable=E1101
+
+    @staticmethod
+    def detect_escape(data):
+        # true if escape was executed
+        data = data.strip()
+        if data.startswith('<'):
+            return False
+        if '<' in data or '>' in data:
+            return False
+        return True
+
     def __init__(self, html_str: str, is_unescape: bool = False):
         self.html_str = HTMLController.unescape(html_str) if is_unescape is True else html_str
         self.soup = BeautifulSoup(self.html_str, "html.parser")
@@ -93,8 +143,24 @@ class HTMLController(ManualNH3, ManualBleach):
                 result.string = ''
         return self
 
-    def clean(self):
-        return self.nh3_clean_text(data=self.nh3_clean())
+    def clean(
+            self,
+            append_tags: set[str] = None,
+            append_attrs: dict[str, set[str]] = None,
+            is_minify: bool = True,
+            allowed_input_names: list[str] = None,
+            **kwargs
+    ):
+        data = self.nh3_clean(
+            append_tags=append_tags,
+            append_attrs=append_attrs,
+            **kwargs,
+        )
+        if allowed_input_names:
+            data = self.soup_clean_input(html_str=data, allowed_names=allowed_input_names)
+        if is_minify:
+            data = self.minify(data)
+        return self.nh3_clean_text(data=data)
 
     def is_html(self):
         return self.nh3_is_html(data=self.to_string())

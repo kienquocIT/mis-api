@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-# from apps.sales.inventory.models import GoodsRegistration
+from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
@@ -256,6 +256,16 @@ class SaleOrder(DataAbstractModel):
                 return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
+        # check delivery (if SO was used for OrderDelivery => can't reject)
+        if hasattr(instance, 'delivery_of_sale_order'):
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -272,8 +282,8 @@ class SaleOrder(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 # create registration
-                # if self.opportunity:
-                #     GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+                if self.opportunity:
+                    GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
@@ -282,7 +292,7 @@ class SaleOrder(DataAbstractModel):
                         # product
                         SOFinishHandler.push_product_info(instance=self)
                         # opportunity
-                        SOFinishHandler.update_opportunity_stage_by_so(instance=self)
+                        SOFinishHandler.update_opportunity(instance=self)
                         # customer
                         SOFinishHandler.push_to_customer_activity(instance=self)
                         # reports
@@ -295,6 +305,9 @@ class SaleOrder(DataAbstractModel):
                         # change document handle
                         DocumentChangeHandler.change_handle(instance=self)
 
+        if self.system_status in [4]:  # cancel
+            # opportunity
+            SOFinishHandler.update_opportunity(instance=self)
         # opportunity log
         SOHandler.push_opportunity_log(instance=self)
         # diagram

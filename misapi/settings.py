@@ -80,6 +80,7 @@ INSTALLED_APPS = \
         'apps.core.printer',  # print templates & rules
         'apps.core.mailer',  # mail templates & rules
         'apps.core.diagram',  # diagram for apps
+        'apps.core.forms',  # form
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -213,6 +214,8 @@ LANGUAGE_CHOICE = (
     ('en', 'English'),
     ('vi', 'Vietnamese'),
 )
+
+LANGUAGE_CHOICE_CODE = [item[0] for item in LANGUAGE_CHOICE]
 
 TIME_ZONE = 'Asia/Ho_Chi_Minh'
 

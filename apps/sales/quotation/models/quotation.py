@@ -292,6 +292,12 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
             return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -311,10 +317,12 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         # opportunity
-                        QuotationFinishHandler.update_opportunity_stage_by_quotation(instance=self)
+                        QuotationFinishHandler.update_opportunity(instance=self)
                         # customer
                         QuotationFinishHandler.push_to_customer_activity(instance=self)
-
+        if self.system_status in [4]:  # cancel
+            # opportunity
+            QuotationFinishHandler.update_opportunity(instance=self)
         # opportunity log
         QuotationHandler.push_opportunity_log(instance=self)
         # diagram

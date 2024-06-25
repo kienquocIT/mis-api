@@ -6,17 +6,28 @@ import logging
 from django.conf import settings
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import APIException
-from .response import convert_errors
+from .response import ConvertErrors
 from .push_notify import TeleBotPushNotify
 
 logger = logging.getLogger()
+
+
+def get_exception_handler_opts(context):
+    return {
+        'LIST_CONVERT_TO': getattr(context['view'], 'LIST_CONVERT_TO', 'STR'),  # 'FIRST', 'LIST_STR', 'STR'
+        'LIST_STR_JOIN_CHAR': getattr(context['view'], 'LIST_STR_JOIN_CHAR', '. '),
+        'DATA_ALWAYS_LIST': getattr(context['view'], 'DATA_ALWAYS_LIST', False),  # "a" => ["a"]
+    }
 
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is not None:
-        response.data = convert_errors(response.data, response.status_code)
+        errors = ConvertErrors(opts=get_exception_handler_opts(context)).convert(response.data, response.status_code)
+        if settings.DEBUG_PERMIT:
+            print('[custom_exception_handler] errors:', errors)
+        response.data = errors
     return response
 
 

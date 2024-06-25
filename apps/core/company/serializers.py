@@ -57,7 +57,8 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         )
 
 
@@ -107,7 +108,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             tenant=tenant_obj, company=company_obj,
             report_inventory__period_mapped__fiscal_year=datetime.datetime.now().year
         ).exists()
-        old_definition_inventory_valuation_config = company_obj.companyconfig.definition_inventory_valuation
+        old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
         if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
             raise serializers.ValidationError({
                 'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
@@ -124,7 +125,8 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         )
 
     def update(self, instance, validated_data):
@@ -140,7 +142,8 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'cost_per_lot',
+            'cost_per_project'
         ])
         this_period = Periods.objects.filter(
             tenant=instance.company.tenant,

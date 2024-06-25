@@ -197,259 +197,210 @@ class Opportunity(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def common_check_property_stage(cls, obj):
-        list_property = []
-
-        # customer
-        customer_data = {
-            'condition_property': {
-                'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
-                'title': 'Customer'
-            },
-            'comparison_operator': '≠' if obj.customer else '=',
-            'compare_data': 0,
-        }
-        list_property.append(customer_data)
-
-        if obj.customer:
-            customer_data = {
-                'condition_property': {
-                    'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
-                    'title': 'Customer'
+    def parse_stage_common(cls, condition_id, condition_title, compare_data, obj):
+        stages = []
+        if condition_title == 'Customer':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if obj.customer else '=',
+                    'compare_data': compare_data,
                 },
-                'comparison_operator': '=',
-                'compare_data': obj.customer.annual_revenue,
-            }
-            list_property.append(customer_data)
-
-        # Product category
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8',
-                    'title': 'Product Category'
-                },
-                'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
-                'compare_data': 0,
-            }
-        )
-
-        # Budget
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '36233e9a-8dc9-4a7c-a6ad-504bac91d4cb',
-                    'title': 'Budget'
-                },
-                'comparison_operator': '=' if obj.budget_value == 0 else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '195440c2-41bc-43f1-b387-fc5cd26401df',
-                    'title': 'Open Date'
-                },
-                'comparison_operator': '≠' if obj.open_date else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '43009b1a-a25d-43be-ab97-47540a2f00cb',
-                    'title': 'Close Date'
-                },
-                'comparison_operator': '≠' if obj.close_date else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '35dbf6f2-78a8-4286-8cf3-b95de5c78873',
-                    'title': 'Decision maker'
-                },
-                'comparison_operator': '≠' if obj.decision_maker else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '92c8035a-5372-41c1-9a8e-4b048d8af406',
-                    'title': 'Lost By Other Reason'
-                },
-                'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'c8fa79ae-2490-4286-af25-3407e129fedb',
-                    'title': 'Competitor.Win'
-                },
-                'comparison_operator': '=' if not obj.lost_by_other_reason and obj.is_close_lost else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '39b50254-e32d-473b-8380-f3b7765af434',
-                    'title': 'Product.Line.Detail'
-                },
-                'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'f436053d-f15a-4505-b368-9ccdf5afb5f6',
-                    'title': 'Close Deal'
-                },
-                'comparison_operator': '=' if obj.is_deal_close else '≠',
-                'compare_data': 0,
-            }
-        )
-        return list_property
-
-    @classmethod
-    def check_property_stage_when_saving_quotation(cls, obj, is_quotation_confirm):
-        list_property = cls.common_check_property_stage(obj)
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                    'title': 'Quotation.confirm'
-                },
-                'comparison_operator': '=' if is_quotation_confirm else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                    'title': 'SaleOrder.status'
-                },
-                'comparison_operator': '=' if obj.sale_order and obj.sale_order.system_status == 0 else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                    'title': 'SaleOrder.Delivery.Status'
-                },
-                'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': 0,
-            }
-        )
-        return list_property
-
-    @classmethod
-    def check_property_stage_when_saving_sale_order(cls, obj, sale_order_status):
-        list_property = cls.common_check_property_stage(obj)
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                    'title': 'SaleOrder.status'
-                },
-                'comparison_operator': '≠' if sale_order_status == 0 else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                    'title': 'Quotation.confirm'
-                },
-                'comparison_operator':
-                    '=' if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '=',
+                    'compare_data': int(obj.customer.annual_revenue) if obj.customer else None,
+                }
+            ]
+        if condition_title == 'Product Category':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if len(obj.product_category.all()) > 0 else '=',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Budget':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '=' if obj.budget_value == 0 else '≠',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Open Date':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if obj.open_date else '=',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Close Date':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if obj.close_date else '=',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Decision maker':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if obj.decision_maker else '=',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Lost By Other Reason':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '=' if obj.lost_by_other_reason else '≠',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Competitor.Win':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '='
+                    if not obj.lost_by_other_reason and obj.is_close_lost
                     else '≠',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                    'title': 'SaleOrder.Delivery.Status'
-                },
-                'comparison_operator': '≠' if obj.sale_order and obj.sale_order.delivery_call else '=',
-                'compare_data': 0,
-            }
-        )
-        return list_property
-
-    @classmethod
-    def check_property_stage_when_saving_delivery(cls, obj, delivery_status):
-        list_property = cls.common_check_property_stage(obj)
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                    'title': 'SaleOrder.status'
-                },
-                'comparison_operator': '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                    'title': 'SaleOrder.Delivery.Status'
-                },
-                'comparison_operator': '≠' if delivery_status else '=',
-                'compare_data': 0,
-            }
-        )
-
-        list_property.append(
-            {
-                'condition_property': {
-                    'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                    'title': 'Quotation.confirm'
-                },
-                'comparison_operator': '='
-                if obj.quotation and obj.quotation.system_status == 0 and obj.quotation.is_customer_confirm
-                else '≠',
-                'compare_data': 0,
-            }
-        )
-        return list_property
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Product.Line.Detail':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '≠' if len(obj.opportunity_product_datas) > 0 else '=',
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'Close Deal':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '=' if obj.is_deal_close else '≠',
+                    'compare_data': compare_data,
+                }
+            ]
+        return stages
 
     @classmethod
-    def auto_update_stage(cls, list_property, obj):
+    def parse_stage_reference(cls, condition_id, condition_title, compare_data, obj):
+        stages = []
+        check_quotation, check_so, check_delivery = cls.get_comparison_operators(
+            quotation=obj.quotation, sale_order=obj.sale_order
+        )
+        if condition_title == 'Quotation.confirm':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': check_quotation,
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'SaleOrder.status':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': check_so,
+                    'compare_data': compare_data,
+                }
+            ]
+        if condition_title == 'SaleOrder.Delivery.Status':
+            stages = [
+                {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': check_delivery,
+                    'compare_data': compare_data,
+                }
+            ]
+        return stages
+
+    @classmethod
+    def get_comparison_operators(cls, quotation, sale_order):
+        check_quotation = '≠'
+        check_so = '≠'
+        check_delivery = '='
+        if quotation:
+            check_quotation = '=' if quotation.is_customer_confirm and quotation.system_status == 3 else '≠'
+        if sale_order:
+            check_so = '=' if sale_order.system_status == 3 else '≠'
+            check_delivery = '≠' if hasattr(sale_order, 'delivery_of_sale_order') else '='
+        return check_quotation, check_so, check_delivery
+
+    @classmethod
+    def parse_stage(cls, list_stage, obj):
+        list_stage_instance = []
+        for stage in list_stage:
+            if isinstance(stage.condition_datas, list):
+                for condition in stage.condition_datas:
+                    condition_id = condition.get('condition_property', {}).get('id', None)
+                    condition_title = condition.get('condition_property', {}).get('title', '')
+                    compare_data = condition.get('compare_data', 0)
+                    stages_common = cls.parse_stage_common(
+                        condition_id=condition_id, condition_title=condition_title, compare_data=compare_data, obj=obj
+                    )
+                    if len(stages_common) > 0:
+                        list_stage_instance.extend(stages_common)
+                    stages_reference = cls.parse_stage_reference(
+                        condition_id=condition_id, condition_title=condition_title, compare_data=compare_data, obj=obj
+                    )
+                    if len(stages_reference) > 0:
+                        list_stage_instance.extend(stages_reference)
+        return list_stage_instance
+
+    @classmethod
+    def update_stage(cls, obj):
         stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id).order_by('win_rate')
-
         stage_lost = None
         stage_delivery = None
         stage_close = None
-
         list_stage = []
         # sort stage [stage 1, stage 2, ...., stage Close Lost, stage Delivery, stage Deal Close
         for item in stages:
@@ -461,26 +412,24 @@ class Opportunity(DataAbstractModel):
                 stage_delivery = item
             else:
                 list_stage.append(item)
-
         if stage_lost:
             list_stage.append(stage_lost)
-
         if stage_delivery:
             list_stage.append(stage_delivery)
-
         if stage_close:
             list_stage.append(stage_close)
-
+        # list stage instance
+        list_stage_instance = cls.parse_stage(list_stage=list_stage, obj=obj)
         # check stage
         index = 0
         win_rate = 0
         for idx, item in enumerate(list_stage):
             if item.logical_operator == 0:
-                if all(element in list_property for element in item.condition_datas):
+                if all(element in list_stage_instance for element in item.condition_datas):
                     index = idx
                     win_rate = item.win_rate
             else:
-                if any(element in list_property for element in item.condition_datas):
+                if any(element in list_stage_instance for element in item.condition_datas):
                     index = idx
                     win_rate = item.win_rate
         bulk_data = [
@@ -490,7 +439,7 @@ class Opportunity(DataAbstractModel):
                 is_current=False
             ) for item in list_stage[:index + 1]]
         bulk_data[-1].is_current = True
-        obj.stage.clear()
+        obj.opportunity_stage_opportunity.all().delete()
         OpportunityStage.objects.bulk_create(bulk_data)
         return win_rate
 
@@ -499,6 +448,13 @@ class Opportunity(DataAbstractModel):
         config = OpportunityConfig.objects.filter_current(fill__company=True).first()
         if config.is_select_stage:
             return False
+        return True
+
+    @classmethod
+    def handle_stage_win_rate(cls, obj):
+        if obj.check_config_auto_update_stage():
+            obj.win_rate = obj.update_stage(obj=obj)
+            obj.save(update_fields=['win_rate'])
         return True
 
     def save(self, *args, **kwargs):
@@ -511,34 +467,7 @@ class Opportunity(DataAbstractModel):
                     fill__tenant=True, fill__company=True, is_delete=False
                 )
                 self.code = 'OPP.00' + str(records.count() + 1)
-
-        keys_condition = ('quotation_confirm', 'sale_order_status', 'delivery_status')
-        if any(key in kwargs for key in keys_condition) and not self.is_close_lost and not self.is_deal_close:
-            if 'quotation_confirm' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
-                        self
-                    )
-                del kwargs['quotation_confirm']
-            elif 'sale_order_status' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
-                        self
-                    )
-                del kwargs['sale_order_status']
-            elif 'delivery_status' in kwargs:
-                if self.check_config_auto_update_stage():
-                    self.win_rate = self.auto_update_stage(
-                        self.check_property_stage_when_saving_delivery(self, kwargs['delivery_status']),
-                        self
-                    )
-                del kwargs['delivery_status']
-            if 'update_fields' in kwargs:
-                kwargs['update_fields'].append('win_rate')
-            else:
-                kwargs.update({'update_fields': ['win_rate']})
+        # hit DB
         super().save(*args, **kwargs)
 
 

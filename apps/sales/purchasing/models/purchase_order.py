@@ -130,6 +130,12 @@ class PurchaseOrder(DataAbstractModel):
             return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code

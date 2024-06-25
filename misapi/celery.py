@@ -34,4 +34,8 @@ app.conf.beat_schedule = {
         'task': 'apps.eoffice.leave.tasks.update_annual_leave_each_month',
         'schedule': crontab(minute=0, hour=0, day_of_month=15, month_of_year='*', day_of_week='*'),
     },
+    'check-and-update-active-publish-form': {
+        'task': 'apps.core.forms.tasks.check_and_update_active_publish_form',
+        'schedule': crontab(minute=5),
+    },
 }

@@ -67,9 +67,10 @@ class DocHandler:
             if obj.is_change is False:
                 setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
                 update_fields.append('document_root_id')
-        obj.save(update_fields=update_fields)
-        # cancel document root or previous document
+        # cancel document root or previous document before finish new document
         DocHandler.force_cancel_doc_previous(document_change=obj)
+        # save finish
+        obj.save(update_fields=update_fields)
         return True
 
     @classmethod
@@ -121,23 +122,12 @@ class DocHandler:
         return None
 
     @classmethod
-    def force_set_is_change_doc_previous(cls, runtime_obj):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            doc_previous = DocHandler.get_doc_previous(document_change=obj)
-            if doc_previous:
-                doc_previous.is_change = True
-                doc_previous.save(update_fields=['is_change'])
-        return True
-
-    @classmethod
     def force_cancel_doc_previous(cls, document_change):
         doc_previous = DocHandler.get_doc_previous(document_change=document_change)
         if doc_previous:
             setattr(doc_previous, 'system_status', 4)
-            doc_previous.save(update_fields=['system_status'])
+            setattr(doc_previous, 'is_change', True)
+            doc_previous.save(update_fields=['system_status', 'is_change'])
         return True
 
     @classmethod
@@ -780,8 +770,6 @@ class RuntimeStageHandler:
             field_saved += ['status']
             DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
-        # check document is change document then set is_change = True
-        DocHandler.force_set_is_change_doc_previous(runtime_obj=self.runtime_obj)
         return True
 
 

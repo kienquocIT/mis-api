@@ -17,7 +17,7 @@ from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
 from apps.sales.opportunity.models import (
     OpportunityConfig, OpportunityConfigStage, StageCondition,
-    OpportunitySaleTeamMember,
+    OpportunitySaleTeamMember, Opportunity,
 )
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
@@ -43,8 +43,9 @@ from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
-from ...sales.lead.models import LeadStage
+from apps.sales.lead.models import LeadStage
 from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
+from apps.core.forms.models import Form
 
 logger = logging.getLogger(__name__)
 
@@ -1126,3 +1127,9 @@ def project_member_event_destroy(sender, instance, **kwargs):
         employee_permission.remove_permit_by_prj(
             tenant_id=instance.project.tenant_id, prj_id=instance.project_id
         )
+
+
+@receiver(post_save, sender=Form)
+def form_post_save(sender, instance, created, **kwargs):
+    if created is True:
+        instance.get_or_create_publish()
