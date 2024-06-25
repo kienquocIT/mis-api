@@ -2070,16 +2070,11 @@ def init_folder():
     return True
 
 
-def remove_same_serial():
-    product = Product.objects.filter(id="52427ba7-534e-4018-b74f-be1a4deb3817").first()
-    if product:
-        product.stock_amount -= 5
-        product.available_amount = product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount
-        product.save(update_fields=['stock_amount', 'available_amount'])
-    for serial_number in ['PR033-1', 'PR033-2', 'PR033-3', 'PR033-4', 'PR033-5']:
-        check_serial = ProductWareHouseSerial.objects.filter(serial_number=serial_number, is_delete=0).first()
-        if check_serial:
-            check_serial.delete()
-    print('remove_same_serial done.')
+def update_pw_stock_receipt_delivery():
+    product_wh = ProductWareHouse.objects.filter(id="ee28aab2ac70495bb8deed27e56f4178").first()
+    if product_wh:
+        product_wh.receipt_amount = 5
+        product_wh.stock_amount = 0
+        product_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+    print('update_pw_stock_receipt_delivery done')
     return True
-
