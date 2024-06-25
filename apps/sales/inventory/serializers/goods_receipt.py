@@ -7,6 +7,8 @@ from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommo
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
+    serial_number = serializers.CharField(max_length=100, required=False, allow_blank=False)
+
     class Meta:
         model = GoodsReceiptSerial
         fields = (

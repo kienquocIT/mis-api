@@ -32,6 +32,7 @@ from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
+from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
@@ -2093,4 +2094,28 @@ def update_opp_config_stage():
                         data['compare_data'] = int(data['compare_data'])
         config_stage.save(update_fields=['condition_datas'])
     print('update_opp_config_stage done.')
+    return True
+
+
+def init_folder():
+    for employee in Employee.objects.all():
+        Folder.objects.bulk_create([
+            Folder(
+                tenant_id=employee.tenant_id, company_id=employee.company_id,
+                title=title, is_system=True,
+                employee_inherit_id=employee.id,
+            )
+            for title in ["System", "Personal", "Shared with me"]
+        ])
+    print("init_folder done.")
+    return True
+
+
+def update_pw_stock_receipt_delivery():
+    product_wh = ProductWareHouse.objects.filter(id="ee28aab2ac70495bb8deed27e56f4178").first()
+    if product_wh:
+        product_wh.receipt_amount = 5
+        product_wh.stock_amount = 0
+        product_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+    print('update_pw_stock_receipt_delivery done')
     return True

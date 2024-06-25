@@ -492,6 +492,7 @@ class Folder(MasterDataAbstractModel):
         help_text='',
         related_name='folder_employee_inherit',
     )
+    is_system = models.BooleanField(default=False, help_text="flag to know this folder auto created by system")
 
     class Meta:
         verbose_name = 'Folder'
