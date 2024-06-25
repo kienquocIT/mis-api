@@ -1,7 +1,7 @@
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods
+from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods, ProductWareHouse
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
@@ -11,7 +11,7 @@ from apps.sales.report.models import (
 )
 from apps.sales.report.serializers import (
     ReportInventoryDetailListSerializer, BalanceInitializationListSerializer,
-    ReportInventoryListSerializer
+    ReportInventoryListSerializer, ProductWarehouseViewListSerializer
 )
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
@@ -451,6 +451,33 @@ class ReportInventoryList(BaseListMixin):
         self.ser_context['config_inventory_management'] = ReportInventorySub.get_config_inventory_management(
             company_config
         )
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWarehouseViewList(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWarehouseViewListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        try:
+            warehouse_id = self.request.query_params['warehouse_id']
+            return super().get_queryset().select_related(
+                'product__inventory_uom'
+            ).prefetch_related(
+                'product_warehouse_lot_product_warehouse',
+                'product_warehouse_serial_product_warehouse'
+            ).filter(
+                warehouse_id=warehouse_id, stock_amount__gt=0
+            ).order_by('product__code')
+        except KeyError:
+            return super().get_queryset().none()
+
+    @swagger_auto_schema(operation_summary='Product WareHouse View')
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
