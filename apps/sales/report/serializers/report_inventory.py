@@ -67,7 +67,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
-    def get_stock_activities_detail(cls, obj, all_logs_by_month, wh_id, div, **kwargs):
+    def get_stock_activities_detail(cls, obj, all_logs_by_month, div, **kwargs):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
         for log in all_logs_by_month.filter(
@@ -151,7 +151,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
                     'data_stock_activity': self.get_stock_activities_detail(
                         obj,
                         self.context.get('all_logs_by_month', []),
-                        warehouse_item[0],
                         self.context.get('definition_inventory_valuation'),
                         **kw_parameter
                     ),
