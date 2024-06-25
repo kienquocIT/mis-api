@@ -1148,18 +1148,6 @@ def make_sure_asset_config():
     print('Asset tools config is done!')
 
 
-def create_report_pipeline_by_opp():
-    for opp in Opportunity.objects.all():
-        ReportPipeline.push_from_opp(
-            tenant_id=opp.tenant_id,
-            company_id=opp.company_id,
-            opportunity_id=opp.id,
-            employee_inherit_id=opp.employee_inherit_id,
-        )
-    print('create_report_pipeline_by_opp done.')
-    return True
-
-
 def fool_data_for_revenue_dashboard():
     a = ReportRevenue.objects.get(sale_order_id='93d99efb0a774f9eb6bf65cc336b3719')
     a.date_approved = datetime(2023, 1, 1)
@@ -1223,22 +1211,6 @@ def fool_data_for_revenue_dashboard():
         obj.fiscal_year = 2023
         obj.save()
         print('Update period data done!')
-
-
-def update_date_approved():
-    for item in ReportRevenue.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    for item in ReportCustomer.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    for item in ReportProduct.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    print('Done!')
 
 
 def reset_and_run_reports_sale(run_type=0):
@@ -1487,21 +1459,6 @@ def change_duplicate_group():
             item.save()
             print('Change:', item.id, old_code, 'TO', item.code)
     print('Function run successful')
-
-
-def update_gr_for_lot_serial():
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        for gr_lot in gr.goods_receipt_lot_goods_receipt.all():
-            lot = ProductWareHouseLot.objects.filter(lot_number=gr_lot.lot_number).first()
-            if lot:
-                lot.goods_receipt = gr
-                lot.save(update_fields=['goods_receipt'])
-        for gr_serial in gr.goods_receipt_serial_goods_receipt.all():
-            serial = ProductWareHouseSerial.objects.filter(serial_number=gr_serial.serial_number).first()
-            if serial:
-                serial.goods_receipt = gr
-                serial.save(update_fields=['goods_receipt'])
-    print('update_gr_for_lot_serial done.')
 
 
 def get_latest_log(log, period_mapped, sub_period_order):
@@ -1960,35 +1917,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, run_update_warehou
     print('Complete!')
 
 
-def update_product_warehouse_uom_base():
-    for product in Product.objects.all():
-        if product.general_uom_group:
-            uom_base = product.general_uom_group.uom_reference
-            if uom_base:
-                for pw_base in ProductWareHouse.objects.filter(
-                        product_id=product.id, uom_id=uom_base.id
-                ):
-                    total_receipt = 0
-                    total_sold = 0
-                    for product_warehouse in ProductWareHouse.objects.filter(
-                            product_id=product.id, warehouse=pw_base.warehouse_id
-                    ).exclude(uom_id=uom_base.id):
-                        final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
-                        total_receipt += product_warehouse.receipt_amount * final_ratio
-                        total_sold += product_warehouse.sold_amount * final_ratio
-
-                        ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
-                        ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
-                        product_warehouse.delete()
-
-                    pw_base.receipt_amount += total_receipt
-                    pw_base.sold_amount += total_sold
-                    pw_base.stock_amount += total_receipt - total_sold
-                    pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
-    print('update_product_warehouse_uom_base done.')
-    return True
-
-
 def update_goods_return_items_nt():
     data = [
         {
@@ -2017,7 +1945,7 @@ def update_goods_return_items_nt():
         }
     ]
 
-    update_product_warehouse_uom_base("567d8692-56f3-4fb5-8815-13dae765e763")
+    run_update_pw_uom_base(run_type=1, product_id="567d8692-56f3-4fb5-8815-13dae765e763")
     for item in data:
         obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
         obj.product_id = item.get('prd')
@@ -2085,18 +2013,6 @@ def load_hint():
     print('Done')
 
 
-def update_opp_config_stage():
-    for config_stage in OpportunityConfigStage.objects.all():
-        if isinstance(config_stage.condition_datas, list):
-            for data in config_stage.condition_datas:
-                if 'compare_data' in data:
-                    if isinstance(data['compare_data'], str):
-                        data['compare_data'] = int(data['compare_data'])
-        config_stage.save(update_fields=['condition_datas'])
-    print('update_opp_config_stage done.')
-    return True
-
-
 def init_folder():
     for employee in Employee.objects.all():
         Folder.objects.bulk_create([
@@ -2111,11 +2027,40 @@ def init_folder():
     return True
 
 
-def update_pw_stock_receipt_delivery():
-    product_wh = ProductWareHouse.objects.filter(id="ee28aab2ac70495bb8deed27e56f4178").first()
-    if product_wh:
-        product_wh.receipt_amount = 5
-        product_wh.stock_amount = 0
-        product_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-    print('update_pw_stock_receipt_delivery done')
+def update_pw_uom_base(product):
+    if product.general_uom_group:
+        uom_base = product.general_uom_group.uom_reference
+        if uom_base:
+            for pw_base in ProductWareHouse.objects.filter(
+                    product_id=product.id, uom_id=uom_base.id
+            ):
+                total_receipt = 0
+                total_sold = 0
+                for product_warehouse in ProductWareHouse.objects.filter(
+                        product_id=product.id, warehouse=pw_base.warehouse_id
+                ).exclude(uom_id=uom_base.id):
+                    final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+                    total_receipt += product_warehouse.receipt_amount * final_ratio
+                    total_sold += product_warehouse.sold_amount * final_ratio
+
+                    ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
+                    ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
+                    product_warehouse.delete()
+
+                pw_base.receipt_amount += total_receipt
+                pw_base.sold_amount += total_sold
+                pw_base.stock_amount += total_receipt - total_sold
+                pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+    return True
+
+
+def run_update_pw_uom_base(run_type=0, product_id=None):
+    if run_type == 0:  # run all
+        for product in Product.objects.all():
+            update_pw_uom_base(product=product)
+    if run_type == 1:  # by product_id
+        product = Product.objects.filter(id=product_id).first()
+        if product:
+            update_pw_uom_base(product=product)
+    print('run_update_pw_uom_base done.')
     return True
