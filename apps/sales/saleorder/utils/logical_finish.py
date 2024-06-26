@@ -24,8 +24,10 @@ class SOFinishHandler:
                     product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
                 )
                 product_order.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_order': product_order.product_quantity * final_ratio,
+                    'update_stock_info': {
+                        'quantity_order': product_order.product_quantity * final_ratio,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['wait_delivery_amount', 'available_amount']
                 })
         return True

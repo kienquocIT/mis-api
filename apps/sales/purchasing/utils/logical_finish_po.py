@@ -38,8 +38,10 @@ class POFinishHandler:
                 product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
             stock_final = product_purchase.stock * final_ratio
             product_purchase.product.save(**{
-                'update_transaction_info': True,
-                'quantity_purchase': product_quantity_order_request_final + stock_final,
+                'update_stock_info': {
+                    'quantity_purchase': product_quantity_order_request_final + stock_final,
+                    'system_status': instance.system_status,
+                },
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
         return True

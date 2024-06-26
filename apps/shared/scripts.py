@@ -1266,17 +1266,17 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+    for po in PurchaseOrder.objects.filter(system_status__in=[3, 4]):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+    for gr in GoodsReceipt.objects.filter(system_status__in=[3, 4]):
         GRFinishHandler.push_product_info(instance=gr)
     # output
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+    for so in SaleOrder.objects.filter(system_status__in=[3, 4]):
         SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.all():
+    for return_obj in GoodsReturn.objects.filter(system_status__in=[3, 4]):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True

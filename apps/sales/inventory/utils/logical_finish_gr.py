@@ -214,9 +214,11 @@ class GRFinishHandler:
                     product_obj=product_receipt.product, uom_transaction=product_receipt.uom
                 )
                 product_receipt.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
-                    'quantity_receipt_actual': quantity_receipt_actual * final_ratio,
+                    'update_stock_info': {
+                        'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
+                        'quantity_receipt_actual': quantity_receipt_actual * final_ratio,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                 })
         else:  # GR for IA
@@ -228,8 +230,10 @@ class GRFinishHandler:
                     product_obj=product_receipt.product, uom_transaction=product_receipt.uom
                 )
                 product_receipt.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_receipt_ia': quantity_receipt_actual * final_ratio,
+                    'update_stock_info': {
+                        'quantity_receipt_ia': quantity_receipt_actual * final_ratio,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['available_amount', 'stock_amount']
                 })
         return True
