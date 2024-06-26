@@ -163,6 +163,8 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
+    opening_balance_quantity = serializers.SerializerMethodField()
+    opening_balance_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportInventoryProductWarehouse
@@ -211,6 +213,16 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
             'space_month': obj.period_mapped.space_month,
             'fiscal_year': obj.period_mapped.fiscal_year,
         } if obj.period_mapped else {}
+
+    @classmethod
+    def get_opening_balance_quantity(cls, obj):
+        return cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.opening_balance_quantity)
+
+    @classmethod
+    def get_opening_balance_cost(cls, obj):
+        return obj.opening_balance_value / cast_unit_to_inv_quantity(
+            obj.product.inventory_uom, obj.opening_balance_quantity
+        )
 
 
 class ReportInventoryListSerializer(serializers.ModelSerializer):
@@ -439,7 +451,7 @@ class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
                 'id': item.id,
                 'lot_number': item.lot_number,
                 'expire_date': item.expire_date,
-                'quantity_import': item.quantity_import
+                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import)
             })
         for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
             sn_data.append({
