@@ -1227,17 +1227,17 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
             SOFinishHandler.push_to_report_customer(instance=sale_order)
-        for g_return in GoodsReturn.objects.filter(system_status__in=[2, 3]):
+        for g_return in GoodsReturn.objects.filter(system_status=3):
             ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_cashflow(instance=sale_order)
-        for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        for purchase_order in PurchaseOrder.objects.filter(system_status=3):
             POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
     return True
@@ -1266,17 +1266,17 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status__in=[3, 4]):
+    for po in PurchaseOrder.objects.filter(system_status=3):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status__in=[3, 4]):
+    for gr in GoodsReceipt.objects.filter(system_status=3):
         GRFinishHandler.push_product_info(instance=gr)
     # output
-    for so in SaleOrder.objects.filter(system_status__in=[3, 4]):
+    for so in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.filter(system_status__in=[3, 4]):
+    for return_obj in GoodsReturn.objects.filter(system_status=3):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True
@@ -1289,7 +1289,7 @@ def reset_and_run_warehouse_stock(run_type=0):
     ProductWareHouse.objects.all().delete()
     # input, output, provide
     if run_type == 0:  # input
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             GRFinishHandler.push_to_warehouse_stock(instance=gr)
     if run_type == 1:  # output
         for deli_sub in OrderDeliverySub.objects.all():
@@ -1315,7 +1315,7 @@ def reset_and_run_warehouse_stock(run_type=0):
 def reset_and_run_pw_lot_transaction(run_type=0):
     if run_type == 0:  # goods receipt
         ProductWareHouseLotTransaction.objects.filter(type_transaction=0).delete()
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             for gr_warehouse in gr.goods_receipt_warehouse_goods_receipt.all():
                 if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
                     gr_product = gr_warehouse.goods_receipt_product
@@ -1915,3 +1915,10 @@ def run_update_pw_uom_base(run_type=0, product_id=None):
             update_pw_uom_base(product=product)
     print('run_update_pw_uom_base done.')
     return True
+
+
+def delete_gr_map_wh():
+    gr_wh = GoodsReceiptWarehouse.objects.filter(id="80afc5ee-f7b9-486f-a756-b66a3c642c40").first()
+    if gr_wh:
+        gr_wh.delete()
+    print('delete_gr_map_wh done.')
