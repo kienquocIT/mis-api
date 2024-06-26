@@ -10,8 +10,10 @@ class DeliFinishHandler:
             for deli_product in instance.delivery_product_delivery_sub.all():
                 if deli_product.product:
                     deli_product.product.save(**{
-                        'update_transaction_info': True,
-                        'quantity_delivery': deli_product.picked_quantity,
+                        'update_stock_info': {
+                            'quantity_delivery': deli_product.picked_quantity,
+                            'system_status': 3,
+                        },
                         'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                     })
         else:
@@ -22,8 +24,10 @@ class DeliFinishHandler:
                     ).first()
                     if product_obj:
                         product_obj.save(**{
-                            'update_transaction_info': True,
-                            'quantity_delivery': product_data['done'],
+                            'update_stock_info': {
+                                'quantity_delivery': product_data['done'],
+                                'system_status': 3,
+                            },
                             'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                         })
         return True
