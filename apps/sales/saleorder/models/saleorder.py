@@ -283,7 +283,7 @@ class SaleOrder(DataAbstractModel):
 
                 # create registration
                 if self.opportunity:
-                    GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+                    GoodsRegistration.check_and_create_goods_registration(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:

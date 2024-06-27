@@ -81,7 +81,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_inventory_uom(cls, obj):
         return {
-            "id": str(obj.inventory_uom.id), "title": obj.inventory_uom.title
+            "id": str(obj.inventory_uom.id),
+            "title": obj.inventory_uom.title,
+            'ratio': obj.inventory_uom.ratio
         } if obj.inventory_uom else {}
 
 

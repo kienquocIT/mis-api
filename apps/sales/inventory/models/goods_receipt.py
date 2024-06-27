@@ -242,7 +242,7 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def regis_stock_when_receipt(cls, instance, stock_data):
-        if instance.company.company_config.cost_per_project:  # Case 5
+        if instance.company.company_config.cost_per_project:  # Project
             for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
                 sale_order = po_pr_mapped.purchase_request.sale_order
                 if sale_order:

@@ -15,8 +15,8 @@ class GoodsRegistration(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def create_goods_registration_when_sale_order_approved(cls, sale_order):
-        if sale_order.company.company_config.cost_per_project:  # Case 5
+    def check_and_create_goods_registration(cls, sale_order):
+        if sale_order.company.company_config.cost_per_project:  # Project
             goods_registration = GoodsRegistration.objects.create(
                 code=f'GRe-{sale_order.code}',
                 title=f'{sale_order.code}-GoodsRegistration',
@@ -29,7 +29,7 @@ class GoodsRegistration(DataAbstractModel):
             )
             bulk_info = []
             for so_item in sale_order.sale_order_product_sale_order.filter(product__isnull=False):
-                if 1 in so_item.product.product_choice:
+                if 1 in so_item.product.product_choice:  # inventory
                     bulk_info.append(
                         GoodsRegistrationLineDetail(
                             goods_registration=goods_registration,

@@ -30,8 +30,10 @@ class CompanyConfigDetail(APIView):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         try:
+            company_id = self.request.query_params['company_id'] \
+                if 'company_id' in self.request.query_params else request.user.company_current_id
             obj = CompanyConfig.objects.select_related('currency').get(
-                company_id=request.user.company_current_id,
+                company_id=company_id,
                 **{'force_cache': True}
             )
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
@@ -48,7 +50,11 @@ class CompanyConfigDetail(APIView):
     )
     def put(self, request, *args, **kwargs):
         try:
-            obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
+            company_id = self.request.query_params['company_id'] \
+                if 'company_id' in self.request.query_params else request.user.company_current_id
+            obj = CompanyConfig.objects.select_related('currency').get(
+                company_id=company_id
+            )
             ser = CompanyConfigUpdateSerializer(obj, data=request.data)
             ser.is_valid(raise_exception=True)
             ser.save()
