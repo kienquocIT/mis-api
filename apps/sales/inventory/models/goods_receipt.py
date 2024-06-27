@@ -274,15 +274,18 @@ class GoodsReceipt(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        GRFinishHandler.push_to_warehouse_stock(self)
-                        GRFinishHandler.push_product_info(self)
-                        GRFinishHandler.update_gr_info_for_po(self)
-                        GRFinishHandler.update_gr_info_for_ia(self)
-                        GRFinishHandler.update_is_all_receipted_po(self)
-                        GRFinishHandler.update_is_all_receipted_ia(self)
+                        GRFinishHandler.push_to_warehouse_stock(instance=self)
+                        GRFinishHandler.push_product_info(instance=self)
+                        GRFinishHandler.update_gr_info_for_po(instance=self)
+                        GRFinishHandler.update_gr_info_for_ia(instance=self)
+                        GRFinishHandler.update_is_all_receipted_po(instance=self)
+                        GRFinishHandler.update_is_all_receipted_ia(instance=self)
 
             stock_data = self.prepare_data_for_logging(self)
             self.regis_stock_when_receipt(self, stock_data)
+
+        if self.system_status in [4]:  # cancel
+            GRFinishHandler.push_product_info(instance=self)
 
         # diagram
         GRHandler.push_diagram(instance=self)

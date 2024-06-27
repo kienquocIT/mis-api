@@ -306,6 +306,8 @@ class SaleOrder(DataAbstractModel):
                         DocumentChangeHandler.change_handle(instance=self)
 
         if self.system_status in [4]:  # cancel
+            # product
+            SOFinishHandler.push_product_info(instance=self)
             # opportunity
             SOFinishHandler.update_opportunity(instance=self)
         # opportunity log

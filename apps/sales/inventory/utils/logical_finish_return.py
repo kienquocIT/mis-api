@@ -23,14 +23,18 @@ class ReturnFinishHandler:
                     is_redelivery = True
             if product and is_redelivery is False:  # update product no redelivery
                 product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return': value,
+                    'update_stock_info': {
+                        'quantity_return': value,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['stock_amount', 'available_amount']
                 })
             if product and is_redelivery is True:  # update product with redelivery
                 product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return_redelivery': value,
+                    'update_stock_info': {
+                        'quantity_return_redelivery': value,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
                 })
         return True

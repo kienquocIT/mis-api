@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
+from apps.masterdata.saledata.utils import ProductHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
@@ -320,46 +321,9 @@ class Product(DataAbstractModel):
                         })
         return unit_cost_list
 
-    @classmethod
-    def update_transaction_information(cls, instance, **kwargs):
-        del kwargs['update_transaction_info']
-        # If product doesn't have inventory choice
-        if 1 not in instance.product_choice:
-            return {}
-        # If product have inventory choice
-        if 'quantity_purchase' in kwargs:
-            instance.wait_receipt_amount += kwargs['quantity_purchase']
-            del kwargs['quantity_purchase']
-        if 'quantity_receipt_po' in kwargs and 'quantity_receipt_actual' in kwargs:
-            instance.wait_receipt_amount -= kwargs['quantity_receipt_po']
-            instance.stock_amount += kwargs['quantity_receipt_actual']
-            del kwargs['quantity_receipt_po']
-            del kwargs['quantity_receipt_actual']
-        if 'quantity_receipt_ia' in kwargs:
-            instance.stock_amount += kwargs['quantity_receipt_ia']
-            del kwargs['quantity_receipt_ia']
-        if 'quantity_order' in kwargs:
-            instance.wait_delivery_amount += kwargs['quantity_order']
-            del kwargs['quantity_order']
-        if 'quantity_delivery' in kwargs:
-            instance.wait_delivery_amount -= kwargs['quantity_delivery']
-            instance.stock_amount -= kwargs['quantity_delivery']
-            del kwargs['quantity_delivery']
-        if 'quantity_return' in kwargs:
-            instance.stock_amount += kwargs['quantity_return']
-            del kwargs['quantity_return']
-        if 'quantity_return_redelivery' in kwargs:
-            instance.wait_delivery_amount += kwargs['quantity_return_redelivery']
-            instance.stock_amount += kwargs['quantity_return_redelivery']
-            del kwargs['quantity_return_redelivery']
-        instance.available_amount = (
-                instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
-        )
-        return kwargs
-
     def save(self, *args, **kwargs):
-        if 'update_transaction_info' in kwargs:
-            result = self.update_transaction_information(self, **kwargs)
+        if 'update_stock_info' in kwargs:
+            result = ProductHandler.update_stock_info(self, **kwargs)
             kwargs = result
         # hit DB
         super().save(*args, **kwargs)
