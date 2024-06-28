@@ -14,6 +14,7 @@ class ExpenseListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     expense_item = serializers.SerializerMethodField()
     price_list = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -25,6 +26,7 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'uom',
             'expense_item',
             'price_list',
+            'role',
         )
 
     @classmethod
@@ -35,6 +37,15 @@ class ExpenseListSerializer(serializers.ModelSerializer):
                 'title': obj.uom_group.title,
             }
         return {}
+
+    @classmethod
+    def get_role(cls, obj):
+        if obj.role:
+            return [{
+                'id': item.id,
+                'title': item.title,
+            } for item in obj.role.all()]
+        return []
 
     @classmethod
     def get_uom(cls, obj):

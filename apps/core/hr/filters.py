@@ -5,7 +5,7 @@ from rest_framework import exceptions
 
 from apps.shared import BastionFieldAbstractListFilter
 from apps.shared import TypeCheck
-from .models import Employee, DistributionApplication
+from .models import Employee, DistributionApplication, RoleHolder
 
 __all__ = [
     'EmployeeListFilter',
@@ -18,6 +18,7 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
         method='filter_group__first_manager', field_name='group__first_manager__id'
     )
     list_from_leave = filters.CharFilter(method='filter_list_from_leave')
+    role = filters.CharFilter(method='filter_role', field_name='role')
 
     class Meta:
         model = Employee
@@ -40,6 +41,22 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
     @classmethod
     def filter_list_from_leave(cls, queryset, *args, **kwargs):
         return queryset
+
+    def filter_role(self, queryset, name, value):
+        user_obj = getattr(self.request, 'user', None)
+        if user_obj:
+            excludes_employee = []
+            value = value.split(',')
+            if len(value) > 1:
+                role_map_emp = RoleHolder.objects.filter(role_id__in=value)
+            else:
+                role_map_emp = RoleHolder.objects.filter(role_id=value[0])
+            for item in role_map_emp:
+                if str(item.role.id) in value:
+                    excludes_employee.append(str(item.employee_id))
+            filter_kwargs = Q(**{'id__in': excludes_employee})
+            return queryset.filter(filter_kwargs)
+        raise exceptions.AuthenticationFailed
 
 
 class EmployeeStorageAppAllListFilter(django_filters.FilterSet):
