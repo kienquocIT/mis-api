@@ -2,8 +2,9 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, Zones, ZonesProperties
 )
+from apps.shared import BaseMsg
 
 
 # Subscription Plan
@@ -155,3 +156,81 @@ class IndicatorParamListSerializer(serializers.ModelSerializer):
             'example',
             'param_type'
         )
+
+
+# ZONE
+class ZonesCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+    properties_data = serializers.ListField(child=serializers.UUIDField())
+
+    class Meta:
+        model = Zones
+        fields = (
+            'title',
+            'remark',
+            'properties_data',
+            'order',
+        )
+
+    @classmethod
+    def validate_properties_data(cls, value):
+        if isinstance(value, list):
+            property_list = ApplicationProperty.objects.filter_current(
+                    fill__tenant=True, fill__company=True, id__in=value
+            )
+            if property_list.count() == len(value):
+                return [
+                    {'id': prop.id, 'title': prop.title, 'code': prop.code, 'remark': prop.remark}
+                    for prop in property_list
+                ]
+            raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_NOT_EXIST})
+        raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_IS_ARRAY})
+
+
+class ApplicationZonesDetailSerializer(serializers.ModelSerializer):
+    zones = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Application
+        fields = (
+            'zones',
+        )
+
+    @classmethod
+    def get_zones(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'remark': zone.remark, 'properties_data': zone.properties_data}
+            for zone in obj.zones_application.all()
+        ]
+
+
+class ApplicationZonesUpdateSerializer(serializers.ModelSerializer):
+    zones = ZonesCreateSerializer(many=True)
+
+    class Meta:
+        model = Application
+        fields = (
+            'zones',
+        )
+
+    def update(self, instance, validated_data):
+        zones_data = []
+        if 'zones' in validated_data:
+            zones_data = validated_data['zones']
+            del validated_data['zones']
+        old_zones = instance.zones_application.filter()
+        if old_zones:
+            for old_zone in old_zones:
+                old_zone.zones_props_zone.all().delete()
+            old_zones.delete()
+        zones = Zones.objects.bulk_create([
+            Zones(**zone_data, application=instance)
+            for zone_data in zones_data
+        ])
+        if zones:
+            for zone in zones:
+                ZonesProperties.objects.bulk_create([
+                    ZonesProperties(zone=zone, property=prop)
+                    for prop in zone.properties_data
+                ])
+        return instance

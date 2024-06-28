@@ -5,7 +5,7 @@ from apps.core.base.views import (
     TenantApplicationList,
     CountryList, CityList, DistrictList, WardList, BaseCurrencyList, BaseItemUnitList, IndicatorParamList,
     ApplicationPropertyOpportunityList, ApplicationDetail, ApplicationPropertyForPrintList,
-    ApplicationPropertyForMailList,
+    ApplicationPropertyForMailList, ApplicationZonesDetail,
 )
 
 urlpatterns = [
@@ -42,4 +42,6 @@ urlpatterns = [
         ApplicationPropertyOpportunityList.as_view(),
         name='ApplicationPropertyOpportunityList'
     ),
+
+    path('application-zone/<str:pk>', ApplicationZonesDetail.as_view(), name='ApplicationZonesDetail'),
 ]

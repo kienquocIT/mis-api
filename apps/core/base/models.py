@@ -5,7 +5,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy
 from jsonfield import JSONField
 
-from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
+from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE, MasterDataAbstractModel
 
 from apps.core.models import CoreAbstractModel
 
@@ -589,5 +589,56 @@ class IndicatorParam(SimpleAbstractModel):
         verbose_name = 'Indicator Param'
         verbose_name_plural = 'Indicator Params'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# ZONE
+class Zones(MasterDataAbstractModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name="application",
+        related_name="zones_application",
+        null=True
+    )
+    remark = models.TextField(verbose_name="remark", blank=True, null=True)
+    properties = models.ManyToManyField(
+        'base.ApplicationProperty',
+        through='ZonesProperties',
+        symmetrical=False,
+        blank=True,
+        related_name='zones_relate_properties',
+    )
+    properties_data = models.JSONField(
+        verbose_name="property list",
+        default=list,
+        help_text="list data parsed from ApplicationProperty [{},{}]"
+    )
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Zone'
+        verbose_name_plural = 'Zones'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ZonesProperties(SimpleAbstractModel):
+    property = models.ForeignKey(
+        'base.ApplicationProperty',
+        on_delete=models.CASCADE,
+        related_name='zones_props_property',
+    )
+    zone = models.ForeignKey(
+        'base.Zones',
+        on_delete=models.CASCADE,
+        related_name='zones_props_zone',
+    )
+
+    class Meta:
+        verbose_name = 'Zone Property'
+        verbose_name_plural = 'Zones Properties'
         default_permissions = ()
         permissions = ()
