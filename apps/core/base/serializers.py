@@ -175,62 +175,73 @@ class ZonesCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_properties_data(cls, value):
         if isinstance(value, list):
-            property_list = ApplicationProperty.objects.filter_current(
-                    fill__tenant=True, fill__company=True, id__in=value
-            )
+            property_list = ApplicationProperty.objects.filter(id__in=value)
             if property_list.count() == len(value):
                 return [
-                    {'id': prop.id, 'title': prop.title, 'code': prop.code, 'remark': prop.remark}
+                    {'id': str(prop.id), 'title': prop.title, 'code': prop.code, 'remark': prop.remark}
                     for prop in property_list
                 ]
             raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_NOT_EXIST})
         raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_IS_ARRAY})
 
 
-class ApplicationZonesDetailSerializer(serializers.ModelSerializer):
-    zones = serializers.SerializerMethodField()
+class ZonesListSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Application
+        model = Zones
         fields = (
-            'zones',
+            'title',
+            'remark',
+            'properties_data',
+            'order',
+        )
+
+
+class ZonesCreateUpdateSerializer(serializers.ModelSerializer):
+    application = serializers.UUIDField()
+    zones_data = ZonesCreateSerializer(many=True)
+
+    class Meta:
+        model = Zones
+        fields = (
+            'application',
+            'zones_data',
         )
 
     @classmethod
-    def get_zones(cls, obj):
-        return [
-            {'id': zone.id, 'title': zone.title, 'remark': zone.remark, 'properties_data': zone.properties_data}
-            for zone in obj.zones_application.all()
-        ]
+    def validate_application(cls, value):
+        try:
+            return Application.objects.get(id=value)
+        except Application.DoesNotExist:
+            raise serializers.ValidationError({'application': BaseMsg.APPLICATION_NOT_EXIST})
 
-
-class ApplicationZonesUpdateSerializer(serializers.ModelSerializer):
-    zones = ZonesCreateSerializer(many=True)
-
-    class Meta:
-        model = Application
-        fields = (
-            'zones',
-        )
-
-    def update(self, instance, validated_data):
-        zones_data = []
-        if 'zones' in validated_data:
-            zones_data = validated_data['zones']
-            del validated_data['zones']
-        old_zones = instance.zones_application.filter()
-        if old_zones:
-            for old_zone in old_zones:
-                old_zone.zones_props_zone.all().delete()
-            old_zones.delete()
-        zones = Zones.objects.bulk_create([
-            Zones(**zone_data, application=instance)
-            for zone_data in zones_data
-        ])
-        if zones:
-            for zone in zones:
-                ZonesProperties.objects.bulk_create([
-                    ZonesProperties(zone=zone, property=prop)
-                    for prop in zone.properties_data
+    def create(self, validated_data):
+        zone = None
+        application = validated_data.get('application', None)
+        zones_data = validated_data.get('zones_data', [])
+        user = self.context.get('user', None)
+        if application and user:
+            if all(hasattr(user, attr) for attr in ('tenant_current_id', 'company_current_id', 'employee_current_id')):
+                old_zones = application.zones_application.filter(
+                    tenant_id=user.tenant_current_id, company_id=user.company_current_id
+                )
+                if old_zones:
+                    for old_zone in old_zones:
+                        old_zone.zones_props_zone.all().delete()
+                    old_zones.delete()
+                new_zones = Zones.objects.bulk_create([
+                    Zones(
+                        **zone_data, application=application,
+                        tenant_id=user.tenant_current_id, company_id=user.company_current_id,
+                        employee_created_id=user.employee_current_id, employee_modified_id=user.employee_current_id,
+                    )
+                    for zone_data in zones_data
                 ])
-        return instance
+                if new_zones:
+                    for new_zone in new_zones:
+                        ZonesProperties.objects.bulk_create([
+                            ZonesProperties(zone=new_zone, property_id=prop_data.get('id', None))
+                            for prop_data in new_zone.properties_data
+                        ])
+                        zone = new_zone
+        return zone

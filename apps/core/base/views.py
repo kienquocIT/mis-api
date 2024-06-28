@@ -6,10 +6,10 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.base.filters import ApplicationPropertiesListFilter
-from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin, BaseCreateMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones
 )
 
 from apps.core.base.serializers import (
@@ -17,7 +17,7 @@ from apps.core.base.serializers import (
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
     BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
-    ApplicationPropertyForMailListSerializer, ApplicationZonesUpdateSerializer, ApplicationZonesDetailSerializer,
+    ApplicationPropertyForMailListSerializer, ZonesCreateUpdateSerializer, ZonesListSerializer,
 )
 
 
@@ -374,38 +374,37 @@ class ApplicationPropertyOpportunityList(BaseListMixin):
 
 
 # ZONE
-class ApplicationZonesDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
-    queryset = Application.objects
-    serializer_detail = ApplicationZonesDetailSerializer
-    serializer_update = ApplicationZonesUpdateSerializer
-    # retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
-    # update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related('zones_application')
+class ZonesList(BaseListMixin, BaseCreateMixin):
+    queryset = Zones.objects
+    search_fields = ['title', 'remark',]
+    filterset_fields = {
+        'application_id': ['exact'],
+    }
+    serializer_list = ZonesListSerializer
+    serializer_create = ZonesCreateUpdateSerializer
+    serializer_detail = ZonesListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
-        operation_summary="Application Zones Detail",
-        operation_description="Get Application Zones Detail by ID",
+        operation_summary="Zones List",
+        operation_description="Get Zones List",
     )
     @mask_view(
         login_require=True, auth_require=False,
     )
-    def get(self, request, *args, pk, **kwargs):
-        return self.retrieve(request, *args, pk, **kwargs)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Update Application Zones",
-        operation_description="Update Application Zones by ID",
-        request_body=ApplicationZonesUpdateSerializer,
+        operation_summary="Create Zones",
+        operation_description="Create new Zones",
+        request_body=ZonesCreateUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, pk, **kwargs):
+    def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
-        return self.update(request, *args, pk, **kwargs)
+        return self.create(request, *args, **kwargs)
