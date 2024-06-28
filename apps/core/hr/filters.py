@@ -42,7 +42,7 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
     def filter_list_from_leave(cls, queryset, *args, **kwargs):
         return queryset
 
-    def filter_role(self, queryset, name, value):
+    def filter_role(self, queryset, name, value):  # pylint: disable=W0613
         user_obj = getattr(self.request, 'user', None)
         if user_obj:
             excludes_employee = []
