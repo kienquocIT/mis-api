@@ -19,7 +19,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
                     serial_data = []
-                    for serial in obj.product_wh_serial_goods_receipt.filter(
+                    for serial in obj.pw_serial_goods_receipt.filter(
                         product_warehouse__product_id=item.product_id,
                         product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
                     ).order_by('vendor_serial_number', 'serial_number'):
