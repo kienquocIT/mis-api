@@ -1227,17 +1227,17 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
             SOFinishHandler.push_to_report_customer(instance=sale_order)
-        for g_return in GoodsReturn.objects.filter(system_status__in=[2, 3]):
+        for g_return in GoodsReturn.objects.filter(system_status=3):
             ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_cashflow(instance=sale_order)
-        for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        for purchase_order in PurchaseOrder.objects.filter(system_status=3):
             POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
     return True
@@ -1266,17 +1266,17 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+    for po in PurchaseOrder.objects.filter(system_status=3):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+    for gr in GoodsReceipt.objects.filter(system_status=3):
         GRFinishHandler.push_product_info(instance=gr)
     # output
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+    for so in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.all():
+    for return_obj in GoodsReturn.objects.filter(system_status=3):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True
@@ -1289,7 +1289,7 @@ def reset_and_run_warehouse_stock(run_type=0):
     ProductWareHouse.objects.all().delete()
     # input, output, provide
     if run_type == 0:  # input
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             GRFinishHandler.push_to_warehouse_stock(instance=gr)
     if run_type == 1:  # output
         for deli_sub in OrderDeliverySub.objects.all():
@@ -1315,7 +1315,7 @@ def reset_and_run_warehouse_stock(run_type=0):
 def reset_and_run_pw_lot_transaction(run_type=0):
     if run_type == 0:  # goods receipt
         ProductWareHouseLotTransaction.objects.filter(type_transaction=0).delete()
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             for gr_warehouse in gr.goods_receipt_warehouse_goods_receipt.all():
                 if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
                     gr_product = gr_warehouse.goods_receipt_product
@@ -1556,7 +1556,7 @@ def run_inventory_report():
     return True
 
 
-def report_rerun(company_id, start_month, run_fix_data=False, run_update_warehouse=False, has_lot=False):
+def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
     ReportInventorySub.objects.all().delete()
     ReportInventoryProductWarehouse.objects.all().delete()
     ReportInventory.objects.all().delete()
@@ -1631,31 +1631,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, run_update_warehou
             ending_balance_cost=float(8000000),
             for_balance=True
         )
-        if run_update_warehouse:
-            ProductWareHouse.objects.filter(id='5da687717c6049a1905a6193e3f41c51').update(
-                stock_amount=5,
-                receipt_amount=5
-            )
-            ProductWareHouse.objects.filter(id='b7b6a84e-f38e-492e-bf9a-7b03cbe02b52').update(
-                stock_amount=14,
-                receipt_amount=26
-            )
-
-            for sn in ProductWareHouseSerial.objects.filter(id__in=[
-                '78275273-0b24-40ee-8f53-c353f640fb12',
-                '8c322c95-116d-4ee4-893c-bb337a0656e1'
-            ]):
-                sn.product_warehouse_id = 'b7b6a84e-f38e-492e-bf9a-7b03cbe02b52'
-                sn.save(update_fields=['product_warehouse_id'])
-
-            prd_wh = ProductWareHouse.objects.filter(id='025e7896fd874c80befda6f18ed148b1').first()
-            if prd_wh:
-                for sn in ProductWareHouseSerial.objects.filter(product_warehouse=prd_wh):
-                    sn.product_warehouse_id = '5da687717c6049a1905a6193e3f41c51'
-                    sn.save(update_fields=['product_warehouse_id'])
-                prd_wh.delete()
-            ProductWareHouse.objects.filter(id='8d34b13a63c8464daeb4afb53348003a').delete()
-
         # đầu kỳ Vision
         if has_lot:
             ReportInventoryProductWarehouse.objects.create(
@@ -1696,25 +1671,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, run_update_warehou
                 ending_balance_cost=float(40000000),
                 for_balance=True
             )
-        if run_update_warehouse:
-            ProductWareHouseLot.objects.filter(id='9b310c99-f2bb-4f78-8f9b-8ec4abdf9023').update(
-                product_warehouse_id='5c296dbf-1885-47b1-aada-b318724d6859',
-                quantity_import=0
-            )
-            ProductWareHouseLot.objects.filter(id='12de4425-e1e3-41a0-bd28-6e44d78ec260').update(
-                quantity_import=3
-            )
-            ProductWareHouseLot.objects.filter(id='153cb1a1-7004-4fbd-a08a-61fc9b172a1d').update(
-                quantity_import=3
-            )
-            ProductWareHouse.objects.filter(id='5c296dbf-1885-47b1-aada-b318724d6859').update(
-                sold_amount=12,
-                stock_amount=3
-            )
-            ProductWareHouse.objects.filter(id='52614125-cebd-405c-a59a-a0c4890abfed').update(
-                stock_amount=3,
-                receipt_amount=3
-            )
         # đầu kỳ HP
         ReportInventoryProductWarehouse.objects.create(
             tenant=company.tenant,
@@ -1734,111 +1690,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, run_update_warehou
             ending_balance_cost=float(138000000),
             for_balance=True
         )
-        if run_update_warehouse:
-            prd_wh = ProductWareHouse.objects.filter(
-                product_id="e12e4dd2-fb4e-479d-ae8a-c902f3dbc896"
-            ).first()
-            if prd_wh:
-                prd_wh.stock_amount = 5
-                prd_wh.receipt_amount = 28
-                prd_wh.save(update_fields=['stock_amount', 'receipt_amount'])
-                if ProductWareHouseSerial.objects.filter(vendor_serial_number='hp-dk').count() == 0:
-                    new_sn = [
-                        ProductWareHouseSerial(
-                            tenant=company.tenant,
-                            company=company,
-                            vendor_serial_number='hp-dk',
-                            serial_number='hp-dk-01',
-                            product_warehouse=prd_wh
-                        ),
-                        ProductWareHouseSerial(
-                            tenant=company.tenant,
-                            company=company,
-                            vendor_serial_number='hp-dk',
-                            serial_number='hp-dk-02',
-                            product_warehouse=prd_wh
-                        )
-                    ]
-                    ProductWareHouseSerial.objects.bulk_create(new_sn)
-                    prd_wh.product.stock_amount = 5
-                    prd_wh.product.available_amount = -24
-                    prd_wh.product.save(update_fields=['stock_amount', 'available_amount'])
-        # đầu kỳ Transceiver
-        if has_lot:
-            ReportInventoryProductWarehouse.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                lot_mapped_id="b1d4a1cfb72b41d0817d0514d49bd352",
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(3),
-                opening_balance_value=float(24000000),
-                opening_balance_cost=float(8000000),
-                ending_balance_quantity=float(3),
-                ending_balance_value=float(24000000),
-                ending_balance_cost=float(8000000),
-                for_balance=True
-            )
-            ReportInventoryProductWarehouse.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                lot_mapped_id="d3d5116b56fa4171a78b71ed53b1cce6",
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(1),
-                opening_balance_value=float(8000000),
-                opening_balance_cost=float(8000000),
-                ending_balance_quantity=float(1),
-                ending_balance_value=float(8000000),
-                ending_balance_cost=float(8000000),
-                for_balance=True
-            )
-        else:
-            ReportInventoryProductWarehouse.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(4),
-                opening_balance_value=float(32000000),
-                opening_balance_cost=float(8000000),
-                ending_balance_quantity=float(4),
-                ending_balance_value=float(32000000),
-                ending_balance_cost=float(8000000),
-                for_balance=True
-            )
-        if run_update_warehouse:
-            ProductWareHouse.objects.filter(id='a0401285-454e-484b-a54a-5795284f19cd').update(stock_amount=13)
-            Product.objects.filter(id='1ee9ee35-25af-48f8-95f7-c51fcd4c615c').update(stock_amount=16, available_amount=1)
-            lot = ProductWareHouseLot.objects.filter(id='d3d5116b56fa4171a78b71ed53b1cce6').first()
-            if lot:
-                lot.quantity_import = 0
-                lot.save(update_fields=['quantity_import'])
-            lot = ProductWareHouseLot.objects.filter(id='b1d4a1cf-b72b-41d0-817d-0514d49bd352').first()
-            if lot:
-                lot.quantity_import = 13
-                lot.save(update_fields=['quantity_import'])
-
-            ProductWareHouse.objects.filter(id='78fdd83e-6cea-415c-9879-d7dbd6d4a224').update(stock_amount=3)
-            lot = ProductWareHouseLot.objects.filter(id='449f5026-b9dc-4cb0-ade8-4cda3b32018b').first()
-            if lot:
-                lot.quantity_import = 3
-                lot.save(update_fields=['quantity_import'])
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -2064,3 +1915,10 @@ def run_update_pw_uom_base(run_type=0, product_id=None):
             update_pw_uom_base(product=product)
     print('run_update_pw_uom_base done.')
     return True
+
+
+def delete_gr_map_wh():
+    gr_wh = GoodsReceiptWarehouse.objects.filter(id="80afc5ee-f7b9-486f-a756-b66a3c642c40").first()
+    if gr_wh:
+        gr_wh.delete()
+    print('delete_gr_map_wh done.')

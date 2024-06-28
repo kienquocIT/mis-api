@@ -111,6 +111,10 @@ class PeriodsDetailSerializer(serializers.ModelSerializer):
         )
 
 
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+
+
 def for_serial(item, instance, prd_obj, wh_obj):
     bulk_info_prd_wh = []
     bulk_info_sn = []
@@ -127,7 +131,7 @@ def for_serial(item, instance, prd_obj, wh_obj):
                     company_id=instance.company_id,
                     product=prd_obj,
                     warehouse=wh_obj,
-                    uom=prd_obj.inventory_uom,
+                    uom=prd_obj.general_uom_group.uom_reference,
                     unit_price=float(item.get('value')) / float(item.get('quantity')),
                     tax=prd_obj.purchase_tax,
                     stock_amount=float(item.get('quantity')),
@@ -139,9 +143,9 @@ def for_serial(item, instance, prd_obj, wh_obj):
                     product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
                     warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
                     uom_data={
-                        "id": str(prd_obj.inventory_uom_id),
-                        "code": prd_obj.inventory_uom.code,
-                        "title": prd_obj.inventory_uom.title
+                        "id": str(prd_obj.general_uom_group.uom_reference_id),
+                        "code": prd_obj.general_uom_group.uom_reference.code,
+                        "title": prd_obj.general_uom_group.uom_reference.title
                     },
                     tax_data={
                         "id": str(prd_obj.purchase_tax_id),
@@ -168,55 +172,56 @@ def for_serial(item, instance, prd_obj, wh_obj):
 def for_lot(item, instance, prd_obj, wh_obj):
     bulk_info_prd_wh = []
     bulk_info_lot = []
-    if float(item.get('quantity')) == sum(float(lot.get('quantity_import', 0)) for lot in item.get('data_lot', [])):
-        if not ProductWareHouse.objects.filter(
+    if not ProductWareHouse.objects.filter(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            product=prd_obj,
+            warehouse=wh_obj
+    ).exists():
+        bulk_info_prd_wh.append(
+            ProductWareHouse(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 product=prd_obj,
-                warehouse=wh_obj
-        ).exists():
-            bulk_info_prd_wh.append(
-                ProductWareHouse(
+                warehouse=wh_obj,
+                uom=prd_obj.general_uom_group.uom_reference,
+                unit_price=float(item.get('value')) / float(item.get('quantity')),
+                tax=prd_obj.purchase_tax,
+                stock_amount=float(item.get('quantity')),
+                receipt_amount=float(item.get('quantity')),
+                sold_amount=0,
+                picked_ready=0,
+                used_amount=0,
+                # backup data
+                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                uom_data={
+                    "id": str(prd_obj.general_uom_group.uom_reference_id),
+                    "code": prd_obj.general_uom_group.uom_reference.code,
+                    "title": prd_obj.general_uom_group.uom_reference.title
+                },
+                tax_data={
+                    "id": str(prd_obj.purchase_tax_id),
+                    "code": prd_obj.purchase_tax.code,
+                    "rate": prd_obj.purchase_tax.rate,
+                    "title": prd_obj.purchase_tax.title
+                }
+            )
+        )
+        for lot in item.get('data_lot', []):
+            bulk_info_lot.append(
+                ProductWareHouseLot(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    product=prd_obj,
-                    warehouse=wh_obj,
-                    uom=prd_obj.inventory_uom,
-                    unit_price=float(item.get('value')) / float(item.get('quantity')),
-                    tax=prd_obj.purchase_tax,
-                    stock_amount=float(item.get('quantity')),
-                    receipt_amount=float(item.get('quantity')),
-                    sold_amount=0,
-                    picked_ready=0,
-                    used_amount=0,
-                    # backup data
-                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
-                    uom_data={
-                        "id": str(prd_obj.inventory_uom_id),
-                        "code": prd_obj.inventory_uom.code,
-                        "title": prd_obj.inventory_uom.title
-                    },
-                    tax_data={
-                        "id": str(prd_obj.purchase_tax_id),
-                        "code": prd_obj.purchase_tax.code,
-                        "rate": prd_obj.purchase_tax.rate,
-                        "title": prd_obj.purchase_tax.title
-                    }
-                )
-            )
-            for lot in item.get('data_lot', []):
-                bulk_info_lot.append(
-                    ProductWareHouseLot(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product_warehouse=bulk_info_prd_wh[-1],
-                        **lot
+                    product_warehouse=bulk_info_prd_wh[-1],
+                    lot_number=lot.get('lot_number'),
+                    quantity_import=ReportInventorySub.cast_quantity_to_unit(
+                        prd_obj.inventory_uom, float(lot.get('quantity_import'))
                     )
                 )
-            return bulk_info_prd_wh, [], bulk_info_lot
-        raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
-    raise serializers.ValidationError({"Invalid": 'Quantity is != num lot data.'})
+            )
+        return bulk_info_prd_wh, [], bulk_info_lot
+    raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
 
 def for_none(item, instance, prd_obj, wh_obj):
@@ -233,7 +238,7 @@ def for_none(item, instance, prd_obj, wh_obj):
                 company_id=instance.company_id,
                 product=prd_obj,
                 warehouse=wh_obj,
-                uom=prd_obj.inventory_uom,
+                uom=prd_obj.general_uom_group.uom_reference,
                 unit_price=float(item.get('value')) / float(item.get('quantity')),
                 tax=prd_obj.purchase_tax,
                 stock_amount=float(item.get('quantity')),
@@ -245,9 +250,9 @@ def for_none(item, instance, prd_obj, wh_obj):
                 product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
                 warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
                 uom_data={
-                    "id": str(prd_obj.inventory_uom_id),
-                    "code": prd_obj.inventory_uom.code,
-                    "title": prd_obj.inventory_uom.title
+                    "id": str(prd_obj.general_uom_group.uom_reference_id),
+                    "code": prd_obj.general_uom_group.uom_reference.code,
+                    "title": prd_obj.general_uom_group.uom_reference.title
                 },
                 tax_data={
                     "id": str(prd_obj.purchase_tax_id),
@@ -286,7 +291,7 @@ def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
     return True
 
 
-def update_balance_data(balance_data, instance):
+def update_balance_data(balance_data, instance, employee_current):
     """
     Lấy thời gian sử dụng phần mềm
     Lặp từng row trong balance table:
@@ -315,7 +320,10 @@ def update_balance_data(balance_data, instance):
             if item.get('product_id') and item.get('warehouse_id'):
                 prd_obj = Product.objects.filter(id=item.get('product_id')).first()
                 wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-
+                item['quantity'] = ReportInventorySub.cast_quantity_to_unit(
+                    prd_obj.inventory_uom,
+                    float(item.get('quantity'))
+                )
                 if prd_obj and wh_obj:
                     check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
 
@@ -327,8 +335,8 @@ def update_balance_data(balance_data, instance):
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
                                 company=instance.company,
-                                employee_created=instance.employee_created,
-                                employee_inherit=instance.employee_inherit,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
                                 product=prd_obj,
                                 warehouse=wh_obj,
                                 period_mapped=instance,
@@ -352,8 +360,8 @@ def update_balance_data(balance_data, instance):
                             ReportInventoryProductWarehouse(
                                 tenant=instance.tenant,
                                 company=instance.company,
-                                employee_created=instance.employee_created,
-                                employee_inherit=instance.employee_inherit,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
                                 product=prd_obj,
                                 warehouse=wh_obj,
                                 period_mapped=instance,
@@ -424,6 +432,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
 
         if 'balance_data' in self.initial_data:
-            update_balance_data(self.initial_data.get('balance_data', []), instance)
+            update_balance_data(
+                self.initial_data.get('balance_data', []),
+                instance,
+                self.context.get('employee_current')
+            )
 
         return instance
