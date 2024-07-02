@@ -83,7 +83,10 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class GoodsRegistrationProductWarehouseList(BaseListMixin):
     queryset = GoodsRegistrationLineDetail.objects
-    filterset_fields = {'so_item__sale_order_id': ['exact'], 'so_item__product_id': ['exact']}
+    filterset_fields = {
+        'so_item__sale_order_id': ['exact'],
+        'so_item__product_id': ['exact']
+    }
     serializer_list = GoodsRegistrationProductWarehouseSerializer
 
     def get_queryset(self):
@@ -107,7 +110,10 @@ class GoodsRegistrationProductWarehouseList(BaseListMixin):
 
 class GoodsRegistrationProductWarehouseLotList(BaseListMixin):
     queryset = GoodsRegistrationLineDetail.objects
-    filterset_fields = {'so_item__sale_order_id': ['exact'], 'so_item__product_id': ['exact']}
+    filterset_fields = {
+        'so_item__sale_order_id': ['exact'],
+        'so_item__product_id': ['exact']
+    }
     serializer_list = GoodsRegistrationProductWarehouseLotSerializer
 
     def get_queryset(self):
@@ -117,6 +123,9 @@ class GoodsRegistrationProductWarehouseLotList(BaseListMixin):
                 'so_item__product'
             ).prefetch_related(
                 'goods_registration_item_lot__lot_registered'
+            ).filter(
+                goods_registration_item_lot__lot_registered__product_warehouse__warehouse_id=
+                self.request.query_params.get('warehouse_id')
             )
         return super().get_queryset().none()
 
@@ -143,6 +152,9 @@ class GoodsRegistrationProductWarehouseSerialList(BaseListMixin):
                 'so_item__product'
             ).prefetch_related(
                 'goods_registration_item_serial__sn_registered'
+            ).filter(
+                goods_registration_item_lot__sn_registered__product_warehouse__warehouse_id=
+                self.request.query_params.get('warehouse_id')
             )
         return super().get_queryset().none()
 
