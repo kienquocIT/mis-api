@@ -620,7 +620,7 @@ class Zones(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Zone'
         verbose_name_plural = 'Zones'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
