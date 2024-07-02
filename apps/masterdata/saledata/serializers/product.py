@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.sales.report.models import ReportInventorySub
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -402,6 +403,10 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         return product
 
 
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     general_information = serializers.SerializerMethodField()  # noqa
     sale_information = serializers.SerializerMethodField()
@@ -549,20 +554,24 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'warehouse', 'uom'
         ).order_by('warehouse__code')
         for item in product_warehouse:
-            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
-            uom_ratio_des = item.uom.ratio if item.uom else 0
-            if uom_ratio_src and uom_ratio_des:
-                quantity, cost, _ = obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=3)
-                ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                if quantity > 0:
-                    result.append({
-                        'id': item.id,
-                        'warehouse': {
-                            'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
-                        } if item.warehouse else {},
-                        'stock_amount': quantity / ratio_convert,
-                        'cost': cost * ratio_convert
-                    })
+            if item.stock_amount > 0:
+                casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
+                config_inventory_management = ReportInventorySub.get_config_inventory_management(
+                    obj.company.company_config
+                )
+
+                result.append({
+                    'id': item.id,
+                    'warehouse': {
+                        'id': item.warehouse_id,
+                        'title': item.warehouse.title,
+                        'code': item.warehouse.code,
+                    } if item.warehouse else {},
+                    'stock_amount': casted_stock_amount,
+                    'cost': obj.get_unit_cost_by_warehouse(
+                        warehouse_id=item.warehouse_id, get_type=2
+                    ) / casted_stock_amount if config_inventory_management == [1] else None
+                })
         return result
 
     @classmethod

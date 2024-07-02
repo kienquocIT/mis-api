@@ -13,6 +13,8 @@ from ..utils import DeliHandler, DeliFinishHandler
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
 
+from ...inventory.models import GoodsRegistration
+
 from ...report.models import ReportInventorySub
 
 

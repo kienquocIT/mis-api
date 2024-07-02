@@ -1,5 +1,11 @@
 from django.db import models
+
+from apps.masterdata.saledata.models import ProductWareHouseSerial
 from apps.shared import DataAbstractModel, SimpleAbstractModel
+
+
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
 
 class GoodsRegistration(DataAbstractModel):
@@ -41,45 +47,107 @@ class GoodsRegistration(DataAbstractModel):
         return None
 
     @classmethod
-    def update_registered_quantity_when_receipt(cls, sale_order, stock_info):
-        if sale_order.opportunity:
+    def for_goods_receipt(cls, so_item, stock_info, gre_item, goods_receipt_id):
+        sn_data = []
+        this_registered = cast_unit_to_inv_quantity(so_item.unit_of_measure, stock_info['quantity'])
+        gre_item.this_registered += this_registered
+        gre_item.this_registered_value += stock_info['value']
+        gre_item.this_available = gre_item.this_registered - gre_item.this_others
+        gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
+        if stock_info['product'].general_traceability_method == 1:  # lot
+            stock_info['lot_data']['lot_quantity'] = cast_unit_to_inv_quantity(
+                so_item.unit_of_measure, stock_info['lot_data']['lot_quantity']
+            )
+            GoodsRegistrationLot.objects.create(
+                goods_registration_item=gre_item,
+                lot_registered_id=stock_info['lot_data']['lot_id'],
+            )
+        if stock_info['product'].general_traceability_method == 2:  # sn
+            bulk_info = []
+            for sn in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
+                sn_data.append({
+                    'id': str(sn.id),
+                    'vendor_serial_number': sn.vendor_serial_number,
+                    'serial_number': sn.serial_number
+                })
+                bulk_info.append(
+                    GoodsRegistrationSerial(
+                        goods_registration_item=gre_item,
+                        sn_registered=sn
+                    )
+                )
+            GoodsRegistrationSerial.objects.bulk_create(bulk_info)
+
+        gre_item.registered_data += [{
+            'product_id': str(stock_info['product'].id),
+            'product_code': stock_info['product'].code,
+            'warehouse_id': str(stock_info['warehouse'].id),
+            'warehouse_code': stock_info['warehouse'].code,
+            'system_date': str(stock_info['system_date']),
+            'posting_date': str(stock_info['posting_date']),
+            'document_date': str(stock_info['document_date']),
+            'stock_type': stock_info['stock_type'],
+            'trans_id': stock_info['trans_id'],
+            'trans_code': stock_info['trans_code'],
+            'trans_title': stock_info['trans_title'],
+            'quantity': this_registered,
+            'cost': stock_info['cost'],
+            'value': stock_info['value'],
+            'lot_data': stock_info['lot_data'],
+            'sn_data': sn_data
+        }]
+        return gre_item
+
+    @classmethod
+    def for_delivery(cls, so_item, stock_info, gre_item, delivery_id):
+        sn_data = []
+        this_registered = cast_unit_to_inv_quantity(so_item.unit_of_measure, stock_info['quantity'])
+        gre_item.this_registered -= this_registered
+        gre_item.this_registered_value -= stock_info['value']
+        gre_item.this_available = gre_item.this_registered - gre_item.this_others
+        gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
+        if stock_info['product'].general_traceability_method == 1:  # lot
+            stock_info['lot_data']['lot_quantity'] = cast_unit_to_inv_quantity(
+                so_item.unit_of_measure, stock_info['lot_data']['lot_quantity']
+            )
+
+        gre_item.registered_data += [{
+            'product_id': str(stock_info['product'].id),
+            'product_code': stock_info['product'].code,
+            'warehouse_id': str(stock_info['warehouse'].id),
+            'warehouse_code': stock_info['warehouse'].code,
+            'system_date': str(stock_info['system_date']),
+            'posting_date': str(stock_info['posting_date']),
+            'document_date': str(stock_info['document_date']),
+            'stock_type': stock_info['stock_type'],
+            'trans_id': stock_info['trans_id'],
+            'trans_code': stock_info['trans_code'],
+            'trans_title': stock_info['trans_title'],
+            'quantity': this_registered,
+            'cost': stock_info['cost'],
+            'value': stock_info['value'],
+            'lot_data': stock_info['lot_data'],
+            'sn_data': sn_data
+        }]
+        return gre_item
+
+    @classmethod
+    def update_registered_quantity(cls, sale_order, stock_info, **kwargs):
+        if sale_order.opportunity and stock_info.get('sale_order'):
             gre = sale_order.goods_registration_so.first()
             so_item = sale_order.sale_order_product_sale_order.filter(product=stock_info['product']).first()
             if gre and so_item:
                 gre_item = GoodsRegistrationLineDetail.objects.filter(goods_registration=gre, so_item=so_item).first()
                 if gre_item:
-                    gre_item.this_registered += stock_info['quantity']
-                    gre_item.this_registered_value += stock_info['value']
-                    gre_item.this_available = gre_item.this_registered - gre_item.this_others
-                    gre_item.this_available_value = gre_item.this_registered_value - gre_item.this_others_value
-                    gre_item.registered_data += [{
-                        'product_id': str(stock_info['product'].id),
-                        'product_code': stock_info['product'].code,
-                        'warehouse_id': str(stock_info['warehouse'].id),
-                        'warehouse_code': stock_info['warehouse'].code,
-                        'system_date': str(stock_info['system_date']),
-                        'posting_date': str(stock_info['posting_date']),
-                        'document_date': str(stock_info['document_date']),
-                        'stock_type': stock_info['stock_type'],
-                        'trans_id': stock_info['trans_id'],
-                        'trans_code': stock_info['trans_code'],
-                        'trans_title': stock_info['trans_title'],
-                        'quantity': stock_info['quantity'],
-                        'cost': stock_info['cost'],
-                        'value': stock_info['value'],
-                        'lot_data': stock_info['lot_data']
-                    }]
+                    if 'goods_receipt_id' in kwargs:
+                        cls.for_goods_receipt(so_item, stock_info, gre_item, kwargs.get('goods_receipt_id'))
+                    if 'delivery_id' in kwargs:
+                        cls.for_delivery(so_item, stock_info, gre_item, kwargs.get('delivery_id'))
                     gre_item.save(update_fields=[
                         'this_registered', 'this_registered_value',
                         'this_available', 'this_available_value',
                         'registered_data'
                     ])
-                    if len(stock_info['lot_data']) > 0:
-                        GoodsRegistrationLot.objects.create(
-                            goods_registration_item=gre_item,
-                            lot_registered_id=stock_info['lot_data']['lot_id'],
-                            lot_registered_quantity=stock_info['lot_data']['lot_quantity']
-                        )
         return True
 
 
@@ -126,7 +194,6 @@ class GoodsRegistrationLot(SimpleAbstractModel):
     lot_registered = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, related_name='goods_registration_lot_registered'
     )
-    lot_registered_quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Registration Lot'

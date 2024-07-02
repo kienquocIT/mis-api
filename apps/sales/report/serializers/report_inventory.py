@@ -118,9 +118,10 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
+            kw_parameter['warehouse_for_filter_id'] = warehouse_item[0]
             if 1 in config_inventory_management:
                 kw_parameter['warehouse_id'] = warehouse_item[0]
-            inventory_cost_data = obj.product.report_inventory_product_warehouse_product.filter(
+            inventory_cost_data = obj.product.report_inventory_prd_wh_product.filter(
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order,
                 **kw_parameter
@@ -161,7 +162,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
 class BalanceInitializationListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    warehouse = serializers.SerializerMethodField()
+    warehouse_for_filter = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
     opening_balance_quantity = serializers.SerializerMethodField()
     opening_balance_cost = serializers.SerializerMethodField()
@@ -171,7 +172,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
-            'warehouse',
+            'warehouse_for_filter',
             'period_mapped',
             'sub_period_order',
             'opening_balance_quantity',
@@ -197,12 +198,12 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
     @classmethod
-    def get_warehouse(cls, obj):
+    def get_warehouse_for_filter(cls, obj):
         return {
-            'id': obj.warehouse_id,
-            'title': obj.warehouse.title,
-            'code': obj.warehouse.code,
-        } if obj.warehouse else {}
+            'id': obj.warehouse_for_filter_id,
+            'title': obj.warehouse_for_filter.title,
+            'code': obj.warehouse_for_filter.code,
+        } if obj.warehouse_for_filter else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
@@ -227,7 +228,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
 
 class ReportInventoryListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    warehouse = serializers.SerializerMethodField()
+    warehouse_for_filter = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
 
@@ -236,7 +237,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
-            'warehouse',
+            'warehouse_for_filter',
             'period_mapped',
             'sub_period_order',
             'stock_activities',
@@ -260,12 +261,12 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
     @classmethod
-    def get_warehouse(cls, obj):
+    def get_warehouse_for_filter(cls, obj):
         return {
-            'id': obj.warehouse_id,
-            'title': obj.warehouse.title,
-            'code': obj.warehouse.code,
-        } if obj.warehouse else {}
+            'id': obj.warehouse_for_filter_id,
+            'title': obj.warehouse_for_filter.title,
+            'code': obj.warehouse_for_filter.code,
+        } if obj.warehouse_for_filter else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
@@ -340,7 +341,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
     def get_stock_activities(self, obj):
         div = self.context.get('definition_inventory_valuation')
         config_inventory_management = self.context.get('config_inventory_management')
-        kw_parameter = {}
+        kw_parameter = {'warehouse_for_filter_id': obj.warehouse_for_filter_id}
         if 1 in config_inventory_management:
             kw_parameter['warehouse_id'] = obj.warehouse_id
         if 2 in config_inventory_management:
@@ -354,7 +355,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
-        for log in obj.product.report_inventory_by_month_product.filter(
+        for log in obj.product.report_inventory_log_product.filter(
             report_inventory__period_mapped_id=obj.period_mapped_id,
             report_inventory__sub_period_order=obj.sub_period_order,
             **kw_parameter

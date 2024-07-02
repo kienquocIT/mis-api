@@ -156,6 +156,9 @@ def for_serial(item, instance, prd_obj, wh_obj):
                 )
             )
             for serial in item.get('data_sn', []):
+                for key in serial:
+                    if serial[key] == '':
+                        serial[key] = None
                 bulk_info_sn.append(
                     ProductWareHouseSerial(
                         tenant_id=instance.tenant_id,
@@ -209,6 +212,9 @@ def for_lot(item, instance, prd_obj, wh_obj):
             )
         )
         for lot in item.get('data_lot', []):
+            for key in lot:
+                if lot[key] == '':
+                    lot[key] = None
             bulk_info_lot.append(
                 ProductWareHouseLot(
                     tenant_id=instance.tenant_id,
@@ -310,12 +316,12 @@ def update_balance_data(balance_data, instance, employee_current):
         Else: raise lỗi
     """
     sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
-    bulk_info_rp_prd_wh = []
-    bulk_info_prd_wh = []
-    bulk_info_sn = []
-    bulk_info_lot = []
     sub_period_obj = instance.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
     if sub_period_obj:
+        bulk_info_rp_prd_wh = []
+        bulk_info_prd_wh = []
+        bulk_info_sn = []
+        bulk_info_lot = []
         for item in balance_data:
             if item.get('product_id') and item.get('warehouse_id'):
                 prd_obj = Product.objects.filter(id=item.get('product_id')).first()
@@ -338,7 +344,8 @@ def update_balance_data(balance_data, instance, employee_current):
                                 employee_created=employee_current,
                                 employee_inherit=employee_current,
                                 product=prd_obj,
-                                warehouse=wh_obj,
+                                warehouse=wh_obj if not instance.company.company_config.cost_per_project else None,
+                                warehouse_for_filter=wh_obj,
                                 period_mapped=instance,
                                 sub_period_order=sub_period_order_value,
                                 sub_period=sub_period_obj,
@@ -363,7 +370,8 @@ def update_balance_data(balance_data, instance, employee_current):
                                 employee_created=employee_current,
                                 employee_inherit=employee_current,
                                 product=prd_obj,
-                                warehouse=wh_obj,
+                                warehouse=wh_obj if not instance.company.company_config.cost_per_project else None,
+                                warehouse_for_filter=wh_obj,
                                 period_mapped=instance,
                                 sub_period_order=sub_period_order_value,
                                 sub_period=sub_period_obj,
@@ -403,10 +411,10 @@ def update_balance_data(balance_data, instance, employee_current):
                     bulk_info_lot += sub_lot
                 else:
                     raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
-            ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
-            ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
-            ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
-            ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
+        ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
+        ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
+        ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
+        ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
         return True
     raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
 

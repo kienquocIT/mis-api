@@ -489,7 +489,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             instance.opportunity.quotation = instance
             instance.opportunity.save(**{
                 'update_fields': ['quotation'],
-                'quotation_confirm': instance.is_customer_confirm,
+                # 'quotation_confirm': instance.is_customer_confirm,
             })
         return instance
 

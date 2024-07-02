@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
-from apps.sales.inventory.models import GoodsReceipt
+from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptWarehouse, GoodsRegistrationSerial, \
+    GoodsRegistrationLineDetail
 
 
 class GoodsDetailListSerializer(serializers.ModelSerializer):
@@ -90,33 +91,51 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Serial': f"Serial id {serial_id} is not existed"})
 
     @classmethod
-    def create_serial(cls, item, prd_wh, goods_receipt_id):
+    def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
         del item['serial_id']
         if item.get('vendor_serial_number') and item.get('serial_number'):
             if not ProductWareHouseSerial.objects.filter(
                     serial_number=item.get('serial_number')
             ).exists():
-                new_serial = ProductWareHouseSerial.objects.create(
-                    **item,
-                    product_warehouse=prd_wh,
-                    goods_receipt_id=goods_receipt_id,
-                    company_id=prd_wh.company_id,
-                    tenant_id=prd_wh.tenant_id
+                bulk_info_new_serial.append(
+                    ProductWareHouseSerial(
+                        **item,
+                        product_warehouse=prd_wh,
+                        goods_receipt_id=goods_receipt_id,
+                        company_id=prd_wh.company_id,
+                        tenant_id=prd_wh.tenant_id
+                    )
                 )
-                return new_serial
+                return bulk_info_new_serial
         raise serializers.ValidationError({'Serial': "Can not create new serial."})
 
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
         all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
-        amount_create = 0
+        bulk_info_new_serial = []
         for item in serial_data:
             serial_id = item.get('serial_id')
             if serial_id:
                 cls.update_serial(item, all_serial, serial_id, goods_receipt_id)
             else:
-                amount_create += 1
-                cls.create_serial(item, prd_wh, goods_receipt_id)
+                bulk_info_new_serial = cls.create_serial(item, prd_wh, goods_receipt_id, bulk_info_new_serial)
+        created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
+        gr_wh = GoodsReceiptWarehouse.objects.filter(
+            goods_receipt_id=goods_receipt_id,
+            warehouse=prd_wh.warehouse,
+            goods_receipt_product__product=prd_wh.product
+        ).first()
+        if gr_wh:
+            pr_prd = hasattr(gr_wh.goods_receipt_request_product, 'purchase_request_product')
+            so_item = hasattr(pr_prd, 'sale_order_product') if pr_prd else None
+            gre_item = GoodsRegistrationLineDetail.objects.filter(so_item=so_item).first() if so_item else None
+            if gre_item:
+                bulk_info_regis = []
+                for sn in created_sn:
+                    bulk_info_regis.append(GoodsRegistrationSerial(goods_registration_item=gre_item, sn_registered=sn))
+                GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
+
+        amount_create = len(bulk_info_new_serial)
         if amount_create > 0:
             prd_wh.receipt_amount += amount_create
             prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
