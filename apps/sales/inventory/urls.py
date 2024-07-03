@@ -5,10 +5,10 @@ from apps.sales.inventory.views import (
     InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList,
     GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn,
     GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList,
-    GoodsRegistrationList, GoodsRegistrationDetail,
-    GoodsRegistrationProductWarehouseList,
-    GoodsRegistrationProductWarehouseLotList,
-    GoodsRegistrationProductWarehouseSerialList
+    GoodsRegistrationList,
+    GoodsRegistrationDetail,
+    GoodsRegistrationLotList,
+    GoodsRegistrationSerialList, GoodsRegistrationGeneralList
 )
 
 urlpatterns = [
@@ -69,18 +69,18 @@ urlpatterns += [
     path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
     path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
     path(
-        'goods-registration-prd-wh',
-        GoodsRegistrationProductWarehouseList.as_view(),
-        name='GoodsRegistrationProductWarehouseList'
+        'goods-registration-prd-wh-general',
+        GoodsRegistrationGeneralList.as_view(),
+        name='GoodsRegistrationGeneralList'
     ),
     path(
         'goods-registration-prd-wh-lot',
-        GoodsRegistrationProductWarehouseLotList.as_view(),
-        name='GoodsRegistrationProductWarehouseLotList'
+        GoodsRegistrationLotList.as_view(),
+        name='GoodsRegistrationLotList'
     ),
     path(
         'goods-registration-prd-wh-serial',
-        GoodsRegistrationProductWarehouseSerialList.as_view(),
-        name='GoodsRegistrationProductWarehouseSerialList'
+        GoodsRegistrationSerialList.as_view(),
+        name='GoodsRegistrationSerialList'
     ),
 ]

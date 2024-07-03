@@ -359,13 +359,14 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         if 3 in config_inventory_management:
             kw_parameter['sale_order_id'] = log.sale_order_id
 
+        # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
+        latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
+            div,
+            log.product_id,
+            **kw_parameter
+        )
+
         if div == 0:
-            # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
-            latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
-                div,
-                log.product_id,
-                **kw_parameter
-            )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_perpetual_inventory(
                 log,
@@ -391,12 +392,6 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             )
             return True
         if div == 1:
-            # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
-            latest_value_dict = LoggingSubFunction.get_latest_log_value_dict(
-                div,
-                log.product_id,
-                **kw_parameter
-            )
             # tính toán value list mới
             new_value_list = LoggingSubFunction.calculate_new_value_dict_in_periodic_inventory(
                 log,

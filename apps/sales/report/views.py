@@ -421,7 +421,7 @@ class ReportInventoryList(BaseListMixin):
             if self.request.query_params['product_id_list'] != '':
                 prd_id_list = self.request.query_params['product_id_list'].split(',')
                 return_query = super().get_queryset().select_related(
-                    "product__inventory_uom", "warehouse", "period_mapped"
+                    "product__inventory_uom", "warehouse", "warehouse_for_filter", "period_mapped"
                 ).prefetch_related(
                     'product__report_inventory_prd_wh_product',
                     'product__report_inventory_log_product'
@@ -431,11 +431,13 @@ class ReportInventoryList(BaseListMixin):
                     product_id__in=prd_id_list
                 )
                 if self.request.user.company_current.company_config.cost_per_project:
-                    return return_query.order_by('sale_order__code', 'product__code', 'lot_mapped__lot_number')
+                    return return_query.order_by(
+                        "warehouse_for_filter__code", 'sale_order__code', 'product__code', 'lot_mapped__lot_number'
+                    )
                 return return_query.order_by('warehouse_for_filter__code', 'product__code', 'lot_mapped__lot_number')
 
             return_query = super().get_queryset().select_related(
-                "product__inventory_uom", "warehouse", "period_mapped"
+                "product__inventory_uom", "warehouse", "warehouse_for_filter", "period_mapped"
             ).prefetch_related(
                 'product__report_inventory_prd_wh_product',
                 'product__report_inventory_log_product'
@@ -444,7 +446,9 @@ class ReportInventoryList(BaseListMixin):
                 sub_period_order=sub_period_order
             )
             if self.request.user.company_current.company_config.cost_per_project:
-                return return_query.order_by('sale_order__code', 'product__code', 'lot_mapped__lot_number')
+                return return_query.order_by(
+                    'warehouse_for_filter__code', 'sale_order__code', 'product__code', 'lot_mapped__lot_number'
+                )
             return return_query.order_by('warehouse_for_filter__code', 'product__code', 'lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()

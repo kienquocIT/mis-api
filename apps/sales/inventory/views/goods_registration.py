@@ -1,11 +1,17 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.inventory.models import GoodsRegistration, GoodsRegistrationLineDetail
+from apps.sales.inventory.models import (
+    GoodsRegistration,
+    GoodsRegistrationItem,
+    GoodsRegistrationSerial,
+    GoodsRegistrationLot, GoodsRegistrationGeneral
+)
 from apps.sales.inventory.serializers import (
-    GoodsRegistrationListSerializer, GoodsRegistrationCreateSerializer,
-    GoodsRegistrationDetailSerializer, GoodsRegistrationUpdateSerializer,
-    GoodsRegistrationProductWarehouseSerializer,
-    GoodsRegistrationProductWarehouseLotSerializer,
-    GoodsRegistrationProductWarehouseSerialSerializer
+    GoodsRegistrationListSerializer,
+    GoodsRegistrationCreateSerializer,
+    GoodsRegistrationDetailSerializer,
+    GoodsRegistrationUpdateSerializer,
+    GoodsRegistrationLotSerializer,
+    GoodsRegistrationSerialSerializer, GoodsRegistrationGeneralSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -81,25 +87,25 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class GoodsRegistrationProductWarehouseList(BaseListMixin):
-    queryset = GoodsRegistrationLineDetail.objects
+class GoodsRegistrationGeneralList(BaseListMixin):
+    queryset = GoodsRegistrationGeneral.objects
     filterset_fields = {
-        'so_item__sale_order_id': ['exact'],
-        'so_item__product_id': ['exact']
+        'gre_item__so_item__sale_order_id': ['exact'],
+        'gre_item__product_id': ['exact'],
+        'warehouse_id': ['exact'],
     }
-    serializer_list = GoodsRegistrationProductWarehouseSerializer
+    serializer_list = GoodsRegistrationGeneralSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
             return super().get_queryset().select_related(
-                'so_item__sale_order',
-                'so_item__product'
+                'warehouse'
             )
         return super().get_queryset().none()
 
     @swagger_auto_schema(
-        operation_summary="Goods registration Product Warehouse List",
-        operation_description="Get Goods registration Product Warehouse List",
+        operation_summary="Goods registration Lot List",
+        operation_description="Get Goods registration Lot List",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -108,64 +114,55 @@ class GoodsRegistrationProductWarehouseList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class GoodsRegistrationProductWarehouseLotList(BaseListMixin):
-    queryset = GoodsRegistrationLineDetail.objects
+class GoodsRegistrationLotList(BaseListMixin):
+    queryset = GoodsRegistrationLot.objects
     filterset_fields = {
-        'so_item__sale_order_id': ['exact'],
-        'so_item__product_id': ['exact']
+        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_general__gre_item__product_id': ['exact'],
+        'gre_general__warehouse_id': ['exact'],
     }
-    serializer_list = GoodsRegistrationProductWarehouseLotSerializer
+    serializer_list = GoodsRegistrationLotSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
             return super().get_queryset().select_related(
-                'so_item__sale_order',
-                'so_item__product'
-            ).prefetch_related(
-                'goods_registration_item_lot__lot_registered',
-                'goods_registration_item_lot__warehouse'
+                'lot_registered'
             )
         return super().get_queryset().none()
 
     @swagger_auto_schema(
-        operation_summary="Goods registration Product Warehouse Lot List",
-        operation_description="Get Goods registration Product Warehouse Lot List",
+        operation_summary="Goods registration Lot List",
+        operation_description="Get Goods registration Lot List",
     )
     @mask_view(
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
-        self.ser_context = {
-            'warehouse_id': request.query_params.get('warehouse_id')
-        }
         return self.list(request, *args, **kwargs)
 
 
-class GoodsRegistrationProductWarehouseSerialList(BaseListMixin):
-    queryset = GoodsRegistrationLineDetail.objects
-    filterset_fields = {'so_item__sale_order_id': ['exact'], 'so_item__product_id': ['exact']}
-    serializer_list = GoodsRegistrationProductWarehouseSerialSerializer
+class GoodsRegistrationSerialList(BaseListMixin):
+    queryset = GoodsRegistrationSerial.objects
+    filterset_fields = {
+        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_general__gre_item__product_id': ['exact'],
+        'gre_general__warehouse_id': ['exact'],
+    }
+    serializer_list = GoodsRegistrationSerialSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
             return super().get_queryset().select_related(
-                'so_item__sale_order',
-                'so_item__product'
-            ).prefetch_related(
-                'goods_registration_item_serial__sn_registered',
-                'goods_registration_item_serial__warehouse'
+                'sn_registered'
             )
         return super().get_queryset().none()
 
     @swagger_auto_schema(
-        operation_summary="Goods registration Product Warehouse Serial List",
-        operation_description="Get Goods registration Product Warehouse Serial List",
+        operation_summary="Goods registration Serial List",
+        operation_description="Get Goods registration Serial List",
     )
     @mask_view(
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
-        self.ser_context = {
-            'warehouse_id': request.query_params.get('warehouse_id')
-        }
         return self.list(request, *args, **kwargs)

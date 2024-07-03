@@ -1,7 +1,11 @@
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
-from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptWarehouse, GoodsRegistrationSerial, \
-    GoodsRegistrationLineDetail
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, Product, WareHouse
+from apps.sales.inventory.models import (
+    GoodsReceipt,
+    GoodsReceiptWarehouse,
+    GoodsRegistrationSerial,
+    GoodsRegistrationGeneral
+)
 
 
 class GoodsDetailListSerializer(serializers.ModelSerializer):
@@ -132,15 +136,16 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             so_item = pr_prd.sale_order_product if pr_prd and hasattr(
                 pr_prd, 'sale_order_product'
             ) else None
-            gre_item = GoodsRegistrationLineDetail.objects.filter(so_item=so_item).first() if so_item else None
-            if gre_item:
+            gre_general = GoodsRegistrationGeneral.objects.filter(
+                gre_item__so_item=so_item
+            ).first() if so_item else None
+            if gre_general:
                 bulk_info_regis = []
                 for serial in created_sn:
                     bulk_info_regis.append(
                         GoodsRegistrationSerial(
-                            goods_registration_item=gre_item,
+                            gre_general=gre_general,
                             sn_registered=serial,
-                            warehouse=serial.product_warehouse.warehouse
                         )
                     )
                 GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
@@ -162,7 +167,52 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             if self.initial_data.get('is_serial_update'):
                 self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
             return prd_wh
-        raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
+        else:
+            product_obj = Product.objects.filter(id=product_id).first()
+            warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+            goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
+            product_gr_obj = product_obj.goods_receipt_product_product.first()
+            if product_obj and warehouse_obj and goods_receipt_obj and product_gr_obj:
+                uom_obj = product_gr_obj.uom
+                tax_obj = product_gr_obj.tax
+                prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=goods_receipt_obj.tenant_id,
+                    company_id=goods_receipt_obj.company_id,
+                    product=product_obj,
+                    uom=uom_obj,
+                    warehouse=warehouse_obj,
+                    tax=tax_obj,
+                    unit_price=product_gr_obj.product_unit_price,
+                    stock_amount=0,
+                    receipt_amount=0,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': product_obj.id,
+                        'code': product_obj.code,
+                        'title': product_obj.title
+                    },
+                    warehouse_data={
+                        'id': warehouse_obj.id,
+                        'code': warehouse_obj.code,
+                        'title': warehouse_obj.title
+                    },
+                    uom_data={
+                        'id': uom_obj.id,
+                        'code': uom_obj.code,
+                        'title': uom_obj.title
+                    },
+                    tax_data={
+                        'id': tax_obj.id,
+                        'code': tax_obj.code,
+                        'title': tax_obj.title,
+                        'rate': tax_obj.rate
+                    }
+                )
+                if self.initial_data.get('is_serial_update'):
+                    self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                return prd_wh
+            raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
 
 
 class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):

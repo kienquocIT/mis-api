@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from apps.sales.inventory.models import GoodsRegistration, GoodsRegistrationLineDetail
+from apps.sales.inventory.models import (
+    GoodsRegistration,
+    GoodsRegistrationItem,
+    GoodsRegistrationSerial,
+    GoodsRegistrationLot, GoodsRegistrationGeneral
+)
 
 
 class GoodsRegistrationListSerializer(serializers.ModelSerializer):
@@ -66,7 +71,7 @@ class GoodsRegistrationDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_data_line_detail(cls, obj):
         data_line_detail = []
-        for item in obj.goods_registration_line_detail.all().order_by('so_item__order'):
+        for item in obj.gre_item.all().order_by('so_item__order'):
             data_line_detail.append({
                 'so_code': item.so_item.sale_order.code,
                 'so_item': {
@@ -86,18 +91,21 @@ class GoodsRegistrationDetailSerializer(serializers.ModelSerializer):
                     'total_order': item.so_item.product_quantity
                 } if item.so_item else {},
                 'this_registered': item.this_registered,
-                'this_others': item.this_others,
                 'this_available': item.this_available,
                 'this_registered_value': item.this_registered_value,
-                'this_others_value': item.this_others_value,
                 'this_available_value': item.this_available_value,
-                'registered_data': item.registered_data,
-                'out_registered': item.out_registered,
-                'out_delivered': item.out_delivered,
-                'out_remain': item.out_remain,
-                'out_registered_value': item.out_registered_value,
-                'out_delivered_value': item.out_delivered_value,
-                'out_remain_value': item.out_remain_value,
+                'registered_data': [{
+                    'warehouse_code': child.warehouse.code,
+                    'quantity': child.quantity,
+                    'cost': child.cost,
+                    'value': child.value,
+                    'stock_type': child.stock_type,
+                    'uom_title': child.uom.title,
+                    'trans_id': child.trans_id,
+                    'trans_code': child.trans_code,
+                    'trans_title': child.trans_title,
+                    'system_date': child.system_date
+                } for child in item.gre_item_sub.all()]
             })
         return data_line_detail
 
@@ -112,139 +120,56 @@ class GoodsRegistrationUpdateSerializer(serializers.ModelSerializer):
 
 
 # các class cho xuất hàng dự án
-class GoodsRegistrationProductWarehouseSerializer(serializers.ModelSerializer):
-    sale_order = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
+
+class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = GoodsRegistrationLineDetail
+        model = GoodsRegistrationGeneral
         fields = (
             'id',
-            'sale_order',
-            'product',
-            'this_registered',
-            'this_registered_value',
-            'this_available',
-            'this_available_value',
-            'registered_data'
+            'quantity'
+        )
+
+
+class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
+    lot_registered = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GoodsRegistrationLot
+        fields = (
+            'id',
+            'lot_registered'
         )
 
     @classmethod
-    def get_sale_order(cls, obj):
-        sale_order = obj.so_item.sale_order
+    def get_lot_registered(cls, obj):
         return {
-            'id': str(sale_order.id),
-            'code': sale_order.code,
-            'title': sale_order.title
-        }
-
-    @classmethod
-    def get_product(cls, obj):
-        product = obj.so_item.product
-        return {
-            'id': str(product.id),
-            'code': product.code,
-            'title': product.title
+            'id': str(obj.lot_registered_id),
+            'lot_number': obj.lot_registered.lot_number,
+            'quantity_import': obj.lot_registered.quantity_import,
+            'expire_date': obj.lot_registered.expire_date,
+            'manufacture_date': obj.lot_registered.manufacture_date
         }
 
 
-class GoodsRegistrationProductWarehouseLotSerializer(serializers.ModelSerializer):
-    sale_order = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    lot_data = serializers.SerializerMethodField()
+class GoodsRegistrationSerialSerializer(serializers.ModelSerializer):
+    sn_registered = serializers.SerializerMethodField()
 
     class Meta:
-        model = GoodsRegistrationLineDetail
+        model = GoodsRegistrationSerial
         fields = (
             'id',
-            'sale_order',
-            'product',
-            'this_registered',
-            'this_registered_value',
-            'this_available',
-            'this_available_value',
-            'registered_data',
-            'lot_data'
+            'sn_registered',
         )
 
     @classmethod
-    def get_sale_order(cls, obj):
-        sale_order = obj.so_item.sale_order
+    def get_sn_registered(cls, obj):
         return {
-            'id': str(sale_order.id),
-            'code': sale_order.code,
-            'title': sale_order.title
+            'id': str(obj.sn_registered_id),
+            'vendor_serial_number': obj.sn_registered.vendor_serial_number,
+            'serial_number': obj.sn_registered.serial_number,
+            'expire_date': obj.sn_registered.expire_date,
+            'manufacture_date': obj.sn_registered.manufacture_date,
+            'warranty_start': obj.sn_registered.warranty_start,
+            'warranty_end': obj.sn_registered.warranty_end
         }
-
-    @classmethod
-    def get_product(cls, obj):
-        product = obj.so_item.product
-        return {
-            'id': str(product.id),
-            'code': product.code,
-            'title': product.title
-        }
-
-    def get_lot_data(self, obj):
-        lot_data = []
-        for registered in obj.goods_registration_item_lot.filter(warehouse_id=self.context.get('warehouse_id')):
-            lot_data.append({
-                'id': str(registered.lot_registered_id),
-                'lot_number': registered.lot_registered.lot_number,
-                'quantity_import': registered.lot_registered.quantity_import,
-                'expire_date': registered.lot_registered.expire_date,
-                'manufacture_date': registered.lot_registered.manufacture_date
-            })
-        return lot_data
-
-
-class GoodsRegistrationProductWarehouseSerialSerializer(serializers.ModelSerializer):
-    sale_order = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    serial_data = serializers.SerializerMethodField()
-
-    class Meta:
-        model = GoodsRegistrationLineDetail
-        fields = (
-            'id',
-            'sale_order',
-            'product',
-            'this_registered',
-            'this_registered_value',
-            'this_available',
-            'this_available_value',
-            'registered_data',
-            'serial_data'
-        )
-
-    @classmethod
-    def get_sale_order(cls, obj):
-        sale_order = obj.so_item.sale_order
-        return {
-            'id': str(sale_order.id),
-            'code': sale_order.code,
-            'title': sale_order.title
-        }
-
-    @classmethod
-    def get_product(cls, obj):
-        product = obj.so_item.product
-        return {
-            'id': str(product.id),
-            'code': product.code,
-            'title': product.title
-        }
-
-    def get_serial_data(self, obj):
-        serial_data = []
-        for registered in obj.goods_registration_item_serial.filter(warehouse_id=self.context.get('warehouse_id')):
-            serial_data.append({
-                'id': str(registered.sn_registered_id),
-                'vendor_serial_number': registered.sn_registered.vendor_serial_number,
-                'serial_number': registered.sn_registered.serial_number,
-                'expire_date': registered.sn_registered.expire_date,
-                'manufacture_date': registered.sn_registered.manufacture_date,
-                'warranty_start': registered.sn_registered.warranty_start,
-                'warranty_end': registered.sn_registered.warranty_end
-            })
-        return serial_data
