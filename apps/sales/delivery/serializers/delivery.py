@@ -353,10 +353,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         OrderDeliveryProduct.objects.bulk_create(prod_arr)
 
     @classmethod
-    def create_new_code(cls):
-        delivery = OrderDeliverySub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
+    def create_new_code(cls, tenant, company):
+        delivery = OrderDeliverySub.objects.filter(
+            tenant=tenant,
+            company=company,
             is_delete=False
         ).count()
         char = "D"
@@ -366,7 +366,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
-        new_code = OrderDeliverySubUpdateSerializer.create_new_code()
+        new_code = OrderDeliverySubUpdateSerializer.create_new_code(instance.tenant, instance.company)
         delivered = instance.delivered_quantity_before + total_done
         remain = instance.delivery_quantity - delivered
         new_sub = OrderDeliverySub.objects.create(
