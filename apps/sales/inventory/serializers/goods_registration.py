@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from apps.sales.inventory.models import (
     GoodsRegistration,
-    GoodsRegistrationItem,
     GoodsRegistrationSerial,
-    GoodsRegistrationLot, GoodsRegistrationGeneral
+    GoodsRegistrationLot,
+    GoodsRegistrationGeneral
 )
 
 

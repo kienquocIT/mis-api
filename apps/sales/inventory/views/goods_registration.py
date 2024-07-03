@@ -1,7 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     GoodsRegistration,
-    GoodsRegistrationItem,
     GoodsRegistrationSerial,
     GoodsRegistrationLot, GoodsRegistrationGeneral
 )

@@ -166,7 +166,6 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         if prd_wh:
             if self.initial_data.get('is_serial_update'):
                 self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
-            return prd_wh
         else:
             product_obj = Product.objects.filter(id=product_id).first()
             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
@@ -211,8 +210,9 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 )
                 if self.initial_data.get('is_serial_update'):
                     self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
-                return prd_wh
-            raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
+            else:
+                raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
+        return prd_wh
 
 
 class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
