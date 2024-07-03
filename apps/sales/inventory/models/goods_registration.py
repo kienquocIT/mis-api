@@ -144,7 +144,7 @@ class GoodsRegistration(DataAbstractModel):
                     if 'goods_receipt_id' in kwargs:
                         cls.for_goods_receipt(so_item, stock_info, gre_item, kwargs.get('goods_receipt_id'))
                     if 'delivery_id' in kwargs:
-                        cls.for_delivery(so_item, stock_info, gre_item, kwargs.get('delivery_id'))
+                        cls.for_delivery(so_item, stock_info, gre_item)
                     gre_item.save(update_fields=[
                         'this_registered', 'this_registered_value',
                         'this_available', 'this_available_value',
