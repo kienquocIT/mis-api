@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
             name='sub_period',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_product_warehouse_sub_period', to='saledata.subperiods'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_prd_wh_sub_period', to='saledata.subperiods'),
         ),
     ]

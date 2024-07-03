@@ -25,11 +25,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
             name='sale_order',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_product_warehouse_sale_order', to='saleorder.saleorder'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_prd_wh_sale_order', to='saleorder.saleorder'),
         ),
         migrations.AddField(
             model_name='reportinventorysub',
             name='sale_order',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_by_month_sale_order', to='saleorder.saleorder'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_log_sale_order', to='saleorder.saleorder'),
         ),
     ]

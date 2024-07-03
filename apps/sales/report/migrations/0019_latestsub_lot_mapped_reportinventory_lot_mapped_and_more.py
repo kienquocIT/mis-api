@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
             name='lot_mapped',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='report_inventory_product_warehouse_lot_mapped', to='saledata.productwarehouselot'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='report_inventory_prd_wh_lot_mapped', to='saledata.productwarehouselot'),
         ),
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportinventorysub',
             name='lot_mapped',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='report_inventory_by_month_lot_mapped', to='saledata.productwarehouselot'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='report_inventory_log_lot_mapped', to='saledata.productwarehouselot'),
         ),
         migrations.AlterField(
             model_name='reportinventoryproductwarehouse',

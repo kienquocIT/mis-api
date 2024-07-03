@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
             name='period_mapped',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_product_warehouse_period', to='saledata.periods'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='report_inventory_prd_wh_period', to='saledata.periods'),
         ),
         migrations.AddField(
             model_name='reportinventoryproductwarehouse',
