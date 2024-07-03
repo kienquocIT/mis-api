@@ -126,13 +126,21 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             goods_receipt_product__product=prd_wh.product
         ).first()
         if gr_wh:
-            pr_prd = hasattr(gr_wh.goods_receipt_request_product, 'purchase_request_product')
-            so_item = hasattr(pr_prd, 'sale_order_product') if pr_prd else None
+            pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
+                gr_wh.goods_receipt_request_product, 'purchase_request_product'
+            ) else None
+            so_item = pr_prd.sale_order_product if pr_prd and hasattr(
+                pr_prd, 'sale_order_product'
+            ) else None
             gre_item = GoodsRegistrationLineDetail.objects.filter(so_item=so_item).first() if so_item else None
             if gre_item:
                 bulk_info_regis = []
                 for sn in created_sn:
-                    bulk_info_regis.append(GoodsRegistrationSerial(goods_registration_item=gre_item, sn_registered=sn))
+                    bulk_info_regis.append(
+                        GoodsRegistrationSerial(
+                            goods_registration_item=gre_item, sn_registered=sn, warehouse=sn.product_warehouse.warehouse
+                        )
+                    )
                 GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
 
         amount_create = len(bulk_info_new_serial)

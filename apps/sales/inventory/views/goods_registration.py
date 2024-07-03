@@ -122,10 +122,8 @@ class GoodsRegistrationProductWarehouseLotList(BaseListMixin):
                 'so_item__sale_order',
                 'so_item__product'
             ).prefetch_related(
-                'goods_registration_item_lot__lot_registered'
-            ).filter(
-                goods_registration_item_lot__lot_registered__product_warehouse__warehouse_id=
-                self.request.query_params.get('warehouse_id')
+                'goods_registration_item_lot__lot_registered',
+                'goods_registration_item_lot__warehouse'
             )
         return super().get_queryset().none()
 
@@ -137,6 +135,9 @@ class GoodsRegistrationProductWarehouseLotList(BaseListMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        self.ser_context = {
+            'warehouse_id': request.query_params.get('warehouse_id')
+        }
         return self.list(request, *args, **kwargs)
 
 
@@ -151,10 +152,8 @@ class GoodsRegistrationProductWarehouseSerialList(BaseListMixin):
                 'so_item__sale_order',
                 'so_item__product'
             ).prefetch_related(
-                'goods_registration_item_serial__sn_registered'
-            ).filter(
-                goods_registration_item_lot__sn_registered__product_warehouse__warehouse_id=
-                self.request.query_params.get('warehouse_id')
+                'goods_registration_item_serial__sn_registered',
+                'goods_registration_item_serial__warehouse'
             )
         return super().get_queryset().none()
 
@@ -166,4 +165,7 @@ class GoodsRegistrationProductWarehouseSerialList(BaseListMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        self.ser_context = {
+            'warehouse_id': request.query_params.get('warehouse_id')
+        }
         return self.list(request, *args, **kwargs)

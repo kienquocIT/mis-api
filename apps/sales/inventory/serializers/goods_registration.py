@@ -120,6 +120,7 @@ class GoodsRegistrationProductWarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsRegistrationLineDetail
         fields = (
+            'id',
             'sale_order',
             'product',
             'this_registered',
@@ -156,6 +157,7 @@ class GoodsRegistrationProductWarehouseLotSerializer(serializers.ModelSerializer
     class Meta:
         model = GoodsRegistrationLineDetail
         fields = (
+            'id',
             'sale_order',
             'product',
             'this_registered',
@@ -184,10 +186,9 @@ class GoodsRegistrationProductWarehouseLotSerializer(serializers.ModelSerializer
             'title': product.title
         }
 
-    @classmethod
-    def get_lot_data(cls, obj):
+    def get_lot_data(self, obj):
         lot_data = []
-        for registered in obj.goods_registration_item_lot.all():
+        for registered in obj.goods_registration_item_lot.filter(warehouse_id=self.context.get('warehouse_id')):
             lot_data.append({
                 'id': str(registered.lot_registered_id),
                 'lot_number': registered.lot_registered.lot_number,
@@ -206,6 +207,7 @@ class GoodsRegistrationProductWarehouseSerialSerializer(serializers.ModelSeriali
     class Meta:
         model = GoodsRegistrationLineDetail
         fields = (
+            'id',
             'sale_order',
             'product',
             'this_registered',
@@ -234,10 +236,9 @@ class GoodsRegistrationProductWarehouseSerialSerializer(serializers.ModelSeriali
             'title': product.title
         }
 
-    @classmethod
-    def get_serial_data(cls, obj):
+    def get_serial_data(self, obj):
         serial_data = []
-        for registered in obj.goods_registration_item_serial.all():
+        for registered in obj.goods_registration_item_serial.filter(warehouse_id=self.context.get('warehouse_id')):
             serial_data.append({
                 'id': str(registered.sn_registered_id),
                 'vendor_serial_number': registered.sn_registered.vendor_serial_number,

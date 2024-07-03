@@ -61,6 +61,7 @@ class GoodsRegistration(DataAbstractModel):
             GoodsRegistrationLot.objects.create(
                 goods_registration_item=gre_item,
                 lot_registered_id=stock_info['lot_data']['lot_id'],
+                warehouse=stock_info['warehouse']
             )
         if stock_info['product'].general_traceability_method == 2:  # sn
             bulk_info = []
@@ -73,7 +74,8 @@ class GoodsRegistration(DataAbstractModel):
                 bulk_info.append(
                     GoodsRegistrationSerial(
                         goods_registration_item=gre_item,
-                        sn_registered=sn
+                        sn_registered=sn,
+                        warehouse=sn.product_warehouse.warehouse
                     )
                 )
             GoodsRegistrationSerial.objects.bulk_create(bulk_info)
@@ -194,6 +196,12 @@ class GoodsRegistrationLot(SimpleAbstractModel):
     lot_registered = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, related_name='goods_registration_lot_registered'
     )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name="goods_registration_lot_warehouse",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Goods Registration Lot'
@@ -209,6 +217,12 @@ class GoodsRegistrationSerial(SimpleAbstractModel):
     )
     sn_registered = models.ForeignKey(
         'saledata.ProductWareHouseSerial', on_delete=models.CASCADE, related_name='goods_registration_sn_registered'
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name="goods_registration_serial_warehouse",
+        null=True
     )
 
     class Meta:

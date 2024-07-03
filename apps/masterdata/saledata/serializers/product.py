@@ -978,12 +978,7 @@ class ProductForSaleDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = (
-            'id',
-            'code',
-            'title',
-            'cost_list',
-        )
+        fields = ('id', 'code', 'title', 'cost_list')
 
     @classmethod
     def get_cost_list(cls, obj):
@@ -995,13 +990,7 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = (
-            'id',
-            'title',
-            'code',
-            'group',
-            'ratio',
-        )
+        fields = ('id', 'title', 'code', 'group', 'ratio')
 
     @classmethod
     def get_group(cls, obj):
