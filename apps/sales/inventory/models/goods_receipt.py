@@ -1,6 +1,5 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
-from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE

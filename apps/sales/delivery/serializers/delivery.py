@@ -9,13 +9,10 @@ from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler, DeliFinishHandler
+from ...report.models import ReportInventorySub
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
-
-from ...inventory.models import GoodsRegistration
-
-from ...report.models import ReportInventorySub
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):

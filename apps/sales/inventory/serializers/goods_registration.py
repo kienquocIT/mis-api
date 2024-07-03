@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.sales.inventory.models import GoodsRegistration, GoodsRegistrationLineDetail
-from apps.shared import AbstractDetailSerializerModel
 
 
 class GoodsRegistrationListSerializer(serializers.ModelSerializer):

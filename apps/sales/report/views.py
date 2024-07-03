@@ -317,97 +317,92 @@ class ReportInventoryList(BaseListMixin):
     @classmethod
     def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
         sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        if not sub.run_report_inventory:
-            if int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month:
-                if sub_period_order == 12:
-                    last_sub_period_order = 1
-                    last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()
-                else:
-                    last_sub_period_order = int(sub_period_order) - 1
-                    last_period_mapped = period_mapped
+        if all([
+            not sub.run_report_inventory,
+            int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month
+        ]):
+            if sub_period_order == 12:
+                last_sub_period_order = 1
+                last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()
+            else:
+                last_sub_period_order = int(sub_period_order) - 1
+                last_period_mapped = period_mapped
 
-                all_subs = {
-                    'last': ReportInventoryProductWarehouse.objects.filter(
-                        tenant=tenant, company=company,
-                        period_mapped=last_period_mapped, sub_period_order=last_sub_period_order
-                    ),
-                    'this': ReportInventoryProductWarehouse.objects.filter(
-                        tenant=tenant, company=company,
-                        period_mapped=period_mapped, sub_period_order=sub_period_order
-                    )
-                }
+            all_subs = {
+                'last': ReportInventoryProductWarehouse.objects.filter(
+                    tenant=tenant, company=company,
+                    period_mapped=last_period_mapped, sub_period_order=last_sub_period_order
+                ),
+                'this': ReportInventoryProductWarehouse.objects.filter(
+                    tenant=tenant, company=company,
+                    period_mapped=period_mapped, sub_period_order=sub_period_order
+                )
+            }
 
-                div = company.company_config.definition_inventory_valuation
-                new_subs_list = []
-                for last_item in all_subs['last']:
-                    if not all_subs['this'].filter(
-                        product_id=last_item.product_id,
-                        warehouse_id=last_item.warehouse_id,
-                        lot_mapped_id=last_item.lot_mapped_id,
-                        sale_order_id=last_item.sale_order_id,
-                    ).exists():
-                        quantity = None
-                        cost = None
-                        value = None
-                        if div == 0:
-                            quantity = last_item.ending_balance_quantity
-                            cost = last_item.ending_balance_cost
-                            value = last_item.ending_balance_value
-                        if div == 1:
-                            quantity = last_item.periodic_ending_balance_quantity
-                            cost = last_item.periodic_ending_balance_cost
-                            value = last_item.periodic_ending_balance_value
+            new_subs_list = []
+            for last_item in all_subs['last']:
+                if not all_subs['this'].filter(
+                    product_id=last_item.product_id,
+                    warehouse_id=last_item.warehouse_id,
+                    lot_mapped_id=last_item.lot_mapped_id,
+                    sale_order_id=last_item.sale_order_id,
+                ).exists():
+                    if company.company_config.definition_inventory_valuation == 0:
+                        quantity = last_item.ending_balance_quantity
+                        cost = last_item.ending_balance_cost
+                        value = last_item.ending_balance_value
+                        new_subs_list.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=tenant,
+                                company=company,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
+                                product_id=last_item.product_id,
+                                sale_order_id=last_item.sale_order_id,
+                                lot_mapped_id=last_item.lot_mapped_id,
+                                warehouse_id=last_item.warehouse_id,
+                                warehouse_for_filter_id=last_item.warehouse_for_filter_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=sub,
+                                opening_balance_quantity=quantity,
+                                opening_balance_cost=cost,
+                                opening_balance_value=value,
+                                ending_balance_quantity=quantity,
+                                ending_balance_cost=cost,
+                                ending_balance_value=value
+                            )
+                        )
+                    if company.company_config.definition_inventory_valuation == 1:
+                        quantity = last_item.periodic_ending_balance_quantity
+                        cost = last_item.periodic_ending_balance_cost
+                        value = last_item.periodic_ending_balance_value
+                        new_subs_list.append(
+                            ReportInventoryProductWarehouse(
+                                tenant=tenant,
+                                company=company,
+                                employee_created=employee_current,
+                                employee_inherit=employee_current,
+                                product_id=last_item.product_id,
+                                lot_mapped_id=last_item.lot_mapped_id,
+                                warehouse_id=last_item.warehouse_id,
+                                warehouse_for_filter_id=last_item.warehouse_for_filter_id,
+                                period_mapped=period_mapped,
+                                sub_period_order=sub_period_order,
+                                sub_period=sub,
+                                opening_balance_quantity=quantity,
+                                opening_balance_cost=cost,
+                                opening_balance_value=value,
+                                periodic_ending_balance_quantity=quantity,
+                                periodic_ending_balance_cost=cost,
+                                periodic_ending_balance_value=value
+                            )
+                        )
 
-                        if quantity and cost and value:
-                            if div == 0:
-                                new_subs_list.append(
-                                    ReportInventoryProductWarehouse(
-                                        tenant=tenant,
-                                        company=company,
-                                        employee_created=employee_current,
-                                        employee_inherit=employee_current,
-                                        product_id=last_item.product_id,
-                                        sale_order_id=last_item.sale_order_id,
-                                        lot_mapped_id=last_item.lot_mapped_id,
-                                        warehouse_id=last_item.warehouse_id,
-                                        warehouse_for_filter_id=last_item.warehouse_for_filter_id,
-                                        period_mapped=period_mapped,
-                                        sub_period_order=sub_period_order,
-                                        sub_period=sub,
-                                        opening_balance_quantity=quantity,
-                                        opening_balance_cost=cost,
-                                        opening_balance_value=value,
-                                        ending_balance_quantity=quantity,
-                                        ending_balance_cost=cost,
-                                        ending_balance_value=value
-                                    )
-                                )
-                            if div == 1:
-                                new_subs_list.append(
-                                    ReportInventoryProductWarehouse(
-                                        tenant=tenant,
-                                        company=company,
-                                        employee_created=employee_current,
-                                        employee_inherit=employee_current,
-                                        product_id=last_item.product_id,
-                                        lot_mapped_id=last_item.lot_mapped_id,
-                                        warehouse_id=last_item.warehouse_id,
-                                        warehouse_for_filter_id=last_item.warehouse_for_filter_id,
-                                        period_mapped=period_mapped,
-                                        sub_period_order=sub_period_order,
-                                        sub_period=sub,
-                                        opening_balance_quantity=quantity,
-                                        opening_balance_cost=cost,
-                                        opening_balance_value=value,
-                                        periodic_ending_balance_quantity=quantity,
-                                        periodic_ending_balance_cost=cost,
-                                        periodic_ending_balance_value=value
-                                    )
-                                )
-                if len(new_subs_list):
-                    ReportInventoryProductWarehouse.objects.bulk_create(new_subs_list)
-                    sub.run_report_inventory = True
-                    sub.save(update_fields=['run_report_inventory'])
+            if len(new_subs_list) > 0:
+                ReportInventoryProductWarehouse.objects.bulk_create(new_subs_list)
+                sub.run_report_inventory = True
+                sub.save(update_fields=['run_report_inventory'])
         return True
 
     def get_queryset(self):

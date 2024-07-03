@@ -135,20 +135,21 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             gre_item = GoodsRegistrationLineDetail.objects.filter(so_item=so_item).first() if so_item else None
             if gre_item:
                 bulk_info_regis = []
-                for sn in created_sn:
+                for serial in created_sn:
                     bulk_info_regis.append(
                         GoodsRegistrationSerial(
-                            goods_registration_item=gre_item, sn_registered=sn, warehouse=sn.product_warehouse.warehouse
+                            goods_registration_item=gre_item,
+                            sn_registered=serial,
+                            warehouse=serial.product_warehouse.warehouse
                         )
                     )
                 GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
 
-        amount_create = len(bulk_info_new_serial)
-        if amount_create > 0:
-            prd_wh.receipt_amount += amount_create
+        if len(bulk_info_new_serial) > 0:
+            prd_wh.receipt_amount += len(bulk_info_new_serial)
             prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
             prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-            prd_wh.product.stock_amount += amount_create
+            prd_wh.product.stock_amount += len(bulk_info_new_serial)
             prd_wh.product.save(update_fields=['stock_amount'])
         return True
 

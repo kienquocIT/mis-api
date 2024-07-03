@@ -65,17 +65,17 @@ class GoodsRegistration(DataAbstractModel):
             )
         if stock_info['product'].general_traceability_method == 2:  # sn
             bulk_info = []
-            for sn in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
+            for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
                 sn_data.append({
-                    'id': str(sn.id),
-                    'vendor_serial_number': sn.vendor_serial_number,
-                    'serial_number': sn.serial_number
+                    'id': str(serial.id),
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number
                 })
                 bulk_info.append(
                     GoodsRegistrationSerial(
                         goods_registration_item=gre_item,
-                        sn_registered=sn,
-                        warehouse=sn.product_warehouse.warehouse
+                        sn_registered=serial,
+                        warehouse=serial.product_warehouse.warehouse
                     )
                 )
             GoodsRegistrationSerial.objects.bulk_create(bulk_info)
@@ -101,7 +101,7 @@ class GoodsRegistration(DataAbstractModel):
         return gre_item
 
     @classmethod
-    def for_delivery(cls, so_item, stock_info, gre_item, delivery_id):
+    def for_delivery(cls, so_item, stock_info, gre_item):
         sn_data = []
         this_registered = cast_unit_to_inv_quantity(so_item.unit_of_measure, stock_info['quantity'])
         gre_item.this_registered -= this_registered
