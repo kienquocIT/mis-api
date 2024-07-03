@@ -451,9 +451,10 @@ class ZonesApplicationList(BaseListMixin):
 
 class ZonesList(BaseListMixin, BaseCreateMixin):
     queryset = Zones.objects
-    search_fields = ['title', 'remark',]
+    search_fields = ['title', 'remark']
     filterset_fields = {
         'application_id': ['exact'],
+        'id': ['exact', 'in'],
     }
     serializer_list = ZonesListSerializer
     serializer_create = ZonesCreateUpdateSerializer

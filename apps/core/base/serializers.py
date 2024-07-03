@@ -186,6 +186,7 @@ class ZonesListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zones
         fields = (
+            'id',
             'title',
             'remark',
             'properties_data',
