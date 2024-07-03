@@ -158,7 +158,41 @@ class IndicatorParamListSerializer(serializers.ModelSerializer):
         )
 
 
-# ZONE
+# ZONES
+class ApplicationZonesListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+    zones = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Application
+        fields = (
+            'id',
+            'title',
+            'code',
+            'zones',
+        )
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.get_title_i18n()
+
+    @classmethod
+    def get_zones(cls, obj):
+        return ZonesListSerializer(obj.zones_application.all(), many=True).data
+
+
+class ZonesListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Zones
+        fields = (
+            'title',
+            'remark',
+            'properties_data',
+            'order',
+        )
+
+
 class ZonesCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     properties_data = serializers.ListField(child=serializers.UUIDField())
@@ -183,18 +217,6 @@ class ZonesCreateSerializer(serializers.ModelSerializer):
                 ]
             raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_NOT_EXIST})
         raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_IS_ARRAY})
-
-
-class ZonesListSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Zones
-        fields = (
-            'title',
-            'remark',
-            'properties_data',
-            'order',
-        )
 
 
 class ZonesCreateUpdateSerializer(serializers.ModelSerializer):
