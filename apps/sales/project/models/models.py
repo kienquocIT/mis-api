@@ -234,6 +234,13 @@ class ProjectWorks(DataAbstractModel):
     order = models.SmallIntegerField(
         default=1
     )
+    expense_data = models.JSONField(
+        default=dict,
+        verbose_name='total, tax, sub total of expense list in this work',
+        help_text=json.dumps(
+            {'price': 1000, 'tax': 100, 'total_after_tax': 1100}
+        )
+    )
 
     def before_save(self):
         if self.employee_inherit:

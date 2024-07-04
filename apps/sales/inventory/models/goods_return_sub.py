@@ -420,7 +420,9 @@ class GoodsReturnSubSerializerForNonPicking:
                         tenant_id=delivery_sub_obj.tenant_id,
                         order_delivery=delivery_sub_obj.order_delivery,
                         date_done=None,
-                        code=OrderDeliverySubUpdateSerializer.create_new_code(),
+                        code=OrderDeliverySubUpdateSerializer.create_new_code(
+                            delivery_sub_obj.tenant_id, delivery_sub_obj.company_id
+                        ),
                         previous_step=delivery_sub_obj,
                         times=delivery_sub_obj.times + 1,
                         delivery_quantity=delivery_sub_obj.delivery_quantity - return_quantity + redelivery_quantity,

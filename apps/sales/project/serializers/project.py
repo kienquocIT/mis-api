@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
-from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups
+from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
@@ -164,6 +164,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                     "dependencies_parent": "",
                     "progress": item.work.w_rate,
                     "weight": item.work.w_weight,
+                    "expense_data": item.work.expense_data,
                 }
                 group_mw = item.work.project_groupmapwork_work.all()
                 if group_mw:
@@ -222,6 +223,9 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
 
 
 class ProjectUpdateSerializers(serializers.ModelSerializer):
+    expense_data = serializers.JSONField(required=False)
+    work_expense_data = serializers.JSONField(required=False)
+    delete_expense_lst = serializers.JSONField(required=False)
 
     @classmethod
     def validate_project_owner(cls, value):
@@ -235,6 +239,10 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
+    @classmethod
+    def validate_expense_data(cls, value):
+        return value
+
     class Meta:
         model = Project
         fields = (
@@ -243,10 +251,80 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             'finish_date',
             'project_owner',
             'employee_inherit',
-            'system_status'
+            'system_status',
+            'expense_data',
+            'work_expense_data',
+            'delete_expense_lst',
         )
 
+    @classmethod
+    def delete_expense_map_list(cls, lst):
+        if lst:
+            WorkMapExpense.objects.filter(id__in=lst).delete()
+
+    def cu_expense_lst(self, lst):
+        if lst:
+            create_lst = []
+            delete_lst = []
+            for idx in lst:
+                dict_item = lst[idx]
+                for item in dict_item:
+                    if hasattr(item, 'id'):
+                        delete_lst.append(item.id)
+                        create_lst.append(WorkMapExpense(
+                            id=item.id,
+                            tenant_id=self.instance.tenant_id,
+                            company_id=self.instance.company_id,
+                            work_id=idx,
+                            title=item['expense_name'] if isinstance(item['expense_name'], str) else '',
+                            expense_name_id=item['expense_name'] if isinstance(
+                                item['expense_name'], dict) and hasattr(item['expense_name'], 'id') else None,
+                            expense_item_id=item['expense_item']['id'],
+                            uom_id=item['uom']['id'],
+                            quantity=item['quantity'],
+                            expense_price=item['expense_price'],
+                            tax_id=item['tax']['id'],
+                            sub_total=item['sub_total'],
+                            sub_total_after_tax=item['sub_total_after_tax'],
+                            is_labor=item['is_labor']
+                        ))
+                    else:
+                        create_lst.append(WorkMapExpense(
+                            tenant_id=self.instance.tenant_id,
+                            company_id=self.instance.company_id,
+                            work_id=idx,
+                            title=item['expense_name'] if isinstance(item['expense_name'], str) else '',
+                            expense_name_id=item['expense_name'] if isinstance(
+                                item['expense_name'], dict) and hasattr(item['expense_name'], 'id') else None,
+                            expense_item_id=item['expense_item']['id'],
+                            uom_id=item['uom']['id'],
+                            quantity=item['quantity'],
+                            expense_price=item['expense_price'],
+                            tax_id=item['tax']['id'],
+                            sub_total=item['sub_total'],
+                            sub_total_after_tax=item['sub_total_after_tax'],
+                            is_labor=item['is_labor']
+                        ))
+            if delete_lst:
+                WorkMapExpense.objects.filter(id__in=delete_lst).delete()
+            WorkMapExpense.objects.bulk_create(create_lst)
+
+    @classmethod
+    def update_work_expense(cls, lst):
+        if lst:
+            for item in lst:
+                work_expense = lst[item]
+                ProjectWorks.objects.filter(id=item).update(expense_data=work_expense)
+
     def update(self, instance, validated_data):
+        expense_lst = validated_data.pop('expense_data', None)
+        work_expense_lst = validated_data.pop('work_expense_data', None)
+        delete_expense_lst = validated_data.pop('delete_expense_lst', None)
+
+        self.delete_expense_map_list(delete_expense_lst)
+        self.cu_expense_lst(expense_lst)
+        self.update_work_expense(work_expense_lst)
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

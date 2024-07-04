@@ -1,8 +1,16 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.inventory.models import GoodsRegistration
+from apps.sales.inventory.models import (
+    GoodsRegistration,
+    GoodsRegistrationSerial,
+    GoodsRegistrationLot, GoodsRegistrationGeneral
+)
 from apps.sales.inventory.serializers import (
-    GoodsRegistrationListSerializer, GoodsRegistrationCreateSerializer,
-    GoodsRegistrationDetailSerializer, GoodsRegistrationUpdateSerializer
+    GoodsRegistrationListSerializer,
+    GoodsRegistrationCreateSerializer,
+    GoodsRegistrationDetailSerializer,
+    GoodsRegistrationUpdateSerializer,
+    GoodsRegistrationLotSerializer,
+    GoodsRegistrationSerialSerializer, GoodsRegistrationGeneralSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -76,3 +84,84 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class GoodsRegistrationGeneralList(BaseListMixin):
+    queryset = GoodsRegistrationGeneral.objects
+    filterset_fields = {
+        'gre_item__so_item__sale_order_id': ['exact'],
+        'gre_item__product_id': ['exact'],
+        'warehouse_id': ['exact'],
+    }
+    serializer_list = GoodsRegistrationGeneralSerializer
+
+    def get_queryset(self):
+        if self.request.user.company_current.company_config.cost_per_project:
+            return super().get_queryset().select_related(
+                'warehouse'
+            )
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Goods registration Lot List",
+        operation_description="Get Goods registration Lot List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class GoodsRegistrationLotList(BaseListMixin):
+    queryset = GoodsRegistrationLot.objects
+    filterset_fields = {
+        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_general__gre_item__product_id': ['exact'],
+        'gre_general__warehouse_id': ['exact'],
+    }
+    serializer_list = GoodsRegistrationLotSerializer
+
+    def get_queryset(self):
+        if self.request.user.company_current.company_config.cost_per_project:
+            return super().get_queryset().select_related(
+                'lot_registered'
+            )
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Goods registration Lot List",
+        operation_description="Get Goods registration Lot List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class GoodsRegistrationSerialList(BaseListMixin):
+    queryset = GoodsRegistrationSerial.objects
+    filterset_fields = {
+        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_general__gre_item__product_id': ['exact'],
+        'gre_general__warehouse_id': ['exact'],
+    }
+    serializer_list = GoodsRegistrationSerialSerializer
+
+    def get_queryset(self):
+        if self.request.user.company_current.company_config.cost_per_project:
+            return super().get_queryset().select_related(
+                'sn_registered'
+            )
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Goods registration Serial List",
+        operation_description="Get Goods registration Serial List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

@@ -5,7 +5,10 @@ from apps.sales.inventory.views import (
     InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList,
     GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn,
     GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList,
-    GoodsRegistrationList, GoodsRegistrationDetail
+    GoodsRegistrationList,
+    GoodsRegistrationDetail,
+    GoodsRegistrationLotList,
+    GoodsRegistrationSerialList, GoodsRegistrationGeneralList
 )
 
 urlpatterns = [
@@ -65,4 +68,19 @@ urlpatterns += [
 urlpatterns += [
     path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
     path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
+    path(
+        'goods-registration-prd-wh-general',
+        GoodsRegistrationGeneralList.as_view(),
+        name='GoodsRegistrationGeneralList'
+    ),
+    path(
+        'goods-registration-prd-wh-lot',
+        GoodsRegistrationLotList.as_view(),
+        name='GoodsRegistrationLotList'
+    ),
+    path(
+        'goods-registration-prd-wh-serial',
+        GoodsRegistrationSerialList.as_view(),
+        name='GoodsRegistrationSerialList'
+    ),
 ]

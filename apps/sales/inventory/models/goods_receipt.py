@@ -1,6 +1,5 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
-from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportInventorySub
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
@@ -238,18 +237,7 @@ class GoodsReceipt(DataAbstractModel):
             instance.date_approved,
             stock_data
         )
-        return stock_data
-
-    @classmethod
-    def regis_stock_when_receipt(cls, instance, stock_data):
-        if instance.company.company_config.cost_per_project:  # Case 5
-            for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
-                sale_order = po_pr_mapped.purchase_request.sale_order
-                if sale_order:
-                    for item in stock_data:
-                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
-            return True
-        return False
+        return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -281,8 +269,7 @@ class GoodsReceipt(DataAbstractModel):
                         GRFinishHandler.update_is_all_receipted_po(instance=self)
                         GRFinishHandler.update_is_all_receipted_ia(instance=self)
 
-            stock_data = self.prepare_data_for_logging(self)
-            self.regis_stock_when_receipt(self, stock_data)
+            self.prepare_data_for_logging(self)
 
         if self.system_status in [4]:  # cancel
             GRFinishHandler.push_product_info(instance=self)
