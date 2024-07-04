@@ -5,7 +5,7 @@ from apps.core.base.views import (
     TenantApplicationList,
     CountryList, CityList, DistrictList, WardList, BaseCurrencyList, BaseItemUnitList, IndicatorParamList,
     ApplicationPropertyOpportunityList, ApplicationDetail, ApplicationPropertyForPrintList,
-    ApplicationPropertyForMailList, ZonesList, ZonesApplicationList,
+    ApplicationPropertyForMailList, ZonesList, ZonesApplicationList, AppEmpConfigList,
 )
 
 urlpatterns = [
@@ -46,4 +46,6 @@ urlpatterns = [
     # zones
     path('zones-application/list', ZonesApplicationList.as_view(), name='ZonesApplicationList'),
     path('zones/list', ZonesList.as_view(), name='ZonesList'),
+    # employee config on app
+    path('app-emp-config/list', AppEmpConfigList.as_view(), name='AppEmpConfigList'),
 ]

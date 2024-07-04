@@ -661,7 +661,7 @@ class ApplicationEmpConfig(MasterDataAbstractModel):
     remark = models.TextField(verbose_name="remark", blank=True, null=True)
     zones_editing = models.ManyToManyField(
         'base.Zones',
-        through='EmployeesZonesEditing',
+        through='AppEmpConfigZonesEditing',
         symmetrical=False,
         blank=True,
         related_name='app_emp_config_relate_zones_editing',
@@ -673,7 +673,7 @@ class ApplicationEmpConfig(MasterDataAbstractModel):
     )
     zones_hidden = models.ManyToManyField(
         'base.Zones',
-        through='EmployeesZonesHidden',
+        through='AppEmpConfigZonesHidden',
         symmetrical=False,
         blank=True,
         related_name='app_emp_config_relate_zones_hidden',
@@ -693,16 +693,16 @@ class ApplicationEmpConfig(MasterDataAbstractModel):
         permissions = ()
 
 
-class EmployeesZonesEditing(SimpleAbstractModel):
+class AppEmpConfigZonesEditing(SimpleAbstractModel):
     app_emp_config = models.ForeignKey(
         'base.ApplicationEmpConfig',
         on_delete=models.CASCADE,
-        related_name='employees_zones_editing_app_emp_config',
+        related_name='app_emp_config_zones_editing_config',
     )
     zone = models.ForeignKey(
         'base.Zones',
         on_delete=models.CASCADE,
-        related_name='employees_zones_editing_zone',
+        related_name='app_emp_config_zones_editing_zone',
     )
 
     class Meta:
@@ -712,16 +712,16 @@ class EmployeesZonesEditing(SimpleAbstractModel):
         permissions = ()
 
 
-class EmployeesZonesHidden(SimpleAbstractModel):
+class AppEmpConfigZonesHidden(SimpleAbstractModel):
     app_emp_config = models.ForeignKey(
         'base.ApplicationEmpConfig',
         on_delete=models.CASCADE,
-        related_name='employees_zones_hidden_app_emp_config',
+        related_name='app_emp_config_zones_hidden_config',
     )
     zone = models.ForeignKey(
         'base.Zones',
         on_delete=models.CASCADE,
-        related_name='employees_zones_hidden_zone',
+        related_name='app_emp_config_zones_hidden_zone',
     )
 
     class Meta:

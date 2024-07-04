@@ -2,8 +2,10 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, Zones, ZonesProperties
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, Zones, ZonesProperties,
+    ApplicationEmpConfig, AppEmpConfigZonesHidden, AppEmpConfigZonesEditing
 )
+from apps.core.hr.models import Employee
 from apps.shared import BaseMsg
 
 
@@ -194,7 +196,7 @@ class ZonesListSerializer(serializers.ModelSerializer):
         )
 
 
-class ZonesCreateSerializer(serializers.ModelSerializer):
+class ZonesSupportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     properties_data = serializers.ListField(child=serializers.UUIDField())
 
@@ -222,7 +224,7 @@ class ZonesCreateSerializer(serializers.ModelSerializer):
 
 class ZonesCreateUpdateSerializer(serializers.ModelSerializer):
     application = serializers.UUIDField()
-    zones_data = ZonesCreateSerializer(many=True)
+    zones_data = ZonesSupportSerializer(many=True)
 
     class Meta:
         model = Zones
@@ -268,3 +270,134 @@ class ZonesCreateUpdateSerializer(serializers.ModelSerializer):
                         ])
                         zone = new_zone
         return zone
+
+
+# EMPLOYEE CONFIG ON APP
+def validate_zones(value):
+    if isinstance(value, list):
+        zone_list = Zones.objects.filter(id__in=value)
+        if zone_list.count() == len(value):
+            return [
+                {
+                    'id': str(zone.id), 'title': zone.title,
+                    'properties_data': zone.properties_data, 'remark': zone.remark,
+                } for zone in zone_list
+            ]
+        raise serializers.ValidationError({'detail': BaseMsg.ZONE_NOT_EXIST})
+    raise serializers.ValidationError({'detail': BaseMsg.ZONE_IS_ARRAY})
+
+
+class AppEmpConfigListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ApplicationEmpConfig
+        fields = (
+            'id',
+            'employee_data',
+            'zones_editing_data',
+            'zones_hidden_data',
+            'remark',
+            'order',
+        )
+
+
+class AppEmpConfigSupportSerializer(serializers.ModelSerializer):
+    employee_data = serializers.UUIDField()
+    zones_editing_data = serializers.ListField(child=serializers.UUIDField())
+    zones_hidden_data = serializers.ListField(child=serializers.UUIDField())
+
+    class Meta:
+        model = ApplicationEmpConfig
+        fields = (
+            'employee_data',
+            'zones_editing_data',
+            'zones_hidden_data',
+            'remark',
+            'order',
+        )
+
+    @classmethod
+    def validate_employee_data(cls, value):
+        try:
+            employee = Employee.objects.get(id=value)
+            return {
+                'id': str(employee.id),
+                'first_name': employee.first_name,
+                'last_name': employee.last_name,
+                'full_name': employee.get_full_name(),
+                'code': employee.code,
+                'tenant_id': str(employee.tenant_id),
+                'company_id': str(employee.company_id),
+            }
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'Employee': BaseMsg.ZONE_NOT_EXIST})
+
+    @classmethod
+    def validate_zones_editing_data(cls, value):
+        return validate_zones(value=value)
+
+    @classmethod
+    def validate_zones_hidden_data(cls, value):
+        return validate_zones(value=value)
+
+
+class AppEmpConfigCreateUpdateSerializer(serializers.ModelSerializer):
+    application = serializers.UUIDField()
+    configs_data = AppEmpConfigSupportSerializer(many=True)
+
+    class Meta:
+        model = ApplicationEmpConfig
+        fields = (
+            'application',
+            'configs_data',
+        )
+
+    @classmethod
+    def validate_application(cls, value):
+        try:
+            return Application.objects.get(id=value)
+        except Application.DoesNotExist:
+            raise serializers.ValidationError({'application': BaseMsg.APPLICATION_NOT_EXIST})
+
+    def create(self, validated_data):
+        app_emp_config = None
+        application = validated_data.get('application', None)
+        configs_data = validated_data.get('configs_data', [])
+        user = self.context.get('user', None)
+        if application and user:
+            if all(hasattr(user, attr) for attr in ('tenant_current_id', 'company_current_id')):
+                old_app_emp_configs = application.app_emp_config_application.filter(
+                    tenant_id=user.tenant_current_id, company_id=user.company_current_id
+                )
+                if old_app_emp_configs:
+                    for old_app_emp_config in old_app_emp_configs:
+                        old_app_emp_config.app_emp_config_zones_editing_config.all().delete()
+                        old_app_emp_config.app_emp_config_zones_hidden_config.all().delete()
+                    old_app_emp_configs.delete()
+                new_app_emp_configs = ApplicationEmpConfig.objects.bulk_create([
+                    ApplicationEmpConfig(
+                        **config_data,
+                        application=application,
+                        tenant_id=config_data.get('employee_data', {}).get('tenant_id', None),
+                        company_id=config_data.get('employee_data', {}).get('company_id', None),
+                        employee_created_id=config_data.get('employee_data', {}).get('id', None),
+                        employee_modified_id=config_data.get('employee_data', {}).get('id', None),
+                    )
+                    for config_data in configs_data
+                ])
+                if new_app_emp_configs:
+                    for new_app_emp_config in new_app_emp_configs:
+                        AppEmpConfigZonesEditing.objects.bulk_create([
+                            AppEmpConfigZonesEditing(
+                                app_emp_config=new_app_emp_config, zone_id=zone_data.get('id', None)
+                            )
+                            for zone_data in new_app_emp_config.zones_editing_data
+                        ])
+                        AppEmpConfigZonesHidden.objects.bulk_create([
+                            AppEmpConfigZonesHidden(
+                                app_emp_config=new_app_emp_config, zone_id=zone_data.get('id', None)
+                            )
+                            for zone_data in new_app_emp_config.zones_hidden_data
+                        ])
+                        app_emp_config = new_app_emp_config
+        return app_emp_config

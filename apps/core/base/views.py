@@ -9,7 +9,8 @@ from apps.core.base.filters import ApplicationPropertiesListFilter
 from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin, BaseCreateMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones,
+    ApplicationEmpConfig
 )
 
 from apps.core.base.serializers import (
@@ -18,7 +19,7 @@ from apps.core.base.serializers import (
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
     BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
     ApplicationPropertyForMailListSerializer, ZonesCreateUpdateSerializer, ZonesListSerializer,
-    ApplicationZonesListSerializer,
+    ApplicationZonesListSerializer, AppEmpConfigListSerializer, AppEmpConfigCreateUpdateSerializer,
 )
 
 
@@ -476,6 +477,44 @@ class ZonesList(BaseListMixin, BaseCreateMixin):
         operation_summary="Create Zones",
         operation_description="Create new Zones",
         request_body=ZonesCreateUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.create(request, *args, **kwargs)
+
+
+# EMPLOYEE CONFIG ON APP
+class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = ApplicationEmpConfig.objects
+    search_fields = ['employee_created__search_content']
+    filterset_fields = {
+        'application_id': ['exact'],
+        'id': ['exact', 'in'],
+    }
+    serializer_list = AppEmpConfigListSerializer
+    serializer_create = AppEmpConfigCreateUpdateSerializer
+    serializer_detail = AppEmpConfigListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Application Employee Config List",
+        operation_description="Get Application Employee Config List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Application Employee Config",
+        operation_description="Create new Application Employee Config",
+        request_body=AppEmpConfigCreateUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
