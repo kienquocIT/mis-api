@@ -251,6 +251,7 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
+    available_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -259,11 +260,12 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'product',
             'warehouse',
             'uom',
-            'stock_amount',
+            'stock_amount',  # total of product in warehouse
             'receipt_amount',
             'sold_amount',
             'picked_ready',
             'agency',
+            'available_amount',  # products that allowed to use
         )
 
     @classmethod
@@ -295,6 +297,14 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_agency(cls, obj):
         return obj.warehouse.agency_id
+
+    @classmethod
+    def get_available_amount(cls, obj):
+        if obj.warehouse and obj.product:
+            regis = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id).first()
+            if regis:
+                return obj.stock_amount - regis.quantity
+        return obj.stock_amount
 
 
 class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):
@@ -412,6 +422,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
 
 class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
     product_warehouse = serializers.SerializerMethodField()
+    quantity_available = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouseLot
@@ -422,6 +433,7 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'expire_date',
             'manufacture_date',
+            'quantity_available',
         )
 
     @classmethod
@@ -451,6 +463,18 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
                 'ratio': obj.product_warehouse.uom.ratio,
             } if obj.product_warehouse.uom else {}
         }
+
+    @classmethod
+    def get_quantity_available(cls, obj):
+        if obj.gre_lot_registered.count() > 0:
+            if obj.product_warehouse:
+                if obj.product_warehouse.warehouse and obj.product_warehouse.product:
+                    regis = obj.product_warehouse.warehouse.gre_item_general_warehouse.filter(
+                        gre_item__product_id=obj.product_warehouse.product_id
+                    ).first()
+                    if regis:
+                        return obj.quantity_import - regis.quantity
+        return obj.quantity_import
 
 
 class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):

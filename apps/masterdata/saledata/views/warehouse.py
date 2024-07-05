@@ -231,6 +231,7 @@ class ProductWareHouseSerialList(BaseListMixin):
         "product_warehouse__warehouse_id": ["exact"],
         "serial_number": ["exact"],
         "is_delete": ["exact"],
+        "gre_sn_registered": ["exact", "isnull"],
     }
     serializer_list = ProductWarehouseSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

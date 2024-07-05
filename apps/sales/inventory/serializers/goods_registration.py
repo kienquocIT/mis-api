@@ -122,13 +122,56 @@ class GoodsRegistrationUpdateSerializer(serializers.ModelSerializer):
 # các class cho xuất hàng dự án
 
 class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    stock_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
         fields = (
             'id',
-            'quantity'
+            'product',
+            'warehouse',
+            'uom',
+            'stock_amount',
         )
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.gre_item:
+            return {
+                'id': obj.gre_item.product_id,
+                'title': obj.gre_item.product.title,
+                'code': obj.gre_item.product.code,
+                'general_traceability_method': obj.gre_item.product.general_traceability_method,
+            } if obj.gre_item.product else {}
+        return {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.gre_item:
+            if obj.gre_item.product:
+                if obj.gre_item.product.general_uom_group:
+                    return {
+                        'id': obj.gre_item.product.general_uom_group.uom_reference_id,
+                        'title': obj.gre_item.product.general_uom_group.uom_reference.title,
+                        'code': obj.gre_item.product.general_uom_group.uom_reference.code,
+                        'ratio': obj.gre_item.product.general_uom_group.uom_reference.ratio
+                    } if obj.gre_item.product.general_uom_group.uom_reference else {}
+        return {}
+
+    @classmethod
+    def get_stock_amount(cls, obj):
+        return obj.quantity
 
 
 class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
