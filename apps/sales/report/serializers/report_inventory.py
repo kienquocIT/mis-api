@@ -349,98 +349,24 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             })
         return data_stock_activity
 
-    def get_stock_activities(self, obj):
-        div = self.context.get('definition_inventory_valuation')
-        config_inventory_management = self.context.get('config_inventory_management')
-        date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
-
-        if not obj.warehouse_id:  # Project
-            result = []
-            for wh_sub in obj.report_inventory_prd_wh_wh.all().order_by('warehouse_id'):
-                sub_warehouse_id = wh_sub.warehouse_id
-                data_stock_activity = []
-                sum_in_quantity = 0
-                sum_out_quantity = 0
-                sum_in_value = 0
-                sum_out_value = 0
-                kw_parameter = {
-                    'physical_warehouse_id': sub_warehouse_id,
-                    'sale_order_id': obj.sale_order_id
-                }
-                for log in obj.product.report_inventory_log_product.filter(
-                    report_inventory__period_mapped_id=obj.period_mapped_id,
-                    report_inventory__sub_period_order=obj.sub_period_order,
-                    **kw_parameter
-                ):
-                    if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
-                        if log.stock_type == 1:
-                            sum_in_quantity += log.quantity
-                            sum_in_value += log.value
-                        else:
-                            sum_out_quantity += log.quantity
-                            sum_out_value += log.value
-
-                        # lấy detail cho từng TH
-                        if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return',
-                                               'Goods transfer (in)']:
-                            data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity,
-                                                                                      obj.product)
-                        elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
-                            data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity,
-                                                                                       obj.product)
-                data_stock_activity = sorted(
-                    data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
-                )
-
-                # lấy inventory_cost_data của kì hiện tại
-                this_sub_value = LoggingSubFunction.get_balance_data_this_sub(obj)
-
-                if div == 0:
-                    sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
-                    sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
-                else:
-                    sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
-                    sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
-                    sum_in_value = obj.sum_input_value
-                    sum_out_value = obj.sum_output_value
-
-                casted_opening_quantity = cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom, wh_sub.opening_quantity
-                )
-                casted_ending_quantity = cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom, wh_sub.ending_quantity
-                )
-                result.append({
-                    'opening_balance_quantity': casted_opening_quantity,
-                    'opening_balance_value': wh_sub.opening_quantity * this_sub_value['opening_balance_cost'],
-                    'sum_in_quantity': sum_in_quantity,
-                    'sum_in_value': sum_in_value,
-                    'sum_out_quantity': sum_out_quantity,
-                    'sum_out_value': sum_out_value,
-                    'ending_balance_quantity': casted_ending_quantity,
-                    'ending_balance_value': wh_sub.ending_quantity * this_sub_value['ending_balance_cost'],
-                    'data_stock_activity': data_stock_activity,
-                    'periodic_closed': obj.periodic_closed
-                })
-            return result
-        else:
+    @classmethod
+    def for_project(cls, obj, date_range, div):
+        result = []
+        for wh_sub in obj.report_inventory_prd_wh_wh.all().order_by('warehouse_id'):
+            sub_warehouse_id = wh_sub.warehouse_id
             data_stock_activity = []
             sum_in_quantity = 0
             sum_out_quantity = 0
             sum_in_value = 0
             sum_out_value = 0
-            kw_parameter = {'physical_warehouse_id': obj.warehouse_id}
-            if 1 in config_inventory_management:
-                kw_parameter['warehouse_id'] = obj.warehouse_id
-            if 2 in config_inventory_management:
-                kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
-            if 3 in config_inventory_management:
-                kw_parameter['sale_order_id'] = obj.sale_order_id
-
+            kw_parameter = {
+                'physical_warehouse_id': sub_warehouse_id,
+                'sale_order_id': obj.sale_order_id
+            }
             for log in obj.product.report_inventory_log_product.filter(
-                report_inventory__period_mapped_id=obj.period_mapped_id,
-                report_inventory__sub_period_order=obj.sub_period_order,
-                **kw_parameter
+                    report_inventory__period_mapped_id=obj.period_mapped_id,
+                    report_inventory__sub_period_order=obj.sub_period_order,
+                    **kw_parameter
             ):
                 if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                     if log.stock_type == 1:
@@ -451,11 +377,13 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                         sum_out_value += log.value
 
                     # lấy detail cho từng TH
-                    if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)']:
-                        data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
+                    if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return',
+                                           'Goods transfer (in)']:
+                        data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity,
+                                                                                  obj.product)
                     elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
-                        data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)
-
+                        data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity,
+                                                                                   obj.product)
             data_stock_activity = sorted(
                 data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
             )
@@ -472,25 +400,113 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 sum_in_value = obj.sum_input_value
                 sum_out_value = obj.sum_output_value
 
-            result = {
-                'opening_balance_quantity': cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom,
-                    this_sub_value['opening_balance_quantity']
-                ),
-                'opening_balance_value': this_sub_value['opening_balance_value'],
+            casted_opening_quantity = cast_unit_to_inv_quantity(
+                obj.product.inventory_uom, wh_sub.opening_quantity
+            )
+            casted_ending_quantity = cast_unit_to_inv_quantity(
+                obj.product.inventory_uom, wh_sub.ending_quantity
+            )
+            result.append({
+                'opening_balance_quantity': casted_opening_quantity,
+                'opening_balance_value': wh_sub.opening_quantity * this_sub_value['opening_balance_cost'],
                 'sum_in_quantity': sum_in_quantity,
                 'sum_in_value': sum_in_value,
                 'sum_out_quantity': sum_out_quantity,
                 'sum_out_value': sum_out_value,
-                'ending_balance_quantity': cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom,
-                    this_sub_value['ending_balance_quantity']
-                ),
-                'ending_balance_value': this_sub_value['ending_balance_value'],
+                'ending_balance_quantity': casted_ending_quantity,
+                'ending_balance_value': wh_sub.ending_quantity * this_sub_value['ending_balance_cost'],
                 'data_stock_activity': data_stock_activity,
                 'periodic_closed': obj.periodic_closed
-            }
-            return result
+            })
+        return result
+
+    @classmethod
+    def for_none_project(cls, obj, date_range, div, config_inventory_management):
+        data_stock_activity = []
+        sum_in_quantity = 0
+        sum_out_quantity = 0
+        sum_in_value = 0
+        sum_out_value = 0
+        kw_parameter = {'physical_warehouse_id': obj.warehouse_id}
+        if 1 in config_inventory_management:
+            kw_parameter['warehouse_id'] = obj.warehouse_id
+        if 2 in config_inventory_management:
+            kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
+        if 3 in config_inventory_management:
+            kw_parameter['sale_order_id'] = obj.sale_order_id
+
+        for log in obj.product.report_inventory_log_product.filter(
+                report_inventory__period_mapped_id=obj.period_mapped_id,
+                report_inventory__sub_period_order=obj.sub_period_order,
+                **kw_parameter
+        ):
+            if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
+                if log.stock_type == 1:
+                    sum_in_quantity += log.quantity
+                    sum_in_value += log.value
+                else:
+                    sum_out_quantity += log.quantity
+                    sum_out_value += log.value
+
+                # lấy detail cho từng TH
+                if log.trans_title in [
+                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)'
+                ]:
+                    data_stock_activity = cls.get_data_stock_activity_for_in(
+                        log, data_stock_activity, obj.product
+                    )
+                elif log.trans_title in [
+                    'Delivery', 'Goods issue', 'Goods transfer (out)'
+                ]:
+                    data_stock_activity = cls.get_data_stock_activity_for_out(
+                        log, data_stock_activity, obj.product
+                    )
+
+        data_stock_activity = sorted(
+            data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
+        )
+
+        # lấy inventory_cost_data của kì hiện tại
+        this_sub_value = LoggingSubFunction.get_balance_data_this_sub(obj)
+
+        if div == 0:
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
+        else:
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+            sum_in_value = obj.sum_input_value
+            sum_out_value = obj.sum_output_value
+
+        result = {
+            'opening_balance_quantity': cast_unit_to_inv_quantity(
+                obj.product.inventory_uom,
+                this_sub_value['opening_balance_quantity']
+            ),
+            'opening_balance_value': this_sub_value['opening_balance_value'],
+            'sum_in_quantity': sum_in_quantity,
+            'sum_in_value': sum_in_value,
+            'sum_out_quantity': sum_out_quantity,
+            'sum_out_value': sum_out_value,
+            'ending_balance_quantity': cast_unit_to_inv_quantity(
+                obj.product.inventory_uom,
+                this_sub_value['ending_balance_quantity']
+            ),
+            'ending_balance_value': this_sub_value['ending_balance_value'],
+            'data_stock_activity': data_stock_activity,
+            'periodic_closed': obj.periodic_closed
+        }
+        return result
+
+    def get_stock_activities(self, obj):
+        div = self.context.get('definition_inventory_valuation')
+        config_inventory_management = self.context.get('config_inventory_management')
+        date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
+
+        if not obj.warehouse_id:  # Project
+            self.for_project(obj, date_range, div)
+        else:
+            self.for_none_project(obj, date_range, div, config_inventory_management)
 
 
 class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
