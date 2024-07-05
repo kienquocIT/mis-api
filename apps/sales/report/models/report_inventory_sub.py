@@ -1,5 +1,5 @@
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
-from apps.sales.report.models.report_inventory import *
+from apps.sales.report.models.report_inventory import LatestSub, ReportInventoryProductWarehouse
 
 
 class LoggingSubFunction:
