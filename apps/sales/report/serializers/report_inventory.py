@@ -503,8 +503,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
         if not obj.warehouse_id:  # Project
             return self.for_project(obj, date_range, div)
-        else:
-            return self.for_none_project(obj, date_range, div, config_inventory_management)
+        return self.for_none_project(obj, date_range, div, config_inventory_management)
 
 
 class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
