@@ -65,7 +65,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                         } if gr_wh_gr_prd else {},
                         'serial_list': serial_data,
                         'quantity_import': gr_wh_gr_prd.quantity_import,
-                        'status': int(len(serial_data) == item.quantity_import)
+                        'status': int(len(serial_data) == gr_wh_gr_prd.quantity_import)
                     })
         return product_data
 
@@ -137,7 +137,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 pr_prd, 'sale_order_product'
             ) else None
             gre_general = GoodsRegistrationGeneral.objects.filter(
-                gre_item__so_item=so_item
+                gre_item__so_item=so_item,
+                warehouse=prd_wh.warehouse
             ).first() if so_item else None
             if gre_general:
                 bulk_info_regis = []
@@ -149,6 +150,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                         )
                     )
                 GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
+            else:
+                raise serializers.ValidationError({'Gre general': "Can not find gre general."})
 
         if len(bulk_info_new_serial) > 0:
             prd_wh.receipt_amount += len(bulk_info_new_serial)

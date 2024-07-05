@@ -54,8 +54,6 @@ class ReportInventory(DataAbstractModel):  # rp_inventory
         """
         if 'warehouse_id' in kwargs:
             del kwargs['warehouse_id']
-        if 'warehouse_for_filter_id' in kwargs:
-            del kwargs['warehouse_for_filter_id']
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             # (obj này là root) - có thì return, chưa có thì tạo mới
@@ -114,10 +112,10 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         related_name='report_inventory_log_warehouse',
         null=True
     )
-    warehouse_for_filter = models.ForeignKey(
+    physical_warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
-        related_name='report_inventory_log_warehouse_for_filter',
+        related_name='report_inventory_log_physical_warehouse',
         null=True
     )
     sale_order = models.ForeignKey(
@@ -243,7 +241,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
         bulk_info = []
         log_order_number = 0
         for item in stock_data:
-            kw_parameter = {'warehouse_for_filter_id': item['warehouse'].id}
+            kw_parameter = {}
             if 1 in config_inventory_management:
                 kw_parameter['warehouse_id'] = item['warehouse'].id
             if 2 in config_inventory_management:
@@ -278,6 +276,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                     if stock_obj.employee_inherit else stock_obj.employee_created,
                     report_inventory=rp_inventory,
                     product=item['product'],
+                    physical_warehouse=item['warehouse'],
                     sale_order=item.get('sale_order'),
                     system_date=item['system_date'],
                     posting_date=item['posting_date'],
@@ -324,6 +323,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                     if stock_obj.employee_inherit else stock_obj.employee_created,
                     report_inventory=rp_inventory,
                     product=item['product'],
+                    physical_warehouse=item['warehouse'],
                     system_date=item['system_date'],
                     posting_date=item['posting_date'],
                     document_date=item['document_date'],
@@ -341,7 +341,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                 bulk_info.append(new_log)
                 log_order_number += 1
 
-            if stock_obj.company.company_config.cost_per_project:  # Project
+            if 'sale_order_id' in kw_parameter:  # Project
                 LoggingSubFunction.regis_stock(stock_obj, item)
 
         new_log_list = cls.objects.bulk_create(bulk_info)
@@ -351,7 +351,7 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
     def update_current_value_dict_for_log(cls, log, period_obj, sub_period_order, config_inventory_management):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
         div = log.company.company_config.definition_inventory_valuation
-        kw_parameter = {'warehouse_for_filter_id': log.warehouse_for_filter_id}
+        kw_parameter = {}
         if 1 in config_inventory_management:
             kw_parameter['warehouse_id'] = log.warehouse_id
         if 2 in config_inventory_management:
@@ -418,6 +418,11 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
     def update_this_record_value_dict_for_periodic_inventory(
         cls, this_rp_prd_wh, log, period_obj, sub_period_order, latest_value_dict, **kwargs
     ):
+        log_warehouse = None
+        if 'log_warehouse' in kwargs:
+            log_warehouse = kwargs['log_warehouse']
+            del kwargs['log_warehouse']
+
         # nếu kiểm kê định kì
         if not this_rp_prd_wh:  # nếu không có thì tạo, gán log
             this_rp_prd_wh = ReportInventoryProductWarehouse.objects.create(
@@ -469,10 +474,31 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             'periodic_closed'
         ])
 
+        this_rp_prd_wh_warehouse = this_rp_prd_wh.report_inventory_prd_wh_wh.filter(warehouse=log_warehouse).first()
+        if this_rp_prd_wh_warehouse:
+            this_rp_prd_wh_warehouse.ending_quantity += log.quantity
+            this_rp_prd_wh_warehouse.save(update_fields=['ending_quantity'])
+        else:
+            last_ending = ReportInventoryProductWarehouseWH.get_previous_ending_quantity_this_project(
+                this_rp_prd_wh, log_warehouse
+            )
+            ReportInventoryProductWarehouseWH.objects.create(
+                report_inventory_prd_wh=this_rp_prd_wh,
+                warehouse=log_warehouse,
+                opening_quantity=last_ending,
+                ending_quantity=last_ending + log.quantity
+            )
+        return True
+
     @classmethod
     def update_this_record_value_dict_for_perpetual_inventory(
         cls, this_rp_prd_wh, log, period_obj, sub_period_order, latest_value_dict, **kwargs
     ):
+        log_warehouse = None
+        if 'log_warehouse' in kwargs:
+            log_warehouse = kwargs['log_warehouse']
+            del kwargs['log_warehouse']
+
         if not this_rp_prd_wh:  # không có thì tạo, gán log
             this_rp_prd_wh = ReportInventoryProductWarehouse.objects.create(
                 tenant_id=log.tenant_id,
@@ -517,6 +543,22 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
             'sub_latest_log'
         ])
 
+        this_rp_prd_wh_warehouse = this_rp_prd_wh.report_inventory_prd_wh_wh.filter(warehouse=log_warehouse).first()
+        if this_rp_prd_wh_warehouse:
+            this_rp_prd_wh_warehouse.ending_quantity += log.quantity
+            this_rp_prd_wh_warehouse.save(update_fields=['ending_quantity'])
+        else:
+            last_ending = ReportInventoryProductWarehouseWH.get_previous_ending_quantity_this_project(
+                this_rp_prd_wh, log_warehouse
+            )
+            ReportInventoryProductWarehouseWH.objects.create(
+                report_inventory_prd_wh=this_rp_prd_wh,
+                warehouse=log_warehouse,
+                opening_quantity=last_ending,
+                ending_quantity=last_ending + log.quantity
+            )
+        return True
+
     @classmethod
     def update_this_record_value_dict(cls, log, period_obj, sub_period_order, latest_value_dict, div, **kwargs):
         """
@@ -535,6 +577,9 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                 sub_period=sub_period_obj,
                 **kwargs
             ).first()
+
+            if 'sale_order_id' in kwargs:
+                kwargs['log_warehouse'] = log.physical_warehouse
 
             # nếu kiểm kê thường xuyên
             if div == 0:
@@ -556,9 +601,10 @@ class ReportInventorySub(DataAbstractModel):  # rp_sub
                     **kwargs
                 )
 
+            if 'log_warehouse' in kwargs:
+                del kwargs['log_warehouse']
+
             # cập nhập log mới nhất, không có thì tạo mới
-            if 'warehouse_for_filter_id' in kwargs:
-                del kwargs['warehouse_for_filter_id']
             latest_log_obj = log.product.latest_log_product.filter(**kwargs).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
@@ -591,12 +637,6 @@ class ReportInventoryProductWarehouse(DataAbstractModel):  # rp_prd_wh
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='report_inventory_prd_wh_warehouse',
-        null=True
-    )
-    warehouse_for_filter = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.CASCADE,
-        related_name='report_inventory_prd_wh_warehouse_for_filter',
         null=True
     )
     lot_mapped = models.ForeignKey(
@@ -668,6 +708,42 @@ class ReportInventoryProductWarehouse(DataAbstractModel):  # rp_prd_wh
         permissions = ()
 
 
+class ReportInventoryProductWarehouseWH(SimpleAbstractModel):
+    report_inventory_prd_wh = models.ForeignKey(
+        ReportInventoryProductWarehouse,
+        on_delete=models.CASCADE,
+        related_name='report_inventory_prd_wh_wh',
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='report_inventory_prd_wh_wh_warehouse',
+        null=True
+    )
+    opening_quantity = models.FloatField(default=0)
+    ending_quantity = models.FloatField(default=0)
+
+    @classmethod
+    def get_previous_ending_quantity_this_project(cls, report_inventory_prd_wh, warehouse):
+        previous = cls.objects.filter(
+            report_inventory_prd_wh=report_inventory_prd_wh,
+            warehouse=warehouse
+        ).order_by(
+            '-report_inventory_prd_wh__period_mapped__fiscal_year',
+            '-report_inventory_prd_wh__sub_period_order'
+        ).first()
+        if previous:
+            return previous.ending_quantity
+        return 0
+
+    class Meta:
+        verbose_name = 'Report Inventory Product Warehouse WH'
+        verbose_name_plural = 'Report Inventory Product Warehouse WH'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
 class LatestSub(SimpleAbstractModel):
     product = models.ForeignKey(
         'saledata.Product',
@@ -733,8 +809,6 @@ class LoggingSubFunction:
         - option 1: [warehouse_id]
         Hàm lấy Log gần nhất theo sp và kho. Không có trả về None
         """
-        if 'warehouse_for_filter_id' in kwargs:
-            del kwargs['warehouse_for_filter_id']
         last_record = LatestSub.objects.filter(
             product_id=product_id,
             **kwargs
@@ -773,8 +847,6 @@ class LoggingSubFunction:
         - option 1: [warehouse_id]
         Hàm tìm value_dict Log gần nhất, không có trả về đầu kỳ hiện tại
         """
-        if 'warehouse_for_filter_id' in kwargs:
-            del kwargs['warehouse_for_filter_id']
         latest_trans = LoggingSubFunction.get_latest_log(
             product_id,
             **kwargs
