@@ -433,6 +433,7 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         if 3 in config_inventory_management:
             kw_parameter['sale_order_id'] = obj.sale_order_id
 
+        print(kw_parameter)
         for log in obj.product.report_inventory_log_product.filter(
                 report_inventory__period_mapped_id=obj.period_mapped_id,
                 report_inventory__sub_period_order=obj.sub_period_order,
@@ -500,11 +501,10 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         div = self.context.get('definition_inventory_valuation')
         config_inventory_management = self.context.get('config_inventory_management')
         date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
-
         if not obj.warehouse_id:  # Project
-            self.for_project(obj, date_range, div)
+            return self.for_project(obj, date_range, div)
         else:
-            self.for_none_project(obj, date_range, div, config_inventory_management)
+            return self.for_none_project(obj, date_range, div, config_inventory_management)
 
 
 class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
