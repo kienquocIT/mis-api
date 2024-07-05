@@ -315,6 +315,83 @@ class ReportInventoryList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @classmethod
+    def for_perpetual(
+            cls, last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+            bulk_info, bulk_info_wh
+    ):
+        quantity = last_item.ending_balance_quantity
+        cost = last_item.ending_balance_cost
+        value = last_item.ending_balance_value
+        rp_prd_wh = ReportInventoryProductWarehouse(
+            tenant=tenant,
+            company=company,
+            employee_created=employee_current,
+            employee_inherit=employee_current,
+            product_id=last_item.product_id,
+            sale_order_id=last_item.sale_order_id,
+            lot_mapped_id=last_item.lot_mapped_id,
+            warehouse_id=last_item.warehouse_id,
+            period_mapped=period_mapped,
+            sub_period_order=sub_period_order,
+            sub_period=sub,
+            opening_balance_quantity=quantity,
+            opening_balance_cost=cost,
+            opening_balance_value=value,
+            ending_balance_quantity=quantity,
+            ending_balance_cost=cost,
+            ending_balance_value=value
+        )
+        bulk_info.append(rp_prd_wh)
+        for report_inventory_prd_wh in last_item.report_inventory_prd_wh_wh.all():
+            bulk_info_wh.append(
+                ReportInventoryProductWarehouseWH(
+                    report_inventory_prd_wh=rp_prd_wh,
+                    warehouse=report_inventory_prd_wh.warehouse,
+                    opening_quantity=report_inventory_prd_wh.ending_quantity,
+                    ending_quantity=report_inventory_prd_wh.ending_quantity
+                )
+            )
+        return bulk_info, bulk_info_wh
+
+    @classmethod
+    def for_periodic(
+            cls, last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+            bulk_info, bulk_info_wh
+    ):
+        quantity = last_item.periodic_ending_balance_quantity
+        cost = last_item.periodic_ending_balance_cost
+        value = last_item.periodic_ending_balance_value
+        rp_prd_wh = ReportInventoryProductWarehouse(
+            tenant=tenant,
+            company=company,
+            employee_created=employee_current,
+            employee_inherit=employee_current,
+            product_id=last_item.product_id,
+            lot_mapped_id=last_item.lot_mapped_id,
+            warehouse_id=last_item.warehouse_id,
+            period_mapped=period_mapped,
+            sub_period_order=sub_period_order,
+            sub_period=sub,
+            opening_balance_quantity=quantity,
+            opening_balance_cost=cost,
+            opening_balance_value=value,
+            periodic_ending_balance_quantity=quantity,
+            periodic_ending_balance_cost=cost,
+            periodic_ending_balance_value=value
+        )
+        bulk_info.append(rp_prd_wh)
+        for report_inventory_prd_wh in last_item.report_inventory_prd_wh_wh.all():
+            bulk_info_wh.append(
+                ReportInventoryProductWarehouseWH(
+                    report_inventory_prd_wh=rp_prd_wh,
+                    warehouse=report_inventory_prd_wh.warehouse,
+                    opening_quantity=report_inventory_prd_wh.ending_quantity,
+                    ending_quantity=report_inventory_prd_wh.ending_quantity
+                )
+            )
+        return bulk_info, bulk_info_wh
+
+    @classmethod
     def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
         sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
         if all([
@@ -349,70 +426,15 @@ class ReportInventoryList(BaseListMixin):
                     sale_order_id=last_item.sale_order_id,
                 ).exists():
                     if company.company_config.definition_inventory_valuation == 0:
-                        quantity = last_item.ending_balance_quantity
-                        cost = last_item.ending_balance_cost
-                        value = last_item.ending_balance_value
-                        rp_prd_wh = ReportInventoryProductWarehouse(
-                            tenant=tenant,
-                            company=company,
-                            employee_created=employee_current,
-                            employee_inherit=employee_current,
-                            product_id=last_item.product_id,
-                            sale_order_id=last_item.sale_order_id,
-                            lot_mapped_id=last_item.lot_mapped_id,
-                            warehouse_id=last_item.warehouse_id,
-                            period_mapped=period_mapped,
-                            sub_period_order=sub_period_order,
-                            sub_period=sub,
-                            opening_balance_quantity=quantity,
-                            opening_balance_cost=cost,
-                            opening_balance_value=value,
-                            ending_balance_quantity=quantity,
-                            ending_balance_cost=cost,
-                            ending_balance_value=value
+                        bulk_info, bulk_info_wh = cls.for_perpetual(
+                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+                            bulk_info, bulk_info_wh
                         )
-                        bulk_info.append(rp_prd_wh)
-                        for report_inventory_prd_wh in last_item.report_inventory_prd_wh_wh.all():
-                            bulk_info_wh.append(
-                                ReportInventoryProductWarehouseWH(
-                                    report_inventory_prd_wh=rp_prd_wh,
-                                    warehouse=report_inventory_prd_wh.warehouse,
-                                    opening_quantity=report_inventory_prd_wh.ending_quantity,
-                                    ending_quantity=report_inventory_prd_wh.ending_quantity
-                                )
-                            )
                     if company.company_config.definition_inventory_valuation == 1:
-                        quantity = last_item.periodic_ending_balance_quantity
-                        cost = last_item.periodic_ending_balance_cost
-                        value = last_item.periodic_ending_balance_value
-                        rp_prd_wh = ReportInventoryProductWarehouse(
-                            tenant=tenant,
-                            company=company,
-                            employee_created=employee_current,
-                            employee_inherit=employee_current,
-                            product_id=last_item.product_id,
-                            lot_mapped_id=last_item.lot_mapped_id,
-                            warehouse_id=last_item.warehouse_id,
-                            period_mapped=period_mapped,
-                            sub_period_order=sub_period_order,
-                            sub_period=sub,
-                            opening_balance_quantity=quantity,
-                            opening_balance_cost=cost,
-                            opening_balance_value=value,
-                            periodic_ending_balance_quantity=quantity,
-                            periodic_ending_balance_cost=cost,
-                            periodic_ending_balance_value=value
+                        bulk_info, bulk_info_wh = cls.for_periodic(
+                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+                            bulk_info, bulk_info_wh
                         )
-                        bulk_info.append(rp_prd_wh)
-                        for report_inventory_prd_wh in last_item.report_inventory_prd_wh_wh.all():
-                            bulk_info_wh.append(
-                                ReportInventoryProductWarehouseWH(
-                                    report_inventory_prd_wh=rp_prd_wh,
-                                    warehouse=report_inventory_prd_wh.warehouse,
-                                    opening_quantity=report_inventory_prd_wh.ending_quantity,
-                                    ending_quantity=report_inventory_prd_wh.ending_quantity
-                                )
-                            )
 
             if len(bulk_info) > 0:
                 ReportInventoryProductWarehouse.objects.bulk_create(bulk_info)

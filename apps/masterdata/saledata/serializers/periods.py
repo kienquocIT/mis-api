@@ -298,9 +298,25 @@ def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
     return True
 
 
+def update_general_sn_lot(item, instance, prd_obj, wh_obj, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot):
+    if len(item.get('data_sn', [])) > 0:
+        sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
+    elif len(item.get('data_lot', [])) > 0:
+        sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
+    elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
+        sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
+    else:
+        sub_prd_wh, sub_sn, sub_lot = [], [], []
+
+    bulk_info_prd_wh += sub_prd_wh
+    bulk_info_sn += sub_sn
+    bulk_info_lot += sub_lot
+    return bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+
+
 def update_balance_data_sub(
         instance, prd_obj, wh_obj, sub_period_order_value, item, employee_current, sub_period_obj,
-        bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh,bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+        bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
 ):
     check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
 
@@ -375,18 +391,10 @@ def update_balance_data_sub(
                 )
             )
 
-    if len(item.get('data_sn', [])) > 0:
-        sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
-    elif len(item.get('data_lot', [])) > 0:
-        sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
-    elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
-        sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
-    else:
-        sub_prd_wh, sub_sn, sub_lot = [], [], []
+    bulk_info_prd_wh, bulk_info_sn, bulk_info_lot = update_general_sn_lot(
+        item, instance, prd_obj, wh_obj, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+    )
 
-    bulk_info_prd_wh += sub_prd_wh
-    bulk_info_sn += sub_sn
-    bulk_info_lot += sub_lot
     return bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
 
 

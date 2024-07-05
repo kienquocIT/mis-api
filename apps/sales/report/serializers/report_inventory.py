@@ -400,20 +400,18 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                 sum_in_value = obj.sum_input_value
                 sum_out_value = obj.sum_output_value
 
-            casted_opening_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, wh_sub.opening_quantity
-            )
-            casted_ending_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, wh_sub.ending_quantity
-            )
             result.append({
-                'opening_balance_quantity': casted_opening_quantity,
+                'opening_balance_quantity': cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, wh_sub.opening_quantity
+                ),
                 'opening_balance_value': wh_sub.opening_quantity * this_sub_value['opening_balance_cost'],
                 'sum_in_quantity': sum_in_quantity,
                 'sum_in_value': sum_in_value,
                 'sum_out_quantity': sum_out_quantity,
                 'sum_out_value': sum_out_value,
-                'ending_balance_quantity': casted_ending_quantity,
+                'ending_balance_quantity': cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, wh_sub.ending_quantity
+                ),
                 'ending_balance_value': wh_sub.ending_quantity * this_sub_value['ending_balance_cost'],
                 'data_stock_activity': data_stock_activity,
                 'periodic_closed': obj.periodic_closed
