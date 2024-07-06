@@ -126,6 +126,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     stock_amount = serializers.SerializerMethodField()
+    available_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
@@ -135,6 +136,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
             'warehouse',
             'uom',
             'stock_amount',
+            'available_amount',
         )
 
     @classmethod
@@ -173,6 +175,10 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     def get_stock_amount(cls, obj):
         return obj.quantity
 
+    @classmethod
+    def get_available_amount(cls, obj):
+        return obj.quantity
+
 
 class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
     lot_registered = serializers.SerializerMethodField()
@@ -189,10 +195,11 @@ class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
         return {
             'id': str(obj.lot_registered_id),
             'lot_number': obj.lot_registered.lot_number,
-            'quantity_import': obj.lot_registered.quantity_import,
+            'quantity_import': obj.gre_general.quantity if obj.gre_general else 0,
             'expire_date': obj.lot_registered.expire_date,
-            'manufacture_date': obj.lot_registered.manufacture_date
-        }
+            'manufacture_date': obj.lot_registered.manufacture_date,
+            'quantity_available': obj.gre_general.quantity if obj.gre_general else 0,
+        } if obj.lot_registered else {}
 
 
 class GoodsRegistrationSerialSerializer(serializers.ModelSerializer):

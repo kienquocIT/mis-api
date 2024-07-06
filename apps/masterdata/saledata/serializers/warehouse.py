@@ -301,9 +301,12 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_amount(cls, obj):
         if obj.warehouse and obj.product:
-            regis = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id).first()
-            if regis:
-                return obj.stock_amount - regis.quantity
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                quantity_regis = 0
+                for regis in regis_list:
+                    quantity_regis += regis.quantity
+                return obj.stock_amount - quantity_regis
         return obj.stock_amount
 
 
@@ -467,13 +470,11 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quantity_available(cls, obj):
         if obj.gre_lot_registered.count() > 0:
-            if obj.product_warehouse:
-                if obj.product_warehouse.warehouse and obj.product_warehouse.product:
-                    regis = obj.product_warehouse.warehouse.gre_item_general_warehouse.filter(
-                        gre_item__product_id=obj.product_warehouse.product_id
-                    ).first()
-                    if regis:
-                        return obj.quantity_import - regis.quantity
+            quantity_regis = 0
+            for lot_registered in obj.gre_lot_registered.all():
+                if lot_registered.gre_general:
+                    quantity_regis += lot_registered.gre_general.quantity
+            return obj.quantity_import - quantity_regis
         return obj.quantity_import
 
 
