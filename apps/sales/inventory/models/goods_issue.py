@@ -1,7 +1,7 @@
 import json
 from django.db import models
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, SubPeriods
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -73,7 +73,7 @@ class GoodsIssue(DataAbstractModel):
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     quantity = lot_item['old_quantity'] - lot_item['quantity']
                     if prd_wh_lot and quantity > 0:
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, quantity)
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, quantity)
                         activities_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
@@ -96,7 +96,7 @@ class GoodsIssue(DataAbstractModel):
                             }
                         })
             else:
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
                 activities_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
@@ -112,7 +112,7 @@ class GoodsIssue(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
             activities_data

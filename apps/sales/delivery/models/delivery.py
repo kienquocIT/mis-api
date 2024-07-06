@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -314,7 +314,7 @@ class OrderDeliverySub(DataAbstractModel):
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj:
                 quantity_delivery = lot.get('quantity_delivery')
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(
                     deli_item.uom, quantity_delivery
                 )
                 stock_data.append({
@@ -346,7 +346,7 @@ class OrderDeliverySub(DataAbstractModel):
     @classmethod
     def for_sn(cls, instance, deli_item, deli_data, stock_data):
         quantity_delivery = len(deli_data.get('serial_data', []))
-        casted_quantity = ReportInventorySub.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
+        casted_quantity = ReportStockLog.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
         stock_data.append({
             'sale_order': instance.order_delivery.sale_order,
             'product': deli_item.product,
@@ -387,7 +387,7 @@ class OrderDeliverySub(DataAbstractModel):
                 deli_item.product.general_traceability_method == 0
             ]):
                 lot_data = deli_item.delivery_data[0]
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(
                     deli_item.uom, deli_item.picked_quantity
                 )
                 stock_data.append({
@@ -406,7 +406,7 @@ class OrderDeliverySub(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_when_stock_activities_happened(
             instance,
             instance.date_done,
             stock_data

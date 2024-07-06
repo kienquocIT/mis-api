@@ -7,7 +7,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel
 
 
@@ -46,11 +46,11 @@ class GoodsReturn(DataAbstractModel):
         product_detail_list = instance.goods_return_product_detail.all()
         stock_data = []
         for item in product_detail_list.filter(type=0):
-            delivery_item = ReportInventorySub.objects.filter(
+            delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
                     delivery_item.current_cost * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -76,11 +76,11 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
-            delivery_item = ReportInventorySub.objects.filter(
+            delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
                     delivery_item.current_cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -112,11 +112,11 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=2):
-            delivery_item = ReportInventorySub.objects.filter(
+            delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
                     delivery_item.current_cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -148,7 +148,7 @@ class GoodsReturn(DataAbstractModel):
         product_detail_list = instance.goods_return_product_detail.all()
         stock_data = []
         for item in product_detail_list.filter(type=0):
-            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.default_return_number)
+            casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.default_return_number)
             casted_cost = (
                     item.cost_for_periodic * item.default_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
@@ -169,7 +169,7 @@ class GoodsReturn(DataAbstractModel):
                 'lot_data': {}
             })
         for item in product_detail_list.filter(type=1):
-            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.lot_return_number)
+            casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.lot_return_number)
             casted_cost = (
                     item.cost_for_periodic * item.lot_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
@@ -196,7 +196,7 @@ class GoodsReturn(DataAbstractModel):
                 }
             })
         for item in product_detail_list.filter(type=2):
-            casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, float(item.is_return))
+            casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, float(item.is_return))
             casted_cost = (
                     item.cost_for_periodic * float(item.is_return) / casted_quantity
             ) if casted_quantity > 0 else 0
@@ -225,7 +225,7 @@ class GoodsReturn(DataAbstractModel):
         else:
             stock_data = cls.for_periodic_inventory(instance)
 
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_when_stock_activities_happened(
             instance,
             instance.date_created,
             stock_data

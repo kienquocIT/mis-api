@@ -3,7 +3,7 @@ from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product, \
     SubPeriods
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
@@ -84,7 +84,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_value': item.unit_cost * lot_item['quantity'],
                             'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                         }
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, lot_item['quantity'])
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, lot_item['quantity'])
                         casted_cost = (
                                 item.unit_cost * lot_item['quantity'] / casted_quantity
                         ) if lot_item['quantity'] > 0 else 0
@@ -119,7 +119,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_data': lot_data
                         })
             else:
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 activities_data_out.append({
                     'product': item.product,
@@ -151,12 +151,12 @@ class GoodsTransfer(DataAbstractModel):
                     'value': casted_cost * casted_quantity,
                     'lot_data': {}
                 })
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
             activities_data_out
         )
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_when_stock_activities_happened(
             instance,
             instance.date_approved,
             activities_data_in

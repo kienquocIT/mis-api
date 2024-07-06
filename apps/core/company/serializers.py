@@ -11,7 +11,7 @@ from apps.core.company.models import (
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
@@ -104,9 +104,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
-        has_trans = ReportInventorySub.objects.filter(
+        has_trans = ReportStockLog.objects.filter(
             tenant=tenant_obj, company=company_obj,
-            report_inventory__period_mapped__fiscal_year=datetime.datetime.now().year
+            report_stock__period_mapped__fiscal_year=datetime.datetime.now().year
         ).exists()
         old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
         if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
