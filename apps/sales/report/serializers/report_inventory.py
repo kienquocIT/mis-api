@@ -118,7 +118,6 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
-            kw_parameter['warehouse_for_filter_id'] = warehouse_item[0]
             if 1 in config_inventory_management:
                 kw_parameter['warehouse_id'] = warehouse_item[0]
             inventory_cost_data = obj.product.report_inventory_prd_wh_product.filter(
@@ -162,7 +161,7 @@ class ReportInventoryDetailListSerializer(serializers.ModelSerializer):
 
 class BalanceInitializationListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    warehouse_for_filter = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
     opening_balance_quantity = serializers.SerializerMethodField()
     opening_balance_cost = serializers.SerializerMethodField()
@@ -172,7 +171,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
-            'warehouse_for_filter',
+            'warehouse',
             'period_mapped',
             'sub_period_order',
             'opening_balance_quantity',
@@ -198,12 +197,12 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
     @classmethod
-    def get_warehouse_for_filter(cls, obj):
+    def get_warehouse(cls, obj):
         return {
-            'id': obj.warehouse_for_filter_id,
-            'title': obj.warehouse_for_filter.title,
-            'code': obj.warehouse_for_filter.code,
-        } if obj.warehouse_for_filter else {}
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
@@ -228,16 +227,18 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
 
 class ReportInventoryListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    warehouse_for_filter = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
+    warehouse_sub_list = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportInventoryProductWarehouse
         fields = (
             'id',
             'product',
-            'warehouse_for_filter',
+            'warehouse',
+            'warehouse_sub_list',
             'period_mapped',
             'sub_period_order',
             'stock_activities',
@@ -261,12 +262,22 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
     @classmethod
-    def get_warehouse_for_filter(cls, obj):
+    def get_warehouse(cls, obj):
         return {
-            'id': obj.warehouse_for_filter_id,
-            'title': obj.warehouse_for_filter.title,
-            'code': obj.warehouse_for_filter.code,
-        } if obj.warehouse_for_filter else {}
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_warehouse_sub_list(cls, obj):
+        return [{
+            'id': wh_sub.warehouse_id,
+            'title': wh_sub.warehouse.title,
+            'code': wh_sub.warehouse.code,
+            'opening_quantity': wh_sub.opening_quantity,
+            'ending_quantity': wh_sub.ending_quantity
+        } for wh_sub in obj.report_inventory_prd_wh_wh.all().order_by('warehouse_id')]
 
     @classmethod
     def get_period_mapped(cls, obj):
@@ -338,10 +349,83 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             })
         return data_stock_activity
 
-    def get_stock_activities(self, obj):
-        div = self.context.get('definition_inventory_valuation')
-        config_inventory_management = self.context.get('config_inventory_management')
-        kw_parameter = {'warehouse_for_filter_id': obj.warehouse_for_filter_id}
+    @classmethod
+    def for_project(cls, obj, date_range, div):
+        result = []
+        for wh_sub in obj.report_inventory_prd_wh_wh.all().order_by('warehouse_id'):
+            sub_warehouse_id = wh_sub.warehouse_id
+            data_stock_activity = []
+            sum_in_quantity = 0
+            sum_out_quantity = 0
+            sum_in_value = 0
+            sum_out_value = 0
+            kw_parameter = {
+                'physical_warehouse_id': sub_warehouse_id,
+                'sale_order_id': obj.sale_order_id
+            }
+            for log in obj.product.report_inventory_log_product.filter(
+                    report_inventory__period_mapped_id=obj.period_mapped_id,
+                    report_inventory__sub_period_order=obj.sub_period_order,
+                    **kw_parameter
+            ):
+                if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
+                    if log.stock_type == 1:
+                        sum_in_quantity += log.quantity
+                        sum_in_value += log.value
+                    else:
+                        sum_out_quantity += log.quantity
+                        sum_out_value += log.value
+
+                    # lấy detail cho từng TH
+                    if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return',
+                                           'Goods transfer (in)']:
+                        data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity,
+                                                                                  obj.product)
+                    elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
+                        data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity,
+                                                                                   obj.product)
+            data_stock_activity = sorted(
+                data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
+            )
+
+            # lấy inventory_cost_data của kì hiện tại
+            this_sub_value = LoggingSubFunction.get_balance_data_this_sub(obj)
+
+            if div == 0:
+                sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+                sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
+            else:
+                sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+                sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+                sum_in_value = obj.sum_input_value
+                sum_out_value = obj.sum_output_value
+
+            result.append({
+                'opening_balance_quantity': cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, wh_sub.opening_quantity
+                ),
+                'opening_balance_value': wh_sub.opening_quantity * this_sub_value['opening_balance_cost'],
+                'sum_in_quantity': sum_in_quantity,
+                'sum_in_value': sum_in_value,
+                'sum_out_quantity': sum_out_quantity,
+                'sum_out_value': sum_out_value,
+                'ending_balance_quantity': cast_unit_to_inv_quantity(
+                    obj.product.inventory_uom, wh_sub.ending_quantity
+                ),
+                'ending_balance_value': wh_sub.ending_quantity * this_sub_value['ending_balance_cost'],
+                'data_stock_activity': data_stock_activity,
+                'periodic_closed': obj.periodic_closed
+            })
+        return result
+
+    @classmethod
+    def for_none_project(cls, obj, date_range, div, config_inventory_management):
+        data_stock_activity = []
+        sum_in_quantity = 0
+        sum_out_quantity = 0
+        sum_in_value = 0
+        sum_out_value = 0
+        kw_parameter = {'physical_warehouse_id': obj.warehouse_id}
         if 1 in config_inventory_management:
             kw_parameter['warehouse_id'] = obj.warehouse_id
         if 2 in config_inventory_management:
@@ -349,16 +433,11 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
         if 3 in config_inventory_management:
             kw_parameter['sale_order_id'] = obj.sale_order_id
 
-        date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
-        data_stock_activity = []
-        sum_in_quantity = 0
-        sum_out_quantity = 0
-        sum_in_value = 0
-        sum_out_value = 0
+        print(kw_parameter)
         for log in obj.product.report_inventory_log_product.filter(
-            report_inventory__period_mapped_id=obj.period_mapped_id,
-            report_inventory__sub_period_order=obj.sub_period_order,
-            **kw_parameter
+                report_inventory__period_mapped_id=obj.period_mapped_id,
+                report_inventory__sub_period_order=obj.sub_period_order,
+                **kw_parameter
         ):
             if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                 if log.stock_type == 1:
@@ -369,10 +448,18 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
                     sum_out_value += log.value
 
                 # lấy detail cho từng TH
-                if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)']:
-                    data_stock_activity = self.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
-                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
-                    data_stock_activity = self.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)
+                if log.trans_title in [
+                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)'
+                ]:
+                    data_stock_activity = cls.get_data_stock_activity_for_in(
+                        log, data_stock_activity, obj.product
+                    )
+                elif log.trans_title in [
+                    'Delivery', 'Goods issue', 'Goods transfer (out)'
+                ]:
+                    data_stock_activity = cls.get_data_stock_activity_for_out(
+                        log, data_stock_activity, obj.product
+                    )
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
@@ -409,6 +496,14 @@ class ReportInventoryListSerializer(serializers.ModelSerializer):
             'periodic_closed': obj.periodic_closed
         }
         return result
+
+    def get_stock_activities(self, obj):
+        div = self.context.get('definition_inventory_valuation')
+        config_inventory_management = self.context.get('config_inventory_management')
+        date_range = self.context.get('date_range', [])  # lấy tham số khoảng tg
+        if not obj.warehouse_id:  # Project
+            return self.for_project(obj, date_range, div)
+        return self.for_none_project(obj, date_range, div, config_inventory_management)
 
 
 class ProductWarehouseViewListSerializer(serializers.ModelSerializer):

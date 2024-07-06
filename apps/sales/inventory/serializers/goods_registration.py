@@ -105,7 +105,7 @@ class GoodsRegistrationDetailSerializer(serializers.ModelSerializer):
                     'trans_code': child.trans_code,
                     'trans_title': child.trans_title,
                     'system_date': child.system_date
-                } for child in item.gre_item_sub.all()]
+                } for child in item.gre_item_sub.all().order_by('system_date')]
             })
         return data_line_detail
 
