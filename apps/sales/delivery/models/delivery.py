@@ -406,7 +406,7 @@ class OrderDeliverySub(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_done,
             stock_data

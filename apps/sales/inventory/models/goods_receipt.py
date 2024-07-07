@@ -232,7 +232,7 @@ class GoodsReceipt(DataAbstractModel):
             stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
         else:
             stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_approved,
             stock_data

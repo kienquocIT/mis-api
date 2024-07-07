@@ -225,7 +225,7 @@ class GoodsReturn(DataAbstractModel):
         else:
             stock_data = cls.for_periodic_inventory(instance)
 
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_created,
             stock_data

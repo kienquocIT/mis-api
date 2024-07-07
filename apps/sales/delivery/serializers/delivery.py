@@ -528,7 +528,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         cls.for_lot(instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj)
                     if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
                         cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_done,
             stock_data

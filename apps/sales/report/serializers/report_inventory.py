@@ -8,7 +8,7 @@ def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
     return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
 
-class ReportStockDetailListSerializer(serializers.ModelSerializer):
+class ReportStockListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     lot_mapped = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
@@ -120,13 +120,13 @@ class ReportStockDetailListSerializer(serializers.ModelSerializer):
             # warehouse_item: [id, code, title]
             if 1 in config_inventory_management:
                 kw_parameter['warehouse_id'] = warehouse_item[0]
-            inventory_cost_data = obj.product.report_inventory_cost_product.filter(
+            rp_inventory_cost = obj.product.report_inventory_cost_product.filter(
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order,
                 **kw_parameter
             ).first()
-            if inventory_cost_data:
-                this_balance = ReportInventorySubFunction.get_balance_data_this_sub(inventory_cost_data)
+            if rp_inventory_cost:
+                this_balance = ReportInventorySubFunction.get_balance_data_this_sub_period(rp_inventory_cost)
                 casted_obq = cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, this_balance['opening_balance_quantity']
                 )
@@ -154,7 +154,7 @@ class ReportStockDetailListSerializer(serializers.ModelSerializer):
                         self.context.get('definition_inventory_valuation'),
                         **kw_parameter
                     ),
-                    'periodic_closed': inventory_cost_data.periodic_closed
+                    'periodic_closed': rp_inventory_cost.periodic_closed
                 })
         return sorted(result, key=lambda key: key['warehouse_code'])
 
@@ -225,7 +225,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         )
 
 
-class ReportStockListSerializer(serializers.ModelSerializer):
+class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
@@ -389,7 +389,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             )
 
             # lấy inventory_cost_data của kì hiện tại
-            this_sub_value = ReportInventorySubFunction.get_balance_data_this_sub(obj)
+            this_sub_value = ReportInventorySubFunction.get_balance_data_this_sub_period(obj)
 
             if div == 0:
                 sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
@@ -466,7 +466,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         )
 
         # lấy inventory_cost_data của kì hiện tại
-        this_sub_value = ReportInventorySubFunction.get_balance_data_this_sub(obj)
+        this_sub_value = ReportInventorySubFunction.get_balance_data_this_sub_period(obj)
 
         if div == 0:
             sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)

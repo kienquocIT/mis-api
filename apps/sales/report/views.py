@@ -10,8 +10,8 @@ from apps.sales.report.models import (
     ReportInventorySubFunction, ReportInventoryCostWH
 )
 from apps.sales.report.serializers import (
-    ReportStockDetailListSerializer, BalanceInitializationListSerializer,
-    ReportStockListSerializer, ProductWarehouseViewListSerializer
+    ReportStockListSerializer, BalanceInitializationListSerializer,
+    ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
 )
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
@@ -211,7 +211,7 @@ class ReportCashflowList(BaseListMixin):
 # REPORT INVENTORY
 class ReportStockDetailList(BaseListMixin):
     queryset = ReportStock.objects
-    serializer_list = ReportStockDetailListSerializer
+    serializer_list = ReportStockListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -311,7 +311,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
 
 class ReportStockList(BaseListMixin):
     queryset = ReportInventoryCost.objects
-    serializer_list = ReportStockListSerializer
+    serializer_list = ReportInventoryCostListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @classmethod

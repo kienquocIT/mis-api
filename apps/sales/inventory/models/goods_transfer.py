@@ -151,12 +151,12 @@ class GoodsTransfer(DataAbstractModel):
                     'value': casted_cost * casted_quantity,
                     'lot_data': {}
                 })
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_approved,
             activities_data_out
         )
-        ReportStockLog.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_approved,
             activities_data_in
