@@ -160,7 +160,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
         ).first()
         if period_obj:
             sub_period_order = stock_obj_date.month - period_obj.space_month
-            
             if stock_obj.company.company_config.definition_inventory_valuation == 1:
                 if int(sub_period_order) == 1:
                     last_period_obj = Periods.objects.filter(
@@ -301,7 +300,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
                 new_value_dict['quantity'], new_value_dict['cost'], new_value_dict['value']
             ) if new_value_dict['quantity'] > 0 else (0, 0, 0)
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
-            
             return cls.update_this_rp_inventory_cost_value_dict(
                 log, period_obj, sub_period_order, latest_value_dict, div, **kw_parameter
             )
@@ -319,7 +317,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             return cls.update_this_rp_inventory_cost_value_dict(
                 log, period_obj, sub_period_order, latest_value_dict, div, **kw_parameter
             )
-        
         raise serializers.ValidationError({'Company config': 'Company inventory valuation config must be 0 or 1.'})
 
     @classmethod
@@ -428,7 +425,9 @@ class ReportStockLog(DataAbstractModel):  # rp_log
         return this_rp_inventory_cost
 
     @classmethod
-    def update_this_rp_inventory_cost_value_dict(cls, log, period_obj, sub_period_order, latest_value_dict, div, **kwargs):
+    def update_this_rp_inventory_cost_value_dict(
+            cls, log, period_obj, sub_period_order, latest_value_dict, div, **kwargs
+    ):
         """
         Step 3: Hàm kiểm tra record cost của sp này trong kì nay đã có hay chưa ?
                 Chưa thì tạo mới - Có thì Update lại quantity-cost-value
