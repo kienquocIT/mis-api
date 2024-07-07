@@ -198,11 +198,19 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_warehouse(cls, obj):
-        return {
-            'id': obj.warehouse_id,
-            'title': obj.warehouse.title,
-            'code': obj.warehouse.code,
-        } if obj.warehouse else {}
+        if obj.warehouse:
+            return {
+                'id': obj.warehouse_id,
+                'title': obj.warehouse.title,
+                'code': obj.warehouse.code,
+            }
+        else:
+            warehouse_sub = obj.report_inventory_cost_wh.first()
+            return {
+                'id': warehouse_sub.warehouse.id,
+                'title': warehouse_sub.warehouse.title,
+                'code': warehouse_sub.warehouse.code,
+            } if warehouse_sub else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
