@@ -59,8 +59,8 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
-    ReportInventoryProductWarehouse, LatestSub, ReportInventory
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
+    ReportInventoryCost, LatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1371,8 +1371,8 @@ def reset_opportunity_stage():
     print('Done')
 
 
-def update_report_inventory_sub_trans_title():
-    for item in ReportInventorySub.objects.all():
+def update_report_stock_sub_trans_title():
+    for item in ReportStockLog.objects.all():
         if item.trans_code.startswith('D'):
             item.trans_title = 'Delivery'
             item.save(update_fields=['trans_title'])
@@ -1466,21 +1466,21 @@ def get_latest_log(log, period_mapped, sub_period_order):
     # 1: lấy records tháng này
     # 2: lấy records các tháng trước (trong năm)
     # 3: lấy records các năm trước
-    subs = ReportInventorySub.objects.filter(
+    subs = ReportStockLog.objects.filter(
         product_id=log.product_id, warehouse_id=log.warehouse_id,
         report_inventory__period_mapped=period_mapped,
         report_inventory__sub_period_order=sub_period_order,
         date_created__lt=log.date_created
     )
     if subs.count() == 0:
-        subs = ReportInventorySub.objects.filter(
+        subs = ReportStockLog.objects.filter(
             product_id=log.product_id, warehouse_id=log.warehouse_id,
             report_inventory__period_mapped=period_mapped,
             report_inventory__sub_period_order__lt=sub_period_order,
             date_created__lt=log.date_created
         )
         if subs.count() == 0:
-            subs = ReportInventorySub.objects.filter(
+            subs = ReportStockLog.objects.filter(
                 product_id=log.product_id, warehouse_id=log.warehouse_id,
                 report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year,
                 date_created__lt=log.date_created
@@ -1490,7 +1490,7 @@ def get_latest_log(log, period_mapped, sub_period_order):
 
 
 def run_inventory_report():
-    for log in ReportInventorySub.objects.all().order_by('date_created'):
+    for log in ReportStockLog.objects.all().order_by('date_created'):
         period_mapped = log.report_inventory.period_mapped
         sub_period_order = log.report_inventory.sub_period_order
         latest_trans = get_latest_log(log, period_mapped, sub_period_order)
@@ -1509,7 +1509,7 @@ def run_inventory_report():
 
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
-            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
+            inventory_cost_data_item = ReportInventoryCost.objects.filter(
                 tenant_id=period_mapped.tenant_id,
                 company_id=period_mapped.company_id,
                 product=log.product,
@@ -1519,7 +1519,7 @@ def run_inventory_report():
                 sub_period=sub_period_obj
             ).first()
             if not inventory_cost_data_item:
-                ReportInventoryProductWarehouse.objects.create(
+                ReportInventoryCost.objects.create(
                     tenant_id=period_mapped.tenant_id,
                     company_id=period_mapped.company_id,
                     product=log.product,
@@ -1542,14 +1542,14 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = LatestSub.objects.filter(
+            latest_log_obj = LatestLog.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                LatestSub.objects.create(
+                LatestLog.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
@@ -1557,43 +1557,17 @@ def run_inventory_report():
 
 
 def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
-    ReportInventorySub.objects.all().delete()
-    ReportInventoryProductWarehouse.objects.all().delete()
-    ReportInventory.objects.all().delete()
-    LatestSub.objects.all().delete()
+    ReportStockLog.objects.all().delete()
+    ReportInventoryCost.objects.all().delete()
+    ReportStock.objects.all().delete()
+    LatestLog.objects.all().delete()
 
     if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')
         company = Company.objects.get(id=company_id)
-        ProductWareHouseLotTransaction.objects.create(
-            pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
-            delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
-            quantity=2,
-            type_transaction=1
-        )
-        OrderDeliveryProduct.objects.filter(id='b8442325292042c1afa03d82505e7be6').update(delivery_data=[
-            {
-                "uom": "f77ab927-c430-4d61-bdc0-2519055b4204",
-                "stock": 1,
-                "lot_data": [
-                    {
-                        'quantity_initial': 1,
-                        'quantity_delivery': 1,
-                        'product_warehouse_lot_id': 'b1d4a1cfb72b41d0817d0514d49bd352'
-                    }
-                ],
-                "warehouse": "bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89",
-                "serial_data": []
-            }
-        ])
-
-        ProductWareHouse.objects.filter(id__in=[
-            '1554f02491394d4793c259aa7be051d8',
-            '328ae65745644a66b90fb18e76dd2737',
-        ]).delete()
 
         # đầu kỳ OKSS
-        ReportInventoryProductWarehouse.objects.create(
+        ReportInventoryCost.objects.create(
             tenant=company.tenant,
             company=company,
             employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
@@ -1613,7 +1587,7 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
         )
 
         # đầu kỳ SW
-        ReportInventoryProductWarehouse.objects.create(
+        ReportInventoryCost.objects.create(
             tenant=company.tenant,
             company=company,
             employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
@@ -1631,9 +1605,10 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
             ending_balance_cost=float(8000000),
             for_balance=True
         )
+
         # đầu kỳ Vision
         if has_lot:
-            ReportInventoryProductWarehouse.objects.create(
+            ReportInventoryCost.objects.create(
                 tenant=company.tenant,
                 company=company,
                 employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
@@ -1653,7 +1628,7 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
                 for_balance=True
             )
         else:
-            ReportInventoryProductWarehouse.objects.create(
+            ReportInventoryCost.objects.create(
                 tenant=company.tenant,
                 company=company,
                 employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
@@ -1671,8 +1646,9 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
                 ending_balance_cost=float(40000000),
                 for_balance=True
             )
+
         # đầu kỳ HP
-        ReportInventoryProductWarehouse.objects.create(
+        ReportInventoryCost.objects.create(
             tenant=company.tenant,
             company=company,
             employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',

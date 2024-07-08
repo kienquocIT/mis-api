@@ -259,7 +259,7 @@ class Product(DataAbstractModel):
                         latest_trans.latest_log.current_value
                     ]
                 else:
-                    opening_value_list_obj = self.report_inventory_prd_wh_product.filter(
+                    opening_value_list_obj = self.report_inventory_cost_product.filter(
                         warehouse_id=warehouse_id, period_mapped=this_period,
                     ).first()
                     if opening_value_list_obj:
@@ -275,7 +275,7 @@ class Product(DataAbstractModel):
                     else:
                         value_list = [0, 0, 0]
             else:
-                opening_value_list_obj = self.report_inventory_prd_wh_product.filter(
+                opening_value_list_obj = self.report_inventory_cost_product.filter(
                     warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
                 ).first()
                 value_list = [
@@ -309,7 +309,7 @@ class Product(DataAbstractModel):
                             'value': latest_trans.latest_log.current_value,
                         })
                 else:
-                    opening_value_list_obj = self.report_inventory_prd_wh_product.filter(
+                    opening_value_list_obj = self.report_inventory_cost_product.filter(
                         warehouse_id=warehouse.id, period_mapped=this_period, sub_period_order=sub_period_order
                     ).first()
                     if opening_value_list_obj and opening_value_list_obj.opening_balance_quantity > 0:

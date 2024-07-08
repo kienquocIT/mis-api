@@ -4,8 +4,8 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
-from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventorySub, \
-    ReportInventoryProductWarehouseWH
+from apps.sales.report.models import ReportInventoryCost, ReportStockLog, \
+    ReportInventoryCostWH
 
 
 # Product Type
@@ -222,7 +222,7 @@ def for_lot(item, instance, prd_obj, wh_obj):
                     company_id=instance.company_id,
                     product_warehouse=bulk_info_prd_wh[-1],
                     lot_number=lot.get('lot_number'),
-                    quantity_import=ReportInventorySub.cast_quantity_to_unit(
+                    quantity_import=ReportStockLog.cast_quantity_to_unit(
                         prd_obj.inventory_uom, float(lot.get('quantity_import'))
                     )
                 )
@@ -274,7 +274,7 @@ def for_none(item, instance, prd_obj, wh_obj):
 
 
 def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
-    if ReportInventorySub.objects.filter(
+    if ReportStockLog.objects.filter(
             tenant=instance.tenant,
             company=instance.company,
             product=prd_obj,
@@ -284,7 +284,7 @@ def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
             {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
         )
 
-    if ReportInventoryProductWarehouse.objects.filter(
+    if ReportInventoryCost.objects.filter(
             tenant=instance.tenant,
             company=instance.company,
             product=prd_obj,
@@ -324,7 +324,7 @@ def update_balance_data_sub(
     prd_obj.available_amount += float(item.get('quantity'))
     prd_obj.save(update_fields=['stock_amount', 'available_amount'])
     if instance.company.company_config.definition_inventory_valuation == 0:
-        rp_prd_wh = ReportInventoryProductWarehouse(
+        rp_prd_wh = ReportInventoryCost(
             tenant=instance.tenant,
             company=instance.company,
             employee_created=employee_current,
@@ -349,15 +349,15 @@ def update_balance_data_sub(
         bulk_info_rp_prd_wh.append(rp_prd_wh)
         if instance.company.company_config.cost_per_project:
             bulk_info_rp_prd_wh_wh.append(
-                ReportInventoryProductWarehouseWH(
-                    report_inventory_prd_wh=rp_prd_wh,
+                ReportInventoryCostWH(
+                    report_inventory_cost=rp_prd_wh,
                     warehouse=wh_obj,
                     opening_quantity=float(item.get('quantity')),
                     ending_quantity=float(item.get('quantity'))
                 )
             )
     else:
-        rp_prd_wh = ReportInventoryProductWarehouse(
+        rp_prd_wh = ReportInventoryCost(
             tenant=instance.tenant,
             company=instance.company,
             employee_created=employee_current,
@@ -383,8 +383,8 @@ def update_balance_data_sub(
         bulk_info_rp_prd_wh.append(rp_prd_wh)
         if instance.company.company_config.cost_per_project:
             bulk_info_rp_prd_wh_wh.append(
-                ReportInventoryProductWarehouseWH(
-                    report_inventory_prd_wh=rp_prd_wh,
+                ReportInventoryCostWH(
+                    report_inventory_cost=rp_prd_wh,
                     warehouse=wh_obj,
                     opening_quantity=float(item.get('quantity')),
                     ending_quantity=float(item.get('quantity'))
@@ -407,11 +407,11 @@ def update_balance_data(balance_data, instance, employee_current):
             Kiểm tra thử có hđ nhập-xuất nào chưa ?
             Nếu có: raise lỗi
             Else:
-                Lấy record ReportInventoryProductWarehouse (theo period và sub)
+                Lấy record ReportInventoryCost (theo period và sub)
                 Nếu có: raise lỗi
                 Else:
                     Cập nhập 'stock_amount' và 'available_amount' cho Product (cộng lên)
-                    Tạo ReportInventoryProductWarehouse mới (lưu opening_balance_quantity-value-cost)
+                    Tạo ReportInventoryCost mới (lưu opening_balance_quantity-value-cost)
                     Tạo ReportInventory mới (lưu prd-wh theo period và sub)
                     Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
         Else: raise lỗi
@@ -428,7 +428,7 @@ def update_balance_data(balance_data, instance, employee_current):
             if item.get('product_id') and item.get('warehouse_id'):
                 prd_obj = Product.objects.filter(id=item.get('product_id')).first()
                 wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                item['quantity'] = ReportInventorySub.cast_quantity_to_unit(
+                item['quantity'] = ReportStockLog.cast_quantity_to_unit(
                     prd_obj.inventory_uom,
                     float(item.get('quantity'))
                 )
@@ -441,8 +441,8 @@ def update_balance_data(balance_data, instance, employee_current):
                     )
                 else:
                     raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
-        ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
-        ReportInventoryProductWarehouseWH.objects.bulk_create(bulk_info_rp_prd_wh_wh)
+        ReportInventoryCost.objects.bulk_create(bulk_info_rp_prd_wh)
+        ReportInventoryCostWH.objects.bulk_create(bulk_info_rp_prd_wh_wh)
         ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
         ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
         ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
