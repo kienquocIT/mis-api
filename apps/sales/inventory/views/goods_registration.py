@@ -146,6 +146,7 @@ class GoodsRegistrationSerialList(BaseListMixin):
         'gre_general__gre_item__so_item__sale_order_id': ['exact'],
         'gre_general__gre_item__product_id': ['exact'],
         'gre_general__warehouse_id': ['exact'],
+        'sn_registered__is_delete': ['exact'],
     }
     serializer_list = GoodsRegistrationSerialSerializer
 

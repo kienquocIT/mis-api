@@ -216,6 +216,10 @@ class SaleOrderActiveDeliverySerializer:
                     "id": str(self.order_obj.customer_billing_id),
                     "bill": self.order_obj.customer_billing.full_address
                 } if self.order_obj.customer_billing else {},
+                "opportunity": {
+                    'id': self.order_obj.opportunity_id, 'title': self.order_obj.opportunity.title,
+                    'code': self.order_obj.opportunity.code,
+                } if self.order_obj.opportunity else {},
             },
             from_picking_area='',
             customer=self.order_obj.customer,
