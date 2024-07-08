@@ -47,64 +47,10 @@ class GoodsRegistration(DataAbstractModel):
         return None
 
     @classmethod
-    def for_goods_receipt(cls, stock_info, gre_item, goods_receipt_id):
+    def update_gre_general(cls, gre_item, stock_info):
         casted_quantity_to_inv = cast_unit_to_inv_quantity(stock_info['product'].inventory_uom, stock_info['quantity'])
-        gre_item.this_registered += casted_quantity_to_inv
-        gre_item.this_registered_value += stock_info['value']
-        gre_item.this_available = gre_item.this_registered
-        gre_item.this_available_value = gre_item.this_registered_value
-
-        # create sub, save by inventory uom
-        GoodsRegistrationItemSub.objects.create(
-            gre_item=gre_item,
-            warehouse=stock_info['warehouse'],
-            quantity=casted_quantity_to_inv,
-            cost=stock_info['value']/casted_quantity_to_inv,
-            value=stock_info['value'],
-            stock_type=stock_info['stock_type'],
-            uom=stock_info['product'].inventory_uom,
-            trans_id=stock_info['trans_id'],
-            trans_code=stock_info['trans_code'],
-            trans_title=stock_info['trans_title'],
-            system_date=stock_info['system_date']
-        )
-
-        # create/update general, save by base uom
-        gre_general = GoodsRegistrationGeneral.objects.filter(
-            gre_item=gre_item,
-            warehouse=stock_info['warehouse']
-        ).first()
-        if gre_general:
-            gre_general.quantity += stock_info['quantity']
-        else:
-            gre_general = GoodsRegistrationGeneral.objects.create(
-                gre_item=gre_item,
-                warehouse=stock_info['warehouse'],
-                quantity=stock_info['quantity']
-            )
-
-        if stock_info['product'].general_traceability_method == 1:  # lot
-            GoodsRegistrationLot.objects.create(
-                gre_general=gre_general,
-                lot_registered_id=stock_info['lot_data']['lot_id']
-            )
-        if stock_info['product'].general_traceability_method == 2:  # sn
-            bulk_info = []
-            for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
-                bulk_info.append(
-                    GoodsRegistrationSerial(
-                        gre_general=gre_general,
-                        sn_registered=serial
-                    )
-                )
-            GoodsRegistrationSerial.objects.bulk_create(bulk_info)
-        return gre_item
-
-    @classmethod
-    def for_delivery(cls, stock_info, gre_item):
-        casted_quantity_to_inv = cast_unit_to_inv_quantity(stock_info['product'].inventory_uom, stock_info['quantity'])
-        gre_item.this_registered -= casted_quantity_to_inv
-        gre_item.this_registered_value -= stock_info['value']
+        gre_item.this_registered += casted_quantity_to_inv * stock_info['stock_type']
+        gre_item.this_registered_value += stock_info['value'] * stock_info['stock_type']
         gre_item.this_available = gre_item.this_registered
         gre_item.this_available_value = gre_item.this_registered_value
 
@@ -129,14 +75,40 @@ class GoodsRegistration(DataAbstractModel):
             warehouse=stock_info['warehouse']
         ).first()
         if gre_general:
-            gre_general.quantity -= stock_info['quantity']
+            gre_general.quantity += stock_info['quantity'] * stock_info['stock_type']
+            gre_general.save(update_fields=['quantity'])
         else:
-            GoodsRegistrationGeneral.objects.create(
+            gre_general = GoodsRegistrationGeneral.objects.create(
                 gre_item=gre_item,
                 warehouse=stock_info['warehouse'],
                 quantity=stock_info['quantity']
             )
+        return gre_item, gre_general
 
+    @classmethod
+    def for_goods_receipt(cls, stock_info, gre_item, goods_receipt_id):
+        gre_item, gre_general = cls.update_gre_general(gre_item, stock_info)
+        # create lot/sn data
+        if stock_info['product'].general_traceability_method == 1:  # lot
+            GoodsRegistrationLot.objects.create(
+                gre_general=gre_general,
+                lot_registered_id=stock_info['lot_data']['lot_id']
+            )
+        if stock_info['product'].general_traceability_method == 2:  # sn
+            bulk_info = []
+            for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
+                bulk_info.append(
+                    GoodsRegistrationSerial(
+                        gre_general=gre_general,
+                        sn_registered=serial
+                    )
+                )
+            GoodsRegistrationSerial.objects.bulk_create(bulk_info)
+        return gre_item
+
+    @classmethod
+    def for_delivery(cls, stock_info, gre_item):
+        gre_item, _ = cls.update_gre_general(gre_item, stock_info)
         return gre_item
 
     @classmethod
@@ -149,9 +121,9 @@ class GoodsRegistration(DataAbstractModel):
                 ).first()
                 if gre_item:
                     if 'goods_receipt_id' in kwargs:
-                        cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
+                        gre_item = cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
                     if 'delivery_id' in kwargs:
-                        cls.for_delivery(stock_info, gre_item)
+                        gre_item = cls.for_delivery(stock_info, gre_item)
                     gre_item.save(update_fields=[
                         'this_registered', 'this_registered_value',
                         'this_available', 'this_available_value',
