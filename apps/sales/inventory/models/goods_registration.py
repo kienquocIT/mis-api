@@ -121,9 +121,9 @@ class GoodsRegistration(DataAbstractModel):
                 ).first()
                 if gre_item:
                     if 'goods_receipt_id' in kwargs:
-                        cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
+                        gre_item = cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
                     if 'delivery_id' in kwargs:
-                        cls.for_delivery(stock_info, gre_item)
+                        gre_item = cls.for_delivery(stock_info, gre_item)
                     gre_item.save(update_fields=[
                         'this_registered', 'this_registered_value',
                         'this_available', 'this_available_value',
