@@ -22,7 +22,7 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
     warehouse = serializers.UUIDField()
     end_warehouse = serializers.UUIDField()
     uom = serializers.UUIDField()
-    sale_order_id = serializers.UUIDField(required=False)
+    sale_order = serializers.UUIDField(required=False)
     sn_data = serializers.ListField(default=[])
     lot_data = serializers.ListField(default=[])
 

@@ -44,6 +44,7 @@ class GoodsTransfer(DataAbstractModel):
                 casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 activities_data_out.append({
+                    'sale_order': item.sale_order,
                     'product': item.product,
                     'warehouse': item.warehouse,
                     'system_date': instance.date_approved,
@@ -59,6 +60,7 @@ class GoodsTransfer(DataAbstractModel):
                     'lot_data': {}
                 })
                 activities_data_in.append({
+                    'sale_order': item.sale_order,
                     'product': item.product,
                     'warehouse': item.end_warehouse,
                     'system_date': instance.date_approved,
@@ -89,6 +91,7 @@ class GoodsTransfer(DataAbstractModel):
                                 item.unit_cost * lot_item['quantity'] / casted_quantity
                         ) if lot_item['quantity'] > 0 else 0
                         activities_data_out.append({
+                            'sale_order': item.sale_order,
                             'product': item.product,
                             'warehouse': item.warehouse,
                             'system_date': instance.date_approved,
@@ -104,6 +107,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_data': lot_data
                         })
                         activities_data_in.append({
+                            'sale_order': item.sale_order,
                             'product': item.product,
                             'warehouse': item.end_warehouse,
                             'system_date': instance.date_approved,
@@ -226,7 +230,7 @@ class GoodsTransfer(DataAbstractModel):
                     lot_des_obj.save(update_fields=['quantity_import'])
                 else:
                     bulk_info.append(
-                        ProductWareHouseLot.objects.create(
+                        ProductWareHouseLot(
                             tenant_id=instance.tenant_id,
                             company_id=instance.company_id,
                             product_warehouse=destination,
@@ -350,9 +354,9 @@ class GoodsTransferProduct(MasterDataAbstractModel):
 
     lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'quantity': ...}]
     sn_data = models.JSONField(default=list)  # [..., ..., ...]
-    quantity = models.FloatField()
-    unit_cost = models.FloatField()
-    subtotal = models.FloatField()
+    quantity = models.FloatField(default=0)
+    unit_cost = models.FloatField(default=0)
+    subtotal = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Transfer Product'

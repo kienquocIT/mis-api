@@ -491,9 +491,9 @@ class ReportStockLog(DataAbstractModel):  # rp_log
                     )
 
             # cập nhập log mới nhất, không có thì tạo mới
-            latest_log_obj = log.product.latest_log_product.filter(
-                warehouse_id=log.physical_warehouse_id, **kwargs
-            ).first() if 'warehouse_id' not in kwargs else log.product.latest_log_product.filter(**kwargs).first()
+            if 'warehouse_id' not in kwargs:
+                kwargs['warehouse_id'] = log.physical_warehouse_id
+            latest_log_obj = log.product.latest_log_product.filter(**kwargs).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
