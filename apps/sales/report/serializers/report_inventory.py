@@ -67,13 +67,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
-    def get_stock_activities_detail(cls, obj, all_logs_by_month, div, **kwargs):
+    def get_stock_activities_detail(cls, obj, all_logs_by_month, div, warehouse_id, **kwargs):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
-        for log in all_logs_by_month.filter(
-            product_id=obj.product_id,
-            **kwargs
-        ):
+        if 'sale_order_id' in kwargs:
+            kwargs['physical_warehouse_id'] = warehouse_id
+        for log in all_logs_by_month.filter(product_id=obj.product_id, **kwargs):
             casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
             casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
@@ -126,7 +125,9 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                 **kw_parameter
             ).first()
             if rp_inventory_cost:
-                this_balance = ReportInventorySubFunction.get_balance_data_this_sub_period(rp_inventory_cost)
+                this_balance = ReportInventorySubFunction.get_balance_data_this_sub_period(
+                    rp_inventory_cost, warehouse_item[0] if 'sale_order_id' in kw_parameter else None
+                )
                 casted_obq = cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, this_balance['opening_balance_quantity']
                 )
@@ -152,6 +153,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                         obj,
                         self.context.get('all_logs_by_month', []),
                         self.context.get('definition_inventory_valuation'),
+                        warehouse_item[0],
                         **kw_parameter
                     ),
                     'periodic_closed': rp_inventory_cost.periodic_closed

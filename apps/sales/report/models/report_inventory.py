@@ -769,24 +769,49 @@ class ReportInventorySubFunction:
         return {'quantity': 0, 'cost': 0, 'value': 0}
 
     @classmethod
-    def get_balance_data_this_sub_period(cls, this_rp_inventory_cost):
+    def get_balance_data_this_sub_period(cls, this_rp_inventory_cost, warehouse_id):
         print('---get_balance_data_this_sub_period')
         """ Hàm lấy opening và ending của kỳ này """
-        # Get Opening
-        opening_quantity = this_rp_inventory_cost.opening_balance_quantity
-        opening_cost = this_rp_inventory_cost.opening_balance_cost
-        opening_value = this_rp_inventory_cost.opening_balance_value
+        if not warehouse_id:
+            # Get Opening
+            opening_quantity = this_rp_inventory_cost.opening_balance_quantity
+            opening_cost = this_rp_inventory_cost.opening_balance_cost
+            opening_value = this_rp_inventory_cost.opening_balance_value
 
-        # Get Ending
-        ending_quantity, ending_cost, ending_value = (
-            this_rp_inventory_cost.ending_balance_quantity,
-            this_rp_inventory_cost.ending_balance_cost,
-            this_rp_inventory_cost.ending_balance_value
-        ) if this_rp_inventory_cost.company.company_config.definition_inventory_valuation == 0 else (
-            this_rp_inventory_cost.periodic_ending_balance_quantity,
-            this_rp_inventory_cost.periodic_ending_balance_cost,
-            this_rp_inventory_cost.periodic_ending_balance_value
-        )
+            # Get Ending
+            ending_quantity, ending_cost, ending_value = (
+                this_rp_inventory_cost.ending_balance_quantity,
+                this_rp_inventory_cost.ending_balance_cost,
+                this_rp_inventory_cost.ending_balance_value
+            ) if this_rp_inventory_cost.company.company_config.definition_inventory_valuation == 0 else (
+                this_rp_inventory_cost.periodic_ending_balance_quantity,
+                this_rp_inventory_cost.periodic_ending_balance_cost,
+                this_rp_inventory_cost.periodic_ending_balance_value
+            )
+        else:
+            this_rp_inventory_cost_wh = this_rp_inventory_cost.report_inventory_cost_wh.filter(
+                warehouse_id=warehouse_id
+            ).first()
+            if this_rp_inventory_cost_wh:
+                # Get Opening
+                opening_quantity = this_rp_inventory_cost_wh.opening_quantity
+                opening_cost = this_rp_inventory_cost.opening_balance_cost
+                opening_value = opening_quantity * opening_cost
+
+                # Get Ending
+                ending_quantity, ending_cost, ending_value = (
+                    this_rp_inventory_cost_wh.ending_quantity,
+                    this_rp_inventory_cost.ending_balance_cost,
+                    this_rp_inventory_cost_wh.ending_quantity * this_rp_inventory_cost.ending_balance_cost
+                ) if this_rp_inventory_cost.company.company_config.definition_inventory_valuation == 0 else (
+                    this_rp_inventory_cost.periodic_ending_balance_quantity,
+                    this_rp_inventory_cost.periodic_ending_balance_cost,
+                    this_rp_inventory_cost.periodic_ending_balance_value
+                )
+            else:
+                (
+                    opening_quantity, opening_cost, opening_value, ending_quantity, ending_cost, ending_value
+                ) = 0, 0, 0, 0, 0, 0
 
         return {
             'opening_balance_quantity': opening_quantity,
