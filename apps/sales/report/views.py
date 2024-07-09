@@ -437,7 +437,6 @@ class ReportStockList(BaseListMixin):
                         )
 
             if len(bulk_info) > 0:
-                print(len(bulk_info_wh))
                 ReportInventoryCost.objects.bulk_create(bulk_info)
                 ReportInventoryCostWH.objects.bulk_create(bulk_info_wh)
                 sub.run_report_inventory = True
@@ -445,9 +444,12 @@ class ReportStockList(BaseListMixin):
         return True
 
     def get_queryset(self):
+        filter_fields = {}
         try:
             period_mapped = Periods.objects.filter(id=self.request.query_params['period_mapped']).first()
             sub_period_order = self.request.query_params['sub_period_order']
+            if 'sale_order' in self.request.query_params:
+                filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
             self.create_this_sub_record(
                 self.request.user.tenant_current,
@@ -467,7 +469,8 @@ class ReportStockList(BaseListMixin):
                 ).filter(
                     period_mapped=period_mapped,
                     sub_period_order=sub_period_order,
-                    product_id__in=prd_id_list
+                    product_id__in=prd_id_list,
+                    **filter_fields
                 )
                 if self.request.user.company_current.company_config.cost_per_project:
                     return return_query.order_by(
@@ -482,7 +485,8 @@ class ReportStockList(BaseListMixin):
                 'product__report_stock_log_product'
             ).filter(
                 period_mapped=period_mapped,
-                sub_period_order=sub_period_order
+                sub_period_order=sub_period_order,
+                **filter_fields
             )
             if self.request.user.company_current.company_config.cost_per_project:
                 return return_query.order_by(

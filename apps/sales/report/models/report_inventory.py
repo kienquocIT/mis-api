@@ -769,7 +769,7 @@ class ReportInventorySubFunction:
         return {'quantity': 0, 'cost': 0, 'value': 0}
 
     @classmethod
-    def get_balance_data_this_sub_period(cls, this_rp_inventory_cost, warehouse_id):
+    def get_balance_data_this_sub_period(cls, this_rp_inventory_cost, warehouse_id=None):
         print('---get_balance_data_this_sub_period')
         """ Hàm lấy opening và ending của kỳ này """
         if not warehouse_id:
