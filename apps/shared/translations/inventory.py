@@ -7,4 +7,4 @@ class WarehouseMsg:
     END_WAREHOUSE_NOT_EXIST = _('End warehouse not exist')
     AGENCY_NOT_EXIST = _('Agency not exist')
 
-    PRODUCT_NOT_EXIST = _('Product in warehouse not exist')
+    PRODUCT_WAREHOUSE_NOT_EXIST = _('Product warehouse not exist')

@@ -28,39 +28,6 @@ class GoodsTransfer(DataAbstractModel):
     )
     date_transfer = models.DateTimeField(null=True)
 
-    goods_transfer_datas = models.JSONField(
-        help_text=json.dumps(
-            [
-                {
-                    'warehouse': {
-                        'id': 'warehouse_id',
-                        'title': 'warehouse_title',
-                    },
-                    'warehouse_product': {  # product in warehouse
-                        'id': 'id',
-                        'product_data': {
-                            'id': 'product_id',
-                            'title': 'product_title',
-                        }
-                    },
-                    'uom': {
-                        'id': 'uom_id',
-                        'title': 'uom_title'
-                    },
-                    'quantity': 2,
-                    'end_warehouse': {
-                        'id': 'end_warehouse_id',
-                        'title': 'end_warehouse_title'
-                    },
-                    'unit_cost': 500000,
-                    'subtotal_cost': 1000000,
-                    'lot_changes': [],
-                    'sn_changes': []
-                }
-            ]
-        )
-    )
-
     class Meta:
         verbose_name = 'Goods Transfer'
         verbose_name_plural = 'Goods Transfer'
@@ -73,7 +40,40 @@ class GoodsTransfer(DataAbstractModel):
         activities_data_out = []
         activities_data_in = []
         for item in instance.goods_transfer.all():
-            if len(item.lot_data) > 0:
+            if item.product.general_traceability_method == 0:
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
+                activities_data_out.append({
+                    'product': item.product,
+                    'warehouse': item.warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods transfer (out)',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {}
+                })
+                activities_data_in.append({
+                    'product': item.product,
+                    'warehouse': item.end_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods transfer (in)',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_cost * casted_quantity,
+                    'lot_data': {}
+                })
+            if item.product.general_traceability_method == 1:
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     if prd_wh_lot:
@@ -118,10 +118,11 @@ class GoodsTransfer(DataAbstractModel):
                             'value': casted_cost * casted_quantity,
                             'lot_data': lot_data
                         })
-            else:
+            if item.product.general_traceability_method == 2:
                 casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 activities_data_out.append({
+                    'sale_order': item.sale_order,
                     'product': item.product,
                     'warehouse': item.warehouse,
                     'system_date': instance.date_approved,
@@ -137,6 +138,7 @@ class GoodsTransfer(DataAbstractModel):
                     'lot_data': {}
                 })
                 activities_data_in.append({
+                    'sale_order': item.sale_order,
                     'product': item.product,
                     'warehouse': item.end_warehouse,
                     'system_date': instance.date_approved,
@@ -164,38 +166,44 @@ class GoodsTransfer(DataAbstractModel):
         return True
 
     @classmethod
-    def update_source_destination_product_warehouse_obj(cls, item, product_obj, instance):
+    def update_source_destination_product_warehouse_obj(cls, item, instance):
         try:
-            source = product_obj.product_warehouse_product.filter(
-                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse_id=item['warehouse']['id']
+            source = item.product.product_warehouse_product.filter(
+                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item.warehouse
             ).first()
-            destination = product_obj.product_warehouse_product.filter(
-                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item['end_warehouse']['id']
+            destination = item.product.product_warehouse_product.filter(
+                tenant_id=instance.tenant_id, company_id=instance.company_id, warehouse=item.end_warehouse
             ).first()
             if not destination:
                 destination = ProductWareHouse.objects.create(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    product=product_obj,
-                    uom_id=item['uom']['id'],
-                    warehouse_id=item['end_warehouse']['id'],
+                    product=item.product,
+                    uom=item.uom,
+                    warehouse=item.end_warehouse,
                     tax=None,
-                    unit_price=item['unit_cost'],
-                    stock_amount=item['quantity'],
-                    receipt_amount=item['quantity'],
+                    unit_price=item.unit_cost,
+                    stock_amount=item.quantity,
+                    receipt_amount=item.quantity,
                     sold_amount=0,
                     picked_ready=0,
-                    product_data=item['warehouse_product']['product_data'],
-                    warehouse_data=item['end_warehouse'],
-                    uom_data=item['uom'],
+                    product_data={
+                        'id': item.product_id, 'code': item.product.code, 'title': item.product.title
+                    },
+                    warehouse_data={
+                        'id': item.end_warehouse_id, 'code': item.end_warehouse.code, 'title': item.end_warehouse.title
+                    },
+                    uom_data={
+                        'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
+                    },
                     tax_data={}
                 )
             else:
-                destination.receipt_amount += item['quantity']
+                destination.receipt_amount += item.quantity
                 destination.stock_amount = destination.receipt_amount - destination.sold_amount
                 destination.save(update_fields=['receipt_amount', 'stock_amount'])
 
-            source.receipt_amount -= item['quantity']
+            source.receipt_amount -= item.quantity
             source.stock_amount = source.receipt_amount - source.sold_amount
             source.save(update_fields=['receipt_amount', 'stock_amount'])
             return source, destination
@@ -204,10 +212,10 @@ class GoodsTransfer(DataAbstractModel):
 
     @classmethod
     def update_for_lot(cls, item, source, destination, instance):
-        lot_data = item['lot_changes']
         all_lot_src = source.product_warehouse_lot_product_warehouse.all()
         all_lot_des = destination.product_warehouse_lot_product_warehouse.all()
-        for lot_item in lot_data:
+        bulk_info = []
+        for lot_item in item.lot_data:
             lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
             if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
                 lot_src_obj.quantity_import -= lot_item['quantity']
@@ -217,51 +225,56 @@ class GoodsTransfer(DataAbstractModel):
                     lot_des_obj.quantity_import += lot_item['quantity']
                     lot_des_obj.save(update_fields=['quantity_import'])
                 else:
-                    ProductWareHouseLot.objects.create(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product_warehouse=destination,
-                        lot_number=lot_src_obj.lot_number,
-                        quantity_import=lot_item['quantity'],
-                        expire_date=lot_src_obj.expire_date,
-                        manufacture_date=lot_src_obj.manufacture_date
+                    bulk_info.append(
+                        ProductWareHouseLot.objects.create(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            product_warehouse=destination,
+                            lot_number=lot_src_obj.lot_number,
+                            quantity_import=lot_item['quantity'],
+                            expire_date=lot_src_obj.expire_date,
+                            manufacture_date=lot_src_obj.manufacture_date
+                        )
                     )
             else:
                 raise serializers.ValidationError({'Lot': 'Update Lot failed.'})
+        ProductWareHouseLot.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
     def update_for_serial(cls, item, source, destination, instance):
-        sn_data = item['sn_changes']
         all_sn_src = source.product_warehouse_serial_product_warehouse.all()
-        for sn_id in sn_data:
+        bulk_info = []
+        for sn_id in item.sn_data:
             sn_src_obj = all_sn_src.filter(id=sn_id).first()
             if sn_src_obj and not sn_src_obj.is_delete:
                 sn_src_obj.is_delete = True
                 sn_src_obj.save(update_fields=['is_delete'])
-                ProductWareHouseSerial.objects.create(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_warehouse=destination,
-                    vendor_serial_number=sn_src_obj.vendor_serial_number,
-                    serial_number=sn_src_obj.serial_number,
-                    expire_date=sn_src_obj.expire_date,
-                    manufacture_date=sn_src_obj.manufacture_date,
-                    warranty_start=sn_src_obj.warranty_start,
-                    warranty_end=sn_src_obj.warranty_end
+                bulk_info.append(
+                    ProductWareHouseSerial(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product_warehouse=destination,
+                        vendor_serial_number=sn_src_obj.vendor_serial_number,
+                        serial_number=sn_src_obj.serial_number,
+                        expire_date=sn_src_obj.expire_date,
+                        manufacture_date=sn_src_obj.manufacture_date,
+                        warranty_start=sn_src_obj.warranty_start,
+                        warranty_end=sn_src_obj.warranty_end
+                    )
                 )
             else:
                 raise serializers.ValidationError({'Serial': 'Update Serial failed.'})
+        ProductWareHouseSerial.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
     def update_lot_serial_data_warehouse(cls, instance):
-        for item in instance.goods_transfer_datas:
-            product_obj = Product.objects.get(id=item['warehouse_product']['product_data']['id'])
-            source, destination = cls.update_source_destination_product_warehouse_obj(item, product_obj, instance)
-            if product_obj.general_traceability_method == 1:  # lot
+        for item in instance.goods_transfer.all():
+            source, destination = cls.update_source_destination_product_warehouse_obj(item, instance)
+            if item.product.general_traceability_method == 1:  # lot
                 cls.update_for_lot(item, source, destination, instance)
-            elif product_obj.general_traceability_method == 2:  # sn
+            elif item.product.general_traceability_method == 2:  # sn
                 cls.update_for_serial(item, source, destination, instance)
         return True
 
@@ -298,18 +311,16 @@ class GoodsTransferProduct(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='goods_transfer',
     )
+    product_warehouse = models.ForeignKey(
+        'saledata.ProductWareHouse',
+        on_delete=models.CASCADE,
+        related_name='product_warehouse_goods_transfer',
+    )
+
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='warehouse_goods_transfer',
-    )
-    warehouse_title = models.CharField(
-        max_length=500,
-    )
-    warehouse_product = models.ForeignKey(
-        'saledata.ProductWareHouse',
-        on_delete=models.CASCADE,
-        related_name='product_warehouse_goods_transfer',
     )
 
     product = models.ForeignKey(
@@ -318,25 +329,25 @@ class GoodsTransferProduct(MasterDataAbstractModel):
         related_name="product_goods_transfer",
     )
 
-    product_title = models.CharField(
-        max_length=500,
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        related_name="sale_order_goods_transfer",
+        null=True
     )
+
     end_warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='end_warehouse_goods_transfer',
     )
-    end_warehouse_title = models.CharField(
-        max_length=500,
-    )
+
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='uom_goods_transfer',
     )
-    uom_title = models.CharField(
-        max_length=500,
-    )
+
     lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'quantity': ...}]
     sn_data = models.JSONField(default=list)  # [..., ..., ...]
     quantity = models.FloatField()

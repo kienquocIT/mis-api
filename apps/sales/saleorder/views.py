@@ -40,12 +40,13 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        common_queryset = super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
+        return common_queryset.filter(has_regis=True) if 'has_regis' in self.request.query_params else common_queryset
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",

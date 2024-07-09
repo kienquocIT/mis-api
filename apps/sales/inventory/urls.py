@@ -8,7 +8,9 @@ from apps.sales.inventory.views import (
     GoodsRegistrationList,
     GoodsRegistrationDetail,
     GoodsRegistrationLotList,
-    GoodsRegistrationSerialList, GoodsRegistrationGeneralList
+    GoodsRegistrationSerialList,
+    GoodsRegistrationGeneralList,
+    ProjectProductList
 )
 
 urlpatterns = [
@@ -82,5 +84,10 @@ urlpatterns += [
         'goods-registration-prd-wh-serial',
         GoodsRegistrationSerialList.as_view(),
         name='GoodsRegistrationSerialList'
+    ),
+    path(
+        'product-list-for-project',
+        ProjectProductList.as_view(),
+        name='ProjectProductList'
     ),
 ]

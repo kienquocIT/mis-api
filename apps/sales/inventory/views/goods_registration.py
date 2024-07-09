@@ -10,7 +10,9 @@ from apps.sales.inventory.serializers import (
     GoodsRegistrationDetailSerializer,
     GoodsRegistrationUpdateSerializer,
     GoodsRegistrationLotSerializer,
-    GoodsRegistrationSerialSerializer, GoodsRegistrationGeneralSerializer
+    GoodsRegistrationSerialSerializer,
+    GoodsRegistrationGeneralSerializer,
+    ProjectProductListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -86,6 +88,7 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
+# for get Project products by SO-WH-PRD
 class GoodsRegistrationGeneralList(BaseListMixin):
     queryset = GoodsRegistrationGeneral.objects
     filterset_fields = {
@@ -159,6 +162,34 @@ class GoodsRegistrationSerialList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Goods registration Serial List",
         operation_description="Get Goods registration Serial List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# for get Project products for Transfer
+class ProjectProductList(BaseListMixin):
+    queryset = GoodsRegistrationGeneral.objects
+    filterset_fields = {
+        'goods_registration__sale_order_id': ['exact'],
+        'warehouse_id': ['exact'],
+        'gre_item__product_id': ['exact']
+    }
+    serializer_list = ProjectProductListSerializer
+
+    def get_queryset(self):
+        if self.request.user.company_current.company_config.cost_per_project:
+            return super().get_queryset().select_related(
+                'warehouse'
+            )
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Project Product List",
+        operation_description="Project Products List",
     )
     @mask_view(
         login_require=True, auth_require=False,

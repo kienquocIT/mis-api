@@ -2,9 +2,10 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account, ProductWareHouseLot, \
-    ProductWareHouseSerial
+    ProductWareHouseSerial, Product
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
-from apps.shared import WarehouseMsg, ProductMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.sales.saleorder.models import SaleOrder
+from apps.shared import WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_transfer import GTMsg
 
 __all__ = [
@@ -16,94 +17,72 @@ __all__ = [
 
 
 class GoodsTransferProductSerializer(serializers.ModelSerializer):
-    warehouse_product = serializers.UUIDField()
+    product_warehouse = serializers.UUIDField()
+    product = serializers.UUIDField()
     warehouse = serializers.UUIDField()
     end_warehouse = serializers.UUIDField()
     uom = serializers.UUIDField()
-
-    sn_changes = serializers.ListField(default=[])
-    lot_changes = serializers.ListField(default=[])
+    sale_order_id = serializers.UUIDField(required=False)
+    sn_data = serializers.ListField(default=[])
+    lot_data = serializers.ListField(default=[])
 
     class Meta:
         model = GoodsTransferProduct
         fields = (
-            'warehouse_product',
+            'product_warehouse',
             'warehouse',
+            'product',
+            'sale_order',
             'end_warehouse',
             'uom',
+            'lot_data',
+            'sn_data',
             'quantity',
             'unit_cost',
-            'subtotal',
-            'sn_changes',
-            'lot_changes'
+            'subtotal'
         )
 
     @classmethod
-    def validate_warehouse_product(cls, value):
+    def validate_product_warehouse(cls, value):
         try:
-            product = ProductWareHouse.objects.select_related('product').get(id=value)
-            return {
-                'id': str(product.id),
-                'product_data': {
-                    'id': str(product.product_id),
-                    'title': product.product.title,
-                    'code': product.product.code,
-                }
-            }
+            return ProductWareHouse.objects.select_related('product').get(id=value)
         except ProductWareHouse.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'warehouse_product': WarehouseMsg.PRODUCT_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'product_warehouse': WarehouseMsg.PRODUCT_WAREHOUSE_NOT_EXIST})
 
     @classmethod
     def validate_warehouse(cls, value):
         try:
-            warehouse = WareHouse.objects.get(id=value)
-            return {
-                'id': str(warehouse.id),
-                'title': warehouse.title,
-                'code': warehouse.code,
-            }
+            return WareHouse.objects.get(id=value)
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+
+    @classmethod
+    def validate_product(cls, value):
+        try:
+            return Product.objects.get(id=value)
+        except WareHouse.DoesNotExist:
+            raise serializers.ValidationError({'product': ProductMsg.DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_sale_order(cls, value):
+        try:
+            return SaleOrder.objects.get(id=value)
+        except WareHouse.DoesNotExist:
+            raise serializers.ValidationError({'sale order': SaleMsg.SALE_ORDER_NOT_EXIST})
 
     @classmethod
     def validate_end_warehouse(cls, value):
         try:
-            warehouse = WareHouse.objects.get(id=value)
-            return {
-                'id': str(warehouse.id),
-                'title': warehouse.title,
-                'code': warehouse.code,
-            }
+            return WareHouse.objects.get(id=value)
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'end_warehouse': WarehouseMsg.END_WAREHOUSE_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'end warehouse': WarehouseMsg.END_WAREHOUSE_NOT_EXIST})
 
     @classmethod
     def validate_uom(cls, value):
         try:
-            uom = UnitOfMeasure.objects.get(id=value)
-            return {
-                'id': str(uom.id),
-                'title': uom.title,
-                'code': uom.code,
-            }
+            return UnitOfMeasure.objects.get(id=value)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST
-                }
-            )
+            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
 
     def validate(self, validated_data):
         return validated_data
@@ -134,7 +113,7 @@ class GoodsTransferListSerializer(serializers.ModelSerializer):
 
 
 class GoodsTransferCreateSerializer(serializers.ModelSerializer):
-    goods_transfer_datas = serializers.ListField(child=GoodsTransferProductSerializer())
+    goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
 
@@ -146,7 +125,7 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
             'agency',
             'date_transfer',
             'system_status',
-            'goods_transfer_datas'
+            'goods_transfer_data'
         )
 
     @classmethod
@@ -154,54 +133,13 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
         try:
             return Account.objects.get(id=value)
         except ProductWareHouse.DoesNotExist:
-            raise serializers.ValidationError(
-                {
-                    'agency': GTMsg.AGENCY_NOT_EXIST
-                }
-            )
-
-    @classmethod
-    def update_product_amount(cls, data, instance):
-        ProductWareHouse.push_from_receipt(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            product_id=data['warehouse_product']['product_data']['id'],
-            warehouse_id=data['end_warehouse']['id'],
-            uom_id=data['uom']['id'],
-            tax_id=data['tax_data']['id'],
-            amount=data['quantity'],
-            unit_price=data['unit_price']
-        )
-        ProductWareHouse.pop_from_transfer(
-            product_warehouse_id=data['warehouse_product']['id'],
-            amount=data['quantity'],
-            data=data
-        )
-        return True
+            raise serializers.ValidationError({'agency': GTMsg.AGENCY_NOT_EXIST})
 
     @classmethod
     def common_create_sub_goods_transfer(cls, instance, data):
         bulk_data = []
         for item in data:
-            obj = GoodsTransferProduct(
-                goods_transfer=instance,
-                warehouse_id=item['warehouse']['id'],
-                warehouse_title=item['warehouse']['title'],
-                warehouse_product_id=item['warehouse_product']['id'],
-                product_id=item['warehouse_product']['product_data']['id'],
-                product_title=item['warehouse_product']['product_data']['title'],
-                end_warehouse_id=item['end_warehouse']['id'],
-                end_warehouse_title=item['end_warehouse']['title'],
-                uom_id=item['uom']['id'],
-                uom_title=item['uom']['title'],
-                quantity=item['quantity'],
-                unit_cost=item['unit_cost'],
-                subtotal=item['subtotal'],
-                company=instance.company,
-                tenant=instance.tenant,
-                lot_data=item['lot_changes'],
-                sn_data=item['sn_changes']
-            )
+            obj = GoodsTransferProduct(goods_transfer=instance, **item)
             bulk_data.append(obj)
         GoodsTransferProduct.objects.filter(goods_transfer=instance).delete()
         GoodsTransferProduct.objects.bulk_create(bulk_data)
@@ -209,14 +147,16 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        goods_transfer_data = validated_data['goods_transfer_data']
+        del validated_data['goods_transfer_data']
         instance = GoodsTransfer.objects.create(**validated_data, goods_transfer_type=0)
-        self.common_create_sub_goods_transfer(instance, validated_data['goods_transfer_datas'])
+        self.common_create_sub_goods_transfer(instance, goods_transfer_data)
         return instance
 
 
 class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
     agency = serializers.SerializerMethodField()
-    goods_transfer_datas = serializers.SerializerMethodField()
+    goods_transfer_data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsTransfer
@@ -229,7 +169,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
             'system_status',
             'agency',
             'note',
-            'goods_transfer_datas'
+            'goods_transfer_data'
         )
 
     @classmethod
@@ -242,7 +182,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_goods_transfer_datas_finished(cls, item, lot_detail, serial_detail):
+    def get_goods_transfer_data_finished(cls, item, lot_detail, serial_detail):
         serial_exist = len(item.sn_data)
         all_sn = ProductWareHouseSerial.objects.filter(id__in=item.sn_data)
         for each in all_sn:
@@ -268,9 +208,9 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return lot_is_lost, serial_exist
 
     @classmethod
-    def get_goods_transfer_datas_not_finished(cls, item, lot_detail, serial_detail):
+    def get_goods_transfer_data_not_finished(cls, item, lot_detail, serial_detail):
         serial_exist = 0
-        for serial in item.warehouse_product.product_warehouse_serial_product_warehouse.filter(
+        for serial in item.product_warehouse.product_warehouse_serial_product_warehouse.filter(
                 is_delete=False
         ).order_by('vendor_serial_number', 'serial_number'):
             serial_exist += 1 if str(serial.id) in item.sn_data else 0
@@ -284,7 +224,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
                 'warranty_end': serial.warranty_end
             })
         lot_is_lost = False
-        for lot in item.warehouse_product.product_warehouse_lot_product_warehouse.filter(
+        for lot in item.product_warehouse.product_warehouse_lot_product_warehouse.filter(
                 quantity_import__gt=0
         ).order_by('lot_number'):
             for each in item.lot_data:
@@ -301,20 +241,20 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return lot_is_lost, serial_exist
 
     @classmethod
-    def get_goods_transfer_datas(cls, obj):
-        goods_transfer_datas = []
+    def get_goods_transfer_data(cls, obj):
+        goods_transfer_data = []
         for item in obj.goods_transfer.all():
             serial_detail = []
             lot_detail = []
 
             if obj.system_status not in [2, 3]:
-                lot_is_lost, serial_exist = cls.get_goods_transfer_datas_not_finished(item, lot_detail, serial_detail)
+                lot_is_lost, serial_exist = cls.get_goods_transfer_data_not_finished(item, lot_detail, serial_detail)
             else:
-                lot_is_lost, serial_exist = cls.get_goods_transfer_datas_finished(item, lot_detail, serial_detail)
+                lot_is_lost, serial_exist = cls.get_goods_transfer_data_finished(item, lot_detail, serial_detail)
 
-            goods_transfer_datas.append({
+            goods_transfer_data.append({
                 'product_warehouse': {
-                    'id': item.warehouse_product_id,
+                    'id': item.product_warehouse_id,
                     'product': {
                         'id': item.product_id,
                         'code': item.product.code,
@@ -348,11 +288,11 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
                 'serial_is_lost': serial_exist < len(item.sn_data),
                 'sn_data': item.sn_data
             })
-        return goods_transfer_datas
+        return goods_transfer_data
 
 
 class GoodsTransferUpdateSerializer(serializers.ModelSerializer):
-    goods_transfer_datas = serializers.ListField(child=GoodsTransferProductSerializer())
+    goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
 
@@ -364,7 +304,7 @@ class GoodsTransferUpdateSerializer(serializers.ModelSerializer):
             'agency',
             'date_transfer',
             'system_status',
-            'goods_transfer_datas'
+            'goods_transfer_data'
         )
 
     def validate(self, validated_data):
@@ -372,8 +312,10 @@ class GoodsTransferUpdateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        goods_transfer_data = validated_data['goods_transfer_data']
+        del validated_data['goods_transfer_data']
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        GoodsTransferCreateSerializer.common_create_sub_goods_transfer(instance, validated_data['goods_transfer_datas'])
+        GoodsTransferCreateSerializer.common_create_sub_goods_transfer(instance, goods_transfer_data)
         return instance

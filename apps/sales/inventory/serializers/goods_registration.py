@@ -120,7 +120,6 @@ class GoodsRegistrationUpdateSerializer(serializers.ModelSerializer):
 
 
 # các class cho xuất hàng dự án
-
 class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -149,7 +148,7 @@ class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
             'quantity_import': obj.lot_registered.quantity_import,
             'expire_date': obj.lot_registered.expire_date,
             'manufacture_date': obj.lot_registered.manufacture_date
-        }
+        } if obj.lot_registered else None
 
 
 class GoodsRegistrationSerialSerializer(serializers.ModelSerializer):
@@ -172,4 +171,63 @@ class GoodsRegistrationSerialSerializer(serializers.ModelSerializer):
             'manufacture_date': obj.sn_registered.manufacture_date,
             'warranty_start': obj.sn_registered.warranty_start,
             'warranty_end': obj.sn_registered.warranty_end
-        }
+        } if obj.sn_registered else {}
+
+
+class ProjectProductListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    serial_detail = serializers.SerializerMethodField()
+    lot_detail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GoodsRegistrationGeneral
+        fields = (
+            'id',
+            'product',
+            'serial_detail',
+            'lot_detail',
+            'quantity'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        product = obj.gre_item.product
+        return {
+            'id': str(product.id),
+            'code': product.code,
+            'title': product.title,
+            'general_traceability_method': product.general_traceability_method
+        } if product else {}
+
+    @classmethod
+    def get_serial_detail(cls, obj):
+        serial_detail = []
+        for serial in obj.gre_general_serial.filter(sn_registered__is_delete=False).order_by(
+            'sn_registered__vendor_serial_number', 'sn_registered__serial_number'
+        ):
+            serial_detail.append({
+                'id': str(serial.sn_registered_id),
+                'vendor_serial_number': serial.sn_registered.vendor_serial_number,
+                'serial_number': serial.sn_registered.serial_number,
+                'expire_date': serial.sn_registered.expire_date,
+                'manufacture_date': serial.sn_registered.manufacture_date,
+                'warranty_start': serial.sn_registered.warranty_start,
+                'warranty_end': serial.sn_registered.warranty_end
+            })
+        return serial_detail
+
+    @classmethod
+    def get_lot_detail(cls, obj):
+        lot_detail = []
+        for lot in obj.gre_general_lot.filter(lot_registered__quantity_import__gt=0).order_by(
+                'lot_registered__lot_number'
+        ):
+            lot_detail.append({
+                'id': str(lot.lot_registered_id),
+                'lot_number': lot.lot_registered.lot_number,
+                'quantity_import': lot.lot_registered.quantity_import,
+                'expire_date': lot.lot_registered.expire_date,
+                'manufacture_date': lot.lot_registered.manufacture_date
+            })
+        return lot_detail
+

@@ -32,6 +32,8 @@ class GoodsRegistration(DataAbstractModel):
                 tenant_id=sale_order.tenant_id,
                 system_status=1
             )
+            sale_order.has_regis = True
+            sale_order.save(update_fields=['has_regis'])
             bulk_info = []
             for so_item in sale_order.sale_order_product_sale_order.filter(product__isnull=False):
                 if 1 in so_item.product.product_choice:  # inventory
@@ -56,6 +58,7 @@ class GoodsRegistration(DataAbstractModel):
 
         # create sub, save by inventory uom
         GoodsRegistrationItemSub.objects.create(
+            goods_registration=gre_item.goods_registration,
             gre_item=gre_item,
             warehouse=stock_info['warehouse'],
             quantity=casted_quantity_to_inv,
@@ -79,6 +82,7 @@ class GoodsRegistration(DataAbstractModel):
             gre_general.save(update_fields=['quantity'])
         else:
             gre_general = GoodsRegistrationGeneral.objects.create(
+                goods_registration=gre_item.goods_registration,
                 gre_item=gre_item,
                 warehouse=stock_info['warehouse'],
                 quantity=stock_info['quantity']
@@ -91,6 +95,7 @@ class GoodsRegistration(DataAbstractModel):
         # create lot/sn data
         if stock_info['product'].general_traceability_method == 1:  # lot
             GoodsRegistrationLot.objects.create(
+                goods_registration=gre_general.goods_registration,
                 gre_general=gre_general,
                 lot_registered_id=stock_info['lot_data']['lot_id']
             )
@@ -99,6 +104,7 @@ class GoodsRegistration(DataAbstractModel):
             for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
                 bulk_info.append(
                     GoodsRegistrationSerial(
+                        goods_registration=gre_general.goods_registration,
                         gre_general=gre_general,
                         sn_registered=serial
                     )
@@ -117,7 +123,8 @@ class GoodsRegistration(DataAbstractModel):
             gre = sale_order.goods_registration_so.first()
             if gre:
                 gre_item = GoodsRegistrationItem.objects.filter(
-                    goods_registration=gre, product=stock_info['product']
+                    goods_registration=gre,
+                    product=stock_info['product']
                 ).first()
                 if gre_item:
                     if 'goods_receipt_id' in kwargs:
@@ -157,6 +164,9 @@ class GoodsRegistrationItem(SimpleAbstractModel):
 
 
 class GoodsRegistrationItemSub(SimpleAbstractModel):
+    goods_registration = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, null=True
+    )
     gre_item = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_sub', null=True
     )
@@ -186,6 +196,9 @@ class GoodsRegistrationItemSub(SimpleAbstractModel):
 
 
 class GoodsRegistrationGeneral(SimpleAbstractModel):
+    goods_registration = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, null=True
+    )
     gre_item = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_general', null=True
     )
@@ -206,6 +219,9 @@ class GoodsRegistrationGeneral(SimpleAbstractModel):
 
 
 class GoodsRegistrationLot(SimpleAbstractModel):
+    goods_registration = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, null=True
+    )
     gre_general = models.ForeignKey(
         GoodsRegistrationGeneral, on_delete=models.CASCADE, related_name='gre_general_lot', null=True
     )
@@ -222,6 +238,9 @@ class GoodsRegistrationLot(SimpleAbstractModel):
 
 
 class GoodsRegistrationSerial(SimpleAbstractModel):
+    goods_registration = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, null=True
+    )
     gre_general = models.ForeignKey(
         GoodsRegistrationGeneral, on_delete=models.CASCADE, related_name='gre_general_serial', null=True
     )

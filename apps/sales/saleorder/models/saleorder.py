@@ -204,6 +204,10 @@ class SaleOrder(DataAbstractModel):
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
     # delivery status
     delivery_status = models.SmallIntegerField(choices=SALE_ORDER_DELIVERY_STATUS, default=0)
+    has_regis = models.BooleanField(
+        default=False,
+        help_text='is True if linked with registration else False',
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
