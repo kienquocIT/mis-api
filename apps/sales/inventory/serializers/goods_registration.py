@@ -230,4 +230,3 @@ class ProjectProductListSerializer(serializers.ModelSerializer):
                 'manufacture_date': lot.lot_registered.manufacture_date
             })
         return lot_detail
-

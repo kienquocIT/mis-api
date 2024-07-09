@@ -217,8 +217,8 @@ class ReportStockLog(DataAbstractModel):  # rp_log
 
     @classmethod
     def create_new_log_list(cls, stock_obj, stock_data, period_obj, sub_period_order, config_inventory_management):
-        print('---create_new_log_list')
         """ Step 1: Hàm tạo các log mới """
+        print('---create_new_log_list')
         bulk_info = []
         log_order_number = 0
         for item in stock_data:
@@ -285,8 +285,8 @@ class ReportStockLog(DataAbstractModel):  # rp_log
 
     @classmethod
     def update_current_value_for_log(cls, log, period_obj, sub_period_order, config_inventory_management):
-        print('---update_current_value_for_log')
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
+        print('---update_current_value_for_log')
         div = log.company.company_config.definition_inventory_valuation
         kw_parameter = {}
         if 1 in config_inventory_management:
@@ -440,11 +440,11 @@ class ReportStockLog(DataAbstractModel):  # rp_log
     def update_this_rp_inventory_cost_value_dict(
             cls, log, period_obj, sub_period_order, latest_cost, div, **kwargs
     ):
-        print('---update_this_rp_inventory_cost_value_dict')
         """
         Step 3: Hàm kiểm tra record cost của sp này trong kì nay đã có hay chưa ?
                 Chưa thì tạo mới - Có thì Update lại quantity-cost-value
         """
+        print('---update_this_rp_inventory_cost_value_dict')
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             sum_ending_balance_quantity = 0
@@ -721,8 +721,8 @@ class ReportInventorySubFunction:
 
     @classmethod
     def calculate_new_value_dict_in_perpetual(cls, log, latest_value_dict):
-        print('---calculate_new_value_dict_in_perpetual')
         """ Hàm tính toán cho Phương pháp Kê khai thường xuyên """
+        print('---calculate_new_value_dict_in_perpetual')
         if log.stock_type == 1:
             new_quantity = latest_value_dict['quantity'] + log.quantity
             sum_value = latest_value_dict['value'] + log.value
@@ -736,8 +736,8 @@ class ReportInventorySubFunction:
 
     @classmethod
     def calculate_new_value_dict_in_periodic(cls, log, latest_value_dict):
-        print('---calculate_new_value_dict_in_periodic')
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
+        print('---calculate_new_value_dict_in_periodic')
         # Lúc này sum nhập đã được cập nhập
         return {
             'quantity': latest_value_dict['quantity'] + (log.quantity * log.stock_type),
@@ -747,8 +747,8 @@ class ReportInventorySubFunction:
 
     @classmethod
     def get_opening_balance_value_dict(cls, product_id, warehouse_id, data_type=1, **kwargs):
-        print('---get_opening_balance_value_dict')
         """ Hàm tìm số dư đầu kì """
+        print('---get_opening_balance_value_dict')
         this_record = ReportInventoryCost.objects.filter(
             product_id=product_id, warehouse_id=warehouse_id, for_balance=True, **kwargs
         ).first()
@@ -770,8 +770,8 @@ class ReportInventorySubFunction:
 
     @classmethod
     def get_balance_data_this_sub_period(cls, this_rp_inventory_cost, warehouse_id=None):
-        print('---get_balance_data_this_sub_period')
         """ Hàm lấy opening và ending của kỳ này """
+        print('---get_balance_data_this_sub_period')
         if not warehouse_id:
             # Get Opening
             opening_quantity = this_rp_inventory_cost.opening_balance_quantity

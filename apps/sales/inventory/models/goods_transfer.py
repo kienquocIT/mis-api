@@ -1,8 +1,11 @@
-import json
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, ProductWareHouseSerial, Product, \
+from apps.masterdata.saledata.models import (
+    ProductWareHouseLot,
+    ProductWareHouse,
+    ProductWareHouseSerial,
     SubPeriods
+)
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
