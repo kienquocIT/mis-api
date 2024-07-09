@@ -653,6 +653,11 @@ class ApplicationEmpConfig(MasterDataAbstractModel):
         related_name="app_emp_config_application",
         null=True
     )
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}'
+    )
     employee_data = models.JSONField(
         verbose_name="employee data",
         default=dict,

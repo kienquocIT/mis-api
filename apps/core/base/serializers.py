@@ -378,6 +378,7 @@ class AppEmpConfigCreateUpdateSerializer(serializers.ModelSerializer):
                     ApplicationEmpConfig(
                         **config_data,
                         application=application,
+                        app_code=f"{application.app_label}.{application.model_code}",
                         tenant_id=config_data.get('employee_data', {}).get('tenant_id', None),
                         company_id=config_data.get('employee_data', {}).get('company_id', None),
                         employee_created_id=config_data.get('employee_data', {}).get('id', None),

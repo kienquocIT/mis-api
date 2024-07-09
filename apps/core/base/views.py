@@ -493,7 +493,10 @@ class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
     search_fields = ['employee_created__search_content']
     filterset_fields = {
         'application_id': ['exact'],
+        'application__model_code': ['exact'],
+        'app_code': ['exact'],
         'id': ['exact', 'in'],
+        'employee_created_id': ['exact'],
     }
     serializer_list = AppEmpConfigListSerializer
     serializer_create = AppEmpConfigCreateUpdateSerializer
