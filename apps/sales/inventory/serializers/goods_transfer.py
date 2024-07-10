@@ -280,6 +280,11 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
                         'title': item.end_warehouse.title
                     } if item.end_warehouse else {}
                 },
+                'sale_order': {
+                    'id': item.sale_order_id,
+                    'code': item.sale_order.code,
+                    'title': item.sale_order.title,
+                } if item.sale_order else {},
                 'quantity': item.quantity,
                 'unit_cost': item.unit_cost,
                 'subtotal': item.subtotal,
