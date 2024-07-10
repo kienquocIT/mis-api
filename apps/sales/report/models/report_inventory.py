@@ -719,7 +719,7 @@ class ReportInventorySubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_balance_value_dict(product_id, physical_warehouse_id, 3, **kwargs)
+        return cls.get_opening_balance_value_dict(product_id, 3, **kwargs)
 
     @classmethod
     def calculate_new_value_dict_in_perpetual(cls, log, latest_value_dict):
@@ -748,7 +748,7 @@ class ReportInventorySubFunction:
         }
 
     @classmethod
-    def get_opening_balance_value_dict(cls, product_id, physical_warehouse_id, data_type=1, **kwargs):
+    def get_opening_balance_value_dict(cls, product_id, data_type=1, **kwargs):
         """ Hàm tìm số dư đầu kì """
         print('---get_opening_balance_value_dict')
         this_record = ReportInventoryCost.objects.filter(product_id=product_id, for_balance=True, **kwargs).first()
