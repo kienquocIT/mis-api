@@ -58,8 +58,8 @@ class ReportStock(DataAbstractModel):  # rp_stock
                 defaults={
                     'employee_created': emp_created_obj if emp_created_obj else emp_inherit_obj,
                     'employee_inherit': emp_inherit_obj if emp_inherit_obj else emp_created_obj,
-                    **kwargs
-                }
+                },
+                **kwargs
             )
             return rp_stock
         raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
