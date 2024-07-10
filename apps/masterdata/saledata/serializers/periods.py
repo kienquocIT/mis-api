@@ -429,8 +429,7 @@ def update_balance_data(balance_data, instance, employee_current):
                 prd_obj = Product.objects.filter(id=item.get('product_id')).first()
                 wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
                 item['quantity'] = ReportStockLog.cast_quantity_to_unit(
-                    prd_obj.inventory_uom,
-                    float(item.get('quantity'))
+                    prd_obj.inventory_uom, float(item.get('quantity'))
                 )
                 if prd_obj and wh_obj:
                     (

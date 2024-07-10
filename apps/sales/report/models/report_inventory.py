@@ -300,7 +300,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
         latest_value_dict = ReportInventorySubFunction.get_latest_log_value_dict(
             div,
             log.product_id,
-            log.warehouse_id if log.warehouse_id else log.physical_warehouse_id,
+            log.physical_warehouse_id,
             **kw_parameter
         )
 
@@ -701,10 +701,12 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_value_dict(cls, div, product_id, warehouse_id, **kwargs):
+    def get_latest_log_value_dict(cls, div, product_id, physical_warehouse_id, **kwargs):
         print('---get_latest_log_value_dict')
         latest_log_record = LatestLog.objects.filter(
-            product_id=product_id, warehouse_id=warehouse_id, **kwargs
+            product_id=product_id, warehouse_id=physical_warehouse_id, **kwargs
+        ).first() if 'warehouse_id' not in kwargs else LatestLog.objects.filter(
+            product_id=product_id, **kwargs
         ).first()
         latest_log = latest_log_record.latest_log if latest_log_record else None
         if latest_log:
@@ -717,7 +719,7 @@ class ReportInventorySubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_balance_value_dict(product_id, warehouse_id, 3, **kwargs)
+        return cls.get_opening_balance_value_dict(product_id, physical_warehouse_id, 3, **kwargs)
 
     @classmethod
     def calculate_new_value_dict_in_perpetual(cls, log, latest_value_dict):
@@ -746,12 +748,10 @@ class ReportInventorySubFunction:
         }
 
     @classmethod
-    def get_opening_balance_value_dict(cls, product_id, warehouse_id, data_type=1, **kwargs):
+    def get_opening_balance_value_dict(cls, product_id, physical_warehouse_id, data_type=1, **kwargs):
         """ Hàm tìm số dư đầu kì """
         print('---get_opening_balance_value_dict')
-        this_record = ReportInventoryCost.objects.filter(
-            product_id=product_id, warehouse_id=warehouse_id, for_balance=True, **kwargs
-        ).first()
+        this_record = ReportInventoryCost.objects.filter(product_id=product_id, for_balance=True, **kwargs).first()
         if this_record:
             if data_type == 0:
                 return this_record.opening_balance_quantity

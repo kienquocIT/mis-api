@@ -474,9 +474,9 @@ class ReportStockList(BaseListMixin):
                 )
                 if self.request.user.company_current.company_config.cost_per_project:
                     return return_query.order_by(
-                        "warehouse__code", 'sale_order__code', 'product__code', 'lot_mapped__lot_number'
+                        "warehouse__code", 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
                     )
-                return return_query.order_by('warehouse__code', 'product__code', 'lot_mapped__lot_number')
+                return return_query.order_by('warehouse__code', '-product__code', 'lot_mapped__lot_number')
 
             return_query = super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
@@ -490,9 +490,9 @@ class ReportStockList(BaseListMixin):
             )
             if self.request.user.company_current.company_config.cost_per_project:
                 return return_query.order_by(
-                    'warehouse__code', 'sale_order__code', 'product__code', 'lot_mapped__lot_number'
+                    'warehouse__code', 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
                 )
-            return return_query.order_by('warehouse__code', 'product__code', 'lot_mapped__lot_number')
+            return return_query.order_by('warehouse__code', '-product__code', 'lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()
 

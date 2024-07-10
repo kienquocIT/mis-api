@@ -67,11 +67,11 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         } if obj.period_mapped else {}
 
     @classmethod
-    def get_stock_activities_detail(cls, obj, all_logs_by_month, div, warehouse_id, **kwargs):
+    def get_stock_activities_detail(cls, obj, all_logs_by_month, div, physical_warehouse_id, **kwargs):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
         if 'sale_order_id' in kwargs:
-            kwargs['physical_warehouse_id'] = warehouse_id
+            kwargs['physical_warehouse_id'] = physical_warehouse_id
         for log in all_logs_by_month.filter(product_id=obj.product_id, **kwargs):
             casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
