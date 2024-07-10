@@ -50,3 +50,10 @@ class WorkMapExpense(DataAbstractModel):
         default=False,
         help_text='flag to know this record is labor or not',
     )
+
+    class Meta:
+        verbose_name = 'Work map expense'
+        verbose_name_plural = 'Work map expense'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

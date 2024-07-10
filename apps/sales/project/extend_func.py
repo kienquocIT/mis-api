@@ -67,10 +67,9 @@ def get_prj_mem_of_crt_user(prj_obj, employee_current):
     crt_user = None
     model_cls = DisperseModel(app_model='project_ProjectMapMember').get_model()
     if model_cls:
-        temp = model_cls.objects.filter_current(
+        temp = model_cls.objects.filter(
             project=prj_obj,
-            member=employee_current,
-            fill__tenant=True, fill__company=True,
+            member=employee_current
         )
         if temp.exists():
             crt_user = temp.first()
@@ -83,11 +82,10 @@ def check_permit_add_member_pj(task, emp_crt):
     # or user in team member and have permission
     # or user in team member with do not have permit but create sub-task
     emp_id = emp_crt.id
-    prj_obj = task['project']
+    prj_obj = task['project'] if hasattr(task, 'project') else task
     pj_member_current_user = get_prj_mem_of_crt_user(prj_obj=prj_obj, employee_current=emp_crt)
     if str(prj_obj.employee_inherit_id) == str(emp_id) or pj_member_current_user.permit_add_gaw or (
-            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(
-            task, 'id')
+            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(task, 'id')
     ):
         return True
     return False
@@ -111,14 +109,15 @@ def calc_update_task(task_obj):
                 # calc rate group
                 if hasattr(work, 'project_groupmapwork_work'):
                     group_map = work.project_groupmapwork_work.all()
-                    group = group_map.first().group
-                    list_work = group.works.all()
-                    rate_w = 0
-                    for work in list_work:
-                        rate_w += work.w_rate
-                    if rate_w > 0:
-                        group.gr_rate = round(rate_w / list_work.count(), 1)
-                        group.save()
+                    if group_map:
+                        group = group_map.first().group
+                        list_work = group.works.all()
+                        rate_w = 0
+                        for work in list_work:
+                            rate_w += work.w_rate
+                        if rate_w > 0:
+                            group.gr_rate = round(rate_w / list_work.count(), 1)
+                            group.save()
 
 
 def re_calc_work_group(work):

@@ -1651,6 +1651,57 @@ AppProp_AssetTools_Return_data = {
     }
 }
 
+AppProp_Sales_Project_data = {
+    "44c83ee9-9c32-41b8-990d-549574469feb": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "31149baa-3418-4882-aa8f-c26780daa0c6": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Project owner",
+        "code": "project_owner",
+        "type": 5,
+    },
+    "e195f491-f0f2-43ca-914d-6d2cb905f959": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Project PM",
+        "code": "employee_inherit",
+        "type": 5,
+    },
+    "df28e122-88f1-45ce-a605-8ea4d11ace01": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Start date",
+        "code": "start_date",
+        "type": 2,
+    },
+    "78d897d9-db09-4854-8ee4-2a13dffcdc80": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Finish date",
+        "code": "finish_date",
+        "type": 2,
+    },
+    "3d63709c-5af0-4784-8283-8453c88bd4de": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Groups",
+        "code": "groups",
+        "type": 5,
+    },
+    "fcb61229-bb62-44d0-a4ba-6b13e1eacee9": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Works",
+        "code": "works",
+        "type": 5,
+    },
+    "dfbd2db4-9438-4629-baf4-711a9c0bc134": {
+        "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
+        "title": "Members",
+        "code": "members",
+        "type": 5,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1666,4 +1717,5 @@ ApplicationProperty_data = {
     **AppProp_AssetTools_Provide_data,
     **AppProp_AssetTools_Delivery_data,
     **AppProp_AssetTools_Return_data,
+    **AppProp_Sales_Project_data,
 }
