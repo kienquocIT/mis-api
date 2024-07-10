@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouseSerial,
     SubPeriods
 )
+from apps.sales.inventory.models.goods_registration import GoodsRegistrationItemSub, GoodsRegistrationGeneral
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
@@ -227,7 +228,7 @@ class GoodsTransfer(DataAbstractModel):
             if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
                 lot_src_obj.quantity_import -= lot_item['quantity']
                 lot_src_obj.save(update_fields=['quantity_import'])
-                lot_des_obj = all_lot_des.filter(id=lot_item['lot_id']).first()
+                lot_des_obj = all_lot_des.filter(lot_number=lot_src_obj.lot_number).first()
                 if lot_des_obj:
                     lot_des_obj.quantity_import += lot_item['quantity']
                     lot_des_obj.save(update_fields=['quantity_import'])
@@ -285,6 +286,65 @@ class GoodsTransfer(DataAbstractModel):
                 cls.update_for_serial(item, source, destination, instance)
         return True
 
+    @classmethod
+    def check_and_create_gre_item_sub_if_transfer_in_project(cls, goods_transfer, goods_transfer_item):
+        goods_registration = goods_transfer_item.sale_order.goods_registration_so.first()
+        gre_item = goods_registration.gre_item.filter(product=goods_transfer_item.product).first()
+
+        # update gre_general
+        gre_general = gre_item.gre_item_general.all()
+        gre_general_out_warehouse = gre_general.filter(warehouse=goods_transfer_item.warehouse).first()
+        gre_general_in_warehouse = gre_general.filter(warehouse=goods_transfer_item.end_warehouse).first()
+        if gre_general_out_warehouse:
+            gre_general_out_warehouse.quantity -= goods_transfer_item.quantity
+            gre_general_out_warehouse.save(update_fields=['quantity'])
+        if gre_general_in_warehouse:
+            gre_general_in_warehouse.quantity += goods_transfer_item.quantity
+            gre_general_in_warehouse.save(update_fields=['quantity'])
+        else:
+            GoodsRegistrationGeneral.objects.create(
+                goods_registration=goods_registration,
+                gre_item=gre_item,
+                warehouse=goods_transfer_item.end_warehouse,
+                quantity=goods_transfer_item.quantity
+            )
+
+        casted_quantity = (
+                goods_transfer_item.quantity / goods_transfer_item.product.inventory_uom.ratio
+        ) if goods_transfer_item.product.inventory_uom.ratio else 0
+        GoodsRegistrationItemSub.objects.bulk_create(
+            [
+                GoodsRegistrationItemSub(
+                    goods_registration=goods_registration,
+                    gre_item=gre_item,
+                    warehouse=goods_transfer_item.warehouse,
+                    quantity=casted_quantity,
+                    cost=goods_transfer_item.unit_cost,
+                    value=casted_quantity * goods_transfer_item.unit_cost,
+                    stock_type=-1,
+                    uom=goods_transfer_item.uom,
+                    trans_id=goods_transfer.id,
+                    trans_code=goods_transfer.code,
+                    trans_title='Goods transfer (out)',
+                    system_date=goods_transfer.date_approved
+                ),
+                GoodsRegistrationItemSub(
+                    goods_registration=goods_registration,
+                    gre_item=gre_item,
+                    warehouse=goods_transfer_item.end_warehouse,
+                    quantity=casted_quantity,
+                    cost=goods_transfer_item.unit_cost,
+                    value=casted_quantity * goods_transfer_item.unit_cost,
+                    stock_type=1,
+                    uom=goods_transfer_item.uom,
+                    trans_id=goods_transfer.id,
+                    trans_code=goods_transfer.code,
+                    trans_title='Goods transfer (in)',
+                    system_date=goods_transfer.date_approved
+                )
+            ]
+        )
+
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
             self.company_id,
@@ -308,6 +368,9 @@ class GoodsTransfer(DataAbstractModel):
 
                 self.prepare_data_for_logging(self)
                 self.update_lot_serial_data_warehouse(self)
+                for item in self.goods_transfer.filter(sale_order__isnull=False):
+                    self.check_and_create_gre_item_sub_if_transfer_in_project(self, item)
+
         # hit DB
         super().save(*args, **kwargs)
 

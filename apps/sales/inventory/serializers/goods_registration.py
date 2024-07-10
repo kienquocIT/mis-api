@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import ProductWareHouseLot
 from apps.sales.inventory.models import (
     GoodsRegistration,
     GoodsRegistrationSerial,
@@ -105,7 +107,7 @@ class GoodsRegistrationDetailSerializer(serializers.ModelSerializer):
                     'trans_code': child.trans_code,
                     'trans_title': child.trans_title,
                     'system_date': child.system_date
-                } for child in item.gre_item_sub.all().order_by('system_date')]
+                } for child in item.gre_item_sub.all().order_by('system_date', '-trans_title')]
             })
         return data_line_detail
 
@@ -218,15 +220,17 @@ class ProjectProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_lot_detail(cls, obj):
+        """ Lấy các lot của Dự án này, lấy số lượng theo bảng prd-wh """
         lot_detail = []
-        for lot in obj.gre_general_lot.filter(lot_registered__quantity_import__gt=0).order_by(
-                'lot_registered__lot_number'
-        ):
-            lot_detail.append({
-                'id': str(lot.lot_registered_id),
-                'lot_number': lot.lot_registered.lot_number,
-                'quantity_import': lot.lot_registered.quantity_import,
-                'expire_date': lot.lot_registered.expire_date,
-                'manufacture_date': lot.lot_registered.manufacture_date
-            })
+        for lot in obj.gre_general_lot.all():
+            lot_obj = ProductWareHouseLot.objects.filter(id=lot.lot_registered_id).first()
+            if lot_obj:
+                lot_detail.append({
+                    'id': str(lot_obj.id),
+                    'lot_number': lot_obj.lot_number,
+                    'quantity_import': lot_obj.quantity_import,
+                    'expire_date': lot_obj.expire_date,
+                    'manufacture_date': lot_obj.manufacture_date,
+                    'warehouse_id': str(lot_obj.product_warehouse.warehouse_id)
+                })
         return lot_detail

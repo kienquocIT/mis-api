@@ -175,7 +175,6 @@ class ProjectProductList(BaseListMixin):
     queryset = GoodsRegistrationGeneral.objects
     filterset_fields = {
         'goods_registration__sale_order_id': ['exact'],
-        'warehouse_id': ['exact'],
         'gre_item__product_id': ['exact']
     }
     serializer_list = ProjectProductListSerializer
