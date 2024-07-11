@@ -126,7 +126,8 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     stock_amount = serializers.SerializerMethodField()
-    available_amount = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    available_picked = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
@@ -136,7 +137,9 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
             'warehouse',
             'uom',
             'stock_amount',
-            'available_amount',
+            'picked_ready',
+            'available_stock',
+            'available_picked',
         )
 
     @classmethod
@@ -176,8 +179,12 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
         return obj.quantity
 
     @classmethod
-    def get_available_amount(cls, obj):
+    def get_available_stock(cls, obj):
         return obj.quantity
+
+    @classmethod
+    def get_available_picked(cls, obj):
+        return obj.picked_ready
 
 
 class GoodsRegistrationLotSerializer(serializers.ModelSerializer):

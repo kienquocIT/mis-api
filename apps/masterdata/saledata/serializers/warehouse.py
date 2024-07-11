@@ -251,7 +251,8 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
-    available_amount = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    available_picked = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -265,7 +266,8 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'sold_amount',
             'picked_ready',
             'agency',
-            'available_amount',  # products that allowed to use
+            'available_stock',  # products that allowed to delivery (not include products for other projects)
+            'available_picked',  # products that allowed to pick (not include products for other projects)
         )
 
     @classmethod
@@ -299,7 +301,7 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
         return obj.warehouse.agency_id
 
     @classmethod
-    def get_available_amount(cls, obj):
+    def get_available_stock(cls, obj):
         if obj.warehouse and obj.product:
             regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
             if regis_list:
@@ -308,6 +310,17 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
                     quantity_regis += regis.quantity
                 return obj.stock_amount - quantity_regis
         return obj.stock_amount
+
+    @classmethod
+    def get_available_picked(cls, obj):
+        if obj.warehouse and obj.product:
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                picked_regis = 0
+                for regis in regis_list:
+                    picked_regis += regis.picked_ready
+                return obj.picked_ready - picked_regis
+        return obj.picked_ready
 
 
 class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):

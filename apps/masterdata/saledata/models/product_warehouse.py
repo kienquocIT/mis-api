@@ -14,12 +14,13 @@ class ProductWareHouse(MasterDataAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product of WareHouse',
-        related_name='product_warehouse_product'
+        related_name='product_warehouse_product',
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         verbose_name='WareHouse of Product',
+        related_name='product_warehouse_warehouse',
     )
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
