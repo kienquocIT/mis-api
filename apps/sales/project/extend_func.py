@@ -92,32 +92,31 @@ def check_permit_add_member_pj(task, emp_crt):
 
 
 def calc_update_task(task_obj):
-    if task_obj.project and hasattr(task_obj, 'id'):
-        task_map = task_obj.project_projectmaptasks_task.all()
-        if task_map.count():
-            work = task_map.first().work
-            list_task = ProjectMapTasks.objects.filter(work=work)
-            if list_task:
-                # check percent complete of work by task
-                total_w = 0
-                for item in list_task:
-                    total_w += item.task.percent_completed
-                if total_w > 0:
-                    work.w_rate = round(total_w / list_task.count(), 1)
-                    work.work_status = 1
-                    work.save()
-                # calc rate group
-                if hasattr(work, 'project_groupmapwork_work'):
-                    group_map = work.project_groupmapwork_work.all()
-                    if group_map:
-                        group = group_map.first().group
-                        list_work = group.works.all()
-                        rate_w = 0
-                        for work in list_work:
-                            rate_w += work.w_rate
-                        if rate_w > 0:
-                            group.gr_rate = round(rate_w / list_work.count(), 1)
-                            group.save()
+    task_map = task_obj.project_projectmaptasks_task.all()
+    if task_map.count():
+        work = task_map.first().work
+        list_task = ProjectMapTasks.objects.filter(work=work)
+        if list_task:
+            # check percent complete of work by task
+            total_w = 0
+            for item in list_task:
+                total_w += item.task.percent_completed
+            if total_w > 0:
+                work.w_rate = round(total_w / list_task.count(), 1)
+                work.work_status = 1
+                work.save()
+            # calc rate group
+            if hasattr(work, 'project_groupmapwork_work'):
+                group_map = work.project_groupmapwork_work.all()
+                if group_map:
+                    group = group_map.first().group
+                    list_work = group.works.all()
+                    rate_w = 0
+                    for work in list_work:
+                        rate_w += work.w_rate
+                    if rate_w > 0:
+                        group.gr_rate = round(rate_w / list_work.count(), 1)
+                        group.save()
 
 
 def re_calc_work_group(work):

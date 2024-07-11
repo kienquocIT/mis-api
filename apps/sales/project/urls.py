@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import ProjectList, ProjectDetail, ProjectUpdate, ProjectMemberAdd, ProjectMemberDetail, ProjectGroupList, \
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD, \
-    ProjectTaskDetail, ProjectWorkExpenseList, ProjectCreateBaseline, ProjectBaselineDetail
+    ProjectTaskDetail, ProjectWorkExpenseList, ProjectCreateBaseline, ProjectBaselineDetail, ProjectBaselineUpdate
 
 urlpatterns = [
     path('list', ProjectList.as_view(), name='ProjectList'),
@@ -24,6 +24,8 @@ urlpatterns = [
     path('assign-task-link/<str:pk>', ProjectTaskDetail.as_view(), name='ProjectTaskDetail'),
     # work expense list
     path('work-expense-list', ProjectWorkExpenseList.as_view(), name='ProjectWorkExpenseList'),
+    # baseline workflow
     path('create-baseline/list', ProjectCreateBaseline.as_view(), name='ProjectCreateBaseline'),
     path('create-baseline/detail/<str:pk>', ProjectBaselineDetail.as_view(), name='ProjectBaselineDetail'),
+    path('create-baseline/edit/<str:pk>', ProjectBaselineUpdate.as_view(), name='ProjectBaselineUpdate'),
 ]

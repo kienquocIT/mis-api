@@ -1,22 +1,18 @@
 __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailSerializers', 'ProjectUpdateSerializers',
-           'ProjectUpdateOrderSerializers', 'ProjectCreateBaselineSerializers', 'ProjectBaselineDetailSerializers',
-           'ProjectBaselineListSerializers'
-           ]
+           'ProjectUpdateOrderSerializers']
 
 from rest_framework import serializers
 
-from apps.shared import HRMsg, FORMATTING, ProjectMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, \
-    call_task_background
+from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
-from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense, ProjectBaseline
-from ..tasks import create_baseline_data
+from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
     works = serializers.SerializerMethodField()
     tasks = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    project_owner = serializers.SerializerMethodField()
+    project_pm = serializers.SerializerMethodField()
     baseline = serializers.SerializerMethodField()
 
     @classmethod
@@ -48,9 +44,9 @@ class ProjectListSerializers(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_project_owner(cls, obj):
-        if obj.project_owner:
-            return obj.project_owner_data
+    def get_project_pm(cls, obj):
+        if obj.project_pm:
+            return obj.project_pm_data
         return {}
 
     @classmethod
@@ -91,7 +87,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
             'start_date',
             'finish_date',
@@ -104,13 +100,6 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
 
 class ProjectCreateSerializers(serializers.ModelSerializer):
-    employee_inherit_id = serializers.UUIDField()
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return str(value)
 
     @classmethod
     def create_project_map_member(cls, project):
@@ -125,17 +114,17 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
-        if str(project.employee_inherit_id) != str(project.project_owner_id):
-            permission_by_configured_owner = pj_get_alias_permit_from_app(employee_obj=project.project_owner)
+        if str(project.employee_inherit_id) != str(project.project_pm.id):
+            permission_by_configured_pm = pj_get_alias_permit_from_app(employee_obj=project.project_pm)
             ProjectMapMember.objects.create(
                 tenant_id=project.tenant_id,
                 company_id=project.company_id,
                 project=project,
-                member=project.project_owner,
+                member=project.project_pm,
                 permit_add_member=True,
                 permit_add_gaw=True,
                 permit_view_this_project=True,
-                permission_by_configured=permission_by_configured_owner
+                permission_by_configured=permission_by_configured_pm
             )
 
     def create(self, validated_data):
@@ -148,11 +137,11 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
         model = Project
         fields = (
             'title',
-            'employee_inherit_id',
-            'project_owner',
+            'project_pm',
             'start_date',
             'finish_date',
-            'system_status'
+            'system_status',
+            'employee_inherit'
         )
 
 
@@ -161,7 +150,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     works = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    project_owner = serializers.SerializerMethodField()
+    project_pm = serializers.SerializerMethodField()
 
     @classmethod
     def get_groups(cls, obj):
@@ -236,9 +225,9 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_project_owner(cls, obj):
-        if obj.project_owner:
-            return obj.project_owner_data
+    def get_project_pm(cls, obj):
+        if obj.project_pm:
+            return obj.project_pm_data
         return {}
 
     class Meta:
@@ -250,7 +239,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'start_date',
             'finish_date',
             'completion_rate',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
             'system_status',
             'works',
@@ -265,7 +254,7 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
     delete_expense_lst = serializers.JSONField(required=False)
 
     @classmethod
-    def validate_project_owner(cls, value):
+    def validate_project_pm(cls, value):
         if not value:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
@@ -286,7 +275,7 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             'title',
             'start_date',
             'finish_date',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
             'system_status',
             'expense_data',
@@ -410,61 +399,3 @@ class ProjectUpdateOrderSerializers(serializers.ModelSerializer):
         if group_list:
             self.group_update_order(group_list)
         return instance
-
-
-class ProjectBaselineListSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectBaseline
-        fields = (
-            'project_data',
-            'member_data',
-            'member_perm_data',
-            'work_task_data',
-            'work_expense_data',
-            'baseline_version',
-        )
-
-
-class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
-
-    class Meta:
-        model = ProjectBaseline
-        fields = (
-            'project_data',
-            'project',
-            'employee_created',
-        )
-
-    @classmethod
-    def validate_project_data(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_CREATE_BASELINE})
-        return str(value)
-
-    def create(self, validated_data):
-        # create project baseline
-        baseline = ProjectBaseline.objects.create(**validated_data)
-
-        call_task_background(
-            my_task=create_baseline_data,
-            **{
-                'baseline_id': str(baseline.id),
-                'project_id': str(baseline.project.id)
-            }
-        )
-        return baseline
-
-
-class ProjectBaselineDetailSerializers(serializers.ModelSerializer):
-
-    class Meta:
-        model = ProjectBaseline
-        fields = (
-            'id',
-            'project_data',
-            'work_expense_data',
-            'work_task_data',
-            'member_perm_data',
-            'member_data',
-            'baseline_version',
-        )

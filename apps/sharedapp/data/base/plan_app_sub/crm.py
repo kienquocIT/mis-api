@@ -1869,6 +1869,40 @@ SALE_PROJECT = {
     "allow_permit": True,
 }
 
+SALE_PROJECT_BASELINE = {
+    "id": "255d9f44-905f-4bc7-8256-316a6959b683",
+    "title": "Project Baseline",
+    "code": "projectbaseline",
+    "model_code": "projectbaseline",
+    "app_label": "project",
+    "is_workflow": True,
+    "option_permission": 0,
+    "option_allowed": [1, 2, 3, 4],
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_permit": True,
+}
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1956,6 +1990,10 @@ Application_crm_data = {
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],
+    ),
+    "255d9f44-905f-4bc7-8256-316a6959b683": ApplicationConfigFrame(**SALE_PROJECT_BASELINE).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
     ),
 
     # Nhóm 3

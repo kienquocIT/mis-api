@@ -23,8 +23,8 @@ class ProjectTestCase(AdvanceTestCase):
         time_now = timezone.now()
         data = {
             'title': 'project test create',
-            'project_owner': str(self.employee.id),
-            'employee_inherit_id': str(self.employee.id),
+            'project_pm': str(self.employee.id),
+            'employee_inherit': str(self.employee.id),
             'start_date': time_now.strftime('%Y-%m-%d'),
             'end_date': (time_now + timedelta(weeks=12)).strftime('%Y-%m-%d'),
         }

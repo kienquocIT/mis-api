@@ -102,7 +102,7 @@ MAP_FIELD_TITLE = {
     'inventory.goodstransfer': 'title',
     'inventory.goodsreturn': 'title',
     'lead.lead': 'title',
-    'project.project': 'title',
+    'project.projectbaseline': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

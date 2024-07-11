@@ -1660,8 +1660,8 @@ AppProp_Sales_Project_data = {
     },
     "31149baa-3418-4882-aa8f-c26780daa0c6": {
         "application_id": "49fe2eb9-39cd-44af-b74a-f690d7b61b67",
-        "title": "Project owner",
-        "code": "project_owner",
+        "title": "Project PM",
+        "code": "project_pm",
         "type": 5,
     },
     "e195f491-f0f2-43ca-914d-6d2cb905f959": {
@@ -1702,6 +1702,8 @@ AppProp_Sales_Project_data = {
     }
 }
 
+AppProp_Sales_Project_Baseline_data = {}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1718,4 +1720,5 @@ ApplicationProperty_data = {
     **AppProp_AssetTools_Delivery_data,
     **AppProp_AssetTools_Return_data,
     **AppProp_Sales_Project_data,
+    **AppProp_Sales_Project_Baseline_data,
 }

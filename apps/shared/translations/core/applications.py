@@ -57,3 +57,4 @@ class ApplicationName:
     saledata_warehouse = _('Warehouse')
     workflow_workflow = _('Workflow')
     project_project = _('Project')
+    project_projectbaseline = _('Project Baseline')

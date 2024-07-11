@@ -67,6 +67,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
 
     def validate(self, attrs):
+        attrs['employee_inherit'] = attrs['project'].employee_inherit
         return validated_date_work(attrs)
 
     def create(self, validated_data):

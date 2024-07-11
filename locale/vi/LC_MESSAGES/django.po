@@ -1118,3 +1118,7 @@ msgstr "Bạn không được cấp quyền để thực hiện thao tác này"
 #
 msgid "Date work is not followed with date group"
 msgstr "Ngày Công việc không khớp với ngày của Nhóm"
+
+#
+msgid "Project Baseline"
+msgstr "Dự án Đường cơ sở"
