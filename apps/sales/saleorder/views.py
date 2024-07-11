@@ -27,6 +27,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],
+        'has_regis': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
@@ -40,13 +41,12 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        common_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
-        return common_queryset.filter(has_regis=True) if 'has_regis' in self.request.query_params else common_queryset
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",
