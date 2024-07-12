@@ -1270,7 +1270,7 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
 
 REPORT_REVENUE_APP_CONFIG = {
     "id": "c3260940-21ff-4929-94fe-43bc4199d38b",
-    "title": "Report Revenue",
+    "title": "Revenue Report",
     "code": "reportrevenue",
     "model_code": "reportrevenue",
     "app_label": "report",
@@ -1309,7 +1309,7 @@ REPORT_REVENUE_APP_CONFIG = {
 
 REPORT_PRODUCT_APP_CONFIG = {
     "id": "2a709d75-35a7-49c8-84bf-c350164405bc",
-    "title": "Report Product",
+    "title": "Product Report",
     "code": "reportproduct",
     "model_code": "reportproduct",
     "app_label": "report",
@@ -1348,7 +1348,7 @@ REPORT_PRODUCT_APP_CONFIG = {
 
 REPORT_CUSTOMER_APP_CONFIG = {
     "id": "d633036a-8937-4f9d-a227-420e061496fc",
-    "title": "Report Customer",
+    "title": "Customer Report",
     "code": "reportcustomer",
     "model_code": "reportcustomer",
     "app_label": "report",
@@ -1387,7 +1387,7 @@ REPORT_CUSTOMER_APP_CONFIG = {
 
 REPORT_PIPELINE_APP_CONFIG = {
     "id": "298c8b6f-6a62-493f-b0ac-d549a4541497",
-    "title": "Report Pipeline",
+    "title": "Pipeline Report",
     "code": "reportpipeline",
     "model_code": "reportpipeline",
     "app_label": "report",
@@ -1612,7 +1612,7 @@ GOODS_RETURN_APP_CONFIG = {
 
 REPORT_CASHFLOW_APP_CONFIG = {
     "id": "69e84b95-b347-4f49-abdf-0ec80d6eb5bd",
-    "title": "Report Cashflow",
+    "title": "Cashflow Report",
     "code": "reportcashflow",
     "model_code": "reportcashflow",
     "app_label": "report",
