@@ -147,6 +147,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                         GoodsRegistrationSerial(
                             gre_general=gre_general,
                             sn_registered=serial,
+                            goods_registration=gre_general.goods_registration
                         )
                     )
                 GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)

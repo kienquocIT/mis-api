@@ -1556,11 +1556,12 @@ def run_inventory_report():
     return True
 
 
-def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
-    ReportStockLog.objects.all().delete()
-    ReportInventoryCost.objects.all().delete()
-    ReportStock.objects.all().delete()
-    LatestLog.objects.all().delete()
+def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lot=False):
+    if clear:
+        ReportStockLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        ReportInventoryCost.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        ReportStock.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        LatestLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
 
     if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')

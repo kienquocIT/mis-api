@@ -27,6 +27,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],
+        'has_regis': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
