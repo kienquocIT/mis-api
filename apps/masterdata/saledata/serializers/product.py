@@ -888,16 +888,11 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
-            'general_information',
-            'purchase_information',
-            'sale_information',
-            'purchase_information',
-            'price_list',
-            'product_choice',
+            'id', 'code',
+            'title', 'description',
+            'general_information', 'purchase_information',
+            'sale_information', 'purchase_information',
+            'price_list', 'product_choice',
         )
 
     @classmethod
@@ -920,8 +915,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
-            }
-            for price in obj.product_price_product.all()
+            } for price in obj.product_price_product.all()
         ]
 
     @classmethod
@@ -946,8 +940,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'default_uom': {
                 'id': str(obj.sale_default_uom_id), 'title': obj.sale_default_uom.title,
                 'code': obj.sale_default_uom.code, 'ratio': obj.sale_default_uom.ratio,
-                'rounding': obj.sale_default_uom.rounding,
-                'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
+                'rounding': obj.sale_default_uom.rounding, 'is_referenced_unit': obj.sale_default_uom.is_referenced_unit
             } if obj.sale_default_uom else {},
             'tax_code': {
                 'id': str(obj.sale_tax_id), 'title': obj.sale_tax.title,
