@@ -69,7 +69,8 @@ class GoodsRegistration(DataAbstractModel):
             trans_id=stock_info['trans_id'],
             trans_code=stock_info['trans_code'],
             trans_title=stock_info['trans_title'],
-            system_date=stock_info['system_date']
+            system_date=stock_info['system_date'],
+            lot_mapped_id=stock_info['lot_data']['lot_id'] if len(stock_info['lot_data']) > 0 else None
         )
 
         # create/update general, save by base uom
@@ -149,11 +150,17 @@ class GoodsRegistrationItem(SimpleAbstractModel):
         'saledata.Product', on_delete=models.CASCADE, related_name='gre_item_product', null=True
     )
 
+    # số lượng hàng của dự án này
     this_registered = models.FloatField(default=0)
     this_registered_value = models.FloatField(default=0)
-
+    this_registered_borrowed = models.FloatField(default=0)
+    this_registered_value_borrowed = models.FloatField(default=0)
     this_available = models.FloatField(default=0)
     this_available_value = models.FloatField(default=0)
+
+    # số lượng hàng mượn của dự án khác
+    out_registered = models.FloatField(default=0)
+    out_available = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Registration Item'
@@ -186,6 +193,9 @@ class GoodsRegistrationItemSub(SimpleAbstractModel):
     trans_code = models.CharField(blank=True, max_length=100, null=True)
     trans_title = models.CharField(blank=True, max_length=100, null=True)
     system_date = models.DateTimeField(null=True)
+    lot_mapped = models.ForeignKey(
+        'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True
+    )
 
     class Meta:
         verbose_name = 'Goods Registration Item Sub'
@@ -251,6 +261,36 @@ class GoodsRegistrationSerial(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Serial'
         verbose_name_plural = 'Goods Registration Serial'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsRegistrationItemBorrow(SimpleAbstractModel):
+    """ Ghi lại dữ liệu mượn hàng giữa các dự án """
+
+    goods_registration_source = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_src', null=True
+    )
+    gre_item_source = models.ForeignKey(
+        GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_src', null=True
+    )
+
+    quantity = models.FloatField(default=0)
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="gre_item_borrow_uom", null=True
+    )
+
+    goods_registration_destination = models.ForeignKey(
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_des', null=True
+    )
+    gre_item_destination = models.ForeignKey(
+        GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_des', null=True
+    )
+
+    class Meta:
+        verbose_name = 'Goods Registration Item Borrow'
+        verbose_name_plural = 'Goods Registration Item Borrow'
         ordering = ()
         default_permissions = ()
         permissions = ()

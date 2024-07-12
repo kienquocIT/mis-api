@@ -10,7 +10,8 @@ from apps.sales.inventory.views import (
     GoodsRegistrationLotList,
     GoodsRegistrationSerialList,
     GoodsRegistrationGeneralList,
-    ProjectProductList
+    ProjectProductList, GoodsRegistrationItemBorrowList, GoodsRegistrationItemBorrowDetail,
+    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity
 )
 
 urlpatterns = [
@@ -71,6 +72,11 @@ urlpatterns += [
     path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
     path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
     path(
+        'goods-registration-item-sub/list',
+        GoodsRegistrationItemSubList.as_view(),
+        name='GoodsRegistrationItemSubList'
+    ),
+    path(
         'goods-registration-prd-wh-general',
         GoodsRegistrationGeneralList.as_view(),
         name='GoodsRegistrationGeneralList'
@@ -89,5 +95,20 @@ urlpatterns += [
         'product-list-for-project',
         ProjectProductList.as_view(),
         name='ProjectProductList'
+    ),
+    path(
+        'goods-registration-item-borrow/list',
+        GoodsRegistrationItemBorrowList.as_view(),
+        name='GoodsRegistrationItemBorrowList'
+    ),
+    path(
+        'goods-registration-item-borrow/<str:pk>',
+        GoodsRegistrationItemBorrowDetail.as_view(),
+        name='GoodsRegistrationItemBorrowDetail'
+    ),
+    path(
+        'goods-registration-item-available-quantity',
+        GoodsRegistrationItemAvailableQuantity.as_view(),
+        name='GoodsRegistrationItemAvailableQuantity'
     ),
 ]
