@@ -22,6 +22,8 @@ __all__ = [
     'WarehouseEmployeeConfigDetailSerializer'
 ]
 
+from apps.masterdata.saledata.models.inventory import WarehouseShelf
+
 from apps.shared import TypeCheck, WarehouseMsg
 
 
@@ -73,6 +75,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
     city = serializers.SerializerMethodField()
     district = serializers.SerializerMethodField()
     ward = serializers.SerializerMethodField()
+    shelf_data = serializers.SerializerMethodField()
 
     class Meta:
         model = WareHouse
@@ -89,7 +92,8 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'district',
             'warehouse_type',
             'agency',
-            'is_dropship'
+            'is_dropship',
+            'shelf_data'
         )
 
     @classmethod
@@ -128,6 +132,17 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_shelf_data(cls, obj):
+        return [{
+            'id': str(shelf.id),
+            'shelf_title': shelf.shelf_title,
+            'shelf_position': shelf.shelf_position,
+            'shelf_order': shelf.shelf_order,
+            'shelf_row': shelf.shelf_row,
+            'shelf_column': shelf.shelf_column
+        } for shelf in obj.warehouse_shelf_position_warehouse.all()]
+
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
     agency = serializers.UUIDField(required=False, allow_null=True)
@@ -156,6 +171,31 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             except Account.DoesNotExist:
                 raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
         return None
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        instance.warehouse_shelf_position_warehouse.all().delete()
+        bulk_info = []
+        for shelf in self.initial_data.get('shelf_data_new', []):
+            bulk_info.append(
+                WarehouseShelf(
+                    warehouse=instance,
+                    shelf_title=shelf.get('shelf_title'),
+                    shelf_position=shelf.get('shelf_position'),
+                    shelf_order=shelf.get('shelf_order'),
+                    shelf_row=shelf.get('shelf_row'),
+                    shelf_column=shelf.get('shelf_column')
+                )
+            )
+        WarehouseShelf.objects.bulk_create(bulk_info)
+        for shelf in self.initial_data.get('shelf_data_update', []):
+            shelf_id = shelf.get('shelf_id')
+            del shelf['shelf_id']
+            WarehouseShelf.objects.filter(id=shelf_id).update(**shelf)
+        return instance
 
 
 class ProductWareHouseStockListSerializer(serializers.ModelSerializer):

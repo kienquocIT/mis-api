@@ -277,6 +277,7 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
     )
 
     quantity = models.FloatField(default=0)
+    available = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="gre_item_borrow_uom", null=True
     )

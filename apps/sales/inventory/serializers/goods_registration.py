@@ -310,6 +310,7 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'quantity',
+            'available',
             'uom',
             'sale_order',
         )
@@ -318,16 +319,16 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
     def get_sale_order(cls, obj):
         return {
             'id': str(obj.goods_registration_destination.sale_order_id),
-            'code': str(obj.goods_registration_destination.sale_order.code),
-            'title': str(obj.goods_registration_destination.sale_order.title),
+            'code': obj.goods_registration_destination.sale_order.code,
+            'title': obj.goods_registration_destination.sale_order.title,
         }
 
     @classmethod
     def get_uom(cls, obj):
         return {
             'id': str(obj.uom_id),
-            'code': str(obj.uom.code),
-            'title': str(obj.uom.title),
+            'code': obj.uom.code,
+            'title': obj.uom.title,
         }
 
 
@@ -342,6 +343,7 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
             'goods_registration_source',
             'gre_item_source',
             'quantity',
+            'available',
             'uom'
         )
 
@@ -379,7 +381,8 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         except Exception:
             raise serializers.ValidationError({'validate_data': 'Validation have got some errors.'})
 
-    def create(self, validated_data):
+    @classmethod
+    def for_borrow(cls, validated_data):
         casted_quantity = cast_quantity_to_unit(validated_data['uom'], validated_data['quantity'])
         casted_quantity_limit = cast_quantity_to_unit(
             validated_data['gre_item_destination'].so_item.unit_of_measure,
@@ -388,15 +391,30 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         if casted_quantity > casted_quantity_limit:
             raise serializers.ValidationError({'quantity': 'Reserved quantity > Available quantity.'})
 
-        instance = GoodsRegistrationItemBorrow.objects.create(**validated_data)
+        last_borrow = GoodsRegistrationItemBorrow.objects.filter(
+            gre_item_source=validated_data['gre_item_source'],
+            gre_item_destination=validated_data['gre_item_destination']
+        ).first()
+        if last_borrow:
+            if validated_data['uom'] != last_borrow.uom:
+                raise serializers.ValidationError({'uom': 'UOM reserve must be same.'})
 
-        # đổi sang uom đặt hàng
-        casted_quantity = cast_unit_quantity_to_so_uom(
-            instance.gre_item_source.so_item.unit_of_measure,
-            cast_quantity_to_unit(instance.uom, instance.quantity)
-        )
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available += validated_data['quantity']
+            last_borrow.save(update_fields=['quantity', 'available'])
+            instance = last_borrow
+        else:
+            instance = GoodsRegistrationItemBorrow.objects.create(
+                **validated_data, available=validated_data['quantity']
+            )
 
-        # cập nhập sl mượn của dự án B
+            # đổi sang uom đặt hàng
+            casted_quantity = cast_unit_quantity_to_so_uom(
+                instance.gre_item_source.so_item.unit_of_measure,
+                cast_quantity_to_unit(instance.uom, instance.quantity)
+            )
+
+        # cập nhập sl mượn của dự án A
         gre_item_src = validated_data['gre_item_source']
         gre_item_src.out_registered += casted_quantity
         gre_item_src.out_available += casted_quantity
@@ -416,6 +434,47 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
             'this_available_value'
         ])
         return instance
+
+    @classmethod
+    def for_return_back(cls, validated_data):
+        last_borrow = GoodsRegistrationItemBorrow.objects.filter(
+            gre_item_source=validated_data['gre_item_source'],
+            gre_item_destination=validated_data['gre_item_destination']
+        ).first()
+        if last_borrow:
+            if validated_data['uom'] != last_borrow.uom:
+                raise serializers.ValidationError({'uom': 'UOM reserve must be same.'})
+
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available += validated_data['quantity']
+            last_borrow.save(update_fields=['quantity', 'available'])
+
+            # cập nhập sl mượn của dự án A
+            gre_item_src = validated_data['gre_item_source']
+            gre_item_src.out_registered += validated_data['quantity']
+            gre_item_src.out_available += validated_data['quantity']
+            gre_item_src.save(update_fields=['out_registered', 'out_available'])
+
+            # cập nhập sl cho mượn cho dự án B
+            gre_item_des = validated_data['gre_item_destination']
+            unit_price = gre_item_des.this_registered_value / gre_item_des.this_registered
+            gre_item_des.this_registered_borrowed += validated_data['quantity']
+            gre_item_des.this_registered_value_borrowed += unit_price * gre_item_des.this_registered_borrowed
+            gre_item_des.this_available = gre_item_des.this_registered - gre_item_des.this_registered_borrowed
+            gre_item_des.this_available_value = unit_price * gre_item_des.this_available
+            gre_item_des.save(update_fields=[
+                'this_registered_borrowed',
+                'this_registered_value_borrowed',
+                'this_available',
+                'this_available_value'
+            ])
+        return last_borrow
+
+    def create(self, validated_data):
+        if validated_data['quantity'] > 0:
+            return self.for_borrow(validated_data)
+        else:
+            return self.for_return_back(validated_data)
 
 
 class GoodsRegistrationItemBorrowDetailSerializer(serializers.ModelSerializer):

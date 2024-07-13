@@ -123,3 +123,23 @@ class WarehouseEmployeeConfigDetail(SimpleAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+
+class WarehouseShelf(SimpleAbstractModel):
+    warehouse = models.ForeignKey(
+        WareHouse,
+        on_delete=models.CASCADE,
+        related_name='warehouse_shelf_position_warehouse'
+    )
+    shelf_title = models.CharField(max_length=100)
+    shelf_position = models.CharField(max_length=500)
+    shelf_order = models.IntegerField(default=0)
+    shelf_row = models.IntegerField(default=1)
+    shelf_column = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Warehouse Shelf Position'
+        verbose_name_plural = 'Warehouse Shelves Positions'
+        ordering = ('shelf_order',)
+        default_permissions = ()
+        permissions = ()
