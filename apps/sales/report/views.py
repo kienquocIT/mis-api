@@ -393,9 +393,9 @@ class ReportStockList(BaseListMixin):
 
     @classmethod
     def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
-        sub = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
+        sub_period = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
         if all([
-            # not sub.run_report_inventory,
+            not sub_period.run_report_inventory or sub_period.report_inventory_cost_sub_period.count() == 0,
             int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month
         ]):
             if sub_period_order == 12:
@@ -427,20 +427,20 @@ class ReportStockList(BaseListMixin):
                 ).exists():
                     if company.company_config.definition_inventory_valuation == 0:
                         bulk_info, bulk_info_wh = cls.for_perpetual(
-                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub_period,
                             bulk_info, bulk_info_wh
                         )
                     if company.company_config.definition_inventory_valuation == 1:
                         bulk_info, bulk_info_wh = cls.for_periodic(
-                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub,
+                            last_item, tenant, company, employee_current, period_mapped, sub_period_order, sub_period,
                             bulk_info, bulk_info_wh
                         )
 
             if len(bulk_info) > 0:
                 ReportInventoryCost.objects.bulk_create(bulk_info)
                 ReportInventoryCostWH.objects.bulk_create(bulk_info_wh)
-                sub.run_report_inventory = True
-                sub.save(update_fields=['run_report_inventory'])
+                sub_period.run_report_inventory = True
+                sub_period.save(update_fields=['run_report_inventory'])
         return True
 
     def get_queryset(self):

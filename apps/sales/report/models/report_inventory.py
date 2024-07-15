@@ -40,27 +40,37 @@ class ReportStock(DataAbstractModel):  # rp_stock
     )
 
     @classmethod
-    def get_report_stock(
-            cls, tenant_obj, company_obj, emp_created_obj, emp_inherit_obj, period_obj, sub_period_order,
-            product_obj, **kwargs
-    ):
+    def get_report_stock(cls, stock_obj, period_obj, sub_period_order, product_obj, **kwargs):
+        (
+            tenant_obj, company_obj, emp_created_obj, emp_inherit_obj
+        ) = (
+            stock_obj.tenant, stock_obj.company, stock_obj.employee_created, stock_obj.employee_inherit
+        )
         if 'warehouse_id' in kwargs:
             del kwargs['warehouse_id']
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
-            rp_stock, _created = cls.objects.get_or_create(
+            rp_stock = cls.objects.filter(
                 tenant=tenant_obj,
                 company=company_obj,
                 product=product_obj,
                 period_mapped=period_obj,
                 sub_period_order=sub_period_order,
                 sub_period=sub_period_obj,
-                defaults={
-                    'employee_created': emp_created_obj if emp_created_obj else emp_inherit_obj,
-                    'employee_inherit': emp_inherit_obj if emp_inherit_obj else emp_created_obj,
-                },
                 **kwargs
-            )
+            ).first()
+            if not rp_stock:
+                rp_stock = cls.objects.get_or_create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    product=product_obj,
+                    period_mapped=period_obj,
+                    sub_period_order=sub_period_order,
+                    sub_period=sub_period_obj,
+                    employee_created=emp_created_obj if emp_created_obj else emp_inherit_obj,
+                    employee_inherit=emp_inherit_obj if emp_inherit_obj else emp_created_obj,
+                    **kwargs
+                )
             return rp_stock
         raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
 
@@ -231,10 +241,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
                 kw_parameter['sale_order_id'] = item['sale_order'].id if item.get('sale_order') else None
 
             rp_inventory = ReportStock.get_report_stock(
-                stock_obj.tenant,
-                stock_obj.company,
-                stock_obj.employee_created,
-                stock_obj.employee_inherit,
+                stock_obj,
                 period_obj,
                 sub_period_order,
                 item['product'],

@@ -192,6 +192,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     stock_amount = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
     available_picked = serializers.SerializerMethodField()
+    other_projects = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
@@ -204,6 +205,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
             'picked_ready',
             'available_stock',
             'available_picked',
+            'other_projects'
         )
 
     @classmethod
@@ -473,15 +475,15 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
 
         # cập nhập sl mượn của dự án A
         gre_item_src = validated_data['gre_item_source']
-        gre_item_src.out_registered += casted_quantity
-        gre_item_src.out_available += casted_quantity
+        gre_item_src.out_registered += validated_data['quantity']
+        gre_item_src.out_available += validated_data['quantity']
         gre_item_src.save(update_fields=['out_registered', 'out_available'])
 
         # cập nhập sl cho mượn cho dự án B
         gre_item_des = validated_data['gre_item_destination']
         unit_price = gre_item_des.this_registered_value / gre_item_des.this_registered
-        gre_item_des.this_registered_borrowed += casted_quantity
-        gre_item_des.this_registered_value_borrowed += unit_price * gre_item_des.this_registered_borrowed
+        gre_item_des.this_registered_borrowed += validated_data['quantity']
+        gre_item_des.this_registered_value_borrowed = unit_price * gre_item_des.this_registered_borrowed
         gre_item_des.this_available = gre_item_des.this_registered - gre_item_des.this_registered_borrowed
         gre_item_des.this_available_value = unit_price * gre_item_des.this_available
         gre_item_des.save(update_fields=[
@@ -516,7 +518,7 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
             gre_item_des = validated_data['gre_item_destination']
             unit_price = gre_item_des.this_registered_value / gre_item_des.this_registered
             gre_item_des.this_registered_borrowed += validated_data['quantity']
-            gre_item_des.this_registered_value_borrowed += unit_price * gre_item_des.this_registered_borrowed
+            gre_item_des.this_registered_value_borrowed = unit_price * gre_item_des.this_registered_borrowed
             gre_item_des.this_available = gre_item_des.this_registered - gre_item_des.this_registered_borrowed
             gre_item_des.this_available_value = unit_price * gre_item_des.this_available
             gre_item_des.save(update_fields=[
@@ -551,9 +553,16 @@ class GoodsRegistrationItemBorrowUpdateSerializer(serializers.ModelSerializer):
 
 
 class GoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSerializer):
+    this_available_base = serializers.SerializerMethodField()
+
     class Meta:
         model = GoodsRegistrationItem
         fields = (
             'id',
-            'this_available'
+            'this_available',
+            'this_available_base'
         )
+
+    @classmethod
+    def get_this_available_base(cls, obj):
+        return obj.this_available * obj.so_item.unit_of_measure.ratio
