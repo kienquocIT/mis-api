@@ -530,8 +530,7 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if validated_data['quantity'] > 0:
             return self.for_borrow(validated_data)
-        else:
-            return self.for_return_back(validated_data)
+        return self.for_return_back(validated_data)
 
 
 class GoodsRegistrationItemBorrowDetailSerializer(serializers.ModelSerializer):
