@@ -8,6 +8,67 @@ from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
 
+class ContactTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+        self.contact_owner = self.get_employee().data['result'][0]
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_new_contact(self):
+        data = {  # noqa
+            'contact_owner': self.contact_owner['id'],
+            'fullname': 'xxx',
+        }
+        url = reverse('ContactList')
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                "id",
+                "owner",
+                "job_title",
+                "biography",
+                "avatar",
+                "fullname",
+                "salutation",
+                "phone",
+                "mobile",
+                "email",
+                "report_to",
+                "address_information",
+                "additional_information",
+                "account_name",
+                'work_detail_address',
+                'work_country',
+                'work_city',
+                'work_district',
+                'work_ward',
+                'home_detail_address',
+                'home_country',
+                'home_city',
+                'home_district',
+                'home_ward',
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+
 class AccountTestCase(AdvanceTestCase):
     def setUp(self):
         self.maxDiff = None
