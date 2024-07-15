@@ -7,7 +7,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -326,7 +326,6 @@ class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_tax(value=value)
 
 
-# PURCHASE ORDER BEGIN
 def handle_attach_file(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
         relate_app = Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first()
@@ -482,7 +481,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
+class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
@@ -527,8 +526,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
-            # system
-            'system_status',
+            # attachment
             'attachment',
         )
 
@@ -584,7 +582,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
         return purchase_order
 
 
-class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
+class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
     purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
@@ -627,8 +625,6 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
-            # system
-            'system_status',
         )
 
     @classmethod

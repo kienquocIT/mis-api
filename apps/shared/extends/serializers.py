@@ -44,6 +44,7 @@ class AbstractCreateSerializerModel(serializers.ModelSerializer):
                 help_text='0: draft, 1: created',
                 default=0,
             ),
+            'next_node_collab_id': serializers.UUIDField(required=False, allow_null=True),
             'is_change': serializers.BooleanField(required=False, default=False),
             'document_root_id': serializers.UUIDField(required=False, allow_null=True),
             'document_change_order': serializers.IntegerField(required=False, allow_null=True),

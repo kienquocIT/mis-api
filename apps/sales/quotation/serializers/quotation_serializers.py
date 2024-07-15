@@ -185,7 +185,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     customer = serializers.UUIDField()
     contact = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
     payment_term = serializers.UUIDField()
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
@@ -220,7 +219,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
-            'next_node_collab_id',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -247,8 +245,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -319,7 +315,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         return quotation
 
 
-class QuotationUpdateSerializer(serializers.ModelSerializer):
+class QuotationUpdateSerializer(AbstractCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
@@ -399,8 +395,6 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
-            # status
-            'system_status',
         )
 
     @classmethod

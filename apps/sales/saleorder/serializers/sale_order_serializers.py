@@ -277,8 +277,6 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'sale_order_indicators_data',
             # payment stage tab
             'sale_order_payment_stage',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -344,7 +342,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         return sale_order
 
 
-class SaleOrderUpdateSerializer(serializers.ModelSerializer):
+class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
@@ -433,8 +431,6 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_indicators_data',
             # payment stage tab
             'sale_order_payment_stage',
-            # status
-            'system_status',
         )
 
     @classmethod

@@ -4,6 +4,7 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
+from apps.shared import AbstractCreateSerializerModel
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
@@ -500,7 +501,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
+class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
@@ -523,10 +524,8 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -566,7 +565,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
         return goods_receipt
 
 
-class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
+class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=False, allow_null=True)
@@ -585,10 +584,8 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
         )
 
     @classmethod
