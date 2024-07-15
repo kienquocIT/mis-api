@@ -341,11 +341,6 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             validated_data=validated_data,
             instance=sale_order
         )
-        # update field sale_order & create activity log for opportunity
-        if sale_order.opportunity:
-            # update field sale_order
-            sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(update_fields=['sale_order'])
         return sale_order
 
 
@@ -508,10 +503,6 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        # check if change opportunity then update field sale_order in opportunity to None
-        if instance.opportunity_id != validated_data.get('opportunity_id', None):
-            instance.opportunity.sale_order = None
-            instance.opportunity.save(update_fields=['sale_order'])
         # update sale order
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -521,10 +512,6 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True
         )
-        # update field sale_order for opportunity
-        if instance.opportunity:
-            instance.opportunity.sale_order = instance
-            instance.opportunity.save(update_fields=['sale_order'])
         return instance
 
 

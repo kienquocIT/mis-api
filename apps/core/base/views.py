@@ -6,10 +6,11 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.base.filters import ApplicationPropertiesListFilter
-from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin, BaseCreateMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones,
+    ApplicationEmpConfig
 )
 
 from apps.core.base.serializers import (
@@ -17,7 +18,8 @@ from apps.core.base.serializers import (
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
     BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
-    ApplicationPropertyForMailListSerializer,
+    ApplicationPropertyForMailListSerializer, ZonesCreateUpdateSerializer, ZonesListSerializer,
+    ApplicationZonesListSerializer, AppEmpConfigListSerializer, AppEmpConfigCreateUpdateSerializer,
 )
 
 
@@ -371,3 +373,156 @@ class ApplicationPropertyOpportunityList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+# ZONES
+class ZonesApplicationList(BaseListMixin):
+    queryset = Application.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'code': ['exact'],
+        'title': ['exact'],
+        'is_workflow': ['exact'],
+        'allow_import': ['exact'],
+        'allow_print': ['exact'],
+        'allow_mail': ['exact'],
+        'id': ['exact', 'in'],
+    }
+    serializer_list = ApplicationZonesListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
+            return super().get_queryset().filter(
+                id__in=PlanApplication.objects.filter(
+                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+                ).values_list('application__id', flat=True)
+            ).prefetch_related('zones_application')
+        return Application.objects.none()
+
+    def get_serializer_list_data(self, ser_data):
+        if not self.check_page_size():
+            # auto apply will be to manual
+            # - search : support Tone marks and Slugify
+            # - order : support key exist return and reversed with "-" first character
+
+            search_txt = self.request.query_params.get('search', None)
+            if search_txt:
+                search_txt = search_txt.lower()
+
+                def filter_title_has_search(obj):
+                    tmp = dict(OrderedDict(obj))
+                    return (
+                            search_txt in tmp['title'].lower()
+                            or unidecode(search_txt) in unidecode(tmp['title'].lower())
+                    )
+
+                ser_data = list(filter(filter_title_has_search, ser_data))
+
+            order_txt = self.request.query_params.get('ordering', 'title')
+            if order_txt:
+                key_order, reverse_order = order_txt, False
+                if order_txt.startswith('-'):
+                    key_order = key_order[1:]
+                    reverse_order = True
+                try:
+                    ser_data = sorted(ser_data, key=lambda item: unidecode(item[key_order]), reverse=reverse_order)
+                except KeyError:
+                    pass
+
+            return ser_data
+        return ser_data
+
+    def check_page_size(self):
+        page_size = self.request.query_params.get('pageSize', None)
+        if page_size in ('-1', -1):
+            return False
+        return True
+
+    @swagger_auto_schema(
+        operation_summary="Application Zones List",
+        operation_description="Get Application Zones List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        if not self.check_page_size():
+            self.search_fields = []
+        return self.list(request, *args, **kwargs)
+
+
+class ZonesList(BaseListMixin, BaseCreateMixin):
+    queryset = Zones.objects
+    search_fields = ['title', 'remark']
+    filterset_fields = {
+        'application_id': ['exact'],
+        'id': ['exact', 'in'],
+    }
+    serializer_list = ZonesListSerializer
+    serializer_create = ZonesCreateUpdateSerializer
+    serializer_detail = ZonesListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Zones List",
+        operation_description="Get Zones List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Zones",
+        operation_description="Create new Zones",
+        request_body=ZonesCreateUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.create(request, *args, **kwargs)
+
+
+# EMPLOYEE CONFIG ON APP
+class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = ApplicationEmpConfig.objects
+    search_fields = ['employee_created__search_content']
+    filterset_fields = {
+        'application_id': ['exact'],
+        'application__model_code': ['exact'],
+        'app_code': ['exact'],
+        'id': ['exact', 'in'],
+        'employee_created_id': ['exact'],
+    }
+    serializer_list = AppEmpConfigListSerializer
+    serializer_create = AppEmpConfigCreateUpdateSerializer
+    serializer_detail = AppEmpConfigListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Application Employee Config List",
+        operation_description="Get Application Employee Config List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Application Employee Config",
+        operation_description="Create new Application Employee Config",
+        request_body=AppEmpConfigCreateUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.create(request, *args, **kwargs)

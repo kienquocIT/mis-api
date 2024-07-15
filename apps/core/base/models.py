@@ -5,7 +5,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy
 from jsonfield import JSONField
 
-from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
+from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE, MasterDataAbstractModel
 
 from apps.core.models import CoreAbstractModel
 
@@ -589,5 +589,148 @@ class IndicatorParam(SimpleAbstractModel):
         verbose_name = 'Indicator Param'
         verbose_name_plural = 'Indicator Params'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# ZONES
+class Zones(MasterDataAbstractModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name="application",
+        related_name="zones_application",
+        null=True
+    )
+    remark = models.TextField(verbose_name="remark", blank=True, null=True)
+    properties = models.ManyToManyField(
+        'base.ApplicationProperty',
+        through='ZonesProperties',
+        symmetrical=False,
+        blank=True,
+        related_name='zones_relate_properties',
+    )
+    properties_data = models.JSONField(
+        verbose_name="property list",
+        default=list,
+        help_text="list data parsed from ApplicationProperty [{},{}]"
+    )
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Zone'
+        verbose_name_plural = 'Zones'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ZonesProperties(SimpleAbstractModel):
+    property = models.ForeignKey(
+        'base.ApplicationProperty',
+        on_delete=models.CASCADE,
+        related_name='zones_props_property',
+    )
+    zone = models.ForeignKey(
+        'base.Zones',
+        on_delete=models.CASCADE,
+        related_name='zones_props_zone',
+    )
+
+    class Meta:
+        verbose_name = 'Zone Property'
+        verbose_name_plural = 'Zones Properties'
+        default_permissions = ()
+        permissions = ()
+
+
+# EMPLOYEE CONFIG ON APP
+class ApplicationEmpConfig(MasterDataAbstractModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name="application",
+        related_name="app_emp_config_application",
+        null=True
+    )
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}'
+    )
+    employee_data = models.JSONField(
+        verbose_name="employee data",
+        default=dict,
+        help_text="data parsed from Employee {}"
+    )
+    remark = models.TextField(verbose_name="remark", blank=True, null=True)
+    zones_editing = models.ManyToManyField(
+        'base.Zones',
+        through='AppEmpConfigZonesEditing',
+        symmetrical=False,
+        blank=True,
+        related_name='app_emp_config_relate_zones_editing',
+    )
+    zones_editing_data = models.JSONField(
+        verbose_name="zone list",
+        default=list,
+        help_text="list data parsed from Zones [{},{}]"
+    )
+    zones_hidden = models.ManyToManyField(
+        'base.Zones',
+        through='AppEmpConfigZonesHidden',
+        symmetrical=False,
+        blank=True,
+        related_name='app_emp_config_relate_zones_hidden',
+    )
+    zones_hidden_data = models.JSONField(
+        verbose_name="zone list",
+        default=list,
+        help_text="list data parsed from Zones [{},{}]"
+    )
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Application Employee Config'
+        verbose_name_plural = 'Application Employee Configs'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class AppEmpConfigZonesEditing(SimpleAbstractModel):
+    app_emp_config = models.ForeignKey(
+        'base.ApplicationEmpConfig',
+        on_delete=models.CASCADE,
+        related_name='app_emp_config_zones_editing_config',
+    )
+    zone = models.ForeignKey(
+        'base.Zones',
+        on_delete=models.CASCADE,
+        related_name='app_emp_config_zones_editing_zone',
+    )
+
+    class Meta:
+        verbose_name = 'Employee Zone Editing'
+        verbose_name_plural = 'Employees Zones Editing'
+        default_permissions = ()
+        permissions = ()
+
+
+class AppEmpConfigZonesHidden(SimpleAbstractModel):
+    app_emp_config = models.ForeignKey(
+        'base.ApplicationEmpConfig',
+        on_delete=models.CASCADE,
+        related_name='app_emp_config_zones_hidden_config',
+    )
+    zone = models.ForeignKey(
+        'base.Zones',
+        on_delete=models.CASCADE,
+        related_name='app_emp_config_zones_hidden_zone',
+    )
+
+    class Meta:
+        verbose_name = 'Employee Zone Hidden'
+        verbose_name_plural = 'Employees Zones Hidden'
         default_permissions = ()
         permissions = ()

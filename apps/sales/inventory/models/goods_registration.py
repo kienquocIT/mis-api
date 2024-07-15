@@ -219,6 +219,9 @@ class GoodsRegistrationGeneral(SimpleAbstractModel):
         null=True
     )
     quantity = models.FloatField(default=0)
+    picked_ready = models.FloatField(
+        default=0, help_text='quantity of products which were picked to delivery from total quantity registered',
+    )
 
     class Meta:
         verbose_name = 'Goods Registration General'

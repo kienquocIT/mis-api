@@ -598,10 +598,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stock_amount(cls, obj):
         if obj.inventory_uom:
-            casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_stock_amount
-        return None
+            stock = 0
+            for product_wh in obj.product_warehouse_product.all():
+                stock += product_wh.stock_amount
+            return stock / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
+        return 0
 
     @classmethod
     def get_wait_delivery_amount(cls, obj):
@@ -622,10 +623,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_amount(cls, obj):
         if obj.inventory_uom:
-            casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_avl_amount
-        return None
+            stock = 0
+            for product_wh in obj.product_warehouse_product.all():
+                stock += product_wh.stock_amount
+            available = stock - obj.wait_delivery_amount + obj.wait_receipt_amount
+            return available / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
+        return 0
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -885,16 +888,11 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
-            'general_information',
-            'purchase_information',
-            'sale_information',
-            'purchase_information',
-            'price_list',
-            'product_choice',
+            'id', 'code',
+            'title', 'description',
+            'general_information', 'purchase_information',
+            'sale_information', 'purchase_information',
+            'price_list', 'product_choice',
         )
 
     @classmethod
@@ -917,8 +915,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
-            }
-            for price in obj.product_price_product.all()
+            } for price in obj.product_price_product.all()
         ]
 
     @classmethod
@@ -943,8 +940,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'default_uom': {
                 'id': str(obj.sale_default_uom_id), 'title': obj.sale_default_uom.title,
                 'code': obj.sale_default_uom.code, 'ratio': obj.sale_default_uom.ratio,
-                'rounding': obj.sale_default_uom.rounding,
-                'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
+                'rounding': obj.sale_default_uom.rounding, 'is_referenced_unit': obj.sale_default_uom.is_referenced_unit
             } if obj.sale_default_uom else {},
             'tax_code': {
                 'id': str(obj.sale_tax_id), 'title': obj.sale_tax.title,

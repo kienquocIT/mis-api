@@ -2,36 +2,35 @@ from apps.masterdata.saledata.models import ProductWareHouse
 
 
 class GRFinishHandler:
+    # PO GR_INFO
     @classmethod
     def update_gr_info_for_po(cls, instance):
         if instance.goods_receipt_type == 0:  # check type GR for PO
             for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
                 if gr_po_product.purchase_order_product:
-                    gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
-                    gr_po_product.purchase_order_product.gr_completed_quantity = round(
-                        gr_po_product.purchase_order_product.gr_completed_quantity, 2
+                    cls.run_update_gr_info_for_po(
+                        gr_product=gr_po_product, order_request_product=gr_po_product.purchase_order_product,
                     )
-                    gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
-                    gr_po_product.purchase_order_product.gr_remain_quantity = round(
-                        gr_po_product.purchase_order_product.gr_remain_quantity, 2
-                    )
-                    gr_po_product.purchase_order_product.save(update_fields=[
-                        'gr_completed_quantity', 'gr_remain_quantity'
-                    ])
             for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
                 if gr_pr_product.purchase_order_request_product:
-                    gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
-                    gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
-                        gr_pr_product.purchase_order_request_product.gr_completed_quantity, 2
+                    cls.run_update_gr_info_for_po(
+                        gr_product=gr_pr_product, order_request_product=gr_pr_product.purchase_order_request_product,
                     )
-                    gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
-                    gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
-                        gr_pr_product.purchase_order_request_product.gr_remain_quantity, 2
-                    )
-                    gr_pr_product.purchase_order_request_product.save(update_fields=[
-                        'gr_completed_quantity',
-                        'gr_remain_quantity'
-                    ])
+        return True
+
+    @classmethod
+    def run_update_gr_info_for_po(cls, gr_product, order_request_product):
+        order_request_product.gr_completed_quantity += gr_product.quantity_import
+        order_request_product.gr_completed_quantity = round(
+            order_request_product.gr_completed_quantity, 2
+        )
+        order_request_product.gr_remain_quantity -= gr_product.quantity_import
+        order_request_product.gr_remain_quantity = round(
+            order_request_product.gr_remain_quantity, 2
+        )
+        order_request_product.save(update_fields=[
+            'gr_completed_quantity', 'gr_remain_quantity'
+        ])
         return True
 
     @classmethod
@@ -76,6 +75,7 @@ class GRFinishHandler:
                 instance.inventory_adjustment.save(update_fields=['state'])
         return True
 
+    # PRODUCT_WAREHOUSE
     @classmethod
     def push_by_po(cls, instance):
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
@@ -86,17 +86,14 @@ class GRFinishHandler:
                 gr_product = gr_warehouse.goods_receipt_product
                 if gr_product:
                     if gr_product.product:
-                        ProductWareHouse.push_from_receipt(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product_id=gr_product.product_id,
-                            warehouse_id=gr_warehouse.warehouse_id,
-                            uom_id=uom_base.id,
-                            tax_id=gr_product.product.purchase_tax_id,
-                            amount=gr_warehouse.quantity_import * final_ratio,
-                            unit_price=gr_product.product_unit_price,
+                        cls.run_push_to_warehouse_stock(
+                            instance=instance,
+                            gr_product=gr_product,
+                            gr_warehouse=gr_warehouse,
+                            uom_base=uom_base,
                             lot_data=lot_data,
                             serial_data=serial_data,
+                            amount=gr_warehouse.quantity_import * final_ratio,
                         )
         return True
 
@@ -104,14 +101,16 @@ class GRFinishHandler:
     def setup_data_push_by_po(cls, instance, gr_warehouse):
         product_obj = gr_warehouse.goods_receipt_product.product
         uom_product_gr = gr_warehouse.goods_receipt_product.uom
+        purchase_request_id = None
         if gr_warehouse.goods_receipt_request_product:  # Case has PR
             if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
-                pr_product = gr_warehouse.goods_receipt_request_product.purchase_order_request_product
-                if pr_product.is_stock is False:  # Case PR is Product
-                    if pr_product.purchase_request_product:
-                        uom_product_gr = pr_product.purchase_request_product.uom
+                po_request_product = gr_warehouse.goods_receipt_request_product.purchase_order_request_product
+                if po_request_product.is_stock is False:  # Case PR is Product
+                    if po_request_product.purchase_request_product:
+                        uom_product_gr = po_request_product.purchase_request_product.uom
+                        purchase_request_id = po_request_product.purchase_request_product.purchase_request_id
                 else:  # Case PR is Stock
-                    uom_product_gr = pr_product.uom_stock
+                    uom_product_gr = po_request_product.uom_stock
         final_ratio = cls.get_final_uom_ratio(
             product_obj=product_obj, uom_transaction=uom_product_gr
         )
@@ -125,6 +124,7 @@ class GRFinishHandler:
                 'expire_date': lot.expire_date,
                 'manufacture_date': lot.manufacture_date,
                 'goods_receipt_id': instance.id,
+                'purchase_request_id': purchase_request_id,
             })
         for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
             serial_data.append({
@@ -135,6 +135,7 @@ class GRFinishHandler:
                 'warranty_start': serial.warranty_start,
                 'warranty_end': serial.warranty_end,
                 'goods_receipt_id': instance.id,
+                'purchase_request_id': purchase_request_id,
             })
         return uom_base, final_ratio, lot_data, serial_data
 
@@ -149,17 +150,14 @@ class GRFinishHandler:
                 gr_product = gr_warehouse.goods_receipt_product
                 if gr_product:
                     if gr_product.product:
-                        ProductWareHouse.push_from_receipt(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            product_id=gr_product.product_id,
-                            warehouse_id=gr_warehouse.warehouse_id,
-                            uom_id=uom_base.id,
-                            tax_id=gr_product.product.purchase_tax_id,
-                            amount=gr_product.quantity_import * final_ratio,
-                            unit_price=gr_product.product_unit_price,
+                        cls.run_push_to_warehouse_stock(
+                            instance=instance,
+                            gr_product=gr_product,
+                            gr_warehouse=gr_warehouse,
+                            uom_base=uom_base,
                             lot_data=lot_data,
                             serial_data=serial_data,
+                            amount=gr_product.quantity_import * final_ratio,
                         )
         return True
 
@@ -194,14 +192,30 @@ class GRFinishHandler:
         return uom_base, final_ratio, lot_data, serial_data
 
     @classmethod
+    def run_push_to_warehouse_stock(cls, instance, gr_product, gr_warehouse, uom_base, lot_data, serial_data, amount):
+        ProductWareHouse.push_from_receipt(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            product_id=gr_product.product_id,
+            warehouse_id=gr_warehouse.warehouse_id,
+            uom_id=uom_base.id,
+            tax_id=gr_product.product.purchase_tax_id,
+            amount=amount,
+            unit_price=gr_product.product_unit_price,
+            lot_data=lot_data,
+            serial_data=serial_data,
+        )
+        return True
+
+    @classmethod
     def push_to_warehouse_stock(cls, instance):
-        # push data to ProductWareHouse
         if instance.goods_receipt_type == 0:  # GR for PO
             cls.push_by_po(instance=instance)
         elif instance.goods_receipt_type == 1:  # GR for IA
             cls.push_by_ia(instance=instance)
         return True
 
+    # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
         if instance.purchase_order:  # GR for PO

@@ -14,12 +14,13 @@ class ProductWareHouse(MasterDataAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product of WareHouse',
-        related_name='product_warehouse_product'
+        related_name='product_warehouse_product',
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         verbose_name='WareHouse of Product',
+        related_name='product_warehouse_warehouse',
     )
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
@@ -290,6 +291,7 @@ class ProductWareHouseLot(MasterDataAbstractModel):
     ):
         for lot in lot_data:
             goods_receipt_id = None
+            purchase_request_id = None
             delivery_id = None
             obj, _created = cls.objects.get_or_create(
                 tenant_id=tenant_id, company_id=company_id,
@@ -310,11 +312,13 @@ class ProductWareHouseLot(MasterDataAbstractModel):
             # create ProductWareHouseLotTransaction
             if type_transaction == 0:
                 goods_receipt_id = lot.get('goods_receipt_id', None)
+                purchase_request_id = lot.get('purchase_request_id', None)
             if type_transaction == 1:
                 delivery_id = lot.get('delivery_id', None)
             data = {
                 'pw_lot_id': obj.id,
                 'goods_receipt_id': goods_receipt_id,
+                'purchase_request_id': purchase_request_id,
                 'delivery_id': delivery_id,
                 'quantity': lot.get('quantity_import', 0),
                 'type_transaction': type_transaction,
@@ -344,6 +348,14 @@ class ProductWareHouseLotTransaction(SimpleAbstractModel):
         related_name="pw_lot_transact_goods_receipt",
         help_text="To know this lot was receipted by which GoodsReceipt",
         null=True,
+    )
+    purchase_request = models.ForeignKey(
+        'purchasing.PurchaseRequest',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="purchase request",
+        related_name="pw_lot_purchase_request",
+        help_text="To know this lot was receipted by which PurchaseRequest"
     )
     delivery = models.ForeignKey(
         'delivery.OrderDeliverySub',
@@ -415,8 +427,16 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         null=True,
         verbose_name="goods receipt",
-        related_name="product_wh_serial_goods_receipt",
-        help_text="To know this serial was imported by which GoodsReceipt"
+        related_name="pw_serial_goods_receipt",
+        help_text="To know this serial was receipted by which GoodsReceipt"
+    )
+    purchase_request = models.ForeignKey(
+        'purchasing.PurchaseRequest',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="purchase request",
+        related_name="pw_serial_purchase_request",
+        help_text="To know this serial was receipted by which PurchaseRequest"
     )
 
     class Meta:

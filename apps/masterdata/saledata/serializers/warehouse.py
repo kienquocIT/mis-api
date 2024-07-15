@@ -291,6 +291,8 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    available_picked = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -299,11 +301,13 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'product',
             'warehouse',
             'uom',
-            'stock_amount',
+            'stock_amount',  # total of product in warehouse
             'receipt_amount',
             'sold_amount',
             'picked_ready',
             'agency',
+            'available_stock',  # products that allowed to delivery (not include products for other projects)
+            'available_picked',  # products that allowed to pick (not include products for other projects)
         )
 
     @classmethod
@@ -335,6 +339,28 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_agency(cls, obj):
         return obj.warehouse.agency_id
+
+    @classmethod
+    def get_available_stock(cls, obj):
+        if obj.warehouse and obj.product:
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                quantity_regis = 0
+                for regis in regis_list:
+                    quantity_regis += regis.quantity
+                return obj.stock_amount - quantity_regis
+        return obj.stock_amount
+
+    @classmethod
+    def get_available_picked(cls, obj):
+        if obj.warehouse and obj.product:
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                picked_regis = 0
+                for regis in regis_list:
+                    picked_regis += regis.picked_ready
+                return obj.picked_ready - picked_regis
+        return obj.picked_ready
 
 
 class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):
@@ -452,6 +478,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
 
 class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
     product_warehouse = serializers.SerializerMethodField()
+    quantity_available = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouseLot
@@ -462,6 +489,7 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'expire_date',
             'manufacture_date',
+            'quantity_available',
         )
 
     @classmethod
@@ -491,6 +519,16 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
                 'ratio': obj.product_warehouse.uom.ratio,
             } if obj.product_warehouse.uom else {}
         }
+
+    @classmethod
+    def get_quantity_available(cls, obj):
+        if obj.gre_lot_registered.count() > 0:
+            quantity_regis = 0
+            for lot_registered in obj.gre_lot_registered.all():
+                if lot_registered.gre_general:
+                    quantity_regis += lot_registered.gre_general.quantity
+            return obj.quantity_import - quantity_regis
+        return obj.quantity_import
 
 
 class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):

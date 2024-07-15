@@ -18,6 +18,10 @@ class BaseMsg:
     NOT_EXIST = _('do not exist.')
     REQUIRED = _('This field is required')
     FORMAT_NOT_MATCH = _('The value formatting is incorrect')
+    PROPERTY_IS_ARRAY = _('Application property must be array')
+    APPLICATION_NOT_EXIST = _('Application does not exist.')
+    ZONE_NOT_EXIST = _('Zone does not exist.')
+    ZONE_IS_ARRAY = _('Zone property must be array')
 
 
 class PermissionMsg:

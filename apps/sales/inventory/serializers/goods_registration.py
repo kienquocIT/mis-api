@@ -186,13 +186,69 @@ class GoodsRegistrationItemSubSerializer(serializers.ModelSerializer):
 
 # lấy hàng đăng kí theo dự án
 class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    stock_amount = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    available_picked = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
         fields = (
             'id',
-            'quantity'
+            'product',
+            'warehouse',
+            'uom',
+            'stock_amount',
+            'picked_ready',
+            'available_stock',
+            'available_picked',
         )
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.gre_item:
+            return {
+                'id': obj.gre_item.product_id,
+                'title': obj.gre_item.product.title,
+                'code': obj.gre_item.product.code,
+                'general_traceability_method': obj.gre_item.product.general_traceability_method,
+            } if obj.gre_item.product else {}
+        return {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.gre_item:
+            if obj.gre_item.product:
+                if obj.gre_item.product.general_uom_group:
+                    return {
+                        'id': obj.gre_item.product.general_uom_group.uom_reference_id,
+                        'title': obj.gre_item.product.general_uom_group.uom_reference.title,
+                        'code': obj.gre_item.product.general_uom_group.uom_reference.code,
+                        'ratio': obj.gre_item.product.general_uom_group.uom_reference.ratio
+                    } if obj.gre_item.product.general_uom_group.uom_reference else {}
+        return {}
+
+    @classmethod
+    def get_stock_amount(cls, obj):
+        return obj.quantity
+
+    @classmethod
+    def get_available_stock(cls, obj):
+        return obj.quantity
+
+    @classmethod
+    def get_available_picked(cls, obj):
+        return obj.picked_ready
 
 
 class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
@@ -210,10 +266,11 @@ class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
         return {
             'id': str(obj.lot_registered_id),
             'lot_number': obj.lot_registered.lot_number,
-            'quantity_import': obj.lot_registered.quantity_import,
+            'quantity_import': obj.gre_general.quantity if obj.gre_general else 0,
             'expire_date': obj.lot_registered.expire_date,
-            'manufacture_date': obj.lot_registered.manufacture_date
-        } if obj.lot_registered else None
+            'manufacture_date': obj.lot_registered.manufacture_date,
+            'quantity_available': obj.gre_general.quantity if obj.gre_general else 0,
+        } if obj.lot_registered else {}
 
 
 class GoodsRegistrationSerialSerializer(serializers.ModelSerializer):

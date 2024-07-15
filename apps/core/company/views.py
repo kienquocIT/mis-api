@@ -147,7 +147,7 @@ class CompanyUploadLogo(BaseUpdateMixin):
         instance = super().get_object()
         if instance and self.request.user.company_current == instance:
             return instance
-        raise Company.DoesNotExist
+        return ResponseController.notfound_404()
 
     def write_log(self, *args, **kwargs):
         kwargs['request_data'] = {}
