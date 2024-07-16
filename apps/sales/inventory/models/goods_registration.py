@@ -273,19 +273,20 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
     """ Ghi lại dữ liệu mượn hàng giữa các dự án """
 
     goods_registration_source = models.ForeignKey(
-        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_src', null=True
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_borrow_src', null=True
     )
     gre_item_source = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_src', null=True
     )
 
     quantity = models.FloatField(default=0)
+    available = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="gre_item_borrow_uom", null=True
     )
 
     goods_registration_destination = models.ForeignKey(
-        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_des', null=True
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_borrow_des', null=True
     )
     gre_item_destination = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_des', null=True
