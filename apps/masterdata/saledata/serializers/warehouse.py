@@ -191,10 +191,6 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
                 )
             )
         WarehouseShelf.objects.bulk_create(bulk_info)
-        for shelf in self.initial_data.get('shelf_data_update', []):
-            shelf_id = shelf.get('shelf_id')
-            del shelf['shelf_id']
-            WarehouseShelf.objects.filter(id=shelf_id).update(**shelf)
         return instance
 
 
