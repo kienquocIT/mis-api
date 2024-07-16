@@ -237,7 +237,9 @@ class GoodsRegistrationItemBorrowList(BaseListMixin, BaseCreateMixin):
     queryset = GoodsRegistrationItemBorrow.objects
     filterset_fields = {
         'goods_registration_source_id': ['exact'],
-        'gre_item_source_id': ['exact']
+        'gre_item_source_id': ['exact'],
+        'goods_registration_source__sale_order_id': ['exact'],
+        'gre_item_source__product_id': ['exact'],
     }
     serializer_list = GoodsRegistrationItemBorrowListSerializer
     serializer_create = GoodsRegistrationItemBorrowCreateSerializer

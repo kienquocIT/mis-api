@@ -273,7 +273,7 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
     """ Ghi lại dữ liệu mượn hàng giữa các dự án """
 
     goods_registration_source = models.ForeignKey(
-        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_src', null=True
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_borrow_src', null=True
     )
     gre_item_source = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_src', null=True
@@ -286,7 +286,7 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
     )
 
     goods_registration_destination = models.ForeignKey(
-        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_des', null=True
+        GoodsRegistration, on_delete=models.CASCADE, related_name='gre_borrow_des', null=True
     )
     gre_item_destination = models.ForeignKey(
         GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_borrow_des', null=True

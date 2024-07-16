@@ -192,7 +192,6 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     stock_amount = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
     available_picked = serializers.SerializerMethodField()
-    other_projects = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
@@ -205,7 +204,6 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
             'picked_ready',
             'available_stock',
             'available_picked',
-            'other_projects'
         )
 
     @classmethod
@@ -478,6 +476,7 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         gre_item_src.out_registered += validated_data['quantity']
         gre_item_src.out_available += validated_data['quantity']
         gre_item_src.save(update_fields=['out_registered', 'out_available'])
+        gre_item_src.gre_item_general.all(for_borrow=True).delete()
 
         # cập nhập sl cho mượn cho dự án B
         gre_item_des = validated_data['gre_item_destination']
