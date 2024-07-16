@@ -65,7 +65,7 @@ class ProjectGroupList(BaseListMixin, BaseCreateMixin):
         request_body=GroupCreateSerializers,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='project', model_code='project', perm_code='create'
     )
     def post(self, request, *args, **kwargs):

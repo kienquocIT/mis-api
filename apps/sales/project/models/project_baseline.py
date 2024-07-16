@@ -7,10 +7,10 @@ from apps.shared import DataAbstractModel
 
 
 class ProjectBaseline(DataAbstractModel):
-    project = models.ForeignKey(
+    project_related = models.ForeignKey(
         'project.Project',
         on_delete=models.CASCADE,
-        related_name="%(app_label)s_%(class)s_project",
+        related_name="%(app_label)s_%(class)s_project_related",
     )
     project_data = models.JSONField(
         default=list,

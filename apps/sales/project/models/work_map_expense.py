@@ -36,6 +36,7 @@ class WorkMapExpense(DataAbstractModel):
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
+        null=True,
         verbose_name="Tax",
         help_text="Tax per record",
         related_name='%(app_label)s_%(class)s_tax',

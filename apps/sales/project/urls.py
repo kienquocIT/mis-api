@@ -28,4 +28,5 @@ urlpatterns = [
     path('create-baseline/list', ProjectCreateBaseline.as_view(), name='ProjectCreateBaseline'),
     path('create-baseline/detail/<str:pk>', ProjectBaselineDetail.as_view(), name='ProjectBaselineDetail'),
     path('create-baseline/edit/<str:pk>', ProjectBaselineUpdate.as_view(), name='ProjectBaselineUpdate'),
+
 ]

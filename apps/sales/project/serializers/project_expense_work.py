@@ -9,6 +9,7 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
     expense_item = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
+    work_id = serializers.SerializerMethodField()
 
     @classmethod
     def get_expense_name(cls, obj):
@@ -39,6 +40,10 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
             "rate": obj.tax.rate
         } if obj.tax else {}
 
+    @classmethod
+    def get_work_id(cls, obj):
+        return obj.work.id if obj.work else ''
+
     class Meta:
         model = WorkMapExpense
         fields = (
@@ -53,4 +58,5 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
             'sub_total',
             'sub_total_after_tax',
             'is_labor',
+            'work_id',
         )

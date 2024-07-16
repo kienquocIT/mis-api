@@ -10,7 +10,7 @@ from apps.shared import DisperseModel, FORMATTING
 def get_group(group_lst):
     group = []
     for item in group_lst:
-        group_lst.append(
+        group.append(
             {
                 "id": str(item.group.id),
                 "title": item.group.title,
@@ -26,8 +26,8 @@ def get_group(group_lst):
 
 def get_work_and_expense(work_lst):
     work_map_expense_mds = DisperseModel(app_model='project.WorkMapExpense').get_model()
-    work = []
-    expense = {}
+    get_work_lst = []
+    get_expense_lst = {}
     for item in work_lst:
         temp = {
             "id": str(item.work.id),
@@ -51,16 +51,16 @@ def get_work_and_expense(work_lst):
             temp['relationships_type'] = item.work.work_dependencies_type
         if item.work.work_dependencies_parent:
             temp['dependencies_parent'] = str(item.work.work_dependencies_parent.id)
-        work.append(temp)
+        get_work_lst.append(temp)
 
         list_of_expense = work_map_expense_mds.objects.filter(work=item.work)
         for work in list_of_expense:
-            if str(work.work.id) not in expense:
-                expense[str(work.work.id)] = []
-            expense[str(work.work.id)].append(
+            if str(work.work.id) not in get_expense_lst:
+                get_expense_lst[str(work.work.id)] = []
+            get_expense_lst[str(work.work.id)].append(
                 {
                     'id': str(work.id),
-                    'title': work.title,
+                    'title': work.title if not work.is_labor else '',
                     'expense_name': {
                         'id': str(work.expense_name.id),
                         'title': work.expense_name.title,
@@ -82,15 +82,15 @@ def get_work_and_expense(work_lst):
                         "rate": work.tax.rate
                     } if work.tax else {},
                     'sub_total': work.sub_total,
-                    'sub_total_after_tax': work.sub_total,
-                    'is_labor': bool(work.expense_name),
+                    'sub_total_after_tax': work.sub_total_after_tax,
+                    'is_labor': work.is_labor,
                 }
             )
-    return work, expense
+    return get_work_lst, get_expense_lst
 
 
 def get_task_in_work(task_lst):
-    task = []
+    get_task_lst = []
     if task_lst.exists():
         for item in task_lst:
             task = item.task
@@ -111,8 +111,8 @@ def get_task_in_work(task_lst):
                 } if task and hasattr(task, 'employee_inherit') else {},
                 'work_before': item.work_before,
             }
-            task.append(temp)
-    return task
+            get_task_lst.append(temp)
+    return get_task_lst
 
 
 def get_member_and_perm(member_lst):
@@ -184,7 +184,7 @@ def create_baseline_data(baseline_id: UUID or str, project_id: UUID or str):
         employee_lst_perm = member_mds.objects.select_related('member').filter(project=prj_obj)
         baseline_obj.member_data, baseline_obj.member_perm_data = get_member_and_perm(employee_lst_perm)
 
-        baseline_obj.baseline_version = baseline_mds.objects.filter(project=prj_obj).count()
+        baseline_obj.baseline_version = baseline_mds.objects.filter(project_related=prj_obj).count()
         baseline_obj.save()
         return 'Success'
     return 'CREATE_BASELINE_ERROR'

@@ -28,8 +28,10 @@ class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProjectBaseline
         fields = (
+            'title',
+            'code',
             'project_data',
-            'project',
+            'project_related',
             'employee_created',
             'employee_inherit_id',
             'system_status'
@@ -55,7 +57,7 @@ class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
             my_task=create_baseline_data,
             **{
                 'baseline_id': str(baseline.id),
-                'project_id': str(baseline.project.id)
+                'project_id': str(baseline.project_related.id)
             }
         )
         return baseline
@@ -67,6 +69,7 @@ class ProjectBaselineDetailSerializers(AbstractDetailSerializerModel):
         model = ProjectBaseline
         fields = (
             'id',
+            'code',
             'system_status',
             'project_data',
             'work_expense_data',

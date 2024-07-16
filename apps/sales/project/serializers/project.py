@@ -51,13 +51,15 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
     @classmethod
     def get_baseline(cls, obj):
-        if obj.project_projectbaseline_project.all():
+        if obj.project_projectbaseline_project_related.all():
             baseline = {
                 'project_data': [],
                 'count': 0
             }
-            for item in obj.project_projectbaseline_project.all():
+            for item in obj.project_projectbaseline_project_related.all():
                 project_data = item.project_data
+                if item.system_status <= 1:
+                    continue
                 baseline['project_data'].append({
                     'id': str(item.id),
                     'code': project_data['code'],
@@ -295,21 +297,21 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             for idx in lst:
                 dict_item = lst[idx]
                 for item in dict_item:
-                    if hasattr(item, 'id'):
-                        delete_lst.append(item.id)
+                    if 'id' in item:
+                        delete_lst.append(item['id'])
                         create_lst.append(WorkMapExpense(
-                            id=item.id,
+                            id=item['id'],
                             tenant_id=self.instance.tenant_id,
                             company_id=self.instance.company_id,
                             work_id=idx,
-                            title=item['expense_name'] if isinstance(item['expense_name'], str) else '',
-                            expense_name_id=item['expense_name'] if isinstance(
-                                item['expense_name'], dict) and hasattr(item['expense_name'], 'id') else None,
+                            title=item['title'],
+                            expense_name_id=item['expense_name']['id'] if isinstance(
+                                item['expense_name'], dict) and 'id' in item['expense_name'] else None,
                             expense_item_id=item['expense_item']['id'],
                             uom_id=item['uom']['id'],
                             quantity=item['quantity'],
                             expense_price=item['expense_price'],
-                            tax_id=item['tax']['id'],
+                            tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
                             sub_total=item['sub_total'],
                             sub_total_after_tax=item['sub_total_after_tax'],
                             is_labor=item['is_labor']
@@ -319,14 +321,14 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
                             tenant_id=self.instance.tenant_id,
                             company_id=self.instance.company_id,
                             work_id=idx,
-                            title=item['expense_name'] if isinstance(item['expense_name'], str) else '',
-                            expense_name_id=item['expense_name'] if isinstance(
-                                item['expense_name'], dict) and hasattr(item['expense_name'], 'id') else None,
+                            title=item['title'],
+                            expense_name_id=item['expense_name']['id'] if isinstance(
+                                item['expense_name'], dict) and 'id' in item['expense_name'] else None,
                             expense_item_id=item['expense_item']['id'],
                             uom_id=item['uom']['id'],
                             quantity=item['quantity'],
                             expense_price=item['expense_price'],
-                            tax_id=item['tax']['id'],
+                            tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
                             sub_total=item['sub_total'],
                             sub_total_after_tax=item['sub_total_after_tax'],
                             is_labor=item['is_labor']
@@ -347,6 +349,9 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         work_expense_lst = validated_data.pop('work_expense_data', None)
         delete_expense_lst = validated_data.pop('delete_expense_lst', None)
 
+        # - delete all expense(user delete)
+        # - create and update
+        # - update work info
         self.delete_expense_map_list(delete_expense_lst)
         self.cu_expense_lst(expense_lst)
         self.update_work_expense(work_expense_lst)

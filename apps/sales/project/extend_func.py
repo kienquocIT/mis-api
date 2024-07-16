@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from apps.core.hr.models import DistributionApplication
 from apps.shared import DisperseModel
-from .models import ProjectMapTasks
+from .models import ProjectMapTasks, ProjectWorks, ProjectGroups
 
 
 def pj_get_alias_permit_from_app(employee_obj):
@@ -140,3 +140,57 @@ def re_calc_work_group(work):
         if rate_w > 0:
             group.gr_rate = round(rate_w / list_work.count(), 1)
             group.save()
+
+
+def filter_num(num):
+    str_num = str(num)
+    int_part, dec_part = str_num.split('.')
+
+    # Find the index of the first non-zero digit in the decimal part
+    idx = next((i for i, x in enumerate(dec_part) if x != '0'), len(dec_part))
+
+    # Return the number up to the first non-zero digit in the decimal part
+    return float(int_part + '.' + dec_part[:idx + 1])
+
+
+def calc_weight_all(prj):
+    models_group = prj.project_projectmapgroup_project.all()
+    models_work = prj.project_projectmapwork_project.all()
+    work_not_group = []
+    for item in models_work:
+        work = item.work.project_groupmapwork_work.all()
+        if not work:
+            work_not_group.append(item.work)
+
+    count = models_group.count() + len(work_not_group) + 1
+    new_percent = filter_num(100/count)
+    group_lst = []
+    work_lst = []
+    for item_prj in models_group:
+        item_prj.group.gr_weight = new_percent
+        group_lst.append(item_prj.group)
+
+    for item_proj in work_not_group:
+        item_proj.w_weight = new_percent
+        work_lst.append(item_proj)
+
+    ProjectGroups.objects.bulk_update(group_lst, fields=['gr_weight'])
+    ProjectWorks.objects.bulk_update(work_lst, fields=['w_weight'])
+    return new_percent
+
+
+def calc_weight_work_in_group(group_id, is_update=False):
+    percent = 100
+    model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
+    work_lst = model_cls.objects.filter(group_id=group_id)
+    w_lst_update = []
+    if work_lst:
+        count = work_lst.count()
+        if not is_update:
+            count += 1
+        percent = filter_num(100/count)
+        for w_item in work_lst:
+            w_item.work.w_weight = percent
+            w_lst_update.append(w_item.work)
+        ProjectWorks.objects.bulk_update(w_lst_update, fields=['w_weight'])
+    return percent

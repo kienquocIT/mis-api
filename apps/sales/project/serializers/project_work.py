@@ -3,6 +3,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
+from ..extend_func import calc_weight_work_in_group
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -73,6 +74,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
+        validated_data['w_weight'] = calc_weight_work_in_group(group)
         work = ProjectWorks.objects.create(**validated_data)
         ProjectMapWork.objects.create(project=project, work=work)
         if group:
@@ -163,4 +165,5 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         if group:
             GroupMapWork.objects.filter(work=instance).delete()
             GroupMapWork.objects.create(group_id=group, work=instance)
+        instance.w_weight = calc_weight_work_in_group(group, True)
         return instance
