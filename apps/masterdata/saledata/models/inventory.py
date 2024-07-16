@@ -125,7 +125,7 @@ class WarehouseEmployeeConfigDetail(SimpleAbstractModel):
         permissions = ()
 
 
-class WarehouseShelf(SimpleAbstractModel):
+class WarehouseShelf(MasterDataAbstractModel):
     warehouse = models.ForeignKey(
         WareHouse,
         on_delete=models.CASCADE,
