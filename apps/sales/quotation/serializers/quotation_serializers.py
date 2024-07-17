@@ -316,13 +316,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             validated_data=validated_data,
             instance=quotation
         )
-        # update field quotation & create activity log for opportunity
-        if quotation.opportunity:
-            # update field quotation
-            quotation.opportunity.quotation = None
-            quotation.opportunity.save(**{
-                'update_fields': ['quotation'],
-            })
         return quotation
 
 
@@ -471,10 +464,6 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        # check if change opportunity then update field quotation in opportunity to None
-        if instance.opportunity_id != validated_data.get('opportunity_id', None):
-            instance.opportunity.quotation = None
-            instance.opportunity.save(update_fields=['quotation'])
         # update quotation
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -484,13 +473,6 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True
         )
-        # update field quotation for opportunity
-        if instance.opportunity:
-            instance.opportunity.quotation = instance
-            instance.opportunity.save(**{
-                'update_fields': ['quotation'],
-                'quotation_confirm': instance.is_customer_confirm,
-            })
         return instance
 
 

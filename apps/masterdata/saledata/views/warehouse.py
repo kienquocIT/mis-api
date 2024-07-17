@@ -156,9 +156,12 @@ class ProductWareHouseListForGoodsTransfer(BaseListMixin):
         if 'interact' in self.request.query_params:
             if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
                 interact = self.request.user.employee_current.warehouse_employees_emp
-                return super().get_queryset().select_related(
+                return (super().get_queryset().select_related(
                     'product', 'warehouse', 'uom'
-                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
+                ).filter(warehouse_id__in=interact.warehouse_list).prefetch_related(
+                    'product_warehouse_serial_product_warehouse',
+                    'product_warehouse_lot_product_warehouse'
+                ).order_by('product__code'))
         return super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
         ).prefetch_related(
@@ -231,6 +234,7 @@ class ProductWareHouseSerialList(BaseListMixin):
         "product_warehouse__warehouse_id": ["exact"],
         "serial_number": ["exact"],
         "is_delete": ["exact"],
+        "gre_sn_registered": ["exact", "isnull"],
     }
     serializer_list = ProductWarehouseSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

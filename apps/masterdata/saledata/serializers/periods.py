@@ -4,7 +4,8 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
-from apps.sales.report.models import ReportInventoryProductWarehouse, ReportInventorySub
+from apps.sales.report.models import ReportInventoryCost, ReportStockLog, \
+    ReportInventoryCostWH
 
 
 # Product Type
@@ -156,6 +157,9 @@ def for_serial(item, instance, prd_obj, wh_obj):
                 )
             )
             for serial in item.get('data_sn', []):
+                for key in serial:
+                    if serial[key] == '':
+                        serial[key] = None
                 bulk_info_sn.append(
                     ProductWareHouseSerial(
                         tenant_id=instance.tenant_id,
@@ -209,13 +213,16 @@ def for_lot(item, instance, prd_obj, wh_obj):
             )
         )
         for lot in item.get('data_lot', []):
+            for key in lot:
+                if lot[key] == '':
+                    lot[key] = None
             bulk_info_lot.append(
                 ProductWareHouseLot(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
                     product_warehouse=bulk_info_prd_wh[-1],
                     lot_number=lot.get('lot_number'),
-                    quantity_import=ReportInventorySub.cast_quantity_to_unit(
+                    quantity_import=ReportStockLog.cast_quantity_to_unit(
                         prd_obj.inventory_uom, float(lot.get('quantity_import'))
                     )
                 )
@@ -267,7 +274,7 @@ def for_none(item, instance, prd_obj, wh_obj):
 
 
 def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
-    if ReportInventorySub.objects.filter(
+    if ReportStockLog.objects.filter(
             tenant=instance.tenant,
             company=instance.company,
             product=prd_obj,
@@ -277,7 +284,7 @@ def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
             {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
         )
 
-    if ReportInventoryProductWarehouse.objects.filter(
+    if ReportInventoryCost.objects.filter(
             tenant=instance.tenant,
             company=instance.company,
             product=prd_obj,
@@ -291,6 +298,106 @@ def check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value):
     return True
 
 
+def update_general_sn_lot(item, instance, prd_obj, wh_obj, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot):
+    if len(item.get('data_sn', [])) > 0:
+        sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
+    elif len(item.get('data_lot', [])) > 0:
+        sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
+    elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
+        sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
+    else:
+        sub_prd_wh, sub_sn, sub_lot = [], [], []
+
+    bulk_info_prd_wh += sub_prd_wh
+    bulk_info_sn += sub_sn
+    bulk_info_lot += sub_lot
+    return bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+
+
+def update_balance_data_sub(
+        instance, prd_obj, wh_obj, sub_period_order_value, item, employee_current, sub_period_obj,
+        bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+):
+    check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
+
+    prd_obj.stock_amount += float(item.get('quantity'))
+    prd_obj.available_amount += float(item.get('quantity'))
+    prd_obj.save(update_fields=['stock_amount', 'available_amount'])
+    if instance.company.company_config.definition_inventory_valuation == 0:
+        rp_prd_wh = ReportInventoryCost(
+            tenant=instance.tenant,
+            company=instance.company,
+            employee_created=employee_current,
+            employee_inherit=employee_current,
+            product=prd_obj,
+            warehouse=wh_obj if not instance.company.company_config.cost_per_project else None,
+            period_mapped=instance,
+            sub_period_order=sub_period_order_value,
+            sub_period=sub_period_obj,
+            opening_balance_quantity=float(item.get('quantity')),
+            opening_balance_value=float(item.get('value')),
+            opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+            ending_balance_quantity=float(item.get('quantity')),
+            ending_balance_value=float(item.get('value')),
+            ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+            for_balance=True,
+            sum_input_quantity=float(item.get('quantity')),
+            sum_input_value=float(item.get('value')),
+            sum_output_quantity=0,
+            sum_output_value=0
+        )
+        bulk_info_rp_prd_wh.append(rp_prd_wh)
+        if instance.company.company_config.cost_per_project:
+            bulk_info_rp_prd_wh_wh.append(
+                ReportInventoryCostWH(
+                    report_inventory_cost=rp_prd_wh,
+                    warehouse=wh_obj,
+                    opening_quantity=float(item.get('quantity')),
+                    ending_quantity=float(item.get('quantity'))
+                )
+            )
+    else:
+        rp_prd_wh = ReportInventoryCost(
+            tenant=instance.tenant,
+            company=instance.company,
+            employee_created=employee_current,
+            employee_inherit=employee_current,
+            product=prd_obj,
+            warehouse=wh_obj if not instance.company.company_config.cost_per_project else None,
+            period_mapped=instance,
+            sub_period_order=sub_period_order_value,
+            sub_period=sub_period_obj,
+            opening_balance_quantity=float(item.get('quantity')),
+            opening_balance_value=float(item.get('value')),
+            opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
+            periodic_ending_balance_quantity=float(item.get('quantity')),
+            periodic_ending_balance_value=0,
+            periodic_ending_balance_cost=0,
+            for_balance=True,
+            sum_input_quantity=float(item.get('quantity')),
+            sum_input_value=float(item.get('value')),
+            sum_output_quantity=0,
+            sum_output_value=0,
+            periodic_closed=False
+        )
+        bulk_info_rp_prd_wh.append(rp_prd_wh)
+        if instance.company.company_config.cost_per_project:
+            bulk_info_rp_prd_wh_wh.append(
+                ReportInventoryCostWH(
+                    report_inventory_cost=rp_prd_wh,
+                    warehouse=wh_obj,
+                    opening_quantity=float(item.get('quantity')),
+                    ending_quantity=float(item.get('quantity'))
+                )
+            )
+
+    bulk_info_prd_wh, bulk_info_sn, bulk_info_lot = update_general_sn_lot(
+        item, instance, prd_obj, wh_obj, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+    )
+
+    return bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+
+
 def update_balance_data(balance_data, instance, employee_current):
     """
     Lấy thời gian sử dụng phần mềm
@@ -300,113 +407,44 @@ def update_balance_data(balance_data, instance, employee_current):
             Kiểm tra thử có hđ nhập-xuất nào chưa ?
             Nếu có: raise lỗi
             Else:
-                Lấy record ReportInventoryProductWarehouse (theo period và sub)
+                Lấy record ReportInventoryCost (theo period và sub)
                 Nếu có: raise lỗi
                 Else:
                     Cập nhập 'stock_amount' và 'available_amount' cho Product (cộng lên)
-                    Tạo ReportInventoryProductWarehouse mới (lưu opening_balance_quantity-value-cost)
+                    Tạo ReportInventoryCost mới (lưu opening_balance_quantity-value-cost)
                     Tạo ReportInventory mới (lưu prd-wh theo period và sub)
                     Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
         Else: raise lỗi
     """
     sub_period_order_value = instance.company.software_start_using_time.month - instance.space_month
-    bulk_info_rp_prd_wh = []
-    bulk_info_prd_wh = []
-    bulk_info_sn = []
-    bulk_info_lot = []
     sub_period_obj = instance.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
     if sub_period_obj:
+        bulk_info_rp_prd_wh = []
+        bulk_info_rp_prd_wh_wh = []
+        bulk_info_prd_wh = []
+        bulk_info_sn = []
+        bulk_info_lot = []
         for item in balance_data:
             if item.get('product_id') and item.get('warehouse_id'):
                 prd_obj = Product.objects.filter(id=item.get('product_id')).first()
                 wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                item['quantity'] = ReportInventorySub.cast_quantity_to_unit(
-                    prd_obj.inventory_uom,
-                    float(item.get('quantity'))
+                item['quantity'] = ReportStockLog.cast_quantity_to_unit(
+                    prd_obj.inventory_uom, float(item.get('quantity'))
                 )
                 if prd_obj and wh_obj:
-                    check_valid_update(instance, prd_obj, wh_obj, sub_period_order_value)
-
-                    prd_obj.stock_amount += float(item.get('quantity'))
-                    prd_obj.available_amount += float(item.get('quantity'))
-                    prd_obj.save(update_fields=['stock_amount', 'available_amount'])
-                    if instance.company.company_config.definition_inventory_valuation == 0:
-                        bulk_info_rp_prd_wh.append(
-                            ReportInventoryProductWarehouse(
-                                tenant=instance.tenant,
-                                company=instance.company,
-                                employee_created=employee_current,
-                                employee_inherit=employee_current,
-                                product=prd_obj,
-                                warehouse=wh_obj,
-                                period_mapped=instance,
-                                sub_period_order=sub_period_order_value,
-                                sub_period=sub_period_obj,
-                                opening_balance_quantity=float(item.get('quantity')),
-                                opening_balance_value=float(item.get('value')),
-                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                                ending_balance_quantity=float(item.get('quantity')),
-                                ending_balance_value=float(item.get('value')),
-                                ending_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                                for_balance=True,
-                                sum_input_quantity=float(item.get('quantity')),
-                                sum_input_value=float(item.get('value')),
-                                sum_output_quantity=0,
-                                sum_output_value=0
-                            )
-                        )
-                    else:
-                        bulk_info_rp_prd_wh.append(
-                            ReportInventoryProductWarehouse(
-                                tenant=instance.tenant,
-                                company=instance.company,
-                                employee_created=employee_current,
-                                employee_inherit=employee_current,
-                                product=prd_obj,
-                                warehouse=wh_obj,
-                                period_mapped=instance,
-                                sub_period_order=sub_period_order_value,
-                                sub_period=sub_period_obj,
-                                opening_balance_quantity=float(item.get('quantity')),
-                                opening_balance_value=float(item.get('value')),
-                                opening_balance_cost=float(item.get('value')) / float(item.get('quantity')),
-                                periodic_ending_balance_quantity=float(item.get('quantity')),
-                                periodic_ending_balance_value=0,
-                                periodic_ending_balance_cost=0,
-                                for_balance=True,
-                                sum_input_quantity=float(item.get('quantity')),
-                                sum_input_value=float(item.get('value')),
-                                sum_output_quantity=0,
-                                sum_output_value=0,
-                                periodic_closed=False
-                            )
-                        )
-
-                    # Nếu Số lượng = len(data_sn):
-                    #     Kiểm tra thử Product P đã có trong Warehouse W chưa ?
-                    #     Nếu chưa:
-                    #         Tạo ProductWareHouse mới
-                    #         Tạo các record ProductWareHouseSerial mới
-                    #     Else: raise lỗi
-                    # Else: raise lỗi
-                    if len(item.get('data_sn', [])) > 0:
-                        sub_prd_wh, sub_sn, sub_lot = for_serial(item, instance, prd_obj, wh_obj)
-                    elif len(item.get('data_lot', [])) > 0:
-                        sub_prd_wh, sub_sn, sub_lot = for_lot(item, instance, prd_obj, wh_obj)
-                    elif len(item.get('data_lot', [])) == 0 and len(item.get('data_sn', [])) == 0:
-                        sub_prd_wh, sub_sn, sub_lot = for_none(item, instance, prd_obj, wh_obj)
-                    else:
-                        sub_prd_wh, sub_sn, sub_lot = [], [], []
-
-                    bulk_info_prd_wh += sub_prd_wh
-                    bulk_info_sn += sub_sn
-                    bulk_info_lot += sub_lot
+                    (
+                        bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+                    ) = update_balance_data_sub(
+                        instance, prd_obj, wh_obj, sub_period_order_value, item, employee_current, sub_period_obj,
+                        bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
+                    )
                 else:
                     raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
-            ReportInventoryProductWarehouse.objects.bulk_create(bulk_info_rp_prd_wh)
-            ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
-            ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
-            ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
+        ReportInventoryCost.objects.bulk_create(bulk_info_rp_prd_wh)
+        ReportInventoryCostWH.objects.bulk_create(bulk_info_rp_prd_wh_wh)
+        ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
+        ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
+        ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
         return True
     raise serializers.ValidationError({'Sub period missing': 'Sub period object does not exist.'})
 

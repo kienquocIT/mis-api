@@ -204,6 +204,10 @@ class SaleOrder(DataAbstractModel):
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
     # delivery status
     delivery_status = models.SmallIntegerField(choices=SALE_ORDER_DELIVERY_STATUS, default=0)
+    has_regis = models.BooleanField(
+        default=False,
+        help_text='is True if linked with registration else False',
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -283,7 +287,7 @@ class SaleOrder(DataAbstractModel):
 
                 # create registration
                 if self.opportunity:
-                    GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+                    GoodsRegistration.check_and_create_goods_registration(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:

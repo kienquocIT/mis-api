@@ -227,7 +227,7 @@ class FolderDetailSerializer(serializers.ModelSerializer):
 
 
 class FolderCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     parent_n = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:

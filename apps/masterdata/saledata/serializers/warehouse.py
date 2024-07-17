@@ -22,6 +22,8 @@ __all__ = [
     'WarehouseEmployeeConfigDetailSerializer'
 ]
 
+from apps.masterdata.saledata.models.inventory import WarehouseShelf
+
 from apps.shared import TypeCheck, WarehouseMsg
 
 
@@ -73,6 +75,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
     city = serializers.SerializerMethodField()
     district = serializers.SerializerMethodField()
     ward = serializers.SerializerMethodField()
+    shelf_data = serializers.SerializerMethodField()
 
     class Meta:
         model = WareHouse
@@ -89,7 +92,8 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'district',
             'warehouse_type',
             'agency',
-            'is_dropship'
+            'is_dropship',
+            'shelf_data'
         )
 
     @classmethod
@@ -128,6 +132,17 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_shelf_data(cls, obj):
+        return [{
+            'id': str(shelf.id),
+            'shelf_title': shelf.shelf_title,
+            'shelf_position': shelf.shelf_position,
+            'shelf_order': shelf.shelf_order,
+            'shelf_row': shelf.shelf_row,
+            'shelf_column': shelf.shelf_column
+        } for shelf in obj.warehouse_shelf_position_warehouse.all()]
+
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
     agency = serializers.UUIDField(required=False, allow_null=True)
@@ -156,6 +171,27 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             except Account.DoesNotExist:
                 raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
         return None
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        instance.warehouse_shelf_position_warehouse.all().delete()
+        bulk_info = []
+        for shelf in self.initial_data.get('shelf_data_new', []):
+            bulk_info.append(
+                WarehouseShelf(
+                    warehouse=instance,
+                    shelf_title=shelf.get('shelf_title'),
+                    shelf_position=shelf.get('shelf_position'),
+                    shelf_order=shelf.get('shelf_order'),
+                    shelf_row=shelf.get('shelf_row'),
+                    shelf_column=shelf.get('shelf_column')
+                )
+            )
+        WarehouseShelf.objects.bulk_create(bulk_info)
+        return instance
 
 
 class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
@@ -251,6 +287,8 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    available_picked = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
@@ -259,11 +297,13 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'product',
             'warehouse',
             'uom',
-            'stock_amount',
+            'stock_amount',  # total of product in warehouse
             'receipt_amount',
             'sold_amount',
             'picked_ready',
             'agency',
+            'available_stock',  # products that allowed to delivery (not include products for other projects)
+            'available_picked',  # products that allowed to pick (not include products for other projects)
         )
 
     @classmethod
@@ -295,6 +335,28 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_agency(cls, obj):
         return obj.warehouse.agency_id
+
+    @classmethod
+    def get_available_stock(cls, obj):
+        if obj.warehouse and obj.product:
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                quantity_regis = 0
+                for regis in regis_list:
+                    quantity_regis += regis.quantity
+                return obj.stock_amount - quantity_regis
+        return obj.stock_amount
+
+    @classmethod
+    def get_available_picked(cls, obj):
+        if obj.warehouse and obj.product:
+            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
+            if regis_list:
+                picked_regis = 0
+                for regis in regis_list:
+                    picked_regis += regis.picked_ready
+                return obj.picked_ready - picked_regis
+        return obj.picked_ready
 
 
 class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):
@@ -412,6 +474,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
 
 class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
     product_warehouse = serializers.SerializerMethodField()
+    quantity_available = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouseLot
@@ -422,6 +485,7 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'expire_date',
             'manufacture_date',
+            'quantity_available',
         )
 
     @classmethod
@@ -451,6 +515,16 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
                 'ratio': obj.product_warehouse.uom.ratio,
             } if obj.product_warehouse.uom else {}
         }
+
+    @classmethod
+    def get_quantity_available(cls, obj):
+        if obj.gre_lot_registered.count() > 0:
+            quantity_regis = 0
+            for lot_registered in obj.gre_lot_registered.all():
+                if lot_registered.gre_general:
+                    quantity_regis += lot_registered.gre_general.quantity
+            return obj.quantity_import - quantity_regis
+        return obj.quantity_import
 
 
 class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):

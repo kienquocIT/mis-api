@@ -11,7 +11,7 @@ from apps.core.company.models import (
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
@@ -104,9 +104,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
-        has_trans = ReportInventorySub.objects.filter(
+        has_trans = ReportStockLog.objects.filter(
             tenant=tenant_obj, company=company_obj,
-            report_inventory__period_mapped__fiscal_year=datetime.datetime.now().year
+            report_stock__period_mapped__fiscal_year=datetime.datetime.now().year
         ).exists()
         old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
         if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
@@ -198,6 +198,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
     email_app_password_status = serializers.SerializerMethodField()
+    config_inventory_management = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -217,7 +218,8 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'fax',
             'company_function_number',
             'sub_domain',
-            'logo'
+            'logo',
+            'config_inventory_management'
         )
 
     @classmethod
@@ -252,6 +254,14 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'min_number_char': item.min_number_char
             })
         return company_function_number
+
+    @classmethod
+    def get_config_inventory_management(cls, obj):
+        return {
+            'cost_per_warehouse': obj.company_config.cost_per_warehouse,
+            'cost_per_lot': obj.company_config.cost_per_lot,
+            'cost_per_project': obj.company_config.cost_per_project,
+        }
 
 
 def create_company_function_number(company_obj, company_function_number_data):

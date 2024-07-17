@@ -9,11 +9,10 @@ from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler, DeliFinishHandler
+from ...report.models import ReportStockLog
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
-
-from ...report.models import ReportInventorySub
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
@@ -354,10 +353,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         OrderDeliveryProduct.objects.bulk_create(prod_arr)
 
     @classmethod
-    def create_new_code(cls):
-        delivery = OrderDeliverySub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
+    def create_new_code(cls, tenant, company):
+        delivery = OrderDeliverySub.objects.filter(
+            tenant=tenant,
+            company=company,
             is_delete=False
         ).count()
         char = "D"
@@ -367,7 +366,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
-        new_code = OrderDeliverySubUpdateSerializer.create_new_code()
+        new_code = OrderDeliverySubUpdateSerializer.create_new_code(instance.tenant, instance.company)
         delivered = instance.delivered_quantity_before + total_done
         remain = instance.delivery_quantity - delivered
         new_sub = OrderDeliverySub.objects.create(
@@ -446,7 +445,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
-                casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(
                     uom_obj, lot.get('quantity_delivery')
                 )
                 stock_data.append({
@@ -475,7 +474,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_sn(cls, instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj):
-        casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, len(sn_data))
+        casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, len(sn_data))
         stock_data.append({
             'sale_order': instance.order_delivery.sale_order,
             'product': product_obj,
@@ -508,7 +507,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     lot_data = delivery_data.get('lot_data')
                     sn_data = delivery_data.get('serial_data')
                     if product_obj.general_traceability_method == 0:  # None
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(uom_obj, quantity)
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
                         stock_data.append({
                             'sale_order': instance.order_delivery.sale_order,
                             'product': product_obj,
@@ -529,7 +528,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         cls.for_lot(instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj)
                     if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
                         cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_done,
             stock_data

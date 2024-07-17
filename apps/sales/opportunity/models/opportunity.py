@@ -215,7 +215,14 @@ class Opportunity(DataAbstractModel):
                         'title': condition_title,
                     },
                     'comparison_operator': '=',
-                    'compare_data': int(obj.customer.annual_revenue) if obj.customer else None,
+                    'compare_data': int(obj.customer.annual_revenue) if obj.customer.annual_revenue else None,
+                } if obj.customer else {
+                    'condition_property': {
+                        'id': condition_id,
+                        'title': condition_title,
+                    },
+                    'comparison_operator': '=',
+                    'compare_data': None,
                 }
             ]
         if condition_title == 'Product Category':

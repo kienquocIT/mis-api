@@ -64,6 +64,16 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 } for item in obj.customer.contact_account_name.all()],
                 'phone': obj.customer.phone,
                 'email': obj.customer.email,
+                'shipping_address': [{
+                    'id': item.id,
+                    'country_id': item.country_id,
+                    'city_id': item.city_id,
+                    'district_id': item.district_id,
+                    'ward_id': item.ward_id,
+                    'detail_address': item.detail_address,
+                    'full_address': item.full_address,
+                    'is_default': item.is_default
+                } for item in obj.customer.account_mapped_shipping_address.all()]
             }
         return {}
 
