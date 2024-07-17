@@ -21,7 +21,7 @@ from apps.sales.inventory.serializers import (
     GoodsRegistrationItemBorrowDetailSerializer,
     GoodsRegistrationItemBorrowUpdateSerializer,
     GoodsRegistrationItemSubSerializer,
-    GoodsRegistrationItemAvailableQuantitySerializer
+    GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -324,6 +324,28 @@ class GoodsRegistrationItemAvailableQuantity(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=False,
         # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class GoodsRegisBorrowList(BaseListMixin):
+    queryset = GoodsRegistrationItem.objects
+    filterset_fields = {
+        'so_item__sale_order_id': ['exact'],
+        'product_id': ['exact'],
+    }
+    serializer_list = GoodsRegisBorrowListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Goods Registration Borrow List",
+        operation_description="Get Goods Registration Borrow List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
