@@ -337,8 +337,8 @@ class GoodsRegisBorrowList(BaseListMixin):
     }
     serializer_list = GoodsRegisBorrowListSerializer
 
-    def get_queryset(self):
-        return super().get_queryset()
+    # def get_queryset(self):
+    #     return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Goods Registration Borrow List",
