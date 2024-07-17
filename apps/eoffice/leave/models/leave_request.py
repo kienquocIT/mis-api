@@ -147,7 +147,7 @@ class LeaveRequest(DataAbstractModel):
                         total=is_total,
                         action=2,
                         quantity=item['subtotal'],
-                        adjusted_total=item['subtotal'],
+                        adjusted_total=is_total - item['subtotal'],
                         remark=str(TYPE_LIST[2][1]),
                         type_arises=3
                     )

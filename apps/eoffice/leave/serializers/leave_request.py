@@ -313,7 +313,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
         model = LeaveAvailable
         fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark', 'expiration_date')
 
-    def create_history(self, instance, validated_data, bf_total):
+    def create_history(self, instance, bf_total):
         employee_id = self.context.get('employee_id', None)
         init_data = self.initial_data
         history = LeaveAvailableHistory.objects.create(
@@ -321,7 +321,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
             tenant_id=self.context.get('tenant_id', None),
             leave_available_id=str(instance.id),
             open_year=instance.open_year,
-            employee_inherit=validated_data['employee_inherit'],
+            employee_inherit=instance.employee_inherit,
             total=bf_total,
             action=init_data['action'],
             quantity=init_data['quantity'],
@@ -345,17 +345,15 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
         try:
             initial_data = self.initial_data
             with transaction.atomic():
-                update_total = 0
+                update_total = instance.total - float(initial_data['quantity'])
                 before_total = deepcopy(instance.available)
                 if initial_data['action'] == '1':  # increase
                     update_total = instance.total + float(initial_data['quantity'])
-                else:
-                    update_total = instance.total - float(initial_data['quantity'])
                 instance.total = update_total
                 instance.available = instance.total - instance.used
                 instance.save()
                 if instance:
-                    self.create_history(instance, validated_data, before_total)
+                    self.create_history(instance, before_total)
                 return instance
         except Exception as create_error:
             print('error save leave available', create_error)
