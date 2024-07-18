@@ -3,7 +3,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_work_in_group
+from ..extend_func import calc_weight_work_in_group, reorder_work_when_create
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -69,12 +69,18 @@ class WorkCreateSerializers(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs['employee_inherit'] = attrs['project'].employee_inherit
+        w_start_date = attrs['w_start_date']
+        w_end_date = attrs['w_end_date']
+        if w_end_date < w_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
         return validated_date_work(attrs)
 
     def create(self, validated_data):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
         validated_data['w_weight'] = calc_weight_work_in_group(group)
+        if group:
+            validated_data['order'] = reorder_work_when_create(group)
         work = ProjectWorks.objects.create(**validated_data)
         ProjectMapWork.objects.create(project=project, work=work)
         if group:
@@ -155,6 +161,10 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+        w_start_date = attrs['w_start_date']
+        w_end_date = attrs['w_end_date']
+        if w_end_date < w_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
         return validated_date_work(attrs)
 
     def update(self, instance, validated_data):

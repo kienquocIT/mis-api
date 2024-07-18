@@ -296,6 +296,7 @@ class ProjectMapGroup(DataAbstractModel):
         verbose_name = 'Project map group'
         verbose_name_plural = 'Project map groups'
         default_permissions = ()
+        ordering = ('-date_created',)
         permissions = ()
 
 
