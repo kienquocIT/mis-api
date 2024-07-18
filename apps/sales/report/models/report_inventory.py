@@ -60,7 +60,7 @@ class ReportStock(DataAbstractModel):  # rp_stock
                 **kwargs
             ).first()
             if not rp_stock:
-                rp_stock = cls.objects.get_or_create(
+                rp_stock = cls.objects.create(
                     tenant=tenant_obj,
                     company=company_obj,
                     product=product_obj,

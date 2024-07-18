@@ -15,9 +15,6 @@ class ProjectTaskList(BaseListMixin):
     queryset = ProjectMapTasks.objects
     serializer_list = ProjectTaskListSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    filterset_fields = {
-        'work': ['exact', 'isnull'],
-    }
 
     def get_queryset(self):
         return super().get_queryset().select_related("task", "task__employee_inherit")
@@ -39,6 +36,7 @@ class ProjectTaskList(BaseListMixin):
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
+        params = self.request.query_params.dict()
         state_from_app, data_from_app = self.has_get_list_from_app()
         if state_from_app is True:
             if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
@@ -47,7 +45,16 @@ class ProjectTaskList(BaseListMixin):
         # check permit config exists if from_app not calling...
         prj_has_view_ids = self.get_prj_has_view_this()
         if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
-            return self.filter_kwargs_q__from_config() | Q(project_id__in=prj_has_view_ids)
+            if prj_has_view_ids:
+                filter_kwargs = Q(project_id__in=prj_has_view_ids)
+                if 'project_id' in params and 'work_id' in params:
+                    filter_kwargs &= Q(
+                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id': params.get('work_id')}) | Q(
+                            **{'work_id__isnull': True}
+                        )
+                    )
+                return filter_kwargs
+            return self.filter_kwargs_q__from_config()
         return self.list_empty()
 
     @classmethod
@@ -76,11 +83,6 @@ class ProjectTaskList(BaseListMixin):
             return pj_member_current_user.permit_add_gaw
         return False
 
-    def get_lookup_url_kwarg(self) -> dict:
-        return {
-            'project_id': self.kwargs['pk_pj'],
-        }
-
     @swagger_auto_schema(
         operation_summary="Project task list",
         operation_description="get project task list",
@@ -90,8 +92,10 @@ class ProjectTaskList(BaseListMixin):
         label_code='project', model_code='project', perm_code='view',
         skip_filter_employee=True,
     )
-    def get(self, request, *args, pk_pj, **kwargs):
-        pj_obj = self.get_pj_obj(pk_pj)
+    def get(self, request, *args, **kwargs):
+        params = request.query_params.dict()
+        project_id = params.get('project_id', None)
+        pj_obj = self.get_pj_obj(project_id)
         if pj_obj:
             if self.check_permit_add_member_pj(pj_obj=pj_obj):
                 return self.list(request, *args, **kwargs)

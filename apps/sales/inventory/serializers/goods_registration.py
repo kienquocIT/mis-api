@@ -385,6 +385,8 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
             'quantity',
             'available_stock',
             'product',
+            'base_quantity',
+            'base_available',
             'uom',
             'sale_order',
             'regis_data',
@@ -410,32 +412,32 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
             } if gre_item.product else {}
         return {}
 
-    # @classmethod
-    # def get_uom(cls, obj):
-    #     gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
-    #     if gre_item:
-    #         if gre_item.product:
-    #             if gre_item.product.general_uom_group:
-    #                 return {
-    #                     'id': gre_item.product.general_uom_group.uom_reference_id,
-    #                     'title': gre_item.product.general_uom_group.uom_reference.title,
-    #                     'code': gre_item.product.general_uom_group.uom_reference.code,
-    #                     'ratio': gre_item.product.general_uom_group.uom_reference.ratio
-    #                 } if gre_item.product.general_uom_group.uom_reference else {}
-    #     return {}
-
     @classmethod
     def get_uom(cls, obj):
-        return {
-            'id': obj.uom_id,
-            'title': obj.uom.title,
-            'code': obj.uom.code,
-            'ratio': obj.uom.ratio
-        } if obj.uom else {}
+        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        if gre_item:
+            if gre_item.product:
+                if gre_item.product.general_uom_group:
+                    return {
+                        'id': gre_item.product.general_uom_group.uom_reference_id,
+                        'title': gre_item.product.general_uom_group.uom_reference.title,
+                        'code': gre_item.product.general_uom_group.uom_reference.code,
+                        'ratio': gre_item.product.general_uom_group.uom_reference.ratio
+                    } if gre_item.product.general_uom_group.uom_reference else {}
+        return {}
+
+    # @classmethod
+    # def get_uom(cls, obj):
+    #     return {
+    #         'id': obj.uom_id,
+    #         'title': obj.uom.title,
+    #         'code': obj.uom.code,
+    #         'ratio': obj.uom.ratio
+    #     } if obj.uom else {}
 
     @classmethod
     def get_available_stock(cls, obj):
-        return obj.available
+        return obj.base_available
 
     @classmethod
     def get_regis_data(cls, obj):
@@ -443,7 +445,7 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
         gre_item = obj.gre_item_destination
         if gre_item:
             for regis in GoodsRegistrationGeneralSerializer(gre_item.gre_item_general.all(), many=True).data:
-                regis.update({'available_stock': obj.available})
+                regis.update({'available_stock': obj.base_available})
                 result.append(regis)
         return result
 
@@ -523,11 +525,16 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
             last_borrow = validated_data['last_borrow']
             last_borrow.quantity += validated_data['quantity']
             last_borrow.available += validated_data['quantity']
-            last_borrow.save(update_fields=['quantity', 'available'])
+            last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+            last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+            last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
             instance = last_borrow
         else:
             instance = GoodsRegistrationItemBorrow.objects.create(
-                **validated_data, available=validated_data['quantity']
+                **validated_data,
+                available=validated_data['quantity'],
+                base_quantity=cast_quantity_to_unit(validated_data['uom'], validated_data['quantity']),
+                base_available=cast_quantity_to_unit(validated_data['uom'], validated_data['quantity']),
             )
         return instance
 
@@ -537,7 +544,9 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         last_borrow = validated_data['last_borrow']
         last_borrow.quantity -= validated_data['quantity']
         last_borrow.available -= validated_data['quantity']
-        last_borrow.save(update_fields=['quantity', 'available'])
+        last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+        last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+        last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
         return last_borrow
 
     def create(self, validated_data):
@@ -547,7 +556,7 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         # đổi sang uom đặt hàng
         borrow_quantity = cast_unit_quantity_to_so_uom(
             instance.gre_item_source.so_item.unit_of_measure,
-            cast_quantity_to_unit(instance.uom, instance.quantity)
+            instance.base_quantity
         )
 
         # cập nhập sl mượn của dự án A
@@ -600,7 +609,7 @@ class GoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSerializ
 
     @classmethod
     def get_this_available_base(cls, obj):
-        return obj.this_available * obj.so_item.unit_of_measure.ratio
+        return cast_quantity_to_unit(obj.so_item.unit_of_measure, obj.this_available)
 
 
 # Common serializer to get regis + borrow
