@@ -426,15 +426,6 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
                     } if gre_item.product.general_uom_group.uom_reference else {}
         return {}
 
-    # @classmethod
-    # def get_uom(cls, obj):
-    #     return {
-    #         'id': obj.uom_id,
-    #         'title': obj.uom.title,
-    #         'code': obj.uom.code,
-    #         'ratio': obj.uom.ratio
-    #     } if obj.uom else {}
-
     @classmethod
     def get_available_stock(cls, obj):
         return obj.base_available
