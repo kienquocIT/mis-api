@@ -376,6 +376,7 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
+    regis_data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationItemBorrow
@@ -386,6 +387,7 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'sale_order',
+            'regis_data',
         )
 
     @classmethod
@@ -434,6 +436,16 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_stock(cls, obj):
         return obj.available
+
+    @classmethod
+    def get_regis_data(cls, obj):
+        result = []
+        gre_item = obj.gre_item_destination
+        if gre_item:
+            for regis in GoodsRegistrationGeneralSerializer(gre_item.gre_item_general.all(), many=True).data:
+                regis.update({'available_stock': obj.available})
+                result.append(regis)
+        return result
 
 
 class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
