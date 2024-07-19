@@ -60,7 +60,13 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('period_mapped').prefetch_related()
+        return super().get_queryset().select_related(
+            'period_mapped',
+        ).prefetch_related(
+            'budget_plan_group_budget_plan__group_mapped',
+            'budget_plan_group_budget_plan__budget_plan_group_expense_budget_plan_group__expense_item',
+            'budget_plan_company_expense_budget_plan__expense_item'
+        )
 
     @swagger_auto_schema(
         operation_summary="BudgetPlan detail",
