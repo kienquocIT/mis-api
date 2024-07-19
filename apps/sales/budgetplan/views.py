@@ -1,5 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.budgetplan.models import BudgetPlan
+from apps.core.hr.models import Group
+from apps.sales.budgetplan.models import BudgetPlan, BudgetPlanGroup
 from apps.sales.budgetplan.serializers import (
     BudgetPlanListSerializer, BudgetPlanCreateSerializer,
     BudgetPlanDetailSerializer, BudgetPlanUpdateSerializer
@@ -77,6 +78,20 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='budget_plan', model_code='budgetplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        if 'update_group' in request.query_params:
+            obj = BudgetPlan.objects.filter(id=kwargs['pk']).first()
+            if obj:
+                all_company_group = list(Group.objects.filter(
+                    company_id=obj.company_id, tenant_id=obj.tenant_id, is_delete=False
+                ).values_list('id', flat=True))
+                all_budget_plan_group = list(obj.budget_plan_group_budget_plan.all().values_list(
+                    'group_mapped_id', flat=True
+                ))
+
+                bulk_info = []
+                for group_added_id in list(set(all_company_group).symmetric_difference(set(all_budget_plan_group))):
+                    bulk_info.append(BudgetPlanGroup(budget_plan=obj, group_mapped_id=group_added_id))
+                BudgetPlanGroup.objects.bulk_create(bulk_info)
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(

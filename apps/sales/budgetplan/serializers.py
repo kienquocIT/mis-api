@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.core.hr.models import Group
+from apps.core.hr.models.general import Group
 from apps.masterdata.saledata.models import Periods
 from apps.sales.budgetplan.models import (
     BudgetPlan, BudgetPlanGroup, BudgetPlanCompanyExpense, BudgetPlanGroupExpense
@@ -121,7 +121,7 @@ class BudgetPlanDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_group_budget_data(cls, obj):
         group_budget_data = []
-        for item in obj.budget_plan_group_budget_plan.all():
+        for item in obj.budget_plan_group_budget_plan.filter(group_mapped__is_delete=False):
             group_budget_data.append({
                 'id': item.id,
                 'group': {
@@ -173,22 +173,27 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def create_new_budget_plan_group_expense(cls, instance, budget_plan_group, data_group_budget_plan):
         BudgetPlanGroupExpense.objects.filter(budget_plan_group=budget_plan_group).delete()
-        print(BudgetPlanGroupExpense.objects.all().count())
         bulk_info = []
+        expense_item_id_list_existed = []
         for item in data_group_budget_plan:
+            expense_item_id_list_existed.append(item['expense_item_id'])
             bulk_info.append(
                 BudgetPlanGroupExpense(
                     budget_plan=instance, budget_plan_group=budget_plan_group, **item
                 )
             )
-        BudgetPlanGroupExpense.objects.bulk_create(bulk_info)
-        return True
+        if len(set(expense_item_id_list_existed)) == len(bulk_info):
+            BudgetPlanGroupExpense.objects.bulk_create(bulk_info)
+            return True
+        raise serializers.ValidationError({'expense': 'Expense items are duplicated.'})
 
     @classmethod
     def create_new_budget_plan_company_expense(cls, instance):
-        all_group_expense = BudgetPlanGroupExpense.objects.filter(budget_plan=instance)
+        all_group_expense = BudgetPlanGroupExpense.objects.filter(
+            budget_plan=instance,
+            budget_plan_group__group_mapped__is_delete=False
+        )
         BudgetPlanCompanyExpense.objects.filter(budget_plan=instance).delete()
-        print(BudgetPlanCompanyExpense.objects.all().count())
         existed_expense_id_list = []
         bulk_info = []
         order = 1

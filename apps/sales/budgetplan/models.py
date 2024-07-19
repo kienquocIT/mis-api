@@ -3,7 +3,9 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class BudgetPlan(DataAbstractModel):
-    period_mapped = models.ForeignKey('saledata.Periods', on_delete=models.CASCADE)
+    period_mapped = models.ForeignKey(
+        'saledata.Periods', on_delete=models.CASCADE, related_name='budget_plan_period_mapped'
+    )
     monthly = models.BooleanField(default=False)
     quarterly = models.BooleanField(default=False)
     auto_sum_target = models.BooleanField(default=False)
@@ -23,7 +25,11 @@ class BudgetPlanGroup(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='budget_plan_group_budget_plan'
     )
-    group_mapped = models.ForeignKey('hr.Group', on_delete=models.CASCADE)
+    group_mapped = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name='budget_plan_group_group_mapped'
+    )
 
     class Meta:
         verbose_name = 'Budget Plan Group'
