@@ -1,4 +1,3 @@
-from datetime import datetime
 from rest_framework import serializers
 from apps.core.hr.models import Group
 from apps.masterdata.saledata.models import Periods
