@@ -539,6 +539,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         if self.picked_quantity > self.remaining_quantity:
             raise ValueError(_("Products must have picked quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
+        return True
 
     def create_delivery_product_warehouse(self):
         pw_data = [
@@ -561,7 +562,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             pw_data=pw_data
         )
         return True
-    
+
     def create_lot_serial(self):
         if not self.delivery_lot_delivery_product.exists():
             for delivery in self.delivery_data:
