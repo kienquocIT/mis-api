@@ -296,26 +296,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     "quantity": data['stock']
                 }
                 DeliHandler.minus_tock(source, product_warehouse, config)
-
-    @classmethod
-    def create_delivery_product_warehouse(cls, deli_product_list):
-        for deli_product in deli_product_list:
-            OrderDeliveryProductWarehouse.objects.bulk_create(
-                [
-                    OrderDeliveryProductWarehouse(
-                        delivery_product_id=deli_product.id,
-                        sale_order_id=deli_data.get('sale_order', {}).get('id', None),
-                        sale_order_data=deli_data.get('sale_order', {}),
-                        warehouse_id=deli_data.get('warehouse', {}).get('id', None),
-                        warehouse_data=deli_data.get('warehouse', {}),
-                        uom_id=deli_data.get('uom', {}).get('id', None),
-                        uom_data=deli_data.get('warehouse', {}),
-                        lot_data=deli_data.get('lot_data', {}),
-                        serial_data=deli_data.get('serial_data', {}),
-                        quantity_delivery=deli_data.get('stock', 0),
-                    )
-                ] for deli_data in deli_product.delivery_data
-            )
         return True
 
     @classmethod
@@ -347,6 +327,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
+        return True
 
     @classmethod
     def create_prod(cls, new_sub, instance):
@@ -372,8 +353,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
-        deli_product_list = OrderDeliveryProduct.objects.bulk_create(prod_arr)
-        # cls.create_delivery_product_warehouse(deli_product_list=deli_product_list)
+        OrderDeliveryProduct.objects.bulk_create(prod_arr)
         return True
 
     @classmethod

@@ -540,18 +540,39 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             raise ValueError(_("Products must have picked quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
+    def create_delivery_product_warehouse(self):
+        pw_data = [
+            {
+                'sale_order_id': deli_data.get('sale_order', None),
+                'sale_order_data': deli_data.get('sale_order_data', {}),
+                'warehouse_id': deli_data.get('warehouse', None),
+                'warehouse_data': deli_data.get('warehouse_data', {}),
+                'uom_id': deli_data.get('uom', None),
+                'uom_data': deli_data.get('uom_data', {}),
+                'lot_data': deli_data.get('lot_data', {}),
+                'serial_data': deli_data.get('serial_data', {}),
+                'quantity_delivery': deli_data.get('stock', 0),
+            } for deli_data in self.delivery_data
+        ]
+        OrderDeliveryProductWarehouse.create(
+            delivery_product_id=self.id,
+            tenant_id=self.delivery_sub.tenant_id,
+            company_id=self.delivery_sub.company_id,
+            pw_data=pw_data
+        )
+        return True
+    
     def create_lot_serial(self):
         if not self.delivery_lot_delivery_product.exists():
             for delivery in self.delivery_data:
-                if 'lot_data' in delivery:
-                    OrderDeliveryLot.create(
-                        delivery_product_id=self.id,
-                        delivery_sub_id=self.delivery_sub_id,
-                        delivery_id=self.delivery_sub.order_delivery_id,
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        lot_data=delivery['lot_data']
-                    )
+                OrderDeliveryLot.create(
+                    delivery_product_id=self.id,
+                    delivery_sub_id=self.delivery_sub_id,
+                    delivery_id=self.delivery_sub.order_delivery_id,
+                    tenant_id=self.delivery_sub.tenant_id,
+                    company_id=self.delivery_sub.company_id,
+                    lot_data=delivery.get('lot_data', [])
+                )
             self.update_product_warehouse_lot()
         if not self.delivery_serial_delivery_product.exists():
             for delivery in self.delivery_data:
@@ -610,6 +631,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             del kwargs['for_goods_return']
         if not for_goods_return:
             self.before_save()
+            self.create_delivery_product_warehouse()
             self.create_lot_serial()
         super().save(*args, **kwargs)
 
@@ -665,6 +687,22 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            delivery_product_id,
+            tenant_id,
+            company_id,
+            pw_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            delivery_product_id=delivery_product_id,
+            tenant_id=tenant_id,
+            company_id=company_id,
+        ) for data in pw_data])
+        return True
 
 
 class OrderDeliveryLot(MasterDataAbstractModel):
