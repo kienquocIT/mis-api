@@ -12,14 +12,14 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstra
 
 
 class Project(DataAbstractModel):
-    project_owner = models.ForeignKey(
+    project_pm = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='Representative of project',
-        related_name='%(app_label)s_%(class)s_project_owner',
+        related_name='%(app_label)s_%(class)s_project_pm',
     )
-    project_owner_data = models.JSONField(
+    project_pm_data = models.JSONField(
         default=dict,
-        verbose_name='Employee info backup',
+        verbose_name='Employee PM info backup',
         help_text=json.dumps(
             [
                 {'id': '', 'full_name': '', 'code': ''}
@@ -72,6 +72,21 @@ class Project(DataAbstractModel):
         blank=True,
         related_name='members_of_project'
     )
+    prj_sub_tax_price = models.FloatField(
+        help_text='Total price tax of project',
+        default=0,
+        null=True
+    )
+    prj_sub_total = models.FloatField(
+        help_text='Total price of project',
+        default=0,
+        null=True
+    )
+    prj_sub_total_after_tax = models.FloatField(
+        help_text='Total price after tax',
+        default=0,
+        null=True
+    )
 
     def code_generator(self):
         if not self.code:
@@ -95,11 +110,11 @@ class Project(DataAbstractModel):
                 "full_name": self.employee_inherit.get_full_name(),
                 "code": self.employee_inherit.code
             }
-        if self.project_owner:
-            self.project_owner_data = {
-                "id": str(self.project_owner_id),
-                "full_name": self.project_owner.get_full_name(),
-                "code": self.project_owner.code
+        if self.project_pm:
+            self.project_pm_data = {
+                "id": str(self.project_pm_id),
+                "full_name": self.project_pm.get_full_name(),
+                "code": self.project_pm.code
             }
         return True
 

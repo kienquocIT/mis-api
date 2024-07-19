@@ -36,6 +36,7 @@ class WorkMapExpense(DataAbstractModel):
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
+        null=True,
         verbose_name="Tax",
         help_text="Tax per record",
         related_name='%(app_label)s_%(class)s_tax',
@@ -50,3 +51,10 @@ class WorkMapExpense(DataAbstractModel):
         default=False,
         help_text='flag to know this record is labor or not',
     )
+
+    class Meta:
+        verbose_name = 'Work map expense'
+        verbose_name_plural = 'Work map expense'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

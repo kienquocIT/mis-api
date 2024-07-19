@@ -181,14 +181,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                   'log_time', 'attach', 'percent_completed', 'project', 'work')
 
     @classmethod
-    def validate_title(cls, attrs):
-        if attrs:
-            return attrs
-        raise serializers.ValidationError(
-            {'title': django.utils.translation.gettext_lazy("Title is required.")}
-        )
-
-    @classmethod
     def validate_end_time(cls, attrs):
         if attrs:
             return attrs
@@ -239,8 +231,9 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if 'project' in attrs:
+            prj_obj = attrs['project']
             employee_current = self.context.get('user', None).employee_current
-            check_permit = check_permit_add_member_pj(attrs, employee_current)
+            check_permit = check_permit_add_member_pj(prj_obj, employee_current)
             if check_permit:
                 return attrs
             raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
