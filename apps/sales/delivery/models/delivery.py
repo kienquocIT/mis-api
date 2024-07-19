@@ -621,6 +621,52 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         permissions = ()
 
 
+class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
+    delivery_product = models.ForeignKey(
+        'delivery.OrderDeliveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_pw_delivery_product",
+    )
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="delivery_pw_sale_order",
+        help_text="main sale order of delivery or sale order from other project (borrow)",
+        null=True,
+    )
+    sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="delivery_pw_warehouse",
+    )
+    warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom",
+        related_name="delivery_pw_uom",
+    )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    lot_data = models.JSONField(
+        default=list, help_text='data json of lot [{}, {}], records in OrderDeliveryLot'
+    )
+    serial_data = models.JSONField(
+        default=list, help_text='data json of serial [{}, {}], records in OrderDeliverySerial'
+    )
+    quantity_delivery = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Delivery Product Warehouse'
+        verbose_name_plural = 'Delivery Product Warehouses'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class OrderDeliveryLot(MasterDataAbstractModel):
     delivery = models.ForeignKey(
         OrderDelivery,

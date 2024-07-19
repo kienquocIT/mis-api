@@ -8,6 +8,7 @@ from apps.masterdata.saledata.models import ProductWareHouse, Product, WareHouse
 from apps.shared import TypeCheck, HrMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
+from ..models.delivery import OrderDeliveryProductWarehouse
 from ..utils import DeliHandler, DeliFinishHandler
 from ...report.models import ReportStockLog
 
@@ -297,6 +298,27 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 DeliHandler.minus_tock(source, product_warehouse, config)
 
     @classmethod
+    def create_delivery_product_warehouse(cls, deli_product_list):
+        for deli_product in deli_product_list:
+            OrderDeliveryProductWarehouse.objects.bulk_create(
+                [
+                    OrderDeliveryProductWarehouse(
+                        delivery_product_id=deli_product.id,
+                        sale_order_id=deli_data.get('sale_order', {}).get('id', None),
+                        sale_order_data=deli_data.get('sale_order', {}),
+                        warehouse_id=deli_data.get('warehouse', {}).get('id', None),
+                        warehouse_data=deli_data.get('warehouse', {}),
+                        uom_id=deli_data.get('uom', {}).get('id', None),
+                        uom_data=deli_data.get('warehouse', {}),
+                        lot_data=deli_data.get('lot_data', {}),
+                        serial_data=deli_data.get('serial_data', {}),
+                        quantity_delivery=deli_data.get('stock', 0),
+                    )
+                ] for deli_data in deli_product.delivery_data
+            )
+        return True
+
+    @classmethod
     def update_prod(cls, sub, product_done, config):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=sub
@@ -350,7 +372,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
-        OrderDeliveryProduct.objects.bulk_create(prod_arr)
+        deli_product_list = OrderDeliveryProduct.objects.bulk_create(prod_arr)
+        # cls.create_delivery_product_warehouse(deli_product_list=deli_product_list)
+        return True
 
     @classmethod
     def create_new_code(cls, tenant, company):
@@ -536,9 +560,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return True
 
     def update(self, instance, validated_data):
-        # declare default object
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
-
         validated_product = validated_data['products']
         config = instance.config_at_that_point
         if not config:
