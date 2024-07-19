@@ -1869,6 +1869,45 @@ SALE_PROJECT = {
     "allow_permit": True,
 }
 
+BUDGET_PLAN_APP_CONFIG = {
+    "id": "ac21e8e4-fe32-41f4-9887-ee077677735c",
+    "title": "Budget Plan",
+    "code": "budgetplan",
+    "model_code": "budgetplan",
+    "app_label": "budget_plan",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2101,6 +2140,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c04b2295-307f-49ed-80ab-1ca7f2b32d00": ApplicationConfigFrame(**LEAD_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "ac21e8e4-fe32-41f4-9887-ee077677735c": ApplicationConfigFrame(**BUDGET_PLAN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

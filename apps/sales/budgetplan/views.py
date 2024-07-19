@@ -33,8 +33,8 @@ class BudgetPlanList(BaseListMixin, BaseCreateMixin):
         operation_description="Get BudgetPlan List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='budget_plan', model_code='budgetplan', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='budget_plan', model_code='budgetplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -45,8 +45,8 @@ class BudgetPlanList(BaseListMixin, BaseCreateMixin):
         request_body=BudgetPlanCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='budget_plan', model_code='budgetplan', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='budget_plan', model_code='budgetplan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -73,8 +73,8 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get BudgetPlan detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='budget_plan', model_code='budgetplan', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='budget_plan', model_code='budgetplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -85,8 +85,8 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BudgetPlanUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='budget_plan', model_code='budgetplan', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='budget_plan', model_code='budgetplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
