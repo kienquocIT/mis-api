@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.core.hr.models import Group
-from apps.sales.budgetplan.models import BudgetPlan, BudgetPlanGroup
+from apps.sales.budgetplan.models import BudgetPlan, BudgetPlanGroup, BudgetPlanGroupConfig
 from apps.sales.budgetplan.serializers import (
     BudgetPlanListSerializer, BudgetPlanCreateSerializer,
-    BudgetPlanDetailSerializer, BudgetPlanUpdateSerializer
+    BudgetPlanDetailSerializer, BudgetPlanUpdateSerializer, BudgetPlanGroupConfigListSerializer,
+    BudgetPlanGroupConfigDetailSerializer, BudgetPlanGroupConfigCreateSerializer
 )
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
@@ -78,6 +79,9 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='budget_plan', model_code='budgetplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_current_id': request.user.employee_current_id,
+        }
         if 'update_group' in request.query_params:
             obj = BudgetPlan.objects.filter(id=kwargs['pk']).first()
             if obj:
@@ -104,4 +108,42 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='budget_plan', model_code='budgetplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_current_id': request.user.employee_current_id,
+        }
         return self.update(request, *args, **kwargs)
+
+
+class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = BudgetPlanGroupConfig.objects
+    search_fields = []
+    serializer_list = BudgetPlanGroupConfigListSerializer
+    serializer_create = BudgetPlanGroupConfigCreateSerializer
+    serializer_detail = BudgetPlanGroupConfigDetailSerializer
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="BudgetPlan List",
+        operation_description="Get BudgetPlan List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create BudgetPlan",
+        operation_description="Create new BudgetPlan",
+        request_body=BudgetPlanCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

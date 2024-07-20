@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 class BudgetPlan(DataAbstractModel):
@@ -87,6 +87,48 @@ class BudgetPlanGroupExpense(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Budget Plan Group Expense'
         verbose_name_plural = 'Budget Plans Groups Expenses'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class BudgetPlanGroupConfig(SimpleAbstractModel):
+    company = models.ForeignKey(
+        'company.Company',
+        on_delete=models.CASCADE,
+        related_name='bp_config_company'
+    )
+    employee_allowed = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        related_name='bp_config_employee_allowed'
+    )
+
+    class Meta:
+        verbose_name = 'Budget Plan Group Config'
+        verbose_name_plural = 'Budget Plan Group Configs'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class BudgetPlanGroupConfigEmployeeGroup(SimpleAbstractModel):
+    budget_plan_group_config = models.ForeignKey(
+        BudgetPlanGroupConfig,
+        on_delete=models.CASCADE,
+        related_name='bp_config_detail'
+    )
+    group_allowed = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name='bp_config_detail_group_allowed'
+    )
+    can_view = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Budget Plan Group Config Employee Group'
+        verbose_name_plural = 'Budget Plan Group Config Employees Groups'
         ordering = ()
         default_permissions = ()
         permissions = ()
