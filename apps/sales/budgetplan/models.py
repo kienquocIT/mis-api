@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class BudgetPlan(DataAbstractModel):
