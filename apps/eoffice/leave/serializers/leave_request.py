@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister, LeaveAvailable, LeaveAvailableHistory
-from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST
+from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST, AbstractCreateSerializerModel
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
            'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer',
@@ -74,13 +74,13 @@ class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
         )
 
 
-class LeaveRequestCreateSerializer(serializers.ModelSerializer):
+class LeaveRequestCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     detail_data = serializers.JSONField(allow_null=True)
 
     class Meta:
         model = LeaveRequest
-        fields = ('title', 'employee_inherit_id', 'request_date', 'detail_data', 'start_day', 'total', 'system_status')
+        fields = ('title', 'employee_inherit_id', 'request_date', 'detail_data', 'start_day', 'total')
 
     @classmethod
     def validate_title(cls, value):
@@ -221,13 +221,12 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
         return []
 
 
-class LeaveRequestUpdateSerializer(AbstractDetailSerializerModel):
+class LeaveRequestUpdateSerializer(AbstractCreateSerializerModel):
     detail_data = serializers.JSONField(allow_null=True)
 
     class Meta:
         model = LeaveRequest
-        fields = ('id', 'title', 'code', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total',
-                  'system_status')
+        fields = ('id', 'title', 'code', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total')
 
     @classmethod
     def validate_detail_data(cls, value):

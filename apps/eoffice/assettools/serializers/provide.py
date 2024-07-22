@@ -4,7 +4,7 @@ __all__ = ['AssetToolsProvideCreateSerializer', 'AssetToolsProvideListSerializer
 from rest_framework import serializers
 
 from apps.core.base.models import Application
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, SYSTEM_STATUS
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, AbstractCreateSerializerModel
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared.translations.base import AttachmentMsg
 from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProvideAttachmentFile
@@ -56,7 +56,7 @@ def handle_attach_file(instance, attachment_result):
     return True
 
 
-class AssetToolsProvideCreateSerializer(serializers.ModelSerializer):
+class AssetToolsProvideCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
@@ -194,7 +194,7 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
+class AssetToolsProvideUpdateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True, required=False)
 

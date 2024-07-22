@@ -12,7 +12,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.assettools.models import AssetToolsDeliveryAttachmentFile, AssetToolsDelivery, \
     ProductDeliveredMapProvide
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, DisperseModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, DisperseModel, AbstractCreateSerializerModel
 from apps.shared.translations import AssetToolsMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -71,7 +71,7 @@ def handle_attach_file(instance, attachment_result):
     return True
 
 
-class AssetToolsDeliveryCreateSerializer(serializers.ModelSerializer):
+class AssetToolsDeliveryCreateSerializer(AbstractCreateSerializerModel):
     products = AssetToolsProductsMapDeliverySerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
     employee_inherit_id = serializers.UUIDField()
@@ -241,7 +241,7 @@ class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
         )
 
 
-class AssetToolsDeliveryUpdateSerializer(serializers.ModelSerializer):
+class AssetToolsDeliveryUpdateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProductsMapDeliverySerializer(many=True, required=False)
 
