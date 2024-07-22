@@ -165,7 +165,7 @@ def calc_weight_all(prj, is_delete=False):
     count = models_group.count() + len(work_not_group)
     if not is_delete:
         count += 1
-    new_percent = filter_num(100/count)
+    new_percent = filter_num(100/count) if count > 0 else 100
     group_lst = []
     work_lst = []
     for item_prj in models_group:
@@ -201,7 +201,8 @@ def calc_weight_work_in_group(group_id, is_update=False):
 
 def reorder_work(group_id=None):
     group_obj = ProjectGroups.objects.filter(id=group_id)
-
+    if not group_obj.exists():
+        return False
     work_order = group_obj.order + 1
 
     work_in_group = GroupMapWork.objects.filter(group=group_obj)
