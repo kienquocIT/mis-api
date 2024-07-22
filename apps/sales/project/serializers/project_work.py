@@ -3,7 +3,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_work_in_group, calc_weight_all
+from ..extend_func import calc_weight_work_in_group, calc_weight_all, reorder_work
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -188,7 +188,6 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
             weight_val = calc_weight_work_in_group(validated_group, True)
             # update lại all work, group trong project
             calc_weight_all(project_map_work.project, is_delete=True)
-
         elif has_group_before.exists() and not validated_group:
             # update có group thành ko có group
 
@@ -197,7 +196,6 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
             calc_weight_work_in_group(instance_group.id, True)
             # update lại all work, group trong project
             weight_val = calc_weight_all(project_map_work.project, is_delete=True)
-
         elif has_group_before.exists():
             if str(instance_group.id) != str(validated_group):
                 # update work có group là group mới => update lại work cũ và work mới
@@ -216,6 +214,8 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
         validated_data['w_weight'] = self.check_update_with_group(instance, group)
+        if group:
+            validated_data['order'] = reorder_work(group)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
