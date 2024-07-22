@@ -318,7 +318,7 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
         for item in self.initial_data.get('group_allowed_list'):
             valid_permission += int(item.get('can_view')) + int(item.get('can_edit'))
         if valid_permission <= 0:
-            raise serializers.ValidationError({'permission': 'List Budget plan permissions is empty. =))'})
+            raise serializers.ValidationError({'permission': 'List Budget plan permissions is empty.'})
         return validated_data
 
     def create(self, validated_data):
