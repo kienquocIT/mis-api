@@ -134,6 +134,12 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
+        delete_employee_allowed_id = request.query_params.get('delete_employee_allowed_id')
+        if delete_employee_allowed_id:
+            BudgetPlanGroupConfig.objects.filter(
+                company=request.user.company_current,
+                employee_allowed_id=delete_employee_allowed_id
+            ).delete()
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

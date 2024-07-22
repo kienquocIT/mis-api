@@ -294,6 +294,10 @@ class BudgetPlanGroupConfigListSerializer(serializers.ModelSerializer):  # noqa
 class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
     employee_allowed = serializers.UUIDField(required=True)
 
+    class Meta:
+        model = BudgetPlanGroupConfig
+        fields = ('employee_allowed',)
+
     @classmethod
     def validate_employee_allowed(cls, value):
         try:
@@ -301,9 +305,12 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': 'Employee obj is not exist.'})
 
-    class Meta:
-        model = BudgetPlanGroupConfig
-        fields = ('employee_allowed',)
+    def validate(self, validated_data):
+        if validated_data['employee_allowed'].bp_config_employee_allowed.first():
+            raise serializers.ValidationError(
+                {'employee': 'This employee has config already. Remove old then create new one.'}
+            )
+        return validated_data
 
     def create(self, validated_data):
         config = BudgetPlanGroupConfig.objects.create(**validated_data)
