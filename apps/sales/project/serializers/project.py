@@ -2,7 +2,6 @@ __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailS
            'ProjectUpdateOrderSerializers']
 
 import json
-
 from rest_framework import serializers
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
@@ -59,11 +58,11 @@ class ProjectListSerializers(serializers.ModelSerializer):
                 'count': 0
             }
             for item in obj.project_projectbaseline_project_related.all():
+                if item.system_status <= 1:
+                    continue
                 project_data = item.project_data
                 if not isinstance(project_data, dict):
                     project_data = json.loads(project_data)
-                if item.system_status <= 1:
-                    continue
                 baseline['project_data'].append({
                     'id': str(item.id),
                     'code': project_data['code'],
@@ -81,7 +80,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
                         'completed': len([x for x in item.work_task_data if x['percent'] == 100])
                     },
                     'version': item.baseline_version
-                } if project_data else {})
+                })
                 baseline['count'] += 1
 
             return baseline

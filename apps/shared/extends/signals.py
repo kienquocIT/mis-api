@@ -44,8 +44,9 @@ from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
-from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
+from apps.sales.project.models import ProjectMapMember, ProjectMapTasks, ProjectWorks, ProjectGroups, ProjectMapGroup
 from apps.core.forms.models import Form
+from ...sales.project.extend_func import calc_weight_all
 
 logger = logging.getLogger(__name__)
 
@@ -1133,3 +1134,9 @@ def project_member_event_destroy(sender, instance, **kwargs):
 def form_post_save(sender, instance, created, **kwargs):
     if created is True:
         instance.get_or_create_publish()
+
+
+@receiver(post_delete, sender=ProjectMapGroup)
+def project_group_event_destroy(sender, instance, **kwargs):
+    calc_weight_all(instance.project, True)
+    print('re calculator weight id Done')

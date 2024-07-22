@@ -153,7 +153,7 @@ def filter_num(num):
     return float(int_part + '.' + dec_part[:idx + 1])
 
 
-def calc_weight_all(prj):
+def calc_weight_all(prj, is_delete=False):
     models_group = prj.project_projectmapgroup_project.all()
     models_work = prj.project_projectmapwork_project.all()
     work_not_group = []
@@ -162,7 +162,9 @@ def calc_weight_all(prj):
         if not work:
             work_not_group.append(item.work)
 
-    count = models_group.count() + len(work_not_group) + 1
+    count = models_group.count() + len(work_not_group)
+    if not is_delete:
+        count += 1
     new_percent = filter_num(100/count)
     group_lst = []
     work_lst = []
@@ -180,6 +182,7 @@ def calc_weight_all(prj):
 
 
 def calc_weight_work_in_group(group_id, is_update=False):
+    # calc weight all work in group
     percent = 100
     model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
     work_lst = model_cls.objects.filter(group_id=group_id)
@@ -196,8 +199,7 @@ def calc_weight_work_in_group(group_id, is_update=False):
     return percent
 
 
-def reorder_work_when_create(group_id):
-
+def reorder_work_when_create(group_id=None):
     group_obj = ProjectGroups.objects.get(id=group_id)
     work_order = group_obj.order + 1
 
