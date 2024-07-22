@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from apps.core.hr.models import DistributionApplication
 from apps.shared import DisperseModel
-from .models import ProjectMapTasks, ProjectWorks, ProjectGroups
+from .models import ProjectMapTasks, ProjectWorks, ProjectGroups, GroupMapWork, ProjectMapGroup, ProjectMapWork
 
 
 def pj_get_alias_permit_from_app(employee_obj):
@@ -153,7 +153,7 @@ def filter_num(num):
     return float(int_part + '.' + dec_part[:idx + 1])
 
 
-def calc_weight_all(prj):
+def calc_weight_all(prj, is_delete=False):
     models_group = prj.project_projectmapgroup_project.all()
     models_work = prj.project_projectmapwork_project.all()
     work_not_group = []
@@ -162,7 +162,9 @@ def calc_weight_all(prj):
         if not work:
             work_not_group.append(item.work)
 
-    count = models_group.count() + len(work_not_group) + 1
+    count = models_group.count() + len(work_not_group)
+    if not is_delete:
+        count += 1
     new_percent = filter_num(100/count)
     group_lst = []
     work_lst = []
@@ -180,6 +182,7 @@ def calc_weight_all(prj):
 
 
 def calc_weight_work_in_group(group_id, is_update=False):
+    # calc weight all work in group
     percent = 100
     model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
     work_lst = model_cls.objects.filter(group_id=group_id)
@@ -194,3 +197,33 @@ def calc_weight_work_in_group(group_id, is_update=False):
             w_lst_update.append(w_item.work)
         ProjectWorks.objects.bulk_update(w_lst_update, fields=['w_weight'])
     return percent
+
+
+def reorder_work_when_create(group_id=None):
+    group_obj = ProjectGroups.objects.get(id=group_id)
+    work_order = group_obj.order + 1
+
+    work_in_group = GroupMapWork.objects.filter(group=group_obj)
+    if work_in_group.exists():
+        work_order = work_in_group.order_by('-work__order').last().work.order + 1
+
+    group_bellow = ProjectMapGroup.objects.filter(group=group_obj, order__gte=work_order).order_by('-order')
+    work_bellow = ProjectMapWork.objects.filter(group=group_obj, order__gte=work_order).order_by('-order')
+    merge_lst = []
+    for group_obj in group_bellow:
+        group_obj.order += 1
+        merge_lst.append(group_obj)
+    for work_obj in work_bellow:
+        work_obj.order += 1
+        merge_lst.append(work_obj)
+    sorted(merge_lst, key=lambda x: x.order)
+    g_update_lst = list(filter(lambda x: hasattr(x, 'group'), merge_lst))
+    w_update_lst = list(filter(lambda x: hasattr(x, 'work'), merge_lst))
+    ProjectGroups.objects.bulk_update(g_update_lst, fields=['order'])
+    ProjectWorks.objects.bulk_update(w_update_lst, fields=['order'])
+    return work_order
+
+    # to do here check order when user create work has link group
+    #  lấy order của group, lấy danh sách work trong group lớn hơn và bằng order,
+    #  lấy danh sách group lớn hơn order và bằng, merge lại 2 danh sách group và work này, loop trong danh sách mới
+    #  này lấy ra order và cộng thêm 1 cho tất cả các order này -> save lại
