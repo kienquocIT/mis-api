@@ -282,7 +282,7 @@ class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
             'quantity_import': obj.gre_general.quantity if obj.gre_general else 0,
             'expire_date': obj.lot_registered.expire_date,
             'manufacture_date': obj.lot_registered.manufacture_date,
-            'quantity_available': obj.gre_general.quantity if obj.gre_general else 0,
+            'available_stock': obj.gre_general.quantity if obj.gre_general else 0,
         } if obj.lot_registered else {}
 
 
