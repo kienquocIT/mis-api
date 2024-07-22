@@ -280,15 +280,19 @@ class BudgetPlanGroupConfigListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_group_allowed(cls, obj):
-        return [{
-            'group': {
-                'id': str(item.group_allowed_id),
-                'code': item.group_allowed.code,
-                'title': item.group_allowed.title
-            },
-            'can_view': item.can_view,
-            'can_edit': item.can_edit,
-        } for item in obj.bp_config_detail.all()]
+        group_allowed = []
+        for item in obj.bp_config_detail.all():
+            if item.can_view or item.can_edit:
+                group_allowed.append({
+                    'group': {
+                        'id': str(item.group_allowed_id),
+                        'code': item.group_allowed.code,
+                        'title': item.group_allowed.title
+                    },
+                    'can_view': item.can_view,
+                    'can_edit': item.can_edit,
+                })
+        return group_allowed
 
 
 class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
@@ -310,6 +314,11 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'employee': 'This employee has config already. Remove old then create new one.'}
             )
+        valid_permission = 0
+        for item in self.initial_data.get('group_allowed_list'):
+            valid_permission += int(item.get('can_view')) + int(item.get('can_edit'))
+        if valid_permission <= 0:
+            raise serializers.ValidationError({'permission': 'List Budget plan permissions is empty. =))'})
         return validated_data
 
     def create(self, validated_data):
@@ -324,7 +333,6 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
                     can_edit=item.get('can_edit')
                 )
             )
-
         BudgetPlanGroupConfigEmployeeGroup.objects.bulk_create(bulk_info_bp_gr_config_detail)
         return config
 

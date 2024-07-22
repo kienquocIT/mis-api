@@ -1,17 +1,16 @@
 from rest_framework import serializers
-
+from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency, ExpenseItem
 from apps.sales.cashoutflow.models.advance_payment import AdvancePaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel
+from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel, SYSTEM_STATUS
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
     advance_payment_type = serializers.SerializerMethodField()
-    advance_value = serializers.SerializerMethodField()
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
@@ -20,6 +19,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
     opportunity_id = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    system_status_raw = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -35,15 +37,23 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'return_value',
             'remain_value',
             'money_gave',
-            'creator_name_id',
-            'employee_inherit_id',
+            'employee_inherit',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
             'expense_items',
             'opportunity_id',
-            'system_status'
+            'system_status',
+            'system_status_raw'
         )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_sale_order_mapped(cls, obj):
@@ -146,12 +156,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         return "To Employee"
 
     @classmethod
-    def get_advance_value(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
-        return sum_ap_value
-
-    @classmethod
     def get_to_payment(cls, obj):
         all_items = obj.advance_payment.all()
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
@@ -181,6 +185,14 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             return obj.sale_order_mapped.opportunity_id
         return None
 
+    @classmethod
+    def get_system_status(cls, obj):
+        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
+
+    @classmethod
+    def get_system_status_raw(cls, obj):
+        return obj.system_status
+
 
 def create_expense_items(advance_payment_obj, expense_valid_list):
     vnd_currency = Currency.objects.filter_current(
@@ -190,7 +202,9 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
     ).first()
     if vnd_currency:
         bulk_info = []
+        advance_value = 0
         for item in expense_valid_list:
+            advance_value += item.get('expense_after_tax_price', 0)
             bulk_info.append(AdvancePaymentCost(
                 **item,
                 advance_payment=advance_payment_obj,
@@ -202,6 +216,8 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
         if len(bulk_info) > 0:
             AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
             AdvancePaymentCost.objects.bulk_create(bulk_info)
+            advance_payment_obj.advance_value = advance_value
+            advance_payment_obj.save()
         return True
     return False
 
@@ -289,7 +305,6 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     opportunity_mapped = serializers.SerializerMethodField()
     creator_name = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    advance_value = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
@@ -315,12 +330,6 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'attachment'
         )
-
-    @classmethod
-    def get_advance_value(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
-        return sum_ap_value
 
     @classmethod
     def get_expense_items(cls, obj):
