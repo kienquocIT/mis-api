@@ -199,8 +199,9 @@ def calc_weight_work_in_group(group_id, is_update=False):
     return percent
 
 
-def reorder_work_when_create(group_id=None):
-    group_obj = ProjectGroups.objects.get(id=group_id)
+def reorder_work(group_id=None):
+    group_obj = ProjectGroups.objects.filter(id=group_id)
+
     work_order = group_obj.order + 1
 
     work_in_group = GroupMapWork.objects.filter(group=group_obj)

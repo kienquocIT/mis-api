@@ -99,7 +99,7 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         params = self.request.query_params.dict()
         self.ser_context = {
-            'project': params['project']
+            'project': params['project'],
         }
         return self.list(request, *args, **kwargs)
 
