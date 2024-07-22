@@ -107,7 +107,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'expense_items',
                 'opportunity_id',
                 'system_status',
-                'system_status_raw'
+                'system_status_raw',
+                'employee_inherit'
             ],
             check_sum_second=True,
         )
@@ -639,7 +640,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
-                'system_status_raw'
+                'system_status_raw',
+                'employee_inherit'
             ],
             check_sum_second=True,
         )
