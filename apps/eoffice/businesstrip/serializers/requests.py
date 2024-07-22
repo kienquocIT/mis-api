@@ -13,7 +13,8 @@ from apps.eoffice.businesstrip.models import (
     BusinessRequestAttachmentFile, BusinessRequestEmployeeOnTrip,
 )
 
-from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
+from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel, \
+    AbstractCreateSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.eoffices import BusinessMsg
 
@@ -122,7 +123,7 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
         )
 
 
-class BusinessRequestCreateSerializer(serializers.ModelSerializer):
+class BusinessRequestCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     departure = serializers.UUIDField()
     destination = serializers.UUIDField()
@@ -330,7 +331,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
         )
 
 
-class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
+class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
     expense_items = ExpenseItemListUpdateSerializer(many=True)
     employee_inherit_id = serializers.UUIDField()
 
