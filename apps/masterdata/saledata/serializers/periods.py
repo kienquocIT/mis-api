@@ -476,4 +476,6 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 self.context.get('employee_current')
             )
 
+
+
         return instance

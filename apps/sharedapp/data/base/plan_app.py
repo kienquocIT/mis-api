@@ -290,6 +290,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale
         "application_id": "255d9f44-905f-4bc7-8256-316a6959b683",  # Project baseline
     },
+    "ac21e8e4-fe32-41f4-9887-ee077677735c": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "ac21e8e4-fe32-41f4-9887-ee077677735c",  # Budget Plan
+    },
 }
 
 _PlanApplication_eOffice_data = {
