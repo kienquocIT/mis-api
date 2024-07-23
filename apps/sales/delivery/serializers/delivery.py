@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot
 from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.base import AttachmentMsg
@@ -541,6 +542,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         )
         return True
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
         validated_product = validated_data['products']

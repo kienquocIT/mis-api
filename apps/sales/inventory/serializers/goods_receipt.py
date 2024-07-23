@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
-from apps.shared import AbstractCreateSerializerModel
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
@@ -412,7 +412,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 
 
 # GOODS RECEIPT BEGIN
-class GoodsReceiptListSerializer(serializers.ModelSerializer):
+class GoodsReceiptListSerializer(AbstractListSerializerModel):
     purchase_order = serializers.SerializerMethodField()
     inventory_adjustment = serializers.SerializerMethodField()
 
@@ -446,7 +446,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
         } if obj.inventory_adjustment else {}
 
 
-class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
+class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()

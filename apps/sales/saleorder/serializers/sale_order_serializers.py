@@ -6,11 +6,12 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel
 
 
 # SALE ORDER BEGIN
-class SaleOrderListSerializer(serializers.ModelSerializer):
+class SaleOrderListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()

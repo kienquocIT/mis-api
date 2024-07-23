@@ -6,11 +6,12 @@ from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
-from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel
 
 
 # QUOTATION BEGIN
-class QuotationListSerializer(serializers.ModelSerializer):
+class QuotationListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()

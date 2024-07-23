@@ -7,7 +7,8 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel, AbstractDetailSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -350,7 +351,7 @@ def validate_attachment(instance, value):
 
 
 # BEGIN PURCHASE ORDER
-class PurchaseOrderListSerializer(serializers.ModelSerializer):
+class PurchaseOrderListSerializer(AbstractListSerializerModel):
     supplier = serializers.SerializerMethodField()
 
     class Meta:
@@ -374,7 +375,7 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
         } if obj.supplier else {}
 
 
-class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
+class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests_data = serializers.SerializerMethodField()
     purchase_quotations_data = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()

@@ -283,26 +283,18 @@ class SaleOrder(DataAbstractModel):
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    # code
-                    self.push_code(instance=self, kwargs=kwargs)
-                    # registration
-                    if self.opportunity:
+                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
-                    # product
-                    SOFinishHandler.push_product_info(instance=self)
-                    # opportunity
-                    SOFinishHandler.update_opportunity(instance=self)
-                    # customer
-                    SOFinishHandler.push_to_customer_activity(instance=self)
-                    # reports
-                    SOFinishHandler.push_to_report_revenue(instance=self)
+                    SOFinishHandler.push_product_info(instance=self)  # product
+                    SOFinishHandler.update_opportunity(instance=self)  # opportunity
+                    SOFinishHandler.push_to_customer_activity(instance=self)  # customer
+                    SOFinishHandler.push_to_report_revenue(instance=self)  # reports
                     SOFinishHandler.push_to_report_product(instance=self)
                     SOFinishHandler.push_to_report_customer(instance=self)
                     SOFinishHandler.push_to_report_cashflow(instance=self)
-                    # final acceptance
-                    SOFinishHandler.push_final_acceptance_so(instance=self)
-                    # change document handle
-                    DocumentChangeHandler.change_handle(instance=self)
+                    SOFinishHandler.push_final_acceptance_so(instance=self)  # final acceptance
+                    DocumentChangeHandler.change_handle(instance=self)  # change document handle
 
         if self.system_status in [4]:  # cancel
             # product

@@ -174,18 +174,16 @@ class OrderDelivery(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
-    def create_code_delivery(self):
-        # auto create code (temporary)
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=4)
-            if code_generated:
-                self.code = code_generated
-            else:
-                self.code = self.generate_code(self.company_id)
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+        return True
 
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        self.create_code_delivery()
+        self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:

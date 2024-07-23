@@ -13,6 +13,9 @@ class AbstractListSerializerModel(serializers.ModelSerializer):
             'id': serializers.UUIDField(),
             **super().get_fields(),
             'system_status': serializers.IntegerField(),
+            'is_change': serializers.BooleanField(),
+            'document_root_id': serializers.UUIDField(),
+            'document_change_order': serializers.IntegerField(),
         }
 
     class Meta:

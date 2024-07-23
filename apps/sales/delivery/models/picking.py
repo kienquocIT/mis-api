@@ -148,9 +148,14 @@ class OrderPicking(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+        return True
+
     def save(self, *args, **kwargs):
-        if not self.code:
-            self.code = self.generate_code(self.company_id)
+        self.push_code(instance=self)  # code
         self.set_and_check_quantity()
         self.put_backup_data()
         super().save(*args, **kwargs)
@@ -302,9 +307,13 @@ class OrderPickingSub(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+        return True
+
     def before_save(self):
-        if not self.code:
-            self.code = self.generate_code(self.company_id)
         self.set_and_check_quantity()
         if self.ware_house and not self.ware_house_data:
             self.ware_house_data = {
@@ -314,6 +323,7 @@ class OrderPickingSub(DataAbstractModel):
             }
 
     def save(self, *args, **kwargs):
+        self.push_code(instance=self)  # code
         self.before_save()
         if kwargs.get('force_inserts', False):
             times_arr = OrderPickingSub.objects.filter(order_picking=self.order_picking).values_list('times', flat=True)
