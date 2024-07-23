@@ -563,3 +563,46 @@ SaleOrder_data__params = {
         'is_print': True,
     },
 }
+
+AdvancePayment_data__params = {
+    "9616c619-3d13-4278-b960-33a806af008d": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Code",
+        "code": "code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "eb33b20c-6cb7-4353-a08b-1d4a96e2592d": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Supplier name",
+        "code": "supplier__name",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "b9b001d5-5252-4d79-8b29-ef6276544a32": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment method",
+        "code": "method",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Return date",
+        "code": "return_date",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "a157de67-1af6-46f9-af89-0b9d8621abc1": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance value",
+        "code": "advance_value",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+}

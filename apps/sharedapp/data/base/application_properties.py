@@ -1,4 +1,9 @@
-from .application_properties_params import Quotation_data__params, Bastion_data_params, SaleOrder_data__params
+from .application_properties_params import (
+    Quotation_data__params,
+    Bastion_data_params,
+    SaleOrder_data__params,
+    AdvancePayment_data__params
+)
 
 __all__ = ["ApplicationProperty_data"]
 
@@ -1480,6 +1485,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "expense_valid_list",
         "type": 1,
     },
+    **AdvancePayment_data__params
 }
 
 AppProp_SaleData_Payment_data = {
