@@ -5,7 +5,7 @@ from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot
-from apps.shared import TypeCheck, HrMsg
+from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler, DeliFinishHandler
@@ -104,7 +104,7 @@ class OrderDeliveryListSerializer(serializers.ModelSerializer):
         )
 
 
-class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
+class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -189,7 +189,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField(min_value=1)
 
 
-class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
+class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
     products = ProductDeliveryUpdateSerializer(many=True)
     employee_inherit_id = serializers.UUIDField()
     estimated_delivery_date = serializers.DateTimeField()

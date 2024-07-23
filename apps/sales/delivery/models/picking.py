@@ -2,7 +2,6 @@ import json
 
 from django.db import models
 
-from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION,
 )

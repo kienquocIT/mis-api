@@ -537,6 +537,8 @@ DELIVERY_APP_CONFIG = {
             "local_depends_on": {"view": "==", },
         },
     },
+    "allow_print": True,
+    "allow_mail": True,
     "allow_permit": True,
 }
 

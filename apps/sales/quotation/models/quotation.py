@@ -274,7 +274,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def generate_code(cls, company_id):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
+        num_max = cls.find_max_number(codes=existing_codes)
         if num_max is None:
             code = 'SQ0001'
         elif num_max < 10000:
@@ -285,6 +285,14 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         if cls.objects.filter(code=code, company_id=company_id).exists():
             return cls.generate_code(company_id=company_id)
         return code
+
+    @classmethod
+    def push_code(cls, instance, kwargs):
+        if not instance.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=1)
+            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+            kwargs['update_fields'].append('code')
+        return True
 
     @classmethod
     def check_change_document(cls, instance):
@@ -299,27 +307,16 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:  # added, finish
-            # check if not code then generate code
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=1)
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.code = self.generate_code(self.company_id)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
-            if 'update_fields' in kwargs:
-                if isinstance(kwargs['update_fields'], list):
-                    if 'date_approved' in kwargs['update_fields']:
-                        # opportunity
-                        QuotationFinishHandler.update_opportunity(instance=self)
-                        # customer
-                        QuotationFinishHandler.push_to_customer_activity(instance=self)
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    # code
+                    self.push_code(instance=self, kwargs=kwargs)
+                    # opportunity
+                    QuotationFinishHandler.update_opportunity(instance=self)
+                    # customer
+                    QuotationFinishHandler.push_to_customer_activity(instance=self)
         if self.system_status in [4]:  # cancel
             # opportunity
             QuotationFinishHandler.update_opportunity(instance=self)

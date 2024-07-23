@@ -125,6 +125,13 @@ class PurchaseOrder(DataAbstractModel):
         return code
 
     @classmethod
+    def push_code(cls, instance, kwargs):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+            kwargs['update_fields'].append('code')
+        return True
+
+    @classmethod
     def check_change_document(cls, instance):
         if not instance:
             return False
@@ -137,24 +144,17 @@ class PurchaseOrder(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:  # added, finish
-            # check if not code then generate code
-            if not self.code:
-                self.code = self.generate_code(self.company_id)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
-            if 'update_fields' in kwargs:
-                if isinstance(kwargs['update_fields'], list):
-                    if 'date_approved' in kwargs['update_fields']:
-                        POFinishHandler.update_remain_and_status_purchase_request(instance=self)
-                        POFinishHandler.update_is_all_ordered_purchase_request(instance=self)
-                        POFinishHandler.push_product_info(instance=self)
-                        # report
-                        POFinishHandler.push_to_report_cashflow(instance=self)
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    # code
+                    self.push_code(instance=self, kwargs=kwargs)
+                    POFinishHandler.update_remain_and_status_purchase_request(instance=self)
+                    POFinishHandler.update_is_all_ordered_purchase_request(instance=self)
+                    POFinishHandler.push_product_info(instance=self)
+                    # report
+                    POFinishHandler.push_to_report_cashflow(instance=self)
 
         if self.system_status in [4]:  # cancel
             POFinishHandler.push_product_info(instance=self)
