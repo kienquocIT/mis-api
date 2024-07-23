@@ -919,6 +919,29 @@ class ConfigDefaultData:
         return True
 
 
+@receiver(post_save, sender=TaskResult)
+def update_task_result(sender, instance, create, **kwargs):
+    status = getattr(instance, 'status', '')
+    if status == 'FAILURE':
+        msg = TeleBotPushNotify.generate_msg(
+            idx='CELERY_TASK',
+            status='FAILURE',
+            group_name='INFO',
+            **{
+                'id': str(getattr(instance, 'id', '-')),
+                'task_id': str(getattr(instance, 'task_id', '-')),
+                'task_name': str(getattr(instance, 'task_name', '-')),
+                'task_kwargs': str(getattr(instance, 'task_kwargs', '-')),
+                'task_args': str(getattr(instance, 'task_args', '-')),
+                'date_created': str(getattr(instance, 'date_created', '-')),
+                'date_done': str(getattr(instance, 'date_done', '-')),
+                'trace_back': '-',
+                'errors': str(getattr(instance, 'result', '-')),
+            }
+        )
+        TeleBotPushNotify().send_msg(msg=msg)
+
+
 @receiver(post_save, sender=Company)
 def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
