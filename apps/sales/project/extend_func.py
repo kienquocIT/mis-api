@@ -207,12 +207,10 @@ def reorder_work(group_id=None, prj=None):
 
     work_in_group = GroupMapWork.objects.filter(group=group_obj)
     if work_in_group.exists():
-        work_order = work_in_group.order_by('-work__order').last().work.order + 1
+        work_order = work_in_group.order_by('work__order').last().work.order + 1
 
-    group_bellow = ProjectMapGroup.objects.filter(project=prj, group__order__gte=work_order).order_by(
-        '-group__order'
-    )
-    work_bellow = ProjectMapWork.objects.filter(project=prj, work__order__gte=work_order).order_by('-work__order')
+    group_bellow = ProjectMapGroup.objects.filter(project=prj, group__order__gte=work_order)
+    work_bellow = ProjectMapWork.objects.filter(project=prj, work__order__gte=work_order)
     merge_lst = []
     for group_obj in group_bellow:
         group_obj.group.order += 1

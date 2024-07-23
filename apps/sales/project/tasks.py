@@ -158,13 +158,6 @@ def create_baseline_data(baseline_id: UUID or str, project_id: UUID or str):
         except baseline_mds.DoesNotExist:
             raise ValueError('BASELINE NOT FOUND: ' + baseline_id)
 
-        # try:
-            # prj_data_temp = ast.literal_eval(baseline_obj.project_data)
-        # except json.JSONDecodeError:
-        #     return 'PARSE_DATA_ERROR'
-        # del prj_data_temp['groups']
-        # del prj_data_temp['works']
-        # prj_data_temp = baseline_obj.project_data
         if not isinstance(baseline_obj.project_data, dict):
             raise ValueError('data Project not valid dict')
 
