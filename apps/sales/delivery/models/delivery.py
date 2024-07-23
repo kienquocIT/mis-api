@@ -422,6 +422,41 @@ class OrderDeliverySub(DataAbstractModel):
         )
         return True
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("D")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'D0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'D{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+        return True
+
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
             self.company_id,
@@ -429,6 +464,7 @@ class OrderDeliverySub(DataAbstractModel):
             self.date_approved if self.date_approved else self.date_created
         )
 
+        self.push_code(instance=self)  # code
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(

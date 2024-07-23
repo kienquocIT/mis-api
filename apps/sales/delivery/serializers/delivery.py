@@ -357,20 +357,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         return True
 
     @classmethod
-    def create_new_code(cls, tenant, company):
-        delivery = OrderDeliverySub.objects.filter(
-            tenant=tenant,
-            company=company,
-            is_delete=False
-        ).count()
-        char = "D"
-        temper = delivery + 1
-        new_code = f"{char}{temper:03d}"
-        return new_code
-
-    @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
-        new_code = OrderDeliverySubUpdateSerializer.create_new_code(instance.tenant, instance.company)
         delivered = instance.delivered_quantity_before + total_done
         remain = instance.delivery_quantity - delivered
         new_sub = OrderDeliverySub.objects.create(
@@ -378,7 +365,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             tenant_id=instance.tenant_id,
             order_delivery=instance.order_delivery,
             date_done=None,
-            code=new_code,
             previous_step=instance,
             times=instance.times + 1,
             delivery_quantity=instance.delivery_quantity,
@@ -395,7 +381,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             customer_data=instance.customer_data,
             contact_data=instance.contact_data,
             config_at_that_point=instance.config_at_that_point,
-            employee_inherit=instance.employee_inherit
+            employee_inherit=instance.employee_inherit,
+            system_status=1,
         )
         return new_sub
 

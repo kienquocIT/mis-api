@@ -5,7 +5,6 @@ from django.utils import timezone
 
 from celery import shared_task
 
-# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -164,7 +163,6 @@ class SaleOrderActiveDeliverySerializer:
             date_done=None,
             previous_step=None,
             times=1,
-            code=obj.code,
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
             # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
@@ -253,10 +251,8 @@ class SaleOrderActiveDeliverySerializer:
             self.order_obj.opportunity.handle_stage_win_rate(obj=self.order_obj.opportunity)
         return order_delivery
 
-    # @decorator_run_workflow
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
-            code=obj_delivery.code,
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             id=sub_id,
