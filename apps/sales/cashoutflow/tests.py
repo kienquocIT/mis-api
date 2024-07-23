@@ -632,7 +632,12 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
-                'attachment'
+                'attachment',
+                'workflow_runtime_id',
+                'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order'
             ],
             check_sum_second=True,
         )
