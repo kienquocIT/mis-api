@@ -13,7 +13,7 @@ class ProjectBaseline(DataAbstractModel):
         related_name="%(app_label)s_%(class)s_project_related",
     )
     project_data = models.JSONField(
-        default=list,
+        default=dict,
         help_text=json.dumps(
             {
                 "id": "ce0c0422-ffb8-4891-aaf7-c54bc7f17d9a",
@@ -103,7 +103,7 @@ class ProjectBaseline(DataAbstractModel):
         verbose_name='Member data list'
     )
     member_perm_data = models.JSONField(
-        default=list,
+        default=dict,
         help_text=json.dumps(
             {
                 "ef3ab1bb-e699-4250-ac6d-aefacb77385e": [{

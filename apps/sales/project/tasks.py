@@ -154,27 +154,30 @@ def create_baseline_data(baseline_id: UUID or str, project_id: UUID or str):
         try:
             prj_obj = project_mds.objects.get(id=project_id)
         except project_mds.DoesNotExist:
-            return 'PROJECT NOT FOUND: ' + project_id
+            raise ValueError('PROJECT NOT FOUND: ' + project_id)
         try:
             baseline_obj = baseline_mds.objects.get(id=baseline_id)
         except baseline_mds.DoesNotExist:
-            return 'BASELINE NOT FOUND: ' + baseline_id
+            raise ValueError('BASELINE NOT FOUND: ' + baseline_id)
 
-        try:
-            prj_data_temp = ast.literal_eval(baseline_obj.project_data)
-        except json.JSONDecodeError:
-            return 'PARSE_DATA_ERROR'
-        del prj_data_temp['groups']
-        del prj_data_temp['works']
+        # try:
+            # prj_data_temp = ast.literal_eval(baseline_obj.project_data)
+        # except json.JSONDecodeError:
+        #     return 'PARSE_DATA_ERROR'
+        # del prj_data_temp['groups']
+        # del prj_data_temp['works']
+        # prj_data_temp = baseline_obj.project_data
+        if not isinstance(baseline_obj.project_data, dict):
+            raise ValueError('data Project not valid dict')
 
         # get GROUP list
         group = group_mds.objects.select_related('group').filter(project=prj_obj)
-        prj_data_temp['group'] = get_group(group)
+        baseline_obj.project_data['group'] = get_group(group)
 
         # get WORK list and EXPENSE list map with WORK
         work = work_mds.objects.select_related('work').filter(project=prj_obj)
-        prj_data_temp['work'], baseline_obj.work_expense_data = get_work_and_expense(work)
-        baseline_obj.project_data = prj_data_temp
+        baseline_obj.project_data['work'], baseline_obj.work_expense_data = get_work_and_expense(work)
+        baseline_obj.project_data = baseline_obj.project_data
 
         # get TASK list assign for WORK in PROJECT
         proj_map_task_all = task_map_work_mds.objects.select_related('task', 'work').filter(project=prj_obj)

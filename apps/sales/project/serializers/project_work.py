@@ -79,9 +79,9 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
         if group:
-            if project:
-                prj_obj = Project.objects.get(id=project)
-                validated_data['order'] = reorder_work(group, prj_obj)
+            # if project:
+            #     prj_obj = Project.objects.get(id=project)
+            #     validated_data['order'] = reorder_work(group, prj_obj)
             validated_data['w_weight'] = calc_weight_work_in_group(group)
         else:
             validated_data['w_weight'] = calc_weight_all(project)
