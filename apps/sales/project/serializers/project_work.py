@@ -79,6 +79,9 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
         if group:
+            if project:
+                prj_obj = Project.objects.get(id=project)
+                validated_data['order'] = reorder_work(group, prj_obj)
             validated_data['w_weight'] = calc_weight_work_in_group(group)
         else:
             validated_data['w_weight'] = calc_weight_all(project)
@@ -213,9 +216,10 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
+        # if group:
+            # prj_obj = instance.project_projectmapwork_work.all().first().project
+            # validated_data['order'] = reorder_work(group, prj_obj)
         validated_data['w_weight'] = self.check_update_with_group(instance, group)
-        if group:
-            validated_data['order'] = reorder_work(group)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

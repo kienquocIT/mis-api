@@ -199,9 +199,9 @@ def calc_weight_work_in_group(group_id, is_update=False):
     return percent
 
 
-def reorder_work(group_id=None):
-    group_obj = ProjectGroups.objects.filter(id=group_id)
-    if not group_obj.exists():
+def reorder_work(group_id=None, prj=None):
+    group_obj = ProjectGroups.objects.filter(id=group_id).first()
+    if not group_obj:
         return False
     work_order = group_obj.order + 1
 
@@ -209,23 +209,19 @@ def reorder_work(group_id=None):
     if work_in_group.exists():
         work_order = work_in_group.order_by('-work__order').last().work.order + 1
 
-    group_bellow = ProjectMapGroup.objects.filter(group=group_obj, order__gte=work_order).order_by('-order')
-    work_bellow = ProjectMapWork.objects.filter(group=group_obj, order__gte=work_order).order_by('-order')
+    group_bellow = ProjectMapGroup.objects.filter(project=prj, group__order__gte=work_order).order_by(
+        '-group__order'
+    )
+    work_bellow = ProjectMapWork.objects.filter(project=prj, work__order__gte=work_order).order_by('-work__order')
     merge_lst = []
     for group_obj in group_bellow:
-        group_obj.order += 1
-        merge_lst.append(group_obj)
+        group_obj.group.order += 1
+        merge_lst.append(group_obj.group)
     for work_obj in work_bellow:
-        work_obj.order += 1
-        merge_lst.append(work_obj)
-    sorted(merge_lst, key=lambda x: x.order)
-    g_update_lst = list(filter(lambda x: hasattr(x, 'group'), merge_lst))
-    w_update_lst = list(filter(lambda x: hasattr(x, 'work'), merge_lst))
+        work_obj.work.order += 1
+        merge_lst.append(work_obj.work)
+    g_update_lst = list(filter(lambda x: hasattr(x, 'gr_weight'), merge_lst))
+    w_update_lst = list(filter(lambda x: hasattr(x, 'work_status'), merge_lst))
     ProjectGroups.objects.bulk_update(g_update_lst, fields=['order'])
     ProjectWorks.objects.bulk_update(w_update_lst, fields=['order'])
     return work_order
-
-    # to do here check order when user create work has link group
-    #  lấy order của group, lấy danh sách work trong group lớn hơn và bằng order,
-    #  lấy danh sách group lớn hơn order và bằng, merge lại 2 danh sách group và work này, loop trong danh sách mới
-    #  này lấy ra order và cộng thêm 1 cho tất cả các order này -> save lại
