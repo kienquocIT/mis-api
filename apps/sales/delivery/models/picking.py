@@ -121,21 +121,6 @@ class OrderPicking(DataAbstractModel):
             }
         return True
 
-    def create_code_picking(self):
-        # auto create code (temporary)
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=3)
-            if code_generated:
-                self.code = code_generated
-            else:
-                picking = OrderPickingSub.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
-                ).count()
-                char = "P"
-                temper = picking + 1
-                code = f"{char}{temper:03d}"
-                self.code = code
-
     @classmethod
     def find_max_number(cls, codes):
         num_max = None
@@ -290,21 +275,37 @@ class OrderPickingSub(DataAbstractModel):
             raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.pickup_quantity - self.picked_quantity_before
 
-    def create_code_picking(self):
-        # auto create code (temporary)
-        delivery = OrderPickingSub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        if not self.code:
-            char = "P"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("P")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'P0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'P{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
 
     def before_save(self):
-        self.create_code_picking()
+        if not self.code:
+            self.code = self.generate_code(self.company_id)
         self.set_and_check_quantity()
         if self.ware_house and not self.ware_house_data:
             self.ware_house_data = {

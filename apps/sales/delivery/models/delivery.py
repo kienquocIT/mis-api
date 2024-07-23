@@ -146,6 +146,34 @@ class OrderDelivery(DataAbstractModel):
             }
         return True
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("D")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'D0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'D{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
     def create_code_delivery(self):
         # auto create code (temporary)
         if not self.code:
@@ -153,13 +181,7 @@ class OrderDelivery(DataAbstractModel):
             if code_generated:
                 self.code = code_generated
             else:
-                delivery = OrderDeliverySub.objects.filter(
-                    tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
-                ).count()
-                char = "D"
-                temper = delivery + 1
-                code = f"{char}{temper:03d}"
-                self.code = code
+                self.code = self.generate_code(self.company_id)
 
     def save(self, *args, **kwargs):
         self.put_backup_data()
@@ -296,17 +318,6 @@ class OrderDeliverySub(DataAbstractModel):
         if self.ready_quantity > self.remaining_quantity:
             raise ValueError(_("Products must have delivery quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
-
-    def create_code_delivery(self):
-        # auto create code (temporary)
-        delivery = OrderDeliverySub.objects.filter(
-            tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
-        ).count()
-        if not self.code:
-            char = "D"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
 
     @classmethod
     def for_lot(cls, instance, deli_item, deli_data, stock_data, main_product_unit_price):
