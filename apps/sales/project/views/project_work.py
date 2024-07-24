@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
 from apps.sales.project.extend_func import get_prj_mem_of_crt_user
-from apps.sales.project.models import ProjectWorks, ProjectMapMember, Project
+from apps.sales.project.models import ProjectWorks, ProjectMapMember, Project, ProjectMapWork
 from apps.sales.project.serializers import WorkListSerializers, WorkCreateSerializers, WorkDetailSerializers, \
     WorkUpdateSerializers
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, TypeCheck, ResponseController, BaseRetrieveMixin, \
@@ -44,13 +44,11 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
                 return item_data['prj'].keys()
         return []
 
-    def get_project_has_view_this(self):
+    @classmethod
+    def get_project_has_view_this(cls, prj_id):
+        prj_lst = ProjectMapWork.objects.filter(project_id=prj_id)
         return [
-            str(item) for item in ProjectMapMember.objects.filter_current(
-                fill__tenant=True, fill__company=True,
-                member_id=self.cls_check.employee_attr.employee_current_id,
-                permit_view_this_project=True,
-            ).values_list('project_id', flat=True)
+            str(item) for item in prj_lst.values_list('work_id', flat=True)
         ]
 
     @property
@@ -60,14 +58,15 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         query_params: from_app=app_label-model_code
         """
         state_from_app, data_from_app = self.has_get_list_from_app()
+        params = self.request.query_params.dict()
         if state_from_app is True:
             if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
                 return self.filter_kwargs_q__from_app(data_from_app)
             return self.list_empty()
         # check permit config exists if from_app not calling...
-        project_has_view_ids = self.get_project_has_view_this()
-        if self.cls_check.permit_cls.config_data__exist or project_has_view_ids:
-            return self.filter_kwargs_q__from_config() | Q(id__in=project_has_view_ids)
+        project_has_view_ids = self.get_project_has_view_this(params['project'])
+        if project_has_view_ids:
+            return Q(id__in=project_has_view_ids)
         return self.list_empty()
 
     def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
@@ -98,6 +97,10 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        params = self.request.query_params.dict()
+        self.ser_context = {
+            'project': params['project'],
+        }
         return self.list(request, *args, **kwargs)
 
     def get_project_member_of_current_user(self, project_obj):
@@ -131,6 +134,11 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         data = request.data
         prj_pk = data.get('project')
         pj_obj = get_project_obj(prj_pk)
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+            'employee_id': request.user.employee_current_id,
+        }
         if pj_obj:
             if self.check_permit_add_gaw(project_obj=pj_obj):
                 return self.create(request, *args, **kwargs)

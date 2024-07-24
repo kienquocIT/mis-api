@@ -24,6 +24,8 @@ class ProjectBaselineListSerializers(serializers.ModelSerializer):
 
 class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
+    project_data = serializers.DictField()
+    # ProjectDetailSerializers()
 
     class Meta:
         model = ProjectBaseline
@@ -47,7 +49,7 @@ class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
     def validate_project_data(cls, value):
         if not value:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_CREATE_BASELINE})
-        return str(value)
+        return value
 
     @decorator_run_workflow
     def create(self, validated_data):

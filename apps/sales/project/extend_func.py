@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from apps.core.hr.models import DistributionApplication
 from apps.shared import DisperseModel
-from .models import ProjectMapTasks, ProjectWorks, ProjectGroups
+from .models import ProjectMapTasks, ProjectWorks, ProjectGroups, GroupMapWork, ProjectMapGroup, ProjectMapWork
 
 
 def pj_get_alias_permit_from_app(employee_obj):
@@ -153,7 +153,7 @@ def filter_num(num):
     return float(int_part + '.' + dec_part[:idx + 1])
 
 
-def calc_weight_all(prj):
+def calc_weight_all(prj, is_delete=False):
     models_group = prj.project_projectmapgroup_project.all()
     models_work = prj.project_projectmapwork_project.all()
     work_not_group = []
@@ -162,8 +162,10 @@ def calc_weight_all(prj):
         if not work:
             work_not_group.append(item.work)
 
-    count = models_group.count() + len(work_not_group) + 1
-    new_percent = filter_num(100/count)
+    count = models_group.count() + len(work_not_group)
+    if not is_delete:
+        count += 1
+    new_percent = filter_num(100/count) if count > 0 else 100
     group_lst = []
     work_lst = []
     for item_prj in models_group:
@@ -180,6 +182,7 @@ def calc_weight_all(prj):
 
 
 def calc_weight_work_in_group(group_id, is_update=False):
+    # calc weight all work in group
     percent = 100
     model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
     work_lst = model_cls.objects.filter(group_id=group_id)
@@ -194,3 +197,31 @@ def calc_weight_work_in_group(group_id, is_update=False):
             w_lst_update.append(w_item.work)
         ProjectWorks.objects.bulk_update(w_lst_update, fields=['w_weight'])
     return percent
+
+
+def reorder_work(group_id=None, prj=None):
+    group_obj = ProjectGroups.objects.filter(id=group_id).first()
+    if not group_obj:
+        return False
+    work_order = group_obj.order + 1
+
+    work_in_group = GroupMapWork.objects.filter(group=group_obj)
+    if work_in_group.exists():
+        work_order = work_in_group.order_by('-work__order').last().work.order + 1
+
+    group_bellow = ProjectMapGroup.objects.filter(project=prj, group__order__gte=work_order).order_by(
+        '-group__order'
+    )
+    work_bellow = ProjectMapWork.objects.filter(project=prj, work__order__gte=work_order).order_by('-work__order')
+    merge_lst = []
+    for group_obj in group_bellow:
+        group_obj.group.order += 1
+        merge_lst.append(group_obj.group)
+    for work_obj in work_bellow:
+        work_obj.work.order += 1
+        merge_lst.append(work_obj.work)
+    g_update_lst = list(filter(lambda x: hasattr(x, 'gr_weight'), merge_lst))
+    w_update_lst = list(filter(lambda x: hasattr(x, 'work_status'), merge_lst))
+    ProjectGroups.objects.bulk_update(g_update_lst, fields=['order'])
+    ProjectWorks.objects.bulk_update(w_update_lst, fields=['order'])
+    return work_order

@@ -3,7 +3,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_work_in_group
+from ..extend_func import calc_weight_work_in_group, calc_weight_all
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -69,14 +69,28 @@ class WorkCreateSerializers(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs['employee_inherit'] = attrs['project'].employee_inherit
+        w_start_date = attrs['w_start_date']
+        w_end_date = attrs['w_end_date']
+        if w_end_date < w_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
         return validated_date_work(attrs)
 
     def create(self, validated_data):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
-        validated_data['w_weight'] = calc_weight_work_in_group(group)
+        if group:
+            # if project:
+            #     prj_obj = Project.objects.get(id=project)
+            #     validated_data['order'] = reorder_work(group, prj_obj)
+            validated_data['w_weight'] = calc_weight_work_in_group(group)
+        else:
+            validated_data['w_weight'] = calc_weight_all(project)
         work = ProjectWorks.objects.create(**validated_data)
-        ProjectMapWork.objects.create(project=project, work=work)
+        ProjectMapWork.objects.create(
+            project=project, work=work,
+            tenant=work.tenant,
+            company=work.company
+        )
         if group:
             GroupMapWork.objects.create(group_id=group, work=work)
         return work
@@ -155,15 +169,55 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+        w_start_date = attrs['w_start_date']
+        w_end_date = attrs['w_end_date']
+        if w_end_date < w_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
         return validated_date_work(attrs)
+
+    @classmethod
+    def check_update_with_group(cls, instance_work, validated_group):
+        project_map_work = instance_work.project_projectmapwork_work.all().first()
+
+        has_group_before = instance_work.project_groupmapwork_work.all()
+        weight_val = instance_work.w_weight
+        instance_group = has_group_before.first().group if has_group_before.exists() else None
+
+        if not has_group_before.exists() and validated_group:
+            # update ko có group thành có group
+
+            # update all work trong group validated
+            GroupMapWork.objects.create(group_id=validated_group, work=instance_work)
+            weight_val = calc_weight_work_in_group(validated_group, True)
+            # update lại all work, group trong project
+            calc_weight_all(project_map_work.project, is_delete=True)
+        elif has_group_before.exists() and not validated_group:
+            # update có group thành ko có group
+
+            # update all work trong group cũ
+            GroupMapWork.objects.filter(work=instance_work).delete()
+            calc_weight_work_in_group(instance_group.id, True)
+            # update lại all work, group trong project
+            weight_val = calc_weight_all(project_map_work.project, is_delete=True)
+        elif has_group_before.exists():
+            if str(instance_group.id) != str(validated_group):
+                # update work có group là group mới => update lại work cũ và work mới
+                if validated_group:
+                    GroupMapWork.objects.filter(work=instance_work).delete()
+                    GroupMapWork.objects.create(group_id=validated_group, work=instance_work)
+
+                    # update group cũ
+                    calc_weight_work_in_group(instance_group.id, True)
+                    # update group mới
+                    weight_val = calc_weight_work_in_group(validated_group, True)
+                else:
+                    GroupMapWork.objects.filter(work=instance_work).delete()
+        return weight_val
 
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
+        validated_data['w_weight'] = self.check_update_with_group(instance, group)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        if group:
-            GroupMapWork.objects.filter(work=instance).delete()
-            GroupMapWork.objects.create(group_id=group, work=instance)
-        instance.w_weight = calc_weight_work_in_group(group, True)
         return instance
