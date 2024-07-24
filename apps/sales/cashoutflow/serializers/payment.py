@@ -167,9 +167,9 @@ def create_payment_cost_items(payment_obj, payment_expense_valid_list):
         payment_obj.advance_value = payment_value
 
         opp = payment_obj.opportunity_mapped
-        quo = payment_obj.quotation_mapped
-        so = payment_obj.sale_order_mapped
-        sale_code = so.code if so else quo.code if quo else opp.code if opp else None
+        quotation = payment_obj.quotation_mapped
+        sale_order = payment_obj.sale_order_mapped
+        sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
         payment_obj.sale_code = sale_code
 
         payment_obj.save(update_fields=['payment_value', 'sale_code'])

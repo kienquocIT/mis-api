@@ -219,9 +219,9 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
             advance_payment_obj.advance_value = advance_value
 
             opp = advance_payment_obj.opportunity_mapped
-            quo = advance_payment_obj.quotation_mapped
-            so = advance_payment_obj.sale_order_mapped
-            sale_code = so.code if so else quo.code if quo else opp.code if opp else None
+            quotation = advance_payment_obj.quotation_mapped
+            sale_order = advance_payment_obj.sale_order_mapped
+            sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
             advance_payment_obj.sale_code = sale_code
 
             advance_payment_obj.save(update_fields=['advance_value', 'sale_code'])
