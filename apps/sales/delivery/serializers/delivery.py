@@ -6,7 +6,8 @@ from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot
-from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
+from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler, DeliFinishHandler
@@ -68,7 +69,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         )
 
 
-class OrderDeliverySubListSerializer(serializers.ModelSerializer):
+class OrderDeliverySubListSerializer(AbstractListSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
 
     @classmethod

@@ -183,7 +183,7 @@ class OrderDelivery(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        self.push_code(instance=self)  # code
+        # self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:
@@ -451,20 +451,25 @@ class OrderDeliverySub(DataAbstractModel):
         return code
 
     @classmethod
-    def push_code(cls, instance):
+    def push_code(cls, instance, kwargs):
         if not instance.code:
             code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+            kwargs['update_fields'].append('code')
         return True
 
     def save(self, *args, **kwargs):
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.push_code(instance=self, kwargs=kwargs)  # code
+
         SubPeriods.check_open(
             self.company_id,
             self.tenant_id,
             self.date_approved if self.date_approved else self.date_created
         )
-
-        self.push_code(instance=self)  # code
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
