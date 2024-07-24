@@ -578,13 +578,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
 
-        # update sale order
-        DeliFinishHandler.push_so_status(instance=instance)
-        # update product
-        DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
-        # create final acceptance
-        DeliFinishHandler.push_final_acceptance(instance=instance, validated_product=validated_product)
-        # diagram
+        # DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
+        # DeliFinishHandler.push_final_acceptance(instance=instance, validated_product=validated_product)
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
         self.prepare_data_for_logging(instance)

@@ -18,7 +18,7 @@ class GoodsReturnSubSerializerForNonPicking:
         B3: Bulk create
         """
         prod_arr = []
-        for obj in OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub_obj):
+        for obj in delivery_sub_obj.delivery_product_delivery_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             new_prod = OrderDeliveryProduct(
@@ -35,7 +35,7 @@ class GoodsReturnSubSerializerForNonPicking:
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
-        OrderDeliveryProduct.objects.filter(delivery_sub=new_sub).delete()
+        new_sub.delivery_product_delivery_sub.all().delete()
         OrderDeliveryProduct.objects.bulk_create(prod_arr)
         return True
 
@@ -53,7 +53,7 @@ class GoodsReturnSubSerializerForNonPicking:
             + Else: giữ nguyên 'delivered_quantity_before', 'remaining_quantity' và 'ready_quantity' = 0
         B3: Done
         """
-        for obj in OrderDeliveryProduct.objects.filter(delivery_sub=ready_sub):
+        for obj in ready_sub.delivery_product_delivery_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             if obj_return_quantity > obj.delivery_quantity:
@@ -78,20 +78,17 @@ class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def create_product_warehouse_for_general(cls, goods_return, item, return_quantity):
         # get delivery product
-        delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=goods_return.delivery,
-            product_id=item.product_id
-        ).first()
-        if delivery_product:
+        deli_product = goods_return.delivery.delivery_product_delivery_sub.filter(product_id=item.product_id).first()
+        if deli_product:
             ProductWareHouse.push_from_receipt(
                 tenant_id=goods_return.tenant_id,
                 company_id=goods_return.company_id,
                 product_id=item.product_id,
                 warehouse_id=item.return_to_warehouse_id,
                 uom_id=item.uom_id,
-                tax_id=delivery_product.product.sale_tax_id,
+                tax_id=deli_product.product.sale_tax_id,
                 amount=return_quantity,
-                unit_price=delivery_product.product_unit_price,
+                unit_price=deli_product.product_unit_price,
                 lot_data=[],
                 serial_data=[],
             )
@@ -101,11 +98,8 @@ class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def create_product_warehouse_for_lot(cls, goods_return, item, return_quantity, sample_lot):
         # get delivery product
-        delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=goods_return.delivery,
-            product_id=item.product_id
-        ).first()
-        if delivery_product:
+        deli_product = goods_return.delivery.delivery_product_delivery_sub.filter(product_id=item.product_id).first()
+        if deli_product:
             new_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=goods_return.tenant_id,
                 company_id=goods_return.company_id,
@@ -119,8 +113,8 @@ class GoodsReturnSubSerializerForNonPicking:
                     product_id=item.product_id,
                     uom_id=item.uom_id,
                     warehouse_id=item.return_to_warehouse_id,
-                    tax=delivery_product.product.sale_tax,
-                    unit_price=delivery_product.product_unit_price,
+                    tax=deli_product.product.sale_tax,
+                    unit_price=deli_product.product_unit_price,
                     stock_amount=return_quantity,
                     receipt_amount=return_quantity,
                     sold_amount=0,
@@ -141,10 +135,10 @@ class GoodsReturnSubSerializerForNonPicking:
                         'title': item.uom.title
                     },
                     tax_data={
-                        'id': delivery_product.product.sale_tax_id,
-                        'code': delivery_product.product.sale_tax.code,
-                        'title': delivery_product.product.sale_tax.title,
-                        'rate': delivery_product.product.sale_tax.rate
+                        'id': deli_product.product.sale_tax_id,
+                        'code': deli_product.product.sale_tax.code,
+                        'title': deli_product.product.sale_tax.title,
+                        'rate': deli_product.product.sale_tax.rate
                     }
                 )
             else:
@@ -166,11 +160,8 @@ class GoodsReturnSubSerializerForNonPicking:
     @classmethod
     def create_product_warehouse_for_sn(cls, goods_return, item, return_quantity, sample_sn):
         # get delivery product
-        delivery_product = OrderDeliveryProduct.objects.filter(
-            delivery_sub=goods_return.delivery,
-            product_id=item.product_id
-        ).first()
-        if delivery_product:
+        deli_product = goods_return.delivery.delivery_product_delivery_sub.filter(product_id=item.product_id).first()
+        if deli_product:
             new_prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=goods_return.tenant_id,
                 company_id=goods_return.company_id,
@@ -184,8 +175,8 @@ class GoodsReturnSubSerializerForNonPicking:
                     product_id=item.product_id,
                     uom_id=item.uom_id,
                     warehouse_id=item.return_to_warehouse_id,
-                    tax=delivery_product.product.sale_tax,
-                    unit_price=delivery_product.product_unit_price,
+                    tax=deli_product.product.sale_tax,
+                    unit_price=deli_product.product_unit_price,
                     stock_amount=return_quantity,
                     receipt_amount=return_quantity,
                     sold_amount=0,
@@ -206,10 +197,10 @@ class GoodsReturnSubSerializerForNonPicking:
                         'title': item.uom.title
                     },
                     tax_data={
-                        'id': delivery_product.product.sale_tax_id,
-                        'code': delivery_product.product.sale_tax.code,
-                        'title': delivery_product.product.sale_tax.title,
-                        'rate': delivery_product.product.sale_tax.rate
+                        'id': deli_product.product.sale_tax_id,
+                        'code': deli_product.product.sale_tax.code,
+                        'title': deli_product.product.sale_tax.title,
+                        'rate': deli_product.product.sale_tax.rate
                     }
                 )
             else:
@@ -466,7 +457,7 @@ class GoodsReturnSubSerializerForPicking:
             employee_inherit=picking_obj_sub.employee_inherit
         )
         bulk_info = []
-        for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
+        for obj in picking_obj_sub.picking_product_picking_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
             new_item = OrderPickingProduct(
@@ -483,7 +474,7 @@ class GoodsReturnSubSerializerForPicking:
             )
             new_item.before_save()
             bulk_info.append(new_item)
-        OrderPickingProduct.objects.filter(picking_sub=new_sub).delete()
+        new_sub.picking_product_picking_sub.all().delete()
         OrderPickingProduct.objects.bulk_create(bulk_info)
         return new_sub
 
@@ -495,7 +486,7 @@ class GoodsReturnSubSerializerForPicking:
         picking_obj_sub.save(update_fields=[
             'pickup_quantity', 'picked_quantity_before', 'remaining_quantity'
         ])
-        for obj in OrderPickingProduct.objects.filter(picking_sub=picking_obj_sub):
+        for obj in picking_obj_sub.picking_product_picking_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
 

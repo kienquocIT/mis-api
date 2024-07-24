@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
+from apps.sales.delivery.utils import DeliFinishHandler
 from apps.sales.report.models import ReportStockLog
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -464,6 +465,9 @@ class OrderDeliverySub(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
+                    DeliFinishHandler.push_so_status(instance=self)  # sale order
+                    DeliFinishHandler.push_product_info(instance=self)  # product
+                    DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
 
         SubPeriods.check_open(
             self.company_id,
@@ -498,6 +502,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product need Picking',
+        related_name='delivery_product_product',
     )
     product_data = models.JSONField(
         default=dict,
