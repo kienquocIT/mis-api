@@ -65,6 +65,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'sale_code',
             ],
             check_sum_second=True,
         )
