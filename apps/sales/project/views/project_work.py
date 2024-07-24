@@ -134,11 +134,6 @@ class ProjectWorkList(BaseListMixin, BaseCreateMixin):
         data = request.data
         prj_pk = data.get('project')
         pj_obj = get_project_obj(prj_pk)
-        self.ser_context = {
-            'company_id': request.user.company_current_id,
-            'tenant_id': request.user.tenant_current_id,
-            'employee_id': request.user.employee_current_id,
-        }
         if pj_obj:
             if self.check_permit_add_gaw(project_obj=pj_obj):
                 return self.create(request, *args, **kwargs)
@@ -231,6 +226,9 @@ class ProjectWorkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     def put(self, request, *args, pk, **kwargs):
         data = request.data
         project_id = data.get('project', None)
+        self.ser_context = {
+            'project': project_id
+        }
         employee_id = data.get('employee_inherit', None) if data.get(
             'employee_inherit', None
         ) is not None else request.user.employee_current_id

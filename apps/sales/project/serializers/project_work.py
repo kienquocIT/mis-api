@@ -3,7 +3,7 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_work_in_group, calc_weight_all
+from ..extend_func import calc_weight_work_in_group, calc_weight_all, reorder_work
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
@@ -79,9 +79,8 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
         if group:
-            # if project:
-            #     prj_obj = Project.objects.get(id=project)
-            #     validated_data['order'] = reorder_work(group, prj_obj)
+            if project:
+                validated_data['order'] = reorder_work(group, project)
             validated_data['w_weight'] = calc_weight_work_in_group(group)
         else:
             validated_data['w_weight'] = calc_weight_all(project)
@@ -89,7 +88,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         ProjectMapWork.objects.create(
             project=project, work=work,
             tenant=work.tenant,
-            company=work.company
+            company=work.company,
         )
         if group:
             GroupMapWork.objects.create(group_id=group, work=work)
@@ -216,6 +215,11 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
+        if group:
+            proj_id = self.context.get('project', None)
+            if proj_id:
+                prj_obj = Project.objects.get(id=proj_id)
+                validated_data['order'] = reorder_work(group, prj_obj)
         validated_data['w_weight'] = self.check_update_with_group(instance, group)
         for key, value in validated_data.items():
             setattr(instance, key, value)
