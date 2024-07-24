@@ -1,16 +1,19 @@
 from django.conf import settings
-from rest_framework import serializers
 from django.core.mail import get_connection
+from rest_framework import serializers
 
 from apps.core.account.models import User
-from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
-from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING, SimpleEncryptor
+from apps.core.hr.models import (
+    Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
+)
+from apps.shared import (
+    HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING, SimpleEncryptor
+)
 from apps.shared.permissions.util import PermissionController
 
 from .common import (
-    HasPermPlanAppCreateSerializer,
-    set_up_data_plan_app, validate_license_used,
-    create_plan_employee_update_tenant_plan, PlanAppUpdateSerializer,
+    HasPermPlanAppCreateSerializer, set_up_data_plan_app, validate_license_used,
+    create_plan_employee_update_tenant_plan, PlanAppUpdateSerializer
 )
 from ..tasks import sync_plan_app_employee
 from ...base.models import Application, PlanApplication
