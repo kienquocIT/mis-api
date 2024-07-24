@@ -2,7 +2,6 @@ import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
-from django.core.mail import get_connection
 from rest_framework import serializers
 from apps.core.account.models import User
 from apps.core.company.models import (
@@ -197,7 +196,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    email_app_password_status = serializers.SerializerMethodField()
     config_inventory_management = serializers.SerializerMethodField()
 
     @classmethod
@@ -212,7 +210,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'code',
             'representative_fullname',
             'email',
-            'email_app_password_status',
             'address',
             'phone',
             'fax',
@@ -221,23 +218,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'logo',
             'config_inventory_management'
         )
-
-    @classmethod
-    def get_email_app_password_status(cls, obj):
-        if obj.email_app_password:
-            try:
-                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-                connection = get_connection(
-                    username=obj.email,
-                    password=SimpleEncryptor(key=password).decrypt(obj.email_app_password),
-                    fail_silently=False,
-                )
-                if connection.open():
-                    return True
-            except Exception as err:
-                print(err)
-                return False
-        return False
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -303,7 +283,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
-            'email_app_password',
             'phone',
             'fax'
         )
@@ -333,7 +312,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
-    email_app_password = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     class Meta:
         model = Company
@@ -343,17 +321,11 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
-            'email_app_password',
-            'email_app_password_status',
             'phone',
             'fax'
         )
 
     def validate(self, validate_data):
-        if validate_data.get('email_app_password'):
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            cryptor = SimpleEncryptor(key=password)
-            validate_data['email_app_password'] = cryptor.encrypt(validate_data['email_app_password'])
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
                 raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
@@ -363,22 +335,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        if validated_data.get('email_app_password') is not None:
-            try:
-                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-                connection = get_connection(
-                    username=instance.email,
-                    password=SimpleEncryptor(key=password).decrypt(instance.email_app_password),
-                    fail_silently=False,
-                )
-                if not connection.open():
-                    instance.email_app_password_status = False
-                    instance.save(update_fields=['email_app_password_status'])
-            except Exception as err:
-                print(err)
-                instance.email_app_password_status = False
-                instance.save(update_fields=['email_app_password_status'])
 
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance

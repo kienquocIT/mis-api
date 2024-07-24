@@ -128,6 +128,9 @@ class Employee(TenantAbstractModel):
         storage=PublicMediaStorage, upload_to=generate_employee_avatar_path, null=True,
     )
 
+    email_app_password = models.TextField(verbose_name='email app password', null=True)
+    email_app_password_status = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
