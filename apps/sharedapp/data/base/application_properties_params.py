@@ -573,10 +573,18 @@ AdvancePayment_data__params = {
         "type": 1,
         "is_print": True,
     },
-    "eb33b20c-6cb7-4353-a08b-1d4a96e2592d": {
+    "8a677597-59ec-4264-a8ad-32ce827a9152": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Supplier name",
-        "code": "supplier__name",
+        "title": "Title",
+        "code": "title",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "1f1a4221-5446-4695-b9be-947c984a7ff3": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Sale code",
+        "code": "sale_code",
         "remark": "",
         "type": 1,
         "is_print": True,
@@ -601,6 +609,106 @@ AdvancePayment_data__params = {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Advance value",
         "code": "advance_value",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+}
+
+Payment_data__params = {
+    "f5910fbd-a7b2-432f-882f-e48a87b8532b": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Code",
+        "code": "code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "5761fdcb-47cf-449b-a07c-575a3dc3cd4c": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Title",
+        "code": "title",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "4b86ff76-3f41-4dd8-9f12-ae4e26504065": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Sale code",
+        "code": "sale_code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "0c48d17c-71de-4ee0-952f-7f7790903e2f": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Payment method",
+        "code": "method",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "154d05de-7c50-45d9-b5d3-25b754ca133f": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Payment value",
+        "code": "payment_value",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+}
+
+IA_data__params = {
+    "1d5de627-5c5b-4434-b163-42b844eb2ed6": {
+        "application_id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
+        "title": "Code",
+        "code": "code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "ded97def-bd0f-41ae-9169-450f919e5d43": {
+        "application_id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
+        "title": "Title",
+        "code": "title",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+}
+
+Goods_Transfer_data__params = {
+    "58fcc70a-e923-4e6a-9864-4808d6c83806": {
+        "application_id": "866f163d-b724-404d-942f-4bc44dc2e2ed",
+        "title": "Code",
+        "code": "code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "53bd4fac-0358-438a-b9ef-33b5b09fe241": {
+        "application_id": "866f163d-b724-404d-942f-4bc44dc2e2ed",
+        "title": "Title",
+        "code": "title",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+}
+
+Goods_Return_data__params = {
+    "ab43ec67-d090-4280-a3b8-3455e300f17e": {
+        "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",
+        "title": "Code",
+        "code": "code",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "ad81954c-609a-40ac-82d0-e5628479b9a7": {
+        "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",
+        "title": "Title",
+        "code": "title",
         "remark": "",
         "type": 1,
         "is_print": True,

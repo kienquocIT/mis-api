@@ -483,9 +483,11 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'date_created',
                 'system_status',
+                'system_status_raw',
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
+                'employee_inherit'
             ],
             check_sum_second=True,
         )
@@ -637,7 +639,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'system_status',
                 'is_change',
                 'document_root_id',
-                'document_change_order'
+                'document_change_order',
+                'sale_code'
             ],
             check_sum_second=True,
         )
