@@ -11,7 +11,7 @@ from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
+from apps.shared import DisperseModel, AttMsg, FORMATTING
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
