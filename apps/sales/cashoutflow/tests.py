@@ -152,6 +152,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'attachment',
                 'is_change',
+                'sale_code',
                 'document_root_id',
                 'document_change_order',
             ],
