@@ -40,7 +40,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
-            'employee_inherit'
         )
 
     @classmethod

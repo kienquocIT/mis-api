@@ -489,7 +489,6 @@ class PaymentTestCase(AdvanceTestCase):
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
-                'employee_inherit'
             ],
             check_sum_second=True,
         )
