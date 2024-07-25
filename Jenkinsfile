@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
+        GIT_COMMIT_MSG = sh (script: 'git log -1 --pretty=%B ${GIT_COMMIT}', returnStdout: true).trim()
         
         BUILD_TRIGGER_BY_NAME = getBuildUser()
 
@@ -19,7 +20,7 @@ pipeline {
                 script {
                     echo "${currentBuild.changeSets}"
                     if (TELEGRAM_ENABLE == '1') {
-                        sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛");
+                        sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛 \nLast commit: ${GIT_COMMIT_MSG}");
                     }
                 }
             }
