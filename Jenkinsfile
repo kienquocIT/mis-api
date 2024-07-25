@@ -97,5 +97,6 @@ def sendTelegram(message) {
 
 @NonCPS
 def getBuildUser() {
-    return currentBuild.getBuildCauses()[0]
+    // [_class:hudson.model.Cause$UserIdCause, shortDescription:Started by user ADMIN, userId:admin, userName:ADMIN]
+    return currentBuild.getBuildCauses()[0].userName
 }
