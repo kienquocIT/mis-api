@@ -1,8 +1,81 @@
-from apps.masterdata.saledata.models import Product, UnitOfMeasure, ProductWareHouse
+from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse
 from apps.sales.acceptance.models import FinalAcceptance
+from apps.shared import DisperseModel
 
 
 class DeliFinishHandler:
+    # NEW DELIVERY SUB + PRODUCT
+    @classmethod
+    def create_new(cls, instance):
+        total_done = 0
+        for deli_product in instance.delivery_product_delivery_sub.all():
+            total_done += deli_product.picked_quantity
+        if instance.remaining_quantity > total_done:  # still not delivery all items, create new sub
+            new_sub = cls.create_new_sub(instance, total_done, 2)
+            cls.create_prod(new_sub, instance)
+            delivery_obj = instance.order_delivery
+            delivery_obj.sub = new_sub
+            delivery_obj.save(update_fields=['sub'])
+        else:  # delivery all items, not create new sub
+            instance.order_delivery.state = 2
+            instance.order_delivery.save(update_fields=['state'])
+        return True
+
+    @classmethod
+    def create_new_sub(cls, instance, total_done, case=0):
+        quantity_before = instance.delivered_quantity_before + total_done
+        remaining_quantity = instance.delivery_quantity - quantity_before
+        model_deli_sub = DisperseModel(app_model='delivery.orderdeliverysub').get_model()
+        if model_deli_sub and hasattr(model_deli_sub, 'objects'):
+            return model_deli_sub.objects.create(
+                company_id=instance.company_id,
+                tenant_id=instance.tenant_id,
+                order_delivery=instance.order_delivery,
+                date_done=None,
+                previous_step=instance,
+                times=instance.times + 1,
+                delivery_quantity=instance.delivery_quantity,
+                delivered_quantity_before=quantity_before,
+                remaining_quantity=remaining_quantity,
+                # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
+                ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
+                delivery_data=None,
+                is_updated=False,
+                state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
+                sale_order_data=instance.order_delivery.sale_order_data,
+                estimated_delivery_date=instance.estimated_delivery_date,
+                actual_delivery_date=instance.actual_delivery_date,
+                customer_data=instance.customer_data,
+                contact_data=instance.contact_data,
+                config_at_that_point=instance.config_at_that_point,
+                employee_inherit=instance.employee_inherit,
+                system_status=1,
+            )
+        return None
+
+    @classmethod
+    def create_prod(cls, new_sub, instance):
+        # update to current product list of current sub
+        prod_arr = []
+        model_deli_product = DisperseModel(app_model='delivery.orderdeliveryproduct').get_model()
+        if model_deli_product and hasattr(model_deli_product, 'objects'):
+            for deli_product in instance.delivery_product_delivery_sub.all():
+                quantity_before = deli_product.delivered_quantity_before + deli_product.picked_quantity
+                remaining_quantity = deli_product.delivery_quantity - quantity_before
+                ready_quantity = deli_product.ready_quantity - deli_product.picked_quantity
+                new_prod = deli_product.setup_new_obj(
+                    old_obj=deli_product,
+                    new_sub=new_sub,
+                    delivery_quantity=deli_product.delivery_quantity,
+                    delivered_quantity_before=quantity_before,
+                    remaining_quantity=remaining_quantity,
+                    ready_quantity=ready_quantity if ready_quantity > 0 else 0
+                )
+                new_prod.before_save()
+                prod_arr.append(new_prod)
+            model_deli_product.objects.bulk_create(prod_arr)
+        return True
+
     # PRODUCT WAREHOUSE
     @classmethod
     def push_product_warehouse(cls, instance):

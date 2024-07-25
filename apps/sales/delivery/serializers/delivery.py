@@ -296,7 +296,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     "uom": data['uom'],
                     "quantity": data['stock']
                 }
-                DeliHandler.minus_tock(source, product_warehouse, config)
+                DeliFinishHandler.minus_tock(source, product_warehouse, config)
         return True
 
     @classmethod
@@ -359,8 +359,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
-        delivered = instance.delivered_quantity_before + total_done
-        remain = instance.delivery_quantity - delivered
+        quantity_before = instance.delivered_quantity_before + total_done
+        remaining_quantity = instance.delivery_quantity - quantity_before
         new_sub = OrderDeliverySub.objects.create(
             company_id=instance.company_id,
             tenant_id=instance.tenant_id,
@@ -369,8 +369,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             previous_step=instance,
             times=instance.times + 1,
             delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=delivered,
-            remaining_quantity=remain,
+            delivered_quantity_before=quantity_before,
+            remaining_quantity=remaining_quantity,
             # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
             ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
             delivery_data=None,

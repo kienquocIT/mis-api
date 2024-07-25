@@ -430,6 +430,22 @@ class OrderPickingProduct(SimpleAbstractModel):
         self._put_backup_data()
         self._set_and_check_quantity()
 
+    def setup_new_obj(self, old_obj, new_sub, pickup_quantity, picked_quantity_before, remaining_quantity):
+        new_obj = OrderPickingProduct(
+            product_data=old_obj.product_data,
+            uom_data=old_obj.uom_data,
+            uom_id=old_obj.uom_id,
+            pickup_quantity=pickup_quantity,
+            picked_quantity_before=picked_quantity_before,
+            remaining_quantity=remaining_quantity,
+            picked_quantity=0,
+            picking_sub=new_sub,
+            product_id=old_obj.product_id,
+            order=old_obj.order
+        )
+        new_obj.before_save()
+        return new_obj
+
     def save(self, *args, **kwargs):
         self.before_save()
         super().save(*args, **kwargs)

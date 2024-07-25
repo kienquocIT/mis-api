@@ -465,8 +465,9 @@ class OrderDeliverySub(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
-                    DeliFinishHandler.push_so_status(instance=self)  # sale order
+                    DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.push_product_info(instance=self)  # product
+                    DeliFinishHandler.push_so_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
 
         SubPeriods.check_open(
@@ -680,6 +681,24 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
+
+    def setup_new_obj(
+            self, old_obj, new_sub, delivery_quantity, delivered_quantity_before, remaining_quantity, ready_quantity
+    ):
+        new_obj = OrderDeliveryProduct(
+            delivery_sub=new_sub,
+            product=old_obj.product,
+            uom=old_obj.uom,
+            delivery_quantity=delivery_quantity,
+            delivered_quantity_before=delivered_quantity_before,
+            remaining_quantity=remaining_quantity,
+            ready_quantity=ready_quantity,
+            picked_quantity=0,
+            order=old_obj.order,
+            delivery_data=old_obj.delivery_data
+        )
+        new_obj.before_save()
+        return new_obj
 
     def save(self, *args, **kwargs):
         for_goods_return = kwargs.get('for_goods_return')
