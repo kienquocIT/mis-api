@@ -5,12 +5,12 @@ from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseLot
+from apps.masterdata.saledata.models import ProductWareHouseLot
 from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
     AbstractListSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
-from ..utils import DeliHandler, DeliFinishHandler
+from ..utils import DeliHandler
 from ...report.models import ReportStockLog
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -304,27 +304,19 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         return True
 
     @classmethod
-    def config_two(cls, instance, product_done, config):  # none_picking_many_delivery
+    def config_two_four(cls, instance, product_done, next_node_collab_id, config):  # none_picking_many_delivery
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
         instance.state = 2
         instance.is_updated = True
+        instance.next_node_collab_id = next_node_collab_id
         instance.save(
-            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
-        )
-        return True
-
-    @classmethod
-    def config_four(cls, instance, product_done, config):  # picking_many_delivery
-        cls.update_prod(instance, product_done, config)
-        instance.date_done = timezone.now()
-        instance.is_updated = True
-        instance.state = 2
-        instance.save(
-            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
+            update_fields=[
+                'date_done', 'state', 'is_updated', 'estimated_delivery_date',
+                'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
+                'next_node_collab_id',
+            ]
         )
         return True
 
@@ -430,6 +422,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
         validated_product = validated_data['products']
+        next_node_collab_id = validated_data.get('next_node_collab_id', None)
         config = instance.config_at_that_point
         if not config:
             get_config = DeliveryConfig.objects.get(company_id=instance.company_id)
@@ -437,8 +430,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 "is_picking": get_config.is_picking,
                 "is_partial_ship": get_config.is_partial_ship
             }
-        is_picking = config['is_picking']
-        is_partial = config['is_partial_ship']
         product_done = {}
         total_done = 0
         for item in validated_product:
@@ -457,12 +448,12 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             try:
                 with transaction.atomic():
                     self.handle_attach_file(instance, validated_data)
-                    if is_partial and not is_picking:
-                        # config 2 (none_picking_many_delivery)
-                        self.config_two(instance, product_done, config)
-                    if is_partial and is_picking:
-                        # config 4 (picking_many_delivery)
-                        self.config_four(instance, product_done, config)
+                    self.config_two_four(
+                        instance=instance,
+                        product_done=product_done,
+                        next_node_collab_id=next_node_collab_id,
+                        config=config
+                    )
             except Exception as err:
                 print(err)
                 raise err

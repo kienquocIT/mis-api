@@ -2,7 +2,6 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse
-from apps.sales.delivery.models import OrderPickingProduct
 from apps.shared import DisperseModel
 from apps.shared.translations.sales import DeliverMsg
 
