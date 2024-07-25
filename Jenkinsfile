@@ -17,6 +17,7 @@ pipeline {
         stage('Pre-Build') {
             steps {
                 script {
+                    echo "${currentBuild.changeSets}"
                     if (TELEGRAM_ENABLE == '1') {
                         sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛");
                     }
