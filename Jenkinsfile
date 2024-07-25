@@ -64,13 +64,22 @@ pipeline {
         }
     }
     post {
-        always {
+        success {
             script {
-                sh '''
+                sh """
                     curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
                     -d chat_id=${TELEGRAM_CHAT_ID} \
-                    -d text='Build finished: ' + ${currentBuild.currentResult}
-                '''
+                    -d text="Build finished: SUCCESSFUL"
+                """
+            }
+        }
+        failure {
+            script {
+                sh """
+                    curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                    -d chat_id=${TELEGRAM_CHAT_ID} \
+                    -d text="Build finished: FAILURE"
+                """
             }
         }
     }
