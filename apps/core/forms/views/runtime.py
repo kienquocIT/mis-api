@@ -8,6 +8,7 @@ from apps.core.forms.serializers.serializers import (
     FormPublishedEntriesCreateSerializer,
     FormPublishedEntriesDetailSerializer, FormPublishedRuntimeDetailSerializer, FormPublishedEntriesUpdateSerializer,
 )
+from apps.core.tenant.models import Tenant
 from apps.shared import mask_view, ResponseController, TypeCheck
 from apps.shared.extends.exceptions import handle_exception_all_view
 
@@ -99,7 +100,7 @@ class FormEntrySubmitted(APIView):
 
     @swagger_auto_schema()
     @mask_view(login_require=True)
-    def get(self, request, *args, tenant_code, form_code, use_at, pk_submitted, **kwargs):
+    def get(self, request, *args, tenant_code, form_code, use_at, pk_submitted, **kwargs):  # pylint: disable=R0912
         if (
                 tenant_code and form_code and len(form_code) == FORM_CODE_LENGTH and use_at in ['view', 'iframe']
                 and TypeCheck.check_uuid(pk_submitted)
@@ -132,7 +133,10 @@ class FormEntrySubmitted(APIView):
 
                     if tenant_current.code.lower() != tenant_code:
                         raise exceptions.PermissionDenied
+                else:
+                    raise exceptions.PermissionDenied
 
+                if tenant_current:
                     obj_submitted = FormPublishedEntries.objects.filter(
                         pk=pk_submitted,
                         tenant_id=tenant_current.id,
@@ -152,8 +156,8 @@ class FormEntrySubmitted(APIView):
         return ResponseController.notfound_404()
 
     @swagger_auto_schema()
-    @mask_view(login_require=True)
-    def put(self, request, *args, tenant_code, form_code, use_at, pk_submitted, **kwargs):
+    @mask_view(login_require=False)
+    def put(self, request, *args, tenant_code, form_code, use_at, pk_submitted, **kwargs):  # pylint: disable=R0912
         if (
                 tenant_code and form_code and len(form_code) == FORM_CODE_LENGTH and use_at in ['view', 'iframe']
                 and TypeCheck.check_uuid(pk_submitted)
@@ -194,6 +198,16 @@ class FormEntrySubmitted(APIView):
                             }
                         )
 
+                else:
+                    if obj.form.submit_edit_of_anonymous is True:
+                        try:
+                            tenant_current = Tenant.objects.get(code=tenant_code)
+                        except Tenant.DoesNotExist:
+                            raise exceptions.PermissionDenied
+                    else:
+                        raise exceptions.PermissionDenied
+
+                if tenant_current:
                     obj_submitted = FormPublishedEntries.objects.filter(
                         pk=pk_submitted,
                         tenant_id=tenant_current.id,
