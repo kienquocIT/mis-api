@@ -2,7 +2,8 @@ pipeline {
     agent any
     environment {
         GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
-        BUILD_TRIGGER_BY = getBuildUser()
+        
+        BUILD_TRIGGER_BY_NAME = getBuildUser()
 
         SERVER_IP_DEPLOY_DEFAULT = credentials('server-ip-deploy-default')
         SERVER_PATH_DELOY_DEFAULT = credentials('server-path-deploy-default')
@@ -16,9 +17,8 @@ pipeline {
         stage('Pre-Build') {
             steps {
                 script {
-                    echo "BUILD_TRIGGER_BY: ${BUILD_TRIGGER_BY}"
                     if (TELEGRAM_ENABLE == '1') {
-                        sendTelegram("[${JOB_NAME}] Jenkins is building (￣_,￣ ) 💛💛💛");
+                        sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛");
                     }
                 }
             }
@@ -68,14 +68,14 @@ pipeline {
         success {
             script {
                 if (TELEGRAM_ENABLE == '1') {
-                    sendTelegram("[${JOB_NAME}] Build finished: SUCCESSFUL (￣▽￣) 💚💚💚")
+                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME}] Build finished: Successful 💚💚💚")
                 }
             }
         }
         failure {
             script {
                 if (TELEGRAM_ENABLE == '1') {
-                    sendTelegram("[${JOB_NAME}] Build finished: FAILURE ㄟ( ▔, ▔ )ㄏ 💔💔💔")
+                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build finished: Failure 💔💔💔")
                 }
             }
         }
