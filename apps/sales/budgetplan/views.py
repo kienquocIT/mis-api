@@ -74,9 +74,9 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     @classmethod
-    def update_record_with_data_params(cls, pk, query_params):
+    def update_record_with_data_params(cls, budget_plan_id, query_params):
         if 'update_group' in query_params:
-            obj = BudgetPlan.objects.filter(id=pk).first()
+            obj = BudgetPlan.objects.filter(id=budget_plan_id).first()
             if obj:
                 all_company_group = list(Group.objects.filter(
                     company_id=obj.company_id, tenant_id=obj.tenant_id, is_delete=False
@@ -90,9 +90,9 @@ class BudgetPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     bulk_info.append(BudgetPlanGroup(budget_plan=obj, group_mapped_id=group_added_id))
                 BudgetPlanGroup.objects.bulk_create(bulk_info)
         if 'lock_this_plan' in query_params:
-            BudgetPlan.objects.filter(id=pk).update(is_lock=True)
+            BudgetPlan.objects.filter(id=budget_plan_id).update(is_lock=True)
         if 'unlock_this_plan' in query_params:
-            BudgetPlan.objects.filter(id=pk).update(is_lock=False)
+            BudgetPlan.objects.filter(id=budget_plan_id).update(is_lock=False)
         return True
 
     @swagger_auto_schema(
@@ -150,7 +150,9 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
             bulk_info = []
             for emp_id in json.loads(query_params.get('emp_id_can_view_company_bp')):
                 bulk_info.append(
-                    EmployeeCanViewCompanyBudgetPlan(company=company_current, employee_allowed_id=emp_id, can_view_company=True)
+                    EmployeeCanViewCompanyBudgetPlan(
+                        company=company_current, employee_allowed_id=emp_id, can_view_company=True
+                    )
                 )
             EmployeeCanViewCompanyBudgetPlan.objects.filter(company=company_current).delete()
             EmployeeCanViewCompanyBudgetPlan.objects.bulk_create(bulk_info)
@@ -158,7 +160,9 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
             bulk_info = []
             for emp_id in json.loads(query_params.get('emp_id_can_lock_bp')):
                 bulk_info.append(
-                    EmployeeCanLockBudgetPlan(company=company_current, employee_allowed_id=emp_id, can_lock_plan=True)
+                    EmployeeCanLockBudgetPlan(
+                        company=company_current, employee_allowed_id=emp_id, can_lock_plan=True
+                    )
                 )
             EmployeeCanLockBudgetPlan.objects.filter(company=company_current).delete()
             EmployeeCanLockBudgetPlan.objects.bulk_create(bulk_info)
