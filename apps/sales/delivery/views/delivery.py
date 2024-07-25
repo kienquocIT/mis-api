@@ -11,6 +11,7 @@ __all__ = ['OrderDeliverySubList', 'OrderDeliverySubDetail']
 
 class OrderDeliverySubList(BaseListMixin):
     queryset = OrderDeliverySub.objects
+    search_fields = ['title', 'code', 'order_delivery__sale_order__title']
     serializer_list = OrderDeliverySubListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']

@@ -1,5 +1,5 @@
 __init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd', 'ProjectMemberDetail',
-            'ProjectUpdateOrder']
+            'ProjectUpdateOrder', 'ProjectCreateBaseline', 'ProjectCreateBaseline', 'ProjectBaselineDetail']
 
 from typing import Union
 
@@ -34,6 +34,7 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
+        'employee_inherit',
     ]
 
     @classmethod
@@ -91,7 +92,7 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
         operation_description="get project list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -217,9 +218,16 @@ class ProjectUpdate(BaseUpdateMixin, BaseDestroyMixin):
         )
 
     def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
-        # This function automatically runs when a user using the put method
-        if str(instance.employee_inherit_id) == str(self.cls_check.employee_attr.employee_current_id):
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
+        prj_obj = instance
+        if emp_id and str(prj_obj.employee_inherit_id) == str(emp_id):
             return True
+        obj_of_current_user = get_prj_mem_of_crt_user(
+            prj_obj=prj_obj, employee_current=self.cls_check.employee_attr.employee_current
+        )
+        if obj_of_current_user:
+            return obj_of_current_user.permit_add_gaw
         return False
 
     @swagger_auto_schema(
@@ -236,7 +244,7 @@ class ProjectUpdate(BaseUpdateMixin, BaseDestroyMixin):
 
 
 class ProjectMemberAdd(BaseCreateMixin):
-    queryset = ProjectMapMember # noqa
+    queryset = ProjectMapMember  # noqa
     serializer_create = MemberOfProjectAddSerializer
 
     def get_project_member_of_current_user(self, project_obj):

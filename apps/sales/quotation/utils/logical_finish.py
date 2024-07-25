@@ -5,10 +5,12 @@ class QuotationFinishHandler:
 
     # OPPORTUNITY STAGE
     @classmethod
-    def update_opportunity_stage(cls, instance):
+    def update_opportunity(cls, instance):
         if instance.opportunity:
             instance.opportunity.quotation = instance if instance.system_status == 3 else None
             instance.opportunity.save(update_fields=['quotation'])
+            # handle stage & win_rate
+            instance.opportunity.handle_stage_win_rate(obj=instance.opportunity)
         return True
 
     # CUSTOMER ACTIVITY

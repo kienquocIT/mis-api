@@ -7,7 +7,7 @@ from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.assettools.models import AssetToolsReturnAttachmentFile, AssetToolsReturn, AssetToolsReturnMapProduct
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -52,7 +52,7 @@ def handle_attach_file(instance, attachment_result):
     return True
 
 
-class AssetToolsReturnCreateSerializer(serializers.ModelSerializer):
+class AssetToolsReturnCreateSerializer(AbstractCreateSerializerModel):
     products = AssetToolsProductsMapReturnSerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
     employee_inherit_id = serializers.UUIDField()
@@ -175,7 +175,7 @@ class AssetToolsReturnListSerializer(serializers.ModelSerializer):
         )
 
 
-class AssetToolsReturnUpdateSerializer(serializers.ModelSerializer):
+class AssetToolsReturnUpdateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProductsMapReturnSerializer(many=True, required=False)
 

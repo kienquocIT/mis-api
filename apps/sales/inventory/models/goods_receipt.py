@@ -1,8 +1,7 @@
 from django.db import models
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
-from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
-from apps.sales.report.models import ReportInventorySub
+from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
 
@@ -110,7 +109,7 @@ class GoodsReceipt(DataAbstractModel):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             if gr_item.product.general_traceability_method != 1:  # None + Sn
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
-                    casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                    casted_quantity = ReportStockLog.cast_quantity_to_unit(
                         gr_item.uom, gr_prd_wh.quantity_import
                     )
                     casted_cost = (
@@ -134,7 +133,7 @@ class GoodsReceipt(DataAbstractModel):
             else:  # lot
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                     for lot in gr_prd_wh.goods_receipt_lot_gr_warehouse.all():
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
                         casted_cost = (
                             gr_item.product_unit_price * lot.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
@@ -170,7 +169,7 @@ class GoodsReceipt(DataAbstractModel):
                     purchase_request = pr_product.purchase_request_product.purchase_request
                 for prd_wh in pr_product.goods_receipt_warehouse_request_product.all():
                     if gr_item.product.general_traceability_method != 1:
-                        casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(
                             gr_item.uom, prd_wh.quantity_import
                         )
                         casted_cost = (
@@ -194,7 +193,7 @@ class GoodsReceipt(DataAbstractModel):
                         })
                     else:
                         for lot in prd_wh.goods_receipt_lot_gr_warehouse.all():
-                            casted_quantity = ReportInventorySub.cast_quantity_to_unit(
+                            casted_quantity = ReportStockLog.cast_quantity_to_unit(
                                 gr_item.uom, lot.quantity_import
                             )
                             casted_cost = (
@@ -233,23 +232,12 @@ class GoodsReceipt(DataAbstractModel):
             stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
         else:
             stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
-        ReportInventorySub.logging_when_stock_activities_happened(
+        ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_approved,
             stock_data
         )
-        return stock_data
-
-    @classmethod
-    def regis_stock_when_receipt(cls, instance, stock_data):
-        if instance.company.company_config.cost_per_project:  # Case 5
-            for po_pr_mapped in instance.purchase_order.purchase_order_request_order.all():
-                sale_order = po_pr_mapped.purchase_request.sale_order
-                if sale_order:
-                    for item in stock_data:
-                        GoodsRegistration.update_registered_quantity_when_receipt(sale_order, item)
-            return True
-        return False
+        return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -274,15 +262,17 @@ class GoodsReceipt(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        GRFinishHandler.push_to_warehouse_stock(self)
-                        GRFinishHandler.push_product_info(self)
-                        GRFinishHandler.update_gr_info_for_po(self)
-                        GRFinishHandler.update_gr_info_for_ia(self)
-                        GRFinishHandler.update_is_all_receipted_po(self)
-                        GRFinishHandler.update_is_all_receipted_ia(self)
+                        GRFinishHandler.push_to_warehouse_stock(instance=self)
+                        GRFinishHandler.push_product_info(instance=self)
+                        GRFinishHandler.update_gr_info_for_po(instance=self)
+                        GRFinishHandler.update_gr_info_for_ia(instance=self)
+                        GRFinishHandler.update_is_all_receipted_po(instance=self)
+                        GRFinishHandler.update_is_all_receipted_ia(instance=self)
 
-            stock_data = self.prepare_data_for_logging(self)
-            self.regis_stock_when_receipt(self, stock_data)
+            self.prepare_data_for_logging(self)
+
+        if self.system_status in [4]:  # cancel
+            GRFinishHandler.push_product_info(instance=self)
 
         # diagram
         GRHandler.push_diagram(instance=self)

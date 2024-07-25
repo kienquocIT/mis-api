@@ -926,6 +926,7 @@ class BaseListMixin(BaseMixin):
 
 
 class BaseCreateMixin(BaseMixin):
+    create_use_transaction_atomic: bool = False
     auto_write_log: bool = True
     CREATE_HIDDEN_FIELD_DEFAULT = [
         'tenant_id', 'company_id',
@@ -962,10 +963,12 @@ class BaseCreateMixin(BaseMixin):
             return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
 
-    @staticmethod
-    def perform_create(serializer, extras: dict):
+    def perform_create(self, serializer, extras: dict):
         try:
-            with transaction.atomic():
+            if self.create_use_transaction_atomic is True:
+                with transaction.atomic():
+                    return serializer.save(**extras)
+            else:
                 return serializer.save(**extras)
         except serializers.ValidationError as err:
             raise err
@@ -1002,6 +1005,7 @@ class BaseRetrieveMixin(BaseMixin):
 
 
 class BaseUpdateMixin(BaseMixin):
+    update_use_transaction_atomic: bool = False
     UPDATE_HIDDEN_FIELD_DEFAULT = ['employee_modified_id']  # DataAbstract
     UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['employee_modified_id']  # MasterData
 
@@ -1081,12 +1085,14 @@ class BaseUpdateMixin(BaseMixin):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
-    @staticmethod
-    def perform_update(serializer, extras: dict = None):
+    def perform_update(self, serializer, extras: dict = None):
         try:
-            with transaction.atomic():
-                if not extras:
-                    extras = {}
+            if self.update_use_transaction_atomic is True:
+                with transaction.atomic():
+                    if not extras:
+                        extras = {}
+                    return serializer.save(**extras)
+            else:
                 return serializer.save(**extras)
         except serializers.ValidationError as err:
             raise err

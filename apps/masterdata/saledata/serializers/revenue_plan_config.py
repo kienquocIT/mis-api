@@ -4,7 +4,6 @@ from apps.masterdata.saledata.models.revenue_plan_config import (
 )
 
 
-# Product Type
 class RevenuePlanConfigListSerializer(serializers.ModelSerializer):  # noqa
     roles_mapped_list = serializers.SerializerMethodField()
 

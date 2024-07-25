@@ -538,6 +538,7 @@ DELIVERY_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PRICES_APP_CONFIG = {
@@ -684,6 +685,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -744,6 +746,7 @@ PAYMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -1186,6 +1189,7 @@ GOODS_TRANSFER_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True
 }
 
 GOODS_ISSUE_APP_CONFIG = {
@@ -1235,7 +1239,53 @@ GOODS_ISSUE_APP_CONFIG = {
     "allow_permit": True,
 }
 
-GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
+GOODS_RETURN_APP_CONFIG = {
+    "id": "0242ba77-8b02-4589-8ed9-239788083f2b",
+    "title": "Goods Return",
+    "code": "goodsreturn",
+    "model_code": "goodsreturn",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True
+}
+
+INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
     "title": "Inventory Adjustment",
     "code": "inventoryadjustment",
@@ -1266,11 +1316,12 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True
 }
 
 REPORT_REVENUE_APP_CONFIG = {
     "id": "c3260940-21ff-4929-94fe-43bc4199d38b",
-    "title": "Report Revenue",
+    "title": "Revenue Report",
     "code": "reportrevenue",
     "model_code": "reportrevenue",
     "app_label": "report",
@@ -1309,7 +1360,7 @@ REPORT_REVENUE_APP_CONFIG = {
 
 REPORT_PRODUCT_APP_CONFIG = {
     "id": "2a709d75-35a7-49c8-84bf-c350164405bc",
-    "title": "Report Product",
+    "title": "Product Report",
     "code": "reportproduct",
     "model_code": "reportproduct",
     "app_label": "report",
@@ -1348,7 +1399,7 @@ REPORT_PRODUCT_APP_CONFIG = {
 
 REPORT_CUSTOMER_APP_CONFIG = {
     "id": "d633036a-8937-4f9d-a227-420e061496fc",
-    "title": "Report Customer",
+    "title": "Customer Report",
     "code": "reportcustomer",
     "model_code": "reportcustomer",
     "app_label": "report",
@@ -1387,7 +1438,7 @@ REPORT_CUSTOMER_APP_CONFIG = {
 
 REPORT_PIPELINE_APP_CONFIG = {
     "id": "298c8b6f-6a62-493f-b0ac-d549a4541497",
-    "title": "Report Pipeline",
+    "title": "Pipeline Report",
     "code": "reportpipeline",
     "model_code": "reportpipeline",
     "app_label": "report",
@@ -1565,54 +1616,9 @@ AP_INVOICE_APP_CONFIG = {
     "allow_permit": True,
 }
 
-GOODS_RETURN_APP_CONFIG = {
-    "id": "0242ba77-8b02-4589-8ed9-239788083f2b",
-    "title": "Goods Return",
-    "code": "goodsreturn",
-    "model_code": "goodsreturn",
-    "app_label": "inventory",
-    "is_workflow": True,
-    "app_depend_on": [
-        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
-        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
-    ],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-}
-
 REPORT_CASHFLOW_APP_CONFIG = {
     "id": "69e84b95-b347-4f49-abdf-0ec80d6eb5bd",
-    "title": "Report Cashflow",
+    "title": "Cashflow Report",
     "code": "reportcashflow",
     "model_code": "reportcashflow",
     "app_label": "report",
@@ -1869,6 +1875,80 @@ SALE_PROJECT = {
     "allow_permit": True,
 }
 
+SALE_PROJECT_BASELINE = {
+    "id": "255d9f44-905f-4bc7-8256-316a6959b683",
+    "title": "Project Baseline",
+    "code": "projectbaseline",
+    "model_code": "projectbaseline",
+    "app_label": "project",
+    "is_workflow": True,
+    "option_permission": 0,
+    "option_allowed": [1, 2, 3, 4],
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_permit": True,
+}
+
+BUDGET_PLAN_APP_CONFIG = {
+    "id": "ac21e8e4-fe32-41f4-9887-ee077677735c",
+    "title": "Budget Plan",
+    "code": "budgetplan",
+    "model_code": "budgetplan",
+    "app_label": "budget_plan",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1956,6 +2036,10 @@ Application_crm_data = {
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],
+    ),
+    "255d9f44-905f-4bc7-8256-316a6959b683": ApplicationConfigFrame(**SALE_PROJECT_BASELINE).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
     ),
 
     # Nhóm 3
@@ -2048,7 +2132,7 @@ Application_crm_data = {
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
-    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data(
+    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**INVENTORY_ADJUSTMENT_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
@@ -2101,6 +2185,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c04b2295-307f-49ed-80ab-1ca7f2b32d00": ApplicationConfigFrame(**LEAD_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "ac21e8e4-fe32-41f4-9887-ee077677735c": ApplicationConfigFrame(**BUDGET_PLAN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

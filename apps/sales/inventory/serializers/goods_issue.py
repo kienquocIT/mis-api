@@ -68,7 +68,7 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
         except ProductWareHouse.DoesNotExist:
             raise serializers.ValidationError(
                 {
-                    'warehouse_product': WarehouseMsg.PRODUCT_NOT_EXIST
+                    'warehouse_product': ProductMsg.DOES_NOT_EXIST
                 }
             )
 

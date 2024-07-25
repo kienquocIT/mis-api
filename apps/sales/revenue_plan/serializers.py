@@ -138,9 +138,9 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
         revenue_plan = RevenuePlan.objects.create(**validated_data, code=f'RP{period_year}')
         create_revenue_plan_group(revenue_plan, self.initial_data.get('RevenuePlanGroup_data', []))
         create_revenue_plan_group_employee(revenue_plan, self.initial_data.get('RevenuePlanGroupEmployee_data', []))
-        if period.planned is False:
-            period.planned = True
-            period.save(update_fields=['planned'])
+        if period.has_revenue_planned is False:
+            period.has_revenue_planned = True
+            period.save(update_fields=['has_revenue_planned'])
         else:
             raise serializers.ValidationError({'Period': SaleMsg.PERIOD_HAS_PLAN})
         return revenue_plan

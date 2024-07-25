@@ -24,8 +24,10 @@ class SOFinishHandler:
                     product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
                 )
                 product_order.product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_order': product_order.product_quantity * final_ratio,
+                    'update_stock_info': {
+                        'quantity_order': product_order.product_quantity * final_ratio,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['wait_delivery_amount', 'available_amount']
                 })
         return True
@@ -139,10 +141,12 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def update_opportunity_stage(cls, instance):
+    def update_opportunity(cls, instance):
         if instance.opportunity:
             instance.opportunity.sale_order = instance if instance.system_status == 3 else None
             instance.opportunity.save(update_fields=['sale_order'])
+            # handle stage & win_rate
+            instance.opportunity.handle_stage_win_rate(obj=instance.opportunity)
         return True
 
     @classmethod

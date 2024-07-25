@@ -130,6 +130,12 @@ class PurchaseOrder(DataAbstractModel):
             return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -144,11 +150,14 @@ class PurchaseOrder(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
-                        POFinishHandler.update_remain_and_status_purchase_request(self)
-                        POFinishHandler.update_is_all_ordered_purchase_request(self)
-                        POFinishHandler.push_product_info(self)
+                        POFinishHandler.update_remain_and_status_purchase_request(instance=self)
+                        POFinishHandler.update_is_all_ordered_purchase_request(instance=self)
+                        POFinishHandler.push_product_info(instance=self)
                         # report
-                        POFinishHandler.push_to_report_cashflow(self)
+                        POFinishHandler.push_to_report_cashflow(instance=self)
+
+        if self.system_status in [4]:  # cancel
+            POFinishHandler.push_product_info(instance=self)
 
         # diagram
         POHandler.push_diagram(instance=self)

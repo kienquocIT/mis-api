@@ -363,7 +363,8 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'product_price_product__currency_using',
             'product_price_product__price_list',
             'product_variant_attributes',
-            'product_variants'
+            'product_variants',
+            'product_warehouse_product',
         ).select_related(
             'general_product_category',
             'general_uom_group',

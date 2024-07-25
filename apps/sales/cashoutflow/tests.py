@@ -99,14 +99,14 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'return_value',
                 'remain_value',
                 'money_gave',
-                'creator_name_id',
-                'employee_inherit_id',
+                'employee_inherit',
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
                 'expense_items',
                 'opportunity_id',
-                'system_status'
+                'system_status',
+                'system_status_raw'
             ],
             check_sum_second=True,
         )
@@ -632,12 +632,12 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
-                'system_status',
-                'workflow_runtime_id',
                 'attachment',
+                'workflow_runtime_id',
+                'system_status',
                 'is_change',
                 'document_root_id',
-                'document_change_order',
+                'document_change_order'
             ],
             check_sum_second=True,
         )

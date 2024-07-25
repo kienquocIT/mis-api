@@ -67,4 +67,5 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
         return self.update(request, *args, pk, **kwargs)

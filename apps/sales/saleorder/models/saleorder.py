@@ -204,6 +204,10 @@ class SaleOrder(DataAbstractModel):
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
     # delivery status
     delivery_status = models.SmallIntegerField(choices=SALE_ORDER_DELIVERY_STATUS, default=0)
+    has_regis = models.BooleanField(
+        default=False,
+        help_text='is True if linked with registration else False',
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -256,6 +260,16 @@ class SaleOrder(DataAbstractModel):
                 return False
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        # check if SO was used for PR
+        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+            return False
+        # check delivery (if SO was used for OrderDelivery => can't reject)
+        if hasattr(instance, 'delivery_of_sale_order'):
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             # check if not code then generate code
@@ -273,7 +287,7 @@ class SaleOrder(DataAbstractModel):
 
                 # create registration
                 if self.opportunity:
-                    GoodsRegistration.create_goods_registration_when_sale_order_approved(self)
+                    GoodsRegistration.check_and_create_goods_registration(self)
 
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
@@ -282,7 +296,7 @@ class SaleOrder(DataAbstractModel):
                         # product
                         SOFinishHandler.push_product_info(instance=self)
                         # opportunity
-                        SOFinishHandler.update_opportunity_stage(instance=self)
+                        SOFinishHandler.update_opportunity(instance=self)
                         # customer
                         SOFinishHandler.push_to_customer_activity(instance=self)
                         # reports
@@ -296,8 +310,10 @@ class SaleOrder(DataAbstractModel):
                         DocumentChangeHandler.change_handle(instance=self)
 
         if self.system_status in [4]:  # cancel
+            # product
+            SOFinishHandler.push_product_info(instance=self)
             # opportunity
-            SOFinishHandler.update_opportunity_stage(instance=self)
+            SOFinishHandler.update_opportunity(instance=self)
         # opportunity log
         SOHandler.push_opportunity_log(instance=self)
         # diagram

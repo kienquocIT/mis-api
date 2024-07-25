@@ -23,14 +23,18 @@ class ReturnFinishHandler:
                     is_redelivery = True
             if product and is_redelivery is False:  # update product no redelivery
                 product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return': value,
+                    'update_stock_info': {
+                        'quantity_return': value,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['stock_amount', 'available_amount']
                 })
             if product and is_redelivery is True:  # update product with redelivery
                 product.save(**{
-                    'update_transaction_info': True,
-                    'quantity_return_redelivery': value,
+                    'update_stock_info': {
+                        'quantity_return_redelivery': value,
+                        'system_status': instance.system_status,
+                    },
                     'update_fields': ['wait_delivery_amount', 'stock_amount', 'available_amount']
                 })
         return True
@@ -145,17 +149,17 @@ class ReturnFinishHandler:
                         product_data_json.update({str(product.id): value})
                     else:
                         product_data_json[str(product.id)] += value
-            cls.update_report_revenue(sale_order=instance.sale_order, product_data_json=product_data_json)
+            cls.setup_update_report(sale_order=instance.sale_order, product_data_json=product_data_json)
         return True
 
     @classmethod
-    def update_report_revenue(cls, sale_order, product_data_json):
+    def setup_update_report(cls, sale_order, product_data_json):
         gross_profit_rate = 0
         net_income_rate = 0
         quo_dc_total_rate = 0
+        return_revenue_total = 0
         if sale_order.quotation:
             quo_dc_total_rate = sale_order.quotation.total_product_discount_rate
-        return_revenue_total = 0
         if sale_order.indicator_revenue > 0:
             gross_profit_rate = sale_order.indicator_gross_profit / sale_order.indicator_revenue
             net_income_rate = sale_order.indicator_net_income / sale_order.indicator_revenue

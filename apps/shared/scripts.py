@@ -32,6 +32,7 @@ from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
+from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
@@ -58,8 +59,8 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportInventorySub, ReportCashflow, \
-    ReportInventoryProductWarehouse, LatestSub, ReportInventory
+from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
+    ReportInventoryCost, LatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1147,18 +1148,6 @@ def make_sure_asset_config():
     print('Asset tools config is done!')
 
 
-def create_report_pipeline_by_opp():
-    for opp in Opportunity.objects.all():
-        ReportPipeline.push_from_opp(
-            tenant_id=opp.tenant_id,
-            company_id=opp.company_id,
-            opportunity_id=opp.id,
-            employee_inherit_id=opp.employee_inherit_id,
-        )
-    print('create_report_pipeline_by_opp done.')
-    return True
-
-
 def fool_data_for_revenue_dashboard():
     a = ReportRevenue.objects.get(sale_order_id='93d99efb0a774f9eb6bf65cc336b3719')
     a.date_approved = datetime(2023, 1, 1)
@@ -1224,22 +1213,6 @@ def fool_data_for_revenue_dashboard():
         print('Update period data done!')
 
 
-def update_date_approved():
-    for item in ReportRevenue.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    for item in ReportCustomer.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    for item in ReportProduct.objects.all():
-        if item.date_approved is None:
-            item.date_approved = item.date_created
-            item.save(update_fields=['date_approved'])
-    print('Done!')
-
-
 def reset_and_run_reports_sale(run_type=0):
     if run_type == 0:  # run report revenue, customer, product
         ReportRevenue.objects.all().delete()
@@ -1254,17 +1227,17 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
             SOFinishHandler.push_to_report_customer(instance=sale_order)
-        for g_return in GoodsReturn.objects.filter(system_status__in=[2, 3]):
+        for g_return in GoodsReturn.objects.filter(system_status=3):
             ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
         ReportCashflow.objects.all().delete()
-        for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_cashflow(instance=sale_order)
-        for purchase_order in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        for purchase_order in PurchaseOrder.objects.filter(system_status=3):
             POFinishHandler.push_to_report_cashflow(instance=purchase_order)
     print('reset_and_run_reports_sale done.')
     return True
@@ -1293,17 +1266,17 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+    for po in PurchaseOrder.objects.filter(system_status=3):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+    for gr in GoodsReceipt.objects.filter(system_status=3):
         GRFinishHandler.push_product_info(instance=gr)
     # output
-    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+    for so in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_product_info(instance=so)
     for deli_sub in OrderDeliverySub.objects.all():
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.all():
+    for return_obj in GoodsReturn.objects.filter(system_status=3):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True
@@ -1316,7 +1289,7 @@ def reset_and_run_warehouse_stock(run_type=0):
     ProductWareHouse.objects.all().delete()
     # input, output, provide
     if run_type == 0:  # input
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             GRFinishHandler.push_to_warehouse_stock(instance=gr)
     if run_type == 1:  # output
         for deli_sub in OrderDeliverySub.objects.all():
@@ -1342,7 +1315,7 @@ def reset_and_run_warehouse_stock(run_type=0):
 def reset_and_run_pw_lot_transaction(run_type=0):
     if run_type == 0:  # goods receipt
         ProductWareHouseLotTransaction.objects.filter(type_transaction=0).delete()
-        for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr in GoodsReceipt.objects.filter(system_status=3):
             for gr_warehouse in gr.goods_receipt_warehouse_goods_receipt.all():
                 if gr_warehouse.is_additional is False:  # check if not additional by Goods Detail
                     gr_product = gr_warehouse.goods_receipt_product
@@ -1398,8 +1371,8 @@ def reset_opportunity_stage():
     print('Done')
 
 
-def update_report_inventory_sub_trans_title():
-    for item in ReportInventorySub.objects.all():
+def update_report_stock_sub_trans_title():
+    for item in ReportStockLog.objects.all():
         if item.trans_code.startswith('D'):
             item.trans_title = 'Delivery'
             item.save(update_fields=['trans_title'])
@@ -1488,41 +1461,26 @@ def change_duplicate_group():
     print('Function run successful')
 
 
-def update_gr_for_lot_serial():
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        for gr_lot in gr.goods_receipt_lot_goods_receipt.all():
-            lot = ProductWareHouseLot.objects.filter(lot_number=gr_lot.lot_number).first()
-            if lot:
-                lot.goods_receipt = gr
-                lot.save(update_fields=['goods_receipt'])
-        for gr_serial in gr.goods_receipt_serial_goods_receipt.all():
-            serial = ProductWareHouseSerial.objects.filter(serial_number=gr_serial.serial_number).first()
-            if serial:
-                serial.goods_receipt = gr
-                serial.save(update_fields=['goods_receipt'])
-    print('update_gr_for_lot_serial done.')
-
-
 def get_latest_log(log, period_mapped, sub_period_order):
     # để tránh TH lấy hết records lên thì sẽ lấy ưu tiên theo thứ tự:
     # 1: lấy records tháng này
     # 2: lấy records các tháng trước (trong năm)
     # 3: lấy records các năm trước
-    subs = ReportInventorySub.objects.filter(
+    subs = ReportStockLog.objects.filter(
         product_id=log.product_id, warehouse_id=log.warehouse_id,
         report_inventory__period_mapped=period_mapped,
         report_inventory__sub_period_order=sub_period_order,
         date_created__lt=log.date_created
     )
     if subs.count() == 0:
-        subs = ReportInventorySub.objects.filter(
+        subs = ReportStockLog.objects.filter(
             product_id=log.product_id, warehouse_id=log.warehouse_id,
             report_inventory__period_mapped=period_mapped,
             report_inventory__sub_period_order__lt=sub_period_order,
             date_created__lt=log.date_created
         )
         if subs.count() == 0:
-            subs = ReportInventorySub.objects.filter(
+            subs = ReportStockLog.objects.filter(
                 product_id=log.product_id, warehouse_id=log.warehouse_id,
                 report_inventory__period_mapped__fiscal_year__lt=period_mapped.fiscal_year,
                 date_created__lt=log.date_created
@@ -1532,7 +1490,7 @@ def get_latest_log(log, period_mapped, sub_period_order):
 
 
 def run_inventory_report():
-    for log in ReportInventorySub.objects.all().order_by('date_created'):
+    for log in ReportStockLog.objects.all().order_by('date_created'):
         period_mapped = log.report_inventory.period_mapped
         sub_period_order = log.report_inventory.sub_period_order
         latest_trans = get_latest_log(log, period_mapped, sub_period_order)
@@ -1551,7 +1509,7 @@ def run_inventory_report():
 
         sub_period_obj = period_mapped.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
-            inventory_cost_data_item = ReportInventoryProductWarehouse.objects.filter(
+            inventory_cost_data_item = ReportInventoryCost.objects.filter(
                 tenant_id=period_mapped.tenant_id,
                 company_id=period_mapped.company_id,
                 product=log.product,
@@ -1561,7 +1519,7 @@ def run_inventory_report():
                 sub_period=sub_period_obj
             ).first()
             if not inventory_cost_data_item:
-                ReportInventoryProductWarehouse.objects.create(
+                ReportInventoryCost.objects.create(
                     tenant_id=period_mapped.tenant_id,
                     company_id=period_mapped.company_id,
                     product=log.product,
@@ -1584,74 +1542,118 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = LatestSub.objects.filter(
+            latest_log_obj = LatestLog.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                LatestSub.objects.create(
+                LatestLog.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
     return True
 
 
-def report_rerun(company_id, start_month):
-    ReportInventorySub.objects.all().delete()
-    ReportInventoryProductWarehouse.objects.all().delete()
-    ReportInventory.objects.all().delete()
-    LatestSub.objects.all().delete()
+def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lot=False):
+    if clear:
+        ReportStockLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        ReportInventoryCost.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        ReportStock.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        LatestLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
 
-    if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+    if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')
         company = Company.objects.get(id=company_id)
-        GoodsReceiptLot.objects.filter(id='ab1ad8663efa4f58a3bec378cfedc039').delete()
-        ProductWareHouseLotTransaction.objects.create(
-            pw_lot_id='12de4425e1e341a0bd286e44d78ec260',
-            delivery_id='0caf1d6b-4f15-4120-b7bd-8b425a487f86',
-            quantity=2,
-            type_transaction=1
-        )
-        # đầu kỳ SW
-        ReportInventoryProductWarehouse.objects.create(
+
+        # đầu kỳ OKSS
+        ReportInventoryCost.objects.create(
             tenant=company.tenant,
             company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            product_id='9e41fb1a-7576-4ee8-85ee-962217b7fc4f',
+            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+            sub_period_order=3,
+            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+            opening_balance_quantity=float(10),
+            opening_balance_value=float(200000000),
+            opening_balance_cost=float(20000000),
+            ending_balance_quantity=float(10),
+            ending_balance_value=float(200000000),
+            ending_balance_cost=float(20000000),
+            for_balance=True
+        )
+
+        # đầu kỳ SW
+        ReportInventoryCost.objects.create(
+            tenant=company.tenant,
+            company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
             product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
             sub_period_order=3,
             sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(7),
-            opening_balance_value=float(56000000),
+            opening_balance_quantity=float(3),
+            opening_balance_value=float(24000000),
             opening_balance_cost=float(8000000),
-            ending_balance_quantity=float(7),
-            ending_balance_value=float(56000000),
+            ending_balance_quantity=float(3),
+            ending_balance_value=float(24000000),
             ending_balance_cost=float(8000000),
             for_balance=True
         )
+
         # đầu kỳ Vision
-        ReportInventoryProductWarehouse.objects.create(
-            tenant=company.tenant,
-            company=company,
-            product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=9,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(2),
-            opening_balance_value=float(80000000),
-            opening_balance_cost=float(40000000),
-            ending_balance_quantity=float(2),
-            ending_balance_value=float(80000000),
-            ending_balance_cost=float(40000000),
-            for_balance=True
-        )
+        if has_lot:
+            ReportInventoryCost.objects.create(
+                tenant=company.tenant,
+                company=company,
+                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+                lot_mapped_id='12de4425e1e341a0bd286e44d78ec260',
+                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+                sub_period_order=3,
+                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+                opening_balance_quantity=float(5),
+                opening_balance_value=float(200000000),
+                opening_balance_cost=float(40000000),
+                ending_balance_quantity=float(5),
+                ending_balance_value=float(200000000),
+                ending_balance_cost=float(40000000),
+                for_balance=True
+            )
+        else:
+            ReportInventoryCost.objects.create(
+                tenant=company.tenant,
+                company=company,
+                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
+                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
+                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
+                sub_period_order=3,
+                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
+                opening_balance_quantity=float(5),
+                opening_balance_value=float(200000000),
+                opening_balance_cost=float(40000000),
+                ending_balance_quantity=float(5),
+                ending_balance_value=float(200000000),
+                ending_balance_cost=float(40000000),
+                for_balance=True
+            )
+
         # đầu kỳ HP
-        ReportInventoryProductWarehouse.objects.create(
+        ReportInventoryCost.objects.create(
             tenant=company.tenant,
             company=company,
+            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
+            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
             product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
             warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
             period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
@@ -1715,7 +1717,10 @@ def report_rerun(company_id, start_month):
 
     all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
     for doc in all_doc_sorted:
-        print(f"----- Run: {doc['id']} | {doc['date_approved']} | {doc['code']} | {doc['type']}")
+        print(f"--- Run id: {doc['id']}")
+        print(f"\tSystem date: {doc['date_approved'].split(' ')[0]}")
+        print(f"\tSystem code: ** {doc['code']} **")
+        print(f"\tType: {doc['type']}")
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
@@ -1737,36 +1742,7 @@ def report_rerun(company_id, start_month):
             instance = GoodsTransfer.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
 
-    print('Done')
-
-
-def update_product_warehouse_uom_base():
-    for product in Product.objects.all():
-        if product.general_uom_group:
-            uom_base = product.general_uom_group.uom_reference
-            if uom_base:
-                for pw_base in ProductWareHouse.objects.filter(
-                        product_id=product.id, uom_id=uom_base.id
-                ):
-                    total_receipt = 0
-                    total_sold = 0
-                    for product_warehouse in ProductWareHouse.objects.filter(
-                            product_id=product.id, warehouse=pw_base.warehouse_id
-                    ).exclude(uom_id=uom_base.id):
-                        final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
-                        total_receipt += product_warehouse.receipt_amount * final_ratio
-                        total_sold += product_warehouse.sold_amount * final_ratio
-
-                        ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
-                        ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
-                        product_warehouse.delete()
-
-                    pw_base.receipt_amount += total_receipt
-                    pw_base.sold_amount += total_sold
-                    pw_base.stock_amount += total_receipt - total_sold
-                    pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
-    print('update_product_warehouse_uom_base done.')
-    return True
+    print('Complete!')
 
 
 def update_goods_return_items_nt():
@@ -1797,7 +1773,7 @@ def update_goods_return_items_nt():
         }
     ]
 
-    update_product_warehouse_uom_base("567d8692-56f3-4fb5-8815-13dae765e763")
+    run_update_pw_uom_base(run_type=1, product_id="567d8692-56f3-4fb5-8815-13dae765e763")
     for item in data:
         obj = GoodsReturnProductDetail.objects.get(id=item.get('id'))
         obj.product_id = item.get('prd')
@@ -1865,13 +1841,61 @@ def load_hint():
     print('Done')
 
 
-def update_opp_config_stage():
-    for config_stage in OpportunityConfigStage.objects.all():
-        if isinstance(config_stage.condition_datas, list):
-            for data in config_stage.condition_datas:
-                if 'compare_data' in data:
-                    if isinstance(data['compare_data'], str):
-                        data['compare_data'] = int(data['compare_data'])
-        config_stage.save(update_fields=['condition_datas'])
-    print('update_opp_config_stage done.')
+def init_folder():
+    for employee in Employee.objects.all():
+        Folder.objects.bulk_create([
+            Folder(
+                tenant_id=employee.tenant_id, company_id=employee.company_id,
+                title=title, is_system=True,
+                employee_inherit_id=employee.id,
+            )
+            for title in ["System", "Personal", "Shared with me"]
+        ])
+    print("init_folder done.")
     return True
+
+
+def update_pw_uom_base(product):
+    if product.general_uom_group:
+        uom_base = product.general_uom_group.uom_reference
+        if uom_base:
+            for pw_base in ProductWareHouse.objects.filter(
+                    product_id=product.id, uom_id=uom_base.id
+            ):
+                total_receipt = 0
+                total_sold = 0
+                for product_warehouse in ProductWareHouse.objects.filter(
+                        product_id=product.id, warehouse=pw_base.warehouse_id
+                ).exclude(uom_id=uom_base.id):
+                    final_ratio = product_warehouse.uom.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+                    total_receipt += product_warehouse.receipt_amount * final_ratio
+                    total_sold += product_warehouse.sold_amount * final_ratio
+
+                    ProductWareHouseLot.objects.filter(product_warehouse=product_warehouse).delete()
+                    ProductWareHouseSerial.objects.filter(product_warehouse=product_warehouse).delete()
+                    product_warehouse.delete()
+
+                pw_base.receipt_amount += total_receipt
+                pw_base.sold_amount += total_sold
+                pw_base.stock_amount += total_receipt - total_sold
+                pw_base.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+    return True
+
+
+def run_update_pw_uom_base(run_type=0, product_id=None):
+    if run_type == 0:  # run all
+        for product in Product.objects.all():
+            update_pw_uom_base(product=product)
+    if run_type == 1:  # by product_id
+        product = Product.objects.filter(id=product_id).first()
+        if product:
+            update_pw_uom_base(product=product)
+    print('run_update_pw_uom_base done.')
+    return True
+
+
+def delete_gr_map_wh():
+    gr_wh = GoodsReceiptWarehouse.objects.filter(id="80afc5ee-f7b9-486f-a756-b66a3c642c40").first()
+    if gr_wh:
+        gr_wh.delete()
+    print('delete_gr_map_wh done.')

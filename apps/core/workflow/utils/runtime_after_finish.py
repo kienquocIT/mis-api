@@ -96,7 +96,7 @@ class DocHandler:
         )
         if obj:
             # check is_possible
-            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj)
+            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj, type_action=0)
             if is_possible is True:
                 return True
             raise serializers.ValidationError({'detail': WorkflowMsg.WF_VALIDATE_CHANGE_CANCEL})
@@ -112,7 +112,7 @@ class DocHandler:
         )
         if obj:
             # check is_possible
-            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj)
+            is_possible = WFValidateHandler.is_possible_change_cancel(obj=obj, type_action=1)
             if is_possible is True:
                 setattr(obj, 'system_status', 4)  # cancel with reject
                 obj.save(update_fields=['system_status'])

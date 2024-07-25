@@ -23,11 +23,9 @@ class DeliHandler:
                 # nếu trừ đủ update vào warehouse, return true
                 break
             final_ratio = 1
-            uom_base = item.uom
             uom_delivery = UnitOfMeasure.objects.filter(id=source['uom']).first()
-            if uom_base and uom_delivery:
-                if uom_base.ratio > 0:
-                    final_ratio = uom_delivery.ratio / uom_base.ratio
+            if item.product and uom_delivery:
+                final_ratio = cls.get_final_uom_ratio(product_obj=item.product, uom_transaction=uom_delivery)
             delivery_quantity = source['quantity'] * final_ratio
             if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
@@ -130,3 +128,11 @@ class DeliHandler:
             cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
             total_all_wh += cost * quantity_deli
         return total_all_wh
+
+    @classmethod
+    def get_final_uom_ratio(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+        return 1

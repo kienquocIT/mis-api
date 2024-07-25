@@ -49,6 +49,7 @@ class ApplicationName:
     report_reportinventory = _('Report Inventory')
     cashoutflow_returnadvance = _('Return Advance')
     revenue_plan_revenueplan = _('Revenue Plan')
+    budgetplan_budgetplan = _('Budget Plan')
     hr_role = _('Role')
     saleorder_saleorder = _('Sale Order')
     saledata_shipping = _('Shipping')
@@ -57,3 +58,4 @@ class ApplicationName:
     saledata_warehouse = _('Warehouse')
     workflow_workflow = _('Workflow')
     project_project = _('Project')
+    project_projectbaseline = _('Project Baseline')

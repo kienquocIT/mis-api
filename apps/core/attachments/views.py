@@ -110,7 +110,7 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'parent_n_id': ['exact', 'isnull'],
-        'id': ['exact', 'isnull'],
+        'employee_inherit_id': ['exact', 'isnull'],
     }
     serializer_list = FolderListSerializer
     serializer_create = FolderCreateSerializer

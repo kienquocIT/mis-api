@@ -70,6 +70,7 @@ class AdvancePayment(DataAbstractModel):
     )
     return_date = models.DateTimeField()
     money_gave = models.BooleanField(default=False)
+    advance_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Advance Payment'
