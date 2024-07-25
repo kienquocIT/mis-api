@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
-        BUILD_TRIGGER_BY = currentBuild.getBuildCauses()[0].shortDescription + " / " + currentBuild.getBuildCauses()[0].userId
+        BUILD_TRIGGER_BY = getBuildUser()
 
         SERVER_IP_DEPLOY_DEFAULT = credentials('server-ip-deploy-default')
         SERVER_PATH_DELOY_DEFAULT = credentials('server-path-deploy-default')
@@ -95,3 +95,7 @@ def sendTelegram(message) {
     """
 }
 
+@NonCPS
+def getBuildUser() {
+    return currentBuild.rawBuild.getCause(Cause.UserIdCause).getUserId()
+}
