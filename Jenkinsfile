@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         GIT_TAG_COMMIT = sh(script: 'git describe --tags --always', returnStdout: true).trim()
+        BUILD_TRIGGER_BY = currentBuild.getBuildCauses()[0].shortDescription + " / " + currentBuild.getBuildCauses()[0].userId
 
         SERVER_IP_DEPLOY_DEFAULT = credentials('server-ip-deploy-default')
         SERVER_PATH_DELOY_DEFAULT = credentials('server-path-deploy-default')
@@ -15,6 +16,7 @@ pipeline {
         stage('Pre-Build') {
             steps {
                 script {
+                    echo "BUILD_TRIGGER_BY: ${BUILD_TRIGGER_BY}"
                     if (TELEGRAM_ENABLE == '1') {
                         sendTelegram("[${JOB_NAME}] Jenkins is building (￣_,￣ ) 💛💛💛");
                     }
