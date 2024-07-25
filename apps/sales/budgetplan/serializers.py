@@ -189,7 +189,7 @@ class BudgetPlanDetailSerializer(serializers.ModelSerializer):
                     'company_quarter_list': item.company_quarter_list,
                     'company_year': item.company_year
                 })
-            company_budget_data['data_budget'] = data_budget
+        company_budget_data['data_budget'] = data_budget
         return company_budget_data
 
 
