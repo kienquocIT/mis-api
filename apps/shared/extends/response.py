@@ -62,6 +62,8 @@ class ConvertErrors:
         return True
 
     def convert(self, errors: dict, status_code: str or int):
+        if settings.DEBUG_PERMIT:
+            print('ConvertErrors.convert:', status_code, '-', errors)
         for key, value in errors.items():
             self.handle_dict(key=key, value=value)
         if status_code:

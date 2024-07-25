@@ -1,15 +1,10 @@
 # pylint: disable=W1401
+import datetime
 
-__all__ = [
-    'FormSingleLineConfigSerializer',
-    'FormMultipleLineConfigSerializer',
-    'FormNumberConfigSerializer',
-    'FormPhoneConfigSerializer',
-    'FormEmailConfigSerializer',
-]
+from apps.shared.html_constant import FORM_SANITIZE_TRUSTED_DOMAIN_LINK
+from apps.core.mailer.handle_html import HTMLController
 
 from .serializers_base import *  # pylint: disable=W0401,W0614
-
 
 # re-define class with field
 # def create_serializer_class(base_class, field_name, field_type):
@@ -325,3 +320,457 @@ class FormEmailConfigSerializer(  # noqa
         self.call_m(func=self.manage_min, **ctx)
         self.call_m(func=self.manage_max, **ctx)
         self.call_m(func=self.manage_email, **ctx)
+
+
+class FormSelectOptions(serializers.Serializer):  # noqa
+    title = serializers.CharField(max_length=255)
+    is_default = serializers.BooleanField(default=False)
+    is_default_multiple = serializers.BooleanField(default=False)
+
+
+class FormSelectConfigSerializer(  # noqa
+    ConfigBase, ConfigRequired, ConfigVisibility,
+):
+    options = FormSelectOptions(many=True, default=[])
+
+    @classmethod
+    def validate_options(cls, attrs):
+        if attrs and isinstance(attrs, list) and len(attrs) > 0:
+            default_value = None
+            title_arr = []
+            for item in attrs:
+                if item and isinstance(item, dict) and 'is_default' in item:
+                    if item['is_default'] is True:
+                        if default_value is not None:
+                            raise serializers.ValidationError(
+                                {
+                                    'options': FormMsg.SELECT_DEFAULT_UNIQUE
+                                }
+                            )
+                    title_arr.append(item['title'])
+                else:
+                    raise serializers.ValidationError({'options': FormMsg.SELECT_OPTION_REQUIRED})
+
+            if len(set(title_arr)) != len(title_arr):
+                raise serializers.ValidationError({'options': FormMsg.SELECT_TITLE_UNIQUE})
+            return attrs
+        raise serializers.ValidationError({'options': FormMsg.SELECT_OPTION_REQUIRED})
+
+    is_multiple = serializers.BooleanField(default=False, required=False)
+
+    def manage_options(self, input_name, input_value):  # pylint: disable=R0912
+        if self.mc_required and not input_value:
+            raise serializers.ValidationError({input_name: FormMsg.REQUIRED_FAIL})
+
+        is_multiple = self.manage_configs.get('is_multiple', False)
+        options = self.manage_configs.get('options', [])
+        if options and isinstance(options, list) and len(options) > 0 and isinstance(is_multiple, bool):
+            title_arr = []
+            for item in options:
+                if isinstance(item, dict) and 'title' in item:
+                    title_arr.append(item['title'])
+                else:
+                    raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+            if len(title_arr) == 0:
+                raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+
+            if is_multiple is True and isinstance(input_value, list):
+                for inp_value in input_value:
+                    if inp_value not in title_arr:
+                        raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+            elif is_multiple is False and isinstance(input_value, str):
+                if input_value not in title_arr:
+                    raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+            else:
+                raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+        else:
+            raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+
+    def manage__valid(self, *args, **kwargs):
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        self.call_m(func=self.manage_required, **ctx)
+        self.call_m(func=self.manage_options, **ctx)
+
+
+class FormCheckboxConfigSerializer(  # noqa
+    ConfigVisibility,  # ManageBase
+):
+    label = serializers.CharField(allow_blank=True, max_length=255)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    instruction = serializers.CharField(allow_blank=True)
+
+    @classmethod
+    def validate_instruction(cls, attrs):
+        return attrs.strip()
+
+    size = serializers.ChoiceField(default='medium', choices=['extra-small', 'small', 'medium', 'large', 'extra-large'])
+
+    checkbox_style = serializers.ChoiceField(default='default', choices=['default', 'switch'])
+
+    init_value = serializers.ChoiceField(default='unchecked', choices=['unchecked', 'checked'])
+
+    def manage__valid(self, *args, **kwargs):
+        pass
+
+
+class CheckboxItemInList(serializers.Serializer):  # noqa
+    name = serializers.CharField(max_length=255, required=True)
+    label = serializers.CharField(max_length=255, required=True)
+    is_default = serializers.BooleanField(default=False)
+
+
+class FormManyCheckboxConfigSerializer(  # noqa
+    ConfigVisibility,  # ManageBase
+):
+    label = serializers.CharField(allow_blank=True, max_length=255)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    instruction = serializers.CharField(allow_blank=True)
+
+    @classmethod
+    def validate_instruction(cls, attrs):
+        return attrs.strip()
+
+    size = serializers.ChoiceField(default='medium', choices=['extra-small', 'small', 'medium', 'large', 'extra-large'])
+
+    checkbox_style = serializers.ChoiceField(default='default', choices=['default', 'switch'])
+
+    list_checkbox = serializers.ListSerializer(
+        child=CheckboxItemInList(), min_length=1, max_length=20,
+    )
+
+    def manage__valid(self, *args, **kwargs):
+        pass
+
+
+class FormDateConfigSerializer(  # noqa
+    ConfigBase, ConfigRequired, ConfigVisibility,  # ManageBase
+):
+    init_value_type = serializers.ChoiceField(default='unset', choices=['unset', 'now', 'custom'])
+    init_value_custom = serializers.DateField(allow_null=True)
+    format = serializers.CharField(default='j F Y')
+    min_value = serializers.DateField(allow_null=True)
+    max_value = serializers.DateField(allow_null=True)
+
+    @classmethod
+    def check_date_string_format(cls, date_text) -> datetime.datetime or False:
+        try:
+            return datetime.date.fromisoformat(date_text)
+        except ValueError:
+            pass
+        return False
+
+    def errors_general(self):
+        errors = {}
+        for inp_name in self.manage_input_names:
+            errors[inp_name] = FormMsg.DATE_TYPE_NOT_SUPPORT
+        return errors
+
+    def manage_date(self, *args, **kwargs):
+        errors = {}
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        if not self.check_date_string_format(ctx['input_value']):
+            errors[ctx['input_name']] = FormMsg.DATE_FORMAT_INCORRECT
+        if errors:
+            raise serializers.ValidationError(errors)
+
+    def manage__valid(self, *args, **kwargs):
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        self.call_m(func=self.manage_required, **ctx)
+        self.call_m(func=self.manage_date, **ctx)
+
+
+class FormTimeConfigSerializer(  # noqa
+    ConfigBase, ConfigRequired, ConfigVisibility,
+):
+    init_value_type = serializers.ChoiceField(default='unset', choices=['unset', 'now', 'custom'])
+    init_value_custom = serializers.TimeField(allow_null=True)
+    format = serializers.CharField(default='H:i')
+    min_value = serializers.TimeField(allow_null=True)
+    max_value = serializers.TimeField(allow_null=True)
+
+    @classmethod
+    def check_time_string_format(cls, date_text) -> datetime.datetime or False:
+        try:
+            return datetime.time.fromisoformat(date_text)
+        except ValueError:
+            pass
+        return False
+
+    def errors_general(self):
+        errors = {}
+        for inp_name in self.manage_input_names:
+            errors[inp_name] = FormMsg.TIME_TYPE_NOT_SUPPORT
+        return errors
+
+    def manage_time(self, *args, **kwargs):
+        errors = {}
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        if not self.check_time_string_format(ctx['input_value']):
+            errors[ctx['input_name']] = FormMsg.TIME_FORMAT_INCORRECT
+        if errors:
+            raise serializers.ValidationError(errors)
+
+    def manage__valid(self, *args, **kwargs):
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        self.call_m(func=self.manage_required, **ctx)
+        self.call_m(func=self.manage_time, **ctx)
+
+
+class FormDatetimeConfigSerializer(  # noqa
+    ConfigBase, ConfigRequired, ConfigVisibility,  # ManageBase
+):
+    init_value_type = serializers.ChoiceField(default='unset', choices=['unset', 'now', 'custom'])
+    init_value_custom = serializers.DateTimeField(allow_null=True)
+    format = serializers.CharField(default='j F Y')
+    min_value = serializers.DateTimeField(allow_null=True)
+    max_value = serializers.DateTimeField(allow_null=True)
+
+    @classmethod
+    def check_datetime_string_format(cls, date_text) -> datetime.datetime or False:
+        try:
+            return datetime.datetime.fromisoformat(date_text)
+        except ValueError:
+            pass
+        return False
+
+    def errors_general(self):
+        errors = {}
+        for inp_name in self.manage_input_names:
+            errors[inp_name] = FormMsg.DATE_TYPE_NOT_SUPPORT
+        return errors
+
+    def manage_datetime(self, *args, **kwargs):
+        errors = {}
+
+        def push_errors(key, value):
+            if key not in errors:
+                errors[key] = value
+            elif isinstance(errors[key], list):
+                errors[key].append(value)
+            else:
+                errors[key] = [errors[key], value]
+
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        current_data = self.check_datetime_string_format(ctx['input_value'])
+        if not current_data:
+            push_errors(ctx['input_name'], FormMsg.DATE_FORMAT_INCORRECT)
+        else:
+            if self.manage_configs['min_value']:
+                min_data = self.check_datetime_string_format(self.manage_configs['min_value'])
+                if min_data and current_data < min_data:
+                    push_errors(ctx['input_name'], FormMsg.DATE_LESS_THAN_MIN)
+            if self.manage_configs['max_value']:
+                max_data = self.check_datetime_string_format(self.manage_configs['max_value'])
+                if max_data and current_data > max_data:
+                    push_errors(ctx['input_name'], FormMsg.DATE_LARGE_THAN_MAX)
+        if errors:
+            raise serializers.ValidationError(errors)
+
+    def manage__valid(self, *args, **kwargs):
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        self.call_m(func=self.manage_required, **ctx)
+        self.call_m(func=self.manage_datetime, **ctx)
+
+
+class RatingItemsConfigSerializer(serializers.Serializer):  # noqa
+    value = serializers.CharField(max_length=100)
+    icon = serializers.CharField(max_length=50)
+    color = serializers.CharField(max_length=10)
+    review_require = serializers.BooleanField(default=False)
+    icon_style = serializers.ChoiceField(default='solid', choices=['solid', 'regular'])
+
+
+class FormRatingConfigSerializer(  # noqa
+    ConfigBase, ConfigRequired, ConfigVisibility
+):
+    items = serializers.ListSerializer(
+        child=RatingItemsConfigSerializer(),
+        allow_empty=False, allow_null=False,
+        min_length=1,
+    )
+    isolation_animate = serializers.BooleanField(default=False)
+
+    def _mc__parse_items(self):
+        result = {
+            'values': [],
+            'review_require': [],
+        }
+        items_arr = self.manage_configs.get('items', [])
+        if items_arr and isinstance(items_arr, list):
+            for item in items_arr:
+                if item and isinstance(item, dict) and 'value' in item:
+                    result['values'].append(item['value'])
+                    if item.get('review_require', False) is True:
+                        result['review_require'].append(item['value'])
+        return result
+
+    def manage_rate(self, *args, **kwargs):
+        parse_items = self._mc__parse_items()
+        if self.manage_input_values[0] not in parse_items['values']:
+            raise serializers.ValidationError(
+                {
+                    self.manage_input_names[0]: FormMsg.RATE_VOTE_NOT_SUPPORT
+                }
+            )
+
+        if self.manage_input_values[0] in parse_items['review_require']:
+            if not self.manage_input_values[1]:
+                raise serializers.ValidationError(
+                    {
+                        self.manage_input_names[1]: FormMsg.RATE_REVIEW_REQUIRE
+                    }
+                )
+
+    def manage__valid(self, *args, **kwargs):
+        ctx = {
+            'input_name': self.manage_input_names[0],
+            'input_value': self.manage_input_values[0],
+        }
+        self.call_m(func=self.manage_required, **ctx)
+        self.call_m(func=self.manage_rate, **ctx)
+
+
+class FormCardTextConfigSerializer(  # noqa
+    ManageBase
+):
+    label = serializers.CharField(allow_blank=True, max_length=255)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    content = serializers.CharField()
+
+    def validate_content(self, attrs):
+        return HTMLController(html_str=attrs).clean(
+            trusted_domain=FORM_SANITIZE_TRUSTED_DOMAIN_LINK,
+        )
+
+    def manage__valid(self, *args, **kwargs):
+        ...
+
+
+class FormCardHeadingConfigSerializer(  # noqa
+    ManageBase,
+):
+    label = serializers.CharField(allow_blank=True, max_length=255)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    instruction = serializers.CharField(allow_blank=True, required=False, default='')
+
+    @classmethod
+    def validate_instruction(cls, attrs):
+        return attrs.strip()
+
+    def manage__valid(self, *args, **kwargs):
+        ...
+
+
+class FormSliderConfigSerializer(  # noqa
+    ConfigBase
+):
+    init_value = serializers.IntegerField(default=0)
+    min_value = serializers.IntegerField(default=0)
+    max_value = serializers.IntegerField(default=1)
+    unit_prefix = serializers.CharField(default='', allow_blank=True, max_length=25)
+    unit_postfix = serializers.CharField(default='', allow_blank=True, max_length=25)
+    step = serializers.IntegerField(default=1, min_value=1)
+    skin = serializers.ChoiceField(
+        default='flat', choices=[
+            'flat', 'big', 'modern', 'sharp', 'round', 'square',
+        ]
+    )
+
+    def manage__valid(self, *args, **kwargs):
+        ...
+
+
+class PageBreakHead(ManageBase):  # noqa
+    label = serializers.CharField(allow_blank=True, max_length=100)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    show_head = serializers.BooleanField(default=False)
+
+
+class PageBreakFoot(ManageBase):  # noqa
+    is_prev = serializers.BooleanField(default=False)
+    is_next = serializers.BooleanField(default=False)
+    title_prev = serializers.CharField(max_length=50)
+    title_next = serializers.CharField(max_length=50)
+    show_page_number = serializers.BooleanField(default=False)
+    page_number = serializers.IntegerField(allow_null=True, default=None)
+    page_length = serializers.IntegerField(allow_null=True, default=None)
+
+
+class PageBreakItem(ManageBase):  # noqa
+    head = PageBreakHead()
+    foot = PageBreakFoot()
+
+
+class FormPageConfigSerializer(ManageBase):  # noqa
+    items = serializers.ListSerializer(
+        child=PageBreakItem(),
+        min_length=0,
+        max_length=10,
+        allow_empty=True,
+    )
+    display_page_number = serializers.BooleanField(default=False)
+    display_title = serializers.ChoiceField(default='bar', choices=['', 'bar', 'page', 'bar-and-page'])
+    justify_progress_item = serializers.ChoiceField(default='around', choices=['around', 'between', 'evenly'])
+    progress_style = serializers.ChoiceField(default='steps', choices=['steps', 'proportion', 'bar', 'piece'])
+    show_progress_page = serializers.BooleanField(default=False)
+
+
+class FormPageBreakHeadConfigSerializer(ManageBase):  # noqa
+    label = serializers.CharField(allow_blank=True, max_length=100)
+
+    @classmethod
+    def validate_label(cls, attrs):
+        return attrs.strip()
+
+    head = PageBreakHead()
+
+    foot = PageBreakFoot()
+
+    def manage__valid(self, *args, **kwargs):
+        ...
+
+
+class FormPageBreakFootConfigSerializer(PageBreakFoot):  # noqa
+    def manage__valid(self, *args, **kwargs):
+        ...

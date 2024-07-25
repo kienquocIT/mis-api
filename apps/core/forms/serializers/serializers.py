@@ -1,13 +1,17 @@
+import sys
 from uuid import uuid4
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.forms.i18n import FormMsg
 from apps.core.forms.models import Form, FormPublished, FormPublishedEntries
 from apps.core.forms.validation import FormValidation
+from apps.core.forms.validation.serializers_form import FormPageConfigSerializer
 
 from apps.core.mailer.handle_html import HTMLController
+from apps.shared.html_constant import FORM_SANITIZE_TRUSTED_DOMAIN_LINK
 
 
 class EntriesDefaultShow(serializers.Serializer):  # noqa
@@ -59,13 +63,27 @@ class FormDetailSerializer(serializers.ModelSerializer):
     def get_display_creator(cls, obj):
         return obj.entries_default_show.get('display_creator', False)
 
+    configs = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_configs(cls, obj):
+        result = {}
+        for key, item in obj.configs.items():
+            if isinstance(item, dict) and 'type' in item and 'config' in item:
+                type_field = item['type']
+                if type_field == 'card-text' and isinstance(item['config'], dict) and 'content' in item['config']:
+                    item['config']['content'] = HTMLController.unescape(item['config']['content'])
+            result[key] = item
+        return result
+
     class Meta:
         model = Form
         fields = (
             'id', 'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required', 'submit_only_one', 'edit_submitted',
+            'authentication_required',
+            'submit_only_one', 'edit_submitted',
             'display_referrer_name', 'display_creator',
-            'theme_selected', 'theme_assets',
+            'theme_selected', 'theme_assets', 'page',
             'configs_order', 'configs',
             'published'
         )
@@ -153,6 +171,8 @@ class FormCreateSerializer(serializers.ModelSerializer):
 
     entries_default_show = EntriesDefaultShow()
 
+    page = FormPageConfigSerializer()
+
     def create(self, validated_data):
         html_text = validated_data.pop('html_text', None)
 
@@ -175,9 +195,10 @@ class FormCreateSerializer(serializers.ModelSerializer):
         model = Form
         fields = (
             'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required', 'submit_only_one', 'edit_submitted',
+            'authentication_required',
+            'submit_only_one', 'edit_submitted',
             'entries_default_show',
-            'theme_selected', 'theme_assets',
+            'theme_selected', 'theme_assets', 'page',
             'configs_order', 'configs',
             'html_text',
         )
@@ -201,21 +222,32 @@ class FormUpdateSerializer(serializers.ModelSerializer):
 
     html_text = serializers.CharField(required=False)
 
+    def validate_html_text(self, attrs):
+        attrs = HTMLController(html_str=attrs).clean(
+            trusted_domain=FORM_SANITIZE_TRUSTED_DOMAIN_LINK,
+            allowed_input_names=self.instance.get_input_names(),
+        )
+        if sys.getsizeof(attrs) > settings.FORM_MAX_SIZE_HTML_BYTES:
+            raise serializers.ValidationError({
+                'html_text': FormMsg.FORM_HTML_LARGER_THAN_500kB,
+            })
+        return attrs
+
     configs_order = serializers.ListSerializer(
         child=serializers.CharField(), allow_empty=True, allow_null=True, required=False
     )
 
     entries_default_show = EntriesDefaultShow()
 
+    page = FormPageConfigSerializer()
+
     def update(self, instance, validated_data):
         html_text = validated_data.pop('html_text', None)
-
         configs_order = validated_data.pop('configs_order', instance.configs_order)
         configs = validated_data.pop('configs', instance.configs)
         valid_cls = FormValidation(configs_order=configs_order, configs=configs)
         validated_data['configs_order'] = configs_order
         validated_data['configs'] = valid_cls.configs_validated
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -227,15 +259,15 @@ class FormUpdateSerializer(serializers.ModelSerializer):
                 published_obj.save(update_fields=['html_text'])
         except FormPublished.DoesNotExist:
             pass
-
         return instance
 
     class Meta:
         model = Form
         fields = (
             'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required', 'submit_only_one', 'edit_submitted',
-            'entries_default_show',
+            'authentication_required',
+            'submit_only_one', 'edit_submitted',
+            'entries_default_show', 'page',
             'configs_order', 'configs',
             'html_text'
         )
@@ -381,6 +413,12 @@ class FormPublishedRuntimeDetailSerializer(serializers.ModelSerializer):
         html_text = HTMLController.unescape(obj.html_text)
         return html_text
 
+    authentication_required = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_authentication_required(cls, obj):
+        return obj.form.authentication_required
+
     edit_submitted = serializers.SerializerMethodField()
 
     @classmethod
@@ -404,6 +442,7 @@ class FormPublishedRuntimeDetailSerializer(serializers.ModelSerializer):
             'html_text', 'theme_assets',
             'form_title', 'form_remark',
             'company_title', 'company_logo',
+            'authentication_required',
             'edit_submitted',
             'is_public', 'is_iframe',
             'submitted_data',
