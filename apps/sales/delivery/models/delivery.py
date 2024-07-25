@@ -465,6 +465,7 @@ class OrderDeliverySub(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
+                    DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_status(instance=self)  # sale order

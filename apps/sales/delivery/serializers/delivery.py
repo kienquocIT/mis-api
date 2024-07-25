@@ -281,25 +281,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.delivery_logistic = validated_data['delivery_logistic']
 
     @classmethod
-    def minus_product_warehouse_stock(cls, tenant_com_info, product, stock_info, config):
-        # sử dụng vòng for trong delivery data để đảm bảo nếu như pick từ nhiều kho khác nhau, thì có thể trừ đúng kho
-        # bên picking đã pick, một trong các prod ko dc trừ sẽ trã vể lỗi phiếu
-        for data in stock_info:
-            product_warehouse = ProductWareHouse.objects.filter(
-                tenant_id=tenant_com_info['tenant_id'],
-                company_id=tenant_com_info['company_id'],
-                product_id=product.product_id,
-                warehouse_id=data['warehouse'],
-            )
-            if product_warehouse.exists():
-                source = {
-                    "uom": data['uom'],
-                    "quantity": data['stock']
-                }
-                DeliFinishHandler.minus_tock(source, product_warehouse, config)
-        return True
-
-    @classmethod
     def update_prod(cls, sub, product_done, config):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=sub
@@ -317,78 +298,13 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         raise serializers.ValidationError(
                             {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
                         )
-
-                    # config case 1, 2, 3
-                    cls.minus_product_warehouse_stock(
-                        {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
-                        obj,
-                        delivery_data,
-                        config
-                    )
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
         return True
 
     @classmethod
-    def create_prod(cls, new_sub, instance):
-        # update to current product list of current sub
-        prod_arr = []
-        for obj in OrderDeliveryProduct.objects.filter_current(
-                delivery_sub=instance
-        ):
-            delivery_before = obj.delivered_quantity_before + obj.picked_quantity
-            remain = obj.delivery_quantity - delivery_before
-
-            new_prod = OrderDeliveryProduct(
-                delivery_sub=new_sub,
-                product=obj.product,
-                uom=obj.uom,
-                delivery_quantity=obj.delivery_quantity,
-                delivered_quantity_before=delivery_before,
-                remaining_quantity=remain,
-                ready_quantity=obj.ready_quantity - obj.picked_quantity if obj.ready_quantity > 0 else 0,
-                picked_quantity=0,
-                order=obj.order,
-                delivery_data=obj.delivery_data
-            )
-            new_prod.before_save()
-            prod_arr.append(new_prod)
-        OrderDeliveryProduct.objects.bulk_create(prod_arr)
-        return True
-
-    @classmethod
-    def create_new_sub(cls, instance, total_done, case=0):
-        quantity_before = instance.delivered_quantity_before + total_done
-        remaining_quantity = instance.delivery_quantity - quantity_before
-        new_sub = OrderDeliverySub.objects.create(
-            company_id=instance.company_id,
-            tenant_id=instance.tenant_id,
-            order_delivery=instance.order_delivery,
-            date_done=None,
-            previous_step=instance,
-            times=instance.times + 1,
-            delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=quantity_before,
-            remaining_quantity=remaining_quantity,
-            # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
-            ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
-            delivery_data=None,
-            is_updated=False,
-            state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
-            sale_order_data=instance.order_delivery.sale_order_data,
-            estimated_delivery_date=instance.estimated_delivery_date,
-            actual_delivery_date=instance.actual_delivery_date,
-            customer_data=instance.customer_data,
-            contact_data=instance.contact_data,
-            config_at_that_point=instance.config_at_that_point,
-            employee_inherit=instance.employee_inherit,
-            system_status=1,
-        )
-        return new_sub
-
-    @classmethod
-    def config_two(cls, instance, total_done, product_done, config):  # none_picking_many_delivery
+    def config_two(cls, instance, product_done, config):  # none_picking_many_delivery
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
@@ -398,39 +314,19 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
                            'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
         )
-        if instance.remaining_quantity > total_done:  # still not delivery all items, create new sub
-            new_sub = cls.create_new_sub(instance, total_done, 2)
-            cls.create_prod(new_sub, instance)
-            delivery_obj = instance.order_delivery
-            delivery_obj.sub = new_sub
-            delivery_obj.save(update_fields=['sub'])
-        else:  # delivery all items, not create new sub
-            instance.order_delivery.state = 2
-            instance.order_delivery.save(update_fields=['state'])
         return True
 
     @classmethod
-    def config_four(cls, instance, total_done, product_done, config):  # picking_many_delivery
+    def config_four(cls, instance, product_done, config):  # picking_many_delivery
         cls.update_prod(instance, product_done, config)
-        order_delivery = instance.order_delivery
-        if instance.remaining_quantity > total_done:
-            new_sub = cls.create_new_sub(instance, total_done, 4)
-            cls.create_prod(new_sub, instance)
-            order_delivery.sub = new_sub
-            # update sub cũ
-            instance.date_done = timezone.now()
-            instance.is_updated = True
-            instance.state = 2
-        elif instance.remaining_quantity == total_done:
-            instance.date_done = timezone.now()
-            instance.is_updated = True
-            instance.state = 2
-            order_delivery.state = 2
+        instance.date_done = timezone.now()
+        instance.is_updated = True
+        instance.state = 2
         instance.save(
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
                            'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
         )
-        order_delivery.save(update_fields=['sub', 'state'])
+        return True
 
     @classmethod
     def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
@@ -563,10 +459,10 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     self.handle_attach_file(instance, validated_data)
                     if is_partial and not is_picking:
                         # config 2 (none_picking_many_delivery)
-                        self.config_two(instance, total_done, product_done, config)
+                        self.config_two(instance, product_done, config)
                     if is_partial and is_picking:
                         # config 4 (picking_many_delivery)
-                        self.config_four(instance, total_done, product_done, config)
+                        self.config_four(instance, product_done, config)
             except Exception as err:
                 print(err)
                 raise err
@@ -578,8 +474,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
 
-        # DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
-        # DeliFinishHandler.push_final_acceptance(instance=instance, validated_product=validated_product)
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
         self.prepare_data_for_logging(instance)

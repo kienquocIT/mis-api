@@ -7,18 +7,20 @@ class DeliFinishHandler:
     # NEW DELIVERY SUB + PRODUCT
     @classmethod
     def create_new(cls, instance):
+        config = cls.get_delivery_config(instance=instance)
+        is_picking = config['is_picking']
         total_done = 0
         for deli_product in instance.delivery_product_delivery_sub.all():
             total_done += deli_product.picked_quantity
+        delivery_obj = instance.order_delivery
         if instance.remaining_quantity > total_done:  # still not delivery all items, create new sub
-            new_sub = cls.create_new_sub(instance, total_done, 2)
+            new_sub = cls.create_new_sub(instance, total_done, 2 if is_picking is False else 4)
             cls.create_prod(new_sub, instance)
-            delivery_obj = instance.order_delivery
             delivery_obj.sub = new_sub
             delivery_obj.save(update_fields=['sub'])
         else:  # delivery all items, not create new sub
-            instance.order_delivery.state = 2
-            instance.order_delivery.save(update_fields=['state'])
+            delivery_obj.state = 2
+            delivery_obj.save(update_fields=['state'])
         return True
 
     @classmethod
@@ -37,7 +39,6 @@ class DeliFinishHandler:
                 delivery_quantity=instance.delivery_quantity,
                 delivered_quantity_before=quantity_before,
                 remaining_quantity=remaining_quantity,
-                # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
                 ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
                 delivery_data=None,
                 is_updated=False,
@@ -79,12 +80,7 @@ class DeliFinishHandler:
     # PRODUCT WAREHOUSE
     @classmethod
     def push_product_warehouse(cls, instance):
-        config = instance.config_at_that_point
-        if not config:
-            if hasattr(instance.company, 'sales_delivery_config_detail'):
-                get_config = instance.company.sales_delivery_config_detail
-                if get_config:
-                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
+        config = cls.get_delivery_config(instance=instance)
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.delivery_data:
                 for data_deli in deli_product.delivery_data:
@@ -92,7 +88,7 @@ class DeliFinishHandler:
                         product_warehouse = deli_product.product.product_warehouse_product.filter(
                             tenant_id=instance.tenant_id, company_id=instance.company_id,
                             warehouse_id=data_deli['warehouse'],
-                        ).first()
+                        )
                         source = {"uom": data_deli['uom'], "quantity": data_deli['stock']}
                         DeliFinishHandler.minus_tock(source, product_warehouse, config)
         return True
@@ -193,6 +189,16 @@ class DeliFinishHandler:
             list_data_indicator=list_data_indicator,
         )
         return True
+
+    @classmethod
+    def get_delivery_config(cls, instance):
+        config = instance.config_at_that_point
+        if not config:
+            if hasattr(instance.company, 'sales_delivery_config_detail'):
+                get_config = instance.company.sales_delivery_config_detail
+                if get_config:
+                    return {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
+        return config
 
     @classmethod
     def get_final_uom_ratio(cls, product_obj, uom_transaction):
