@@ -97,5 +97,5 @@ def sendTelegram(message) {
 
 @NonCPS
 def getBuildUser() {
-    return currentBuild.rawBuild.getCause(Cause.UserIdCause).getUserId()
+    return currentBuild.getBuildCauses()[0].userId
 }
