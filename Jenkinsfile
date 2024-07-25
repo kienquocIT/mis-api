@@ -6,7 +6,7 @@ pipeline {
         SERVER_IP_DEPLOY_DEFAULT = credentials('server-ip-deploy-default')
         SERVER_PATH_DELOY_DEFAULT = credentials('server-path-deploy-default')
 
-        TELEGRAM_ENABLE = credentials('telegram-enable)
+        TELEGRAM_ENABLE = credentials('telegram-enable')
         TELEGRAM_TOKEN = credentials('telegram-token') 
         TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
     }
