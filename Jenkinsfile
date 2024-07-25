@@ -14,7 +14,11 @@ pipeline {
         stage('Pre-Build') {
             steps {
                 script {
-                    sh "telegram-send --token '${env.TELEGRAM_TOKEN}' --chat '${env.TELEGRAM_CHAT_ID}' --text '${env.TEXT_PRE_BUILD}'"
+                    sh '''
+                        curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                            -d chat_id=${TELEGRAM_CHAT_ID} \
+                            -d text="${TEXT_PRE_BUILD}"
+                    '''
                 }
             }
         }
@@ -62,7 +66,11 @@ pipeline {
     post {
         always {
             script {
-                sh "telegram-send --token '${env.TELEGRAM_TOKEN}' --chat '${env.TELEGRAM_CHAT_ID}' --text 'Build finished: ${currentBuild.currentResult}'"
+                sh '''
+                    curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                    -d chat_id=${TELEGRAM_CHAT_ID} \
+                    -d text="Build finished: ${currentBuild.currentResult}"
+                '''
             }
         }
     }
