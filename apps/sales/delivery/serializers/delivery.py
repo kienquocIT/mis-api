@@ -308,7 +308,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
-        instance.state = 2
+        # instance.state = 2
         instance.is_updated = True
         instance.next_node_collab_id = next_node_collab_id
         instance.save(

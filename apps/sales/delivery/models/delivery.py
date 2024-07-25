@@ -459,12 +459,19 @@ class OrderDeliverySub(DataAbstractModel):
             kwargs['update_fields'].append('code')
         return True
 
+    @classmethod
+    def push_state(cls, instance, kwargs):
+        instance.state = 2
+        kwargs['update_fields'].append('state')
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
+                    self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.push_product_info(instance=self)  # product
