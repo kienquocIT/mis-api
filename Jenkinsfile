@@ -5,9 +5,6 @@ pipeline {
 
         TELEGRAM_TOKEN = credentials('telegram-token') 
         TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
-        TEXT_PRE_BUILD = "Jenkins is building ${JOB_NAME}"
-        TEXT_SUCCESS_BUILD = "${JOB_NAME} is Success"
-        TEXT_FAILURE_BUILD = "${JOB_NAME} is Failure"
     }
 
     stages {
@@ -17,7 +14,7 @@ pipeline {
                     sh '''
                         curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
                             -d chat_id=${TELEGRAM_CHAT_ID} \
-                            -d text="${TEXT_PRE_BUILD}"
+                            -d text="[${JOB_NAME}] Jenkins is building (￣_,￣ ) 💛💛💛"
                     '''
                 }
             }
@@ -69,7 +66,7 @@ pipeline {
                 sh """
                     curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
                     -d chat_id=${TELEGRAM_CHAT_ID} \
-                    -d text="Build finished: SUCCESSFUL"
+                    -d text="[${JOB_NAME}] Build finished: SUCCESSFUL (￣▽￣) 💚💚💚"
                 """
             }
         }
@@ -78,7 +75,7 @@ pipeline {
                 sh """
                     curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
                     -d chat_id=${TELEGRAM_CHAT_ID} \
-                    -d text="Build finished: FAILURE"
+                    -d text="[${JOB_NAME}] Build finished: FAILURE ㄟ( ▔, ▔ )ㄏ 💔💔💔"
                 """
             }
         }
