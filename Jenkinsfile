@@ -56,10 +56,15 @@ pipeline {
             steps {
                 echo "START SSH SERVER";
                 script {
-                    if (GIT_BRANCH_NAME == 'master') {
-                        sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/compile.sh""";
-                    } else {
-                        sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh""";
+                    try {
+                        if (GIT_BRANCH_NAME == 'master') {
+                            sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/compile.sh""";
+                        } else {
+                            sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh""";
+                        }
+                    } catch (Exception e) {
+                        env.ERROR_MESSAGE = e.getMessage()
+                        throw e
                     }
                 }
                 echo "DONE SSH SERVER";
@@ -77,7 +82,8 @@ pipeline {
         failure {
             script {
                 if (TELEGRAM_ENABLE == '1') {
-                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build finished: Failure 💔💔💔")
+                    def errorMsg = env.ERROR_MESSAGE ?: 'No error message available'
+                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build finished: Failure 💔💔💔 \nErrors: ${errorMsg}")
                 }
             }
         }
