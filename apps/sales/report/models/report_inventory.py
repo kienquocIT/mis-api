@@ -676,19 +676,19 @@ class ReportInventorySubFunction:
     @classmethod
     def regis_stock(cls, stock_obj, stock_data_item):
         print('---regis_stock')
+        sale_order = stock_data_item.get('sale_order', None)
         if stock_data_item.get('trans_title') == 'Delivery':
-            GoodsRegistration.update_registered_quantity(
-                stock_obj.order_delivery.sale_order,
-                stock_data_item,
-                **{'delivery_id': stock_obj.id}
-            )
+            if sale_order:
+                GoodsRegistration.update_registered_quantity(
+                    sale_order,
+                    stock_data_item,
+                    **{'delivery_id': stock_obj.id}
+                )
         if stock_data_item.get('trans_title') == 'Goods receipt':
-            for po_pr_mapped in stock_obj.purchase_order.purchase_order_request_order.all():
-                sale_order = po_pr_mapped.purchase_request.sale_order
-                if sale_order:
-                    GoodsRegistration.update_registered_quantity(
-                        sale_order, stock_data_item, **{'goods_receipt_id': stock_obj.id}
-                    )
+            if sale_order:
+                GoodsRegistration.update_registered_quantity(
+                    sale_order, stock_data_item, **{'goods_receipt_id': stock_obj.id}
+                )
         return True
 
     @classmethod

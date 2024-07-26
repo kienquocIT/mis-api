@@ -1307,7 +1307,7 @@ def reset_and_run_warehouse_stock(run_type=0):
                                 product_id=deli_product.product_id, warehouse_id=data['warehouse'],
                             )
                             source = {"uom": data['uom'], "quantity": data['stock']}
-                            DeliHandler.minus_tock(source, product_warehouse, config)
+                            DeliFinishHandler.minus_tock(source, product_warehouse, config)
     print('reset_and_run_warehouse_stock done.')
     return True
 

@@ -6,11 +6,12 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel
 
 
 # SALE ORDER BEGIN
-class SaleOrderListSerializer(serializers.ModelSerializer):
+class SaleOrderListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
@@ -277,8 +278,6 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'sale_order_indicators_data',
             # payment stage tab
             'sale_order_payment_stage',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -344,7 +343,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         return sale_order
 
 
-class SaleOrderUpdateSerializer(serializers.ModelSerializer):
+class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
@@ -433,8 +432,6 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_indicators_data',
             # payment stage tab
             'sale_order_payment_stage',
-            # status
-            'system_status',
         )
 
     @classmethod

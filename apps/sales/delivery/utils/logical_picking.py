@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse
-from apps.sales.delivery.models import OrderDelivery, OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub
+from apps.shared import DisperseModel
 from apps.shared.translations.sales import DeliverMsg
 
 
@@ -51,36 +51,38 @@ class PickingHandler:
 
     @classmethod
     def update_picking_to_delivery_prod(cls, instance, total, product_update):
-        delivery = OrderDelivery.objects.filter(sale_order_id=instance.sale_order_data['id']).first()
-        delivery_sub = delivery.sub
-        # update stock cho delivery prod
-        obj_update = []
-        # loop trong picking product
-        for key, value in product_update.items():
-            delivery_data = value['delivery_data'][0]
-            key_prod = key.split('___')[0]
-            delivery_prod = OrderDeliveryProduct.objects.filter(
-                delivery_sub=delivery_sub,
-                product_id=key_prod,
-                uom_id=delivery_data['uom'],
-                order=key.split('___')[1]
-            )
-            if delivery_prod.exists():
-                delivery_prod = delivery_prod.first()
-                # cộng vào stock cho delivery prod
-                delivery_prod.ready_quantity += value['stock']
-                delivery_prod.delivery_data.append(delivery_data)
-                obj_update.append(delivery_prod)
+        if instance.order_picking:
+            if instance.order_picking.sale_order:
+                if instance.order_picking.sale_order.delivery_of_sale_order:
+                    delivery_sub = instance.order_picking.sale_order.delivery_of_sale_order.sub
+                    # update stock cho delivery prod
+                    obj_update = []
+                    # loop trong picking product
+                    for key, value in product_update.items():
+                        delivery_data = value['delivery_data'][0]
+                        key_prod = key.split('___')[0]
+                        delivery_prod = delivery_sub.delivery_product_delivery_sub.filter(
+                            product_id=key_prod,
+                            uom_id=delivery_data['uom'],
+                            order=key.split('___')[1]
+                        ).first()
+                        if delivery_prod:
+                            # cộng vào stock cho delivery prod
+                            delivery_prod.ready_quantity += value['stock']
+                            delivery_prod.delivery_data.append(delivery_data)
+                            obj_update.append(delivery_prod)
 
-        PickingHandler.push_pw_picked_ready(instance, product_update)
-        OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
-        # update ready stock cho delivery sub
-        delivery_sub.ready_quantity += total
-        if instance.delivery_option == 1 or instance.remaining_quantity == total:
-            delivery_sub.state = 1
+                    PickingHandler.push_pw_picked_ready(instance, product_update)
+                    model_deli_product = DisperseModel(app_model='delivery.orderdeliveryproduct').get_model()
+                    if model_deli_product and hasattr(model_deli_product, 'objects'):
+                        model_deli_product.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
+                    # update ready stock cho delivery sub
+                    delivery_sub.ready_quantity += total
+                    if instance.delivery_option == 1 or instance.remaining_quantity == total:
+                        delivery_sub.state = 1
 
-        delivery_sub.estimated_delivery_date = instance.estimated_delivery_date
-        delivery_sub.save(update_fields=['state', 'estimated_delivery_date', 'ready_quantity'])
+                    delivery_sub.estimated_delivery_date = instance.estimated_delivery_date
+                    delivery_sub.save(update_fields=['state', 'estimated_delivery_date', 'ready_quantity'])
         return True
 
     @classmethod
@@ -90,14 +92,12 @@ class PickingHandler:
             delivery_data = item['delivery_data'][0]
             key_prod = key.split('___')[0]
             # mỗi phiếu picking chỉ có 1 product match với warehouse nên có thể lấy value 0 của list delivery_data
-            get_prod = OrderPickingProduct.objects.filter(
-                picking_sub=instance,
+            this_prod = instance.picking_product_picking_sub.filter(
                 product_id=key_prod,
                 uom_id=delivery_data['uom'],
                 order=key.split('___')[1]
-            )
-            if get_prod.exists():
-                this_prod = get_prod.first()
+            ).first()
+            if this_prod:
                 this_prod.picked_quantity = item['stock']
 
                 pickup_data_temp[key] = {
@@ -119,47 +119,47 @@ class PickingHandler:
     @classmethod
     def create_new_picking_sub(cls, instance):
         picking = instance.order_picking
+        remaining_quantity = instance.pickup_quantity - (instance.picked_quantity_before + instance.picked_quantity)
         # create new sub follow by prev sub
-        new_sub = OrderPickingSub.objects.create(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            order_picking=picking,
-            date_done=None,
-            previous_step=instance,
-            times=instance.times + 1,
-            pickup_quantity=instance.pickup_quantity,
-            picked_quantity_before=instance.picked_quantity_before + instance.picked_quantity,
-            remaining_quantity=instance.pickup_quantity - (instance.picked_quantity_before + instance.picked_quantity),
-            picked_quantity=0,
-            pickup_data=instance.pickup_data,
-            sale_order_data=picking.sale_order_data,
-            delivery_option=instance.delivery_option,
-            config_at_that_point=instance.config_at_that_point,
-            employee_inherit=instance.employee_inherit
-        )
-
-        picking.sub = new_sub
-        picking.save(update_fields=['sub'])
-        # create prod with new sub id
-        obj_new_prod = []
-        for obj in OrderPickingProduct.objects.filter(
-                picking_sub=instance
-        ):
-            new_item = OrderPickingProduct(
-                product_data=obj.product_data,
-                uom_data=obj.uom_data,
-                uom_id=obj.uom_id,
-                pickup_quantity=obj.pickup_quantity,
-                picked_quantity_before=obj.picked_quantity_before + obj.picked_quantity,
-                remaining_quantity=obj.pickup_quantity - (obj.picked_quantity_before + obj.picked_quantity),
+        model_picking_sub = DisperseModel(app_model='delivery.orderpickingsub').get_model()
+        if model_picking_sub and hasattr(model_picking_sub, 'objects'):
+            new_sub = model_picking_sub.objects.create(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                order_picking=picking,
+                date_done=None,
+                previous_step=instance,
+                times=instance.times + 1,
+                pickup_quantity=instance.pickup_quantity,
+                picked_quantity_before=instance.picked_quantity_before + instance.picked_quantity,
+                remaining_quantity=remaining_quantity,
                 picked_quantity=0,
-                picking_sub=new_sub,
-                product_id=obj.product_id,
-                order=obj.order
+                pickup_data=instance.pickup_data,
+                sale_order_data=picking.sale_order_data,
+                delivery_option=instance.delivery_option,
+                config_at_that_point=instance.config_at_that_point,
+                employee_inherit=instance.employee_inherit
             )
-            new_item.before_save()
-            obj_new_prod.append(new_item)
-        OrderPickingProduct.objects.bulk_create(obj_new_prod)
+            picking.sub = new_sub
+            picking.save(update_fields=['sub'])
+            # create prod with new sub id
+            obj_new_prod = []
+            model_picking_product = DisperseModel(app_model='delivery.orderpickingproduct').get_model()
+            if model_picking_product and hasattr(model_picking_product, 'objects'):
+                for key, value in instance.pickup_data.items():
+                    old_obj = instance.picking_product_picking_sub.filter(product_id=key.split('___')[0]).first()
+                    if old_obj:
+                        quantity_before = value.get('picked_quantity_before', 0) + value.get('picked_quantity', 0)
+                        remaining_quantity = value.get('pickup_quantity', 0) - quantity_before
+                        new_item = old_obj.setup_new_obj(
+                            old_obj=old_obj,
+                            new_sub=new_sub,
+                            pickup_quantity=value.get('pickup_quantity', 0),
+                            picked_quantity_before=quantity_before,
+                            remaining_quantity=remaining_quantity,
+                        )
+                        obj_new_prod.append(new_item)
+                model_picking_product.objects.bulk_create(obj_new_prod)
         return True
 
     @classmethod
