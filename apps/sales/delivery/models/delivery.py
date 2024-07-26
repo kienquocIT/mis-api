@@ -628,62 +628,27 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         return True
 
     def create_lot_serial(self):
-        if not self.delivery_lot_delivery_product.exists():
-            for delivery in self.delivery_data:
-                OrderDeliveryLot.create(
+        self.delivery_lot_delivery_product.all().delete()
+        for delivery in self.delivery_data:
+            OrderDeliveryLot.create(
+                delivery_product_id=self.id,
+                delivery_sub_id=self.delivery_sub_id,
+                delivery_id=self.delivery_sub.order_delivery_id,
+                tenant_id=self.delivery_sub.tenant_id,
+                company_id=self.delivery_sub.company_id,
+                lot_data=delivery.get('lot_data', [])
+            )
+        self.delivery_serial_delivery_product.all().delete()
+        for delivery in self.delivery_data:
+            if 'serial_data' in delivery:
+                OrderDeliverySerial.create(
                     delivery_product_id=self.id,
                     delivery_sub_id=self.delivery_sub_id,
                     delivery_id=self.delivery_sub.order_delivery_id,
                     tenant_id=self.delivery_sub.tenant_id,
                     company_id=self.delivery_sub.company_id,
-                    lot_data=delivery.get('lot_data', [])
+                    serial_data=delivery['serial_data']
                 )
-            self.update_product_warehouse_lot()
-        if not self.delivery_serial_delivery_product.exists():
-            for delivery in self.delivery_data:
-                if 'serial_data' in delivery:
-                    OrderDeliverySerial.create(
-                        delivery_product_id=self.id,
-                        delivery_sub_id=self.delivery_sub_id,
-                        delivery_id=self.delivery_sub.order_delivery_id,
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        serial_data=delivery['serial_data']
-                    )
-            self.update_product_warehouse_serial()
-        return True
-
-    def update_product_warehouse_lot(self):
-        for lot in self.delivery_lot_delivery_product.all():
-            final_ratio = 1
-            uom_delivery_rate = self.uom.ratio if self.uom else 1
-            if lot.product_warehouse_lot:
-                product_warehouse = lot.product_warehouse_lot.product_warehouse
-                if product_warehouse:
-                    uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
-                    if uom_wh_rate and uom_delivery_rate:
-                        final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
-                    # push ProductWareHouseLot
-                    lot_data = [{
-                        'lot_number': lot.product_warehouse_lot.lot_number,
-                        'quantity_import': lot.quantity_delivery * final_ratio,
-                        'expire_date': lot.product_warehouse_lot.expire_date,
-                        'manufacture_date': lot.product_warehouse_lot.manufacture_date,
-                        'delivery_id': self.delivery_sub_id,
-                    }]
-                    ProductWareHouseLot.push_pw_lot(
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        product_warehouse_id=product_warehouse.id,
-                        lot_data=lot_data,
-                        type_transaction=1,
-                    )
-        return True
-
-    def update_product_warehouse_serial(self):
-        for serial in self.delivery_serial_delivery_product.all():
-            serial.product_warehouse_serial.is_delete = True
-            serial.product_warehouse_serial.save(update_fields=['is_delete'])
         return True
 
     def before_save(self):

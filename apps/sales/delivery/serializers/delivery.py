@@ -274,9 +274,12 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def update_self_info(cls, instance, validated_data):
-        instance.estimated_delivery_date = validated_data['estimated_delivery_date']
-        instance.actual_delivery_date = validated_data['actual_delivery_date']
-        instance.remarks = validated_data['remarks']
+        if 'estimated_delivery_date' in validated_data:
+            instance.estimated_delivery_date = validated_data['estimated_delivery_date']
+        if 'actual_delivery_date' in validated_data:
+            instance.actual_delivery_date = validated_data['actual_delivery_date']
+        if 'remarks' in validated_data:
+            instance.remarks = validated_data['remarks']
         if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
             instance.delivery_logistic = validated_data['delivery_logistic']
 

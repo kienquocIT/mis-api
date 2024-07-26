@@ -1343,6 +1343,16 @@ AppProp_SaleData_Delivery_data = {
         'code': 'ready_quantity',
         'type': 1,
     },
+    'f2195dff-0295-40c8-970f-192da0953108': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Products',
+        'code': 'products',
+        'remark': 'detail products of delivery',
+        'code_related': [
+            'employee_inherit_id',
+        ],
+        'type': 1,
+    },
 }
 
 AppProp_Eoffice_Leave_data = {
@@ -1729,6 +1739,7 @@ ApplicationProperty_data = {
     **AppProp_AssetTools_Return_data,
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
+    **AppProp_SaleData_Delivery_data,
 }
 
 AppProp_SaleData_IA_data = {

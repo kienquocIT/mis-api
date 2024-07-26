@@ -1,4 +1,4 @@
-from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse
+from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse, ProductWareHouseLot
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DisperseModel
 
@@ -82,15 +82,22 @@ class DeliFinishHandler:
     def push_product_warehouse(cls, instance):
         config = cls.get_delivery_config(instance=instance)
         for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product and deli_product.delivery_data:
-                for data_deli in deli_product.delivery_data:
-                    if all(key in data_deli for key in ('warehouse', 'uom', 'stock')):
-                        product_warehouse = deli_product.product.product_warehouse_product.filter(
-                            tenant_id=instance.tenant_id, company_id=instance.company_id,
-                            warehouse_id=data_deli['warehouse'],
-                        )
-                        source = {"uom": data_deli['uom'], "quantity": data_deli['stock']}
-                        DeliFinishHandler.minus_tock(source, product_warehouse, config)
+            cls.update_pw(instance=instance, deli_product=deli_product, config=config)
+            cls.update_pw_lot(deli_product=deli_product)
+            cls.update_pw_serial(deli_product=deli_product)
+        return True
+
+    @classmethod
+    def update_pw(cls, instance, deli_product, config):
+        if deli_product.product and deli_product.delivery_data:
+            for data_deli in deli_product.delivery_data:
+                if all(key in data_deli for key in ('warehouse', 'uom', 'stock')):
+                    product_warehouse = deli_product.product.product_warehouse_product.filter(
+                        tenant_id=instance.tenant_id, company_id=instance.company_id,
+                        warehouse_id=data_deli['warehouse'],
+                    )
+                    source = {"uom": data_deli['uom'], "quantity": data_deli['stock']}
+                    DeliFinishHandler.minus_tock(source, product_warehouse, config)
         return True
 
     @classmethod
@@ -126,6 +133,41 @@ class DeliFinishHandler:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
+        return True
+
+    @classmethod
+    def update_pw_lot(cls, deli_product):
+        for lot in deli_product.delivery_lot_delivery_product.all():
+            final_ratio = 1
+            uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
+            if lot.product_warehouse_lot:
+                product_warehouse = lot.product_warehouse_lot.product_warehouse
+                if product_warehouse:
+                    uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                    if uom_wh_rate and uom_delivery_rate:
+                        final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
+                    # push ProductWareHouseLot
+                    lot_data = [{
+                        'lot_number': lot.product_warehouse_lot.lot_number,
+                        'quantity_import': lot.quantity_delivery * final_ratio,
+                        'expire_date': lot.product_warehouse_lot.expire_date,
+                        'manufacture_date': lot.product_warehouse_lot.manufacture_date,
+                        'delivery_id': deli_product.delivery_sub_id,
+                    }]
+                    ProductWareHouseLot.push_pw_lot(
+                        tenant_id=deli_product.delivery_sub.tenant_id,
+                        company_id=deli_product.delivery_sub.company_id,
+                        product_warehouse_id=product_warehouse.id,
+                        lot_data=lot_data,
+                        type_transaction=1,
+                    )
+        return True
+
+    @classmethod
+    def update_pw_serial(cls, deli_product):
+        for serial in deli_product.delivery_serial_delivery_product.all():
+            serial.product_warehouse_serial.is_delete = True
+            serial.product_warehouse_serial.save(update_fields=['is_delete'])
         return True
 
     # PRODUCT INFO
