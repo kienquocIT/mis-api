@@ -32,7 +32,7 @@ pipeline {
                     env.GIT_BRANCH_NAME = getGitBranchName();
                     env.PUSHER = sh (script: 'whoami', returnStdout: true).trim();
                     if (env.GIT_BRANCH_NAME == 'master') {
-                        env.PROJECT_DIR = '${SERVER_PATH_DELOY_DEFAULT}COMPILE/API';
+                        env.PROJECT_DIR = '${SERVER_PATH_DELOY_DEFAULT}COMPILE/api';
                         env.DEPLOY_SERVER_IP = SERVER_IP_DEPLOY_DEFAULT;
                     }
                     if (env.GIT_BRANCH_NAME == 'dev') {
