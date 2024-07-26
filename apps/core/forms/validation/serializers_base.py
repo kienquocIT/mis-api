@@ -96,7 +96,6 @@ class ManageBase(serializers.Serializer):  # noqa # pylint: disable=R0902
 
     def manage__finish(self) -> serializers.ValidationError or dict[str, any]:
         if self.manage_errors:
-            print('self.manage_errors:', self.manage_errors)
             raise serializers.ValidationError(self.manage_errors)
         return self.manage_inputs_data
 
@@ -162,7 +161,7 @@ class ConfigBase(ManageBase):  # noqa
         return attrs.strip()
 
     is_hide_label = serializers.BooleanField(default=False)
-    instruction = serializers.CharField(allow_blank=True)
+    instruction = serializers.CharField(allow_blank=True, required=False, default='')
 
     @classmethod
     def validate_instruction(cls, attrs):
@@ -170,7 +169,7 @@ class ConfigBase(ManageBase):  # noqa
 
     size = serializers.ChoiceField(default='medium', choices=['extra-small', 'small', 'medium', 'large', 'extra-large'])
 
-    place_holder = serializers.CharField(allow_blank=True)
+    place_holder = serializers.CharField(allow_blank=True, required=False, default='')
 
     @classmethod
     def validate_place_holder(cls, attrs):
@@ -203,7 +202,7 @@ class ConfigMinMaxLength(ManageBase):  # noqa
         return attrs
 
     def manage_minlength(self, input_name, input_value):
-        if input_value != "":
+        if isinstance(input_value, str) and input_value != "":
             minlength = self.manage_configs.get('minlength', 0)
             if not isinstance(minlength, int):
                 minlength = 0
@@ -216,7 +215,7 @@ class ConfigMinMaxLength(ManageBase):  # noqa
                 )
 
     def manage_maxlength(self, input_name, input_value):
-        if input_value != "":
+        if isinstance(input_value, str) and input_value != "":
             maxlength = self.manage_configs.get('maxlength', 0)
             if not isinstance(maxlength, int):
                 maxlength = 0

@@ -5,7 +5,7 @@ from apps.core.hr.models.general import Group
 from apps.masterdata.saledata.models import Periods
 from apps.sales.budgetplan.models import (
     BudgetPlan, BudgetPlanGroup, BudgetPlanCompanyExpense, BudgetPlanGroupExpense, BudgetPlanGroupConfig,
-    BudgetPlanGroupConfigEmployeeGroup
+    BudgetPlanGroupConfigEmployeeGroup, EmployeeCanViewCompanyBudgetPlan, EmployeeCanLockBudgetPlan
 )
 from apps.shared import SaleMsg
 
@@ -107,7 +107,8 @@ class BudgetPlanDetailSerializer(serializers.ModelSerializer):
             'quarterly',
             'auto_sum_target',
             'group_budget_data',
-            'company_budget_data'
+            'company_budget_data',
+            'is_lock'
         )
 
     @classmethod
@@ -157,22 +158,38 @@ class BudgetPlanDetailSerializer(serializers.ModelSerializer):
                 })
         return group_budget_data
 
-    @classmethod
-    def get_company_budget_data(cls, obj):
-        company_budget_data = []
-        for item in obj.budget_plan_company_expense_budget_plan.all().order_by('order'):
-            company_budget_data.append({
-                'id': item.id,
-                'order': item.order,
-                'expense_item': {
-                    'id': str(item.expense_item_id),
-                    'code': item.expense_item.code,
-                    'title': item.expense_item.title
-                } if item.expense_item else {},
-                'company_month_list': item.company_month_list,
-                'company_quarter_list': item.company_quarter_list,
-                'company_year': item.company_year
-            })
+    def get_company_budget_data(self, obj):
+        can_view_company = EmployeeCanViewCompanyBudgetPlan.objects.filter(
+            company=self.context.get('company_current_id', None),
+            employee_allowed=self.context.get('employee_current_id', None),
+            can_view_company=True
+        ).exists()
+        can_lock_plan = EmployeeCanLockBudgetPlan.objects.filter(
+            company=self.context.get('company_current_id', None),
+            employee_allowed=self.context.get('employee_current_id', None),
+            can_lock_plan=True
+        ).exists()
+
+        company_budget_data = {
+            'emp_can_lock_plan': can_lock_plan,
+            'emp_can_view_company': can_view_company
+        }
+        data_budget = []
+        if can_view_company:
+            for item in obj.budget_plan_company_expense_budget_plan.all().order_by('order'):
+                data_budget.append({
+                    'id': item.id,
+                    'order': item.order,
+                    'expense_item': {
+                        'id': str(item.expense_item_id),
+                        'code': item.expense_item.code,
+                        'title': item.expense_item.title
+                    } if item.expense_item else {},
+                    'company_month_list': item.company_month_list,
+                    'company_quarter_list': item.company_quarter_list,
+                    'company_year': item.company_year
+                })
+            company_budget_data['data_budget'] = data_budget
         return company_budget_data
 
 
@@ -249,13 +266,16 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'not allow': 'You dont have update permission.'})
 
     def update(self, instance, validated_data):
-        group_id = self.initial_data.get('group_id')
-        data_group_budget_plan = self.initial_data.get('data_group_budget_plan')
+        if not instance.is_lock:
+            group_id = self.initial_data.get('group_id')
+            data_group_budget_plan = self.initial_data.get('data_group_budget_plan')
 
-        budget_plan_group = BudgetPlanGroup.objects.filter(budget_plan=instance, group_mapped_id=group_id).first()
-        if budget_plan_group:
-            self.create_new_budget_plan_group_expense(instance, budget_plan_group, data_group_budget_plan)
-            self.create_new_budget_plan_company_expense(instance)
+            budget_plan_group = BudgetPlanGroup.objects.filter(budget_plan=instance, group_mapped_id=group_id).first()
+            if budget_plan_group:
+                self.create_new_budget_plan_group_expense(instance, budget_plan_group, data_group_budget_plan)
+                self.create_new_budget_plan_company_expense(instance)
+        else:
+            raise serializers.ValidationError({'not allow': 'This budget plan is already locked.'})
         return instance
 
 
@@ -280,15 +300,19 @@ class BudgetPlanGroupConfigListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_group_allowed(cls, obj):
-        return [{
-            'group': {
-                'id': str(item.group_allowed_id),
-                'code': item.group_allowed.code,
-                'title': item.group_allowed.title
-            },
-            'can_view': item.can_view,
-            'can_edit': item.can_edit,
-        } for item in obj.bp_config_detail.all()]
+        group_allowed = []
+        for item in obj.bp_config_detail.all():
+            if item.can_view or item.can_edit:
+                group_allowed.append({
+                    'group': {
+                        'id': str(item.group_allowed_id),
+                        'code': item.group_allowed.code,
+                        'title': item.group_allowed.title
+                    },
+                    'can_view': item.can_view,
+                    'can_edit': item.can_edit,
+                })
+        return group_allowed
 
 
 class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
@@ -310,6 +334,11 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'employee': 'This employee has config already. Remove old then create new one.'}
             )
+        valid_permission = 0
+        for item in self.initial_data.get('group_allowed_list'):
+            valid_permission += int(item.get('can_view')) + int(item.get('can_edit'))
+        if valid_permission <= 0:
+            raise serializers.ValidationError({'permission': 'List Budget plan permissions is empty.'})
         return validated_data
 
     def create(self, validated_data):
@@ -324,7 +353,6 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
                     can_edit=item.get('can_edit')
                 )
             )
-
         BudgetPlanGroupConfigEmployeeGroup.objects.bulk_create(bulk_info_bp_gr_config_detail)
         return config
 
@@ -334,3 +362,41 @@ class BudgetPlanGroupConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = BudgetPlanGroupConfig
         fields = '__all__'
+
+
+class ListCanViewCompanyBudgetPlanSerializer(serializers.ModelSerializer):  # noqa
+    employee_allowed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeCanViewCompanyBudgetPlan
+        fields = (
+            'employee_allowed',
+            'can_view_company',
+        )
+
+    @classmethod
+    def get_employee_allowed(cls, obj):
+        return {
+            'id': str(obj.employee_allowed_id),
+            'code': obj.employee_allowed.code,
+            'full_name': obj.employee_allowed.get_full_name(2)
+        } if obj.employee_allowed else None
+
+
+class ListCanLockBudgetPlanSerializer(serializers.ModelSerializer):  # noqa
+    employee_allowed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeCanLockBudgetPlan
+        fields = (
+            'employee_allowed',
+            'can_lock_plan',
+        )
+
+    @classmethod
+    def get_employee_allowed(cls, obj):
+        return {
+            'id': str(obj.employee_allowed_id),
+            'code': obj.employee_allowed.code,
+            'full_name': obj.employee_allowed.get_full_name(2)
+        } if obj.employee_allowed else None

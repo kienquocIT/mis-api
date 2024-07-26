@@ -540,6 +540,7 @@ DELIVERY_APP_CONFIG = {
     "allow_print": True,
     "allow_mail": True,
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PRICES_APP_CONFIG = {
@@ -686,6 +687,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -746,6 +748,7 @@ PAYMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -1188,6 +1191,7 @@ GOODS_TRANSFER_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True
 }
 
 GOODS_ISSUE_APP_CONFIG = {
@@ -1237,7 +1241,53 @@ GOODS_ISSUE_APP_CONFIG = {
     "allow_permit": True,
 }
 
-GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
+GOODS_RETURN_APP_CONFIG = {
+    "id": "0242ba77-8b02-4589-8ed9-239788083f2b",
+    "title": "Goods Return",
+    "code": "goodsreturn",
+    "model_code": "goodsreturn",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True
+}
+
+INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
     "title": "Inventory Adjustment",
     "code": "inventoryadjustment",
@@ -1268,6 +1318,7 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True
 }
 
 REPORT_REVENUE_APP_CONFIG = {
@@ -1552,51 +1603,6 @@ AP_INVOICE_APP_CONFIG = {
                 "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
                 "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
             },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-}
-
-GOODS_RETURN_APP_CONFIG = {
-    "id": "0242ba77-8b02-4589-8ed9-239788083f2b",
-    "title": "Goods Return",
-    "code": "goodsreturn",
-    "model_code": "goodsreturn",
-    "app_label": "inventory",
-    "is_workflow": True,
-    "app_depend_on": [
-        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
-        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
-    ],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -1905,6 +1911,7 @@ SALE_PROJECT_BASELINE = {
     },
     "allow_permit": True,
 }
+
 BUDGET_PLAN_APP_CONFIG = {
     "id": "ac21e8e4-fe32-41f4-9887-ee077677735c",
     "title": "Budget Plan",
@@ -2127,7 +2134,7 @@ Application_crm_data = {
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
-    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data(
+    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**INVENTORY_ADJUSTMENT_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),

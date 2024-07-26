@@ -1122,3 +1122,7 @@ msgstr "Ngày Công việc không khớp với ngày của Nhóm"
 #
 msgid "Project Baseline"
 msgstr "Dự án Đường cơ sở"
+
+#
+msgid "Error! Date end larger than Date start"
+msgstr "Lỗi! Ngày kết thúc lớn hơn ngày bắt đầu"

@@ -1,6 +1,7 @@
 __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailSerializers', 'ProjectUpdateSerializers',
            'ProjectUpdateOrderSerializers']
 
+import json
 from rest_framework import serializers
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
@@ -57,9 +58,11 @@ class ProjectListSerializers(serializers.ModelSerializer):
                 'count': 0
             }
             for item in obj.project_projectbaseline_project_related.all():
-                project_data = item.project_data
                 if item.system_status <= 1:
                     continue
+                project_data = item.project_data
+                if not isinstance(project_data, dict):
+                    project_data = json.loads(project_data)
                 baseline['project_data'].append({
                     'id': str(item.id),
                     'code': project_data['code'],

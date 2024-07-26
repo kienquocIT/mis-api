@@ -1,4 +1,10 @@
-from .application_properties_params import Quotation_data__params, Bastion_data_params, SaleOrder_data__params
+from .application_properties_params import (
+    Quotation_data__params,
+    Bastion_data_params,
+    SaleOrder_data__params,
+    AdvancePayment_data__params, Payment_data__params, IA_data__params, Goods_Transfer_data__params,
+    Goods_Return_data__params
+)
 
 __all__ = ["ApplicationProperty_data"]
 
@@ -1480,6 +1486,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "expense_valid_list",
         "type": 1,
     },
+    **AdvancePayment_data__params
 }
 
 AppProp_SaleData_Payment_data = {
@@ -1522,6 +1529,7 @@ AppProp_SaleData_Payment_data = {
         "code": "payment_expense_valid_list",
         "type": 1,
     },
+    **Payment_data__params
 }
 
 AppProp_SaleData_Return_Payment_data = {
@@ -1721,4 +1729,16 @@ ApplicationProperty_data = {
     **AppProp_AssetTools_Return_data,
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
+}
+
+AppProp_SaleData_IA_data = {
+    **IA_data__params
+}
+
+AppProp_SaleData_Goods_Transfer_data = {
+    **Goods_Transfer_data__params
+}
+
+AppProp_SaleData_Goods_Return_data = {
+    **Goods_Return_data__params
 }
