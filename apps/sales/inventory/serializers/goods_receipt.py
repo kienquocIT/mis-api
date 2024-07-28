@@ -4,9 +4,12 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
+    serial_number = serializers.CharField(max_length=100, required=False, allow_blank=False)
+
     class Meta:
         model = GoodsReceiptSerial
         fields = (
@@ -409,7 +412,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 
 
 # GOODS RECEIPT BEGIN
-class GoodsReceiptListSerializer(serializers.ModelSerializer):
+class GoodsReceiptListSerializer(AbstractListSerializerModel):
     purchase_order = serializers.SerializerMethodField()
     inventory_adjustment = serializers.SerializerMethodField()
 
@@ -443,7 +446,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
         } if obj.inventory_adjustment else {}
 
 
-class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
+class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -498,7 +501,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
+class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
@@ -521,10 +524,8 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -564,7 +565,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
         return goods_receipt
 
 
-class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
+class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=False, allow_null=True)
@@ -583,10 +584,8 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
         )
 
     @classmethod

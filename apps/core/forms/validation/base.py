@@ -15,6 +15,7 @@ class BaseInputsDataItemSerializer(serializers.Serializer):  # noqa
     label = serializers.CharField(allow_blank=True)
     kwargs = serializers.DictField()
     display = serializers.BooleanField()
+    element = serializers.CharField()
 
 
 class FormItemBaseValidation(serializers.Serializer):  # noqa
@@ -26,8 +27,11 @@ class FormItemBaseValidation(serializers.Serializer):  # noqa
     INPUT_DATA_LENGTH_DEFAULT = 1
 
     def validate_inputs_data(self, attrs):
-        if attrs and isinstance(attrs, list) and len(attrs) == self.INPUT_DATA_LENGTH_DEFAULT:
-            return attrs
+        if isinstance(attrs, list):
+            if self.INPUT_DATA_LENGTH_DEFAULT is None:
+                return attrs
+            if len(attrs) == self.INPUT_DATA_LENGTH_DEFAULT:
+                return attrs
         raise serializers.ValidationError(
             {
                 'inputs_data': FormMsg.INPUT_DATA_LENGTH_INCORRECT
@@ -35,19 +39,32 @@ class FormItemBaseValidation(serializers.Serializer):  # noqa
         )
 
     def manage_data(self, input_names: list[str], validated_data: dict[str, any], body_data: dict[str, any]):
-        if isinstance(input_names, list) and len(input_names) == self.INPUT_DATA_LENGTH_DEFAULT:
-            config = validated_data['config']
-            input_values = [body_data.get(inp_name, None) for inp_name in input_names]
-
-            config_cls = self.fields['config']
-            config_cls.manage_reset(
-                config=config,
-                input_names=input_names,
-                input_values=input_values,
-                body_data=body_data,
+        if (
+            isinstance(input_names, list)
+            and (
+                self.INPUT_DATA_LENGTH_DEFAULT is None
+                or (
+                        self.INPUT_DATA_LENGTH_DEFAULT is not None
+                        and len(input_names) == self.INPUT_DATA_LENGTH_DEFAULT
+                )
             )
-            config_cls.manage__valid()
-            body_data.update(config_cls.manage__finish())
+        ):
+            if len(input_names) > 0:
+                config = validated_data['config']
+                input_values = [body_data.get(inp_name, None) for inp_name in input_names]
+
+                config_cls = self.fields['config']
+                config_cls.manage_reset(
+                    config=config,
+                    input_names=input_names,
+                    input_values=input_values,
+                    body_data=body_data,
+                )
+                config_cls.manage__valid()
+                body_data.update(config_cls.manage__finish())
+            else:
+                # skip if input length equal 0 | ex: card-text!
+                pass
         else:
             raise serializers.ValidationError(
                 {

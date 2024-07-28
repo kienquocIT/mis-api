@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.sales.report.models import ReportStockLog
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -81,7 +82,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_inventory_uom(cls, obj):
         return {
-            "id": str(obj.inventory_uom.id), "title": obj.inventory_uom.title
+            "id": str(obj.inventory_uom.id),
+            "title": obj.inventory_uom.title,
+            'ratio': obj.inventory_uom.ratio
         } if obj.inventory_uom else {}
 
 
@@ -400,6 +403,10 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         return product
 
 
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     general_information = serializers.SerializerMethodField()  # noqa
     sale_information = serializers.SerializerMethodField()
@@ -547,20 +554,24 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'warehouse', 'uom'
         ).order_by('warehouse__code')
         for item in product_warehouse:
-            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
-            uom_ratio_des = item.uom.ratio if item.uom else 0
-            if uom_ratio_src and uom_ratio_des:
-                quantity, cost, _ = obj.get_unit_cost_by_warehouse(item.warehouse_id, get_type=3)
-                ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                if quantity > 0:
-                    result.append({
-                        'id': item.id,
-                        'warehouse': {
-                            'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
-                        } if item.warehouse else {},
-                        'stock_amount': quantity / ratio_convert,
-                        'cost': cost * ratio_convert
-                    })
+            if item.stock_amount > 0:
+                casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
+                config_inventory_management = ReportStockLog.get_config_inventory_management(
+                    obj.company.company_config
+                )
+
+                result.append({
+                    'id': item.id,
+                    'warehouse': {
+                        'id': item.warehouse_id,
+                        'title': item.warehouse.title,
+                        'code': item.warehouse.code,
+                    } if item.warehouse else {},
+                    'stock_amount': casted_stock_amount,
+                    'cost': obj.get_unit_cost_by_warehouse(
+                        warehouse_id=item.warehouse_id, get_type=2
+                    ) / casted_stock_amount if config_inventory_management == [1] else None
+                })
         return result
 
     @classmethod
@@ -587,10 +598,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stock_amount(cls, obj):
         if obj.inventory_uom:
-            casted_stock_amount = obj.stock_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_stock_amount
-        return None
+            stock = 0
+            for product_wh in obj.product_warehouse_product.all():
+                stock += product_wh.stock_amount
+            return stock / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
+        return 0
 
     @classmethod
     def get_wait_delivery_amount(cls, obj):
@@ -611,10 +623,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_amount(cls, obj):
         if obj.inventory_uom:
-            casted_avl_amount = obj.available_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_avl_amount
-        return None
+            stock = 0
+            for product_wh in obj.product_warehouse_product.all():
+                stock += product_wh.stock_amount
+            available = stock - obj.wait_delivery_amount + obj.wait_receipt_amount
+            return available / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
+        return 0
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -874,16 +888,11 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
-            'general_information',
-            'purchase_information',
-            'sale_information',
-            'purchase_information',
-            'price_list',
-            'product_choice',
+            'id', 'code',
+            'title', 'description',
+            'general_information', 'purchase_information',
+            'sale_information', 'purchase_information',
+            'price_list', 'product_choice',
         )
 
     @classmethod
@@ -906,8 +915,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
-            }
-            for price in obj.product_price_product.all()
+            } for price in obj.product_price_product.all()
         ]
 
     @classmethod
@@ -932,8 +940,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'default_uom': {
                 'id': str(obj.sale_default_uom_id), 'title': obj.sale_default_uom.title,
                 'code': obj.sale_default_uom.code, 'ratio': obj.sale_default_uom.ratio,
-                'rounding': obj.sale_default_uom.rounding,
-                'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
+                'rounding': obj.sale_default_uom.rounding, 'is_referenced_unit': obj.sale_default_uom.is_referenced_unit
             } if obj.sale_default_uom else {},
             'tax_code': {
                 'id': str(obj.sale_tax_id), 'title': obj.sale_tax.title,
@@ -967,12 +974,7 @@ class ProductForSaleDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = (
-            'id',
-            'code',
-            'title',
-            'cost_list',
-        )
+        fields = ('id', 'code', 'title', 'cost_list')
 
     @classmethod
     def get_cost_list(cls, obj):
@@ -984,13 +986,7 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = (
-            'id',
-            'title',
-            'code',
-            'group',
-            'ratio',
-        )
+        fields = ('id', 'title', 'code', 'group', 'ratio')
 
     @classmethod
     def get_group(cls, obj):

@@ -72,3 +72,63 @@ msgstr "bản sao"
 #
 msgid "The copy progress encountered a failure"
 msgstr "Tiến trình sao chép gặp lỗi"
+
+#
+msgid "The default selected must be unique"
+msgstr "Giá trị chọn mặc định phải bắt buộc là duy nhất"
+
+#
+msgid "The value must be unique"
+msgstr "Giá trị của select là duy nhất"
+
+#
+msgid "The titles must be unique"
+msgstr "Tiêu đề của select là duy nhất"
+
+#
+msgid "The options must be required"
+msgstr "Lựa chọn của select là bắt buộc"
+
+#
+msgid "The value is not support"
+msgstr "Giá trị không được hỗ trợ"
+
+#
+msgid "The date format is not support"
+msgstr "Định dạng ngày không hỗ trợ"
+
+#
+msgid "The value is not date format"
+msgstr "Giá trị không đúng định dạng ngày"
+
+#
+msgid "The type \"{0}\" not match supported class"
+msgstr "Loại \"{0}\" không hỗ trợ phân tích lớp"
+
+#
+msgid "The vote value is not support"
+msgstr "Dữ liệu bình chọn không hỗ trợ"
+
+#
+msgid "The review must be require"
+msgstr "Nội dung nhận xét là bắt buộc"
+
+#
+msgid "The time format is not support"
+msgstr "Định dạng giờ không hỗ trợ"
+
+#
+msgid "The value is not time format"
+msgstr "Giá trị không đúng định dạng giờ"
+
+#
+msgid "The value less than minimum value"
+msgstr "Giá trị nhỏ hơn giới hạn nhỏ nhất"
+
+#
+msgid "The value large than maximum value"
+msgstr "Giá trị lớn hơn giới hạn lớn nhất"
+
+#
+msgid "The HTML must be less than 500kB"
+msgstr "Dung lượng chuỗi HTML bắt buộc phải nhỏ hơn 500kb"

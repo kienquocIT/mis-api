@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.core.company.models import Company
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
@@ -180,34 +179,34 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
 
-def send_email(email_obj, company_id):
+def send_email(email_obj, employee_created):
     try:
-        company_obj = Company.objects.filter(id=company_id).first()
-        if company_obj:
-            html_content = email_obj.content
-            email = EmailMultiAlternatives(
-                subject=email_obj.subject,
-                body='',
-                from_email=company_obj.email,
-                to=email_obj.email_to_list,
-                cc=email_obj.email_cc_list,
-                bcc=[],
-                reply_to=[],
-            )
-            email.attach_alternative(html_content, "text/html")
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            connection = get_connection(
-                username=company_obj.email,
-                password=SimpleEncryptor(key=password).decrypt(company_obj.email_app_password),
-                fail_silently=False,
-            )
-            email.connection = connection
-            email.send()
-            return True
-        raise serializers.ValidationError({'Send email': 'Company is not defined'})
+        html_content = email_obj.content
+        email = EmailMultiAlternatives(
+            subject=email_obj.subject,
+            body='',
+            from_email=employee_created.email,
+            to=email_obj.email_to_list,
+            cc=email_obj.email_cc_list,
+            bcc=[],
+            reply_to=[],
+        )
+        email.attach_alternative(html_content, "text/html")
+        password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+        connection = get_connection(
+            username=employee_created.email,
+            password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
+            fail_silently=False,
+        )
+        email.connection = connection
+        email.send()
+        return True
     except Exception as err:
+        employee_created.email_app_password_status = False
+        employee_created.save(update_fields=['email_app_password_status'])
+        print(err.args[1])
         raise serializers.ValidationError({
-            'Send email': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
+            'Send email': "Cannot send email. Try to verify your Email in Employee update page."
         })
 
 
@@ -250,8 +249,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
 
-        company_id = self.context.get('company_id', None)
-        send_email(email_obj, company_id)
+        send_email(email_obj, self.context.get('employee_current'))
 
         OpportunityActivityLogs.objects.create(
             email=email_obj,

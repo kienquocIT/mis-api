@@ -1,19 +1,20 @@
 __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailSerializers', 'ProjectUpdateSerializers',
-           'ProjectUpdateOrderSerializers'
-           ]
+           'ProjectUpdateOrderSerializers']
 
+import json
 from rest_framework import serializers
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
-from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups
+from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
     works = serializers.SerializerMethodField()
     tasks = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    project_owner = serializers.SerializerMethodField()
+    project_pm = serializers.SerializerMethodField()
+    baseline = serializers.SerializerMethodField()
 
     @classmethod
     def get_works(cls, obj):
@@ -44,10 +45,46 @@ class ProjectListSerializers(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_project_owner(cls, obj):
-        if obj.project_owner:
-            return obj.project_owner_data
+    def get_project_pm(cls, obj):
+        if obj.project_pm:
+            return obj.project_pm_data
         return {}
+
+    @classmethod
+    def get_baseline(cls, obj):
+        if obj.project_projectbaseline_project_related.all():
+            baseline = {
+                'project_data': [],
+                'count': 0
+            }
+            for item in obj.project_projectbaseline_project_related.all():
+                if item.system_status <= 1:
+                    continue
+                project_data = item.project_data
+                if not isinstance(project_data, dict):
+                    project_data = json.loads(project_data)
+                baseline['project_data'].append({
+                    'id': str(item.id),
+                    'code': project_data['code'],
+                    'title': project_data['title'],
+                    'project_pm': project_data['employee_inherit'],
+                    'start_date': project_data['start_date'],
+                    'finish_date': project_data['finish_date'],
+                    'completion_rate': project_data['completion_rate'],
+                    'works': {
+                        'all': len(project_data['work']),
+                        'completed': len([x for x in project_data['work'] if x['progress'] == 100])
+                    },
+                    'tasks': {
+                        'all': len(item.work_task_data),
+                        'completed': len([x for x in item.work_task_data if x['percent'] == 100])
+                    },
+                    'version': item.baseline_version
+                })
+                baseline['count'] += 1
+
+            return baseline
+        return {'project_data': [], 'count': 0}
 
     class Meta:
         model = Project
@@ -55,7 +92,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
             'start_date',
             'finish_date',
@@ -63,17 +100,11 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'works',
             'tasks',
             'system_status',
+            'baseline',
         )
 
 
 class ProjectCreateSerializers(serializers.ModelSerializer):
-    employee_inherit_id = serializers.UUIDField()
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return str(value)
 
     @classmethod
     def create_project_map_member(cls, project):
@@ -88,17 +119,17 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
-        if str(project.employee_inherit_id) != str(project.project_owner_id):
-            permission_by_configured_owner = pj_get_alias_permit_from_app(employee_obj=project.project_owner)
+        if str(project.employee_inherit_id) != str(project.project_pm.id):
+            permission_by_configured_pm = pj_get_alias_permit_from_app(employee_obj=project.project_pm)
             ProjectMapMember.objects.create(
                 tenant_id=project.tenant_id,
                 company_id=project.company_id,
                 project=project,
-                member=project.project_owner,
+                member=project.project_pm,
                 permit_add_member=True,
                 permit_add_gaw=True,
                 permit_view_this_project=True,
-                permission_by_configured=permission_by_configured_owner
+                permission_by_configured=permission_by_configured_pm
             )
 
     def create(self, validated_data):
@@ -111,11 +142,11 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
         model = Project
         fields = (
             'title',
-            'employee_inherit_id',
-            'project_owner',
+            'project_pm',
             'start_date',
             'finish_date',
-            'system_status'
+            'system_status',
+            'employee_inherit'
         )
 
 
@@ -124,7 +155,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     works = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    project_owner = serializers.SerializerMethodField()
+    project_pm = serializers.SerializerMethodField()
 
     @classmethod
     def get_groups(cls, obj):
@@ -164,6 +195,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                     "dependencies_parent": "",
                     "progress": item.work.w_rate,
                     "weight": item.work.w_weight,
+                    "expense_data": item.work.expense_data,
                 }
                 group_mw = item.work.project_groupmapwork_work.all()
                 if group_mw:
@@ -198,9 +230,9 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_project_owner(cls, obj):
-        if obj.project_owner:
-            return obj.project_owner_data
+    def get_project_pm(cls, obj):
+        if obj.project_pm:
+            return obj.project_pm_data
         return {}
 
     class Meta:
@@ -212,7 +244,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'start_date',
             'finish_date',
             'completion_rate',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
             'system_status',
             'works',
@@ -222,9 +254,12 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
 
 
 class ProjectUpdateSerializers(serializers.ModelSerializer):
+    expense_data = serializers.JSONField(required=False)
+    work_expense_data = serializers.JSONField(required=False)
+    delete_expense_lst = serializers.JSONField(required=False)
 
     @classmethod
-    def validate_project_owner(cls, value):
+    def validate_project_pm(cls, value):
         if not value:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
@@ -235,18 +270,95 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
+    @classmethod
+    def validate_expense_data(cls, value):
+        return value
+
     class Meta:
         model = Project
         fields = (
             'title',
             'start_date',
             'finish_date',
-            'project_owner',
+            'project_pm',
             'employee_inherit',
-            'system_status'
+            'system_status',
+            'expense_data',
+            'work_expense_data',
+            'delete_expense_lst'
         )
 
+    @classmethod
+    def delete_expense_map_list(cls, lst):
+        if lst:
+            WorkMapExpense.objects.filter(id__in=lst).delete()
+
+    def cu_expense_lst(self, lst):
+        if lst:
+            create_lst = []
+            delete_lst = []
+            for idx in lst:
+                dict_item = lst[idx]
+                for item in dict_item:
+                    if 'id' in item:
+                        delete_lst.append(item['id'])
+                        create_lst.append(WorkMapExpense(
+                            id=item['id'],
+                            tenant_id=self.instance.tenant_id,
+                            company_id=self.instance.company_id,
+                            work_id=idx,
+                            title=item['title'],
+                            expense_name_id=item['expense_name']['id'] if isinstance(
+                                item['expense_name'], dict) and 'id' in item['expense_name'] else None,
+                            expense_item_id=item['expense_item']['id'],
+                            uom_id=item['uom']['id'],
+                            quantity=item['quantity'],
+                            expense_price=item['expense_price'],
+                            tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
+                            sub_total=item['sub_total'],
+                            sub_total_after_tax=item['sub_total_after_tax'],
+                            is_labor=item['is_labor']
+                        ))
+                    else:
+                        create_lst.append(WorkMapExpense(
+                            tenant_id=self.instance.tenant_id,
+                            company_id=self.instance.company_id,
+                            work_id=idx,
+                            title=item['title'],
+                            expense_name_id=item['expense_name']['id'] if isinstance(
+                                item['expense_name'], dict) and 'id' in item['expense_name'] else None,
+                            expense_item_id=item['expense_item']['id'],
+                            uom_id=item['uom']['id'],
+                            quantity=item['quantity'],
+                            expense_price=item['expense_price'],
+                            tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
+                            sub_total=item['sub_total'],
+                            sub_total_after_tax=item['sub_total_after_tax'],
+                            is_labor=item['is_labor']
+                        ))
+            if delete_lst:
+                WorkMapExpense.objects.filter(id__in=delete_lst).delete()
+            WorkMapExpense.objects.bulk_create(create_lst)
+
+    @classmethod
+    def update_work_expense(cls, lst):
+        if lst:
+            for item in lst:
+                work_expense = lst[item]
+                ProjectWorks.objects.filter(id=item).update(expense_data=work_expense)
+
     def update(self, instance, validated_data):
+        expense_lst = validated_data.pop('expense_data', None)
+        work_expense_lst = validated_data.pop('work_expense_data', None)
+        delete_expense_lst = validated_data.pop('delete_expense_lst', None)
+
+        # - delete all expense(user delete)
+        # - create and update
+        # - update work info
+        self.delete_expense_map_list(delete_expense_lst)
+        self.cu_expense_lst(expense_lst)
+        self.update_work_expense(work_expense_lst)
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

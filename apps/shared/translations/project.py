@@ -12,3 +12,6 @@ class ProjectMsg:
     PROJECT_WORK = _('Project work')
     PROJECT_WORK_ERROR_DATE = _('Make sure date start larger than relationship work date end')
     PROJECT_WORK_ERROR_DATE2 = _('Date work is not followed with date group')
+    PROJECT_CREATE_BASELINE = _('Create baseline error please reload and try again')
+    PROJECT_DATE_ERROR = _('Error! Date end larger than Date start')
+    PROJECT_DEPENDENCIES_ERROR = _('Work dependencies not found!')

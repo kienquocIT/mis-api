@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from apps.core.mailer.handle_html import HTMLController
 from apps.shared import MasterDataAbstractModel, StringHandler
+from apps.shared.html_constant import FORM_SANITIZE_TRUSTED_DOMAIN_LINK
 
 LABEL_PLACEMENT_CHOICES = (
     ('top', 'TOP'),
@@ -45,6 +46,8 @@ class Form(MasterDataAbstractModel):
     theme_assets = models.JSONField(
         default=dict, verbose_name='Asset include of theme', help_text='{"js": [], "css": []}'
     )
+
+    page = models.JSONField(default=dict, verbose_name='Config of page')
 
     def get_input_names(self) -> list[str]:
         result = []
@@ -97,26 +100,6 @@ class Form(MasterDataAbstractModel):
         permissions = ()
 
 
-SANITIZE_HTML_CONFIG_TAGS = {'label', 'input', 'textarea', 'select', 'option', 'button'}
-SANITIZE_HTML_CONFIG_ATTRS = {
-    'label': {'for'},
-    'input': {
-        'type', 'name', 'placeholder', 'required', 'disabled', 'readonly', 'checked', 'value',
-        'min', 'max', 'minlength', 'maxlength',
-    },
-    'textarea': {
-        'name', 'cols', 'rows', 'placeholder', 'required', 'disabled', 'readonly',
-        'minlength', 'maxlength',
-    },
-    'select': {'name', 'required', 'disabled', 'readonly', 'placeholder'},
-    'option': {'value', 'selected', },
-    'button': {'type'},
-}
-SANITIZE_HTML_CONFIG_ATTRS_PREFIX = {'data-'}
-SANITIZE_HTML_CLEAN_CONTENT_TAGS = {"script", "style", "hr", "br"}  # clean_content_tags
-SANITIZE_HTML_LINK_REL = "noopener noreferrer nofollow"
-
-
 class FormPublished(MasterDataAbstractModel):
     form = models.OneToOneField(Form, on_delete=models.CASCADE, related_name='form_published')
     date_publish_start = models.DateField(default=timezone.now, editable=True, help_text='Set activation date and time')
@@ -155,11 +138,7 @@ class FormPublished(MasterDataAbstractModel):
             self.code = self.generate_code()
         if not HTMLController.detect_escape(self.html_text):
             self.html_text = HTMLController(html_str=self.html_text).clean(
-                append_tags=SANITIZE_HTML_CONFIG_TAGS,
-                append_attrs=SANITIZE_HTML_CONFIG_ATTRS,
-                is_minify=True,
-                generic_attribute_prefixes=SANITIZE_HTML_CONFIG_ATTRS_PREFIX,
-                link_rel=SANITIZE_HTML_LINK_REL,
+                trusted_domain=FORM_SANITIZE_TRUSTED_DOMAIN_LINK,
                 allowed_input_names=self.form.get_input_names(),
             )
         super().save(*args, **kwargs)

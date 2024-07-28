@@ -5,19 +5,16 @@ from django.utils import timezone
 
 from celery import shared_task
 
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
     OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
 )
-from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct, SaleOrderLogistic
+from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 
 __all__ = [
     'task_active_delivery_from_sale_order',
 ]
-
-from apps.sales.saleorder.utils import SOFinishHandler
 
 
 class SaleOrderActiveDeliverySerializer:
@@ -138,6 +135,10 @@ class SaleOrderActiveDeliverySerializer:
                 "id": str(self.order_obj.id),
                 "title": str(self.order_obj.title),
                 "code": str(self.order_obj.code),
+                "opportunity": {
+                    'id': str(self.order_obj.opportunity_id), 'title': self.order_obj.opportunity.title,
+                    'code': self.order_obj.opportunity.code,
+                } if self.order_obj.opportunity else {},
             },
             ware_house=None,
             ware_house_data={},
@@ -162,7 +163,6 @@ class SaleOrderActiveDeliverySerializer:
             date_done=None,
             previous_step=None,
             times=1,
-            code=obj.code,
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
             # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
@@ -188,7 +188,6 @@ class SaleOrderActiveDeliverySerializer:
         obj.save(update_fields=['sub'])
         return obj
 
-    # @decorator_run_workflow
     def _create_order_delivery(
             self,
             delivery_quantity,
@@ -216,6 +215,10 @@ class SaleOrderActiveDeliverySerializer:
                     "id": str(self.order_obj.customer_billing_id),
                     "bill": self.order_obj.customer_billing.full_address
                 } if self.order_obj.customer_billing else {},
+                "opportunity": {
+                    'id': str(self.order_obj.opportunity_id), 'title': self.order_obj.opportunity.title,
+                    'code': self.order_obj.opportunity.code,
+                } if self.order_obj.opportunity else {},
             },
             from_picking_area='',
             customer=self.order_obj.customer,
@@ -250,7 +253,6 @@ class SaleOrderActiveDeliverySerializer:
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
-            code=obj_delivery.code,
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             id=sub_id,

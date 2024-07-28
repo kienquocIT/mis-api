@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from apps.core.hr.models import DistributionApplication
 from apps.shared import DisperseModel
-from .models import ProjectMapTasks
+from .models import ProjectMapTasks, ProjectWorks, ProjectGroups, GroupMapWork, ProjectMapGroup, ProjectMapWork
 
 
 def pj_get_alias_permit_from_app(employee_obj):
@@ -67,10 +67,9 @@ def get_prj_mem_of_crt_user(prj_obj, employee_current):
     crt_user = None
     model_cls = DisperseModel(app_model='project_ProjectMapMember').get_model()
     if model_cls:
-        temp = model_cls.objects.filter_current(
+        temp = model_cls.objects.filter(
             project=prj_obj,
-            member=employee_current,
-            fill__tenant=True, fill__company=True,
+            member=employee_current
         )
         if temp.exists():
             crt_user = temp.first()
@@ -83,34 +82,33 @@ def check_permit_add_member_pj(task, emp_crt):
     # or user in team member and have permission
     # or user in team member with do not have permit but create sub-task
     emp_id = emp_crt.id
-    prj_obj = task['project']
+    prj_obj = task['project'] if hasattr(task, 'project') else task
     pj_member_current_user = get_prj_mem_of_crt_user(prj_obj=prj_obj, employee_current=emp_crt)
     if str(prj_obj.employee_inherit_id) == str(emp_id) or pj_member_current_user.permit_add_gaw or (
-            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(
-            task, 'id')
+            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(task, 'id')
     ):
         return True
     return False
 
 
 def calc_update_task(task_obj):
-    if task_obj.project and hasattr(task_obj, 'id'):
-        task_map = task_obj.project_projectmaptasks_task.all()
-        if task_map.count():
-            work = task_map.first().work
-            list_task = ProjectMapTasks.objects.filter(work=work)
-            if list_task:
-                # check percent complete of work by task
-                total_w = 0
-                for item in list_task:
-                    total_w += item.task.percent_completed
-                if total_w > 0:
-                    work.w_rate = round(total_w / list_task.count(), 1)
-                    work.work_status = 1
-                    work.save()
-                # calc rate group
-                if hasattr(work, 'project_groupmapwork_work'):
-                    group_map = work.project_groupmapwork_work.all()
+    task_map = task_obj.project_projectmaptasks_task.all()
+    if task_map.count():
+        work = task_map.first().work
+        list_task = ProjectMapTasks.objects.filter(work=work)
+        if list_task:
+            # check percent complete of work by task
+            total_w = 0
+            for item in list_task:
+                total_w += item.task.percent_completed
+            if total_w > 0:
+                work.w_rate = round(total_w / list_task.count(), 1)
+                work.work_status = 1
+                work.save()
+            # calc rate group
+            if hasattr(work, 'project_groupmapwork_work'):
+                group_map = work.project_groupmapwork_work.all()
+                if group_map:
                     group = group_map.first().group
                     list_work = group.works.all()
                     rate_w = 0
@@ -142,3 +140,86 @@ def re_calc_work_group(work):
         if rate_w > 0:
             group.gr_rate = round(rate_w / list_work.count(), 1)
             group.save()
+
+
+def filter_num(num):
+    str_num = str(num)
+    int_part, dec_part = str_num.split('.')
+
+    # Find the index of the first non-zero digit in the decimal part
+    idx = next((i for i, x in enumerate(dec_part) if x != '0'), len(dec_part))
+
+    # Return the number up to the first non-zero digit in the decimal part
+    return float(int_part + '.' + dec_part[:idx + 1])
+
+
+def calc_weight_all(prj, is_delete=False):
+    models_group = prj.project_projectmapgroup_project.all()
+    models_work = prj.project_projectmapwork_project.all()
+    work_not_group = []
+    for item in models_work:
+        work = item.work.project_groupmapwork_work.all()
+        if not work:
+            work_not_group.append(item.work)
+
+    count = models_group.count() + len(work_not_group)
+    if not is_delete:
+        count += 1
+    new_percent = filter_num(100/count) if count > 0 else 100
+    group_lst = []
+    work_lst = []
+    for item_prj in models_group:
+        item_prj.group.gr_weight = new_percent
+        group_lst.append(item_prj.group)
+
+    for item_proj in work_not_group:
+        item_proj.w_weight = new_percent
+        work_lst.append(item_proj)
+
+    ProjectGroups.objects.bulk_update(group_lst, fields=['gr_weight'])
+    ProjectWorks.objects.bulk_update(work_lst, fields=['w_weight'])
+    return new_percent
+
+
+def calc_weight_work_in_group(group_id, is_update=False):
+    # calc weight all work in group
+    percent = 100
+    model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
+    work_lst = model_cls.objects.filter(group_id=group_id)
+    w_lst_update = []
+    if work_lst:
+        count = work_lst.count()
+        if not is_update:
+            count += 1
+        percent = filter_num(100/count)
+        for w_item in work_lst:
+            w_item.work.w_weight = percent
+            w_lst_update.append(w_item.work)
+        ProjectWorks.objects.bulk_update(w_lst_update, fields=['w_weight'])
+    return percent
+
+
+def reorder_work(group_id=None, prj=None):
+    group_obj = ProjectGroups.objects.filter(id=group_id).first()
+    if not group_obj:
+        return False
+    work_order = group_obj.order + 1
+
+    work_in_group = GroupMapWork.objects.filter(group=group_obj)
+    if work_in_group.exists():
+        work_order = work_in_group.order_by('work__order').last().work.order + 1
+
+    group_bellow = ProjectMapGroup.objects.filter(project=prj, group__order__gte=work_order)
+    work_bellow = ProjectMapWork.objects.filter(project=prj, work__order__gte=work_order)
+    merge_lst = []
+    for group_obj in group_bellow:
+        group_obj.group.order += 1
+        merge_lst.append(group_obj.group)
+    for work_obj in work_bellow:
+        work_obj.work.order += 1
+        merge_lst.append(work_obj.work)
+    g_update_lst = list(filter(lambda x: hasattr(x, 'gr_weight'), merge_lst))
+    w_update_lst = list(filter(lambda x: hasattr(x, 'work_status'), merge_lst))
+    ProjectGroups.objects.bulk_update(g_update_lst, fields=['order'])
+    ProjectWorks.objects.bulk_update(w_update_lst, fields=['order'])
+    return work_order

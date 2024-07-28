@@ -113,6 +113,7 @@ INSTALLED_APPS = \
         'apps.sales.arinvoice',
         'apps.sales.apinvoice',
         'apps.sales.lead',
+        'apps.sales.budgetplan',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]
@@ -222,6 +223,10 @@ TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 
 USE_TZ = False
+
+# Trusted Link Domain
+TRUSTED_DOMAIN_LINK = json.loads(os.environ.get('TRUSTED_DOMAIN_LINK', '[]'))
+FORM_MAX_SIZE_HTML_BYTES = int(os.environ.get('FORM_MAX_SIZE_HTML_BYTES', 300 * 1024))  # 500 kB = 512 000 bytes
 
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')

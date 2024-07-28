@@ -1,14 +1,19 @@
 __all__ = ['HTMLController']
 
 import re
-from copy import deepcopy
 from html import unescape
 
 import minify_html
 import nh3
 from bs4 import BeautifulSoup
+from django.conf import settings
 
 from apps.shared.extends.utils import DictHandler
+from apps.shared.html_constant import (
+    SANITIZE_HTML_CONFIG_TAGS, SANITIZE_HTML_CONFIG_ATTRS,
+    SANITIZE_HTML_CONFIG_ATTRS_PREFIX, SANITIZE_HTML_LINK_REL, SANITIZE_HTML_TAG_ATTRIBUTE_VALUES,
+    SANITIZE_HTML_SET_TAG_ATTRIBUTE_VALUES,
+)
 
 
 class ManualBleach:
@@ -27,82 +32,185 @@ class ManualBleach:
     ...
 
 
-class ManualNH3:
+class ManualNH3:  # pylint: disable=R0902
     # Ref: https://nh3.readthedocs.io/en/latest/
-    soup: BeautifulSoup
 
-    nh3_tags: set[str] = None
+    @property
+    def nh3_tags(self):
+        return self._nh3_tags
 
-    def nh3_get_tags(self, append_tags: set[str] = None) -> set[str] or ValueError:
-        if not self.nh3_tags:
-            tags = deepcopy(nh3.ALLOWED_TAGS)  # pylint: disable=E1101
-            if isinstance(tags, set):
-                if append_tags and isinstance(append_tags, set):
-                    tags = tags.union(append_tags)
+    @nh3_tags.setter
+    def nh3_tags(self, append_tags: set[str]):
+        self._nh3_tags = self._nh3_tags.union(append_tags)
 
-                self.nh3_tags = tags
-                return tags
-            raise ValueError('NH3.ALLOWED_ATTRIBUTES return should be "dict[str, set[str]]"')
-        return self.nh3_tags
+    @property
+    def nh3_attributes(self):
+        return self._nh3_attributes
 
-    # @staticmethod
-    # def nh3_attribute_filter(element, attr_name, attr_value, *args, **kwargs):
-    #     # return None was remove attribute it!
-    #     # return data push it to value of attribute
-    #     return None
+    @nh3_attributes.setter
+    def nh3_attributes(self, append_attrs: dict[str, set[str]]):
+        if '*' not in self._nh3_attributes:
+            self._nh3_attributes['*'] = set({})
+        self._nh3_attributes['*'] = self._nh3_attributes['*'].union({'style', 'class', 'id'})
 
-    nh3_attributes: dict[str, set[str]] = None
+        # table
+        if 'table' not in self._nh3_attributes:
+            self._nh3_attributes['table'] = set({})
+        self._nh3_attributes['table'] = self._nh3_attributes['table'].union({'border'})
 
-    def nh3_get_attributes(self, append_attrs: dict[str, set[str]] = None) -> dict[str, set[str]] or ValueError:
-        if not self.nh3_attributes:  # pylint: disable=R1702
-            attributes = deepcopy(nh3.ALLOWED_ATTRIBUTES)  # pylint: disable=E1101
-            if isinstance(attributes, dict):
-                # all tag element
-                if '*' not in attributes:
-                    attributes['*'] = set({})
-                attributes['*'] = attributes['*'].union({'style', 'class', 'id'})
+        # span (tag element fill)
+        if 'span' not in self._nh3_attributes:
+            self._nh3_attributes['span'] = set({})
+        self._nh3_attributes['span'] = self._nh3_attributes['span'].union({'data-code'})
 
-                # table
-                if 'table' not in attributes:
-                    attributes['table'] = set({})
-                attributes['table'] = attributes['table'].union({'border'})
+        if append_attrs:
+            for key, value in append_attrs.items():
+                if isinstance(key, str) and isinstance(value, set):
+                    if key in self._nh3_attributes:
+                        self._nh3_attributes[key] = self._nh3_attributes[key].union(value)
+                    else:
+                        self._nh3_attributes[key] = value
 
-                # span (tag element fill)
-                if 'span' not in attributes:
-                    attributes['span'] = set({})
-                attributes['span'] = attributes['span'].union({'data-code'})
+    @property
+    def generic_attribute_prefixes(self):
+        return self._generic_attribute_prefixes
 
-                if append_attrs:
-                    for key, value in append_attrs.items():
-                        if isinstance(key, str) and isinstance(value, set):
-                            if key in attributes:
-                                attributes[key] = attributes[key].union(value)
-                            else:
-                                attributes[key] = value
-                self.nh3_attributes = attributes
-                return attributes
-            raise ValueError('NH3.ALLOWED_ATTRIBUTES return should be "dict[str, set[str]]"')
-        return self.nh3_attributes
+    @generic_attribute_prefixes.setter
+    def generic_attribute_prefixes(self, generic_attribute_prefixes: set[str]):
+        self._generic_attribute_prefixes = self._generic_attribute_prefixes.union(generic_attribute_prefixes)
 
-    def nh3_clean(self, append_tags, append_attrs, **kwargs):
+    @property
+    def link_rel(self):
+        return self._link_rel
+
+    @link_rel.setter
+    def link_rel(self, link_rel: str):
+        self._link_rel = link_rel
+
+    @property
+    def tag_attribute_values(self):
+        return self._tag_attribute_values
+
+    @tag_attribute_values.setter
+    def tag_attribute_values(self, tag_attribute_values: dict[str, dict[str, set[str]]]):
+        for ele, ele_value in tag_attribute_values.items():
+            if ele not in self._tag_attribute_values:
+                self._tag_attribute_values[ele] = {}
+            for attr, attr_value in ele_value.items():
+                if attr not in self._tag_attribute_values[ele]:
+                    self._tag_attribute_values[ele][attr] = set([])
+                self._tag_attribute_values[ele][attr] = self._tag_attribute_values[ele][attr].union(attr_value)
+
+    @property
+    def set_tag_attribute_values(self):
+        return self._set_tag_attribute_values
+
+    @set_tag_attribute_values.setter
+    def set_tag_attribute_values(self, set_tag_attribute_values: dict[str, dict[str, str]]):
+        for ele, ele_value in set_tag_attribute_values.items():
+            if ele not in self._set_tag_attribute_values:
+                self._set_tag_attribute_values[ele] = {}
+            for attr, attr_value in ele_value.items():
+                self._set_tag_attribute_values[ele][attr] = attr_value
+
+    def __init__(self, html_str: str, **kwargs):
+        self._nh3_tags: set[str] = {
+            'code', 'dl', 'rp', 'hr', 'th', 'time', 'h2', 'u', 'br', 'li', 'header', 'tt',
+            'strike', 'data', 'ol', 'sup', 'blockquote', 'td', 'h5', 'col', 'tbody', 'pre',
+            'bdo', 'abbr', 'div', 'h4', 'var', 'table', 'small', 'h1', 'dt', 'area', 'ruby',
+            's', 'p', 'em', 'summary', 'article', 'caption', 'details', 'colgroup', 'dd',
+            'samp', 'thead', 'sub', 'b', 'figcaption', 'hgroup', 'tr', 'map', 'aside', 'q',
+            'ins', 'span', 'i', 'rt', 'del', 'kbd', 'strong', 'a', 'acronym', 'dfn', 'wbr',
+            'ul', 'rtc', 'bdi', 'figure', 'cite', 'center', 'footer', 'mark', 'h6', 'nav',
+            'img', 'h3'
+        }
+        self._nh3_attributes: dict[str, set[str]] = {
+            'q': {'cite'}, 'thead': {'charoff', 'align', 'char'}, 'a': {'href', 'hreflang'},
+            'tbody': {'charoff', 'align', 'char'}, 'tfoot': {'charoff', 'align', 'char'},
+            'th': {'charoff', 'headers', 'align', 'scope', 'colspan', 'rowspan', 'char'},
+            'img': {'alt', 'align', 'src', 'width', 'height'}, 'tr': {'charoff', 'align', 'char'},
+            'table': {'charoff', 'align', 'char', 'summary'}, 'col': {'charoff', 'span', 'align', 'char'},
+            'del': {'cite', 'datetime'}, 'ol': {'start'}, 'hr': {'width', 'align', 'size'}, 'blockquote': {'cite'},
+            'colgroup': {'charoff', 'span', 'align', 'char'}, 'ins': {'cite', 'datetime'},
+            'td': {'headers', 'charoff', 'align', 'colspan', 'rowspan', 'char'}, 'bdo': {'dir'}
+        }
+        self._generic_attribute_prefixes: set[str] = set([])
+        self._link_rel: str = ''
+        self._tag_attribute_values: dict[str, dict[str, set[str]]] = {}
+        self._set_tag_attribute_values: dict[str, dict[str, str]] = {}
+
+        self.html_str: str = html_str
+        self.soup = BeautifulSoup(html_str, 'html.parser')
+
+        self.INPUT_NAME_ALLOWED: set[str] = set([])  # pylint: disable=C0103
+        self.LINK_TRUSTED_DOMAIN: set[str] = set([]) # pylint: disable=C0103
+
+        for key, value in kwargs.items():
+            if key.startswith('override__'):
+                key_tmp = key.replace('override__', '')
+                setattr(self, key_tmp, value)
+            else:
+                setattr(self, key, value)
+
+    @staticmethod
+    def bastion_attribute_filter(  # pylint: disable=R0912
+            element, attribute, value,
+            inputs_name_allowed: set[str] = None,
+            iframe_trusted_domain: set[str] = None
+    ):
+        if not inputs_name_allowed:
+            inputs_name_allowed = set([])
+        if not iframe_trusted_domain:
+            iframe_trusted_domain = set([])
+
+        if not inputs_name_allowed:
+            inputs_name_allowed = []
+        if element == ['input', 'select', 'textarea']:
+            if attribute == 'name':
+                if value not in inputs_name_allowed:
+                    return None
+            elif attribute == 'type':
+                if value == 'submit':
+                    return None
+        elif element == 'button':
+            if attribute == 'type':
+                if value == 'submit':
+                    return 'button'
+        elif element == 'iframe':
+            if attribute == 'src':
+                if value.startswith("https://"):
+                    domain = value.replace('https://', '').split('/')[0].lower()
+                    if domain:
+                        if domain in iframe_trusted_domain:
+                            return value
+                return None
+        return value
+
+    def nh3_attribute_filter(self, element, attribute, value):  # pylint: disable=R1710
+        # return None was remove attribute it!
+        # return data push it to value of attribute
+        # --> Failed case: none return some element don't keep attribute and value
+        # ----> Always return value : None | Other Value | Keep Value
+        valid = self.bastion_attribute_filter(
+            element, attribute, value,
+            inputs_name_allowed=self.INPUT_NAME_ALLOWED,
+            iframe_trusted_domain=self.LINK_TRUSTED_DOMAIN,
+        )
+        if valid != value:
+            return value
+
+    def nh3_clean(self, **kwargs):
         return nh3.clean(  # pylint: disable=E1101
-            self.soup.prettify(),
-            tags=self.nh3_get_tags(append_tags),
-            attributes=self.nh3_get_attributes(append_attrs),
+            self.html_str,
+            tags=self.nh3_tags,
+            attributes=self.nh3_attributes,
+            generic_attribute_prefixes=self.generic_attribute_prefixes,
+            link_rel=self.link_rel,
+            tag_attribute_values=self.tag_attribute_values,
+            set_tag_attribute_values=self._set_tag_attribute_values,
+            # attribute_filter=self.nh3_attribute_filter,
             **kwargs,
         )
-
-    @classmethod
-    def soup_clean_input(cls, html_str: str, allowed_names: list[str]):
-        if html_str and allowed_names:
-            soup = BeautifulSoup(html_str, "html.parser")
-            inputs = soup.find_all('input')
-            for input_tag in inputs:
-                name_value = input_tag.get('name')
-                if name_value not in allowed_names:
-                    input_tag.decompose()
-            return soup.prettify()
-        return html_str
 
     @classmethod
     def nh3_clean_text(cls, data):
@@ -113,7 +221,7 @@ class ManualNH3:
         return nh3.is_html(data)  # pylint: disable=E1101
 
 
-class HTMLController(ManualNH3, ManualBleach):
+class HTMLController(ManualNH3, ManualBleach):  # pylint: disable=R0902
     @staticmethod
     def minify(data):
         return minify_html.minify(data)  # pylint: disable=E1101
@@ -128,9 +236,11 @@ class HTMLController(ManualNH3, ManualBleach):
             return False
         return True
 
-    def __init__(self, html_str: str, is_unescape: bool = False):
-        self.html_str = HTMLController.unescape(html_str) if is_unescape is True else html_str
-        self.soup = BeautifulSoup(self.html_str, "html.parser")
+    def __init__(self, html_str: str, is_unescape: bool = False, soup_pretty: bool = False):
+        html_str = HTMLController.unescape(html_str) if is_unescape is True else html_str
+        if soup_pretty is True:
+            html_str = BeautifulSoup(html_str, "html.parser").prettify()
+        super().__init__(html_str=html_str)
 
     def handle_params(self, data: dict):
         params = self.soup.select("span.params-data[data-code]")
@@ -145,22 +255,37 @@ class HTMLController(ManualNH3, ManualBleach):
 
     def clean(
             self,
+            is_minify: bool = True,
+            is_escape: bool = True,
+            allowed_input_names: list[str] = None,
+            trusted_domain: list[str] = None,
+            # argument for nh3.clean()
             append_tags: set[str] = None,
             append_attrs: dict[str, set[str]] = None,
-            is_minify: bool = True,
-            allowed_input_names: list[str] = None,
+            attr_prefix: set[str] = None,
+            link_rel: str = None,
+            tag_attribute_values: dict[str, dict[str, set]] = None,
+            set_tag_attribute_values: dict[str, dict[str, str]] = None,
             **kwargs
     ):
-        data = self.nh3_clean(
-            append_tags=append_tags,
-            append_attrs=append_attrs,
-            **kwargs,
-        )
-        if allowed_input_names:
-            data = self.soup_clean_input(html_str=data, allowed_names=allowed_input_names)
+        self.nh3_tags = append_tags if append_tags else SANITIZE_HTML_CONFIG_TAGS
+        self.nh3_attributes = append_attrs if append_attrs else SANITIZE_HTML_CONFIG_ATTRS
+        self.generic_attribute_prefixes = attr_prefix if attr_prefix else SANITIZE_HTML_CONFIG_ATTRS_PREFIX
+        self.link_rel = link_rel if link_rel else SANITIZE_HTML_LINK_REL
+        self.tag_attribute_values = tag_attribute_values if tag_attribute_values else SANITIZE_HTML_TAG_ATTRIBUTE_VALUES
+        if set_tag_attribute_values:
+            self.set_tag_attribute_values = set_tag_attribute_values
+        else:
+            self.set_tag_attribute_values = SANITIZE_HTML_SET_TAG_ATTRIBUTE_VALUES
+        self.INPUT_NAME_ALLOWED = set(allowed_input_names if allowed_input_names else [])
+        self.LINK_TRUSTED_DOMAIN = set(trusted_domain if trusted_domain else settings.TRUSTED_DOMAIN_LINK)
+
+        data = self.nh3_clean(**kwargs)
         if is_minify:
             data = self.minify(data)
-        return self.nh3_clean_text(data=data)
+        if is_escape:
+            return self.nh3_clean_text(data=data)
+        return data
 
     def is_html(self):
         return self.nh3_is_html(data=self.to_string())

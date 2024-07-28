@@ -2,10 +2,45 @@ __all__ = [
     'FormValidation',
 ]
 
+import json
+import time
+from typing import Literal
+
 from rest_framework import serializers
 from apps.core.forms.i18n import FormMsg
+from apps.shared import CustomizeEncoder
 from .base import *
 from .forms import *
+
+
+class OrderDictHandle:
+    @classmethod
+    def distribute_type(cls, data):
+        if isinstance(data, dict):
+            return cls.convert_dict(data)
+        if isinstance(data, list):
+            return cls.convert_list(data)
+        return data
+
+    @classmethod
+    def convert_list(cls, data):
+        results = []
+        for item in data:
+            results.append(
+                cls.distribute_type(item)
+            )
+        return results
+
+    @classmethod
+    def convert_dict(cls, data):
+        ctx = {}
+        for key, value in data.items():
+            ctx[key] = cls.distribute_type(value)
+        return ctx
+
+    @classmethod
+    def convert(cls, data):
+        return cls.distribute_type(data)
 
 
 class FormItemValidation:
@@ -16,7 +51,7 @@ class FormItemValidation:
             return True
         raise serializers.ValidationError(
             {
-                'type': 'The type not match supported class'
+                'type': FormMsg.FORM_TYPE_NOT_SUPPORT.format(str(self.type_field)),
             }
         )
 
@@ -94,10 +129,6 @@ class FormValidation:
             raise serializers.ValidationError(errors)
         return body_data_resolved
 
-    @classmethod
-    def convert_to_dict(cls, input_ordered_dict):
-        return {k: cls.convert_to_dict(v) if isinstance(v, dict) else v for k, v in input_ordered_dict.items()}
-
     def __init__(self, configs_order, configs, firing_errors: bool = True):
         # storage input data
         self.configs_order = configs_order
@@ -129,6 +160,12 @@ class FormValidation:
                 if isinstance(input_names_of_cls, list):
                     self.input_names += input_names_of_cls
 
-                self.configs_validated[item_cls.idx] = self.convert_to_dict(item_cls.obj.validated_data)
+                item_validated_data = json.loads(
+                    json.dumps(
+                        OrderDictHandle.convert(item_cls.obj.validated_data),
+                        cls=CustomizeEncoder
+                    )
+                )
+                self.configs_validated[item_cls.idx] = item_validated_data
         if firing_errors and self.errors:
             raise serializers.ValidationError(self.errors)

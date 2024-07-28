@@ -14,7 +14,8 @@ class Periods(MasterDataAbstractModel):
     space_month = models.IntegerField(default=0)
     fiscal_year = models.IntegerField(null=False)
     start_date = models.DateField(null=False)
-    planned = models.BooleanField(default=False)
+    has_revenue_planned = models.BooleanField(default=False, help_text=_('is True if has revenue planned this period'))
+    has_budget_planned = models.BooleanField(default=False, help_text=_('is True if has budget planned this period'))
     sub_periods_type = models.IntegerField(choices=[(0, 'Month'), (1, 'Quarter'), (2, 'Year')], default=0)
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
 

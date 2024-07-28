@@ -3,6 +3,7 @@ __all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSeriali
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
+from ..extend_func import calc_weight_all
 from ..models import Project, ProjectGroups, ProjectMapGroup
 
 
@@ -27,8 +28,16 @@ class GroupCreateSerializers(serializers.ModelSerializer):
         except Project.DoesNotExist:
             raise serializers.ValidationError({'detail': f'{ProjectMsg.PROJECT} {BaseMsg.NOT_EXIST}'})
 
+    def validate(self, attrs):
+        gr_end_date = attrs['gr_end_date']
+        gr_start_date = attrs['gr_start_date']
+        if gr_end_date < gr_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
+        return attrs
+
     def create(self, validated_data):
         project = validated_data.pop('project', None)
+        validated_data['gr_weight'] = calc_weight_all(project)
         group = ProjectGroups.objects.create(**validated_data)
         ProjectMapGroup.objects.create(project=project, group=group, tenant=group.tenant, company=group.company)
         return group
@@ -83,6 +92,13 @@ class GroupDetailSerializers(serializers.ModelSerializer):
             'gr_end_date',
             'order',
         )
+
+    def validate(self, attrs):
+        gr_end_date = attrs['gr_end_date']
+        gr_start_date = attrs['gr_start_date']
+        if gr_end_date < gr_start_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
+        return attrs
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():

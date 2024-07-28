@@ -334,6 +334,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'indicator_revenue',
                 'system_status',
                 'opportunity',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -556,6 +559,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'indicator_revenue',
                 'system_status',
                 'opportunity',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -588,6 +594,9 @@ class TestCaseQuotation(AdvanceTestCase):
                 'indicator_revenue',
                 'system_status',
                 'opportunity',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )

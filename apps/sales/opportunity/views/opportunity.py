@@ -54,6 +54,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
             "customer__contact_account_name",
+            "customer__account_mapped_shipping_address"
         )
 
     @classmethod

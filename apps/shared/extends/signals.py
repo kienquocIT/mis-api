@@ -44,8 +44,9 @@ from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
-from apps.sales.project.models import ProjectMapMember, ProjectMapTasks
+from apps.sales.project.models import ProjectMapMember, ProjectMapTasks, ProjectWorks, ProjectGroups, ProjectMapGroup
 from apps.core.forms.models import Form
+from ...sales.project.extend_func import calc_weight_all
 
 logger = logging.getLogger(__name__)
 
@@ -918,6 +919,29 @@ class ConfigDefaultData:
         return True
 
 
+@receiver(post_save, sender=TaskResult)
+def update_task_result(sender, instance, create, **kwargs):
+    status = getattr(instance, 'status', '')
+    if status == 'FAILURE':
+        msg = TeleBotPushNotify.generate_msg(
+            idx='CELERY_TASK',
+            status='FAILURE',
+            group_name='INFO',
+            **{
+                'id': str(getattr(instance, 'id', '-')),
+                'task_id': str(getattr(instance, 'task_id', '-')),
+                'task_name': str(getattr(instance, 'task_name', '-')),
+                'task_kwargs': str(getattr(instance, 'task_kwargs', '-')),
+                'task_args': str(getattr(instance, 'task_args', '-')),
+                'date_created': str(getattr(instance, 'date_created', '-')),
+                'date_done': str(getattr(instance, 'date_done', '-')),
+                'trace_back': '-',
+                'errors': str(getattr(instance, 'result', '-')),
+            }
+        )
+        TeleBotPushNotify().send_msg(msg=msg)
+
+
 @receiver(post_save, sender=Company)
 def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
@@ -1133,3 +1157,9 @@ def project_member_event_destroy(sender, instance, **kwargs):
 def form_post_save(sender, instance, created, **kwargs):
     if created is True:
         instance.get_or_create_publish()
+
+
+@receiver(post_delete, sender=ProjectMapGroup)
+def project_group_event_destroy(sender, instance, **kwargs):
+    calc_weight_all(instance.project, True)
+    print('re calculator weight id Done')

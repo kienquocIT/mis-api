@@ -112,3 +112,7 @@ msgstr "Đơn hàng"
 #
 msgid "APP_Project"
 msgstr "Dự án"
+
+#
+msgid "APP_Project Baseline"
+msgstr "Dự án Đường cơ sở"

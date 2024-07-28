@@ -1,10 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
-from apps.core.forms.models import (
-    Form, FormPublished, SANITIZE_HTML_CONFIG_TAGS, SANITIZE_HTML_CONFIG_ATTRS,
-    SANITIZE_HTML_CONFIG_ATTRS_PREFIX,
-)
+from apps.core.forms.models import Form, FormPublished
 from apps.core.forms.serializers.serializers import (
     FormListSerializer, FormCreateSerializer, FormDetailSerializer,
     FormUpdateSerializer, FormPublishedDetailSerializer, FormPublishedUpdateSerializer,
@@ -16,6 +13,7 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseUpdateMixin, BaseRetrieveMixin, BaseDestroyMixin, mask_view,
     ResponseController,
 )
+from apps.shared.html_constant import FORM_SANITIZE_TRUSTED_DOMAIN_LINK
 
 
 class FormList(BaseListMixin, BaseCreateMixin):
@@ -150,13 +148,11 @@ class FormSanitizeHTML(APIView):
         data = request.data
         if isinstance(data, dict) and 'html' in data:
             sanitize_html = HTMLController(html_str=data['html']).clean(
-                append_tags=SANITIZE_HTML_CONFIG_TAGS,
-                append_attrs=SANITIZE_HTML_CONFIG_ATTRS,
-                is_minify=True,
-                generic_attribute_prefixes=SANITIZE_HTML_CONFIG_ATTRS_PREFIX,
+                trusted_domain=FORM_SANITIZE_TRUSTED_DOMAIN_LINK,
             )
+            sanitize_html = HTMLController.unescape(sanitize_html)
         return ResponseController.success_200(
             data={
-                'sanitize_html': HTMLController.unescape(sanitize_html),
+                'sanitize_html': sanitize_html,
             }
         )

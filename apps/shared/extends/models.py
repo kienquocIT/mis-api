@@ -180,7 +180,7 @@ class MasterDataAbstractModel(SimpleAbstractModel):
         related_name='%(app_label)s_%(class)s_employee_modifier'
     )
     date_modified = models.DateTimeField(
-        auto_now_add=True,
+        auto_now=True,
         help_text='Date modified this record in last',
     )
 

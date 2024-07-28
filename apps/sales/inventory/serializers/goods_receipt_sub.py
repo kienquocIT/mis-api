@@ -39,30 +39,32 @@ class GoodsReceiptCommonCreate:
                 new_gr_product.ia_item.save(update_fields=['action_status', 'select_for_action'])
             # If PO have PR
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
-            for pr_product in purchase_request_products_data:
-                warehouse_pr_data = []
-                if 'warehouse_data' in pr_product:
-                    warehouse_pr_data = pr_product['warehouse_data']
-                    del pr_product['warehouse_data']
-                new_pr_product = GoodsReceiptRequestProduct.objects.create(
-                    goods_receipt=instance,
-                    goods_receipt_product=new_gr_product,
-                    **pr_product
-                )
-                # create sub model GoodsReceiptWarehouse mapping goods_receipt_request_product
+            if len(purchase_request_products_data) > 0:
+                for pr_product in purchase_request_products_data:
+                    warehouse_pr_data = []
+                    if 'warehouse_data' in pr_product:
+                        warehouse_pr_data = pr_product['warehouse_data']
+                        del pr_product['warehouse_data']
+                    new_pr_product = GoodsReceiptRequestProduct.objects.create(
+                        goods_receipt=instance,
+                        goods_receipt_product=new_gr_product,
+                        **pr_product
+                    )
+                    # create sub model GoodsReceiptWarehouse mapping goods_receipt_request_product
+                    cls.create_gr_warehouse_lot_serial(
+                        warehouse_data=warehouse_pr_data,
+                        instance=instance,
+                        pr_product=new_pr_product,
+                        gr_product=new_gr_product,
+                    )
+            else:
+                # If PO doesn't have PR
+                # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
                 cls.create_gr_warehouse_lot_serial(
-                    warehouse_data=warehouse_pr_data,
+                    warehouse_data=warehouse_gr_data,
                     instance=instance,
-                    pr_product=new_pr_product,
-                    gr_product=new_gr_product,
+                    gr_product=new_gr_product
                 )
-            # If PO doesn't have PR
-            # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
-            cls.create_gr_warehouse_lot_serial(
-                warehouse_data=warehouse_gr_data,
-                instance=instance,
-                gr_product=new_gr_product
-            )
         return True
 
     @classmethod

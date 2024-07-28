@@ -2,7 +2,6 @@ import json
 
 from django.db import models
 
-from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION,
 )
@@ -121,28 +120,44 @@ class OrderPicking(DataAbstractModel):
             }
         return True
 
-    def create_code_picking(self):
-        # auto create code (temporary)
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=3)
-            if code_generated:
-                self.code = code_generated
-            else:
-                picking = OrderPickingSub.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
-                ).count()
-                char = "P"
-                temper = picking + 1
-                code = f"{char}{temper:03d}"
-                self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("P")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
 
-    def before_save(self):
-        self.create_code_picking()
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'P0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'P{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+        return True
 
     def save(self, *args, **kwargs):
+        self.push_code(instance=self)  # code
         self.set_and_check_quantity()
         self.put_backup_data()
-        self.before_save()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -264,21 +279,41 @@ class OrderPickingSub(DataAbstractModel):
             raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.pickup_quantity - self.picked_quantity_before
 
-    def create_code_picking(self):
-        # auto create code (temporary)
-        delivery = OrderPickingSub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        if not self.code:
-            char = "P"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("P")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'P0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'P{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+        return True
 
     def before_save(self):
-        self.create_code_picking()
         self.set_and_check_quantity()
         if self.ware_house and not self.ware_house_data:
             self.ware_house_data = {
@@ -288,6 +323,7 @@ class OrderPickingSub(DataAbstractModel):
             }
 
     def save(self, *args, **kwargs):
+        self.push_code(instance=self)  # code
         self.before_save()
         if kwargs.get('force_inserts', False):
             times_arr = OrderPickingSub.objects.filter(order_picking=self.order_picking).values_list('times', flat=True)
@@ -393,6 +429,22 @@ class OrderPickingProduct(SimpleAbstractModel):
     def before_save(self):
         self._put_backup_data()
         self._set_and_check_quantity()
+
+    def setup_new_obj(self, old_obj, new_sub, pickup_quantity, picked_quantity_before, remaining_quantity):
+        new_obj = OrderPickingProduct(
+            product_data=old_obj.product_data,
+            uom_data=old_obj.uom_data,
+            uom_id=old_obj.uom_id,
+            pickup_quantity=pickup_quantity,
+            picked_quantity_before=picked_quantity_before,
+            remaining_quantity=remaining_quantity,
+            picked_quantity=0,
+            picking_sub=new_sub,
+            product_id=old_obj.product_id,
+            order=old_obj.order
+        )
+        new_obj.before_save()
+        return new_obj
 
     def save(self, *args, **kwargs):
         self.before_save()

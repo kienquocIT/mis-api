@@ -13,6 +13,8 @@ class FormMsg:
     FORM_CONFIG_EXCEPTION_DENY_RUNTIME_SUBMIT = _(
         "There was a problem with the form configuration so the data submission was rejected"
     )
+    FORM_TYPE_NOT_SUPPORT = _("The type \"{0}\" not match supported class")
+    FORM_HTML_LARGER_THAN_500kB = _("The HTML must be less than 500kB")
 
     MINLENGTH_FAIL = _("The minimum value length is {0} characters")
     MAXLENGTH_FAIL = _("The maximum value length is {0} characters")
@@ -33,3 +35,20 @@ class FormMsg:
 
     A_COPY = _("copy")
     FORM_COPY_FAILURE = _("The copy progress encountered a failure")
+
+    SELECT_DEFAULT_UNIQUE = _("The default selected must be unique")
+    SELECT_VALUE_UNIQUE = _("The value must be unique")
+    SELECT_TITLE_UNIQUE = _("The titles must be unique")
+    SELECT_OPTION_REQUIRED = _("The options must be required")
+    OPTIONS_FAIL = _("The value is not support")
+
+    DATE_TYPE_NOT_SUPPORT = _("The date format is not support")
+    DATE_FORMAT_INCORRECT = _("The value is not date format")
+    DATE_LESS_THAN_MIN = _("The value less than minimum value")
+    DATE_LARGE_THAN_MAX = _("The value large than maximum value")
+
+    TIME_TYPE_NOT_SUPPORT = _("The time format is not support")
+    TIME_FORMAT_INCORRECT = _("The value is not time format")
+
+    RATE_VOTE_NOT_SUPPORT = _("The vote value is not support")
+    RATE_REVIEW_REQUIRE = _("The review must be require")
