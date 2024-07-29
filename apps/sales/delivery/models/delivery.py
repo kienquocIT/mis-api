@@ -1,9 +1,9 @@
 import json
 
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
 from apps.sales.delivery.utils import DeliFinishHandler
@@ -309,6 +309,13 @@ class OrderDeliverySub(DataAbstractModel):
                 "billing_address": "consectetur adipiscing elit."
             }
         ),
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='OrderDeliveryAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_delivery',
     )
 
     def set_and_check_quantity(self):
@@ -868,29 +875,21 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         return True
 
 
-class OrderDeliveryAttachment(SimpleAbstractModel):
+class OrderDeliveryAttachment(M2MFilesAbstractModel):
     delivery_sub = models.ForeignKey(
         OrderDeliverySub,
         on_delete=models.CASCADE,
         verbose_name="delivery attachment file",
-        related_name="order_delivery_attachment",
-        help_text="foreigner key to order delivery sub"
-    )
-    files = models.OneToOneField(
-        'attachments.Files',
-        on_delete=models.CASCADE,
-        verbose_name='Order delivery attachment files',
-        help_text='Delivery sub had one/many attachment file',
-        related_name='order_delivery_attachment_files',
-    )
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
+        related_name="delivery_attachment_delivery",
     )
 
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'delivery_sub'
+
     class Meta:
-        verbose_name = 'Order Delivery Attachment'
-        verbose_name_plural = 'Order Delivery Attachment'
+        verbose_name = 'Delivery attachments'
+        verbose_name_plural = 'Delivery attachments'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

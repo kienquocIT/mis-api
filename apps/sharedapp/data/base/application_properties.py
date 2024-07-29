@@ -1321,8 +1321,12 @@ AppProp_SaleData_Delivery_data = {
     },
     '987f4ff4-9b89-41a7-b05f-3589b9807861': {
         'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
-        'title': 'attachment file',
+        'title': 'Attachments',
         'code': 'attachments',
+        'remark': 'attachments of delivery',
+        'code_related': [
+            'employee_inherit_id',
+        ],
         'type': 5,
     },
     '5f4d7b52-5805-411f-9d6d-d6f7ce91ff3c': {

@@ -2,12 +2,10 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouseLot
-from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
-    AbstractListSerializerModel
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
@@ -15,6 +13,19 @@ from ...report.models import ReportStockLog
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
+
+
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.filter(id="1373e903-909c-4b77-9957-8bcf97e8d6d3").first()
+        if relate_app:
+            state = OrderDeliveryAttachment.resolve_change(
+                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+            )
+            if state:
+                return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
@@ -130,31 +141,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_attachments(cls, obj):
-        if obj.attachments:
-            attach = OrderDeliveryAttachment.objects.filter(
-                delivery_sub=obj,
-                media_file=obj.attachments
-            )
-            if attach.exists():
-                attachments = []
-                for item in attach:
-                    files = item.files
-                    attachments.append(
-                        {
-                            'files': {
-                                "id": str(files.id),
-                                "relate_app_id": str(files.relate_app_id),
-                                "relate_app_code": files.relate_app_code,
-                                "relate_doc_id": str(files.relate_doc_id),
-                                "media_file_id": str(files.media_file_id),
-                                "file_name": files.file_name,
-                                "file_size": int(files.file_size),
-                                "file_type": files.file_type
-                            }
-                        }
-                    )
-                return attachments
-        return []
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
     class Meta:
         model = OrderDeliverySub
@@ -222,6 +209,17 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             return value
         raise serializers.ValidationError({'State': _('Can not update when status is Done!')})
 
+    def validate_attachments(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = OrderDeliveryAttachment.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def validate(self, validate_data):
         product_data = validate_data.get('products', [])
         for product in product_data:
@@ -235,42 +233,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         'detail': _('Products must have picked quantity equal to or less than remaining quantity')
                     })
         return validate_data
-
-    def handle_attach_file(self, instance, validate_data):
-        attachments = validate_data.get('attachments', None)
-        if attachments and TypeCheck.check_uuid_list(attachments):
-            user = self.context.get('user', None)
-            relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
-            delivery_sub_id = str(self.instance.id)
-
-            employee_id = user.employee_current_id
-            if not employee_id:
-                raise serializers.ValidationError({'User': HrMsg.EMPLOYEE_WAS_LINKED})
-
-            # check files
-            state, att_objs = Files.check_media_file(file_ids=attachments, employee_id=employee_id, doc_id=instance.id)
-            if state:
-                # register file
-                file_objs = Files.regis_media_file(
-                    relate_app=relate_app, relate_doc_id=delivery_sub_id, file_objs_or_ids=att_objs,
-                )
-
-                # create m2m attachment
-                m2m_obj = []
-                for _counter, obj in enumerate(file_objs):
-                    m2m_obj.append(
-                        OrderDeliveryAttachment(
-                            delivery_sub=self.instance,
-                            files=obj,
-                            date_created=getattr(obj, 'date_created', timezone.now()),
-                        )
-                    )
-                OrderDeliveryAttachment.objects.bulk_create(m2m_obj)
-
-                instance.attachments = validate_data['attachments']
-                return validate_data
-            raise serializers.ValidationError({'Attachment': AttachmentMsg.ERROR_VERIFY})
-        return True
 
     @classmethod
     def update_self_info(cls, instance, validated_data):
@@ -424,8 +386,9 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def update(self, instance, validated_data):
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
-        validated_product = validated_data['products']
+        validated_product = validated_data.get('products', [])
         next_node_collab_id = validated_data.get('next_node_collab_id', None)
+        attachments = validated_data.pop('attachments', None)
         config = instance.config_at_that_point
         if not config:
             get_config = DeliveryConfig.objects.get(company_id=instance.company_id)
@@ -450,7 +413,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             # to do check if not submit product so update common info only
             try:
                 with transaction.atomic():
-                    self.handle_attach_file(instance, validated_data)
                     self.config_two_four(
                         instance=instance,
                         product_done=product_done,
@@ -461,12 +423,15 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 print(err)
                 raise err
         else:
-            del validated_data['products']
+            if 'products' in validated_data:
+                del validated_data['products']
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
+        if attachments is not None:
+            handle_attach_file(instance, attachments)
 
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
