@@ -3,7 +3,7 @@ from datetime import timedelta
 from typing import Union
 from uuid import UUID
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.log.tasks import (force_log_activity,)
@@ -67,10 +67,15 @@ class DocHandler:
             if obj.is_change is False:
                 setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
                 update_fields.append('document_root_id')
-        # cancel document root or previous document before finish new document
-        DocHandler.force_cancel_doc_previous(document_change=obj)
-        # save finish
-        obj.save(update_fields=update_fields)
+        try:
+            with transaction.atomic():
+                # cancel document root or previous document before finish new document
+                DocHandler.force_cancel_doc_previous(document_change=obj)
+                # save finish
+                obj.save(update_fields=update_fields)
+        except Exception as err:
+            print(err)
+            return False
         return True
 
     @classmethod

@@ -338,25 +338,25 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_available_stock(cls, obj):
+        available_stock = obj.stock_amount
         if obj.warehouse and obj.product:
-            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
-            if regis_list:
-                quantity_regis = 0
-                for regis in regis_list:
+            quantity_regis = 0
+            for regis in obj.warehouse.gre_item_general_warehouse.all():
+                if regis.gre_item.product_id == obj.product_id:
                     quantity_regis += regis.quantity
-                return obj.stock_amount - quantity_regis
-        return obj.stock_amount
+                available_stock = obj.stock_amount - quantity_regis
+        return available_stock if available_stock > 0 else 0
 
     @classmethod
     def get_available_picked(cls, obj):
+        available_picked = obj.picked_ready
         if obj.warehouse and obj.product:
-            regis_list = obj.warehouse.gre_item_general_warehouse.filter(gre_item__product_id=obj.product_id)
-            if regis_list:
-                picked_regis = 0
-                for regis in regis_list:
+            picked_regis = 0
+            for regis in obj.warehouse.gre_item_general_warehouse.all():
+                if regis.gre_item.product_id == obj.product_id:
                     picked_regis += regis.picked_ready
-                return obj.picked_ready - picked_regis
-        return obj.picked_ready
+                available_picked = obj.picked_ready - picked_regis
+        return available_picked
 
 
 class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer):
@@ -474,7 +474,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
 
 class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
     product_warehouse = serializers.SerializerMethodField()
-    quantity_available = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouseLot
@@ -485,7 +485,7 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
             'quantity_import',
             'expire_date',
             'manufacture_date',
-            'quantity_available',
+            'available_stock',
         )
 
     @classmethod
@@ -517,7 +517,7 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
         }
 
     @classmethod
-    def get_quantity_available(cls, obj):
+    def get_available_stock(cls, obj):
         if obj.gre_lot_registered.count() > 0:
             quantity_regis = 0
             for lot_registered in obj.gre_lot_registered.all():

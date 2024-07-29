@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
+from apps.sales.delivery.utils import DeliFinishHandler
 from apps.sales.report.models import ReportStockLog
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -146,24 +147,44 @@ class OrderDelivery(DataAbstractModel):
             }
         return True
 
-    def create_code_delivery(self):
-        # auto create code (temporary)
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=4)
-            if code_generated:
-                self.code = code_generated
-            else:
-                delivery = OrderDeliverySub.objects.filter(
-                    tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
-                ).count()
-                char = "D"
-                temper = delivery + 1
-                code = f"{char}{temper:03d}"
-                self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("D")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'D0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'D{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_code(cls, instance):
+        if not instance.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+        return True
 
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        self.create_code_delivery()
+        # self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:
@@ -297,17 +318,6 @@ class OrderDeliverySub(DataAbstractModel):
             raise ValueError(_("Products must have delivery quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
-    def create_code_delivery(self):
-        # auto create code (temporary)
-        delivery = OrderDeliverySub.objects.filter(
-            tenant_id=self.tenant_id, company_id=self.company_id, is_delete=False
-        ).count()
-        if not self.code:
-            char = "D"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
-
     @classmethod
     def for_lot(cls, instance, deli_item, deli_data, stock_data, main_product_unit_price):
         for lot in deli_data.get('lot_data', []):
@@ -413,13 +423,66 @@ class OrderDeliverySub(DataAbstractModel):
         )
         return True
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("D")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'D0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'D{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_code(cls, instance, kwargs):
+        if not instance.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+            kwargs['update_fields'].append('code')
+        return True
+
+    @classmethod
+    def push_state(cls, instance, kwargs):
+        instance.state = 2
+        kwargs['update_fields'].append('state')
+        return True
+
     def save(self, *args, **kwargs):
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    self.push_state(instance=self, kwargs=kwargs)  # state
+                    DeliFinishHandler.create_new(instance=self)  # new sub + product
+                    DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
+                    DeliFinishHandler.push_product_info(instance=self)  # product
+                    DeliFinishHandler.push_so_status(instance=self)  # sale order
+                    DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
+
         SubPeriods.check_open(
             self.company_id,
             self.tenant_id,
             self.date_approved if self.date_approved else self.date_created
         )
-
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
@@ -448,6 +511,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product need Picking',
+        related_name='delivery_product_product',
     )
     product_data = models.JSONField(
         default=dict,
@@ -539,70 +603,75 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         if self.picked_quantity > self.remaining_quantity:
             raise ValueError(_("Products must have picked quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
+        return True
+
+    def create_delivery_product_warehouse(self):
+        pw_data = [
+            {
+                'sale_order_id': deli_data.get('sale_order', None),
+                'sale_order_data': deli_data.get('sale_order_data', {}),
+                'warehouse_id': deli_data.get('warehouse', None),
+                'warehouse_data': deli_data.get('warehouse_data', {}),
+                'uom_id': deli_data.get('uom', None),
+                'uom_data': deli_data.get('uom_data', {}),
+                'lot_data': deli_data.get('lot_data', {}),
+                'serial_data': deli_data.get('serial_data', {}),
+                'quantity_delivery': deli_data.get('stock', 0),
+            } for deli_data in self.delivery_data
+        ]
+        OrderDeliveryProductWarehouse.create(
+            delivery_product_id=self.id,
+            tenant_id=self.delivery_sub.tenant_id,
+            company_id=self.delivery_sub.company_id,
+            pw_data=pw_data
+        )
+        return True
 
     def create_lot_serial(self):
-        if not self.delivery_lot_delivery_product.exists():
-            for delivery in self.delivery_data:
-                if 'lot_data' in delivery:
-                    OrderDeliveryLot.create(
-                        delivery_product_id=self.id,
-                        delivery_sub_id=self.delivery_sub_id,
-                        delivery_id=self.delivery_sub.order_delivery_id,
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        lot_data=delivery['lot_data']
-                    )
-            self.update_product_warehouse_lot()
-        if not self.delivery_serial_delivery_product.exists():
-            for delivery in self.delivery_data:
-                if 'serial_data' in delivery:
-                    OrderDeliverySerial.create(
-                        delivery_product_id=self.id,
-                        delivery_sub_id=self.delivery_sub_id,
-                        delivery_id=self.delivery_sub.order_delivery_id,
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        serial_data=delivery['serial_data']
-                    )
-            self.update_product_warehouse_serial()
-        return True
-
-    def update_product_warehouse_lot(self):
-        for lot in self.delivery_lot_delivery_product.all():
-            final_ratio = 1
-            uom_delivery_rate = self.uom.ratio if self.uom else 1
-            if lot.product_warehouse_lot:
-                product_warehouse = lot.product_warehouse_lot.product_warehouse
-                if product_warehouse:
-                    uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
-                    if uom_wh_rate and uom_delivery_rate:
-                        final_ratio = uom_delivery_rate / uom_wh_rate if uom_wh_rate > 0 else 1
-                    # push ProductWareHouseLot
-                    lot_data = [{
-                        'lot_number': lot.product_warehouse_lot.lot_number,
-                        'quantity_import': lot.quantity_delivery * final_ratio,
-                        'expire_date': lot.product_warehouse_lot.expire_date,
-                        'manufacture_date': lot.product_warehouse_lot.manufacture_date,
-                        'delivery_id': self.delivery_sub_id,
-                    }]
-                    ProductWareHouseLot.push_pw_lot(
-                        tenant_id=self.delivery_sub.tenant_id,
-                        company_id=self.delivery_sub.company_id,
-                        product_warehouse_id=product_warehouse.id,
-                        lot_data=lot_data,
-                        type_transaction=1,
-                    )
-        return True
-
-    def update_product_warehouse_serial(self):
-        for serial in self.delivery_serial_delivery_product.all():
-            serial.product_warehouse_serial.is_delete = True
-            serial.product_warehouse_serial.save(update_fields=['is_delete'])
+        self.delivery_lot_delivery_product.all().delete()
+        for delivery in self.delivery_data:
+            OrderDeliveryLot.create(
+                delivery_product_id=self.id,
+                delivery_sub_id=self.delivery_sub_id,
+                delivery_id=self.delivery_sub.order_delivery_id,
+                tenant_id=self.delivery_sub.tenant_id,
+                company_id=self.delivery_sub.company_id,
+                lot_data=delivery.get('lot_data', [])
+            )
+        self.delivery_serial_delivery_product.all().delete()
+        for delivery in self.delivery_data:
+            if 'serial_data' in delivery:
+                OrderDeliverySerial.create(
+                    delivery_product_id=self.id,
+                    delivery_sub_id=self.delivery_sub_id,
+                    delivery_id=self.delivery_sub.order_delivery_id,
+                    tenant_id=self.delivery_sub.tenant_id,
+                    company_id=self.delivery_sub.company_id,
+                    serial_data=delivery['serial_data']
+                )
         return True
 
     def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
+
+    def setup_new_obj(
+            self, old_obj, new_sub, delivery_quantity, delivered_quantity_before, remaining_quantity, ready_quantity
+    ):
+        new_obj = OrderDeliveryProduct(
+            delivery_sub=new_sub,
+            product=old_obj.product,
+            uom=old_obj.uom,
+            delivery_quantity=delivery_quantity,
+            delivered_quantity_before=delivered_quantity_before,
+            remaining_quantity=remaining_quantity,
+            ready_quantity=ready_quantity,
+            picked_quantity=0,
+            order=old_obj.order,
+            delivery_data=old_obj.delivery_data
+        )
+        new_obj.before_save()
+        return new_obj
 
     def save(self, *args, **kwargs):
         for_goods_return = kwargs.get('for_goods_return')
@@ -610,6 +679,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             del kwargs['for_goods_return']
         if not for_goods_return:
             self.before_save()
+            self.create_delivery_product_warehouse()
             self.create_lot_serial()
         super().save(*args, **kwargs)
 
@@ -619,6 +689,68 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
+
+
+class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
+    delivery_product = models.ForeignKey(
+        'delivery.OrderDeliveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_pw_delivery_product",
+    )
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="delivery_pw_sale_order",
+        help_text="main sale order of delivery or sale order from other project (borrow)",
+        null=True,
+    )
+    sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="delivery_pw_warehouse",
+    )
+    warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom",
+        related_name="delivery_pw_uom",
+    )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    lot_data = models.JSONField(
+        default=list, help_text='data json of lot [{}, {}], records in OrderDeliveryLot'
+    )
+    serial_data = models.JSONField(
+        default=list, help_text='data json of serial [{}, {}], records in OrderDeliverySerial'
+    )
+    quantity_delivery = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Delivery Product Warehouse'
+        verbose_name_plural = 'Delivery Product Warehouses'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            delivery_product_id,
+            tenant_id,
+            company_id,
+            pw_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            delivery_product_id=delivery_product_id,
+            tenant_id=tenant_id,
+            company_id=company_id,
+        ) for data in pw_data])
+        return True
 
 
 class OrderDeliveryLot(MasterDataAbstractModel):
