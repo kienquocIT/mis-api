@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from apps.sales.budgetplan.models import BudgetPlanCompanyExpense
 from apps.sales.cashoutflow.models import Payment
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderRequest
 
 
 class BudgetReportListSerializer(serializers.ModelSerializer):
