@@ -433,8 +433,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         if attachments is not None:
             handle_attach_file(instance, attachments)
 
-        DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
-
         self.prepare_data_for_logging(instance)
 
         return instance

@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
-from apps.sales.delivery.utils import DeliFinishHandler
+from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.models import ReportStockLog
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -496,6 +496,8 @@ class OrderDeliverySub(DataAbstractModel):
                 'times', flat=True
             )
             self.times = (max(times_arr) + 1) if len(times_arr) > 0 else 1
+        # diagram
+        DeliHandler.push_diagram(instance=self)
 
         super().save(*args, **kwargs)
 
