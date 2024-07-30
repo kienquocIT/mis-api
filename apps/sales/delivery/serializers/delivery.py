@@ -4,11 +4,13 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse, Product, WareHouse, UnitOfMeasure, ProductWareHouseLot
-from apps.shared import TypeCheck, HrMsg
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import ProductWareHouseLot
+from apps.shared import TypeCheck, HrMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
-from ..utils import DeliHandler, DeliFinishHandler
+from ..utils import DeliHandler
 from ...report.models import ReportStockLog
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -67,7 +69,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         )
 
 
-class OrderDeliverySubListSerializer(serializers.ModelSerializer):
+class OrderDeliverySubListSerializer(AbstractListSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
@@ -104,7 +106,7 @@ class OrderDeliveryListSerializer(serializers.ModelSerializer):
         )
 
 
-class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
+class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -189,7 +191,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField(min_value=1)
 
 
-class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
+class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
     products = ProductDeliveryUpdateSerializer(many=True)
     employee_inherit_id = serializers.UUIDField()
     estimated_delivery_date = serializers.DateTimeField()
@@ -272,29 +274,14 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def update_self_info(cls, instance, validated_data):
-        instance.estimated_delivery_date = validated_data['estimated_delivery_date']
-        instance.actual_delivery_date = validated_data['actual_delivery_date']
-        instance.remarks = validated_data['remarks']
+        if 'estimated_delivery_date' in validated_data:
+            instance.estimated_delivery_date = validated_data['estimated_delivery_date']
+        if 'actual_delivery_date' in validated_data:
+            instance.actual_delivery_date = validated_data['actual_delivery_date']
+        if 'remarks' in validated_data:
+            instance.remarks = validated_data['remarks']
         if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
             instance.delivery_logistic = validated_data['delivery_logistic']
-
-    @classmethod
-    def minus_product_warehouse_stock(cls, tenant_com_info, product, stock_info, config):
-        # sử dụng vòng for trong delivery data để đảm bảo nếu như pick từ nhiều kho khác nhau, thì có thể trừ đúng kho
-        # bên picking đã pick, một trong các prod ko dc trừ sẽ trã vể lỗi phiếu
-        for data in stock_info:
-            product_warehouse = ProductWareHouse.objects.filter(
-                tenant_id=tenant_com_info['tenant_id'],
-                company_id=tenant_com_info['company_id'],
-                product_id=product.product_id,
-                warehouse_id=data['warehouse'],
-            )
-            if product_warehouse.exists():
-                source = {
-                    "uom": data['uom'],
-                    "quantity": data['stock']
-                }
-                DeliHandler.minus_tock(source, product_warehouse, config)
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -314,134 +301,30 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError(
                             {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
                         )
-
-                    # config case 1, 2, 3
-                    cls.minus_product_warehouse_stock(
-                        {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
-                        obj,
-                        delivery_data,
-                        config
-                    )
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
-
-    @classmethod
-    def create_prod(cls, new_sub, instance):
-        # update to current product list of current sub
-        prod_arr = []
-        for obj in OrderDeliveryProduct.objects.filter_current(
-                delivery_sub=instance
-        ):
-            delivery_before = obj.delivered_quantity_before + obj.picked_quantity
-            remain = obj.delivery_quantity - delivery_before
-
-            new_prod = OrderDeliveryProduct(
-                delivery_sub=new_sub,
-                product=obj.product,
-                uom=obj.uom,
-                delivery_quantity=obj.delivery_quantity,
-                delivered_quantity_before=delivery_before,
-                remaining_quantity=remain,
-                ready_quantity=obj.ready_quantity - obj.picked_quantity if obj.ready_quantity > 0 else 0,
-                picked_quantity=0,
-                order=obj.order,
-                delivery_data=obj.delivery_data
-            )
-            new_prod.before_save()
-            prod_arr.append(new_prod)
-        OrderDeliveryProduct.objects.bulk_create(prod_arr)
-
-    @classmethod
-    def create_new_code(cls, tenant, company):
-        delivery = OrderDeliverySub.objects.filter(
-            tenant=tenant,
-            company=company,
-            is_delete=False
-        ).count()
-        char = "D"
-        temper = delivery + 1
-        new_code = f"{char}{temper:03d}"
-        return new_code
-
-    @classmethod
-    def create_new_sub(cls, instance, total_done, case=0):
-        new_code = OrderDeliverySubUpdateSerializer.create_new_code(instance.tenant, instance.company)
-        delivered = instance.delivered_quantity_before + total_done
-        remain = instance.delivery_quantity - delivered
-        new_sub = OrderDeliverySub.objects.create(
-            company_id=instance.company_id,
-            tenant_id=instance.tenant_id,
-            order_delivery=instance.order_delivery,
-            date_done=None,
-            code=new_code,
-            previous_step=instance,
-            times=instance.times + 1,
-            delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=delivered,
-            remaining_quantity=remain,
-            # ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
-            ready_quantity=instance.ready_quantity - total_done if case == 4 else 0,
-            delivery_data=None,
-            is_updated=False,
-            state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
-            sale_order_data=instance.order_delivery.sale_order_data,
-            estimated_delivery_date=instance.estimated_delivery_date,
-            actual_delivery_date=instance.actual_delivery_date,
-            customer_data=instance.customer_data,
-            contact_data=instance.contact_data,
-            config_at_that_point=instance.config_at_that_point,
-            employee_inherit=instance.employee_inherit
-        )
-        return new_sub
-
-    @classmethod
-    def config_two(cls, instance, total_done, product_done, config):  # none_picking_many_delivery
-        # cho phep giao nhieu lan and tạo sub mới
-        cls.update_prod(instance, product_done, config)
-        instance.date_done = timezone.now()
-        instance.state = 2
-        instance.is_updated = True
-        instance.save(
-            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
-        )
-        if instance.remaining_quantity > total_done:  # still not delivery all items, create new sub
-            new_sub = cls.create_new_sub(instance, total_done, 2)
-            cls.create_prod(new_sub, instance)
-            delivery_obj = instance.order_delivery
-            delivery_obj.sub = new_sub
-            delivery_obj.save(update_fields=['sub'])
-        else:  # delivery all items, not create new sub
-            instance.order_delivery.state = 2
-            instance.order_delivery.save(update_fields=['state'])
         return True
 
     @classmethod
-    def config_four(cls, instance, total_done, product_done, config):  # picking_many_delivery
+    def config_two_four(cls, instance, product_done, next_node_collab_id, config):  # none_picking_many_delivery
+        # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
-        order_delivery = instance.order_delivery
-        if instance.remaining_quantity > total_done:
-            new_sub = cls.create_new_sub(instance, total_done, 4)
-            cls.create_prod(new_sub, instance)
-            order_delivery.sub = new_sub
-            # update sub cũ
-            instance.date_done = timezone.now()
-            instance.is_updated = True
-            instance.state = 2
-        elif instance.remaining_quantity == total_done:
-            instance.date_done = timezone.now()
-            instance.is_updated = True
-            instance.state = 2
-            order_delivery.state = 2
+        instance.date_done = timezone.now()
+        # instance.state = 2
+        instance.is_updated = True
+        instance.next_node_collab_id = next_node_collab_id
         instance.save(
-            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
+            update_fields=[
+                'date_done', 'state', 'is_updated', 'estimated_delivery_date',
+                'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
+                'next_node_collab_id',
+            ]
         )
-        order_delivery.save(update_fields=['sub', 'state'])
+        return True
 
     @classmethod
-    def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj):
+    def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
@@ -449,7 +332,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     uom_obj, lot.get('quantity_delivery')
                 )
                 stock_data.append({
-                    'sale_order': instance.order_delivery.sale_order,
+                    'sale_order': sale_order_obj,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
                     'system_date': instance.date_done,
@@ -494,40 +377,43 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return stock_data
 
     @classmethod
-    def prepare_data_for_logging(cls, instance, validated_delivery_data):
+    def prepare_data_for_logging(cls, instance):
         stock_data = []
-        for deli_item in validated_delivery_data:
-            product_obj = Product.objects.filter(id=deli_item.get('product_id')).first()
-            if product_obj and len(deli_item.get('delivery_data')) > 0:
-                delivery_data = deli_item.get('delivery_data')[0]
-                warehouse_obj = WareHouse.objects.filter(id=delivery_data.get('warehouse')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=delivery_data.get('uom')).first()
-                quantity = delivery_data.get('stock')
-                if warehouse_obj and uom_obj and quantity > 0:
-                    lot_data = delivery_data.get('lot_data')
-                    sn_data = delivery_data.get('serial_data')
-                    if product_obj.general_traceability_method == 0:  # None
-                        casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
-                        stock_data.append({
-                            'sale_order': instance.order_delivery.sale_order,
-                            'product': product_obj,
-                            'warehouse': warehouse_obj,
-                            'system_date': instance.date_done,
-                            'posting_date': instance.date_done,
-                            'document_date': instance.date_done,
-                            'stock_type': -1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Delivery',
-                            'quantity': casted_quantity,
-                            'cost': 0,  # theo gia cost
-                            'value': 0,  # theo gia cost
-                            'lot_data': {}
-                        })
-                    if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
-                        cls.for_lot(instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj)
-                    if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                        cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
+        for deli_product in instance.delivery_product_delivery_sub.all():
+            if deli_product.product:
+                product_obj = deli_product.product
+                for pw_data in deli_product.delivery_pw_delivery_product.all():
+                    sale_order_obj = pw_data.sale_order
+                    warehouse_obj = pw_data.warehouse
+                    uom_obj = pw_data.uom
+                    quantity = pw_data.quantity_delivery
+                    lot_data = pw_data.lot_data
+                    sn_data = pw_data.serial_data
+                    if sale_order_obj and warehouse_obj and uom_obj and quantity > 0:
+                        if product_obj.general_traceability_method == 0:  # None
+                            casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
+                            stock_data.append({
+                                'sale_order': sale_order_obj,
+                                'product': product_obj,
+                                'warehouse': warehouse_obj,
+                                'system_date': instance.date_done,
+                                'posting_date': instance.date_done,
+                                'document_date': instance.date_done,
+                                'stock_type': -1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Delivery',
+                                'quantity': casted_quantity,
+                                'cost': 0,  # theo gia cost
+                                'value': 0,  # theo gia cost
+                                'lot_data': {}
+                            })
+                        if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
+                            cls.for_lot(
+                                instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
+                            )
+                        if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
+                            cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
         ReportStockLog.logging_inventory_activities(
             instance,
             instance.date_done,
@@ -535,11 +421,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
         return True
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
-        # declare default object
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
-
         validated_product = validated_data['products']
+        next_node_collab_id = validated_data.get('next_node_collab_id', None)
         config = instance.config_at_that_point
         if not config:
             get_config = DeliveryConfig.objects.get(company_id=instance.company_id)
@@ -547,8 +433,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 "is_picking": get_config.is_picking,
                 "is_partial_ship": get_config.is_partial_ship
             }
-        is_picking = config['is_picking']
-        is_partial = config['is_partial_ship']
         product_done = {}
         total_done = 0
         for item in validated_product:
@@ -567,12 +451,12 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             try:
                 with transaction.atomic():
                     self.handle_attach_file(instance, validated_data)
-                    if is_partial and not is_picking:
-                        # config 2 (none_picking_many_delivery)
-                        self.config_two(instance, total_done, product_done, config)
-                    if is_partial and is_picking:
-                        # config 4 (picking_many_delivery)
-                        self.config_four(instance, total_done, product_done, config)
+                    self.config_two_four(
+                        instance=instance,
+                        product_done=product_done,
+                        next_node_collab_id=next_node_collab_id,
+                        config=config
+                    )
             except Exception as err:
                 print(err)
                 raise err
@@ -584,21 +468,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
 
-        # update sale order
-        DeliFinishHandler.push_so_status(instance=instance)
-        # update product
-        DeliFinishHandler.push_product_info(instance=instance, validated_product=validated_product)
-        # create final acceptance
-        DeliFinishHandler.push_final_acceptance(instance=instance, validated_product=validated_product)
-        # diagram
         DeliHandler.push_diagram(instance=instance, validated_product=validated_product)
 
-        self.prepare_data_for_logging(
-            instance,
-            [{
-                'product_id': item['product_id'],
-                'delivery_data': item['delivery_data']
-            } for item in validated_product]
-        )
+        self.prepare_data_for_logging(instance)
 
         return instance

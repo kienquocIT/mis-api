@@ -100,8 +100,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_id': request.user.employee_current_id,
-            'tenant_id': request.user.tenant_current_id,
-            'company_id': request.user.company_current_id
+            'employee_current': request.user.employee_current,
         }
         return self.create(request, *args, **kwargs)
 

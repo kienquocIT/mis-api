@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
     ReportStockDetailList, BalanceInitializationList, ReportStockList, ReportGeneralList,
-    PurchaseOrderListReport, ProductWarehouseViewList
+    PurchaseOrderListReport, ProductWarehouseViewList, BudgetReportList, PaymentListForBudgetReport
 )
 
 urlpatterns = [
@@ -23,4 +23,8 @@ urlpatterns = [
 
     # Report purchasing
     path('po-report/list', PurchaseOrderListReport.as_view(), name='PurchaseOrderListReport'),
+
+    # Report badget
+    path('budget-report/list', BudgetReportList.as_view(), name='BudgetReportList'),
+    path('budget-report-payment/list', PaymentListForBudgetReport.as_view(), name='PaymentListForBudgetReport'),
 ]

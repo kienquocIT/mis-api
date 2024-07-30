@@ -1,11 +1,12 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
+from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, SYSTEM_STATUS
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -15,6 +16,9 @@ class PaymentListSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
+    system_status_raw = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -32,6 +36,7 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'payment_value',
             'date_created',
             'system_status',
+            'system_status_raw',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
@@ -118,13 +123,31 @@ class PaymentListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_system_status(cls, obj):
+        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
+
+    @classmethod
+    def get_system_status_raw(cls, obj):
+        return obj.system_status
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+        } if obj.employee_inherit else {}
+
 
 def create_payment_cost_items(payment_obj, payment_expense_valid_list):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
     if vnd_currency:
         bulk_info = []
+        payment_value = 0
         for item in payment_expense_valid_list:
             if float(item['real_value']) + float(item['converted_value']) == float(item['sum_value']):
+                payment_value += item.get('expense_after_tax_price', 0)
                 bulk_info.append(
                     PaymentCost(
                         **item,
@@ -140,6 +163,15 @@ def create_payment_cost_items(payment_obj, payment_expense_valid_list):
 
         PaymentCost.objects.filter(payment=payment_obj).delete()
         PaymentCost.objects.bulk_create(bulk_info)
+        payment_obj.advance_value = payment_value
+
+        opp = payment_obj.opportunity_mapped
+        quotation = payment_obj.quotation_mapped
+        sale_order = payment_obj.sale_order_mapped
+        sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
+        payment_obj.sale_code = sale_code
+
+        payment_obj.save(update_fields=['payment_value', 'sale_code'])
         return True
     return False
 

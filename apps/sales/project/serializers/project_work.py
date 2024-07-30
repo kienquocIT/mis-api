@@ -167,6 +167,12 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
             'group',
         )
 
+    @classmethod
+    def validate_work_dependencies_parent(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DEPENDENCIES_ERROR})
+
     def validate(self, attrs):
         w_start_date = attrs['w_start_date']
         w_end_date = attrs['w_end_date']

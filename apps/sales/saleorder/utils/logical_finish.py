@@ -196,7 +196,7 @@ class DocumentChangeHandler:
                 'document_root_id': instance.document_root_id,
                 'document_change_order': instance.document_change_order - 1,
             })
-        model_cls = DocHandler.get_model(app_code=instance._meta.label_lower)
+        model_cls = DocHandler.get_model(app_code=instance.__class__.get_model_code())
         if model_cls and hasattr(model_cls, 'objects'):
             return model_cls.objects.filter(**data_filter).first()
         return None
@@ -205,7 +205,7 @@ class DocumentChangeHandler:
     @classmethod
     def handle_delivery(cls, instance, doc_previous):
         instance.delivery_status = doc_previous.delivery_status
-        instance.delivery_call = True
+        instance.delivery_call = doc_previous.delivery_call
         so_data = {'id': str(instance.id), 'title': instance.title, 'code': instance.code}
         data_product_change = cls.setup_data_product_change(instance=instance, doc_previous=doc_previous)
         # picking

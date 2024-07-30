@@ -921,7 +921,7 @@ class ConfigDefaultData:
 
 
 @receiver(post_save, sender=TaskResult)
-def update_task_result(sender, instance, create, **kwargs):
+def update_task_result(sender, instance, created, **kwargs):
     status = getattr(instance, 'status', '')
     if status == 'FAILURE':
         msg = TeleBotPushNotify.generate_msg(

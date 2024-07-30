@@ -2,6 +2,8 @@ import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods, ProductWareHouse
+from apps.sales.budgetplan.models import BudgetPlanCompanyExpense
+from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
@@ -13,6 +15,7 @@ from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
     ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
 )
+from apps.sales.report.serializers.report_budget import BudgetReportListSerializer, PaymentListSerializerForBudgetPlan
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
     ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
@@ -639,4 +642,74 @@ class PurchaseOrderListReport(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT BUDGET
+class BudgetReportList(BaseListMixin):
+    queryset = BudgetPlanCompanyExpense.objects
+    filterset_fields = {}
+    serializer_list = BudgetReportListSerializer
+
+    def get_queryset(self):
+        try:
+            period_mapped_id = self.request.query_params.get('budget_plan__period_mapped_id')
+            return super().get_queryset().filter(
+                budget_plan__period_mapped_id=period_mapped_id
+            ).select_related().order_by('order')
+        except KeyError:
+            return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Budget report list",
+        operation_description="Budget report list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportpurchasing', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class PaymentListForBudgetReport(BaseListMixin):
+    queryset = Payment.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    serializer_list = PaymentListSerializerForBudgetPlan
+    filterset_fields = {
+        'opportunity_mapped_id': ['exact'],
+    }
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    def get_queryset(self):
+        if 'date_approved_month' in self.request.query_params:
+            return super().get_queryset().filter(
+                date_approved__month=self.request.query_params.get('date_approved_month')
+            ).prefetch_related(
+                'payment'
+            ).select_related(
+                'sale_order_mapped__opportunity',
+                'quotation_mapped__opportunity',
+                'opportunity_mapped',
+            )
+        return super().get_queryset().filter().prefetch_related(
+            'payment'
+        ).select_related(
+            'sale_order_mapped__opportunity',
+            'quotation_mapped__opportunity',
+            'opportunity_mapped',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Payment list for budget plan",
+        operation_description="Payment list budget plan",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='cashoutflow', model_code='payment', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
