@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from apps.sales.budgetplan.models import BudgetPlanCompanyExpense
+from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 from apps.sales.cashoutflow.models import Payment
 
 
-class BudgetReportListSerializer(serializers.ModelSerializer):
+class BudgetReportCompanyListSerializer(serializers.ModelSerializer):
     expense_item = serializers.SerializerMethodField()
 
     class Meta:
@@ -16,6 +16,29 @@ class BudgetReportListSerializer(serializers.ModelSerializer):
             'company_month_list',
             'company_quarter_list',
             'company_year'
+        )
+
+    @classmethod
+    def get_expense_item(cls, obj):
+        return {
+            'id': str(obj.expense_item_id),
+            'code': obj.expense_item.code,
+            'title': obj.expense_item.title
+        } if obj.expense_item else {}
+
+
+class BudgetReportGroupListSerializer(serializers.ModelSerializer):
+    expense_item = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BudgetPlanGroupExpense
+        fields = (
+            'order',
+            'budget_plan',
+            'expense_item',
+            'group_month_list',
+            'group_quarter_list',
+            'group_year'
         )
 
     @classmethod
