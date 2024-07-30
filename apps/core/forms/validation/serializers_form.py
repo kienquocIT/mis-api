@@ -243,7 +243,10 @@ class FormPhoneConfigSerializer(  # noqa
         }
         self.call_m(func=self.manage_required, **ctx)
         self.call_m(func=self.manage_region_enable, **ctx)
-        self.call_m(func=self.manage_phone_number_with_region, **ctx, opts_active=False)
+        self.call_m(func=self.manage_phone_number_with_region, **{
+            **ctx,
+            'input_value': self.manage_input_values[0],
+        }, opts_active=False)
 
 
 class FormEmailConfigSerializer(  # noqa
