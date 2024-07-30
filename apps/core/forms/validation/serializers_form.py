@@ -743,6 +743,7 @@ class PageBreakItem(ManageBase):  # noqa
 
 
 class FormPageConfigSerializer(ManageBase):  # noqa
+    enabled = serializers.BooleanField(default=False)
     items = serializers.ListSerializer(
         child=PageBreakItem(),
         min_length=0,
