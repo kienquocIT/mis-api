@@ -709,7 +709,6 @@ class PaymentListForBudgetReport(BaseListMixin):
     def get_queryset(self):
         data_filter = {}
         if 'month_list' in self.request.query_params:
-            print(json.loads(self.request.query_params.get('month_list')))
             data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
         if 'date_approved__year' in self.request.query_params:
             data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
