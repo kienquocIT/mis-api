@@ -128,9 +128,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-# Allow Open Tracing all request.
-MIDDLEWARE += ['apps.shared.extends.middleware.customize.JaegerTracingMiddleware']
-#
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
@@ -665,9 +662,8 @@ if ENABLE_PROD is True:
 # -- PROD configurations
 
 # Tracing
-JAEGER_TRACING_ENABLE = os.environ.get('ENABLE_TRACING', False)
-if JAEGER_TRACING_ENABLE in [1, '1']:
-    JAEGER_TRACING_ENABLE = True
+JAEGER_TRACING_ENABLE = os.environ.get('ENABLE_TRACING', False) in [1, '1']
+if JAEGER_TRACING_ENABLE is True:
     JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', 'jaeger_global')
     JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
     JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
