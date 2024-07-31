@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 
@@ -20,7 +21,8 @@ class CustomTestRunner(DiscoverRunner):
         Step 3: Return _db
         """
         _db = super().setup_databases(**kwargs)
-        call_command('init_data', **{'limit_wards': True})
+        if not(settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
+            call_command('init_data', **{'limit_wards': True})
         return _db
 
     def teardown_test_environment(self):
