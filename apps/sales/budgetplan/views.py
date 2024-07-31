@@ -136,6 +136,10 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
+        if 'current_emp' in self.request.query_params:
+            return super().get_queryset().filter(
+                employee_allowed_id=self.request.user.employee_current_id
+            ).select_related('employee_allowed').prefetch_related()
         return super().get_queryset().select_related('employee_allowed').prefetch_related()
 
     @classmethod

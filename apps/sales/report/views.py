@@ -1,8 +1,9 @@
+import json
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods, ProductWareHouse
-from apps.sales.budgetplan.models import BudgetPlanCompanyExpense
+from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
@@ -15,7 +16,11 @@ from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
     ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
 )
-from apps.sales.report.serializers.report_budget import BudgetReportListSerializer, PaymentListSerializerForBudgetPlan
+from apps.sales.report.serializers.report_budget import (
+    BudgetReportCompanyListSerializer,
+    BudgetReportGroupListSerializer,
+    PaymentListSerializerForBudgetPlan
+)
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
     ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
@@ -646,19 +651,39 @@ class PurchaseOrderListReport(BaseListMixin):
 
 
 # REPORT BUDGET
-class BudgetReportList(BaseListMixin):
+class BudgetReportCompanyList(BaseListMixin):
     queryset = BudgetPlanCompanyExpense.objects
-    filterset_fields = {}
-    serializer_list = BudgetReportListSerializer
+    filterset_fields = {
+        'budget_plan__period_mapped_id': ['exact'],
+    }
+    serializer_list = BudgetReportCompanyListSerializer
 
     def get_queryset(self):
-        try:
-            period_mapped_id = self.request.query_params.get('budget_plan__period_mapped_id')
-            return super().get_queryset().filter(
-                budget_plan__period_mapped_id=period_mapped_id
-            ).select_related().order_by('order')
-        except KeyError:
-            return super().get_queryset().none()
+        return super().get_queryset().select_related().order_by('order')
+
+    @swagger_auto_schema(
+        operation_summary="Budget report list",
+        operation_description="Budget report list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportpurchasing', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class BudgetReportGroupList(BaseListMixin):
+    queryset = BudgetPlanGroupExpense.objects
+    filterset_fields = {
+        'budget_plan__period_mapped_id': ['exact'],
+        'budget_plan_group__group_mapped_id': ['exact'],
+    }
+    serializer_list = BudgetReportGroupListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().order_by('order')
 
     @swagger_auto_schema(
         operation_summary="Budget report list",
@@ -675,33 +700,21 @@ class BudgetReportList(BaseListMixin):
 
 class PaymentListForBudgetReport(BaseListMixin):
     queryset = Payment.objects
-    search_fields = [
-        'title',
-        'code',
-    ]
-    serializer_list = PaymentListSerializerForBudgetPlan
     filterset_fields = {
-        'opportunity_mapped_id': ['exact'],
+        'employee_inherit__group_id': ['exact'],
     }
+    serializer_list = PaymentListSerializerForBudgetPlan
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
     def get_queryset(self):
-        if 'date_approved_month' in self.request.query_params:
-            return super().get_queryset().filter(
-                date_approved__month=self.request.query_params.get('date_approved_month')
-            ).prefetch_related(
-                'payment'
-            ).select_related(
-                'sale_order_mapped__opportunity',
-                'quotation_mapped__opportunity',
-                'opportunity_mapped',
-            )
-        return super().get_queryset().filter().prefetch_related(
-            'payment'
-        ).select_related(
-            'sale_order_mapped__opportunity',
-            'quotation_mapped__opportunity',
-            'opportunity_mapped',
-        )
+        data_filter = {}
+        if 'month_list' in self.request.query_params:
+            data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
+        if 'date_approved__year' in self.request.query_params:
+            data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
+        if len(data_filter) == 1:
+            return super().get_queryset().filter(**data_filter).prefetch_related('payment').select_related()
+        return super().get_queryset().none()
 
     @swagger_auto_schema(
         operation_summary="Payment list for budget plan",
