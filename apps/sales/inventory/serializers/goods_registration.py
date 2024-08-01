@@ -246,7 +246,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_available_stock(cls, obj):
-        return obj.quantity
+        return obj.gre_item.this_available if obj.gre_item else 0
 
     @classmethod
     def get_available_picked(cls, obj):
