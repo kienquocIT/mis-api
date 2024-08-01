@@ -1,8 +1,7 @@
 import json
 from drf_yasg.utils import swagger_auto_schema
 from apps.core.hr.models import Group
-from apps.sales.budgetplan.models import BudgetPlan, BudgetPlanGroup, BudgetPlanGroupConfig, \
-    EmployeeCanViewCompanyBudgetPlan, EmployeeCanLockBudgetPlan
+from apps.sales.budgetplan.models import BudgetPlan, BudgetPlanGroup, BudgetPlanGroupConfig
 from apps.sales.budgetplan.serializers import (
     BudgetPlanListSerializer, BudgetPlanCreateSerializer,
     BudgetPlanDetailSerializer, BudgetPlanUpdateSerializer, BudgetPlanGroupConfigListSerializer,
@@ -137,6 +136,10 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
+        if 'current_emp' in self.request.query_params:
+            return super().get_queryset().filter(
+                employee_allowed_id=self.request.user.employee_current_id
+            ).select_related('employee_allowed').prefetch_related()
         return super().get_queryset().select_related('employee_allowed').prefetch_related()
 
     @classmethod
@@ -147,25 +150,13 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
                 company=company_current, employee_allowed_id=delete_employee_allowed_id
             ).delete()
         if 'emp_id_can_view_company_bp' in query_params:
-            bulk_info = []
-            for emp_id in json.loads(query_params.get('emp_id_can_view_company_bp')):
-                bulk_info.append(
-                    EmployeeCanViewCompanyBudgetPlan(
-                        company=company_current, employee_allowed_id=emp_id, can_view_company=True
-                    )
-                )
-            EmployeeCanViewCompanyBudgetPlan.objects.filter(company=company_current).delete()
-            EmployeeCanViewCompanyBudgetPlan.objects.bulk_create(bulk_info)
+            BudgetPlanGroupConfig.objects.filter(
+                employee_allowed_id__in=json.loads(query_params.get('emp_id_can_view_company_bp'))
+            ).update(can_view_company=True)
         if 'emp_id_can_lock_bp' in query_params:
-            bulk_info = []
-            for emp_id in json.loads(query_params.get('emp_id_can_lock_bp')):
-                bulk_info.append(
-                    EmployeeCanLockBudgetPlan(
-                        company=company_current, employee_allowed_id=emp_id, can_lock_plan=True
-                    )
-                )
-            EmployeeCanLockBudgetPlan.objects.filter(company=company_current).delete()
-            EmployeeCanLockBudgetPlan.objects.bulk_create(bulk_info)
+            BudgetPlanGroupConfig.objects.filter(
+                employee_allowed_id__in=json.loads(query_params.get('emp_id_can_view_company_bp'))
+            ).update(can_lock_plan=True)
         return True
 
     @swagger_auto_schema(
@@ -193,7 +184,7 @@ class BudgetPlanGroupConfigList(BaseListMixin, BaseCreateMixin):
 
 
 class ListCanViewCompanyBudgetPlan(BaseListMixin):
-    queryset = EmployeeCanViewCompanyBudgetPlan.objects
+    queryset = BudgetPlanGroupConfig.objects
     search_fields = []
     serializer_list = ListCanViewCompanyBudgetPlanSerializer
     list_hidden_field = ['company_id']
@@ -215,7 +206,7 @@ class ListCanViewCompanyBudgetPlan(BaseListMixin):
 
 
 class ListCanLockBudgetPlan(BaseListMixin):
-    queryset = EmployeeCanLockBudgetPlan.objects
+    queryset = BudgetPlanGroupConfig.objects
     search_fields = []
     serializer_list = ListCanLockBudgetPlanSerializer
     list_hidden_field = ['company_id']

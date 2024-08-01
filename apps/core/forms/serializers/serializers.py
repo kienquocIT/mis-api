@@ -11,12 +11,52 @@ from apps.core.forms.validation import FormValidation
 from apps.core.forms.validation.serializers_form import FormPageConfigSerializer
 
 from apps.core.mailer.handle_html import HTMLController
+from apps.shared import BaseMsg
 from apps.shared.html_constant import FORM_SANITIZE_TRUSTED_DOMAIN_LINK
 
 
 class EntriesDefaultShow(serializers.Serializer):  # noqa
     display_referrer_name = serializers.BooleanField(default=False)
     display_creator = serializers.BooleanField(default=False)
+
+
+class FormNotificationSerializer(serializers.Serializer):  # noqa
+    user_management_enable_new = serializers.BooleanField(default=False)
+    user_management_enable_change = serializers.BooleanField(default=False)
+    user_management_destination = serializers.ListSerializer(
+        child=serializers.EmailField(), allow_empty=True, max_length=25
+    )
+    creator_enable_new = serializers.BooleanField(default=False)
+    creator_enable_change = serializers.BooleanField(default=False)
+    creator_receiver_from = serializers.ChoiceField(default='authenticated', choices=['authenticated', 'field'])
+    creator_field = serializers.CharField(allow_blank=True, max_length=100)
+
+    def validate(self, attrs):
+        creator_enable_new = attrs.get('creator_enable_new', False)
+        # creator_apply_change = attrs.get('creator_enable_change', False)
+        creator_receiver_from = attrs.get('creator_receiver_from', 'authenticated')
+        creator_field = attrs.get('creator_field', '')
+        if creator_receiver_from == 'authenticated':
+            attrs['creator_field'] = ''
+        elif creator_field == 'field' and not creator_enable_new:
+            raise serializers.ValidationError({
+                'creator_field': BaseMsg.REQUIRED,
+            })
+        else:
+            raise serializers.ValidationError({
+                'creator_receiver_from': BaseMsg.REQUIRED,
+            })
+
+        user_management_enable_new = attrs.get('user_management_enable_new', False)
+        user_management_enable_change = attrs.get('user_management_enable_change', False)
+        user_management_destination = attrs.get('user_management_destination', [])
+        if user_management_enable_new or user_management_enable_change:
+            if len(user_management_destination) == 0:
+                raise serializers.ValidationError({
+                    'user_management_destination': BaseMsg.REQUIRED
+                })
+
+        return attrs
 
 
 class FormListSerializer(serializers.ModelSerializer):
@@ -85,7 +125,7 @@ class FormDetailSerializer(serializers.ModelSerializer):
             'display_referrer_name', 'display_creator',
             'theme_selected', 'theme_assets', 'page',
             'configs_order', 'configs',
-            'published'
+            'published',
         )
 
 
@@ -269,7 +309,7 @@ class FormUpdateSerializer(serializers.ModelSerializer):
             'submit_only_one', 'edit_submitted',
             'entries_default_show', 'page',
             'configs_order', 'configs',
-            'html_text'
+            'html_text',
         )
 
 
@@ -361,14 +401,19 @@ class FormPublishedDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'date_publish_start', 'date_publish_finish',
             'is_active', 'code',
-            'is_public', 'is_iframe'
+            'is_public', 'is_iframe', 'notifications'
         )
 
 
 class FormPublishedUpdateSerializer(serializers.ModelSerializer):
+    notifications = FormNotificationSerializer(required=False)
+
     class Meta:
         model = FormPublished
-        fields = ('is_public', 'is_iframe')
+        fields = (
+            'is_public', 'is_iframe',
+            'notifications',
+        )
 
 
 class FormPublishedRuntimeDetailSerializer(serializers.ModelSerializer):

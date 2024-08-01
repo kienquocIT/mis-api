@@ -18,10 +18,13 @@ def get_config_template_user(tenant_id, company_id, user_id, system_code):
         config_obj = mail_config_cls.get_config(tenant_id=tenant_id, company_id=company_id)
         template_obj = mail_template_cls.get_config(tenant_id=tenant_id, company_id=company_id, system_code=system_code)
         user_cls = DisperseModel(app_model='account.User').get_model()
-        try:
-            user_obj = user_cls.objects.get(pk=user_id)
-        except user_cls.DoesNotExist:
-            return 'USER_NOT_FOUND'
+        if user_id:
+            try:
+                user_obj = user_cls.objects.get(pk=user_id)
+            except user_cls.DoesNotExist:
+                return 'USER_NOT_FOUND'
+        else:
+            user_obj = None
 
         return [config_obj, template_obj, user_obj]
     return 'MAIL_CONFIG_NOT_METHOD_GET'
@@ -110,3 +113,29 @@ def send_mail_calendar():
 @shared_task
 def send_mail_feature():
     ...
+
+
+@shared_task
+def send_mail_form(tenant_id, company_id, subject, to_main, contents):
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=1)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, _template_obj, _user_obj] = obj_got
+        cls = SendMailController(mail_config=config_obj, timeout=3)
+        if cls.is_active is True:
+            state_send = cls.setup(
+                subject=subject,
+                from_email=cls.kwargs['from_email'],
+                mail_cc=cls.kwargs['cc_email'],
+                bcc=cls.kwargs['bcc_email'],
+                header={},
+                reply_to=cls.kwargs['reply_email'],
+            ).send(
+                mail_to=to_main,
+                template=contents,
+                data={},
+            )
+            if state_send is True:
+                return 'Success'
+            return 'SEND_FAILURE'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got

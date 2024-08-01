@@ -8,6 +8,7 @@ __pycache__
 logs/*
 *.log
 *.sqlite3
+!.gitlab-ci-db.sqlite3
 /html_jampack/**
 .env
 .env*

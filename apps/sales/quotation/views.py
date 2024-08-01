@@ -127,7 +127,7 @@ class QuotationExpenseList(BaseListMixin):
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax")
+        return super().get_queryset().filter(quotation__system_status=3).select_related("tax", "expense_item")
 
     @swagger_auto_schema(
         operation_summary="QuotationExpense List",

@@ -1,3 +1,9 @@
+import random
+import string
+from uuid import uuid4
+
+import hashlib
+
 from django.db import models
 from django.utils import timezone
 
@@ -100,6 +106,18 @@ class Form(MasterDataAbstractModel):
         permissions = ()
 
 
+def notifications_default():
+    return {
+        "user_management_enable_new": False,
+        "user_management_enable_change": False,
+        "user_management_destination": [],
+        "creator_enable_new": False,
+        "creator_enable_change": False,
+        "creator_receiver_from": "authenticated",
+        "creator_field": ""
+    }
+
+
 class FormPublished(MasterDataAbstractModel):
     form = models.OneToOneField(Form, on_delete=models.CASCADE, related_name='form_published')
     date_publish_start = models.DateField(default=timezone.now, editable=True, help_text='Set activation date and time')
@@ -114,6 +132,7 @@ class FormPublished(MasterDataAbstractModel):
     code = models.CharField(max_length=32, unique=True)
     is_public = models.BooleanField(default=False)
     is_iframe = models.BooleanField(default=False)
+    notifications = models.JSONField(default=notifications_default)
 
     def force_save_html_file(self):
         # content = ContentFile(self.html_text.encode())
@@ -134,6 +153,17 @@ class FormPublished(MasterDataAbstractModel):
         return StringHandler.random_str(32, upper_lower=1)
 
     def save(self, *args, **kwargs):
+        # check and update notifications
+        default_notify = notifications_default()
+        notifications = {
+            **default_notify,
+            **self.notifications,
+        }
+        for key, value in notifications.items():
+            if key in default_notify:
+                self.notifications[key] = value
+
+        #
         if not self.code:
             self.code = self.generate_code()
         if not HTMLController.detect_escape(self.html_text):
@@ -164,6 +194,7 @@ class FormPublishedEntries(MasterDataAbstractModel):
         help_text='User created this record',
         related_name='%(app_label)s_%(class)s_user_creator',
     )
+    creator_email = models.CharField(max_length=255, null=True, verbose_name='Email of entry creator')
 
     # main field
     published = models.ForeignKey(FormPublished, on_delete=models.CASCADE, verbose_name='Record belong to Published')
@@ -186,6 +217,40 @@ class FormPublishedEntries(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Form Published Entries'
         verbose_name_plural = 'Form Published Entries'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class FormPublishAuthenticateEmail(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    email = models.CharField(max_length=255)
+    date_created = models.DateTimeField(default=timezone.now, editable=False)
+    date_modified = models.DateTimeField(auto_now=True)
+
+    otp = models.CharField(max_length=10)
+    opt_expires = models.DateTimeField()
+
+    cookies = models.CharField(max_length=64, blank=True)
+    cookies_expires = models.DateTimeField(null=True)
+
+    @classmethod
+    def generate_otp(cls):
+        return "".join(random.choices(string.digits, k=8))
+
+    @classmethod
+    def generate_string(cls, length):
+        return "".join(random.choices(string.digits + string.ascii_letters, k=length))
+
+    @classmethod
+    def generate_cookies_with_flag(cls, email):
+        now_string = timezone.now().strftime("%m/%d/%Y, %H:%M:%S")
+        data = f'{email}-{now_string}-{cls.generate_string(100)}'.encode('utf-8')
+        return hashlib.sha256(data).hexdigest()
+
+    class Meta:
+        verbose_name = 'Form Authentication Email - Guess'
+        verbose_name_plural = 'Form Authentication Email - Guess'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

@@ -30,7 +30,7 @@ class ConvertErrors:
             **opts
         }
 
-    def handle_list(self, key, value: list):
+    def handle_list(self, key, value: list):  # pylint: disable=R0912
         if isinstance(value, list) and len(value) > 0:
             if isinstance(value[0], str or ErrorDetail):
                 if self.config['LIST_CONVERT_TO'] == 'FIRST':
@@ -44,6 +44,11 @@ class ConvertErrors:
                     if isinstance(item, dict):
                         for key_dict, value_dict in item.items():
                             self.handle_dict(key=key_dict, value=value_dict)
+            elif isinstance(value[0], ErrorDetail):
+                self.result = [item.title() for item in value]
+            elif isinstance(value[0], list):
+                for item in value:
+                    self.handle_dict(key, item)
             else:
                 self.result = {key: self.config['LIST_STR_JOIN_CHAR'].join([str(item) for item in value])}
         return True

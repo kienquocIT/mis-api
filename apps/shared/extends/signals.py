@@ -45,8 +45,9 @@ from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
 from apps.sales.project.models import ProjectMapMember, ProjectMapTasks, ProjectWorks, ProjectGroups, ProjectMapGroup
-from apps.core.forms.models import Form
-from ...sales.project.extend_func import calc_weight_all
+from apps.core.forms.models import Form, FormPublishedEntries
+from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
+from apps.sales.project.extend_func import calc_weight_all
 
 logger = logging.getLogger(__name__)
 
@@ -920,7 +921,7 @@ class ConfigDefaultData:
 
 
 @receiver(post_save, sender=TaskResult)
-def update_task_result(sender, instance, create, **kwargs):
+def update_task_result(sender, instance, created, **kwargs):
     status = getattr(instance, 'status', '')
     if status == 'FAILURE':
         msg = TeleBotPushNotify.generate_msg(
@@ -1157,6 +1158,35 @@ def project_member_event_destroy(sender, instance, **kwargs):
 def form_post_save(sender, instance, created, **kwargs):
     if created is True:
         instance.get_or_create_publish()
+
+
+@receiver(post_save, sender=FormPublishedEntries)
+def new_entry_form_publish(sender, instance, created, **kwargs):
+    published = getattr(instance, 'published', None)
+    if published:
+        notifications = getattr(published, 'notifications', {})
+        if notifications:
+            user_management_enable_new = notifications.get('user_management_enable_new', False)
+            creator_enable_new = notifications.get('creator_enable_new', False)
+            user_management_enable_change = notifications.get('user_management_enable_change', False)
+            creator_enable_change = notifications.get('creator_enable_change', False)
+
+            if created:
+                if user_management_enable_new or creator_enable_new:
+                    call_task_background(
+                        my_task=notifications_form_with_new,
+                        **{
+                            'entry_id': str(instance.id),
+                        }
+                    )
+            else:
+                if user_management_enable_change or creator_enable_change:
+                    call_task_background(
+                        my_task=notifications_form_with_change,
+                        **{
+                            'entry_id': str(instance.id),
+                        },
+                    )
 
 
 @receiver(post_delete, sender=ProjectMapGroup)

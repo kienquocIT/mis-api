@@ -123,7 +123,7 @@ class SaleOrderExpenseList(BaseListMixin):
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax", "expense")
+        return super().get_queryset().filter(sale_order__system_status=3).select_related("tax", "expense_item")
 
     @swagger_auto_schema(
         operation_summary="SaleOrderExpense List",
