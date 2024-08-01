@@ -232,7 +232,7 @@ class GoodsRegistrationGeneral(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration General'
         verbose_name_plural = 'Goods Registration General'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -251,7 +251,7 @@ class GoodsRegistrationLot(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Lot'
         verbose_name_plural = 'Goods Registration Lot'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -270,7 +270,7 @@ class GoodsRegistrationSerial(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Serial'
         verbose_name_plural = 'Goods Registration Serial'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
