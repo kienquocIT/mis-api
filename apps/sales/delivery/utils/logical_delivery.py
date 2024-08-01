@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramSuffix
-from apps.masterdata.saledata.models import Product
 from apps.shared.translations.sales import DeliverMsg
 
 
@@ -21,17 +20,17 @@ class DeliHandler:
         return True
 
     @classmethod
-    def push_diagram(cls, instance, validated_product):
+    def push_diagram(cls, instance):
         quantity = 0
         total = 0
         list_reference = []
-        for product_data in validated_product:  # for in product
-            if all(key in product_data for key in ('product_id', 'delivery_data', 'done')):
-                quantity += product_data.get('done', 0)
-                product_obj = Product.objects.filter(id=product_data.get('product_id', None)).first()
-                if product_obj:
-                    total_all_wh = cls.diagram_get_total_cost_by_wh(product_obj=product_obj, product_data=product_data)
-                    total += total_all_wh
+        for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
+            if deli_product.product and deli_product.delivery_data:
+                quantity += deli_product.picked_quantity
+                total_all_wh = cls.diagram_get_total_cost_by_wh(
+                    product_obj=deli_product.product, delivery_data=deli_product.delivery_data
+                )
+                total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
                 list_reference.append(instance.order_delivery.sale_order.code)
@@ -48,7 +47,7 @@ class DeliHandler:
                         'id': str(instance.id),
                         'title': instance.title,
                         'code': instance.code,
-                        'system_status': 3,
+                        'system_status': instance.system_status,
                         'date_created': str(instance.date_created),
                         # custom
                         'quantity': quantity,
@@ -59,9 +58,9 @@ class DeliHandler:
         return True
 
     @classmethod
-    def diagram_get_total_cost_by_wh(cls, product_obj, product_data):
+    def diagram_get_total_cost_by_wh(cls, product_obj, delivery_data):
         total_all_wh = 0
-        for data_deli in product_data['delivery_data']:  # for in warehouse to get cost of warehouse
+        for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
             lot_data = data_deli.get('lot_data', [])
             serial_data = data_deli.get('serial_data', [])
             quantity_deli = 0
