@@ -113,29 +113,32 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
             })
+
+        old_cost_setting = [
+            self.instance.cost_per_warehouse,
+            self.instance.cost_per_lot,
+            self.instance.cost_per_project
+        ]
+        new_cost_setting = [
+            validate_data.get('cost_per_warehouse'),
+            validate_data.get('cost_per_lot'),
+            validate_data.get('cost_per_project')
+        ]
+        this_period = Periods.objects.filter(
+            tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
+        ).first()
+        if this_period:
+            this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
+            this_period.save(update_fields=['definition_inventory_valuation'])
+        else:
+            raise serializers.ValidationError(
+                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+            )
+        if datetime.datetime.now().year == this_period.fiscal_year and new_cost_setting != old_cost_setting:
+            raise serializers.ValidationError({'Error': "Can't change cost setting in same period year."})
         return validate_data
 
-    class Meta:
-        model = CompanyConfig
-        fields = (
-            'language',
-            'currency',
-            'currency_rule',
-            'sub_domain',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot',
-            'cost_per_project'
-        )
-
     def update(self, instance, validated_data):
-        old_cost_setting = [
-            instance.cost_per_warehouse,
-            instance.cost_per_lot,
-            instance.cost_per_project
-        ]
-
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
         for key, value in validated_data.items():
@@ -152,34 +155,25 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_project'
         ])
 
-        new_cost_setting = [
-            instance.cost_per_warehouse,
-            instance.cost_per_lot,
-            instance.cost_per_project
-        ]
-
-        this_period = Periods.objects.filter(
-            tenant=instance.company.tenant,
-            company=instance.company,
-            fiscal_year=datetime.datetime.now().year
-        ).first()
-        if this_period:
-            this_period.definition_inventory_valuation = instance.definition_inventory_valuation
-            this_period.save(update_fields=['definition_inventory_valuation'])
-        else:
-            raise serializers.ValidationError(
-                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
-            )
-        if datetime.datetime.now().year == this_period.fiscal_year and new_cost_setting != old_cost_setting:
-            raise serializers.ValidationError(
-                {'Error': "Can't change cost setting in same period year."}
-            )
-
         if sub_domain:
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
 
         return instance
+
+    class Meta:
+        model = CompanyConfig
+        fields = (
+            'language',
+            'currency',
+            'currency_rule',
+            'sub_domain',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project'
+        )
 
 
 # Company Serializer
