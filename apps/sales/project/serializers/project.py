@@ -101,6 +101,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'tasks',
             'system_status',
             'baseline',
+            'date_created'
         )
 
 

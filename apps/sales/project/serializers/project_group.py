@@ -3,7 +3,7 @@ __all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSeriali
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_all
+from ..extend_func import calc_weight_all, calc_rate_project
 from ..models import Project, ProjectGroups, ProjectMapGroup
 
 
@@ -40,6 +40,7 @@ class GroupCreateSerializers(serializers.ModelSerializer):
         validated_data['gr_weight'] = calc_weight_all(project)
         group = ProjectGroups.objects.create(**validated_data)
         ProjectMapGroup.objects.create(project=project, group=group, tenant=group.tenant, company=group.company)
+        calc_rate_project(project)
         return group
 
     class Meta:
