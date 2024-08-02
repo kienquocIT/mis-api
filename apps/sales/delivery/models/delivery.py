@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot, WareHouse
+from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.models import ReportStockLog
 from apps.shared import (

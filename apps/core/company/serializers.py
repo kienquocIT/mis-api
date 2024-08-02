@@ -172,7 +172,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             )
         if datetime.datetime.now().year == this_period.fiscal_year and new_cost_setting != old_cost_setting:
             raise serializers.ValidationError(
-                {'Error': f"Can't change cost setting in same period year."}
+                {'Error': "Can't change cost setting in same period year."}
             )
 
         if sub_domain:
