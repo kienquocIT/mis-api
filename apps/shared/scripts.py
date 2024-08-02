@@ -1724,7 +1724,7 @@ def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lo
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            instance.prepare_data_for_logging_run(instance)
+            instance.prepare_data_for_logging(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])

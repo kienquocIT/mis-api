@@ -326,111 +326,6 @@ class OrderDeliverySub(DataAbstractModel):
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
     @classmethod
-    def for_lot(cls, instance, deli_item, deli_data, stock_data, main_product_unit_price):
-        for lot in deli_data.get('lot_data', []):
-            lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
-            if lot_obj:
-                quantity_delivery = lot.get('quantity_delivery')
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(
-                    deli_item.uom, quantity_delivery
-                )
-                stock_data.append({
-                    'sale_order': instance.order_delivery.sale_order,
-                    'product': deli_item.product,
-                    'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
-                    'system_date': instance.date_done,
-                    'posting_date': instance.date_done,
-                    'document_date': instance.date_done,
-                    'stock_type': -1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Delivery',
-                    'quantity': casted_quantity,
-                    'cost': 0,  # theo gia cost
-                    'value': 0,  # theo gia cost
-                    'lot_data': {
-                        'lot_id': str(lot_obj.id),
-                        'lot_number': lot_obj.lot_number,
-                        'lot_quantity': casted_quantity,
-                        'lot_value': main_product_unit_price * casted_quantity,
-                        'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
-                    }
-                })
-            else:
-                raise ValueError(_("Lot does not found."))
-        return stock_data
-
-    @classmethod
-    def for_sn(cls, instance, deli_item, deli_data, stock_data):
-        quantity_delivery = len(deli_data.get('serial_data', []))
-        casted_quantity = ReportStockLog.cast_quantity_to_unit(deli_item.uom, quantity_delivery)
-        stock_data.append({
-            'sale_order': instance.order_delivery.sale_order,
-            'product': deli_item.product,
-            'warehouse': WareHouse.objects.filter(id=deli_data.get('warehouse')).first(),
-            'system_date': instance.date_done,
-            'posting_date': instance.date_done,
-            'document_date': instance.date_done,
-            'stock_type': -1,
-            'trans_id': str(instance.id),
-            'trans_code': instance.code,
-            'trans_title': 'Delivery',
-            'quantity': casted_quantity,
-            'cost': 0,  # theo gia cost
-            'value': 0,  # theo gia cost
-            'lot_data': {}
-        })
-        return stock_data
-
-    @classmethod
-    def prepare_data_for_logging_run(cls, instance):
-        stock_data = []
-        so_products = instance.order_delivery.sale_order.sale_order_product_sale_order.all()
-        for deli_item in instance.delivery_product_delivery_sub.all():
-            if deli_item.picked_quantity > 0:
-                main_item = so_products.filter(order=deli_item.order).first()
-                main_product_unit_price = main_item.product_unit_price if main_item else 0
-                for deli_data in deli_item.delivery_data:
-                    if len(deli_data.get('lot_data', [])) > 0:
-                        stock_data = cls.for_lot(
-                            instance, deli_item, deli_data, stock_data, main_product_unit_price
-                        )
-                    elif len(deli_data.get('serial_data', [])) > 0:
-                        stock_data = cls.for_sn(instance, deli_item, deli_data, stock_data)
-            # for None
-            if all([
-                deli_item.picked_quantity > 0,
-                len(deli_item.delivery_data) > 0,
-                deli_item.product.general_traceability_method == 0
-            ]):
-                lot_data = deli_item.delivery_data[0]
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(
-                    deli_item.uom, deli_item.picked_quantity
-                )
-                stock_data.append({
-                    'sale_order': instance.order_delivery.sale_order,
-                    'product': deli_item.product,
-                    'warehouse': WareHouse.objects.filter(id=lot_data.get('warehouse')).first(),
-                    'system_date': instance.date_done,
-                    'posting_date': instance.date_done,
-                    'document_date': instance.date_done,
-                    'stock_type': -1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Delivery',
-                    'quantity': casted_quantity,
-                    'cost': 0,  # theo gia cost
-                    'value': 0,  # theo gia cost
-                    'lot_data': {}
-                })
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_done,
-            stock_data
-        )
-        return True
-
-    @classmethod
     def find_max_number(cls, codes):
         num_max = None
         for code in codes:
@@ -472,6 +367,104 @@ class OrderDeliverySub(DataAbstractModel):
         kwargs['update_fields'].append('state')
         return True
 
+    @classmethod
+    def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
+        for lot in lot_data:
+            lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
+            if lot_obj and lot.get('quantity_delivery'):
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(
+                    uom_obj, lot.get('quantity_delivery')
+                )
+                stock_data.append({
+                    'sale_order': sale_order_obj,
+                    'product': product_obj,
+                    'warehouse': warehouse_obj,
+                    'system_date': instance.date_done,
+                    'posting_date': instance.date_done,
+                    'document_date': instance.date_done,
+                    'stock_type': -1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Delivery',
+                    'quantity': casted_quantity,
+                    'cost': 0,  # theo gia cost
+                    'value': 0,  # theo gia cost
+                    'lot_data': {
+                        'lot_id': str(lot_obj.id),
+                        'lot_number': lot_obj.lot_number,
+                        'lot_quantity': casted_quantity,
+                        'lot_value': 0,  # theo gia cost
+                        'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
+                    }
+                })
+        return stock_data
+
+    @classmethod
+    def for_sn(cls, instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj):
+        casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, len(sn_data))
+        stock_data.append({
+            'sale_order': instance.order_delivery.sale_order,
+            'product': product_obj,
+            'warehouse': warehouse_obj,
+            'system_date': instance.date_done,
+            'posting_date': instance.date_done,
+            'document_date': instance.date_done,
+            'stock_type': -1,
+            'trans_id': str(instance.id),
+            'trans_code': instance.code,
+            'trans_title': 'Delivery',
+            'quantity': casted_quantity,
+            'cost': 0,  # theo gia cost
+            'value': 0,  # theo gia cost
+            'lot_data': {}
+        })
+        return stock_data
+
+    @classmethod
+    def prepare_data_for_logging(cls, instance):
+        stock_data = []
+        for deli_product in instance.delivery_product_delivery_sub.all():
+            if deli_product.product:
+                product_obj = deli_product.product
+                for pw_data in deli_product.delivery_pw_delivery_product.all():
+                    sale_order_obj = pw_data.sale_order
+                    warehouse_obj = pw_data.warehouse
+                    uom_obj = pw_data.uom
+                    quantity = pw_data.quantity_delivery
+                    lot_data = pw_data.lot_data
+                    sn_data = pw_data.serial_data
+                    if sale_order_obj and warehouse_obj and uom_obj and quantity > 0:
+                        if product_obj.general_traceability_method == 0:  # None
+                            casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
+                            stock_data.append({
+                                'sale_order': sale_order_obj,
+                                'product': product_obj,
+                                'warehouse': warehouse_obj,
+                                'system_date': instance.date_done,
+                                'posting_date': instance.date_done,
+                                'document_date': instance.date_done,
+                                'stock_type': -1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Delivery',
+                                'quantity': casted_quantity,
+                                'cost': 0,  # theo gia cost
+                                'value': 0,  # theo gia cost
+                                'lot_data': {}
+                            })
+                        if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
+                            cls.for_lot(
+                                instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
+                            )
+                        if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
+                            cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
+        ReportStockLog.logging_inventory_activities(
+            instance,
+            instance.date_done,
+            stock_data
+        )
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
@@ -484,6 +477,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
+                    self.prepare_data_for_logging(self)
 
         SubPeriods.check_open(
             self.company_id,

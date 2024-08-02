@@ -130,6 +130,12 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
+        old_cost_setting = [
+            instance.cost_per_warehouse,
+            instance.cost_per_lot,
+            instance.cost_per_project
+        ]
+
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
         for key, value in validated_data.items():
@@ -145,6 +151,13 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         ])
+
+        new_cost_setting = [
+            instance.cost_per_warehouse,
+            instance.cost_per_lot,
+            instance.cost_per_project
+        ]
+
         this_period = Periods.objects.filter(
             tenant=instance.company.tenant,
             company=instance.company,
@@ -156,6 +169,10 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError(
                 {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+            )
+        if datetime.datetime.now().year == this_period.fiscal_year and new_cost_setting != old_cost_setting:
+            raise serializers.ValidationError(
+                {'Error': f"Can't change cost setting in same period year."}
             )
 
         if sub_domain:
