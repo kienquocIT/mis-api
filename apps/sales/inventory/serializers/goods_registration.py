@@ -568,17 +568,9 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
 
         # cập nhập sl cho mượn cho dự án B
-        unit_price = instance.gre_item_destination.this_registered_value / instance.gre_item_destination.this_registered
         instance.gre_item_destination.this_registered_borrowed = borrow_quantity
-        instance.gre_item_destination.this_registered_value_borrowed = unit_price * borrow_quantity
         instance.gre_item_destination.this_available = instance.gre_item_destination.this_registered - borrow_quantity
-        instance.gre_item_destination.this_available_value = unit_price * instance.gre_item_destination.this_available
-        instance.gre_item_destination.save(update_fields=[
-            'this_registered_borrowed',
-            'this_registered_value_borrowed',
-            'this_available',
-            'this_available_value'
-        ])
+        instance.gre_item_destination.save(update_fields=['this_registered_borrowed', 'this_available'])
         return instance
 
 
