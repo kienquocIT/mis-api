@@ -141,9 +141,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
-        instance.currency_rule.update(currency_rule)
         instance.save(update_fields=[
             'language',
             'currency',
@@ -154,7 +154,8 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         ])
-
+        if currency_rule:
+            instance.currency_rule.update(currency_rule)
         if sub_domain:
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
