@@ -11,7 +11,7 @@ from apps.sales.inventory.views import (
     GoodsRegistrationSerialList,
     GoodsRegistrationGeneralList,
     ProjectProductList, GoodsRegistrationItemBorrowList, GoodsRegistrationItemBorrowDetail,
-    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity
+    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList
 )
 
 urlpatterns = [
@@ -111,4 +111,5 @@ urlpatterns += [
         GoodsRegistrationItemAvailableQuantity.as_view(),
         name='GoodsRegistrationItemAvailableQuantity'
     ),
+    path('goods-regis-borrow/list', GoodsRegisBorrowList.as_view(), name='GoodsRegisBorrowList'),
 ]

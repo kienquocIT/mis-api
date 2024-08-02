@@ -163,7 +163,6 @@ class SaleOrderActiveDeliverySerializer:
             date_done=None,
             previous_step=None,
             times=1,
-            code=obj.code,
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
             # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
@@ -189,7 +188,6 @@ class SaleOrderActiveDeliverySerializer:
         obj.save(update_fields=['sub'])
         return obj
 
-    # @decorator_run_workflow
     def _create_order_delivery(
             self,
             delivery_quantity,
@@ -255,7 +253,6 @@ class SaleOrderActiveDeliverySerializer:
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
-            code=obj_delivery.code,
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             id=sub_id,

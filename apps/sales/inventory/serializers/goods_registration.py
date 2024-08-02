@@ -192,6 +192,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
     stock_amount = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
     available_picked = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationGeneral
@@ -204,6 +205,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
             'picked_ready',
             'available_stock',
             'available_picked',
+            'sale_order',
         )
 
     @classmethod
@@ -244,11 +246,22 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_available_stock(cls, obj):
-        return obj.quantity
+        return obj.gre_item.this_available if obj.gre_item else 0
 
     @classmethod
     def get_available_picked(cls, obj):
         return obj.picked_ready
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        if obj.gre_item:
+            if obj.gre_item.so_item:
+                return {
+                    'id': obj.gre_item.so_item.sale_order_id,
+                    'code': obj.gre_item.so_item.sale_order.code,
+                    'title': obj.gre_item.so_item.sale_order.title,
+                } if obj.gre_item.so_item.sale_order else {}
+        return {}
 
 
 class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
@@ -269,7 +282,7 @@ class GoodsRegistrationLotSerializer(serializers.ModelSerializer):
             'quantity_import': obj.gre_general.quantity if obj.gre_general else 0,
             'expire_date': obj.lot_registered.expire_date,
             'manufacture_date': obj.lot_registered.manufacture_date,
-            'quantity_available': obj.gre_general.quantity if obj.gre_general else 0,
+            'available_stock': obj.gre_general.quantity if obj.gre_general else 0,
         } if obj.lot_registered else {}
 
 
@@ -360,7 +373,11 @@ class ProjectProductListSerializer(serializers.ModelSerializer):
 # các cho class cho mượn hàng giữa các dự án
 class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    borrow_uom = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    regis_data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationItemBorrow
@@ -368,10 +385,14 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
             'id',
             'quantity',
             'available',
+            'available_stock',
+            'product',
             'base_quantity',
             'base_available',
             'uom',
+            'borrow_uom',
             'sale_order',
+            'regis_data',
         )
 
     @classmethod
@@ -383,12 +404,53 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
         } if obj.goods_registration_destination.sale_order else {}
 
     @classmethod
+    def get_product(cls, obj):
+        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        if gre_item:
+            return {
+                'id': gre_item.product_id,
+                'title': gre_item.product.title,
+                'code': gre_item.product.code,
+                'general_traceability_method': gre_item.product.general_traceability_method,
+            } if gre_item.product else {}
+        return {}
+
+    @classmethod
     def get_uom(cls, obj):
+        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        if gre_item:
+            if gre_item.product:
+                if gre_item.product.general_uom_group:
+                    return {
+                        'id': gre_item.product.general_uom_group.uom_reference_id,
+                        'title': gre_item.product.general_uom_group.uom_reference.title,
+                        'code': gre_item.product.general_uom_group.uom_reference.code,
+                        'ratio': gre_item.product.general_uom_group.uom_reference.ratio
+                    } if gre_item.product.general_uom_group.uom_reference else {}
+        return {}
+
+    @classmethod
+    def get_borrow_uom(cls, obj):
         return {
             'id': str(obj.uom_id),
-            'code': obj.uom.code,
             'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
         } if obj.uom else {}
+
+    @classmethod
+    def get_available_stock(cls, obj):
+        return obj.base_available
+
+    @classmethod
+    def get_regis_data(cls, obj):
+        result = []
+        gre_item = obj.gre_item_destination
+        if gre_item:
+            for regis in GoodsRegistrationGeneralSerializer(gre_item.gre_item_general.all(), many=True).data:
+                regis.update({'available_stock': obj.base_available})
+                result.append(regis)
+        return result
 
 
 class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
@@ -551,3 +613,25 @@ class GoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSerializ
     @classmethod
     def get_this_available_base(cls, obj):
         return cast_quantity_to_unit(obj.so_item.unit_of_measure, obj.this_available)
+
+
+# Common serializer to get regis + borrow
+class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
+    regis_data = serializers.SerializerMethodField()
+    borrow_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GoodsRegistrationItem
+        fields = (
+            'id',
+            'regis_data',
+            'borrow_data',
+        )
+
+    @classmethod
+    def get_regis_data(cls, obj):
+        return GoodsRegistrationGeneralSerializer(obj.gre_item_general.all(), many=True).data
+
+    @classmethod
+    def get_borrow_data(cls, obj):
+        return GoodsRegistrationItemBorrowListSerializer(obj.gre_item_borrow_src.all(), many=True).data

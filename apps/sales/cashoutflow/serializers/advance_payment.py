@@ -217,7 +217,14 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
             AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
             AdvancePaymentCost.objects.bulk_create(bulk_info)
             advance_payment_obj.advance_value = advance_value
-            advance_payment_obj.save()
+
+            opp = advance_payment_obj.opportunity_mapped
+            quotation = advance_payment_obj.quotation_mapped
+            sale_order = advance_payment_obj.sale_order_mapped
+            sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
+            advance_payment_obj.sale_code = sale_code
+
+            advance_payment_obj.save(update_fields=['advance_value', 'sale_code'])
         return True
     return False
 
@@ -328,7 +335,8 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'supplier',
             'creator_name',
             'employee_inherit',
-            'attachment'
+            'attachment',
+            'sale_code'
         )
 
     @classmethod

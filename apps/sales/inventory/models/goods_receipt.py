@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportStockLog
@@ -61,6 +63,13 @@ class GoodsReceipt(DataAbstractModel):
         verbose_name='Description of this records',
     )
     date_received = models.DateTimeField(null=True)
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='GoodsReceiptAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_goods_receipt',
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt'
@@ -96,6 +105,13 @@ class GoodsReceipt(DataAbstractModel):
         if cls.objects.filter(code=code, company_id=company_id).exists():
             return cls.generate_code(company_id=company_id)
         return code
+
+    @classmethod
+    def push_code(cls, instance, kwargs):
+        if not instance.code:
+            instance.code = cls.generate_code(company_id=instance.company_id)
+            kwargs['update_fields'].append('code')
+        return True
 
     @classmethod
     def get_all_lots(cls, instance):
@@ -246,28 +262,18 @@ class GoodsReceipt(DataAbstractModel):
             self.date_approved if self.date_approved else self.date_created
         )
 
-        if self.system_status in [2, 3]:  # added, finish
-            # check if not code then generate code
-            if not self.code:
-                self.code = self.generate_code(self.company_id)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                # if self.inventory_adjustment:
-                #     self.inventory_adjustment.update_ia_state()
-
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
-            if 'update_fields' in kwargs:
-                if isinstance(kwargs['update_fields'], list):
-                    if 'date_approved' in kwargs['update_fields']:
-                        GRFinishHandler.push_to_warehouse_stock(instance=self)
-                        GRFinishHandler.push_product_info(instance=self)
-                        GRFinishHandler.update_gr_info_for_po(instance=self)
-                        GRFinishHandler.update_gr_info_for_ia(instance=self)
-                        GRFinishHandler.update_is_all_receipted_po(instance=self)
-                        GRFinishHandler.update_is_all_receipted_ia(instance=self)
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    # code
+                    self.push_code(instance=self, kwargs=kwargs)
+                    GRFinishHandler.push_to_warehouse_stock(instance=self)
+                    GRFinishHandler.push_product_info(instance=self)
+                    GRFinishHandler.update_gr_info_for_po(instance=self)
+                    GRFinishHandler.update_gr_info_for_ia(instance=self)
+                    GRFinishHandler.update_is_all_receipted_po(instance=self)
+                    GRFinishHandler.update_is_all_receipted_ia(instance=self)
 
             self.prepare_data_for_logging(self)
 
@@ -527,5 +533,25 @@ class GoodsReceiptSerial(SimpleAbstractModel):
         verbose_name = 'Goods Receipt Serial'
         verbose_name_plural = 'Goods Receipt Serials'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsReceiptAttachment(M2MFilesAbstractModel):
+    goods_receipt = models.ForeignKey(
+        GoodsReceipt,
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="goods_receipt_attachment_gr",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'goods_receipt'
+
+    class Meta:
+        verbose_name = 'Goods receipt attachments'
+        verbose_name_plural = 'Goods receipt attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

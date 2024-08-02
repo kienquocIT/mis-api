@@ -3,10 +3,15 @@
 import os
 import sys
 
+from misapi.opentelemetry import init as open_telemetry_init
+
 
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'misapi.settings')
+
+    open_telemetry_init()
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

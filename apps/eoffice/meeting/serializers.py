@@ -208,7 +208,7 @@ class MeetingScheduleSubFunction:
             raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({error})'})
 
     @classmethod
-    def send_mail(cls, meeting_schedule, response_data, meeting_time, date, time, duration):
+    def send_email(cls, meeting_schedule, response_data, meeting_time, date, time, duration):
         try:
             meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
             email_to_list = []
@@ -226,7 +226,7 @@ class MeetingScheduleSubFunction:
                      f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
                      f"\n\nMeeting ID: {meeting_id}"
                      f"\nPasscode: {response_data.get('password')}",
-                from_email=meeting_schedule.company.email,
+                from_email=meeting_schedule.employee_created.email,
                 to=email_to_list,
                 cc=[],
                 bcc=[],
@@ -246,19 +246,19 @@ class MeetingScheduleSubFunction:
 
             password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
             connection = get_connection(
-                username=meeting_schedule.company.email,
-                password=SimpleEncryptor(key=password).decrypt(meeting_schedule.company.email_app_password),
+                username=meeting_schedule.employee_created.email,
+                password=SimpleEncryptor(key=password).decrypt(meeting_schedule.employee_created.email_app_password),
                 fail_silently=False,
             )
             email.connection = connection
             email.send()
             return True
         except Exception as err:
-            if meeting_schedule.company:
-                meeting_schedule.company.email_app_password_status = False
-                meeting_schedule.company.save(update_fields=['email_app_password_status'])
+            meeting_schedule.employee_created.email_app_password_status = False
+            meeting_schedule.employee_created.save(update_fields=['email_app_password_status'])
+            print(err.args[1])
             raise serializers.ValidationError({
-                'Online meeting': f"Cannot send email. {err.args[1]}. Try to renew your company's app password"
+                'Online meeting': "Cannot send email. Try to verify your Email in Employee update page."
             })
 
     @classmethod
@@ -277,7 +277,7 @@ class MeetingScheduleSubFunction:
             meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
                 'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
             )
-            cls.send_mail(meeting_schedule, response_data, meeting_time, date, time, duration)
+            cls.send_email(meeting_schedule, response_data, meeting_time, date, time, duration)
         return True
 
     @classmethod

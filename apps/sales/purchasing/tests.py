@@ -287,7 +287,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
-             'purchase_status', ],
+             'purchase_status', 'purchase_status_raw'],
             check_sum_second=True,
         )
         return response
@@ -639,6 +639,9 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'delivered_date',
                 'receipt_status',
                 'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -671,6 +674,9 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'delivered_date',
                 'receipt_status',
                 'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -716,11 +722,14 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 # payment stage tab
                 'purchase_order_payment_stage',
                 # system
-                'system_status',
-                'workflow_runtime_id',
                 'is_active',
                 'attachment',
                 'employee_inherit',
+                'workflow_runtime_id',
+                'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )

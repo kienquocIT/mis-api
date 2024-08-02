@@ -14,6 +14,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
+    purchase_status_raw = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -27,6 +28,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
             'delivered_date',
             'system_status',
             'purchase_status',
+            'purchase_status_raw'
         )
 
     @classmethod
@@ -58,6 +60,10 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_purchase_status(cls, obj):
         return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
+
+    @classmethod
+    def get_purchase_status_raw(cls, obj):
+        return obj.purchase_status
 
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):

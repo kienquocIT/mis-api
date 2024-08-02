@@ -1,47 +1,10 @@
 from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramSuffix
-from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse, Product
-from apps.sales.delivery.models import DeliveryConfig
 from apps.shared.translations.sales import DeliverMsg
 
 
 class DeliHandler:
-    @classmethod
-    def minus_tock(cls, source, target, config):
-        # sản phầm trong phiếu
-        # source: dict { uom: uuid, quantity: number }
-        # sản phẩm trong kho
-        # target: object of warehouse has prod (all prod)
-        # kiểm tra kho còn hàng và trừ kho nếu ko đủ return failure
-        if 'is_fifo_lifo' in config and config['is_fifo_lifo']:
-            target = target.reverse()
-        is_done = False
-        list_update = []
-        for item in target:
-            if is_done:
-                # nếu trừ đủ update vào warehouse, return true
-                break
-            final_ratio = 1
-            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom']).first()
-            if item.product and uom_delivery:
-                final_ratio = cls.get_final_uom_ratio(product_obj=item.product, uom_transaction=uom_delivery)
-            delivery_quantity = source['quantity'] * final_ratio
-            if item.stock_amount > 0:
-                # số lượng trong kho đã quy đổi
-                calc = item.stock_amount - delivery_quantity
-                if calc >= 0:
-                    # đủ hàng
-                    is_done = True
-                    item_sold = delivery_quantity
-                    item.sold_amount += item_sold
-                    item.stock_amount = item.receipt_amount - item.sold_amount
-                    if config['is_picking']:
-                        item.picked_ready = item.picked_ready - item_sold
-                    list_update.append(item)
-        ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
-        return True
-
     @classmethod
     def check_update_prod_and_emp(cls, instance, validate_data):
         crt_emp = str(instance.employee_inherit_id)
@@ -57,36 +20,17 @@ class DeliHandler:
         return True
 
     @classmethod
-    def push_product_warehouse(cls, instance):
-        config = instance.config_at_that_point
-        if not config:
-            get_config = DeliveryConfig.objects.filter(company_id=instance.company_id).first()
-            if get_config:
-                config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
-        for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product and deli_product.delivery_data:
-                for data in deli_product.delivery_data:
-                    if all(key in data for key in ('warehouse', 'uom', 'stock')):
-                        product_warehouse = ProductWareHouse.objects.filter(
-                            tenant_id=instance.tenant_id, company_id=instance.company_id,
-                            product_id=deli_product.product_id, warehouse_id=data['warehouse'],
-                        )
-                        source = {"uom": data['uom'], "quantity": data['stock']}
-                        DeliHandler.minus_tock(source, product_warehouse, config)
-        return True
-
-    @classmethod
-    def push_diagram(cls, instance, validated_product):
+    def push_diagram(cls, instance):
         quantity = 0
         total = 0
         list_reference = []
-        for product_data in validated_product:  # for in product
-            if all(key in product_data for key in ('product_id', 'delivery_data', 'done')):
-                quantity += product_data.get('done', 0)
-                product_obj = Product.objects.filter(id=product_data.get('product_id', None)).first()
-                if product_obj:
-                    total_all_wh = cls.diagram_get_total_cost_by_wh(product_obj=product_obj, product_data=product_data)
-                    total += total_all_wh
+        for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
+            if deli_product.product and deli_product.delivery_data:
+                quantity += deli_product.picked_quantity
+                total_all_wh = cls.diagram_get_total_cost_by_wh(
+                    product_obj=deli_product.product, delivery_data=deli_product.delivery_data
+                )
+                total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
                 list_reference.append(instance.order_delivery.sale_order.code)
@@ -103,7 +47,7 @@ class DeliHandler:
                         'id': str(instance.id),
                         'title': instance.title,
                         'code': instance.code,
-                        'system_status': 3,
+                        'system_status': instance.system_status,
                         'date_created': str(instance.date_created),
                         # custom
                         'quantity': quantity,
@@ -114,9 +58,9 @@ class DeliHandler:
         return True
 
     @classmethod
-    def diagram_get_total_cost_by_wh(cls, product_obj, product_data):
+    def diagram_get_total_cost_by_wh(cls, product_obj, delivery_data):
         total_all_wh = 0
-        for data_deli in product_data['delivery_data']:  # for in warehouse to get cost of warehouse
+        for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
             lot_data = data_deli.get('lot_data', [])
             serial_data = data_deli.get('serial_data', [])
             quantity_deli = 0

@@ -79,8 +79,14 @@ class GoodsRegistration(DataAbstractModel):
             warehouse=stock_info['warehouse']
         ).first()
         if gre_general:
+            update_fields = []
             gre_general.quantity += stock_info['quantity'] * stock_info['stock_type']
-            gre_general.save(update_fields=['quantity'])
+            gre_general.picked_ready += stock_info['quantity'] * stock_info['stock_type']
+            if gre_general.quantity >= 0:
+                update_fields.append('quantity')
+            if gre_general.picked_ready >= 0:
+                update_fields.append('picked_ready')
+            gre_general.save(update_fields=update_fields)
         else:
             gre_general = GoodsRegistrationGeneral.objects.create(
                 goods_registration=gre_item.goods_registration,
@@ -226,7 +232,7 @@ class GoodsRegistrationGeneral(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration General'
         verbose_name_plural = 'Goods Registration General'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -245,7 +251,7 @@ class GoodsRegistrationLot(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Lot'
         verbose_name_plural = 'Goods Registration Lot'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -264,7 +270,7 @@ class GoodsRegistrationSerial(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Serial'
         verbose_name_plural = 'Goods Registration Serial'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 

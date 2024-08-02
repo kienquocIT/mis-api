@@ -2,8 +2,8 @@ import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
-from django.core.mail import get_connection
 from rest_framework import serializers
+
 from apps.core.account.models import User
 from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
@@ -12,7 +12,7 @@ from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
+from apps.shared import DisperseModel, AttMsg, FORMATTING
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
@@ -113,7 +113,54 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
             })
+
+        old_cost_setting = [
+            self.instance.cost_per_warehouse,
+            self.instance.cost_per_lot,
+            self.instance.cost_per_project
+        ]
+        new_cost_setting = [
+            validate_data.get('cost_per_warehouse'),
+            validate_data.get('cost_per_lot'),
+            validate_data.get('cost_per_project')
+        ]
+        this_period = Periods.objects.filter(
+            tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
+        ).first()
+        if this_period:
+            this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
+            this_period.save(update_fields=['definition_inventory_valuation'])
+        else:
+            raise serializers.ValidationError(
+                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+            )
+        if datetime.datetime.now().year == this_period.fiscal_year and new_cost_setting != old_cost_setting:
+            raise serializers.ValidationError({'Error': "Can't change cost setting in same period year."})
         return validate_data
+
+    def update(self, instance, validated_data):
+        sub_domain = validated_data.pop('sub_domain', None)
+        currency_rule = validated_data.pop('currency_rule', {})
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save(update_fields=[
+            'language',
+            'currency',
+            'currency_rule',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project'
+        ])
+        if currency_rule:
+            instance.currency_rule.update(currency_rule)
+        if sub_domain:
+            instance.company.sub_domain = sub_domain
+            instance.company.save(update_fields=['sub_domain'])
+
+        return instance
 
     class Meta:
         model = CompanyConfig
@@ -128,41 +175,6 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         )
-
-    def update(self, instance, validated_data):
-        sub_domain = validated_data.pop('sub_domain', None)
-        currency_rule = validated_data.pop('currency_rule', {})
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.currency_rule.update(currency_rule)
-        instance.save(update_fields=[
-            'language',
-            'currency',
-            'currency_rule',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot',
-            'cost_per_project'
-        ])
-        this_period = Periods.objects.filter(
-            tenant=instance.company.tenant,
-            company=instance.company,
-            fiscal_year=datetime.datetime.now().year
-        ).first()
-        if this_period:
-            this_period.definition_inventory_valuation = instance.definition_inventory_valuation
-            this_period.save(update_fields=['definition_inventory_valuation'])
-        else:
-            raise serializers.ValidationError(
-                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
-            )
-
-        if sub_domain:
-            instance.company.sub_domain = sub_domain
-            instance.company.save(update_fields=['sub_domain'])
-
-        return instance
 
 
 # Company Serializer
@@ -197,7 +209,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    email_app_password_status = serializers.SerializerMethodField()
     config_inventory_management = serializers.SerializerMethodField()
 
     @classmethod
@@ -212,7 +223,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'code',
             'representative_fullname',
             'email',
-            'email_app_password_status',
             'address',
             'phone',
             'fax',
@@ -221,23 +231,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'logo',
             'config_inventory_management'
         )
-
-    @classmethod
-    def get_email_app_password_status(cls, obj):
-        if obj.email_app_password:
-            try:
-                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-                connection = get_connection(
-                    username=obj.email,
-                    password=SimpleEncryptor(key=password).decrypt(obj.email_app_password),
-                    fail_silently=False,
-                )
-                if connection.open():
-                    return True
-            except Exception as err:
-                print(err)
-                return False
-        return False
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -303,7 +296,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
-            'email_app_password',
             'phone',
             'fax'
         )
@@ -333,7 +325,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
-    email_app_password = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     class Meta:
         model = Company
@@ -343,17 +334,11 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
-            'email_app_password',
-            'email_app_password_status',
             'phone',
             'fax'
         )
 
     def validate(self, validate_data):
-        if validate_data.get('email_app_password'):
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            cryptor = SimpleEncryptor(key=password)
-            validate_data['email_app_password'] = cryptor.encrypt(validate_data['email_app_password'])
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
                 raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
@@ -363,22 +348,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        if validated_data.get('email_app_password') is not None:
-            try:
-                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-                connection = get_connection(
-                    username=instance.email,
-                    password=SimpleEncryptor(key=password).decrypt(instance.email_app_password),
-                    fail_silently=False,
-                )
-                if not connection.open():
-                    instance.email_app_password_status = False
-                    instance.save(update_fields=['email_app_password_status'])
-            except Exception as err:
-                print(err)
-                instance.email_app_password_status = False
-                instance.save(update_fields=['email_app_password_status'])
 
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance

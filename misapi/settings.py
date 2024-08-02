@@ -128,9 +128,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-# Allow Open Tracing all request.
-MIDDLEWARE += ['apps.shared.extends.middleware.customize.JaegerTracingMiddleware']
-#
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
@@ -183,6 +180,15 @@ DATABASES = {
     }
 }
 
+DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'))
+CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP') in ["1", 1]
+if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
+    # change file db of sqlite3 from default to file sqlite3
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / '.gitlab-ci-db.sqlite3',
+    }
+
 DATABASE_ROUTERS = ['routers.LogRouter']
 
 # Password validation
@@ -227,6 +233,12 @@ USE_TZ = False
 # Trusted Link Domain
 TRUSTED_DOMAIN_LINK = json.loads(os.environ.get('TRUSTED_DOMAIN_LINK', '[]'))
 FORM_MAX_SIZE_HTML_BYTES = int(os.environ.get('FORM_MAX_SIZE_HTML_BYTES', 300 * 1024))  # 500 kB = 512 000 bytes
+
+# UI of API
+UI_DOMAIN_SUFFIX = os.environ.get('UI_DOMAIN_SUFFIX', None)
+UI_DOMAIN_PROTOCOL = os.environ.get('UI_DOMAIN_PROTOCOL', 'https')
+UI_DOMAIN_PATH_REVERSE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs-get')
+UI_DOMAIN_PATH_REVERSE_PAGE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs')
 
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')
@@ -650,9 +662,8 @@ if ENABLE_PROD is True:
 # -- PROD configurations
 
 # Tracing
-JAEGER_TRACING_ENABLE = os.environ.get('ENABLE_TRACING', False)
-if JAEGER_TRACING_ENABLE in [1, '1']:
-    JAEGER_TRACING_ENABLE = True
+JAEGER_TRACING_ENABLE = os.environ.get('ENABLE_TRACING', False) in [1, '1']
+if JAEGER_TRACING_ENABLE is True:
     JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', 'jaeger_global')
     JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
     JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')

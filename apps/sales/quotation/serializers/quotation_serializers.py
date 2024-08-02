@@ -6,11 +6,12 @@ from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
-from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel
 
 
 # QUOTATION BEGIN
-class QuotationListSerializer(serializers.ModelSerializer):
+class QuotationListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
@@ -185,7 +186,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     customer = serializers.UUIDField()
     contact = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
     payment_term = serializers.UUIDField()
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
@@ -220,7 +220,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
-            'next_node_collab_id',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -247,8 +246,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
-            # system
-            'system_status',
         )
 
     @classmethod
@@ -319,7 +316,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         return quotation
 
 
-class QuotationUpdateSerializer(serializers.ModelSerializer):
+class QuotationUpdateSerializer(AbstractCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
@@ -399,8 +396,6 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
-            # status
-            'system_status',
         )
 
     @classmethod

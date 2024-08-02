@@ -1,9 +1,13 @@
 from rest_framework import serializers
+
+from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem, GoodsReceiptAttachment
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared.translations.base import AttachmentMsg
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
@@ -411,7 +415,20 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 
 
 # GOODS RECEIPT BEGIN
-class GoodsReceiptListSerializer(serializers.ModelSerializer):
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.filter(id="dd16a86c-4aef-46ec-9302-19f30b101cf5").first()
+        if relate_app:
+            state = GoodsReceiptAttachment.resolve_change(
+                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+            )
+            if state:
+                return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
+
+
+class GoodsReceiptListSerializer(AbstractListSerializerModel):
     purchase_order = serializers.SerializerMethodField()
     inventory_adjustment = serializers.SerializerMethodField()
 
@@ -445,10 +462,11 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
         } if obj.inventory_adjustment else {}
 
 
-class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
+class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -470,6 +488,8 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'workflow_runtime_id',
             'is_active',
             'employee_inherit',
+            # attachment
+            'attachment',
         )
 
     @classmethod
@@ -499,8 +519,12 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
-class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
+
+class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
@@ -508,6 +532,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
     date_received = serializers.DateTimeField()
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsReceipt
@@ -523,10 +548,10 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
+            # attachment
+            'attachment',
         )
 
     @classmethod
@@ -545,8 +570,23 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     def validate_purchase_requests(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_requests(value=value)
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = GoodsReceiptAttachment.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     @decorator_run_workflow
     def create(self, validated_data):
+        attachment = []
+        if 'attachment' in validated_data:
+            attachment = validated_data['attachment']
+            del validated_data['attachment']
         purchase_requests = []
         goods_receipt_product = []
         if 'purchase_requests' in validated_data:
@@ -563,15 +603,17 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             instance=goods_receipt,
             is_update=False
         )
+        handle_attach_file(goods_receipt, attachment)
         return goods_receipt
 
 
-class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
+class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     purchase_order = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsReceipt
@@ -585,10 +627,10 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'goods_receipt_product',
-            # system
-            'system_status',
+            # attachment
+            'attachment',
         )
 
     @classmethod
@@ -607,8 +649,23 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
     def validate_purchase_requests(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_requests(value=value)
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = GoodsReceiptAttachment.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = []
+        if 'attachment' in validated_data:
+            attachment = validated_data['attachment']
+            del validated_data['attachment']
         purchase_requests = []
         goods_receipt_product = []
         if 'purchase_requests' in validated_data:
@@ -627,4 +684,5 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True
         )
+        handle_attach_file(instance, attachment)
         return instance

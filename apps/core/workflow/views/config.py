@@ -17,8 +17,7 @@ from apps.shared import (
 
 __all__ = [
     'WorkflowOfAppList', 'WorkflowOfAppDetail',
-    'WorkflowList',
-    'WorkflowDetail',
+    'WorkflowList', 'WorkflowDetail',
     'WorkflowCurrentOfAppList',
 ]
 
@@ -138,7 +137,7 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
         serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        self.perform_update(serializer, {})
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}  # pylint: disable=W0212

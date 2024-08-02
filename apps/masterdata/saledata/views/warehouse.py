@@ -128,15 +128,17 @@ class ProductWareHouseList(BaseListMixin):
     # }
 
     def get_queryset(self):
-        if 'interact' in self.request.query_params:
-            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
-                interact = self.request.user.employee_current.warehouse_employees_emp
-                return super().get_queryset().select_related(
-                    'product', 'warehouse', 'uom'
-                ).filter(warehouse_id__in=interact.warehouse_list).order_by('product__code')
-        return super().get_queryset().select_related(
+        queryset_custom = super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
+        ).prefetch_related(
+            'warehouse__gre_item_general_warehouse',
         ).order_by('product__code')
+        if 'interact' in self.request.query_params:
+            employee_current = self.request.user.employee_current
+            if hasattr(employee_current, 'warehouse_employees_emp'):
+                interact = employee_current.warehouse_employees_emp
+                queryset_custom = queryset_custom.filter(warehouse_id__in=interact.warehouse_list)
+        return queryset_custom
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
     @mask_view(
@@ -215,6 +217,8 @@ class ProductWareHouseLotList(BaseListMixin):
             'product_warehouse__product__inventory_uom',
             'product_warehouse__warehouse',
             'product_warehouse__uom',
+        ).prefetch_related(
+            'gre_lot_registered',
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Lot')

@@ -1,6 +1,5 @@
 from django.db import models
 from rest_framework import serializers
-from apps.sales.delivery.models import DeliveryConfig
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.models.goods_return_sub import (
@@ -251,14 +250,15 @@ class GoodsReturn(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-            config = DeliveryConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if config:
-                if config.is_picking is True:
-                    GoodsReturnSubSerializerForPicking.update_delivery(self)
+            if hasattr(self.company, 'sales_delivery_config_detail'):
+                config = self.company.sales_delivery_config_detail
+                if config:
+                    if config.is_picking is True:
+                        GoodsReturnSubSerializerForPicking.update_delivery(self)
+                    else:
+                        GoodsReturnSubSerializerForNonPicking.update_delivery(self)
                 else:
-                    GoodsReturnSubSerializerForNonPicking.update_delivery(self)
-            else:
-                raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
+                    raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
 
             # handle after finish
             # product information

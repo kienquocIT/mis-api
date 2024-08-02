@@ -30,6 +30,7 @@ class BudgetPlanGroup(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='budget_plan_group_group_mapped'
     )
+    is_locked = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Budget Plan Group'
@@ -103,6 +104,8 @@ class BudgetPlanGroupConfig(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='bp_config_employee_allowed'
     )
+    can_view_company = models.BooleanField(default=False)
+    can_lock_plan = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Budget Plan Group Config'

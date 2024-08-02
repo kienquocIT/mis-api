@@ -1307,7 +1307,7 @@ def reset_and_run_warehouse_stock(run_type=0):
                                 product_id=deli_product.product_id, warehouse_id=data['warehouse'],
                             )
                             source = {"uom": data['uom'], "quantity": data['stock']}
-                            DeliHandler.minus_tock(source, product_warehouse, config)
+                            DeliFinishHandler.minus_tock(source, product_warehouse, config)
     print('reset_and_run_warehouse_stock done.')
     return True
 
@@ -1724,7 +1724,7 @@ def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lo
 
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
-            instance.prepare_data_for_logging_run(instance)
+            instance.prepare_data_for_logging(instance)
 
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])

@@ -7,7 +7,8 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel, AbstractDetailSerializerModel
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -326,32 +327,21 @@ class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_tax(value=value)
 
 
-# PURCHASE ORDER BEGIN
 def handle_attach_file(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
         relate_app = Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first()
-        state = PurchaseOrderAttachmentFile.resolve_change(
-            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
-        )
-        if state:
-            return True
+        if relate_app:
+            state = PurchaseOrderAttachmentFile.resolve_change(
+                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+            )
+            if state:
+                return True
         raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
 
 
-def validate_attachment(instance, value):
-    if instance.employee_created_id:
-        state, result = PurchaseOrderAttachmentFile.valid_change(
-            current_ids=value, employee_id=instance.employee_created_id, doc_id=None
-        )
-        if state is True:
-            return result
-        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-
 # BEGIN PURCHASE ORDER
-class PurchaseOrderListSerializer(serializers.ModelSerializer):
+class PurchaseOrderListSerializer(AbstractListSerializerModel):
     supplier = serializers.SerializerMethodField()
 
     class Meta:
@@ -375,7 +365,7 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
         } if obj.supplier else {}
 
 
-class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
+class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests_data = serializers.SerializerMethodField()
     purchase_quotations_data = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
@@ -482,7 +472,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
+class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
@@ -504,7 +494,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    attachment = serializers.ListSerializer(child=serializers.UUIDField(), required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = PurchaseOrder
@@ -527,8 +517,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
-            # system
-            'system_status',
+            # attachment
             'attachment',
         )
 
@@ -564,6 +553,17 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = PurchaseOrderAttachmentFile.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def validate(self, validate_data):
         self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
@@ -579,12 +579,11 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=purchase_order
         )
-        validated_attachment = validate_attachment(purchase_order, attachment)
-        handle_attach_file(purchase_order, validated_attachment)
+        handle_attach_file(purchase_order, attachment)
         return purchase_order
 
 
-class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
+class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
     purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
@@ -605,6 +604,7 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = PurchaseOrder
@@ -627,8 +627,8 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
-            # system
-            'system_status',
+            # attachment
+            'attachment',
         )
 
     @classmethod
@@ -663,12 +663,27 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = PurchaseOrderAttachmentFile.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def validate(self, validate_data):
         self.validate_total_payment_term(validate_data=validate_data)
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = []
+        if 'attachment' in validated_data:
+            attachment = validated_data['attachment']
+            del validated_data['attachment']
         # update purchase order
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -678,6 +693,7 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True,
         )
+        handle_attach_file(instance, attachment)
         return instance
 
 

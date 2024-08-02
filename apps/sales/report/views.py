@@ -1,7 +1,10 @@
+import json
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import WareHouse, Periods, SubPeriods, ProductWareHouse
+from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
+from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.models import (
@@ -12,6 +15,11 @@ from apps.sales.report.models import (
 from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
     ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
+)
+from apps.sales.report.serializers.report_budget import (
+    BudgetReportCompanyListSerializer,
+    BudgetReportGroupListSerializer,
+    PaymentListSerializerForBudgetPlan
 )
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
@@ -639,4 +647,82 @@ class PurchaseOrderListReport(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT BUDGET
+class BudgetReportCompanyList(BaseListMixin):
+    queryset = BudgetPlanCompanyExpense.objects
+    filterset_fields = {
+        'budget_plan__period_mapped_id': ['exact'],
+    }
+    serializer_list = BudgetReportCompanyListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().order_by('order')
+
+    @swagger_auto_schema(
+        operation_summary="Budget report list",
+        operation_description="Budget report list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportpurchasing', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class BudgetReportGroupList(BaseListMixin):
+    queryset = BudgetPlanGroupExpense.objects
+    filterset_fields = {
+        'budget_plan__period_mapped_id': ['exact'],
+        'budget_plan_group__group_mapped_id': ['exact'],
+    }
+    serializer_list = BudgetReportGroupListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().order_by('order')
+
+    @swagger_auto_schema(
+        operation_summary="Budget report list",
+        operation_description="Budget report list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='report', model_code='reportpurchasing', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class PaymentListForBudgetReport(BaseListMixin):
+    queryset = Payment.objects
+    filterset_fields = {
+        'employee_inherit__group_id': ['exact'],
+    }
+    serializer_list = PaymentListSerializerForBudgetPlan
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        data_filter = {}
+        if 'month_list' in self.request.query_params:
+            data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
+        if 'date_approved__year' in self.request.query_params:
+            data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
+        if len(data_filter) == 1:
+            return super().get_queryset().filter(**data_filter).prefetch_related('payment').select_related()
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Payment list for budget plan",
+        operation_description="Payment list budget plan",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='cashoutflow', model_code='payment', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

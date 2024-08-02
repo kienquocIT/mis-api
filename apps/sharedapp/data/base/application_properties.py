@@ -2,7 +2,8 @@ from .application_properties_params import (
     Quotation_data__params,
     Bastion_data_params,
     SaleOrder_data__params,
-    AdvancePayment_data__params
+    AdvancePayment_data__params, Payment_data__params, IA_data__params, Goods_Transfer_data__params,
+    Goods_Return_data__params
 )
 
 __all__ = ["ApplicationProperty_data"]
@@ -1320,8 +1321,12 @@ AppProp_SaleData_Delivery_data = {
     },
     '987f4ff4-9b89-41a7-b05f-3589b9807861': {
         'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
-        'title': 'attachment file',
+        'title': 'Attachments',
         'code': 'attachments',
+        'remark': 'attachments of delivery',
+        'code_related': [
+            'employee_inherit_id',
+        ],
         'type': 5,
     },
     '5f4d7b52-5805-411f-9d6d-d6f7ce91ff3c': {
@@ -1340,6 +1345,16 @@ AppProp_SaleData_Delivery_data = {
         'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
         'title': 'Product quantity',
         'code': 'ready_quantity',
+        'type': 1,
+    },
+    'f2195dff-0295-40c8-970f-192da0953108': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Products',
+        'code': 'products',
+        'remark': 'detail products of delivery',
+        'code_related': [
+            'employee_inherit_id',
+        ],
         'type': 1,
     },
 }
@@ -1528,6 +1543,7 @@ AppProp_SaleData_Payment_data = {
         "code": "payment_expense_valid_list",
         "type": 1,
     },
+    **Payment_data__params
 }
 
 AppProp_SaleData_Return_Payment_data = {
@@ -1727,4 +1743,17 @@ ApplicationProperty_data = {
     **AppProp_AssetTools_Return_data,
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
+    **AppProp_SaleData_Delivery_data,
+}
+
+AppProp_SaleData_IA_data = {
+    **IA_data__params
+}
+
+AppProp_SaleData_Goods_Transfer_data = {
+    **Goods_Transfer_data__params
+}
+
+AppProp_SaleData_Goods_Return_data = {
+    **Goods_Return_data__params
 }
