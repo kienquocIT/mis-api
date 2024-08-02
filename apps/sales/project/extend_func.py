@@ -97,7 +97,7 @@ def calc_update_task(task_obj):
         work = task_map.first().work
         list_task = ProjectMapTasks.objects.filter(work=work)
         if list_task:
-            # check percent complete of work by task
+            # get all task and re-update % complete per work
             total_w = 0
             for item in list_task:
                 total_w += item.task.percent_completed
@@ -109,14 +109,14 @@ def calc_update_task(task_obj):
             if hasattr(work, 'project_groupmapwork_work'):
                 group_map = work.project_groupmapwork_work.all()
                 if group_map:
-                    group = group_map.first().group
-                    list_work = group.works.all()
+                    group_obj = group_map.first().group
+                    list_work = group_obj.works.all()
                     rate_w = 0
                     for work in list_work:
                         rate_w += work.w_rate
                     if rate_w > 0:
-                        group.gr_rate = round(rate_w / list_work.count(), 1)
-                        group.save()
+                        group_obj.gr_rate = round(rate_w / list_work.count(), 1)
+                        group_obj.save()
 
 
 def re_calc_work_group(work):
@@ -223,3 +223,22 @@ def reorder_work(group_id=None, prj=None):
     ProjectGroups.objects.bulk_update(g_update_lst, fields=['order'])
     ProjectWorks.objects.bulk_update(w_update_lst, fields=['order'])
     return work_order
+
+
+def calc_rate_project(pro_obj):
+    group_lst = ProjectMapGroup.objects.filter(project=pro_obj)
+    work_lst = ProjectMapWork.objects.filter(project=pro_obj)
+    rate_all = 0
+    for group_m in group_lst:
+        group = group_m.group
+        if group.gr_rate and group.gr_weight:
+            rate_all += (group.gr_rate / 100) * group.gr_weight
+
+    for work_m in work_lst:
+        work = work_m.work
+        if work.w_rate and work.w_weight:
+            bellow_group = work.project_groupmapwork_work.all()
+            if not bellow_group.exists():
+                rate_all += (work.w_rate / 100) * work.w_weight
+    pro_obj.completion_rate = filter_num(rate_all)
+    pro_obj.save()
