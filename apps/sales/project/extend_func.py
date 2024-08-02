@@ -240,5 +240,6 @@ def calc_rate_project(pro_obj):
             bellow_group = work.project_groupmapwork_work.all()
             if not bellow_group.exists():
                 rate_all += (work.w_rate / 100) * work.w_weight
-    pro_obj.completion_rate = filter_num(rate_all)
-    pro_obj.save()
+    if rate_all > 0:
+        pro_obj.completion_rate = filter_num(rate_all)
+        pro_obj.save()
