@@ -75,7 +75,21 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
 def create_revenue_plan_group(revenue_plan, revenue_plan_group_data):
     bulk_data = []
     for data in revenue_plan_group_data:
-        bulk_data.append(RevenuePlanGroup(revenue_plan_mapped=revenue_plan, **data))
+        if all([
+            data.get('group_mapped_id'),
+            len(data.get('group_month_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in data.get('group_month_target', [])),
+            len(data.get('group_quarter_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in data.get('group_quarter_target', [])),
+            len(data.get('group_month_profit_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in data.get('group_month_profit_target', [])),
+            len(data.get('group_quarter_profit_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in data.get('group_quarter_profit_target', [])),
+            len(data.get('employee_mapped_list', [])) > 0,
+        ]):
+            bulk_data.append(RevenuePlanGroup(revenue_plan_mapped=revenue_plan, **data))
+        else:
+            raise serializers.ValidationError({'group_data': 'Group data is not validated.'})
     RevenuePlanGroup.objects.filter(revenue_plan_mapped=revenue_plan).delete()
     RevenuePlanGroup.objects.bulk_create(bulk_data)
     return True
@@ -84,10 +98,21 @@ def create_revenue_plan_group(revenue_plan, revenue_plan_group_data):
 def create_revenue_plan_group_employee(revenue_plan, revenue_plan_group_employee_data):
     bulk_data = []
     for data in revenue_plan_group_employee_data:
-        bulk_data.append(RevenuePlanGroupEmployee(
-            revenue_plan_mapped=revenue_plan,
-            **data
-        ))
+        if all([
+            data.get('revenue_plan_group_mapped_id'),
+            len(data.get('emp_month_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in data.get('emp_month_target', [])),
+            len(data.get('emp_quarter_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in data.get('emp_quarter_target', [])),
+            len(data.get('emp_month_profit_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in data.get('emp_month_profit_target', [])),
+            len(data.get('emp_quarter_profit_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in data.get('emp_quarter_profit_target', [])),
+            data.get('employee_mapped_id'),
+        ]):
+            bulk_data.append(RevenuePlanGroupEmployee(revenue_plan_mapped=revenue_plan, **data))
+        else:
+            raise serializers.ValidationError({'employee_data': 'Employee data is not validated.'})
     RevenuePlanGroupEmployee.objects.filter(revenue_plan_mapped=revenue_plan).delete()
     created_list = RevenuePlanGroupEmployee.objects.bulk_create(bulk_data)
     # create initial record ReportRevenue
@@ -128,6 +153,18 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
         if validate_data['period_mapped']:
             if validate_data['period_mapped'].start_date.year < datetime.now().year:
                 raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
+        if not all([
+            len(validate_data.get('group_mapped_list', [])) > 0,
+            len(validate_data.get('company_month_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_target', [])),
+            len(validate_data.get('company_quarter_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_target', [])),
+            len(validate_data.get('company_month_profit_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_profit_target', [])),
+            len(validate_data.get('company_quarter_profit_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_profit_target', [])),
+        ]):
+            raise serializers.ValidationError({'company_data': 'Company data is not validated.'})
         return validate_data
 
     def create(self, validated_data):
@@ -240,6 +277,18 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         if validate_data['period_mapped']:
             if validate_data['period_mapped'].start_date.year < datetime.now().year:
                 raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
+        if not all([
+            len(validate_data.get('group_mapped_list', [])) > 0,
+            len(validate_data.get('company_month_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_target', [])),
+            len(validate_data.get('company_quarter_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_target', [])),
+            len(validate_data.get('company_month_profit_target', [])) == 12,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_profit_target', [])),
+            len(validate_data.get('company_quarter_profit_target', [])) == 4,
+            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_profit_target', [])),
+        ]):
+            raise serializers.ValidationError({'company_data': 'Company data is not validated.'})
         return validate_data
 
     def update(self, instance, validated_data):

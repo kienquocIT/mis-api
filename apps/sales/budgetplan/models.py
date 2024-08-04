@@ -104,6 +104,8 @@ class BudgetPlanGroupConfig(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='bp_config_employee_allowed'
     )
+    can_view_company = models.BooleanField(default=False)
+    can_lock_plan = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Budget Plan Group Config'
@@ -130,48 +132,6 @@ class BudgetPlanGroupConfigEmployeeGroup(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Budget Plan Group Config Employee Group'
         verbose_name_plural = 'Budget Plan Group Config Employees Groups'
-        ordering = ()
-        default_permissions = ()
-        permissions = ()
-
-
-class EmployeeCanViewCompanyBudgetPlan(SimpleAbstractModel):
-    company = models.ForeignKey(
-        'company.Company',
-        on_delete=models.CASCADE,
-        related_name='emp_can_view_company_bp_company'
-    )
-    employee_allowed = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='emp_can_view_company_bp_employee_allowed'
-    )
-    can_view_company = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Employee Can View Company BudgetPlan'
-        verbose_name_plural = 'Employees Can View Company BudgetPlan'
-        ordering = ()
-        default_permissions = ()
-        permissions = ()
-
-
-class EmployeeCanLockBudgetPlan(SimpleAbstractModel):
-    company = models.ForeignKey(
-        'company.Company',
-        on_delete=models.CASCADE,
-        related_name='emp_can_lock_bp_company'
-    )
-    employee_allowed = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='emp_can_lock_bp_employee_allowed'
-    )
-    can_lock_plan = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Employee Can Lock Budget Plan'
-        verbose_name_plural = 'Employees Can Lock Budget Plan'
         ordering = ()
         default_permissions = ()
         permissions = ()

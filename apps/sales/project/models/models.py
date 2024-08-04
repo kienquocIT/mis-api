@@ -43,7 +43,7 @@ class Project(DataAbstractModel):
         verbose_name='Finish date',
         default=timezone.now
     )
-    completion_rate = models.IntegerField(
+    completion_rate = models.FloatField(
         verbose_name="Complete rate",
         default=0,
         null=True
@@ -209,13 +209,15 @@ class ProjectWorks(DataAbstractModel):
     work_dependencies_type = models.SmallIntegerField(
         choices=PROJECT_WORK_TYPE,
         null=True,
+        blank=True
     )
     work_dependencies_parent = models.ForeignKey(
         "self",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="work_parent",
         verbose_name="parent work",
         null=True,
+        blank=True,
     )
     employee_inherit_data = models.JSONField(
         default=dict,

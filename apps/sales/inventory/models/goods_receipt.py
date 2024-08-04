@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportStockLog
@@ -61,6 +63,13 @@ class GoodsReceipt(DataAbstractModel):
         verbose_name='Description of this records',
     )
     date_received = models.DateTimeField(null=True)
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='GoodsReceiptAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_goods_receipt',
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt'
@@ -524,5 +533,25 @@ class GoodsReceiptSerial(SimpleAbstractModel):
         verbose_name = 'Goods Receipt Serial'
         verbose_name_plural = 'Goods Receipt Serials'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsReceiptAttachment(M2MFilesAbstractModel):
+    goods_receipt = models.ForeignKey(
+        GoodsReceipt,
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="goods_receipt_attachment_gr",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'goods_receipt'
+
+    class Meta:
+        verbose_name = 'Goods receipt attachments'
+        verbose_name_plural = 'Goods receipt attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

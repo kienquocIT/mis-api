@@ -246,7 +246,7 @@ class GoodsRegistrationGeneralSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_available_stock(cls, obj):
-        return obj.quantity
+        return obj.gre_item.this_available if obj.gre_item else 0
 
     @classmethod
     def get_available_picked(cls, obj):
@@ -375,6 +375,7 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    borrow_uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
     regis_data = serializers.SerializerMethodField()
 
@@ -383,11 +384,13 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'quantity',
+            'available',
             'available_stock',
             'product',
             'base_quantity',
             'base_available',
             'uom',
+            'borrow_uom',
             'sale_order',
             'regis_data',
         )
@@ -425,6 +428,15 @@ class GoodsRegistrationItemBorrowListSerializer(serializers.ModelSerializer):
                         'ratio': gre_item.product.general_uom_group.uom_reference.ratio
                     } if gre_item.product.general_uom_group.uom_reference else {}
         return {}
+
+    @classmethod
+    def get_borrow_uom(cls, obj):
+        return {
+            'id': str(obj.uom_id),
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
 
     @classmethod
     def get_available_stock(cls, obj):
@@ -556,17 +568,9 @@ class GoodsRegistrationItemBorrowCreateSerializer(serializers.ModelSerializer):
         instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
 
         # cập nhập sl cho mượn cho dự án B
-        unit_price = instance.gre_item_destination.this_registered_value / instance.gre_item_destination.this_registered
         instance.gre_item_destination.this_registered_borrowed = borrow_quantity
-        instance.gre_item_destination.this_registered_value_borrowed = unit_price * borrow_quantity
         instance.gre_item_destination.this_available = instance.gre_item_destination.this_registered - borrow_quantity
-        instance.gre_item_destination.this_available_value = unit_price * instance.gre_item_destination.this_available
-        instance.gre_item_destination.save(update_fields=[
-            'this_registered_borrowed',
-            'this_registered_value_borrowed',
-            'this_available',
-            'this_available_value'
-        ])
+        instance.gre_item_destination.save(update_fields=['this_registered_borrowed', 'this_available'])
         return instance
 
 

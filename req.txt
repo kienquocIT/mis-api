@@ -39,6 +39,13 @@ mysqlclient==2.1.1
 nh3==0.2.15
 numpy==1.25.1
 opentracing==2.4.0
+opentelemetry-sdk==1.10.0
+opentelemetry-api==1.10.0
+opentelemetry-exporter-jaeger==1.10.0
+opentelemetry-instrumentation==0.29b0
+opentelemetry-instrumentation-django==0.29b0
+opentelemetry-instrumentation-logging==0.29b0
+opentelemetry-instrumentation-requests==0.29b0
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib

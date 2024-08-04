@@ -7,6 +7,10 @@ def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
     return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
 
 
+def cast_quantity_to_unit(uom, quantity):
+    return quantity * uom.ratio
+
+
 class GoodsRegistration(DataAbstractModel):
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder', on_delete=models.CASCADE, related_name='goods_registration_so'
@@ -52,9 +56,7 @@ class GoodsRegistration(DataAbstractModel):
     def update_gre_general(cls, gre_item, stock_info):
         casted_quantity_to_inv = cast_unit_to_inv_quantity(stock_info['product'].inventory_uom, stock_info['quantity'])
         gre_item.this_registered += casted_quantity_to_inv * stock_info['stock_type']
-        gre_item.this_registered_value += stock_info['value'] * stock_info['stock_type']
         gre_item.this_available = gre_item.this_registered
-        gre_item.this_available_value = gre_item.this_registered_value
 
         # create sub, save by inventory uom
         GoodsRegistrationItemSub.objects.create(
@@ -138,10 +140,7 @@ class GoodsRegistration(DataAbstractModel):
                         gre_item = cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
                     if 'delivery_id' in kwargs:
                         gre_item = cls.for_delivery(stock_info, gre_item)
-                    gre_item.save(update_fields=[
-                        'this_registered', 'this_registered_value',
-                        'this_available', 'this_available_value',
-                    ])
+                    gre_item.save(update_fields=['this_registered', 'this_available'])
         return True
 
 
@@ -158,14 +157,12 @@ class GoodsRegistrationItem(SimpleAbstractModel):
 
     # số lượng hàng của dự án này
     this_registered = models.FloatField(default=0)
-    this_registered_value = models.FloatField(default=0)
     this_registered_borrowed = models.FloatField(default=0)
-    this_registered_value_borrowed = models.FloatField(default=0)
     this_available = models.FloatField(default=0)
-    this_available_value = models.FloatField(default=0)
 
     # số lượng hàng mượn của dự án khác
     out_registered = models.FloatField(default=0)
+    out_delivered = models.FloatField(default=0)
     out_available = models.FloatField(default=0)
 
     class Meta:
@@ -232,7 +229,7 @@ class GoodsRegistrationGeneral(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration General'
         verbose_name_plural = 'Goods Registration General'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -251,7 +248,7 @@ class GoodsRegistrationLot(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Lot'
         verbose_name_plural = 'Goods Registration Lot'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -270,7 +267,7 @@ class GoodsRegistrationSerial(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Goods Registration Serial'
         verbose_name_plural = 'Goods Registration Serial'
-        ordering = ()
+        ordering = ('goods_registration__code',)
         default_permissions = ()
         permissions = ()
 
@@ -286,8 +283,10 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
     )
 
     quantity = models.FloatField(default=0)
+    delivered = models.FloatField(default=0)
     available = models.FloatField(default=0)
     base_quantity = models.FloatField(default=0)
+    base_delivered = models.FloatField(default=0)
     base_available = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="gre_item_borrow_uom", null=True
@@ -306,3 +305,23 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+    def update_borrow_data_when_delivery(self, gre_item_borrow_id, delivered_quantity):
+        gre_item_borrow = self.objects.filter(id=gre_item_borrow_id).first()
+        if gre_item_borrow:
+            gre_item_borrow.delivered += delivered_quantity
+            gre_item_borrow.base_delivered += cast_quantity_to_unit(gre_item_borrow.uom, delivered_quantity)
+            gre_item_borrow.available = gre_item_borrow.quantity - gre_item_borrow.delivered
+            gre_item_borrow.base_available = gre_item_borrow.base_quantity - gre_item_borrow.base_delivered
+            gre_item_borrow.save(update_fields=[
+                'delivered',
+                'base_delivered',
+                'available',
+                'base_available'
+            ])
+            gre_item_borrow.gre_item_source.out_delivered += delivered_quantity
+            gre_item_borrow.gre_item_source.out_available = (
+                    gre_item_borrow.gre_item_source.out_quantity - gre_item_borrow.gre_item_source.out_delivered
+            )
+            gre_item_borrow.gre_item_source.save(update_fields=['out_delivered', 'out_available'])
+        return True

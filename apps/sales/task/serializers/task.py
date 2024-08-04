@@ -7,7 +7,7 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
-from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task
+from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task, calc_rate_project
 from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
@@ -255,6 +255,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         if task.project:
             map_task_with_project(task, project_work)
             calc_update_task(task)
+            calc_rate_project(task.project)
         return task
 
 
@@ -508,6 +509,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             project_work = validated_data.pop('work', None)
             map_task_with_project(instance, project_work)
             calc_update_task(instance)
+            calc_rate_project(instance.project)
         return instance
 
 
