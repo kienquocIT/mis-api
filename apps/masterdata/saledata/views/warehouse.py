@@ -131,7 +131,7 @@ class ProductWareHouseList(BaseListMixin):
         queryset_custom = super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
         ).prefetch_related(
-            'warehouse__gre_item_general_warehouse',
+            'warehouse__gre_item_prd_wh_warehouse',
         ).order_by('product__code')
         if 'interact' in self.request.query_params:
             employee_current = self.request.user.employee_current
@@ -218,7 +218,7 @@ class ProductWareHouseLotList(BaseListMixin):
             'product_warehouse__warehouse',
             'product_warehouse__uom',
         ).prefetch_related(
-            'gre_lot_registered',
+            'gre_item_prd_wh_lot_registered',
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Lot')
@@ -238,7 +238,7 @@ class ProductWareHouseSerialList(BaseListMixin):
         "product_warehouse__warehouse_id": ["exact"],
         "serial_number": ["exact"],
         "is_delete": ["exact"],
-        "gre_sn_registered": ["exact", "isnull"],
+        "gre_item_prd_wh_serial_registered": ["exact", "isnull"],
     }
     serializer_list = ProductWarehouseSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

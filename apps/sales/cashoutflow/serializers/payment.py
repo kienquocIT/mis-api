@@ -6,10 +6,11 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, SYSTEM_STATUS
+from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, SYSTEM_STATUS, \
+    AbstractCreateSerializerModel, AbstractListSerializerModel
 
 
-class PaymentListSerializer(serializers.ModelSerializer):
+class PaymentListSerializer(AbstractListSerializerModel):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
@@ -192,7 +193,7 @@ def create_files_mapped(payment_obj, file_id_list):
         raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
-class PaymentCreateSerializer(serializers.ModelSerializer):
+class PaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -446,7 +447,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class PaymentUpdateSerializer(serializers.ModelSerializer):
+class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
 
     class Meta:

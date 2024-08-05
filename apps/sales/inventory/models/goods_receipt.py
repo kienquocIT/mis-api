@@ -179,11 +179,11 @@ class GoodsReceipt(DataAbstractModel):
     @classmethod
     def for_goods_receipt_has_purchase_request(cls, instance, stock_data, all_lots):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
-            for pr_product in gr_item.goods_receipt_request_product_gr_product.all():
+            for pr_item in gr_item.goods_receipt_request_product_gr_product.all():
                 purchase_request = None
-                if pr_product.purchase_request_product:
-                    purchase_request = pr_product.purchase_request_product.purchase_request
-                for prd_wh in pr_product.goods_receipt_warehouse_request_product.all():
+                if pr_item.purchase_request_product:
+                    purchase_request = pr_item.purchase_request_product.purchase_request
+                for prd_wh in pr_item.goods_receipt_warehouse_request_product.all():
                     if gr_item.product.general_traceability_method != 1:
                         casted_quantity = ReportStockLog.cast_quantity_to_unit(
                             gr_item.uom, prd_wh.quantity_import

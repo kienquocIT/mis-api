@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouseSerial,
     SubPeriods
 )
-from apps.sales.inventory.models.goods_registration import GoodsRegistrationItemSub, GoodsRegistrationGeneral
+from apps.sales.inventory.models.goods_registration import GoodsRegistrationItemSub, GReItemProductWarehouse
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
@@ -291,18 +291,18 @@ class GoodsTransfer(DataAbstractModel):
         goods_registration = goods_transfer_item.sale_order.goods_registration_so.first()
         gre_item = goods_registration.gre_item.filter(product=goods_transfer_item.product).first()
 
-        # update gre_general
-        gre_general = gre_item.gre_item_general.all()
-        gre_general_out_warehouse = gre_general.filter(warehouse=goods_transfer_item.warehouse).first()
-        gre_general_in_warehouse = gre_general.filter(warehouse=goods_transfer_item.end_warehouse).first()
-        if gre_general_out_warehouse:
-            gre_general_out_warehouse.quantity -= goods_transfer_item.quantity
-            gre_general_out_warehouse.save(update_fields=['quantity'])
-        if gre_general_in_warehouse:
-            gre_general_in_warehouse.quantity += goods_transfer_item.quantity
-            gre_general_in_warehouse.save(update_fields=['quantity'])
+        # update gre_item_prd_wh
+        gre_item_prd_wh = gre_item.gre_item_prd_wh.all()
+        gre_item_prd_wh_out_warehouse = gre_item_prd_wh.filter(warehouse=goods_transfer_item.warehouse).first()
+        gre_item_prd_wh_in_warehouse = gre_item_prd_wh.filter(warehouse=goods_transfer_item.end_warehouse).first()
+        if gre_item_prd_wh_out_warehouse:
+            gre_item_prd_wh_out_warehouse.quantity -= goods_transfer_item.quantity
+            gre_item_prd_wh_out_warehouse.save(update_fields=['quantity'])
+        if gre_item_prd_wh_in_warehouse:
+            gre_item_prd_wh_in_warehouse.quantity += goods_transfer_item.quantity
+            gre_item_prd_wh_in_warehouse.save(update_fields=['quantity'])
         else:
-            GoodsRegistrationGeneral.objects.create(
+            GReItemProductWarehouse.objects.create(
                 goods_registration=goods_registration,
                 gre_item=gre_item,
                 warehouse=goods_transfer_item.end_warehouse,

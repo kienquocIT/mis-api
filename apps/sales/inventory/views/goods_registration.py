@@ -1,10 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     GoodsRegistration,
-    GoodsRegistrationSerial,
-    GoodsRegistrationLot,
-    GoodsRegistrationGeneral,
-    GoodsRegistrationItemBorrow,
+    GReItemProductWarehouseSerial,
+    GReItemProductWarehouseLot,
+    GReItemProductWarehouse,
+    GReItemBorrow,
     GoodsRegistrationItemSub, GoodsRegistrationItem
 )
 from apps.sales.inventory.serializers import (
@@ -12,14 +12,14 @@ from apps.sales.inventory.serializers import (
     GoodsRegistrationCreateSerializer,
     GoodsRegistrationDetailSerializer,
     GoodsRegistrationUpdateSerializer,
-    GoodsRegistrationLotSerializer,
-    GoodsRegistrationSerialSerializer,
-    GoodsRegistrationGeneralSerializer,
+    GReItemProductWarehouseLotSerializer,
+    GReItemProductWarehouseSerialSerializer,
+    GReItemProductWarehouseSerializer,
     ProjectProductListSerializer,
-    GoodsRegistrationItemBorrowListSerializer,
-    GoodsRegistrationItemBorrowCreateSerializer,
-    GoodsRegistrationItemBorrowDetailSerializer,
-    GoodsRegistrationItemBorrowUpdateSerializer,
+    GReItemBorrowListSerializer,
+    GReItemBorrowCreateSerializer,
+    GReItemBorrowDetailSerializer,
+    GReItemBorrowUpdateSerializer,
     GoodsRegistrationItemSubSerializer,
     GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer
 )
@@ -123,14 +123,14 @@ class GoodsRegistrationItemSubList(BaseListMixin):
 
 
 # lấy hàng đăng kí theo dự án
-class GoodsRegistrationGeneralList(BaseListMixin):
-    queryset = GoodsRegistrationGeneral.objects
+class GReItemProductWarehouseList(BaseListMixin):
+    queryset = GReItemProductWarehouse.objects
     filterset_fields = {
         'gre_item__so_item__sale_order_id': ['exact'],
         'gre_item__product_id': ['exact'],
         'warehouse_id': ['exact'],
     }
-    serializer_list = GoodsRegistrationGeneralSerializer
+    serializer_list = GReItemProductWarehouseSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
@@ -150,14 +150,14 @@ class GoodsRegistrationGeneralList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class GoodsRegistrationLotList(BaseListMixin):
-    queryset = GoodsRegistrationLot.objects
+class GReItemProductWarehouseLotList(BaseListMixin):
+    queryset = GReItemProductWarehouseLot.objects
     filterset_fields = {
-        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
-        'gre_general__gre_item__product_id': ['exact'],
-        'gre_general__warehouse_id': ['exact'],
+        'gre_item_prd_wh__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_item_prd_wh__gre_item__product_id': ['exact'],
+        'gre_item_prd_wh__warehouse_id': ['exact'],
     }
-    serializer_list = GoodsRegistrationLotSerializer
+    serializer_list = GReItemProductWarehouseLotSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
@@ -177,15 +177,15 @@ class GoodsRegistrationLotList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class GoodsRegistrationSerialList(BaseListMixin):
-    queryset = GoodsRegistrationSerial.objects
+class GReItemProductWarehouseSerialList(BaseListMixin):
+    queryset = GReItemProductWarehouseSerial.objects
     filterset_fields = {
-        'gre_general__gre_item__so_item__sale_order_id': ['exact'],
-        'gre_general__gre_item__product_id': ['exact'],
-        'gre_general__warehouse_id': ['exact'],
+        'gre_item_prd_wh__gre_item__so_item__sale_order_id': ['exact'],
+        'gre_item_prd_wh__gre_item__product_id': ['exact'],
+        'gre_item_prd_wh__warehouse_id': ['exact'],
         'sn_registered__is_delete': ['exact'],
     }
-    serializer_list = GoodsRegistrationSerialSerializer
+    serializer_list = GReItemProductWarehouseSerialSerializer
 
     def get_queryset(self):
         if self.request.user.company_current.company_config.cost_per_project:
@@ -207,7 +207,7 @@ class GoodsRegistrationSerialList(BaseListMixin):
 
 # lấy hàng dự án dành cho Goods Transfer
 class ProjectProductList(BaseListMixin):
-    queryset = GoodsRegistrationGeneral.objects
+    queryset = GReItemProductWarehouse.objects
     filterset_fields = {
         'goods_registration__sale_order_id': ['exact'],
         'gre_item__product_id': ['exact']
@@ -233,17 +233,17 @@ class ProjectProductList(BaseListMixin):
 
 
 # mượn hàng giữa các dự án
-class GoodsRegistrationItemBorrowList(BaseListMixin, BaseCreateMixin):
-    queryset = GoodsRegistrationItemBorrow.objects
+class GReItemBorrowList(BaseListMixin, BaseCreateMixin):
+    queryset = GReItemBorrow.objects
     filterset_fields = {
-        'goods_registration_source_id': ['exact'],
+        'gre_source_id': ['exact'],
         'gre_item_source_id': ['exact'],
-        'goods_registration_source__sale_order_id': ['exact'],
+        'gre_source__sale_order_id': ['exact'],
         'gre_item_source__product_id': ['exact'],
     }
-    serializer_list = GoodsRegistrationItemBorrowListSerializer
-    serializer_create = GoodsRegistrationItemBorrowCreateSerializer
-    serializer_detail = GoodsRegistrationItemBorrowDetailSerializer
+    serializer_list = GReItemBorrowListSerializer
+    serializer_create = GReItemBorrowCreateSerializer
+    serializer_detail = GReItemBorrowDetailSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related()
@@ -262,7 +262,7 @@ class GoodsRegistrationItemBorrowList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Create Goods registration item borrow",
         operation_description="Create new Goods registration item borrow",
-        request_body=GoodsRegistrationItemBorrowCreateSerializer,
+        request_body=GReItemBorrowCreateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -272,10 +272,10 @@ class GoodsRegistrationItemBorrowList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class GoodsRegistrationItemBorrowDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = GoodsRegistrationItemBorrow.objects
-    serializer_detail = GoodsRegistrationItemBorrowDetailSerializer
-    serializer_update = GoodsRegistrationItemBorrowUpdateSerializer
+class GReItemBorrowDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = GReItemBorrow.objects
+    serializer_detail = GReItemBorrowDetailSerializer
+    serializer_update = GReItemBorrowUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -296,7 +296,7 @@ class GoodsRegistrationItemBorrowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Update Goods registration item borrow",
         operation_description="Update Goods registration item borrow by ID",
-        request_body=GoodsRegistrationItemBorrowUpdateSerializer,
+        request_body=GReItemBorrowUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,
