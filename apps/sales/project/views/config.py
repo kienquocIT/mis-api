@@ -19,7 +19,6 @@ class ProjectConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        allow_admin_tenant=True, allow_admin_company=True,
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
