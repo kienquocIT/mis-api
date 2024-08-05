@@ -118,14 +118,22 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
-        all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
         bulk_info_new_serial = []
         for item in serial_data:
-            serial_id = item.get('serial_id')
-            if serial_id:
-                cls.update_serial(item, all_serial, serial_id, goods_receipt_id)
+            if item.get('serial_id'):
+                cls.update_serial(
+                    item,
+                    prd_wh.product_warehouse_serial_product_warehouse.all(),
+                    item.get('serial_id'),
+                    goods_receipt_id
+                )
             else:
-                bulk_info_new_serial = cls.create_serial(item, prd_wh, goods_receipt_id, bulk_info_new_serial)
+                bulk_info_new_serial = cls.create_serial(
+                    item,
+                    prd_wh,
+                    goods_receipt_id,
+                    bulk_info_new_serial
+                )
         created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
         gr_wh = GoodsReceiptWarehouse.objects.filter(
             goods_receipt_id=goods_receipt_id,
