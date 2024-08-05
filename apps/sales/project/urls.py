@@ -2,9 +2,11 @@ from django.urls import path
 
 from .views import ProjectList, ProjectDetail, ProjectUpdate, ProjectMemberAdd, ProjectMemberDetail, ProjectGroupList, \
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD, \
-    ProjectTaskDetail, ProjectWorkExpenseList, ProjectCreateBaseline, ProjectBaselineDetail, ProjectBaselineUpdate
+    ProjectTaskDetail, ProjectWorkExpenseList, ProjectCreateBaseline, ProjectBaselineDetail, ProjectBaselineUpdate, \
+    ProjectConfigDetail
 
 urlpatterns = [
+    path('config', ProjectConfigDetail.as_view(), name='ProjectConfigDetail'),
     path('list', ProjectList.as_view(), name='ProjectList'),
     path('detail/<str:pk>', ProjectDetail.as_view(), name='ProjectDetail'),
     path('edit/<str:pk>', ProjectUpdate.as_view(), name='ProjectUpdate'),

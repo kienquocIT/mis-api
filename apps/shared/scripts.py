@@ -1899,3 +1899,9 @@ def delete_gr_map_wh():
     if gr_wh:
         gr_wh.delete()
     print('delete_gr_map_wh done.')
+
+
+def make_sure_project_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).project_config()
+    print('Project config is done!')

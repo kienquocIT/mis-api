@@ -3,16 +3,25 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_weight_work_in_group, calc_weight_all, reorder_work
+from ..extend_func import calc_weight_work_in_group, calc_weight_all, reorder_work, calc_rate_project
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
 def validated_date_work(attrs):
-    if 'work_dependencies_parent' in attrs:
+    if 'work_dependencies_parent' in attrs and hasattr(attrs['work_dependencies_parent'], 'id'):
         work_type = attrs['work_dependencies_type'] if 'work_dependencies_type' in attrs else 0
-        if work_type == 1 and attrs['work_dependencies_parent'].w_end_date > attrs['w_start_date']:
-            # nếu loại bắt đầu là "finish to start" và ngày kết thúc lớn hơn ngày bắt đầu của work tạo
+
+        # nếu loại bắt đầu là "finish to start" và ngày kết thúc lớn hơn ngày bắt đầu của work tạo
+        if work_type == 1 and hasattr(attrs['work_dependencies_parent'], 'id') \
+                and attrs['work_dependencies_parent'].w_end_date >= attrs['w_start_date'] \
+                or attrs['w_start_date'] < attrs['work_dependencies_parent'].w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE})
+
+        # nếu công việc tự phụ thuộc chính nó thì báo lỗi
+        parent_id = getattr(attrs.get('work_dependencies_parent'), 'id', None)
+        if parent_id and parent_id == attrs.get('id'):
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DEPENDENCIES_ERROR})
+
     if 'group' in attrs:
         group_flt = ProjectGroups.objects.filter(id=attrs['group'])
         if group_flt.exists():
@@ -92,6 +101,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         )
         if group:
             GroupMapWork.objects.create(group_id=group, work=work)
+        calc_rate_project(project)
         return work
 
     class Meta:
@@ -166,12 +176,6 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
             'work_dependencies_type',
             'group',
         )
-
-    @classmethod
-    def validate_work_dependencies_parent(cls, value):
-        if value:
-            return value
-        raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DEPENDENCIES_ERROR})
 
     def validate(self, attrs):
         w_start_date = attrs['w_start_date']
