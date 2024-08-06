@@ -682,7 +682,7 @@ class ReportInventorySubFunction:
                 GoodsRegistration.update_registered_quantity(
                     sale_order,
                     stock_data_item,
-                    **{'delivery_id': stock_obj.id}
+                    **{'delivery_id': stock_obj.id, 'delivery_obj': stock_obj}
                 )
         if stock_data_item.get('trans_title') == 'Goods receipt':
             if sale_order:

@@ -140,6 +140,21 @@ class GoodsRegistration(DataAbstractModel):
                         gre_item = cls.for_goods_receipt(stock_info, gre_item, kwargs.get('goods_receipt_id'))
                     if 'delivery_id' in kwargs:
                         gre_item = cls.for_delivery(stock_info, gre_item)
+
+                        #
+                        delivery_obj = kwargs.get('delivery_obj', None)
+                        if delivery_obj:
+                            if delivery_obj.order_delivery:
+                                main_so_id = delivery_obj.order_delivery.sale_order_id
+                                if delivery_obj.order_delivery.sale_order_id != sale_order.id:
+                                    borrow_obj = gre_item.gre_item_borrow_des.filter(
+                                        goods_registration_source__sale_order_id=main_so_id
+                                    ).first()
+                                    if borrow_obj:
+                                        borrow_obj.update_borrow_data_when_delivery(
+                                            gre_item_borrow=borrow_obj,
+                                            delivered_quantity=stock_info.get('quantity', 0)
+                                        )
                     gre_item.save(update_fields=['this_registered', 'this_available'])
         return True
 
@@ -306,8 +321,7 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_borrow_data_when_delivery(self, gre_item_borrow_id, delivered_quantity):
-        gre_item_borrow = self.objects.filter(id=gre_item_borrow_id).first()
+    def update_borrow_data_when_delivery(self, gre_item_borrow, delivered_quantity):
         if gre_item_borrow:
             gre_item_borrow.delivered += delivered_quantity
             gre_item_borrow.base_delivered += cast_quantity_to_unit(gre_item_borrow.uom, delivered_quantity)
@@ -321,7 +335,7 @@ class GoodsRegistrationItemBorrow(SimpleAbstractModel):
             ])
             gre_item_borrow.gre_item_source.out_delivered += delivered_quantity
             gre_item_borrow.gre_item_source.out_available = (
-                    gre_item_borrow.gre_item_source.out_quantity - gre_item_borrow.gre_item_source.out_delivered
+                    gre_item_borrow.gre_item_source.out_registered - gre_item_borrow.gre_item_source.out_delivered
             )
             gre_item_borrow.gre_item_source.save(update_fields=['out_delivered', 'out_available'])
         return True
