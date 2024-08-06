@@ -811,6 +811,7 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         instance.gre_item_source.out_available = (
                 instance.gre_item_source.out_registered - instance.gre_item_source.out_delivered
         )
+        instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
 
         # update SL kho chung, (trừ đi SL mượn)
         none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
