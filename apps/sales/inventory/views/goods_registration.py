@@ -46,8 +46,8 @@ class GoodsRegistrationList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Goods registration List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsregistration', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -58,8 +58,8 @@ class GoodsRegistrationList(BaseListMixin, BaseCreateMixin):
         request_body=GoodsRegistrationCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='GoodsRegistration', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsregistration', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -80,8 +80,8 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Goods return detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsregistration', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -92,8 +92,8 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=GoodsRegistrationUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='GoodsRegistration', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsregistration', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

@@ -666,8 +666,8 @@ class BudgetReportCompanyList(BaseListMixin):
         operation_description="Budget report list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='report', model_code='reportpurchasing', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportbudget', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
@@ -690,8 +690,8 @@ class BudgetReportGroupList(BaseListMixin):
         operation_description="Budget report list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='report', model_code='reportpurchasing', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportbudget', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
@@ -721,8 +721,7 @@ class PaymentListForBudgetReport(BaseListMixin):
         operation_description="Payment list budget plan",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='payment', perm_code='view',
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
