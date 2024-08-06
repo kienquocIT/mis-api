@@ -5,7 +5,7 @@ from apps.sales.inventory.models import (
     GReItemProductWarehouseLot,
     GReItemProductWarehouse,
     GReItemBorrow,
-    GoodsRegistrationItemSub, GoodsRegistrationItem
+    GoodsRegistrationItemSub, GoodsRegistrationItem, NoneGReItemBorrow, NoneGReItemProductWarehouse
 )
 from apps.sales.inventory.serializers import (
     GoodsRegistrationListSerializer,
@@ -21,7 +21,9 @@ from apps.sales.inventory.serializers import (
     GReItemBorrowDetailSerializer,
     GReItemBorrowUpdateSerializer,
     GoodsRegistrationItemSubSerializer,
-    GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer
+    GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer, NoneGReItemBorrowListSerializer,
+    NoneGReItemBorrowCreateSerializer, NoneGReItemBorrowDetailSerializer, NoneGReItemBorrowUpdateSerializer,
+    NoneGoodsRegistrationItemAvailableQuantitySerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -320,6 +322,103 @@ class GoodsRegistrationItemAvailableQuantity(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Goods registration item available quantity",
         operation_description="Get Goods registration item available quantity",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# mượn hàng từ kho chung
+class NoneGReItemBorrowList(BaseListMixin, BaseCreateMixin):
+    queryset = NoneGReItemBorrow.objects
+    filterset_fields = {
+        'gre_source_id': ['exact'],
+        'gre_item_source_id': ['exact'],
+        'gre_source__sale_order_id': ['exact'],
+        'gre_item_source__product_id': ['exact'],
+    }
+    serializer_list = NoneGReItemBorrowListSerializer
+    serializer_create = NoneGReItemBorrowCreateSerializer
+    serializer_detail = NoneGReItemBorrowDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="None Goods registration item borrow List",
+        operation_description="Get None Goods registration item borrow List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create None Goods registration item borrow",
+        operation_description="Create new None Goods registration item borrow",
+        request_body=NoneGReItemBorrowCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='GoodsRegistration', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class NoneGReItemBorrowDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = NoneGReItemBorrow.objects
+    serializer_detail = NoneGReItemBorrowDetailSerializer
+    serializer_update = NoneGReItemBorrowUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="None Goods registration item borrow detail",
+        operation_description="None Get Goods return item borrow detail by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='GoodsRegistration', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update None Goods registration item borrow",
+        operation_description="Update None Goods registration item borrow by ID",
+        request_body=NoneGReItemBorrowUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='GoodsRegistration', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class NoneGoodsRegistrationItemAvailableQuantity(BaseListMixin):
+    queryset = NoneGReItemProductWarehouse.objects
+    filterset_fields = {
+        'warehouse_id': ['exact'],
+        'product_id': ['exact']
+    }
+    serializer_list = NoneGoodsRegistrationItemAvailableQuantitySerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="None Goods registration item available quantity",
+        operation_description="Get None Goods registration item available quantity",
     )
     @mask_view(
         login_require=True, auth_require=False,

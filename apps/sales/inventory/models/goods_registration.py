@@ -307,6 +307,7 @@ class NoneGReItemProductWarehouse(SimpleAbstractModel):
         default=0,
         help_text='quantity of products which were picked to delivery from total quantity registered',
     )
+    keep_for_project = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'None GRe Item Product Warehouse'
