@@ -116,6 +116,7 @@ class GoodsRegistrationDetailSerializer(serializers.ModelSerializer):
                 'this_available': item.this_available,
                 'this_registered_borrowed': item.this_registered_borrowed,
                 'out_registered': item.out_registered,
+                'out_delivered': item.out_delivered,
                 'out_available': item.out_available
             })
         return data_line_detail
@@ -567,8 +568,13 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
         )
 
         # cập nhập sl mượn của dự án A
-        instance.gre_item_source.out_registered = borrow_quantity
-        instance.gre_item_source.out_available = borrow_quantity
+        if validated_data['quantity'] > 0:
+            instance.gre_item_source.out_registered += borrow_quantity
+        else:
+            instance.gre_item_source.out_registered -= borrow_quantity
+        instance.gre_item_source.out_available = (
+            instance.gre_item_source.out_registered - instance.gre_item_source.out_delivered
+        )
         instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
 
         # cập nhập sl cho mượn cho dự án B
@@ -798,9 +804,13 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         )
 
         # cập nhập sl mượn của dự án A
-        instance.gre_item_source.out_registered = borrow_quantity
-        instance.gre_item_source.out_available = borrow_quantity
-        instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
+        if validated_data['quantity'] > 0:
+            instance.gre_item_source.out_registered += borrow_quantity
+        else:
+            instance.gre_item_source.out_registered -= borrow_quantity
+        instance.gre_item_source.out_available = (
+                instance.gre_item_source.out_registered - instance.gre_item_source.out_delivered
+        )
 
         # update SL kho chung, (trừ đi SL mượn)
         none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
