@@ -8,7 +8,7 @@ from django.db import models
 
 from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, PROJECT_WORK_STT, \
-    PROJECT_WORK_TYPE
+    PROJECT_WORK_TYPE, SYSTEM_STATUS
 
 
 class Project(DataAbstractModel):
@@ -86,6 +86,11 @@ class Project(DataAbstractModel):
         help_text='Total price after tax',
         default=0,
         null=True
+    )
+    project_status = models.SmallIntegerField(
+        # choices=SYSTEM_STATUS,
+        default=1,
+        help_text='choices= ' + str(SYSTEM_STATUS),
     )
 
     def code_generator(self):
