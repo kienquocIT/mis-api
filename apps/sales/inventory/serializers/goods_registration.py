@@ -859,7 +859,7 @@ class NoneGoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSeri
         return obj.quantity - obj.keep_for_project
 
 
-# Common serializer to get regis + borrow
+# Common serializer to get regis + borrow + from general stock
 class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     regis_data = serializers.SerializerMethodField()
     borrow_data = serializers.SerializerMethodField()
