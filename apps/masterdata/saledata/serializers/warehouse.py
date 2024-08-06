@@ -341,7 +341,7 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
         available_stock = obj.stock_amount
         if obj.warehouse and obj.product:
             quantity_regis = 0
-            for regis in obj.warehouse.gre_item_general_warehouse.all():
+            for regis in obj.warehouse.gre_item_prd_wh_warehouse.all():
                 if regis.gre_item.product_id == obj.product_id:
                     quantity_regis += regis.quantity
                 available_stock = obj.stock_amount - quantity_regis
@@ -352,7 +352,7 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
         available_picked = obj.picked_ready
         if obj.warehouse and obj.product:
             picked_regis = 0
-            for regis in obj.warehouse.gre_item_general_warehouse.all():
+            for regis in obj.warehouse.gre_item_prd_wh_warehouse.all():
                 if regis.gre_item.product_id == obj.product_id:
                     picked_regis += regis.picked_ready
                 available_picked = obj.picked_ready - picked_regis
@@ -518,11 +518,11 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_available_stock(cls, obj):
-        if obj.gre_lot_registered.count() > 0:
+        if obj.gre_item_prd_wh_lot_registered.count() > 0:
             quantity_regis = 0
-            for lot_registered in obj.gre_lot_registered.all():
-                if lot_registered.gre_general:
-                    quantity_regis += lot_registered.gre_general.quantity
+            for lot_registered in obj.gre_item_prd_wh_lot_registered.all():
+                if lot_registered.gre_item_prd_wh:
+                    quantity_regis += lot_registered.gre_item_prd_wh.quantity
             return obj.quantity_import - quantity_regis
         return obj.quantity_import
 

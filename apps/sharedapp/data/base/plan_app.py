@@ -294,6 +294,14 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "ac21e8e4-fe32-41f4-9887-ee077677735c",  # Budget Plan
     },
+    "b9fa8d62-4387-4fa5-9be3-d76d77614687": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "b9fa8d62-4387-4fa5-9be3-d76d77614687",  # Report Budget
+    },
+    "20ad27de-ea68-48a9-82bf-8833d7ab6da7": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "20ad27de-ea68-48a9-82bf-8833d7ab6da7",  # Report Budget
+    },
 }
 
 _PlanApplication_eOffice_data = {

@@ -2,11 +2,12 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
-from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSerializerModel
+from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
-class ReturnAdvanceListSerializer(serializers.ModelSerializer):
+class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
 
@@ -70,7 +71,7 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
 
-class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
+class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     cost = ReturnAdvanceCostCreateSerializer(required=True, many=True)
 
     class Meta:
@@ -206,7 +207,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
         return list_result
 
 
-class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
+class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(required=False)
     method = serializers.IntegerField(required=False)
     money_received = serializers.BooleanField(required=False)
