@@ -2,6 +2,8 @@ __all__ = ['ProjectListSerializers', 'ProjectCreateSerializers', 'ProjectDetailS
            'ProjectUpdateOrderSerializers']
 
 import json
+from datetime import datetime
+
 from rest_framework import serializers
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
@@ -15,6 +17,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     project_pm = serializers.SerializerMethodField()
     baseline = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     @classmethod
     def get_works(cls, obj):
@@ -52,11 +55,13 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
     @classmethod
     def get_baseline(cls, obj):
+        baseline = {
+            'project_data': [],
+            'count': 0,
+            'new_t_month': 0
+        }
         if obj.project_projectbaseline_project_related.all():
-            baseline = {
-                'project_data': [],
-                'count': 0
-            }
+            crt = datetime.now()
             for item in obj.project_projectbaseline_project_related.all():
                 if item.system_status <= 1:
                     continue
@@ -82,9 +87,16 @@ class ProjectListSerializers(serializers.ModelSerializer):
                     'version': item.baseline_version
                 })
                 baseline['count'] += 1
+                if item.date_created.year == crt.year and item.date_created.month == crt.month:
+                    baseline['new_t_month'] += 1
 
             return baseline
-        return {'project_data': [], 'count': 0}
+        return baseline
+
+    def get_system_status(self, obj):
+        if obj:
+            return self.instance.project_status
+        return ''
 
     class Meta:
         model = Project
