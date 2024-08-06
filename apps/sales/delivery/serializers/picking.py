@@ -143,6 +143,7 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField()
     order = serializers.IntegerField(min_value=1)
+    picking_data = serializers.JSONField(required=False)
 
 
 class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
@@ -175,15 +176,14 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         picked_quantity_total = 0
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
-        print('check update pass')
-
         if 'products' in validated_data and len(validated_data['products']) > 0:
             for item in validated_data['products']:
                 item_key = str(item['product_id']) + "___" + str(item['order'])
                 picked_quantity_total += item['done']
                 product_done[item_key] = {
                     'stock': item['done'],
-                    'delivery_data': item['delivery_data']
+                    'delivery_data': item['delivery_data'],
+                    'picking_data': item.get('picking_data', []),
                 }
             instance.estimated_delivery_date = validated_data['estimated_delivery_date']
             instance.remarks = validated_data['remarks']
@@ -192,7 +192,10 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             try:
                 with transaction.atomic():
                     # update picking prod và delivery prod trừ vào warehouse stock
-                    pickup_data = PickingHandler.update_prod_current(instance, product_done, picked_quantity_total)
+                    pickup_data = PickingHandler.update_prod_current(
+                        instance=instance, prod_update=product_done,
+                        total_picked=picked_quantity_total
+                    )
                     PickingHandler.update_current_sub(instance, pickup_data, picked_quantity_total)
             except Exception as err:
                 print(err)
@@ -209,5 +212,6 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderPickingSub
-        fields = ('products', 'sale_order_id', 'order_picking', 'state', 'estimated_delivery_date', 'ware_house',
-                  'to_location', 'remarks', 'delivery_option', 'employee_inherit_id')
+        fields = ('products', 'sale_order_id', 'order_picking', 'state',
+                  'estimated_delivery_date', 'ware_house', 'to_location', 'remarks',
+                  'delivery_option', 'employee_inherit_id',)

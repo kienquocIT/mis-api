@@ -608,7 +608,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
         return True
 
-    def create_delivery_product_warehouse(self):
+    def push_delivery_product_warehouse(self):
         pw_data = [
             {
                 'sale_order_id': deli_data.get('sale_order', None),
@@ -682,7 +682,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             del kwargs['for_goods_return']
         if not for_goods_return:
             self.before_save()
-            self.create_delivery_product_warehouse()
+            self.push_delivery_product_warehouse()
             self.create_lot_serial()
         super().save(*args, **kwargs)
 
@@ -706,7 +706,7 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="sale order",
         related_name="delivery_pw_sale_order",
-        help_text="main sale order of delivery or sale order from other project (borrow)",
+        help_text="main sale order of this delivery or sale order from other project (borrow)",
         null=True,
     )
     sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
@@ -722,6 +722,7 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="uom",
         related_name="delivery_pw_uom",
+        help_text='uom ordered',
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     lot_data = models.JSONField(
