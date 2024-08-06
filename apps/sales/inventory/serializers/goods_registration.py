@@ -863,6 +863,7 @@ class NoneGoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSeri
 class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     regis_data = serializers.SerializerMethodField()
     borrow_data = serializers.SerializerMethodField()
+    borrow_data_general_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsRegistrationItem
@@ -870,6 +871,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
             'id',
             'regis_data',
             'borrow_data',
+            'borrow_data_general_stock'
         )
 
     @classmethod
@@ -879,3 +881,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_borrow_data(cls, obj):
         return GReItemBorrowListSerializer(obj.gre_item_src_borrow.all(), many=True).data
+
+    @classmethod
+    def get_borrow_data_general_stock(cls, obj):
+        return NoneGReItemBorrowListSerializer(obj.none_gre_item_src_borrow.all(), many=True).data
