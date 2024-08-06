@@ -803,12 +803,6 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
             validated_data
         )
 
-        # đổi sang uom đặt hàng
-        borrow_quantity = cast_unit_quantity_to_so_uom(
-            instance.gre_item_source.so_item.unit_of_measure,
-            instance.base_quantity
-        )
-
         # cập nhập sl mượn của dự án A
         if validated_data['quantity'] > 0:
             instance.gre_item_source.out_registered += cast_quantity_to_unit(
