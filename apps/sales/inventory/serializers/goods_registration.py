@@ -736,7 +736,9 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
             # validate quantity
             if validate_data['quantity'] > 0:
                 casted_quantity = cast_quantity_to_unit(validate_data['uom'], validate_data['quantity'])
-                casted_quantity_limit = none_gre_item_prd_wh.quantity if none_gre_item_prd_wh else 0
+                casted_quantity_limit = (
+                    none_gre_item_prd_wh.quantity - none_gre_item_prd_wh.keep_for_project
+                )if none_gre_item_prd_wh else 0
                 if casted_quantity > casted_quantity_limit:
                     raise serializers.ValidationError({'quantity': 'Reserved quantity > Available quantity.'})
 
