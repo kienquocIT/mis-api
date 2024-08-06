@@ -267,8 +267,7 @@ class GReItemBorrow(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_borrow_data_when_delivery(self, gre_item_borrow_id, delivered_quantity):
-        gre_item_borrow = self.objects.filter(id=gre_item_borrow_id).first()
+    def update_borrow_data_when_delivery(self, gre_item_borrow, delivered_quantity):
         if gre_item_borrow:
             gre_item_borrow.delivered += delivered_quantity
             gre_item_borrow.base_delivered += cast_quantity_to_unit(gre_item_borrow.uom, delivered_quantity)
@@ -282,7 +281,7 @@ class GReItemBorrow(SimpleAbstractModel):
             ])
             gre_item_borrow.gre_item_source.out_delivered += delivered_quantity
             gre_item_borrow.gre_item_source.out_available = (
-                    gre_item_borrow.gre_item_source.out_quantity - gre_item_borrow.gre_item_source.out_delivered
+                    gre_item_borrow.gre_item_source.out_registered - gre_item_borrow.gre_item_source.out_delivered
             )
             gre_item_borrow.gre_item_source.save(update_fields=['out_delivered', 'out_available'])
         return True
@@ -401,8 +400,7 @@ class NoneGReItemBorrow(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_borrow_data_when_delivery(self, gre_item_borrow_id, delivered_quantity):
-        none_gre_item_borrow = self.objects.filter(id=gre_item_borrow_id).first()
+    def update_borrow_data_when_delivery(self, none_gre_item_borrow, delivered_quantity):
         if none_gre_item_borrow:
             none_gre_item_borrow.delivered += delivered_quantity
             none_gre_item_borrow.base_delivered += cast_quantity_to_unit(
@@ -420,7 +418,7 @@ class NoneGReItemBorrow(SimpleAbstractModel):
             ])
             none_gre_item_borrow.gre_item_source.out_delivered += delivered_quantity
             none_gre_item_borrow.gre_item_source.out_available = (
-                none_gre_item_borrow.gre_item_source.out_quantity - none_gre_item_borrow.gre_item_source.out_delivered
+                none_gre_item_borrow.gre_item_source.out_registered - none_gre_item_borrow.gre_item_source.out_delivered
             )
             none_gre_item_borrow.gre_item_source.save(update_fields=['out_delivered', 'out_available'])
         return True
