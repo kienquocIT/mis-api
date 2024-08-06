@@ -529,7 +529,7 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
         if 'last_borrow' in validated_data:
             last_borrow = validated_data['last_borrow']
             last_borrow.quantity += validated_data['quantity']
-            last_borrow.available += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
             last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
             last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
             last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
@@ -545,18 +545,20 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        validated_data['quantity'] = validated_data['quantity'] * -1
         last_borrow = validated_data['last_borrow']
-        last_borrow.quantity -= validated_data['quantity']
-        last_borrow.available -= validated_data['quantity']
+        last_borrow.quantity += validated_data['quantity']
+        last_borrow.available = last_borrow.quantity - last_borrow.delivered
         last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
         last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
         last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
         return last_borrow
 
     def create(self, validated_data):
-        borrow_quantity = validated_data['quantity']
-        instance = self.for_borrow(validated_data) if borrow_quantity >= 0 else self.for_return_back(validated_data)
+        instance = self.for_borrow(
+            validated_data
+        ) if validated_data['quantity'] >= 0 else self.for_return_back(
+            validated_data
+        )
 
         # đổi sang uom đặt hàng
         borrow_quantity = cast_unit_quantity_to_so_uom(
@@ -615,6 +617,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     borrow_uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
+    warehouse_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = NoneGReItemBorrow
@@ -627,7 +630,8 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
             'base_quantity',
             'base_available',
             'uom',
-            'borrow_uom'
+            'borrow_uom',
+            'warehouse_mapped'
         )
 
     @classmethod
@@ -668,6 +672,14 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_stock(cls, obj):
         return obj.base_available
+
+    @classmethod
+    def get_warehouse_mapped(cls, obj):
+        return {
+            'id': obj.warehouse_mapped_id,
+            'title': obj.warehouse_mapped.title,
+            'code': obj.warehouse_mapped.code,
+        } if obj.warehouse_mapped else {}
 
 
 class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
@@ -746,7 +758,7 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         if 'last_borrow' in validated_data:
             last_borrow = validated_data['last_borrow']
             last_borrow.quantity += validated_data['quantity']
-            last_borrow.available += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
             last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
             last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
             last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
@@ -762,18 +774,20 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        validated_data['quantity'] = validated_data['quantity'] * -1
         last_borrow = validated_data['last_borrow']
-        last_borrow.quantity -= validated_data['quantity']
-        last_borrow.available -= validated_data['quantity']
+        last_borrow.quantity += validated_data['quantity']
+        last_borrow.available = last_borrow.quantity - last_borrow.delivered
         last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
         last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
         last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
         return last_borrow
 
     def create(self, validated_data):
-        borrow_quantity = validated_data['quantity']
-        instance = self.for_borrow(validated_data) if borrow_quantity >= 0 else self.for_return_back(validated_data)
+        instance = self.for_borrow(
+            validated_data
+        ) if validated_data['quantity'] >= 0 else self.for_return_back(
+            validated_data
+        )
 
         # đổi sang uom đặt hàng
         borrow_quantity = cast_unit_quantity_to_so_uom(
@@ -792,7 +806,16 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
             warehouse=instance.warehouse_mapped
         ).first()
         if none_gre_item_prd_wh:
-            none_gre_item_prd_wh.keep_for_project += instance.base_quantity
+            if validated_data['quantity'] > 0:
+                none_gre_item_prd_wh.keep_for_project += cast_quantity_to_unit(
+                    validated_data['uom'],
+                    validated_data['quantity']
+                )
+            else:
+                none_gre_item_prd_wh.keep_for_project -= cast_quantity_to_unit(
+                    validated_data['uom'],
+                    validated_data['quantity'] * (-1)
+                )
             none_gre_item_prd_wh.save(update_fields=['keep_for_project'])
 
         return instance
