@@ -7,11 +7,12 @@ from apps.sales.inventory.views import (
     GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList,
     GoodsRegistrationList,
     GoodsRegistrationDetail,
-    GoodsRegistrationLotList,
-    GoodsRegistrationSerialList,
-    GoodsRegistrationGeneralList,
-    ProjectProductList, GoodsRegistrationItemBorrowList, GoodsRegistrationItemBorrowDetail,
-    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList
+    GReItemProductWarehouseLotList,
+    GReItemProductWarehouseSerialList,
+    GReItemProductWarehouseList,
+    ProjectProductList, GReItemBorrowList, GReItemBorrowDetail,
+    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
+    NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity
 )
 
 urlpatterns = [
@@ -71,45 +72,26 @@ urlpatterns += [
 urlpatterns += [
     path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
     path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
+    path('gre-item-sub/list', GoodsRegistrationItemSubList.as_view(), name='GoodsRegistrationItemSubList'),
+    path('gre-item-prd-wh', GReItemProductWarehouseList.as_view(), name='GReItemProductWarehouseList'),
+    path('gre-item-prd-wh-lot', GReItemProductWarehouseLotList.as_view(), name='GReItemProductWarehouseLotList'),
     path(
-        'goods-registration-item-sub/list',
-        GoodsRegistrationItemSubList.as_view(),
-        name='GoodsRegistrationItemSubList'
+        'gre-item-prd-wh-serial', GReItemProductWarehouseSerialList.as_view(), name='GReItemProductWarehouseSerialList'
     ),
+    path('product-list-for-project', ProjectProductList.as_view(), name='ProjectProductList'),
+    path('gre-item-borrow/list', GReItemBorrowList.as_view(), name='GReItemBorrowList'),
+    path('gre-item-borrow/<str:pk>', GReItemBorrowDetail.as_view(), name='GReItemBorrowDetail'),
     path(
-        'goods-registration-prd-wh-general',
-        GoodsRegistrationGeneralList.as_view(),
-        name='GoodsRegistrationGeneralList'
-    ),
-    path(
-        'goods-registration-prd-wh-lot',
-        GoodsRegistrationLotList.as_view(),
-        name='GoodsRegistrationLotList'
-    ),
-    path(
-        'goods-registration-prd-wh-serial',
-        GoodsRegistrationSerialList.as_view(),
-        name='GoodsRegistrationSerialList'
-    ),
-    path(
-        'product-list-for-project',
-        ProjectProductList.as_view(),
-        name='ProjectProductList'
-    ),
-    path(
-        'goods-registration-item-borrow/list',
-        GoodsRegistrationItemBorrowList.as_view(),
-        name='GoodsRegistrationItemBorrowList'
-    ),
-    path(
-        'goods-registration-item-borrow/<str:pk>',
-        GoodsRegistrationItemBorrowDetail.as_view(),
-        name='GoodsRegistrationItemBorrowDetail'
-    ),
-    path(
-        'goods-registration-item-available-quantity',
+        'gre-item-available-quantity',
         GoodsRegistrationItemAvailableQuantity.as_view(),
         name='GoodsRegistrationItemAvailableQuantity'
+    ),
+    path('none-gre-item-borrow/list', NoneGReItemBorrowList.as_view(), name='NoneGReItemBorrowList'),
+    path('none-gre-item-borrow/<str:pk>', NoneGReItemBorrowDetail.as_view(), name='NoneGReItemBorrowDetail'),
+    path(
+        'none-gre-item-available-quantity',
+        NoneGoodsRegistrationItemAvailableQuantity.as_view(),
+        name='NoneGoodsRegistrationItemAvailableQuantity'
     ),
     path('goods-regis-borrow/list', GoodsRegisBorrowList.as_view(), name='GoodsRegisBorrowList'),
 ]

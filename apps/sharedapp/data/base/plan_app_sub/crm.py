@@ -1951,6 +1951,84 @@ BUDGET_PLAN_APP_CONFIG = {
     "allow_permit": True,
 }
 
+REPORT_BUDGET_APP_CONFIG = {
+    "id": "b9fa8d62-4387-4fa5-9be3-d76d77614687",
+    "title": "Report Budget",
+    "code": "reportbudget",
+    "model_code": "reportbudget",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+REGISTRATION_APP_CONFIG = {
+    "id": "20ad27de-ea68-48a9-82bf-8833d7ab6da7",
+    "title": "Goods Registration",
+    "code": "goodsregistration",
+    "model_code": "goodsregistration",
+    "app_label": "inventory",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2191,6 +2269,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "ac21e8e4-fe32-41f4-9887-ee077677735c": ApplicationConfigFrame(**BUDGET_PLAN_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "b9fa8d62-4387-4fa5-9be3-d76d77614687": ApplicationConfigFrame(**REPORT_BUDGET_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "20ad27de-ea68-48a9-82bf-8833d7ab6da7": ApplicationConfigFrame(**REGISTRATION_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

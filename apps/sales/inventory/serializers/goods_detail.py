@@ -3,8 +3,10 @@ from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSe
 from apps.sales.inventory.models import (
     GoodsReceipt,
     GoodsReceiptWarehouse,
-    GoodsRegistrationSerial,
-    GoodsRegistrationGeneral
+    GReItemProductWarehouseSerial,
+    GReItemProductWarehouse,
+    NoneGReItemProductWarehouse,
+    NoneGReItemProductWarehouseSerial
 )
 
 
@@ -99,6 +101,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         del item['serial_id']
         if item.get('vendor_serial_number') and item.get('serial_number'):
             if not ProductWareHouseSerial.objects.filter(
+                    product_warehouse__product=prd_wh.product,
                     serial_number=item.get('serial_number')
             ).exists():
                 bulk_info_new_serial.append(
@@ -115,14 +118,22 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
-        all_serial = prd_wh.product_warehouse_serial_product_warehouse.all()
         bulk_info_new_serial = []
         for item in serial_data:
-            serial_id = item.get('serial_id')
-            if serial_id:
-                cls.update_serial(item, all_serial, serial_id, goods_receipt_id)
+            if item.get('serial_id'):
+                cls.update_serial(
+                    item,
+                    prd_wh.product_warehouse_serial_product_warehouse.all(),
+                    item.get('serial_id'),
+                    goods_receipt_id
+                )
             else:
-                bulk_info_new_serial = cls.create_serial(item, prd_wh, goods_receipt_id, bulk_info_new_serial)
+                bulk_info_new_serial = cls.create_serial(
+                    item,
+                    prd_wh,
+                    goods_receipt_id,
+                    bulk_info_new_serial
+                )
         created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
         gr_wh = GoodsReceiptWarehouse.objects.filter(
             goods_receipt_id=goods_receipt_id,
@@ -136,23 +147,39 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             so_item = pr_prd.sale_order_product if pr_prd and hasattr(
                 pr_prd, 'sale_order_product'
             ) else None
-            gre_general = GoodsRegistrationGeneral.objects.filter(
+            gre_item_prd_wh = GReItemProductWarehouse.objects.filter(
                 gre_item__so_item=so_item,
                 warehouse=prd_wh.warehouse
             ).first() if so_item else None
-            if gre_general:
+            if gre_item_prd_wh:
+                # hàng đăng kí
                 bulk_info_regis = []
                 for serial in created_sn:
                     bulk_info_regis.append(
-                        GoodsRegistrationSerial(
-                            gre_general=gre_general,
+                        GReItemProductWarehouseSerial(
+                            gre_item_prd_wh=gre_item_prd_wh,
                             sn_registered=serial,
-                            goods_registration=gre_general.goods_registration
+                            goods_registration=gre_item_prd_wh.goods_registration
                         )
                     )
-                GoodsRegistrationSerial.objects.bulk_create(bulk_info_regis)
+                GReItemProductWarehouseSerial.objects.bulk_create(bulk_info_regis)
             else:
-                raise serializers.ValidationError({'Gre general': "Can not find gre general."})
+                # kiểm tra hàng vào kho chung
+                none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
+                    product=prd_wh.product,
+                    warehouse=prd_wh.warehouse
+                ).first()
+                if none_gre_item_prd_wh:
+                    # hàng đăng kí
+                    bulk_info_none_regis = []
+                    for serial in created_sn:
+                        bulk_info_none_regis.append(
+                            NoneGReItemProductWarehouseSerial(
+                                none_gre_item_prd_wh=none_gre_item_prd_wh,
+                                sn_mapped=serial
+                            )
+                        )
+                    NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
 
         if len(bulk_info_new_serial) > 0:
             prd_wh.receipt_amount += len(bulk_info_new_serial)
