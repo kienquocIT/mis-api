@@ -569,9 +569,15 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
         # cập nhập sl mượn của dự án A
         if validated_data['quantity'] > 0:
-            instance.gre_item_source.out_registered += borrow_quantity
+            instance.gre_item_source.out_registered += cast_quantity_to_unit(
+                validated_data['uom'],
+                validated_data['quantity']
+            )
         else:
-            instance.gre_item_source.out_registered -= borrow_quantity
+            instance.gre_item_source.out_registered -= cast_quantity_to_unit(
+                validated_data['uom'],
+                validated_data['quantity'] * (-1)
+            )
         instance.gre_item_source.out_available = (
             instance.gre_item_source.out_registered - instance.gre_item_source.out_delivered
         )
@@ -805,9 +811,15 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
         # cập nhập sl mượn của dự án A
         if validated_data['quantity'] > 0:
-            instance.gre_item_source.out_registered += borrow_quantity
+            instance.gre_item_source.out_registered += cast_quantity_to_unit(
+                validated_data['uom'],
+                validated_data['quantity']
+            )
         else:
-            instance.gre_item_source.out_registered -= borrow_quantity
+            instance.gre_item_source.out_registered -= cast_quantity_to_unit(
+                validated_data['uom'],
+                validated_data['quantity'] * (-1)
+            )
         instance.gre_item_source.out_available = (
                 instance.gre_item_source.out_registered - instance.gre_item_source.out_delivered
         )
