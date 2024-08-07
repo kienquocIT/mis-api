@@ -131,7 +131,9 @@ class Group(TenantAbstractModel):
                         expense_item=item.expense_item,
                         company_month_list=item.group_month_list,
                         company_quarter_list=item.group_quarter_list,
-                        company_year=item.group_year
+                        company_year=item.group_year,
+                        tenant_id=budget_plan.tenant_id,
+                        company_id=budget_plan.company_id
                     )
                 )
                 order += 1

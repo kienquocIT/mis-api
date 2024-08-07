@@ -206,7 +206,11 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
             expense_item_id_list_existed.append(item['expense_item_id'])
             bulk_info.append(
                 BudgetPlanGroupExpense(
-                    budget_plan=instance, budget_plan_group=budget_plan_group, **item
+                    budget_plan=instance,
+                    budget_plan_group=budget_plan_group,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    **item
                 )
             )
         if len(set(expense_item_id_list_existed)) == len(bulk_info):
@@ -233,7 +237,9 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
                         expense_item=item.expense_item,
                         company_month_list=item.group_month_list,
                         company_quarter_list=item.group_quarter_list,
-                        company_year=item.group_year
+                        company_year=item.group_year,
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id
                     )
                 )
                 order += 1
