@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from apps.core.forms.i18n import FormMsg
 from apps.core.forms.models import Form, FormPublished, FormPublishedEntries
@@ -120,7 +120,7 @@ class FormDetailSerializer(serializers.ModelSerializer):
         model = Form
         fields = (
             'id', 'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required',
+            'authentication_required', 'authentication_type',
             'submit_only_one', 'edit_submitted',
             'display_referrer_name', 'display_creator',
             'theme_selected', 'theme_assets', 'page',
@@ -156,7 +156,8 @@ class FormDetailForEntriesSerializer(serializers.ModelSerializer):
         model = Form
         fields = (
             'id', 'title', 'remark',
-            'authentication_required', 'submit_only_one', 'edit_submitted',
+            'authentication_required',  'authentication_type',
+            'submit_only_one', 'edit_submitted',
             'display_referrer_name', 'display_creator',
             'configs_order', 'configs'
         )
@@ -235,7 +236,7 @@ class FormCreateSerializer(serializers.ModelSerializer):
         model = Form
         fields = (
             'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required',
+            'authentication_required', 'authentication_type',
             'submit_only_one', 'edit_submitted',
             'entries_default_show',
             'theme_selected', 'theme_assets', 'page',
@@ -305,7 +306,7 @@ class FormUpdateSerializer(serializers.ModelSerializer):
         model = Form
         fields = (
             'title', 'remark', 'label_placement', 'instruction_placement',
-            'authentication_required',
+            'authentication_required', 'authentication_type',
             'submit_only_one', 'edit_submitted',
             'entries_default_show', 'page',
             'configs_order', 'configs',
@@ -464,6 +465,12 @@ class FormPublishedRuntimeDetailSerializer(serializers.ModelSerializer):
     def get_authentication_required(cls, obj):
         return obj.form.authentication_required
 
+    authentication_type = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_authentication_type(cls, obj):
+        return obj.form.authentication_type
+
     edit_submitted = serializers.SerializerMethodField()
 
     @classmethod
@@ -487,7 +494,7 @@ class FormPublishedRuntimeDetailSerializer(serializers.ModelSerializer):
             'html_text', 'theme_assets',
             'form_title', 'form_remark',
             'company_title', 'company_logo',
-            'authentication_required',
+            'authentication_required', 'authentication_type',
             'edit_submitted',
             'is_public', 'is_iframe',
             'submitted_data',
@@ -520,21 +527,37 @@ class FormPublishedEntriesCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         published_obj = self.context['published_obj']
         user_obj = self.context.get('user_obj', None)
+        obj_auth = self.context.get('obj_auth', None)
         body_data = attrs.pop('body_data', {})
         if published_obj:
             if published_obj.form.authentication_required is True:
-                if not user_obj:
-                    raise serializers.ValidationError(
-                        {
-                            'detail': FormMsg.FORM_REQUIRE_AUTHENTICATED,
-                        }
-                    )
-                if published_obj.form.submit_only_one is True:
-                    submitted = FormPublishedEntries.objects.filter(published=published_obj, user_created=user_obj)
-                    if submitted.exists():
-                        raise serializers.ValidationError({
-                            'detail': FormMsg.FORM_SUBMIT_ONLY_ONE_PER_USER,
-                        })
+                if published_obj.form.authentication_type == 'system':
+                    if not user_obj:
+                        raise exceptions.PermissionDenied('system')
+                    if published_obj.form.submit_only_one is True:
+                        submitted = FormPublishedEntries.objects.filter(published=published_obj, user_created=user_obj)
+                        if submitted.exists():
+                            raise serializers.ValidationError(
+                                {
+                                    'detail': FormMsg.FORM_SUBMIT_ONLY_ONE_PER_USER,
+                                }
+                            )
+                elif published_obj.form.authentication_type == 'email':
+                    if not obj_auth:
+                        raise exceptions.PermissionDenied('email')
+                    if published_obj.form.submit_only_one is True:
+                        submitted = FormPublishedEntries.objects.filter(
+                            published=published_obj,
+                            creator_email=obj_auth.email
+                        )
+                        if submitted.exists():
+                            raise serializers.ValidationError(
+                                {
+                                    'detail': FormMsg.FORM_SUBMIT_ONLY_ONE_PER_USER,
+                                }
+                            )
+                else:
+                    raise exceptions.PermissionDenied()
 
             cls = FormValidation(configs_order=published_obj.form.configs_order, configs=published_obj.form.configs)
             attrs['body_data'] = cls.runtime__valid(body_data=body_data)
@@ -543,6 +566,7 @@ class FormPublishedEntriesCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         published_obj = self.context['published_obj']
         user_obj = self.context.get('user_obj', None)
+        obj_auth = self.context.get('obj_auth', None)
         if published_obj:
             create_data = {
                 **validated_data,
@@ -550,7 +574,8 @@ class FormPublishedEntriesCreateSerializer(serializers.ModelSerializer):
                 'tenant': published_obj.tenant,
                 'company': published_obj.company,
                 'employee_created_id': user_obj.employee_current_id if user_obj else None,
-                'user_created': user_obj,
+                'user_created': user_obj if user_obj else None,
+                'creator_email': obj_auth.email if obj_auth else None,
             }
             instance = FormPublishedEntries.objects.create(**create_data)
             return instance
@@ -613,4 +638,4 @@ class FormEntriesListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FormPublishedEntries
-        fields = ('id', 'body_data', 'date_created', 'ref_name', 'user_created')
+        fields = ('id', 'body_data', 'date_created', 'ref_name', 'user_created', 'creator_email')
