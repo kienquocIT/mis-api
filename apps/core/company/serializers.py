@@ -12,7 +12,7 @@ from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DisperseModel, AttMsg, FORMATTING
+from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
@@ -300,6 +300,15 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'fax'
         )
 
+    @classmethod
+    def validate_code(cls, attrs):
+        attrs = attrs.lower()
+        if Company.objects.filter(code=attrs).exists():
+            raise serializers.ValidationError({
+                'code': BaseMsg.CODE_IS_EXISTS,
+            })
+        return attrs
+
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
@@ -337,6 +346,16 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'phone',
             'fax'
         )
+
+    def validate_code(self, attrs):
+        attrs = attrs.lower()
+        if Company.objects.filter(code=attrs).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(
+                {
+                    'code': BaseMsg.CODE_IS_EXISTS,
+                }
+            )
+        return attrs
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):
