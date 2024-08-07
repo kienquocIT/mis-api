@@ -40,7 +40,7 @@ class BudgetPlanGroup(SimpleAbstractModel):
         permissions = ()
 
 
-class BudgetPlanCompanyExpense(SimpleAbstractModel):
+class BudgetPlanCompanyExpense(DataAbstractModel):
     order = models.IntegerField(default=0)
     budget_plan = models.ForeignKey(
         BudgetPlan,
@@ -64,7 +64,7 @@ class BudgetPlanCompanyExpense(SimpleAbstractModel):
         permissions = ()
 
 
-class BudgetPlanGroupExpense(SimpleAbstractModel):
+class BudgetPlanGroupExpense(DataAbstractModel):
     order = models.IntegerField(default=0)
     budget_plan = models.ForeignKey(
         BudgetPlan,
