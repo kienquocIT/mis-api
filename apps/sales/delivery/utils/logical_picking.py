@@ -7,6 +7,7 @@ from apps.shared.translations.sales import DeliverMsg
 
 
 class PickingHandler:
+    # PRODUCT WAREHOUSE
     @classmethod
     def push_pw_picked_ready(cls, instance, product_update):
         prod_id_temp = {}
@@ -39,15 +40,20 @@ class PickingHandler:
                     else:
                         raise serializers.ValidationError({'products': DeliverMsg.ERROR_OUT_STOCK})
                     # case regis
-                    for picking_data in value.get('picking_data', []):
-                        prod_regis = prod_warehouse.warehouse.gre_item_prd_wh_warehouse.filter(
-                            gre_item__so_item__sale_order_id=picking_data.get('sale_order', None),
-                            gre_item__product_id=prod_warehouse.product_id,
-                        ).first()
-                        if prod_regis:
-                            prod_regis.picked_ready += picking_data.get('done', 0)
-                            prod_regis.save(update_fields=['picked_ready'])
+                    PickingHandler.push_regis_picked_ready(value=value, prod_warehouse=prod_warehouse)
         ProductWareHouse.objects.bulk_update(prod_wh_update, fields=['picked_ready'])
+        return True
+
+    @classmethod
+    def push_regis_picked_ready(cls, value, prod_warehouse):
+        for picking_data in value.get('picking_data', []):
+            prod_regis = prod_warehouse.warehouse.gre_item_prd_wh_warehouse.filter(
+                gre_item__so_item__sale_order_id=picking_data.get('sale_order', None),
+                gre_item__product_id=prod_warehouse.product_id,
+            ).first()
+            if prod_regis:
+                prod_regis.picked_ready += picking_data.get('done', 0)
+                prod_regis.save(update_fields=['picked_ready'])
         return True
 
     @classmethod
