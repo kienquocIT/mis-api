@@ -44,9 +44,13 @@ def decorator_run_workflow(func):
                                 employee_inherit=instance.employee_inherit,
                             )
                             call_task_background(
-                                call_new_runtime,
-                                *[str(runtime_obj.id)],
-                                **{'countdown': 2}
+                                my_task=call_new_runtime,
+                                task_config={
+                                    'countdown': 2,
+                                },
+                                **{
+                                    'runtime_id': str(runtime_obj.id),
+                                }
                             )
             except Exception as err:
                 msg = f'[decorator_run_workflow] Errors: {str(err)}, instance: {str(instance)}'

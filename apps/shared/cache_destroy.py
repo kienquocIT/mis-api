@@ -17,5 +17,7 @@ __all__ = [
 def destroy_cache(sender, instance, **kwargs):  # pylint: disable=W0613
     return call_task_background(
         background_destroy_cache_many_key,
-        *[f'{instance._meta.app_label}_{str(instance.__class__.__name__)}'.lower()],
+        **{
+            'tbl_name': f'{instance._meta.app_label}_{str(instance.__class__.__name__)}'.lower(),
+        }
     )

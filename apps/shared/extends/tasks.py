@@ -14,7 +14,7 @@ __all__ = ['call_task_background', 'check_active_celery_worker']
 
 
 def call_task_background(
-        my_task: callable, *args, task_config: dict[str, any] = None, **kwargs
+        my_task: callable, task_config: dict[str, any] = None, **kwargs
 ) -> Union[Exception, bool]:
     """
     Function support call task with async. Then update args and kwargs of log records by Task ID.
@@ -29,18 +29,18 @@ def call_task_background(
     }
 
     if settings.DEBUG_BG_TASK:
-        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), args, kwargs)
+        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), kwargs)
 
     _id = kwargs.pop('task_id', str(uuid4()))
     if isinstance(my_task, Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             if settings.DEBUG_BG_TASK:
-                data = my_task(*args, **kwargs)
+                data = my_task(**kwargs)
                 print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), data)
                 return data
-            return my_task(*args, **kwargs)
+            return my_task(**kwargs)
         my_task.apply_async(
-            args=args, kwargs=kwargs,
+            kwargs=kwargs,
             task_id=_id,
             # link=my_task_result.s(
             #     _id,
