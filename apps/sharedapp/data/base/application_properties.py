@@ -2,7 +2,10 @@ from .application_properties_params import (
     Quotation_data__params,
     Bastion_data_params,
     SaleOrder_data__params,
-    AdvancePayment_data__params, Payment_data__params, IA_data__params, Goods_Transfer_data__params,
+    AdvancePayment_data__params,
+    Payment_data__params,
+    IA_data__params,
+    Goods_Transfer_data__params,
     Goods_Return_data__params
 )
 
@@ -1455,125 +1458,6 @@ AppProp_Eoffice_Business_trip_data = {
     },
 }
 
-AppProp_SaleData_Advance_Payment_data = {
-    "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Title",
-        "code": "title",
-        "type": 1,
-    },
-    "ceba8e0a-1613-4903-bccd-d6895b236abf": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Advance payment type",
-        "code": "advance_payment_type",
-        "type": 6,
-    },
-    "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Supplier",
-        "code": "supplier",
-        'type': 5,
-        'content_type': 'saledata.Account',
-    },
-    "3dca605f-1a45-454c-9909-973904fcd820": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Advance payment method",
-        "code": "method",
-        "type": 6,
-    },
-    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Return date",
-        "code": "return_date",
-        "type": 2,
-    },
-    # tab line detail
-    "9e7f4f88-2ae1-4f9d-a512-ef8e4c7b99a1": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Money gave",
-        "code": "money_gave",
-        "type": 3,
-    },
-    "51840528-2a9f-448b-afcb-ad0f421fd523": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Tab detail",
-        "code": "expense_valid_list",
-        "type": 1,
-    },
-    **AdvancePayment_data__params
-}
-
-AppProp_SaleData_Payment_data = {
-    "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Title",
-        "code": "title",
-        "type": 1,
-    },
-    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Supplier",
-        "code": "supplier",
-        'type': 5,
-        'content_type': 'saledata.Account',
-    },
-    "85556007-ef17-427d-ac7e-c65c4b10c210": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Internal payment",
-        "code": "is_internal_payment",
-        'type': 4,
-    },
-    "67099494-859c-4ad9-adad-92175230d08f": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Employee payment",
-        "code": "employee_payment",
-        'type': 5,
-        'content_type': 'hr.Employee',
-    },
-    "3811bd07-bab6-452e-89a4-6352c2c667d3": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Payment method",
-        "code": "method",
-        "type": 6,
-    },
-    # tab line detail
-    "09b7660e-adde-4515-bcf1-764020f71e71": {
-        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Tab detail",
-        "code": "payment_expense_valid_list",
-        "type": 1,
-    },
-    **Payment_data__params
-}
-
-AppProp_SaleData_Return_Payment_data = {
-    "192965a3-95ca-47a7-9247-58e1cbf652d4": {
-        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
-        "title": "Title",
-        "code": "title",
-        "type": 1,
-    },
-    "c5c05715-bf9d-4c08-9b6b-4cfa649bf806": {
-        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
-        "title": "Return payment method",
-        "code": "method",
-        "type": 6,
-    },
-    # tab line detail
-    "6ae7e6cc-d3ff-417f-8407-eee143078889": {
-        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
-        "title": "Tab detail",
-        "code": "cost",
-        "type": 1,
-    },
-    "0db6a091-3f1a-4948-bcc9-716287ab9427": {
-        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
-        "title": "Money received",
-        "code": "money_received",
-        "type": 3,
-    },
-}
-
 AppProp_AssetTools_Provide_data = {
     "0ad5bb6a-d55e-4baf-b102-5d7d73884793": {
         "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
@@ -1726,6 +1610,186 @@ AppProp_Sales_Project_data = {
 
 AppProp_Sales_Project_Baseline_data = {}
 
+# haind
+AppProp_SaleData_Advance_Payment_data = {
+    "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Title",
+        "code": "title",
+        "type": 1,
+    },
+    "ceba8e0a-1613-4903-bccd-d6895b236abf": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Advance payment type",
+        "code": "advance_payment_type",
+        "type": 6,
+    },
+    "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "3dca605f-1a45-454c-9909-973904fcd820": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Advance payment method",
+        "code": "method",
+        "type": 6,
+    },
+    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Return date",
+        "code": "return_date",
+        "type": 2,
+    },
+    # tab line detail
+    "51840528-2a9f-448b-afcb-ad0f421fd523": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Tab detail",
+        "code": "expense_valid_list",
+        "type": 1,
+    },
+    **AdvancePayment_data__params
+}
+
+AppProp_SaleData_AP_Invoice_data = {
+    "2308d013-d7a8-4f45-8f9d-8dc579833a5a": {
+        "application_id": "c05a6cf4efff47e0afcf072017b8141a",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_AR_Invoice_data = {
+    "813ecad6-989a-4e70-88d1-2b66efa3c650": {
+        "application_id": "1d7291dd1e59491783a31cc07cfc4638",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Goods_Issue_data = {
+    "66cd789a-eb63-4ff0-a14d-68da90f33c7b": {
+        "application_id": "f26d7ce4e990420a8ec62dc307467f2c",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Goods_Return_data = {
+    **Goods_Return_data__params
+}
+
+AppProp_SaleData_Goods_Transfer_data = {
+    **Goods_Transfer_data__params
+}
+
+AppProp_SaleData_IA_data = {
+    **IA_data__params
+}
+
+AppProp_SaleData_Payment_data = {
+    "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "85556007-ef17-427d-ac7e-c65c4b10c210": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Internal payment",
+        "code": "is_internal_payment",
+        'type': 4,
+    },
+    "67099494-859c-4ad9-adad-92175230d08f": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Employee payment",
+        "code": "employee_payment",
+        'type': 5,
+        'content_type': 'hr.Employee',
+    },
+    "3811bd07-bab6-452e-89a4-6352c2c667d3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Payment method",
+        "code": "method",
+        "type": 6,
+    },
+    # tab line detail
+    "09b7660e-adde-4515-bcf1-764020f71e71": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Tab detail",
+        "code": "payment_expense_valid_list",
+        "type": 1,
+    },
+    **Payment_data__params
+}
+
+AppProp_SaleData_Purchase_Quotation_data = {
+    "4cce8c82-fd38-4e07-8ccc-4d15dea27d09": {
+        "application_id": "f52a966a2eb24851852deff61efeb896",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Purchase_Quotation_Request_data = {
+    "62251ec1-9daa-4992-a8ea-43bb5b2803eb": {
+        "application_id": "d78bd5f38a8d48a3ad62b50d576ce173",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Purchase_Request_data = {
+    "89cbbeca-c419-479d-bc25-7cfd71bc597c": {
+        "application_id": "fbff9b3ff7c9414f995996d3ec2fb8bf",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Return_Payment_data = {
+    "192965a3-95ca-47a7-9247-58e1cbf652d4": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "c5c05715-bf9d-4c08-9b6b-4cfa649bf806": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Return payment method",
+        "code": "method",
+        "type": 6,
+    },
+    # tab line detail
+    "6ae7e6cc-d3ff-417f-8407-eee143078889": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Tab detail",
+        "code": "cost",
+        "type": 1,
+    },
+    "0db6a091-3f1a-4948-bcc9-716287ab9427": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Money received",
+        "code": "money_received",
+        "type": 3,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1735,25 +1799,22 @@ ApplicationProperty_data = {
     **AppProp_SaleData_SaleOrder_data,
     **AppProp_Eoffice_Leave_data,
     **AppProp_Eoffice_Business_trip_data,
-    **AppProp_SaleData_Advance_Payment_data,
-    **AppProp_SaleData_Payment_data,
-    **AppProp_SaleData_Return_Payment_data,
     **AppProp_AssetTools_Provide_data,
     **AppProp_AssetTools_Delivery_data,
     **AppProp_AssetTools_Return_data,
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
     **AppProp_SaleData_Delivery_data,
-}
-
-AppProp_SaleData_IA_data = {
-    **IA_data__params
-}
-
-AppProp_SaleData_Goods_Transfer_data = {
-    **Goods_Transfer_data__params
-}
-
-AppProp_SaleData_Goods_Return_data = {
-    **Goods_Return_data__params
+    # haind
+    **AppProp_SaleData_Advance_Payment_data,
+    **AppProp_SaleData_AP_Invoice_data,
+    **AppProp_SaleData_AR_Invoice_data,
+    **AppProp_SaleData_Goods_Issue_data,
+    **AppProp_SaleData_Goods_Return_data,
+    **AppProp_SaleData_Goods_Transfer_data,
+    **AppProp_SaleData_Payment_data,
+    **AppProp_SaleData_Purchase_Quotation_data,
+    **AppProp_SaleData_Purchase_Quotation_Request_data,
+    **AppProp_SaleData_Purchase_Request_data,
+    **AppProp_SaleData_Return_Payment_data,
 }

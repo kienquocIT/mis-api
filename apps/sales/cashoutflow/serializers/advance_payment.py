@@ -263,8 +263,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'money_gave',
             'opportunity_mapped',
             'quotation_mapped',
-            'sale_order_mapped',
-            'system_status'
+            'sale_order_mapped'
         )
 
     @classmethod
@@ -496,8 +495,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             'supplier',
             'method',
             'return_date',
-            'money_gave',
-            'system_status',
+            'money_gave'
         )
 
     @classmethod

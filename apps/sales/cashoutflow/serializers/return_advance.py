@@ -82,7 +82,6 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
             'method',
             'employee_created_id',
             'employee_inherit',
-            'system_status',
             'money_received',
             'cost',
         )
@@ -147,7 +146,6 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'employee_created',
             'employee_inherit',
             'method',
-            'system_status',
             'money_received',
             'date_created',
             'cost',
@@ -219,8 +217,7 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'method',
             'money_received',
-            'cost',
-            'system_status'
+            'cost'
         )
 
     def update(self, instance, validated_data):

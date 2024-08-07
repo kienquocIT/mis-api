@@ -3,7 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
 __all__ = [
@@ -105,7 +106,7 @@ class GoodsIssueProductSerializer(serializers.ModelSerializer):
             )
 
 
-class GoodsIssueListSerializer(serializers.ModelSerializer):
+class GoodsIssueListSerializer(AbstractListSerializerModel):
     goods_issue_type = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     raw_system_status = serializers.SerializerMethodField()
@@ -135,7 +136,7 @@ class GoodsIssueListSerializer(serializers.ModelSerializer):
         return obj.system_status
 
 
-class GoodsIssueCreateSerializer(serializers.ModelSerializer):
+class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer())
     inventory_adjustment = serializers.UUIDField(required=False)
 
@@ -147,8 +148,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
             'note',
             'goods_issue_type',
             'inventory_adjustment',
-            'goods_issue_datas',
-            'system_status'
+            'goods_issue_datas'
         )
 
     @classmethod
@@ -212,7 +212,6 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'goods_issue_type',
             'goods_issue_datas',
             'inventory_adjustment',
-            'system_status',
         )
 
     @classmethod
@@ -257,7 +256,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
         } for item in obj.goods_issue_product.all()]
 
 
-class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
+class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(required=False)
     note = serializers.CharField(required=False, allow_blank=True)
     goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer())
@@ -267,8 +266,7 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'note',
-            'goods_issue_datas',
-            'system_status'
+            'goods_issue_datas'
         )
 
     @classmethod

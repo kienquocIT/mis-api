@@ -7,10 +7,13 @@ from datetime import datetime
 import requests
 
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, \
     ARInvoiceSign
-from apps.shared import SaleMsg, SYSTEM_STATUS
+from apps.shared import SaleMsg, SYSTEM_STATUS, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    AbstractListSerializerModel
 
 __all__ = [
     'DeliveryListSerializerForARInvoice',
@@ -21,7 +24,7 @@ __all__ = [
 ]
 
 
-class ARInvoiceListSerializer(serializers.ModelSerializer):
+class ARInvoiceListSerializer(AbstractListSerializerModel):
     customer_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
@@ -147,7 +150,7 @@ def read_money_vnd(num):
     return result.strip().capitalize()
 
 
-class ARInvoiceCreateSerializer(serializers.ModelSerializer):
+class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = ARInvoice
         fields = (
@@ -160,8 +163,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status',
-
             'customer_code',
             'customer_name',
             'buyer_name',
@@ -176,7 +177,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             validate_data['is_free_input'] = True
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         number = ARInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False).count() + 1
         ar_invoice = ARInvoice.objects.create(**validated_data, code=f'AR-00{number}')
@@ -193,7 +194,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
         return ar_invoice
 
 
-class ARInvoiceDetailSerializer(serializers.ModelSerializer):
+class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
     delivery_mapped = serializers.SerializerMethodField()
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
@@ -215,12 +216,10 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_info',
             'invoice_example',
-            'system_status',
             'is_created_einvoice',
             'delivery_mapped',
             'item_mapped',
             'attachment',
-
             'is_free_input',
             'customer_code',
             'customer_name',
@@ -306,7 +305,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         return {}
 
 
-class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
+class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = ARInvoice
         fields = (
@@ -317,8 +316,6 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status',
-
             'customer_code',
             'customer_name',
             'buyer_name',
@@ -500,6 +497,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)

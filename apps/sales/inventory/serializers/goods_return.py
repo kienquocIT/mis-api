@@ -3,12 +3,17 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import WareHouse
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile, GoodsReturnProductDetail
+from apps.sales.inventory.models import (
+    GoodsReturn, GoodsReturnAttachmentFile, GoodsReturnProductDetail
+)
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.shared import (
+    SaleMsg, SYSTEM_STATUS,
+    AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
+)
 
 
-class GoodsReturnListSerializer(serializers.ModelSerializer):
+class GoodsReturnListSerializer(AbstractListSerializerModel):
     sale_order = serializers.SerializerMethodField()
     delivery = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
@@ -147,7 +152,7 @@ def create_item_mapped(goods_return):
     return True
 
 
-class GoodsReturnCreateSerializer(serializers.ModelSerializer):
+class GoodsReturnCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150, required=True)
 
     class Meta:
@@ -158,7 +163,6 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             'sale_order',
             'note',
             'delivery',
-            'system_status',
             'product_detail_list',
             'data_line_detail_table'
         )
@@ -190,7 +194,6 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
             'sale_order',
             'note',
             'delivery',
-            'system_status',
             'date_created',
             'product_detail_list',
             'data_line_detail_table',
@@ -231,7 +234,7 @@ class GoodsReturnDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
+class GoodsReturnUpdateSerializer(AbstractCreateSerializerModel):
 
     class Meta:
         model = GoodsReturn
@@ -241,7 +244,6 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
             'sale_order',
             'note',
             'delivery',
-            'system_status',
             'product_detail_list',
             'data_line_detail_table'
         )

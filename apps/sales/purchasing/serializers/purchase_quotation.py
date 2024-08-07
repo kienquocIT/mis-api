@@ -1,11 +1,14 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import (
     PurchaseQuotation, PurchaseQuotationProduct
 )
+from apps.shared import AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
-class PurchaseQuotationListSerializer(serializers.ModelSerializer):
+class PurchaseQuotationListSerializer(AbstractListSerializerModel):
     supplier_mapped = serializers.SerializerMethodField()
     purchase_quotation_request_mapped = serializers.SerializerMethodField()
 
@@ -43,7 +46,7 @@ class PurchaseQuotationListSerializer(serializers.ModelSerializer):
         } if obj.supplier_mapped else {}
 
 
-class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
+class PurchaseQuotationDetailSerializer(AbstractDetailSerializerModel):
     supplier_mapped = serializers.SerializerMethodField()
     contact_mapped = serializers.SerializerMethodField()
     purchase_quotation_request_mapped = serializers.SerializerMethodField()
@@ -66,7 +69,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
             'products_mapped',
             'pretax_price',
             'taxes_price',
-            'total_price'
+            'total_price',
         )
 
     @classmethod
@@ -145,7 +148,7 @@ def create_pq_map_products(purchase_quotation_obj, product_list):
     return True
 
 
-class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
+class PurchaseQuotationCreateSerializer(AbstractCreateSerializerModel):
 
     class Meta:
         model = PurchaseQuotation
@@ -188,6 +191,7 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         if PurchaseQuotation.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'PQ.CODE.0001'
@@ -203,7 +207,7 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
         return purchase_quotation
 
 
-class PurchaseQuotationUpdateSerializer(serializers.ModelSerializer):
+class PurchaseQuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     class Meta:
         model = PurchaseQuotation
@@ -246,6 +250,7 @@ class PurchaseQuotationUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -266,6 +271,7 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
             'product_id',
             'uom',
             'unit_price',
+            'system_status'
         )
 
     @classmethod

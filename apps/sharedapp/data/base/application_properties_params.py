@@ -597,7 +597,7 @@ AdvancePayment_data__params = {
         "type": 1,
         "is_print": True,
     },
-    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
+    "366cffa9-d60e-4128-b99b-09aa99d1e4fd": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Return date",
         "code": "return_date",
@@ -617,7 +617,7 @@ AdvancePayment_data__params = {
 
 Payment_data__params = {
     "f5910fbd-a7b2-432f-882f-e48a87b8532b": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Code",
         "code": "code",
         "remark": "",
@@ -625,7 +625,7 @@ Payment_data__params = {
         "is_print": True,
     },
     "5761fdcb-47cf-449b-a07c-575a3dc3cd4c": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Title",
         "code": "title",
         "remark": "",
@@ -633,7 +633,7 @@ Payment_data__params = {
         "is_print": True,
     },
     "4b86ff76-3f41-4dd8-9f12-ae4e26504065": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Sale code",
         "code": "sale_code",
         "remark": "",
@@ -641,7 +641,7 @@ Payment_data__params = {
         "is_print": True,
     },
     "0c48d17c-71de-4ee0-952f-7f7790903e2f": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Payment method",
         "code": "method",
         "remark": "",
@@ -649,7 +649,7 @@ Payment_data__params = {
         "is_print": True,
     },
     "154d05de-7c50-45d9-b5d3-25b754ca133f": {
-        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Payment value",
         "code": "payment_value",
         "remark": "",
