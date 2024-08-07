@@ -26,22 +26,22 @@ def handle_form_authenticate(request, obj, tenant_code):
     if obj.form.authentication_required is True:
         if obj.form.authentication_type == 'system':
             if not request.user or (request.user and not request.user.is_authenticated):
-                raise exceptions.AuthenticationFailed(detail='system')
+                raise serializers.ValidationError({'authenticate_fail_code': 'system'})
             tenant_current = getattr(request.user, 'tenant_current', None)
             if not tenant_current or not hasattr(tenant_current, 'code'):
-                raise exceptions.PermissionDenied
+                raise serializers.ValidationError({'authenticate_fail_code': 'system'})
             if tenant_current.code.lower() != tenant_code:
-                raise exceptions.PermissionDenied
+                raise serializers.ValidationError({'authenticate_fail_code': 'system'})
             request_user = request.user
         elif obj.form.authentication_type == 'email':
             if not auth_form:
-                raise exceptions.AuthenticationFailed(detail='email')
+                raise serializers.ValidationError({'authenticate_fail_code': 'email'})
             try:
                 obj_auth = FormPublishAuthenticateEmail.objects.get(pk=auth_form)
             except FormPublishAuthenticateEmail.DoesNotExist:
-                raise exceptions.AuthenticationFailed(detail='email')
+                raise serializers.ValidationError({'authenticate_fail_code': 'email'})
             if obj_auth.is_expired() is True:
-                raise exceptions.AuthenticationFailed(detail='email')
+                raise serializers.ValidationError({'authenticate_fail_code': 'email'})
     return {
         'request_user': request_user,
         'obj_auth': obj_auth
