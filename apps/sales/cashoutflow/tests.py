@@ -107,7 +107,10 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'expense_items',
                 'opportunity_id',
                 'system_status',
-                'system_status_raw'
+                'system_status_raw',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -489,6 +492,9 @@ class PaymentTestCase(AdvanceTestCase):
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -762,8 +768,17 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             [
-                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'system_status',
-                'return_total'
+                'id',
+                'title',
+                'code',
+                'advance_payment',
+                'date_created',
+                'money_received',
+                'system_status',
+                'return_total',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )

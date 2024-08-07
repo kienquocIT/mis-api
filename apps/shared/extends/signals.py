@@ -33,7 +33,7 @@ from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
     SaleOrderIndicatorConfig, ORIndicatorDefaultData,
 )
-from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus, OpportunityTask
+from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 
 from .caching import Caching
 from .push_notify import TeleBotPushNotify
@@ -44,10 +44,10 @@ from apps.core.mailer.tasks import send_mail_otp
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
-from apps.sales.project.models import ProjectMapMember, ProjectMapTasks, ProjectWorks, ProjectGroups, ProjectMapGroup
+from apps.sales.project.models import ProjectMapMember, ProjectMapGroup, ProjectMapWork, ProjectConfig
 from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
-from apps.sales.project.extend_func import calc_weight_all
+from ...sales.project.extend_func import calc_weight_all, calc_rate_project
 
 logger = logging.getLogger(__name__)
 
@@ -899,6 +899,12 @@ class ConfigDefaultData:
                 )
         return True
 
+    def project_config(self):
+        ProjectConfig.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant
+        )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -917,6 +923,7 @@ class ConfigDefaultData:
         self.working_calendar_config()
         self.asset_tools_config()
         self.make_sure_workflow_apps()
+        self.project_config()
         return True
 
 
@@ -1192,4 +1199,12 @@ def new_entry_form_publish(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=ProjectMapGroup)
 def project_group_event_destroy(sender, instance, **kwargs):
     calc_weight_all(instance.project, True)
+    calc_rate_project(instance.project)
     print('re calculator weight id Done')
+
+
+@receiver(post_delete, sender=ProjectMapWork)
+def project_work_event_destroy(sender, instance, **kwargs):
+    calc_weight_all(instance.project, True)
+    calc_rate_project(instance.project)
+    print('re calculator rate id Done')

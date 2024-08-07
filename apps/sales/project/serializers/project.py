@@ -101,6 +101,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'tasks',
             'system_status',
             'baseline',
+            'date_created'
         )
 
 
@@ -156,6 +157,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     members = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     project_pm = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
 
     @classmethod
     def get_groups(cls, obj):
@@ -234,6 +236,11 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
         if obj.project_pm:
             return obj.project_pm_data
         return {}
+
+    def get_system_status(self, obj):
+        if obj:
+            return self.instance.project_status
+        return ''
 
     class Meta:
         model = Project
@@ -351,7 +358,8 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         expense_lst = validated_data.pop('expense_data', None)
         work_expense_lst = validated_data.pop('work_expense_data', None)
         delete_expense_lst = validated_data.pop('delete_expense_lst', None)
-
+        system_status = validated_data.pop('system_status', None)
+        validated_data['project_status'] = system_status
         # - delete all expense(user delete)
         # - create and update
         # - update work info

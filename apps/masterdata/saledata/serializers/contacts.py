@@ -122,6 +122,7 @@ class ContactListSerializer(serializers.ModelSerializer):
             'owner',
             'account_name',
             'mobile',
+            'phone',
             'email',
             'report_to'
         )

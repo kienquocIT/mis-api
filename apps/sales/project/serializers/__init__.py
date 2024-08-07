@@ -5,3 +5,4 @@ from .project_member import *
 from .project_task import *
 from .project_expense_work import *
 from .project_baseline import *
+from .config import *

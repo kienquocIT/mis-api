@@ -8,7 +8,7 @@ from django.db import models
 
 from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, PROJECT_WORK_STT, \
-    PROJECT_WORK_TYPE
+    PROJECT_WORK_TYPE, SYSTEM_STATUS
 
 
 class Project(DataAbstractModel):
@@ -43,7 +43,7 @@ class Project(DataAbstractModel):
         verbose_name='Finish date',
         default=timezone.now
     )
-    completion_rate = models.IntegerField(
+    completion_rate = models.FloatField(
         verbose_name="Complete rate",
         default=0,
         null=True
@@ -86,6 +86,11 @@ class Project(DataAbstractModel):
         help_text='Total price after tax',
         default=0,
         null=True
+    )
+    project_status = models.SmallIntegerField(
+        # choices=SYSTEM_STATUS,
+        default=1,
+        help_text='choices= ' + str(SYSTEM_STATUS),
     )
 
     def code_generator(self):
@@ -209,13 +214,15 @@ class ProjectWorks(DataAbstractModel):
     work_dependencies_type = models.SmallIntegerField(
         choices=PROJECT_WORK_TYPE,
         null=True,
+        blank=True
     )
     work_dependencies_parent = models.ForeignKey(
         "self",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="work_parent",
         verbose_name="parent work",
         null=True,
+        blank=True,
     )
     employee_inherit_data = models.JSONField(
         default=dict,

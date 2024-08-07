@@ -286,7 +286,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             log_order_number += 1
 
             if 'sale_order_id' in kw_parameter:  # Project
-                ReportInventorySubFunction.regis_stock(stock_obj, item)
+                GoodsRegistration.update_registration_inventory(item)
 
         return cls.objects.bulk_create(bulk_info)
 
@@ -673,24 +673,6 @@ class LatestLog(SimpleAbstractModel):
 
 
 class ReportInventorySubFunction:
-    @classmethod
-    def regis_stock(cls, stock_obj, stock_data_item):
-        print('---regis_stock')
-        sale_order = stock_data_item.get('sale_order', None)
-        if stock_data_item.get('trans_title') == 'Delivery':
-            if sale_order:
-                GoodsRegistration.update_registered_quantity(
-                    sale_order,
-                    stock_data_item,
-                    **{'delivery_id': stock_obj.id}
-                )
-        if stock_data_item.get('trans_title') == 'Goods receipt':
-            if sale_order:
-                GoodsRegistration.update_registered_quantity(
-                    sale_order, stock_data_item, **{'goods_receipt_id': stock_obj.id}
-                )
-        return True
-
     @classmethod
     def get_latest_month_log(cls, period_obj, sub_period_order, product_id, **kwargs):
         print('---get_latest_month_log')

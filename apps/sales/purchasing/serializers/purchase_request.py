@@ -14,6 +14,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
+    purchase_status_raw = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -27,6 +28,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
             'delivered_date',
             'system_status',
             'purchase_status',
+            'purchase_status_raw'
         )
 
     @classmethod
@@ -59,6 +61,10 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     def get_purchase_status(cls, obj):
         return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
 
+    @classmethod
+    def get_purchase_status_raw(cls, obj):
+        return obj.purchase_status
+
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
@@ -66,6 +72,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
+    purchase_request_product_datas = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -129,6 +136,35 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_purchase_status(cls, obj):
         return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
+
+    @classmethod
+    def get_purchase_request_product_datas(cls, obj):
+        return [
+            {
+                "tax": {
+                    "id": str(item.tax_id),
+                    "code": item.tax.code,
+                    "title": item.tax.title,
+                    "rate": item.tax.rate
+                },
+                "uom": {
+                    "id": str(item.uom_id),
+                    "code": item.uom.code,
+                    "title": item.uom.title
+                },
+                "product": {
+                    "id": str(item.product_id),
+                    "code": item.product.code,
+                    "title": item.product.title,
+                    "uom_group": str(item.product.general_uom_group_id)
+                },
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "description": item.description,
+                "sub_total_price": item.sub_total_price,
+                "sale_order_product": str(item.sale_order_product_id)
+            } for item in obj.purchase_request.all()
+        ]
 
 
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
