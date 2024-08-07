@@ -6,10 +6,10 @@ __all__ = [
 from typing import Union
 from uuid import UUID
 from django.db import models
-from django.utils import timezone
+# from django.utils import timezone
 from apps.core.models import TenantAbstractModel
-from apps.masterdata.saledata.models import Periods
-from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
+# from apps.masterdata.saledata.models import Periods
+# from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 
 
 class GroupLevel(TenantAbstractModel):
