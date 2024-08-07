@@ -267,7 +267,8 @@ class GReItemBorrow(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_borrow_data_when_delivery(self, gre_item_borrow, delivered_quantity):
+    @classmethod
+    def update_borrow_data_when_delivery(cls, gre_item_borrow, delivered_quantity):
         if gre_item_borrow:
             gre_item_borrow.delivered += delivered_quantity
             gre_item_borrow.base_delivered += cast_quantity_to_unit(gre_item_borrow.uom, delivered_quantity)
@@ -306,11 +307,27 @@ class NoneGReItemProductWarehouse(SimpleAbstractModel):
         default=0,
         help_text='quantity of products which were picked to delivery from total quantity registered',
     )
-    keep_for_project = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'None GRe Item Product Warehouse'
         verbose_name_plural = 'None GRe Items Product Warehouse'
+        ordering = ('product__code',)
+        default_permissions = ()
+        permissions = ()
+
+
+class NoneGReItemProductRegisQuantity(SimpleAbstractModel):
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='none_gre_item_product_regis_quantity',
+        null=True
+    )
+    keep_for_project = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'None GRe Item Product Regis Quantity'
+        verbose_name_plural = 'None GRe Items Product Regis Quantity'
         ordering = ('product__code',)
         default_permissions = ()
         permissions = ()
@@ -386,12 +403,6 @@ class NoneGReItemBorrow(SimpleAbstractModel):
         related_name="gre_item_src_borrow_uom",
         null=True
     )
-    warehouse_mapped = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.CASCADE,
-        related_name="gre_item_src_borrow_warehouse_mapped",
-        null=True
-    )
 
     class Meta:
         verbose_name = 'None GRe Item Borrow'
@@ -400,7 +411,8 @@ class NoneGReItemBorrow(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_borrow_data_when_delivery(self, none_gre_item_borrow, delivered_quantity):
+    @classmethod
+    def update_borrow_data_when_delivery(cls, none_gre_item_borrow, delivered_quantity):
         if none_gre_item_borrow:
             none_gre_item_borrow.delivered += delivered_quantity
             none_gre_item_borrow.base_delivered += cast_quantity_to_unit(
@@ -527,6 +539,12 @@ class NoneProjectFunction:
                 warehouse=stock_info['warehouse'],
                 quantity=stock_info['quantity']
             )
+
+        # tạo obj đếm SL đăng kí
+        regis_quantity_obj = NoneGReItemProductRegisQuantity.objects.filter(product=stock_info['product']).first()
+        if regis_quantity_obj:
+            NoneGReItemProductRegisQuantity.objects.create(product=stock_info['product'])
+
         return none_gre_item_prd_wh
 
     @classmethod
