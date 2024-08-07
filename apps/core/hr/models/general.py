@@ -115,26 +115,25 @@ class Group(TenantAbstractModel):
         return [str(x) for x in cls.objects.filter(first_manager_id=employee_id).values_list('id', flat=True)]
 
     @classmethod
-    def update_budget_plan(cls, budget_plan):
-        BudgetPlanCompanyExpense.objects.filter(budget_plan=budget_plan).delete()
+    def update_budget_plan(cls, this_budget_plan):
         existed_expense_id_list = []
         bulk_info = []
         order = 1
-        for item in BudgetPlanGroupExpense.objects.filter(budget_plan=budget_plan).exclude(
+        for item in BudgetPlanGroupExpense.objects.filter(budget_plan=this_budget_plan).exclude(
             budget_plan_group__group_mapped=cls
         ):
             if str(item.expense_item_id) not in existed_expense_id_list:
                 bulk_info.append(
                     BudgetPlanCompanyExpense(
                         order=order,
-                        budget_plan=budget_plan,
+                        budget_plan=this_budget_plan,
                         expense_item=item.expense_item,
                         company_month_list=item.group_month_list,
                         company_quarter_list=item.group_quarter_list,
                         company_year=item.group_year,
-                        tenant_id=budget_plan.tenant_id,
-                        company_id=budget_plan.company_id,
-                        employee_inherit_id=budget_plan.employee_inherit_id
+                        tenant_id=this_budget_plan.tenant_id,
+                        company_id=this_budget_plan.company_id,
+                        employee_inherit_id=this_budget_plan.employee_inherit_id
                     )
                 )
                 order += 1
@@ -151,6 +150,7 @@ class Group(TenantAbstractModel):
                         ]
                         data.company_year += item.group_year
             existed_expense_id_list.append(str(item.expense_item_id))
+        BudgetPlanCompanyExpense.objects.filter(budget_plan=this_budget_plan).delete()
         BudgetPlanCompanyExpense.objects.bulk_create(bulk_info)
         return True
 
@@ -159,7 +159,8 @@ class Group(TenantAbstractModel):
             this_period = Periods.objects.filter(
                 tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
             ).first()
-            for budget_plan in this_period.budget_plan_period_mapped.all():
-                self.update_budget_plan(budget_plan)
+            if this_period:
+                this_budget_plan = this_period.budget_plan_period_mapped.first()
+                self.update_budget_plan(this_budget_plan)
         # hit DB
         super().save(*args, **kwargs)

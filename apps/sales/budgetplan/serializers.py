@@ -222,7 +222,7 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'expense': 'Expense items are duplicated.'})
 
     @classmethod
-    def create_new_budget_plan_company_expense(cls, instance, employee_current_id):
+    def create_new_budget_plan_company_expense(cls, instance):
         all_group_expense = BudgetPlanGroupExpense.objects.filter(
             budget_plan=instance,
             budget_plan_group__group_mapped__is_delete=False
@@ -242,7 +242,7 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
                         company_year=item.group_year,
                         tenant_id=instance.tenant_id,
                         company_id=instance.company_id,
-                        employee_inherit_id=employee_current_id
+                        employee_inherit_id=instance.employee_inherit_id
                     )
                 )
                 order += 1
@@ -287,10 +287,7 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
                     data_group_budget_plan,
                     employee_current_id
                 )
-                self.create_new_budget_plan_company_expense(
-                    instance,
-                    employee_current_id
-                )
+                self.create_new_budget_plan_company_expense(instance)
         else:
             raise serializers.ValidationError({'not allow': 'This budget plan is already locked.'})
         return instance
