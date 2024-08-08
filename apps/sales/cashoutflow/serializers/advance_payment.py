@@ -285,6 +285,8 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
@@ -343,10 +345,12 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     def get_expense_items(cls, obj):
         all_item = obj.advance_payment.all()
         expense_items = []
+        order = 1
         for item in all_item:
             expense_items.append(
                 {
                     'id': item.id,
+                    'order': order,
                     'expense_name': item.expense_name,
                     'expense_type': {
                         'id': item.expense_type_id,
@@ -368,6 +372,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                     'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
                 }
             )
+            order += 1
         return expense_items
 
     @classmethod
@@ -511,6 +516,8 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
@@ -518,6 +525,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.opportunity_mapped:
             if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:

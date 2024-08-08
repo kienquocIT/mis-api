@@ -1646,8 +1646,14 @@ AppProp_SaleData_Advance_Payment_data = {
     # tab line detail
     "51840528-2a9f-448b-afcb-ad0f421fd523": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Tab detail",
+        "title": "*Line detail table",
         "code": "expense_valid_list",
+        "type": 1,
+    },
+    "72848cc3-54b5-44d9-9deb-6c503cd64d04": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "*Money gave/received",
+        "code": "money_gave",
         "type": 1,
     },
     **AdvancePayment_data__params
