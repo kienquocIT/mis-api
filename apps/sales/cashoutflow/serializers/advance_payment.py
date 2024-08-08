@@ -278,6 +278,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'return_date',
             'sale_code_type',
             'advance_value',
+            'advance_value_by_words',
             'advance_payment_type',
             'expense_items',
             'opportunity_mapped',

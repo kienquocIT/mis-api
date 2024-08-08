@@ -669,6 +669,14 @@ AdvancePayment_data__params = {
         "type": 1,
         "is_print": True,
     },
+    "cbe3d23d-42e5-42e7-aec2-d0114a79a4da": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment value (by words)",
+        "code": "advance_value_by_words",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
     # detail
     '19b83b91-9034-4ee9-a5fd-6b18a158b929': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
