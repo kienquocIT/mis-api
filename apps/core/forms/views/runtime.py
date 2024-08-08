@@ -43,8 +43,9 @@ def handle_form_authenticate(request, obj, tenant_code):
             if obj_auth.is_expired() is True:
                 raise serializers.ValidationError({'authenticate_fail_code': 'email'})
     return {
+        'authentication_required': obj.form.authentication_required,
         'request_user': request_user,
-        'obj_auth': obj_auth
+        'obj_auth': obj_auth,
     }
 
 
@@ -142,6 +143,7 @@ class FormEntrySubmitted(APIView):
                 data = handle_form_authenticate(request, obj=obj, tenant_code=tenant_code)
 
                 obj_submitted = None
+                authentication_required = data['authentication_required']
                 request_user = data['request_user']
                 obj_auth = data['obj_auth']
                 if request_user:
@@ -149,13 +151,23 @@ class FormEntrySubmitted(APIView):
                         pk=pk_submitted,
                         company_id=obj.company_id,
                         user_created=data['request_user'],
+                        creator_email__isnull=True,
                         is_active=True, is_delete=False,
                     ).first()
                 elif obj_auth:
                     obj_submitted = FormPublishedEntries.objects.filter(
                         pk=pk_submitted,
                         company_id=obj.company_id,
+                        user_created__isnull=True,
                         creator_email=obj_auth.email,
+                        is_active=True, is_delete=False,
+                    ).first()
+                elif authentication_required is False:
+                    obj_submitted = FormPublishedEntries.objects.filter(
+                        pk=pk_submitted,
+                        company_id=obj.company_id,
+                        user_created__isnull=True,
+                        creator_email__isnull=True,
                         is_active=True, is_delete=False,
                     ).first()
 
