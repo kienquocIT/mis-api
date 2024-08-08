@@ -763,7 +763,10 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         if task_id:
             call_task_background(
                 call_log_update_at_zone,
-                *[task_id, user.employee_current_id],
+                **{
+                    'task_id': task_id,
+                    'employee_id': user.employee_current_id,
+                }
             )
         return True
 

@@ -353,13 +353,12 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
             del validated_data['next_node_collab_id']
         call_task_background(
             call_approval_task,
-            *[
-                str(instance.id),
-                str(instance.employee_id),
-                action_code,
-                remark,  # use for action return
-                next_node_collab_id,  # use for action approve if next node is OUT FORM node
-            ]
+            **{
+                'runtime_assignee_id': str(instance.id),
+                'employee_id': str(instance.employee_id),
+                'action_code': action_code,
+                'remark': remark, 'next_node_collab_id': next_node_collab_id,
+            },
         )
         return instance
 

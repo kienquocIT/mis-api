@@ -149,20 +149,13 @@ class Company(CoreAbstractModel):
             return gen_sub_domain
         return self.make_sub_domain_unique(counter=counter+1)
 
-    def generate_sub_domain(self):
+    def save(self, *args, **kwargs):
         if not self.sub_domain:
             gen_sub_domain = self.make_sub_domain_unique(counter=0)
             self.sub_domain = gen_sub_domain
-
-    def save(self, *args, **kwargs):
-        self.generate_sub_domain()
+        self.code = self.code.lower()
+        self.sub_domain = self.sub_domain.lower()
         super().save(*args, **kwargs)
-        # update total company of tenant
-        if self.tenant:
-            self.tenant.company_total = self.__class__.objects.filter(tenant=self.tenant).count()
-            self.tenant.save()
-        else:
-            print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
     @classmethod
     def refresh_total_user(cls, ids):

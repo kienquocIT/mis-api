@@ -408,7 +408,6 @@ class NoneGReItemBorrowDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class NoneGoodsRegistrationItemAvailableQuantity(BaseListMixin):
     queryset = NoneGReItemProductWarehouse.objects
     filterset_fields = {
-        'warehouse_id': ['exact'],
         'product_id': ['exact']
     }
     serializer_list = NoneGoodsRegistrationItemAvailableQuantitySerializer

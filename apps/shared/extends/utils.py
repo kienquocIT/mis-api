@@ -1,3 +1,9 @@
+__all__ = [
+    'LinkListHandler', 'StringHandler', 'ListHandler',
+    'CustomizeEncoder', 'TypeCheck', 'FORMATTING',
+    'DictHandler',
+]
+
 import json
 import random
 import re
@@ -9,11 +15,7 @@ from uuid import UUID
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
-__all__ = [
-    'LinkListHandler', 'StringHandler', 'ListHandler',
-    'CustomizeEncoder', 'TypeCheck', 'FORMATTING',
-    'DictHandler',
-]
+from rest_framework.serializers import BaseSerializer, SerializerMetaclass
 
 
 class LinkListHandler:
@@ -187,6 +189,17 @@ class TypeCheck:
             )
         return False
 
+    @classmethod
+    def check_email(cls, data: str):
+        if data and '@' in data:
+            arr = data.split("@")
+            if len(arr) >= 2:
+                name = "@".join(arr[:len(arr) - 1])
+                domain = arr[-1]
+                if name and domain:
+                    return True
+        return False
+
 
 class FORMATTING:
     DATETIME = settings.REST_FRAMEWORK['DATETIME_FORMAT']
@@ -329,3 +342,14 @@ class DictHandler:
                 ]
             return self.simple_return(self.current_data)
         return get_fail_return
+
+
+def clone_serializer_with_excludes(serializer_class, excludes) -> SerializerMetaclass:
+    class CustomizeSerializerWithExcludes(serializer_class, BaseSerializer, metaclass=SerializerMetaclass):  # noqa
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        class Meta(serializer_class.Meta):
+            exclude = getattr(serializer_class.Meta, 'exclude', []) + excludes
+
+    return CustomizeSerializerWithExcludes

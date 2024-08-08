@@ -8,3 +8,4 @@ class FormsConfig(AppConfig):
     def ready(self):
         # pylint: disable=import-outside-toplevel / C0415, unused-import / W0611
         from apps.shared.extends.signals import form_post_save
+        from apps.core.forms.signals import new_form_auth

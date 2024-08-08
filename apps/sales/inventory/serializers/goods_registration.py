@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import ProductWareHouseLot, UnitOfMeasure, WareHouse
+from apps.masterdata.saledata.models import ProductWareHouseLot, UnitOfMeasure
 from apps.sales.inventory.models import (
     GoodsRegistration,
     GReItemProductWarehouseSerial,
@@ -10,7 +10,8 @@ from apps.sales.inventory.models import (
     GoodsRegistrationItemSub,
     GoodsRegistrationItem,
     NoneGReItemBorrow,
-    NoneGReItemProductWarehouse
+    NoneGReItemProductWarehouse,
+    NoneGReItemProductRegisQuantity
 )
 
 
@@ -629,7 +630,6 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     borrow_uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
-    warehouse_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = NoneGReItemBorrow
@@ -642,8 +642,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
             'base_quantity',
             'base_available',
             'uom',
-            'borrow_uom',
-            'warehouse_mapped'
+            'borrow_uom'
         )
 
     @classmethod
@@ -685,20 +684,11 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     def get_available_stock(cls, obj):
         return obj.base_available
 
-    @classmethod
-    def get_warehouse_mapped(cls, obj):
-        return {
-            'id': obj.warehouse_mapped_id,
-            'title': obj.warehouse_mapped.title,
-            'code': obj.warehouse_mapped.code,
-        } if obj.warehouse_mapped else {}
-
 
 class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
     gre_source = serializers.UUIDField(required=True)
     gre_item_source = serializers.UUIDField(required=True)
     uom = serializers.UUIDField(required=True)
-    warehouse_mapped = serializers.UUIDField(required=True)
 
     class Meta:
         model = NoneGReItemBorrow
@@ -707,8 +697,7 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
             'gre_item_source',
             'quantity',
             'available',
-            'uom',
-            'warehouse_mapped'
+            'uom'
         )
 
     @classmethod
@@ -732,40 +721,30 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': 'UOM obj is not exist.'})
 
-    @classmethod
-    def validate_warehouse_mapped(cls, value):
-        try:
-            return WareHouse.objects.get(id=value)
-        except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'warehouse_mapped': 'Warehouse obj is not exist.'})
-
     def validate(self, validate_data):
-        try:
-            none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
-                product=validate_data['gre_item_source'].product,
-                warehouse=validate_data['warehouse_mapped']
-            ).first()
-            # validate quantity
-            if validate_data['quantity'] > 0:
-                casted_quantity = cast_quantity_to_unit(validate_data['uom'], validate_data['quantity'])
-                casted_quantity_limit = (
-                    none_gre_item_prd_wh.quantity - none_gre_item_prd_wh.keep_for_project
-                )if none_gre_item_prd_wh else 0
-                if casted_quantity > casted_quantity_limit:
-                    raise serializers.ValidationError({'quantity': 'Reserved quantity > Available quantity.'})
+        sum_quantity = sum(list(NoneGReItemProductWarehouse.objects.filter(
+            product=validate_data['gre_item_source'].product,
+        ).values_list('quantity', flat=True)))
+        regis_quantity = sum(list(NoneGReItemProductRegisQuantity.objects.filter(
+            product=validate_data['gre_item_source'].product,
+        ).values_list('keep_for_project', flat=True)))
 
-            # validate uom
-            last_borrow = NoneGReItemBorrow.objects.filter(
-                gre_item_source=validate_data['gre_item_source'],
-                warehouse_mapped=validate_data['warehouse_mapped']
-            ).first()
-            if last_borrow:
-                if validate_data['uom'] != last_borrow.uom:
-                    raise serializers.ValidationError({'uom': 'UOM reserve must be same.'})
-                validate_data['last_borrow'] = last_borrow
-            return validate_data
-        except Exception:
-            raise serializers.ValidationError({'validate_data': 'Validation have got some errors.'})
+        # validate quantity
+        if validate_data['quantity'] > 0:
+            casted_quantity = cast_quantity_to_unit(validate_data['uom'], validate_data['quantity'])
+            casted_quantity_limit = sum_quantity - regis_quantity
+            if casted_quantity > casted_quantity_limit:
+                raise serializers.ValidationError({'quantity': 'Reserved quantity > Available quantity.'})
+
+        # validate uom
+        last_borrow = NoneGReItemBorrow.objects.filter(
+            gre_item_source=validate_data['gre_item_source']
+        ).first()
+        if last_borrow:
+            if validate_data['uom'] != last_borrow.uom:
+                raise serializers.ValidationError({'uom': 'UOM reserve must be same.'})
+            validate_data['last_borrow'] = last_borrow
+        return validate_data
 
     @classmethod
     def for_borrow(cls, validated_data):
@@ -820,22 +799,21 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         instance.gre_item_source.save(update_fields=['out_registered', 'out_available'])
 
         # update SL kho chung, (trừ đi SL mượn)
-        none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
+        regis_quantity_obj = NoneGReItemProductRegisQuantity.objects.filter(
             product=instance.gre_item_source.product,
-            warehouse=instance.warehouse_mapped
         ).first()
-        if none_gre_item_prd_wh:
+        if regis_quantity_obj:
             if validated_data['quantity'] > 0:
-                none_gre_item_prd_wh.keep_for_project += cast_quantity_to_unit(
+                regis_quantity_obj.keep_for_project += cast_quantity_to_unit(
                     validated_data['uom'],
                     validated_data['quantity']
                 )
             else:
-                none_gre_item_prd_wh.keep_for_project -= cast_quantity_to_unit(
+                regis_quantity_obj.keep_for_project -= cast_quantity_to_unit(
                     validated_data['uom'],
                     validated_data['quantity'] * (-1)
                 )
-            none_gre_item_prd_wh.save(update_fields=['keep_for_project'])
+            regis_quantity_obj.save(update_fields=['keep_for_project'])
 
         return instance
 
@@ -860,22 +838,30 @@ class NoneGReItemBorrowUpdateSerializer(serializers.ModelSerializer):
 class NoneGoodsRegistrationItemAvailableQuantitySerializer(serializers.ModelSerializer):
     this_available = serializers.SerializerMethodField()
     this_available_base = serializers.SerializerMethodField()
+    regis_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = NoneGReItemProductWarehouse
         fields = (
             'id',
             'this_available',
-            'this_available_base'
+            'this_available_base',
+            'regis_quantity'
         )
 
     @classmethod
     def get_this_available(cls, obj):
-        return obj.quantity - obj.keep_for_project
+        return obj.quantity
 
     @classmethod
     def get_this_available_base(cls, obj):
-        return obj.quantity - obj.keep_for_project
+        return obj.quantity
+
+    @classmethod
+    def get_regis_quantity(cls, obj):
+        return sum(list(NoneGReItemProductRegisQuantity.objects.filter(
+            product=obj.product
+        ).values_list('keep_for_project', flat=True)))
 
 
 # Common serializer to get regis + borrow + from general stock

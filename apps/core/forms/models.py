@@ -1,8 +1,7 @@
 import random
 import string
+from datetime import timedelta
 from uuid import uuid4
-
-import hashlib
 
 from django.db import models
 from django.utils import timezone
@@ -32,11 +31,17 @@ def generate_path_public_file(instance, filename):
 
 
 class Form(MasterDataAbstractModel):
+    AUTHENTICATED_TYPE = (
+        ('system', "Company's member"),
+        ('email', "Email"),
+    )
+
     title = models.CharField(max_length=100)
     remark = models.TextField(blank=True, verbose_name='Remark of form, showing after form name')
     label_placement = models.CharField(max_length=10, choices=LABEL_PLACEMENT_CHOICES)
     instruction_placement = models.CharField(max_length=10, choices=INSTRUCTION_PLACEMENT_CHOICES)
     authentication_required = models.BooleanField(default=False)
+    authentication_type = models.CharField(max_length=10, choices=AUTHENTICATED_TYPE, default='system')
     submit_only_one = models.BooleanField(default=False)
     edit_submitted = models.BooleanField(default=False)
     entries_default_show = models.JSONField(
@@ -229,24 +234,57 @@ class FormPublishAuthenticateEmail(models.Model):
     date_modified = models.DateTimeField(auto_now=True)
 
     otp = models.CharField(max_length=10)
-    opt_expires = models.DateTimeField()
+    otp_expires_seconds = models.SmallIntegerField(default=0)
+    otp_expires = models.DateTimeField(null=True)
 
-    cookies = models.CharField(max_length=64, blank=True)
-    cookies_expires = models.DateTimeField(null=True)
-
-    @classmethod
-    def generate_otp(cls):
-        return "".join(random.choices(string.digits, k=8))
+    is_valid = models.BooleanField(default=False)
+    expires = models.DateTimeField(null=True)
 
     @classmethod
-    def generate_string(cls, length):
-        return "".join(random.choices(string.digits + string.ascii_letters, k=length))
+    def generate_otp(cls, length=8):
+        return "".join(random.choices(string.digits, k=length))
 
     @classmethod
-    def generate_cookies_with_flag(cls, email):
-        now_string = timezone.now().strftime("%m/%d/%Y, %H:%M:%S")
-        data = f'{email}-{now_string}-{cls.generate_string(100)}'.encode('utf-8')
-        return hashlib.sha256(data).hexdigest()
+    def generate_otp_data(cls, expires_kwargs=None) -> dict:
+        if not expires_kwargs:
+            expires_kwargs = {
+                'minutes': 2,
+            }
+        data_time = timedelta(**expires_kwargs)
+        return {
+            'otp': cls.generate_otp(length=6),
+            'otp_expires': timezone.now() + data_time,
+            'otp_expires_seconds': data_time.seconds,
+        }
+
+    def activate_valid(self, expire_append='1d'):
+        self.is_valid = True
+        num_time = int(expire_append[:-1])
+        unit = expire_append[-1]
+        now = timezone.now()
+
+        if unit == 's':
+            self.expires = now + timedelta(seconds=num_time)
+        if unit == 'm':
+            self.expires = now + timedelta(minutes=num_time)
+        elif unit == 'h':
+            self.expires = now + timedelta(hours=num_time)
+        elif unit == 'd':
+            self.expires = now + timedelta(days=num_time)
+        elif unit == 'w':
+            self.expires = now + timedelta(weeks=num_time)
+        self.save()
+
+    @classmethod
+    def destroy_expired(cls):
+        obj_expired = cls.objects.filter(expires__lt=timezone.now())
+        if obj_expired:
+            obj_expired.delete()
+
+    def is_expired(self) -> bool:
+        if timezone.now() > self.expires:
+            return True
+        return False
 
     class Meta:
         verbose_name = 'Form Authentication Email - Guess'

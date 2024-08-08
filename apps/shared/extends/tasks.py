@@ -13,25 +13,34 @@ logger = get_task_logger(__name__)
 __all__ = ['call_task_background', 'check_active_celery_worker']
 
 
-def call_task_background(my_task: callable, *args, countdown=0, **kwargs) -> Union[Exception, bool]:
+def call_task_background(
+        my_task: callable, task_config: dict[str, any] = None, **kwargs
+) -> Union[Exception, bool]:
     """
     Function support call task with async. Then update args and kwargs of log records by Task ID.
     countdown: seconds
     """
 
+    if not task_config:
+        task_config = {}
+    task_config = {
+        'countdown': 0,
+        **task_config,
+    }
+
     if settings.DEBUG_BG_TASK:
-        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), args, kwargs)
+        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), kwargs)
 
     _id = kwargs.pop('task_id', str(uuid4()))
     if isinstance(my_task, Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             if settings.DEBUG_BG_TASK:
-                data = my_task(*args, **kwargs)
+                data = my_task(**kwargs)
                 print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), data)
                 return data
-            return my_task(*args, **kwargs)
+            return my_task(**kwargs)
         my_task.apply_async(
-            args=args, kwargs=kwargs,
+            kwargs=kwargs,
             task_id=_id,
             # link=my_task_result.s(
             #     _id,
@@ -39,7 +48,7 @@ def call_task_background(my_task: callable, *args, countdown=0, **kwargs) -> Uni
             #     task_args=json.dumps(args, cls=CustomizeEncoder),
             #     task_kwargs=json.dumps(kwargs, cls=CustomizeEncoder),
             # ),
-            countdown=countdown,
+            **task_config,
         )
         return _id
     raise AttributeError('my_task must be celery task function that have decorator is shared_task')
