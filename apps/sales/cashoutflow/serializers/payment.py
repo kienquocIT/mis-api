@@ -209,7 +209,9 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'employee_inherit',
             'opportunity_mapped',
             'quotation_mapped',
-            'sale_order_mapped'
+            'sale_order_mapped',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -455,7 +457,9 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             'supplier',
             'employee_payment',
             'is_internal_payment',
-            'method'
+            'method',
+            # system
+            'system_status',
         )
 
     @classmethod
