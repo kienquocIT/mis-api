@@ -552,17 +552,23 @@ class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
         lot_data = []
         sn_data = []
         for item in obj.product_warehouse_lot_product_warehouse.filter(quantity_import__gt=0):
+            gr_mapped = item.pw_lot_transact_pw_lot.first()
+            goods_receipt_date = None
+            if gr_mapped:
+                goods_receipt_date = gr_mapped.goods_receipt.date_received if gr_mapped.goods_receipt else None
             lot_data.append({
                 'id': item.id,
                 'lot_number': item.lot_number,
                 'expire_date': item.expire_date,
-                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import)
+                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
+                'goods_receipt_date': goods_receipt_date
             })
         for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
             sn_data.append({
                 'id': item.id,
                 'vendor_serial_number': item.vendor_serial_number,
-                'serial_number': item.serial_number
+                'serial_number': item.serial_number,
+                'goods_receipt_date': item.goods_receipt.date_received if item.goods_receipt else None
             })
         return {
             'lot_data': lot_data,
