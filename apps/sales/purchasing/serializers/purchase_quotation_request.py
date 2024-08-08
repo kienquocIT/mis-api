@@ -1,14 +1,11 @@
 from rest_framework import serializers
-
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import (
     PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest,
 )
-from apps.shared import AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
-class PurchaseQuotationRequestListSerializer(AbstractListSerializerModel):
+class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
     purchase_requests = serializers.SerializerMethodField()
 
     class Meta:
@@ -20,7 +17,6 @@ class PurchaseQuotationRequestListSerializer(AbstractListSerializerModel):
             'purchase_requests',
             'delivered_date',
             'response_status',
-            'system_status'
         )
 
     @classmethod
@@ -35,7 +31,7 @@ class PurchaseQuotationRequestListSerializer(AbstractListSerializerModel):
         return purchase_request_list
 
 
-class PurchaseQuotationRequestDetailSerializer(AbstractDetailSerializerModel):
+class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
     purchase_requests = serializers.SerializerMethodField()
     products_mapped = serializers.SerializerMethodField()
 
@@ -117,7 +113,7 @@ def create_pqr_map_products(pqr_obj, product_list):
     return True
 
 
-class PurchaseQuotationRequestCreateSerializer(AbstractCreateSerializerModel):
+class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -158,7 +154,6 @@ class PurchaseQuotationRequestCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
         return validate_data
 
-    @decorator_run_workflow
     def create(self, validated_data):
         if PurchaseQuotationRequest.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'PQR.CODE.0001'
@@ -176,7 +171,7 @@ class PurchaseQuotationRequestCreateSerializer(AbstractCreateSerializerModel):
         return purchase_quotation_request
 
 
-class PurchaseQuotationRequestUpdateSerializer(AbstractCreateSerializerModel):
+class PurchaseQuotationRequestUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -217,7 +212,6 @@ class PurchaseQuotationRequestUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
         return validate_data
 
-    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)

@@ -4,12 +4,11 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
-from apps.shared import REQUEST_FOR, PURCHASE_STATUS, SYSTEM_STATUS, AbstractListSerializerModel, \
-    AbstractDetailSerializerModel, AbstractCreateSerializerModel
+from apps.shared import REQUEST_FOR, PURCHASE_STATUS, SYSTEM_STATUS
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
-class PurchaseRequestListSerializer(AbstractListSerializerModel):
+class PurchaseRequestListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     request_for = serializers.SerializerMethodField()
@@ -67,7 +66,7 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
         return obj.purchase_status
 
 
-class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
+class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
@@ -91,7 +90,11 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
             'purchase_request_product_datas',
             'pretax_amount',
             'taxes',
-            'total_price'
+            'total_price',
+            # system
+            'system_status',
+            'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod
@@ -292,7 +295,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
 
 
 # BEGIN PURCHASE REQUEST
-class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
+class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
@@ -313,7 +316,9 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
             'purchase_request_product_datas',
             'pretax_amount',
             'taxes',
-            'total_price'
+            'total_price',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -545,7 +550,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
         } if obj.tax else {}
 
 
-class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
+class PurchaseRequestUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     request_for = serializers.IntegerField(required=False)
@@ -629,7 +634,6 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
         return value
 
-    @decorator_run_workflow
     def update(self, instance, validated_data):
         if 'purchase_request_product_datas' in validated_data:
             PurchaseRequestProductSerializer.delete_product_datas(instance)

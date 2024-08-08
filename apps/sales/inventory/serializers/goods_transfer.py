@@ -5,8 +5,7 @@ from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfM
     ProductWareHouseSerial, Product
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, \
-    AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
 from apps.shared.translations.goods_transfer import GTMsg
 
 __all__ = [
@@ -89,7 +88,7 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
         return validated_data
 
 
-class GoodsTransferListSerializer(AbstractListSerializerModel):
+class GoodsTransferListSerializer(serializers.ModelSerializer):
     system_status = serializers.SerializerMethodField()
     raw_system_status = serializers.SerializerMethodField()
 
@@ -113,7 +112,7 @@ class GoodsTransferListSerializer(AbstractListSerializerModel):
         return obj.system_status
 
 
-class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):
+class GoodsTransferCreateSerializer(serializers.ModelSerializer):
     goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
@@ -125,6 +124,7 @@ class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):
             'note',
             'agency',
             'date_transfer',
+            'system_status',
             'goods_transfer_data'
         )
 
@@ -166,6 +166,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'goods_transfer_type',
             'date_transfer',
+            'system_status',
             'agency',
             'note',
             'goods_transfer_data'
@@ -295,7 +296,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return goods_transfer_data
 
 
-class GoodsTransferUpdateSerializer(AbstractDetailSerializerModel):
+class GoodsTransferUpdateSerializer(serializers.ModelSerializer):
     goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
@@ -307,6 +308,7 @@ class GoodsTransferUpdateSerializer(AbstractDetailSerializerModel):
             'note',
             'agency',
             'date_transfer',
+            'system_status',
             'goods_transfer_data'
         )
 

@@ -3,12 +3,9 @@ import uuid
 import time
 import base64
 from rest_framework import serializers
-
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
-from apps.shared import SaleMsg, AbstractListSerializerModel, AbstractCreateSerializerModel, \
-    AbstractDetailSerializerModel
+from apps.shared import SaleMsg
 
 __all__ = [
     'GoodsReceiptListSerializerForAPInvoice',
@@ -19,7 +16,7 @@ __all__ = [
 ]
 
 
-class APInvoiceListSerializer(AbstractListSerializerModel):
+class APInvoiceListSerializer(serializers.ModelSerializer):
     supplier_mapped = serializers.SerializerMethodField()
     po_mapped = serializers.SerializerMethodField()
 
@@ -94,7 +91,7 @@ def create_files_mapped(ap_invoice, file_id_list):
         raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
-class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
+class APInvoiceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = APInvoice
         fields = (
@@ -107,7 +104,8 @@ class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'invoice_date',
             'invoice_sign',
             'invoice_number',
-            'invoice_example'
+            'invoice_example',
+            'system_status'
         )
 
     def validate(self, validate_data):
@@ -118,7 +116,7 @@ class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 validate_data['supplier_mapped'] = None
         return validate_data
 
-    @decorator_run_workflow
+    # @decorator_run_workflow
     def create(self, validated_data):
         number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_default=False).count() + 1
         ap_invoice = APInvoice.objects.create(
@@ -138,7 +136,7 @@ class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
         return ap_invoice
 
 
-class APInvoiceDetailSerializer(AbstractDetailSerializerModel):
+class APInvoiceDetailSerializer(serializers.ModelSerializer):
     goods_receipt_mapped = serializers.SerializerMethodField()
     item_mapped = serializers.SerializerMethodField()
     supplier_mapped = serializers.SerializerMethodField()
@@ -160,6 +158,7 @@ class APInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'system_status',
             'goods_receipt_mapped',
             'item_mapped',
             'attachment'
@@ -227,7 +226,7 @@ def generate_token(http_method, username, password):
     return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
 
 
-class APInvoiceUpdateSerializer(AbstractCreateSerializerModel):
+class APInvoiceUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = APInvoice
         fields = (
@@ -237,13 +236,13 @@ class APInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'invoice_date',
             'invoice_sign',
             'invoice_number',
-            'invoice_example'
+            'invoice_example',
+            'system_status'
         )
 
     def validate(self, validate_data):
         return validate_data
 
-    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
