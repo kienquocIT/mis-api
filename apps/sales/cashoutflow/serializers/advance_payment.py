@@ -554,7 +554,7 @@ class APCommonFunction:
             result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
 
         result = str(result.strip()).capitalize()
-        if result[-1] == ',':
+        if result[-2] == ',':
             result = result[:-1] + ' đồng'
         return result
 
