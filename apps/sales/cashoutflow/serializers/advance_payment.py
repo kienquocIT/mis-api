@@ -554,8 +554,6 @@ class APCommonFunction:
             result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
 
         result = str(result.strip()).capitalize()
-        if result[-2] == ',':
-            result = result[:-1] + ' đồng'
         return result
 
     @classmethod
@@ -582,12 +580,16 @@ class APCommonFunction:
                 AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
                 AdvancePaymentCost.objects.bulk_create(bulk_info)
                 advance_payment_obj.advance_value = advance_value
-                advance_payment_obj.advance_value_by_words = APCommonFunction.read_money_vnd(advance_value)
+                advance_value_by_words = APCommonFunction.read_money_vnd(advance_value)
+                if advance_value_by_words[-1] == ',':
+                    advance_value_by_words = advance_value_by_words[:-1] + ' đồng'
+                advance_payment_obj.advance_value_by_words = advance_value_by_words
 
                 opp = advance_payment_obj.opportunity_mapped
                 quotation = advance_payment_obj.quotation_mapped
                 sale_order = advance_payment_obj.sale_order_mapped
-                sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
+                sale_code = sale_order.code if (
+                    sale_order) else quotation.code if quotation else opp.code if opp else None
                 advance_payment_obj.sale_code = sale_code
 
                 advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])

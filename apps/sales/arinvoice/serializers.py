@@ -144,9 +144,6 @@ def read_money_vnd(num):
     elif len_n <= 12:
         result = read_money_vnd(int(str_n[:-9])) + " tỷ, " + read_money_vnd(int(str_n[-9:]))
 
-    result = str(result.strip()).capitalize()
-    if result[-2] == ',':
-        result = result[:-2] + ' đồng'
     return result
 
 
