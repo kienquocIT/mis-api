@@ -325,6 +325,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_product",
         null=True
     )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -332,6 +333,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -339,6 +341,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # product information
     product_title = models.CharField(max_length=100, blank=True, null=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
@@ -366,6 +369,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_promotion",
         null=True
     )
+    promotion_data = models.JSONField(default=dict, help_text='data json of promotion')
     is_shipping = models.BooleanField(default=False, help_text="flag to know this product is for shipping fee")
     shipping = models.ForeignKey(
         'saledata.Shipping',
@@ -374,6 +378,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         related_name="sale_order_product_shipping",
         null=True
     )
+    shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
     remain_for_purchase_request = models.FloatField(default=0)
     remain_for_purchase_order = models.FloatField(
         default=0,
@@ -423,6 +428,7 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_product",
         null=True
     )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -430,6 +436,7 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_warehouse",
         null=True
     )
+    warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -437,6 +444,7 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -444,6 +452,7 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # cost information
     product_title = models.CharField(max_length=100, blank=True, null=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
@@ -465,6 +474,7 @@ class SaleOrderCost(SimpleAbstractModel):
         related_name="sale_order_cost_shipping",
         null=True
     )
+    shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
 
     class Meta:
         verbose_name = 'Sale Order Cost'
@@ -490,6 +500,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
         related_name="sale_order_expense_expense",
         null=True
     )
+    expense_data = models.JSONField(default=dict, help_text='data json of expense')
     expense_item = models.ForeignKey(
         'saledata.ExpenseItem',
         on_delete=models.CASCADE,
@@ -497,6 +508,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
         related_name="sale_order_expense_expense_item",
         null=True
     )
+    expense_item_data = models.JSONField(default=dict, help_text='data json of expense_item')
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -511,6 +523,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
         related_name="sale_order_expense_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -518,6 +531,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
         related_name="sale_order_expense_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # expense information
     expense_title = models.CharField(max_length=100, blank=True, null=True)
     expense_code = models.CharField(max_length=100, blank=True, null=True)
