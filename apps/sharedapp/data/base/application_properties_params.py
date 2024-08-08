@@ -599,8 +599,8 @@ AdvancePayment_data__params = {
     },
     "53ca77cb-a101-41db-9239-18d8dca35a60": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Employee created",
-        "code": "creator_name__fullname",
+        "title": "Employee created fullname",
+        "code": "creator_name__full_name",
         "remark": "",
         "type": 1,
         "is_print": True,
@@ -615,8 +615,8 @@ AdvancePayment_data__params = {
     },
     "bc7df0ac-ad85-41c5-b853-b71454185b1b": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Employee inherited",
-        "code": "employee_inherit__fullname",
+        "title": "Employee inherited fullname",
+        "code": "employee_inherit__full_name",
         "remark": "",
         "type": 1,
         "is_print": True,
