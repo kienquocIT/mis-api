@@ -1,9 +1,9 @@
-__all__ = ['ProjectWorkExpenseList']
+__all__ = ['ProjectWorkExpenseList', 'ProjectExpenseHomeList']
 
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.project.models import WorkMapExpense, ProjectMapMember
-from apps.sales.project.serializers import WorkExpenseListSerializers
+from apps.sales.project.serializers import WorkExpenseListSerializers, ProjectExpenseHomeListSerializers
 from apps.shared import BaseListMixin, mask_view, ResponseController
 
 
@@ -13,7 +13,8 @@ class ProjectWorkExpenseList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ['title', 'code']
     filterset_fields = {
-        'work_id': ['exact']
+        'work_id': ['exact'],
+        'company_id': ['exact']
     }
 
     def get_queryset(self):
@@ -39,3 +40,25 @@ class ProjectWorkExpenseList(BaseListMixin):
         if self.valid_permit_add_gaw():
             return self.list(request, *args, **kwargs)
         return ResponseController.forbidden_403()
+
+
+class ProjectExpenseHomeList(BaseListMixin):
+    queryset = WorkMapExpense.objects
+    serializer_list = ProjectExpenseHomeListSerializers
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'company_id': ['exact']
+    }
+
+    @swagger_auto_schema(
+        operation_summary="Project expense list home",
+        operation_description="get project expense list home",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='project', model_code='project', perm_code='view',
+        skip_filter_employee=True
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

@@ -93,9 +93,10 @@ class ProjectListSerializers(serializers.ModelSerializer):
             return baseline
         return baseline
 
-    def get_system_status(self, obj):
+    @classmethod
+    def get_system_status(cls, obj):
         if obj:
-            return self.instance.project_status
+            return obj.project_status
         return ''
 
     class Meta:
