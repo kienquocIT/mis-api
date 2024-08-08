@@ -1,4 +1,4 @@
-__all__ = ['WorkExpenseListSerializers']
+__all__ = ['WorkExpenseListSerializers', 'ProjectExpenseHomeListSerializers']
 from rest_framework import serializers
 
 from ..models import WorkMapExpense
@@ -59,4 +59,13 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
             'sub_total_after_tax',
             'is_labor',
             'work_id',
+        )
+
+
+class ProjectExpenseHomeListSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = WorkMapExpense
+        fields = (
+            'sub_total',
         )
