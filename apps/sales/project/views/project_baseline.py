@@ -1,4 +1,4 @@
-__all__ = ['ProjectCreateBaseline', 'ProjectBaselineDetail', 'ProjectBaselineUpdate']
+__all__ = ['ProjectListBaseline', 'ProjectBaselineDetail', 'ProjectBaselineUpdate']
 
 from typing import Union
 
@@ -18,7 +18,7 @@ def get_project_obj(pk_idx):
     return None
 
 
-class ProjectCreateBaseline(BaseListMixin, BaseCreateMixin):
+class ProjectListBaseline(BaseListMixin, BaseCreateMixin):
     queryset = ProjectBaseline.objects
     serializer_list = ProjectBaselineListSerializers
     serializer_create = ProjectCreateBaselineSerializers
@@ -39,6 +39,8 @@ class ProjectCreateBaseline(BaseListMixin, BaseCreateMixin):
         skip_filter_employee=True
     )
     def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

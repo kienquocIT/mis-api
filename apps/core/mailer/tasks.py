@@ -139,3 +139,25 @@ def send_mail_form(tenant_id, company_id, subject, to_main, contents):
             return 'SEND_FAILURE'
         return 'MAIL_CONFIG_DEACTIVATE'
     return obj_got
+
+
+@shared_task
+def send_mail_from_system(subject, to_mail, contents, timeout=10):
+    cls = SendMailController(mail_config=None, timeout=timeout)
+    if cls.is_active is True:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            mail_to=to_mail,
+            template=contents,
+            data={},
+        )
+        if state_send is True:
+            return True
+        return 'SEND_FAILURE'
+    return 'MAIL_CONFIG_DEACTIVATE'

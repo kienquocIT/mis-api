@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Periods
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
@@ -164,66 +164,71 @@ class ReportStockLog(DataAbstractModel):  # rp_log
 
     @classmethod
     def logging_inventory_activities(cls, stock_obj, stock_obj_date, stock_data):
-        print('---logging_inventory_activities')
-        config_inventory_management = cls.get_config_inventory_management(stock_obj.company.company_config)
-        period_obj = Periods.objects.filter(
-            tenant=stock_obj.tenant,
-            company=stock_obj.company,
-            fiscal_year=stock_obj_date.year
-        ).first()
-        if period_obj:
-            sub_period_order = stock_obj_date.month - period_obj.space_month
-            if stock_obj.company.company_config.definition_inventory_valuation == 1:
-                if int(sub_period_order) == 1:
-                    last_period_obj = Periods.objects.filter(
-                        tenant=stock_obj.tenant,
-                        company=stock_obj.company,
-                        fiscal_year=period_obj.fiscal_year - 1
-                    ).first()
-                    pre_rp_inventory_cost_obj = ReportInventoryCost.objects.filter(
-                        period_mapped=last_period_obj,
-                        sub_period_order=12,
-                        periodic_closed=False
-                    ).exists()
-                    if pre_rp_inventory_cost_obj:
-                        ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                            last_period_obj,
-                            12,
-                            stock_obj.tenant,
-                            stock_obj.company
-                        )
-                else:
-                    pre_rp_inventory_cost_obj = ReportInventoryCost.objects.filter(
-                        period_mapped=period_obj,
-                        sub_period_order=int(sub_period_order) - 1,
-                        periodic_closed=False
-                    ).exists()
-                    if pre_rp_inventory_cost_obj:
-                        ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                            period_obj,
-                            int(sub_period_order) - 1,
-                            stock_obj.tenant,
-                            stock_obj.company
-                        )
+        print('---logging_inventory_activities (transaction atomic)')
+        try:
+            with transaction.atomic():
+                config_inventory_management = cls.get_config_inventory_management(stock_obj.company.company_config)
+                period_obj = Periods.objects.filter(
+                    tenant=stock_obj.tenant,
+                    company=stock_obj.company,
+                    fiscal_year=stock_obj_date.year
+                ).first()
+                if period_obj:
+                    sub_period_order = stock_obj_date.month - period_obj.space_month
+                    if stock_obj.company.company_config.definition_inventory_valuation == 1:
+                        if int(sub_period_order) == 1:
+                            last_period_obj = Periods.objects.filter(
+                                tenant=stock_obj.tenant,
+                                company=stock_obj.company,
+                                fiscal_year=period_obj.fiscal_year - 1
+                            ).first()
+                            pre_rp_inventory_cost_obj = ReportInventoryCost.objects.filter(
+                                period_mapped=last_period_obj,
+                                sub_period_order=12,
+                                periodic_closed=False
+                            ).exists()
+                            if pre_rp_inventory_cost_obj:
+                                ReportInventorySubFunction.calculate_ending_balance_for_periodic(
+                                    last_period_obj,
+                                    12,
+                                    stock_obj.tenant,
+                                    stock_obj.company
+                                )
+                        else:
+                            pre_rp_inventory_cost_obj = ReportInventoryCost.objects.filter(
+                                period_mapped=period_obj,
+                                sub_period_order=int(sub_period_order) - 1,
+                                periodic_closed=False
+                            ).exists()
+                            if pre_rp_inventory_cost_obj:
+                                ReportInventorySubFunction.calculate_ending_balance_for_periodic(
+                                    period_obj,
+                                    int(sub_period_order) - 1,
+                                    stock_obj.tenant,
+                                    stock_obj.company
+                                )
 
-            new_log_list = cls.create_new_log_list(
-                stock_obj,
-                stock_data,
-                period_obj,
-                sub_period_order,
-                config_inventory_management
-            )
-            for log in new_log_list:
-                cls.update_current_value_for_log(
-                    log,
-                    period_obj,
-                    sub_period_order,
-                    config_inventory_management
+                    new_log_list = cls.create_new_log_list(
+                        stock_obj,
+                        stock_data,
+                        period_obj,
+                        sub_period_order,
+                        config_inventory_management
+                    )
+                    for log in new_log_list:
+                        cls.update_current_value_for_log(
+                            log,
+                            period_obj,
+                            sub_period_order,
+                            config_inventory_management
+                        )
+                    return True
+                raise serializers.ValidationError(
+                    {'Period missing': f'Period of fiscal year {stock_obj_date.year} does not exist.'}
                 )
-            return True
-        raise serializers.ValidationError(
-            {'Period missing': f'Period of fiscal year {stock_obj_date.year} does not exist.'}
-        )
+        except Exception as err:
+            print(err)
+        return False
 
     @classmethod
     def create_new_log_list(cls, stock_obj, stock_data, period_obj, sub_period_order, config_inventory_management):

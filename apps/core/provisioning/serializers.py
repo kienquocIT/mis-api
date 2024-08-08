@@ -6,7 +6,7 @@ from apps.core.hr.models import Employee, SpaceEmployee
 from apps.core.tenant.models import Tenant
 from apps.core.space.models import Space
 from apps.core.company.models import Company
-from apps.shared import CustomizeEncoder, ProvisioningMsg
+from apps.shared import CustomizeEncoder, ProvisioningMsg, BaseMsg
 
 
 # UTILS PROVISIONING
@@ -65,6 +65,15 @@ class ProvisioningTenantData(serializers.ModelSerializer):
     auto_create_company = serializers.BooleanField()
     company_quality_max = serializers.IntegerField()
     plan = serializers.JSONField(required=False)
+
+    @classmethod
+    def validate_code(cls, attrs):
+        attrs = attrs.lower()
+        if Tenant.objects.filter(code=attrs).exists() or Company.objects.filter(code=attrs).exists():
+            raise serializers.ValidationError({
+                'code': BaseMsg.CODE_IS_EXISTS
+            })
+        return attrs
 
     class Meta:
         model = Tenant

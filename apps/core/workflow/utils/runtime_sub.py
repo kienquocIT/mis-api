@@ -102,7 +102,9 @@ class HookEventHandler:
             if len(args_arr) > 0:
                 call_task_background(
                     force_new_notify_many,
-                    *[args_arr],
+                    **{
+                        'data_list': args_arr,
+                    }
                 )
             return True
         except Exception as err:

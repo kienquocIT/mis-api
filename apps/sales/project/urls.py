@@ -2,8 +2,8 @@ from django.urls import path
 
 from .views import ProjectList, ProjectDetail, ProjectUpdate, ProjectMemberAdd, ProjectMemberDetail, ProjectGroupList, \
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD, \
-    ProjectTaskDetail, ProjectWorkExpenseList, ProjectCreateBaseline, ProjectBaselineDetail, ProjectBaselineUpdate, \
-    ProjectConfigDetail
+    ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate, \
+    ProjectConfigDetail, ProjectExpenseHomeList
 
 urlpatterns = [
     path('config', ProjectConfigDetail.as_view(), name='ProjectConfigDetail'),
@@ -26,9 +26,10 @@ urlpatterns = [
     path('assign-task-link/<str:pk>', ProjectTaskDetail.as_view(), name='ProjectTaskDetail'),
     # work expense list
     path('work-expense-list', ProjectWorkExpenseList.as_view(), name='ProjectWorkExpenseList'),
+    path('project-expense-home-list', ProjectExpenseHomeList.as_view(), name='ProjectExpenseHomeList'),
     # baseline workflow
-    path('create-baseline/list', ProjectCreateBaseline.as_view(), name='ProjectCreateBaseline'),
-    path('create-baseline/detail/<str:pk>', ProjectBaselineDetail.as_view(), name='ProjectBaselineDetail'),
-    path('create-baseline/edit/<str:pk>', ProjectBaselineUpdate.as_view(), name='ProjectBaselineUpdate'),
+    path('baseline/list', ProjectListBaseline.as_view(), name='ProjectListBaseline'),
+    path('baseline/detail/<str:pk>', ProjectBaselineDetail.as_view(), name='ProjectBaselineDetail'),
+    path('baseline/edit/<str:pk>', ProjectBaselineUpdate.as_view(), name='ProjectBaselineUpdate'),
 
 ]

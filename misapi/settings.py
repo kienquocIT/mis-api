@@ -178,6 +178,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'mockup_db_ci': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / '.gitlab-ci-db.sqlite3',
     }
 }
 
@@ -185,10 +189,7 @@ DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'
 CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP') in ["1", 1]
 if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
     # change file db of sqlite3 from default to file sqlite3
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / '.gitlab-ci-db.sqlite3',
-    }
+    DATABASES['default'] = DATABASES['mockup_db_ci']
 
 DATABASE_ROUTERS = ['routers.LogRouter']
 

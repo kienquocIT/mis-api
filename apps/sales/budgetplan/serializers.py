@@ -198,18 +198,25 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
         fields = ()
 
     @classmethod
-    def create_new_budget_plan_group_expense(cls, instance, budget_plan_group, data_group_budget_plan):
-        BudgetPlanGroupExpense.objects.filter(budget_plan_group=budget_plan_group).delete()
+    def create_new_budget_plan_group_expense(
+            cls, instance, budget_plan_group, data_group_budget_plan, employee_current_id
+    ):
         bulk_info = []
         expense_item_id_list_existed = []
         for item in data_group_budget_plan:
             expense_item_id_list_existed.append(item['expense_item_id'])
             bulk_info.append(
                 BudgetPlanGroupExpense(
-                    budget_plan=instance, budget_plan_group=budget_plan_group, **item
+                    budget_plan=instance,
+                    budget_plan_group=budget_plan_group,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    employee_inherit_id=employee_current_id,
+                    **item
                 )
             )
         if len(set(expense_item_id_list_existed)) == len(bulk_info):
+            BudgetPlanGroupExpense.objects.filter(budget_plan_group=budget_plan_group).delete()
             BudgetPlanGroupExpense.objects.bulk_create(bulk_info)
             return True
         raise serializers.ValidationError({'expense': 'Expense items are duplicated.'})
@@ -220,7 +227,6 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
             budget_plan=instance,
             budget_plan_group__group_mapped__is_delete=False
         )
-        BudgetPlanCompanyExpense.objects.filter(budget_plan=instance).delete()
         existed_expense_id_list = []
         bulk_info = []
         order = 1
@@ -233,7 +239,10 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
                         expense_item=item.expense_item,
                         company_month_list=item.group_month_list,
                         company_quarter_list=item.group_quarter_list,
-                        company_year=item.group_year
+                        company_year=item.group_year,
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        employee_inherit_id=instance.employee_inherit_id
                     )
                 )
                 order += 1
@@ -248,6 +257,7 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
                         ]
                         data.company_year += item.group_year
             existed_expense_id_list.append(str(item.expense_item_id))
+        BudgetPlanCompanyExpense.objects.filter(budget_plan=instance).delete()
         BudgetPlanCompanyExpense.objects.bulk_create(bulk_info)
         return True
 
@@ -265,12 +275,18 @@ class BudgetPlanUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if not instance.is_lock:
+            employee_current_id = self.context.get('employee_current_id', None)
             group_id = self.initial_data.get('group_id')
             data_group_budget_plan = self.initial_data.get('data_group_budget_plan')
 
             budget_plan_group = BudgetPlanGroup.objects.filter(budget_plan=instance, group_mapped_id=group_id).first()
             if budget_plan_group:
-                self.create_new_budget_plan_group_expense(instance, budget_plan_group, data_group_budget_plan)
+                self.create_new_budget_plan_group_expense(
+                    instance,
+                    budget_plan_group,
+                    data_group_budget_plan,
+                    employee_current_id
+                )
                 self.create_new_budget_plan_company_expense(instance)
         else:
             raise serializers.ValidationError({'not allow': 'This budget plan is already locked.'})

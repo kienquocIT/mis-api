@@ -28,4 +28,4 @@ def call_log_update_at_zone(task_id: Union[UUID, str], employee_id: Union[UUID, 
     rt_assignee.action_perform.append('update')
     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
     rt_assignee.save(update_fields=['action_perform'])
-    return rt_assignee
+    return str(rt_assignee)
