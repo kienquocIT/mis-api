@@ -593,12 +593,12 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             'title': 'Tam ung thang 5',
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
-            'supplier': None,
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
-            'return_date': '2024-06-06 11:21:00.000000',
+            'return_date': '2023-06-06',
             'money_gave': True,
+            'system_status': 1,
             'expense_valid_list': [
                 {
                     'expense_name': 'Expense Item so 1',
@@ -612,7 +612,6 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                     'expense_uom_name': 'manhour',
                 }
             ],
-            'system_status': 1,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
