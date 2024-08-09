@@ -442,7 +442,6 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         if 3 in config_inventory_management:
             kw_parameter['sale_order_id'] = obj.sale_order_id
 
-        print(kw_parameter)
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
                 report_stock__sub_period_order=obj.sub_period_order,
