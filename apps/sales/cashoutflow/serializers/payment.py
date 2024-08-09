@@ -17,8 +17,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    system_status_raw = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
@@ -37,7 +35,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'payment_value',
             'date_created',
             'system_status',
-            'system_status_raw',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
@@ -123,14 +120,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
                 'is_close': is_close
             }
         return {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_system_status_raw(cls, obj):
-        return obj.system_status
 
     @classmethod
     def get_employee_inherit(cls, obj):

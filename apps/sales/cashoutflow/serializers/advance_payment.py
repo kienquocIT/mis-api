@@ -21,8 +21,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
     opportunity_mapped = serializers.SerializerMethodField()
     opportunity_id = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    system_status_raw = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -45,7 +43,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             'expense_items',
             'opportunity_id',
             'system_status',
-            'system_status_raw'
         )
 
     @classmethod
@@ -185,14 +182,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
         if obj.sale_order_mapped:
             return obj.sale_order_mapped.opportunity_id
         return None
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_system_status_raw(cls, obj):
-        return obj.system_status
 
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
