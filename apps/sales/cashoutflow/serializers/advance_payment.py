@@ -236,6 +236,8 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
             raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
+        if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is not allowed.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
@@ -468,6 +470,8 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
             raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
+        if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is not allowed.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
