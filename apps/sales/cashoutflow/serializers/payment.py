@@ -1,13 +1,11 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, SYSTEM_STATUS, \
-    AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
