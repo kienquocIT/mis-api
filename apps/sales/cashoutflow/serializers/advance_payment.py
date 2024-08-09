@@ -6,8 +6,10 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import Currency, ExpenseItem
 from apps.sales.cashoutflow.models.advance_payment import AdvancePaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, \
+from apps.shared import (
+    AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel,
     AbstractListSerializerModel, AbstractCreateSerializerModel
+)
 
 
 class AdvancePaymentListSerializer(AbstractListSerializerModel):
