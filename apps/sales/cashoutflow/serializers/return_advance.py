@@ -222,6 +222,7 @@ class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
             'system_status'
         )
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.advance_payment.system_status != 3:
             raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})

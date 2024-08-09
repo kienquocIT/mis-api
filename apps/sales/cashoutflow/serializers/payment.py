@@ -464,6 +464,7 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
                 validate_data.pop('employee_payment')
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.opportunity_mapped:
             if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:

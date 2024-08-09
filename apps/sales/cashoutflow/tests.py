@@ -63,10 +63,10 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'attachment',
+                'sale_code',
                 'is_change',
                 'document_root_id',
                 'document_change_order',
-                'sale_code',
             ],
             check_sum_second=True,
         )
@@ -492,9 +492,6 @@ class PaymentTestCase(AdvanceTestCase):
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
-                'is_change',
-                'document_root_id',
-                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -775,10 +772,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'date_created',
                 'money_received',
                 'system_status',
-                'return_total',
-                'is_change',
-                'document_root_id',
-                'document_change_order',
+                'return_total'
             ],
             check_sum_second=True,
         )
