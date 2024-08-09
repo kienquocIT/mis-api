@@ -10,7 +10,7 @@ from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMs
     AbstractCreateSerializerModel, AbstractListSerializerModel
 
 
-class PaymentListSerializer(AbstractListSerializerModel):
+class PaymentListSerializer(serializers.ModelSerializer):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
@@ -193,7 +193,7 @@ def create_files_mapped(payment_obj, file_id_list):
         raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
-class PaymentCreateSerializer(AbstractCreateSerializerModel):
+class PaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -447,7 +447,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class PaymentUpdateSerializer(AbstractCreateSerializerModel):
+class PaymentUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
     class Meta:

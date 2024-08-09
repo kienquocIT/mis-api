@@ -7,7 +7,7 @@ from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSe
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
-class ReturnAdvanceListSerializer(AbstractListSerializerModel):
+class ReturnAdvanceListSerializer(serializers.ModelSerializer):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
 
@@ -71,7 +71,7 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
 
-class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
+class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
     cost = ReturnAdvanceCostCreateSerializer(required=True, many=True)
 
     class Meta:
@@ -207,7 +207,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
         return list_result
 
 
-class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
+class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     method = serializers.IntegerField(required=False)
     money_received = serializers.BooleanField(required=False)
