@@ -5,8 +5,92 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-from apps.core.forms.models import FormPublished, FormPublishedEntries
-from apps.core.mailer.tasks import send_mail_form
+from apps.core.forms.models import FormPublished, FormPublishedEntries, FormPublishAuthenticateEmail
+from apps.core.mailer.tasks import send_mail_form, send_mail_from_system
+
+
+@shared_task
+def clean_form_auth_expired():
+    FormPublishAuthenticateEmail.destroy_expired()
+
+
+TEMPLATE_FORM_SEND_OTP = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .txt-company-name {
+            margin-bottom: 20px;
+        }
+        .otp-group {
+            margin: 20px 10px;
+        }
+        .otp-group span {
+            letter-spacing: 1rem;
+            padding: 10px 20px;
+            font-size: 2rem;
+            background-color: #f3f4f8;
+            color: #2822c2;
+            display: inline-block;
+            border-radius: 5px;
+        }
+        .txt-hi {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .txt-warning {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <img src="https://www.bflow.vn/images/logo/logo_180x180.png" alt="" style="width: 120px;margin-bottom: 10px;">
+    <h3 class="txt-company-name">BFlow - Comprehensive Enterprise Management Solution</h3>
+    <p class="txt-hi">Hello!</p>
+    <p>Use the following one-time password (OTP) to verify your email for actions on the Form</p>
+    <p>This OTP will be valid for <b>${minutes_expires} minutes</b> until <b>${date_expires_utc} (GMT +07:00)</b>.</p>
+    <p class="otp-group"><span>${otp}</span></p>
+    <p class="txt-warning">If you did not initiate this action or believe you received this email by mistake, please contact <a href="mailto:support@bflow.vn">support@bflow.vn</a>.</p>
+    <p>Sincerely,</p>
+    <b>BFlow Team</b>
+    <p><a href="https://www.bflow.vn">www.bflow.vn</a></p>
+</body>
+</html>
+"""
+
+
+@shared_task
+def form_send_otp(form_auth_id):
+    try:
+        obj = FormPublishAuthenticateEmail.objects.get(pk=form_auth_id)
+    except FormPublishAuthenticateEmail.DoesNotExist:
+        raise ValueError(f'Form Authenticate ID is not found: {form_auth_id}')
+
+    try:
+        contents = string.Template(TEMPLATE_FORM_SEND_OTP).safe_substitute({
+            'minutes_expires': int(obj.otp_expires_seconds / 60),
+            'date_expires_utc': obj.otp_expires.strftime('%Y-%m-%d %H:%M'),
+            'otp': obj.otp,
+        })
+    except KeyError as err:
+        raise ValueError(f'Template - KeyError: {str(err)}')
+
+    if contents:
+        subject = 'Your OTP code for form validation'
+        to_mail = [obj.email]
+        state_send = send_mail_from_system(subject=subject, to_mail=to_mail, contents=contents, timeout=30)
+        if state_send is True:
+            return True
+        raise ValueError(f'Send mail error: {state_send}')
+    raise ValueError('Convert HTML before send OTP is failure.')
 
 
 @shared_task
@@ -21,14 +105,21 @@ def check_and_update_active_publish_form():
     return ids_deactivate
 
 
-def form_get_creator_email(entry_obj, creator_receiver_from, creator_field) -> str or None:
-    if creator_receiver_from == 'authenticated':
-        if entry_obj.employee_created:
-            return entry_obj.employee_created.email
-    if creator_receiver_from == 'field' and creator_field:
-        field_data = entry_obj.body_data.get(creator_field, None)
-        if field_data and isinstance(field_data, str) and '@' in field_data:
-            return field_data
+def form_get_creator_email(entry_obj, publish_obj, creator_receiver_from, creator_field) -> str or None:
+    form_obj = getattr(publish_obj, 'form', None) if publish_obj else None
+    if form_obj and hasattr(form_obj, 'authentication_type'):
+        authentication_type = form_obj.authentication_type
+        if creator_receiver_from == 'authenticated':
+            if authentication_type == 'system':
+                if entry_obj.employee_created:
+                    return entry_obj.employee_created.email
+            elif authentication_type == 'email':
+                if entry_obj.creator_email:
+                    return entry_obj.creator_email
+        elif creator_receiver_from == 'field' and creator_field:
+            field_data = entry_obj.body_data.get(creator_field, None)
+            if field_data and isinstance(field_data, str) and '@' in field_data:
+                return field_data
     return None
 
 
@@ -145,14 +236,15 @@ def form_get_summary_data_html(company_sub_domain, publish_obj, entry_obj, creat
 
 
 def form_get_form_data_to_html(company_sub_domain, publish_obj, entry_obj):  # pylint: disable=W0613,W0613
-    return f'''
-        <table>
-            <tr>
-                <th colspan="2">{publish_obj.form.title}</th>
-            </tr>
-            <tr><td colspan="2">Data only supports live viewing, no preview version.</td></tr>
-        </table>
-    '''
+    # return f'''
+    #     <table>
+    #         <tr>
+    #             <th colspan="2">{publish_obj.form.title}</th>
+    #         </tr>
+    #         <tr><td colspan="2">Data only supports live viewing, no preview version.</td></tr>
+    #     </table>
+    # '''
+    return ''
 
 
 def form_get_template(data):
@@ -183,11 +275,14 @@ def notifications_form_with_new(entry_id):
         company_obj = getattr(publish_obj, 'company', None)
         notifications = publish_obj.notifications
         if notifications and isinstance(notifications, dict) and company_obj:
-            creator_enable_new = notifications.get('user_management_enable_new', False)
+            creator_enable_new = notifications.get('creator_enable_new', False)
             creator_receiver_from = notifications.get('creator_receiver_from', False)
             creator_field = notifications.get('creator_field', False)
             creator_email = form_get_creator_email(
-                entry_obj, creator_receiver_from=creator_receiver_from, creator_field=creator_field
+                entry_obj=entry_obj,
+                publish_obj=publish_obj,
+                creator_receiver_from=creator_receiver_from,
+                creator_field=creator_field,
             )
 
             user_management_enable_new = notifications.get('user_management_enable_new', False)
@@ -254,7 +349,10 @@ def notifications_form_with_change(entry_id):
             creator_receiver_from = notifications.get('creator_receiver_from', False)
             creator_field = notifications.get('creator_field', False)
             creator_email = form_get_creator_email(
-                entry_obj, creator_receiver_from=creator_receiver_from, creator_field=creator_field
+                entry_obj=entry_obj,
+                publish_obj=publish_obj,
+                creator_receiver_from=creator_receiver_from,
+                creator_field=creator_field,
             )
 
             user_management_enable_change = notifications.get('user_management_enable_new', False)

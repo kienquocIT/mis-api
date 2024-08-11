@@ -1,3 +1,7 @@
+import os
+
+from django.conf import settings
+
 # Routers use db when event call hit DB (default always use)
 # define DB map apps
 DB_ROUTERS_LOG_APP_LABELS = ("logs",)
@@ -46,5 +50,9 @@ class LogRouter:
         else:
             if db == "default":
                 return True
+            # flag ENABLE_MIGRATE_MOCKUP_DB_CI in commands apps/sharedapp/.../mockup_db_ci.py
+            if os.getenv('ENABLE_MIGRATE_MOCKUP_DB_CI', '0') in [1, '1']:
+                if db == 'mockup_db_ci':
+                    return True
         # print('Denied: ', app_label, model_name, db)
         return False

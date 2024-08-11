@@ -38,4 +38,8 @@ app.conf.beat_schedule = {
         'task': 'apps.core.forms.tasks.check_and_update_active_publish_form',
         'schedule': crontab(minute=5),
     },
+    'clean_form_session_expired': {
+        'task': 'apps.core.forms.tasks.clean_form_auth_expired',
+        'schedule': crontab(minute=5),
+    }
 }

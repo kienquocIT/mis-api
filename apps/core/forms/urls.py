@@ -5,7 +5,7 @@ from apps.core.forms.views import (
     FormSanitizeHTML, FormPublishedDetailForm, FormDetailForEntries,
     RuntimeFormPublishedDetail,
     FormEntriesList, FormEntriesRefNameList, RuntimeFormHasSubmitted, FormEntrySubmitted, FormDetailTheme,
-    FormDetailDuplicate,
+    FormDetailDuplicate, RuntimeAuthenticate, RuntimeAuthVerifySession,
 )
 
 urlpatterns = [
@@ -35,6 +35,10 @@ urlpatterns = [
         'runtime/submitted/data/<str:tenant_code>/<str:form_code>', RuntimeFormHasSubmitted.as_view(),
         name='RuntimeFormHasSubmitted'
     ),
+
+    # authenticate
+    path('runtime/auth', RuntimeAuthenticate.as_view(), name='RuntimeAuthenticate'),
+    path('runtime/auth/<str:pk_form_session>', RuntimeAuthVerifySession.as_view(), name='RuntimeAuthVerifySession'),
 
     # entries
     path('entries/<str:pk>/list', FormEntriesList.as_view(), name='FormEntriesList'),

@@ -39,7 +39,7 @@ class PickingHandler:
                     else:
                         raise serializers.ValidationError({'products': DeliverMsg.ERROR_OUT_STOCK})
 
-                    prod_regis = prod_warehouse.warehouse.gre_item_general_warehouse.filter(
+                    prod_regis = prod_warehouse.warehouse.gre_item_prd_wh_warehouse.filter(
                         gre_item__so_item__sale_order_id=instance.sale_order_data.get('id', None),
                         gre_item__product_id=prod_warehouse.product_id,
                     ).first()
