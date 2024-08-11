@@ -549,8 +549,7 @@ class APCommonFunction:
         elif len_n <= 12:
             result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
 
-        result = str(result.strip()).capitalize()
-        return result.lower()
+        return str(result.strip()).lower()
 
     @classmethod
     def create_expense_items(cls, advance_payment_obj, expense_valid_list):
@@ -576,8 +575,7 @@ class APCommonFunction:
                 AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
                 AdvancePaymentCost.objects.bulk_create(bulk_info)
                 advance_payment_obj.advance_value = advance_value
-                advance_value_by_words = APCommonFunction.read_money_vnd(advance_value)
-                advance_value_by_words[0] = advance_value_by_words[0].upper()
+                advance_value_by_words = APCommonFunction.read_money_vnd(advance_value).capitalize()
                 if advance_value_by_words[-1] == ',':
                     advance_value_by_words = advance_value_by_words[:-1] + ' đồng'
                 advance_payment_obj.advance_value_by_words = advance_value_by_words
