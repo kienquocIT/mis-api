@@ -1,7 +1,4 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
-from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 

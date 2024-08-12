@@ -66,10 +66,9 @@ class DistributionPlanCreateSerializer(serializers.ModelSerializer):
     def validate_supplier_list(cls, supplier_list):
         if len(supplier_list) == 0:
             raise serializers.ValidationError({'supplier_list': 'Supplier list is required.'})
-        else:
-            supplier_list_filter = Account.objects.filter(id__in=supplier_list)
-            if supplier_list_filter.count() != len(supplier_list):
-                raise serializers.ValidationError({'supplier_list': 'Supplier list is not valid.'})
+        supplier_list_filter = Account.objects.filter(id__in=supplier_list)
+        if supplier_list_filter.count() != len(supplier_list):
+            raise serializers.ValidationError({'supplier_list': 'Supplier list is not valid.'})
         return supplier_list
 
     @classmethod
