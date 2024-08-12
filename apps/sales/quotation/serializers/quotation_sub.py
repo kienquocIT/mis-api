@@ -276,36 +276,6 @@ class QuotationCommonValidate:
         try:
             Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return str(value)
-            # return {
-            #     'id': str(promotion.id),
-            #     'title': promotion.title,
-            #     'code': promotion.code,
-            #     'valid_date_start': str(promotion.valid_date_start),
-            #     'valid_date_end': str(promotion.valid_date_end),
-            #     'remark': promotion.remark,
-            #     'currency': {
-            #         'id': str(promotion.currency_id),
-            #         'title': promotion.currency.title,
-            #         'abbreviation': promotion.currency.abbreviation,
-            #     } if promotion.currency else {},
-            #     'customer_type': promotion.customer_type,
-            #     'customer_by_list': promotion.customer_by_list,
-            #     'customer_by_condition': promotion.customer_by_condition,
-            #     'customer_remark': promotion.customer_remark,
-            #     'is_discount': promotion.is_discount,
-            #     'is_gift': promotion.is_gift,
-            #     'discount_method': promotion.discount_method,
-            #     'gift_method': promotion.gift_method,
-            #     'sale_order_used': [
-            #         {
-            #             'customer_id': str(order_used[0]),
-            #             'date_created': str(order_used[1]),
-            #         } for order_used in promotion.sale_order_product_promotion.values_list(
-            #             'sale_order__customer_id',
-            #             'sale_order__date_created'
-            #         )
-            #     ]
-            # }
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
@@ -314,11 +284,6 @@ class QuotationCommonValidate:
         try:
             Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return str(value)
-            # return {
-            #     'id': str(shipping.id),
-            #     'title': shipping.title,
-            #     'code': shipping.code
-            # }
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 

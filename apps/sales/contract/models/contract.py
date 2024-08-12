@@ -5,6 +5,7 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 
 class Contract(DataAbstractModel):
+    document_data = models.JSONField(default=list, help_text='data json of document')
 
     class Meta:
         verbose_name = 'Contract'
@@ -22,6 +23,7 @@ class ContractDocument(MasterDataAbstractModel):
         related_name="contract_doc_contract",
     )
     remark = models.TextField(verbose_name="remark", blank=True, null=True)
+    attachment_data = models.JSONField(default=list, help_text='data json of attachment')
     order = models.IntegerField(default=1)
 
     class Meta:
