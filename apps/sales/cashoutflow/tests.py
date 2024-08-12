@@ -601,9 +601,9 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                     'expense_tax_id': tax.data['result']['id'],
                     'expense_quantity': 2,
                     'expense_unit_price': 20000000,
-                    'expense_tax_price': 20000000 * (tax.data['result']['rate']/100),
+                    'expense_tax_price': 2000000,
                     'expense_subtotal_price': 20000000,
-                    'expense_after_tax_price': 20000000 + 20000000 * (tax.data['result']['rate']/100),
+                    'expense_after_tax_price': 22000000,
                     'expense_uom_name': 'manhour',
                 }
             ],
