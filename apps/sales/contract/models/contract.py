@@ -4,12 +4,12 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 
-class Contract(DataAbstractModel):
+class ContractApproval(DataAbstractModel):
     document_data = models.JSONField(default=list, help_text='data json of document')
 
     class Meta:
-        verbose_name = 'Contract'
-        verbose_name_plural = 'Contracts'
+        verbose_name = 'Contract Approval'
+        verbose_name_plural = 'Contracts Approval'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
@@ -17,7 +17,7 @@ class Contract(DataAbstractModel):
 
 class ContractDocument(MasterDataAbstractModel):
     contract = models.ForeignKey(
-        'contract.Contract',
+        'contract.ContractApproval',
         on_delete=models.CASCADE,
         verbose_name="contract",
         related_name="contract_doc_contract",
@@ -25,6 +25,13 @@ class ContractDocument(MasterDataAbstractModel):
     remark = models.TextField(verbose_name="remark", blank=True, null=True)
     attachment_data = models.JSONField(default=list, help_text='data json of attachment')
     order = models.IntegerField(default=1)
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='ContractDocumentAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_contract_document',
+    )
 
     class Meta:
         verbose_name = 'Contract'

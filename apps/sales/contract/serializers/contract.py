@@ -1,29 +1,44 @@
 from rest_framework import serializers
 
 # from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.contract.models import Contract, ContractDocument
+from apps.sales.contract.models import ContractApproval, ContractDocument, ContractDocumentAttachment
 from apps.sales.contract.serializers.contract_sub import ContractCommonCreate
-from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared.translations.base import AttachmentMsg
 
 
 # SUB
 class DocumentCreateSerializer(serializers.ModelSerializer):
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+
     class Meta:
         model = ContractDocument
         fields = (
             'id',
             'title',
             'remark',
+            'attachment',
             'attachment_data',
             'order',
         )
+
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = ContractDocumentAttachment.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
 # CONTRACT BEGIN
 class ContractListSerializer(AbstractListSerializerModel):
 
     class Meta:
-        model = Contract
+        model = ContractApproval
         fields = (
             'id',
             'title',
@@ -35,7 +50,7 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
-        model = Contract
+        model = ContractApproval
         fields = (
             'id',
             'title',
@@ -49,7 +64,7 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
 
     class Meta:
-        model = Contract
+        model = ContractApproval
         fields = (
             'title',
             'document_data',
@@ -57,9 +72,15 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        contract = Contract.objects.create(**validated_data)
+        doc_map_attach = {}
+        for doc in validated_data.get('document_data', []):
+            if 'order' in doc and 'attachment' in doc:
+                doc_map_attach.update({doc.get('order', 0): doc.get('attachment', [])})
+                del doc['attachment']
+        contract = ContractApproval.objects.create(**validated_data)
         ContractCommonCreate.create_sub_models(
             validated_data=validated_data,
+            doc_map_attach=doc_map_attach,
             instance=contract,
         )
         return contract
@@ -69,7 +90,7 @@ class ContractUpdateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
 
     class Meta:
-        model = Contract
+        model = ContractApproval
         fields = (
             'title',
             'document_data',
@@ -77,8 +98,13 @@ class ContractUpdateSerializer(AbstractCreateSerializerModel):
 
     # @decorator_run_workflow
     def update(self, instance, validated_data):
-        # update quotation
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        ContractCommonCreate.create_sub_models(
+            validated_data=validated_data,
+            doc_map_attach=[],
+            instance=instance,
+            is_update=True,
+        )
         return instance

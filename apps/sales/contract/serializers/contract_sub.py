@@ -1,16 +1,38 @@
-from apps.sales.contract.models import ContractDocument
+from rest_framework import serializers
+
+from apps.core.base.models import Application
+from apps.sales.contract.models import ContractDocument, ContractDocumentAttachment
+from apps.shared.translations.base import AttachmentMsg
 
 
 class ContractCommonCreate:
 
     @classmethod
-    def create_document(cls, instance, validated_data):
-        ContractDocument.objects.bulk_create([
+    def handle_attach_file(cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            relate_app = Application.objects.filter(id="58385bcf-f06c-474e-a372-cadc8ea30ecc").first()
+            if relate_app:
+                state = ContractDocumentAttachment.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+        return True
+
+    @classmethod
+    def create_document(cls, validated_data, doc_map_attach, instance):
+        documents = ContractDocument.objects.bulk_create([
             ContractDocument(
                 contract=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **document
             ) for document in validated_data['document_data']
         ])
+        for document in documents:
+            if document.order in doc_map_attach:
+                ContractCommonCreate.handle_attach_file(
+                    instance=document, attachment_result=doc_map_attach[document.order]
+                )
         return True
 
     @classmethod
@@ -19,9 +41,9 @@ class ContractCommonCreate:
         return True
 
     @classmethod
-    def create_sub_models(cls, validated_data, instance, is_update=False):
+    def create_sub_models(cls, validated_data, doc_map_attach, instance, is_update=False):
         if 'document_data' in validated_data:
             if is_update is True:
                 cls.delete_old_document(instance=instance)
-            cls.create_document(validated_data=validated_data, instance=instance)
+            cls.create_document(validated_data=validated_data, doc_map_attach=doc_map_attach, instance=instance)
         return True
