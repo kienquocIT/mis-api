@@ -1016,7 +1016,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
     "code": "purchaserequest",
     "model_code": "purchaserequest",
     "app_label": "purchasing",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
@@ -1293,7 +1293,7 @@ INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "code": "inventoryadjustment",
     "model_code": "inventoryadjustment",
     "app_label": "inventory",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
@@ -1522,7 +1522,7 @@ AR_INVOICE_APP_CONFIG = {
     "code": "arinvoice",
     "model_code": "arinvoice",
     "app_label": "arinvoice",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
@@ -1573,7 +1573,7 @@ AP_INVOICE_APP_CONFIG = {
     "code": "apinvoice",
     "model_code": "apinvoice",
     "app_label": "apinvoice",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
         "81a111ef-9c32-4cbd-8601-a3cce884badb",  # Purchase Order
@@ -1786,7 +1786,7 @@ LEAD_APP_CONFIG = {
     "code": "lead",
     "model_code": "lead",
     "app_label": "lead",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {

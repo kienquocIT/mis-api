@@ -1,24 +1,20 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, SYSTEM_STATUS, \
-    AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
 
 
-class PaymentListSerializer(AbstractListSerializerModel):
+class PaymentListSerializer(serializers.ModelSerializer):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    system_status_raw = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
@@ -37,7 +33,6 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'payment_value',
             'date_created',
             'system_status',
-            'system_status_raw',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
@@ -125,14 +120,6 @@ class PaymentListSerializer(AbstractListSerializerModel):
         return {}
 
     @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_system_status_raw(cls, obj):
-        return obj.system_status
-
-    @classmethod
     def get_employee_inherit(cls, obj):
         return {
             'id': obj.employee_inherit_id,
@@ -193,7 +180,7 @@ def create_files_mapped(payment_obj, file_id_list):
         raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
-class PaymentCreateSerializer(AbstractCreateSerializerModel):
+class PaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -447,7 +434,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class PaymentUpdateSerializer(AbstractCreateSerializerModel):
+class PaymentUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -477,6 +464,7 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
                 validate_data.pop('employee_payment')
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.opportunity_mapped:
             if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:

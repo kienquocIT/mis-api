@@ -31,7 +31,7 @@ def call_task_background(
     if settings.DEBUG_BG_TASK:
         print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), kwargs)
 
-    _id = kwargs.pop('task_id', str(uuid4()))
+    _id = kwargs.pop('_task_id', str(uuid4()))
     if isinstance(my_task, Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             if settings.DEBUG_BG_TASK:

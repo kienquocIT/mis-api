@@ -51,6 +51,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'return_date',
                 'sale_code_type',
                 'advance_value',
+                'advance_value_by_words',
                 'advance_payment_type',
                 'expense_items',
                 'opportunity_mapped',
@@ -62,10 +63,10 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'attachment',
+                'sale_code',
                 'is_change',
                 'document_root_id',
                 'document_change_order',
-                'sale_code',
             ],
             check_sum_second=True,
         )
@@ -107,7 +108,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'expense_items',
                 'opportunity_id',
                 'system_status',
-                'system_status_raw',
                 'is_change',
                 'document_root_id',
                 'document_change_order',
@@ -144,6 +144,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'return_date',
                 'sale_code_type',
                 'advance_value',
+                'advance_value_by_words',
                 'advance_payment_type',
                 'expense_items',
                 'opportunity_mapped',
@@ -488,13 +489,9 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'date_created',
                 'system_status',
-                'system_status_raw',
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity_mapped',
-                'is_change',
-                'document_root_id',
-                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -591,12 +588,12 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             'title': 'Tam ung thang 5',
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
-            'supplier': None,
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
-            'return_date': '2024-06-06 11:21:00.000000',
+            'return_date': '2023-06-06',
             'money_gave': True,
+            'system_status': 1,
             'expense_valid_list': [
                 {
                     'expense_name': 'Expense Item so 1',
@@ -604,13 +601,12 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                     'expense_tax_id': tax.data['result']['id'],
                     'expense_quantity': 2,
                     'expense_unit_price': 20000000,
-                    'expense_tax_price': 20000000 * (tax.data['result']['rate']/100),
+                    'expense_tax_price': 2000000,
                     'expense_subtotal_price': 20000000,
-                    'expense_after_tax_price': 20000000 + 20000000 * (tax.data['result']['rate']/100),
+                    'expense_after_tax_price': 22000000,
                     'expense_uom_name': 'manhour',
                 }
             ],
-            'system_status': 1,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
@@ -633,6 +629,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'return_date',
                 'sale_code_type',
                 'advance_value',
+                'advance_value_by_words',
                 'advance_payment_type',
                 'expense_items',
                 'opportunity_mapped',
@@ -695,9 +692,22 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'workflow_runtime_id',
-                'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total',
-                'is_change', 'document_root_id', 'document_change_order',
+                'id',
+                'code',
+                'title',
+                'advance_payment',
+                'employee_created',
+                'employee_inherit',
+                'method',
+                'money_received',
+                'date_created',
+                'cost',
+                'return_total',
+                'workflow_runtime_id',
+                'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
@@ -775,10 +785,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'date_created',
                 'money_received',
                 'system_status',
-                'return_total',
-                'is_change',
-                'document_root_id',
-                'document_change_order',
+                'return_total'
             ],
             check_sum_second=True,
         )
@@ -802,9 +809,22 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method',
-                'system_status', 'money_received', 'date_created', 'cost', 'return_total', 'workflow_runtime_id',
-                'is_change', 'document_root_id', 'document_change_order',
+                'id',
+                'code',
+                'title',
+                'advance_payment',
+                'employee_created',
+                'employee_inherit',
+                'method',
+                'money_received',
+                'date_created',
+                'cost',
+                'return_total',
+                'workflow_runtime_id',
+                'system_status',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
             ],
             check_sum_second=True,
         )
