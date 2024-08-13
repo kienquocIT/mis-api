@@ -203,11 +203,68 @@ class DistributionPlanDetailSerializer(serializers.ModelSerializer):
 
 
 class DistributionPlanUpdateSerializer(serializers.ModelSerializer):
+    product = serializers.UUIDField(required=True)
+    no_of_month = serializers.IntegerField(required=True)
+
     class Meta:
         model = DistributionPlan
-        fields = "__all__"
+        fields = (
+            'title',
+            'product',
+            'start_date',
+            'no_of_month',
+            'product_price',
+            'break_event_point',
+            'expected_number',
+            'net_income',
+            'rate',
+            'plan_description'
+        )
+
+    @classmethod
+    def validate_product(cls, value):
+        try:
+            return Product.objects.get(id=value)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'product': 'Product is not exist.'})
+
+    @classmethod
+    def validate_no_of_month(cls, value):
+        if not value or value < 0:
+            raise serializers.ValidationError({'product': 'Product is not exist.'})
+        return value
+
+    @classmethod
+    def validate_supplier_list(cls, supplier_list):
+        if len(supplier_list) == 0:
+            raise serializers.ValidationError({'supplier_list': 'Supplier list is required.'})
+        supplier_list_filter = Account.objects.filter(id__in=supplier_list)
+        if supplier_list_filter.count() != len(supplier_list):
+            raise serializers.ValidationError({'supplier_list': 'Supplier list is not valid.'})
+        return supplier_list
+
+    @classmethod
+    def validate_fixed_cost_list(cls, fixed_cost_list):
+        fixed_cost_list_filter = ExpenseItem.objects.filter(
+            id__in=[expense_item.get('expense_item_id') for expense_item in fixed_cost_list]
+        )
+        if fixed_cost_list_filter.count() != len(fixed_cost_list):
+            raise serializers.ValidationError({'fixed_cost_list': 'Fixed cost list is not valid.'})
+        return fixed_cost_list
+
+    @classmethod
+    def validate_variable_cost_list(cls, variable_cost_list):
+        variable_cost_list_filter = ExpenseItem.objects.filter(
+            id__in=[expense_item.get('expense_item_id') for expense_item in variable_cost_list]
+        )
+        if variable_cost_list_filter.count() != len(variable_cost_list):
+            raise serializers.ValidationError({'variable_cost_list': 'Variable cost list is not valid.'})
+        return variable_cost_list
 
     def validate(self, validate_data):
+        self.validate_supplier_list(self.initial_data.get('supplier_list', []))
+        self.validate_fixed_cost_list(self.initial_data.get('fixed_cost_list', []))
+        self.validate_variable_cost_list(self.initial_data.get('variable_cost_list', []))
         return validate_data
 
     def update(self, instance, validated_data):
@@ -215,4 +272,32 @@ class DistributionPlanUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
+        # create supplier mapped
+        bulk_info_supplier = []
+        for supplier_item in self.initial_data.get('supplier_list', []):
+            bulk_info_supplier.append(
+                DistributionPlanSupplier(distribution_plan=instance, supplier_id=supplier_item)
+            )
+
+        # create fixed cost mapped
+        bulk_info_fixed_cost = []
+        for fixed_cost_item in self.initial_data.get('fixed_cost_list', []):
+            bulk_info_fixed_cost.append(
+                DistributionPlanFixedCost(distribution_plan=instance, **fixed_cost_item)
+            )
+
+        # create variable cost mapped
+        bulk_info_variable_cost = []
+        for variable_cost_item in self.initial_data.get('variable_cost_list', []):
+            bulk_info_variable_cost.append(
+                DistributionPlanVariableCost(distribution_plan=instance, **variable_cost_item)
+            )
+
+        DistributionPlanSupplier.objects.filter(distribution_plan=instance).delete()
+        DistributionPlanFixedCost.objects.filter(distribution_plan=instance).delete()
+        DistributionPlanVariableCost.objects.filter(distribution_plan=instance).delete()
+
+        DistributionPlanSupplier.objects.bulk_create(bulk_info_supplier)
+        DistributionPlanFixedCost.objects.bulk_create(bulk_info_fixed_cost)
+        DistributionPlanVariableCost.objects.bulk_create(bulk_info_variable_cost)
         return instance
