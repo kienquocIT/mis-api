@@ -17,5 +17,5 @@ urlpatterns = [
     path('lead/', include('apps.sales.lead.urls')),
     path('project/', include('apps.sales.project.urls')),
     path('budget-plans/', include('apps.sales.budgetplan.urls')),
-    path('distribution-plans/', include('apps.sales.distribution_plan.urls')),
+    path('distribution-plans/', include('apps.sales.distributionplan.urls')),
 ]

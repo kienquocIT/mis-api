@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.sales.distribution_plan.views import (
+from apps.sales.distributionplan.views import (
     DistributionPlanList, DistributionPlanDetail
 )
 

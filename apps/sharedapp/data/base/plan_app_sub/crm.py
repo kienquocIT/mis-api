@@ -2034,7 +2034,7 @@ DISTRIBUTION_PLAN_CONFIG = {
     "title": "Distribution Plan",
     "code": "distributionplan",
     "model_code": "distributionplan",
-    "app_label": "distribution_plan",
+    "app_label": "distributionplan",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {

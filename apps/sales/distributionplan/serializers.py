@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ExpenseItem, Account
-from apps.sales.distribution_plan.models import (
+from apps.sales.distributionplan.models import (
     DistributionPlan,
     DistributionPlanSupplier,
     DistributionPlanFixedCost,

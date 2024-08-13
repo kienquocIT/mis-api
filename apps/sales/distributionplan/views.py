@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.distribution_plan.models import DistributionPlan
-from apps.sales.distribution_plan.serializers import (
+from apps.sales.distributionplan.models import DistributionPlan
+from apps.sales.distributionplan.serializers import (
     DistributionPlanListSerializer, DistributionPlanDetailSerializer,
     DistributionPlanCreateSerializer, DistributionPlanUpdateSerializer,
 )
@@ -35,8 +35,8 @@ class DistributionPlanList(BaseListMixin, BaseCreateMixin):
         operation_description="Distribution Plan list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='distributionplan', model_code='distributionplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -47,8 +47,8 @@ class DistributionPlanList(BaseListMixin, BaseCreateMixin):
         request_body=DistributionPlanCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='distributionplan', model_code='distributionplan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -68,8 +68,8 @@ class DistributionPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Distribution Plan')
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='distributionplan', model_code='distributionplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -79,8 +79,8 @@ class DistributionPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=DistributionPlanUpdateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='distributionplan', model_code='distributionplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.serializer_class = DistributionPlanUpdateSerializer

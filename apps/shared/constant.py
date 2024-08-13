@@ -107,7 +107,7 @@ MAP_FIELD_TITLE = {
     'purchasing.purchasequotationrequest': 'title',
     'purchasing.purchaserequest': 'title',
     'cashoutflow.returnadvance': 'title',
-    'distribution_plan.distributionplan': 'title',
+    'distributionplan.distributionplan': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

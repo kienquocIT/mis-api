@@ -27,7 +27,11 @@ class DistributionPlan(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code(self.company_id)
+                records = DistributionPlan.objects.filter(
+                    company=self.company, tenant=self.tenant, is_delete=False, system_status=3
+                )
+                self.code = 'DP.00' + str(records.count() + 1)
+
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
