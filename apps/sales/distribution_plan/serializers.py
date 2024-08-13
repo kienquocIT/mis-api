@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ExpenseItem, Account
 from apps.sales.distribution_plan.models import (
     DistributionPlan,
@@ -16,8 +17,10 @@ __all__ = [
     'DistributionPlanUpdateSerializer'
 ]
 
+from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
-class DistributionPlanListSerializer(serializers.ModelSerializer):
+
+class DistributionPlanListSerializer(AbstractListSerializerModel):
     class Meta:
         model = DistributionPlan
         fields = (
@@ -30,7 +33,7 @@ class DistributionPlanListSerializer(serializers.ModelSerializer):
         )
 
 
-class DistributionPlanCreateSerializer(serializers.ModelSerializer):
+class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
     product = serializers.UUIDField(required=True)
     no_of_month = serializers.IntegerField(required=True)
 
@@ -95,7 +98,7 @@ class DistributionPlanCreateSerializer(serializers.ModelSerializer):
         self.validate_variable_cost_list(self.initial_data.get('variable_cost_list', []))
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         distribution_plan = DistributionPlan.objects.create(**validated_data)
 
@@ -126,7 +129,7 @@ class DistributionPlanCreateSerializer(serializers.ModelSerializer):
         return distribution_plan
 
 
-class DistributionPlanDetailSerializer(serializers.ModelSerializer):
+class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
     product = serializers.SerializerMethodField()
     supplier_list = serializers.SerializerMethodField()
     fixed_cost_list = serializers.SerializerMethodField()
@@ -202,7 +205,7 @@ class DistributionPlanDetailSerializer(serializers.ModelSerializer):
         return variable_cost_list
 
 
-class DistributionPlanUpdateSerializer(serializers.ModelSerializer):
+class DistributionPlanUpdateSerializer(AbstractCreateSerializerModel):
     product = serializers.UUIDField(required=True)
     no_of_month = serializers.IntegerField(required=True)
 
@@ -267,6 +270,7 @@ class DistributionPlanUpdateSerializer(serializers.ModelSerializer):
         self.validate_variable_cost_list(self.initial_data.get('variable_cost_list', []))
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
