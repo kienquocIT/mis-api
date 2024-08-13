@@ -47,7 +47,6 @@ class ContractListSerializer(AbstractListSerializerModel):
 
 
 class ContractDetailSerializer(AbstractDetailSerializerModel):
-    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ContractApproval
@@ -55,7 +54,7 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
-            'employee_inherit',
+            'document_data',
         )
 
 

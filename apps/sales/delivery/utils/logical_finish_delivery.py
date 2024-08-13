@@ -187,6 +187,7 @@ class DeliFinishHandler:
                 })
         return True
 
+    # SALE ORDER STATUS
     @classmethod
     def push_so_status(cls, instance):
         if instance.order_delivery.sale_order:
@@ -200,37 +201,51 @@ class DeliFinishHandler:
                 instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
         return True
 
+    # FINAL ACCEPTANCE
     @classmethod
     def push_final_acceptance(cls, instance):
         list_data_indicator = []
-        for deli_product in instance.delivery_product_delivery_sub.all():
-            actual_value = 0
-            if deli_product.product and deli_product.delivery_data:
-                for data_deli in deli_product.delivery_data:
-                    if all(key in data_deli for key in ('warehouse', 'stock')):
-                        cost = deli_product.product.get_unit_cost_by_warehouse(
-                            warehouse_id=data_deli.get('warehouse', None), get_type=1
-                        )
-                        actual_value += cost * data_deli['stock']
-                list_data_indicator.append({
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'sale_order_id': instance.order_delivery.sale_order_id,
-                    'delivery_sub_id': instance.id,
-                    'product_id': deli_product.product_id,
-                    'actual_value': actual_value,
-                    'acceptance_affect_by': 3,
-                })
-        FinalAcceptance.push_final_acceptance(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.order_delivery.sale_order_id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
-            list_data_indicator=list_data_indicator,
-        )
+        if instance.order_delivery:
+            if instance.order_delivery.sale_order:
+                for deli_product in instance.delivery_product_delivery_sub.all():
+                    if deli_product.product:
+                        list_data_indicator.append({
+                            'tenant_id': instance.tenant_id,
+                            'company_id': instance.company_id,
+                            'sale_order_id': instance.order_delivery.sale_order_id,
+                            'delivery_sub_id': instance.id,
+                            'product_id': deli_product.product_id,
+                            'actual_value': DeliFinishHandler.get_delivery_cost(
+                                deli_product=deli_product, sale_order=instance.order_delivery.sale_order
+                            ),
+                            'acceptance_affect_by': 3,
+                        })
+                FinalAcceptance.push_final_acceptance(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    sale_order_id=instance.order_delivery.sale_order_id,
+                    employee_created_id=instance.employee_created_id,
+                    employee_inherit_id=instance.employee_inherit_id,
+                    opportunity_id=instance.order_delivery.sale_order.opportunity_id,
+                    list_data_indicator=list_data_indicator,
+                )
         return True
+
+    @classmethod
+    def get_delivery_cost(cls, deli_product, sale_order):
+        actual_value = 0
+        if 1 in deli_product.product.product_choice:  # case: product allow inventory
+            for data_deli in deli_product.delivery_data:
+                if all(key in data_deli for key in ('warehouse', 'stock')):
+                    cost = deli_product.product.get_unit_cost_by_warehouse(
+                        warehouse_id=data_deli.get('warehouse', None), get_type=1
+                    )
+                    actual_value += cost * data_deli['stock']
+        else:  # case: product not allow inventory
+            so_cost = deli_product.product.sale_order_cost_product.filter(sale_order=sale_order).first()
+            if so_cost:
+                actual_value = so_cost.product_cost_price * deli_product.picked_quantity
+        return actual_value
 
     @classmethod
     def get_delivery_config(cls, instance):

@@ -482,6 +482,8 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'is_group',
             'group_title',
             'group_order',
+            'remain_for_purchase_request',
+            'remain_for_purchase_order',
         )
 
     @classmethod

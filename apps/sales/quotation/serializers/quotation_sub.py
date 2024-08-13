@@ -12,7 +12,6 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
     QuotationIndicator, QuotationAppConfig
-from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg, WarehouseMsg, \
     DisperseModel
 from apps.shared.translations.expense import ExpenseMsg
