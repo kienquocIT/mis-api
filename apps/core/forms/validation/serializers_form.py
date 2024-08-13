@@ -327,13 +327,22 @@ class FormEmailConfigSerializer(  # noqa
 
 class FormSelectOptions(serializers.Serializer):  # noqa
     title = serializers.CharField(max_length=255)
+    value = serializers.CharField(max_length=255)
     is_default = serializers.BooleanField(default=False)
     is_default_multiple = serializers.BooleanField(default=False)
+    col = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    row = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    group = serializers.CharField(max_length=5, allow_blank=True, required=False)
 
 
 class FormSelectConfigSerializer(  # noqa
     ConfigBase, ConfigRequired, ConfigVisibility,
 ):
+    style = serializers.ChoiceField(default='default', choices=['default', 'xbox', 'matrix'])
+    matrix_cols = serializers.ListSerializer(child=serializers.CharField(max_length=50), min_length=0, max_length=20)
+    matrix_rows = serializers.ListSerializer(child=serializers.CharField(max_length=50), min_length=0, max_length=20)
+    matrix_group_by = serializers.ChoiceField(default='', allow_blank=True, choices=['', 'col', 'row'])
+
     options = FormSelectOptions(many=True, default=[])
 
     @classmethod
@@ -359,8 +368,6 @@ class FormSelectConfigSerializer(  # noqa
             return attrs
         raise serializers.ValidationError({'options': FormMsg.SELECT_OPTION_REQUIRED})
 
-    is_multiple = serializers.BooleanField(default=False, required=False)
-
     def manage_options(self, input_name, input_value):  # pylint: disable=R0912
         if self.mc_required and not input_value:
             raise serializers.ValidationError({input_name: FormMsg.REQUIRED_FAIL})
@@ -369,17 +376,21 @@ class FormSelectConfigSerializer(  # noqa
         options = self.manage_configs.get('options', [])
         if options and isinstance(options, list) and len(options) > 0 and isinstance(is_multiple, bool):
             title_arr = []
+            value_arr = []
             for item in options:
-                if isinstance(item, dict) and 'title' in item:
-                    title_arr.append(item['title'])
+                if isinstance(item, dict):
+                    if 'title' in item:
+                        title_arr.append(item['title'])
+                    if 'value' in item:
+                        value_arr.append(item['value'])
                 else:
                     raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
-            if len(title_arr) == 0:
+            if len(title_arr) == 0 or len(value_arr) == 0:
                 raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
 
             if is_multiple is True and isinstance(input_value, list):
                 for inp_value in input_value:
-                    if inp_value not in title_arr:
+                    if inp_value not in value_arr:
                         raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
             elif is_multiple is False and isinstance(input_value, str):
                 if input_value not in title_arr:
@@ -388,6 +399,8 @@ class FormSelectConfigSerializer(  # noqa
                 raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
         else:
             raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+
+    is_multiple = serializers.BooleanField(default=False, required=False)
 
     def manage__valid(self, *args, **kwargs):
         ctx = {
