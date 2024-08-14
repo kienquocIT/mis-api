@@ -144,7 +144,7 @@ def read_money_vnd(num):
     elif len_n <= 12:
         result = read_money_vnd(int(str_n[:-9])) + " tỷ, " + read_money_vnd(int(str_n[-9:]))
 
-    return result.strip().capitalize()
+    return result
 
 
 class ARInvoiceCreateSerializer(serializers.ModelSerializer):

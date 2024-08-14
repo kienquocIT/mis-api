@@ -96,10 +96,11 @@ def getGitBranchName() {
 }
 
 def sendTelegram(message) {
+    def msgEncode = java.net.URLEncoder.encode(message, "UTF-8")
     sh """
         curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
             -d chat_id=${TELEGRAM_CHAT_ID} \
-            -d text="${message}"
+            -d text="${msgEncode}"
     """
 }
 
