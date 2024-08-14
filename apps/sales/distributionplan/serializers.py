@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ExpenseItem, Account
 from apps.sales.distributionplan.models import (
@@ -8,6 +7,7 @@ from apps.sales.distributionplan.models import (
     DistributionPlanFixedCost,
     DistributionPlanVariableCost
 )
+from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 __all__ = [
@@ -16,8 +16,6 @@ __all__ = [
     'DistributionPlanCreateSerializer',
     'DistributionPlanUpdateSerializer'
 ]
-
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 class DistributionPlanListSerializer(AbstractListSerializerModel):
@@ -29,7 +27,8 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
             'title',
             'start_date',
             'no_of_month',
-            'system_status'
+            'system_status',
+            'is_create_purchase_request'
         )
 
 
@@ -160,7 +159,10 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
         return {
             'id': str(obj.product_id),
             'code': obj.product.code,
-            'title': obj.product.title
+            'title': obj.product.title,
+            'description': obj.product.description,
+            'expected_number': obj.expected_number,
+            'purchase_request_number': obj.purchase_request_number
         } if obj.product else {}
 
     @classmethod
