@@ -2029,6 +2029,45 @@ REGISTRATION_APP_CONFIG = {
     "allow_permit": True,
 }
 
+DISTRIBUTION_PLAN_CONFIG = {
+    "id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",
+    "title": "Distribution Plan",
+    "code": "distributionplan",
+    "model_code": "distributionplan",
+    "app_label": "distributionplan",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2277,6 +2316,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "20ad27de-ea68-48a9-82bf-8833d7ab6da7": ApplicationConfigFrame(**REGISTRATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "57a32d5a-3580-43b7-bf31-953a1afc68f4": ApplicationConfigFrame(**DISTRIBUTION_PLAN_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
