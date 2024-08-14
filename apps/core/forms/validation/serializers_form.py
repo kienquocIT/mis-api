@@ -374,24 +374,55 @@ class FormSelectConfigSerializer(  # noqa
 
         is_multiple = self.manage_configs.get('is_multiple', False)
         options = self.manage_configs.get('options', [])
+        matrix_group_by = self.manage_configs.get('matrix_group_by', None)
         if options and isinstance(options, list) and len(options) > 0 and isinstance(is_multiple, bool):
             title_arr = []
             value_arr = []
+            group_by_key = {}
+            groups = []
             for item in options:
                 if isinstance(item, dict):
                     if 'title' in item:
                         title_arr.append(item['title'])
                     if 'value' in item:
                         value_arr.append(item['value'])
+                    if 'group' in item and item['group'] != "":
+                        groups.append(item['group'])
+                        group_by_key[item['value']] = item['group']
                 else:
                     raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
             if len(title_arr) == 0 or len(value_arr) == 0:
                 raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
 
             if is_multiple is True and isinstance(input_value, list):
-                for inp_value in input_value:
-                    if inp_value not in value_arr:
+                style = self.manage_configs.get('style', None)
+                if style == 'matrix':
+                    groups = list(set(groups))
+                    if groups and group_by_key:
+                        group_in_value = {
+                            key: [] for key in groups
+                        }
+                        for inp_value in input_value:
+                            if inp_value not in value_arr or inp_value not in group_by_key:
+                                raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+                            group_index = group_by_key[inp_value]
+                            group_in_value[group_index].append(inp_value)
+
+                        if len(groups) != len(group_in_value.keys()):
+                            raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+                        for _key, inps_value in group_in_value.items():
+                            if not (isinstance(inps_value, list) and len(inps_value) == 1):
+                                if matrix_group_by == 'row':
+                                    raise serializers.ValidationError({input_name: FormMsg.OPTIONS_INCORRECT_ROW})
+                                if matrix_group_by == 'col':
+                                    raise serializers.ValidationError({input_name: FormMsg.OPTIONS_INCORRECT_COL})
+                                raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+                    else:
                         raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
+                else:
+                    for inp_value in input_value:
+                        if inp_value not in value_arr:
+                            raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
             elif is_multiple is False and isinstance(input_value, str):
                 if input_value not in title_arr:
                     raise serializers.ValidationError({input_name: FormMsg.OPTIONS_FAIL})
