@@ -236,7 +236,7 @@ class Product(DataAbstractModel):
         permissions = ()
 
     def get_current_unit_cost(self, get_type=1, **kwargs):
-        company_config = self.company.company_config
+        company_config = getattr(self.company, 'company_config')
         if company_config.cost_per_warehouse and 'warehouse_id' in kwargs:
             return self.get_unit_cost_by_warehouse(kwargs.get('warehouse_id'), get_type=get_type)
         if company_config.cost_per_project and 'sale_order_id' in kwargs:
