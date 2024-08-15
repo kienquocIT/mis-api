@@ -235,6 +235,14 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def get_current_unit_cost(self, get_type=1, **kwargs):
+        company_config = self.company.company_config
+        if company_config.cost_per_warehouse and 'warehouse_id' in kwargs:
+            return self.get_unit_cost_by_warehouse(kwargs.get('warehouse_id'), get_type=get_type)
+        if company_config.cost_per_project and 'sale_order_id' in kwargs:
+            return self.get_unit_cost_by_project(kwargs.get('sale_order_id'), get_type=get_type)
+        return 0
+
     def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
         """
         get_type = 0: get quantity
@@ -277,6 +285,59 @@ class Product(DataAbstractModel):
             else:
                 opening_value_list_obj = self.report_inventory_cost_product.filter(
                     warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                ).first()
+                value_list = [
+                    opening_value_list_obj.opening_balance_quantity,
+                    opening_value_list_obj.opening_balance_cost,
+                    opening_value_list_obj.opening_balance_value
+                ] if opening_value_list_obj else [0, 0, 0]
+            if get_type != 3:
+                return value_list[get_type]
+            return value_list
+        return 0
+
+    def get_unit_cost_by_project(self, sale_order_id, get_type=1):
+        """
+        get_type = 0: get quantity
+        get_type = 1: get cost (default)
+        get_type = 2: get value
+        get_type = 3: get [quantity, cost, value]
+        else: return 0
+        """
+        this_period = Periods.objects.filter(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            fiscal_year=timezone.now().year
+        ).first()
+        if this_period:
+            latest_trans = self.latest_log_product.filter(sale_order_id=sale_order_id).first()
+            company_config = getattr(self.company, 'company_config')
+            if latest_trans:
+                if company_config.definition_inventory_valuation == 0:
+                    value_list = [
+                        latest_trans.latest_log.current_quantity,
+                        latest_trans.latest_log.current_cost,
+                        latest_trans.latest_log.current_value
+                    ]
+                else:
+                    opening_value_list_obj = self.report_inventory_cost_product.filter(
+                        sale_order_id=sale_order_id, period_mapped=this_period,
+                    ).first()
+                    if opening_value_list_obj:
+                        value_list = [
+                            opening_value_list_obj.opening_balance_quantity,
+                            opening_value_list_obj.opening_balance_cost,
+                            opening_value_list_obj.opening_balance_value
+                        ] if not opening_value_list_obj.periodic_closed else [
+                            opening_value_list_obj.periodic_ending_balance_quantity,
+                            opening_value_list_obj.periodic_ending_balance_cost,
+                            opening_value_list_obj.periodic_ending_balance_value
+                        ]
+                    else:
+                        value_list = [0, 0, 0]
+            else:
+                opening_value_list_obj = self.report_inventory_cost_product.filter(
+                    sale_order_id=sale_order_id, period_mapped=this_period, for_balance=True
                 ).first()
                 value_list = [
                     opening_value_list_obj.opening_balance_quantity,
