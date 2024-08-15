@@ -286,41 +286,6 @@ class GReItemBorrow(SimpleAbstractModel):
 
 
 # hàng nhập về kho chung
-class NoneGReItemSub(SimpleAbstractModel):
-    goods_registration = models.ForeignKey(
-        GoodsRegistration, on_delete=models.CASCADE, null=True
-    )
-    gre_item = models.ForeignKey(
-        GoodsRegistrationItem, on_delete=models.CASCADE, related_name='none_gre_item_sub_gre_item', null=True
-    )
-    warehouse = models.ForeignKey(
-        'saledata.WareHouse', on_delete=models.CASCADE, related_name="none_gre_item_sub_warehouse", null=True
-    )
-
-    quantity = models.FloatField(default=0)
-    cost = models.FloatField(default=0)
-    value = models.FloatField(default=0)
-
-    stock_type = models.SmallIntegerField(choices=[(1, 'In'), (-1, 'Out')], default=1)
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="none_gre_item_sub_uom", null=True
-    )
-    trans_id = models.CharField(blank=True, max_length=100, null=True)
-    trans_code = models.CharField(blank=True, max_length=100, null=True)
-    trans_title = models.CharField(blank=True, max_length=100, null=True)
-    system_date = models.DateTimeField(null=True)
-    lot_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True
-    )
-
-    class Meta:
-        verbose_name = 'None Goods Registration Item Sub'
-        verbose_name_plural = 'None Goods Registration Item Subs'
-        ordering = ()
-        default_permissions = ()
-        permissions = ()
-
-
 class NoneGReItemProductWarehouse(SimpleAbstractModel):
     product = models.ForeignKey(
         'saledata.Product',
