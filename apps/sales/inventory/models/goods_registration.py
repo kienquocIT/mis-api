@@ -594,6 +594,11 @@ class NoneProjectFunction:
     def for_delivery(cls, stock_info, stock_obj):
         _ = cls.update_none_gre_item_prd_wh(stock_info)
         # case borrow
+        NoneProjectFunction.call_update_borrow_data(stock_obj=stock_obj, stock_info=stock_info)
+        return True
+
+    @classmethod
+    def call_update_borrow_data(cls, stock_obj, stock_info):
         if stock_obj.order_delivery and 'product' in stock_info:
             main_so = stock_obj.order_delivery.sale_order
             gre_item = stock_info['product'].gre_item_product.filter(so_item__sale_order=main_so).first()
@@ -603,7 +608,7 @@ class NoneProjectFunction:
                 ).first()
                 if none_borrow_obj:
                     none_borrow_obj.update_borrow_data_when_delivery(
-                        gre_item_borrow=none_borrow_obj,
+                        none_gre_item_borrow=none_borrow_obj,
                         delivered_quantity=stock_info.get('quantity', 0)
                     )
         return True

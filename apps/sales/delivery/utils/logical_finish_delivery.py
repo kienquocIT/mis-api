@@ -237,8 +237,15 @@ class DeliFinishHandler:
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse', 'stock')):
-                    cost = deli_product.product.get_unit_cost_by_warehouse(
-                        warehouse_id=data_deli.get('warehouse', None), get_type=1
+                    # cost = deli_product.product.get_unit_cost_by_warehouse(
+                    #     warehouse_id=data_deli.get('warehouse', None), get_type=1
+                    # )
+                    cost = deli_product.product.get_current_unit_cost(
+                        get_type=1,
+                        **{
+                            'warehouse_id': data_deli.get('warehouse', None),
+                            'sale_order_id': data_deli.get('sale_order', None),
+                        }
                     )
                     actual_value += cost * data_deli['stock']
         else:  # case: product not allow inventory
