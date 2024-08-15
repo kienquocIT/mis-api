@@ -40,6 +40,11 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         token = self.get_validated_token(raw_token)
         user = self.get_user(token)
 
+        # from rest_framework_simplejwt.tokens import UntypedToken
+        # xsource = request.headers.get('X-Source', '')
+        # device_id = request.headers.get('Device-ID', '')
+        # print('Device-ID:', device_id)
+
         if user and token and isinstance(user, self.user_model):
             if settings.DEBUG_PERMIT:
                 print('active language [authenticate]:', user.language if user.language else 'vi', user, user.id)
