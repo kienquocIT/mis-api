@@ -5,7 +5,7 @@ from apps.sales.inventory.models import (
     GReItemProductWarehouseLot,
     GReItemProductWarehouse,
     GReItemBorrow,
-    GoodsRegistrationItemSub, GoodsRegistrationItem, NoneGReItemBorrow, NoneGReItemProductWarehouse
+    GReItemSub, GoodsRegistrationItem, NoneGReItemBorrow, NoneGReItemProductWarehouse
 )
 from apps.sales.inventory.serializers import (
     GoodsRegistrationListSerializer,
@@ -20,7 +20,7 @@ from apps.sales.inventory.serializers import (
     GReItemBorrowCreateSerializer,
     GReItemBorrowDetailSerializer,
     GReItemBorrowUpdateSerializer,
-    GoodsRegistrationItemSubSerializer,
+    GReItemSubSerializer,
     GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer, NoneGReItemBorrowListSerializer,
     NoneGReItemBorrowCreateSerializer, NoneGReItemBorrowDetailSerializer, NoneGReItemBorrowUpdateSerializer,
     NoneGoodsRegistrationItemAvailableQuantitySerializer
@@ -100,10 +100,10 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 # lấy dữ liệu chi tiết nhập-xuất hàng của dự án
-class GoodsRegistrationItemSubList(BaseListMixin):
-    queryset = GoodsRegistrationItemSub.objects
+class GReItemSubList(BaseListMixin):
+    queryset = GReItemSub.objects
     filterset_fields = {'gre_item_id': ['exact']}
-    serializer_list = GoodsRegistrationItemSubSerializer
+    serializer_list = GReItemSubSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(

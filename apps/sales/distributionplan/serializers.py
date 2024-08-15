@@ -162,7 +162,12 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'title': obj.product.title,
             'description': obj.product.description,
             'expected_number': obj.expected_number,
-            'purchase_request_number': obj.purchase_request_number
+            'purchase_request_number': obj.purchase_request_number,
+            'uom': {
+                'id': str(obj.product.general_uom_group.uom_reference_id),
+                'code': obj.product.general_uom_group.uom_reference.code,
+                'title': obj.product.general_uom_group.uom_reference.title
+            } if obj.product.general_uom_group.uom_reference else {}
         } if obj.product else {}
 
     @classmethod
