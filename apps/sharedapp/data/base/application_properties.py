@@ -1796,6 +1796,15 @@ AppProp_SaleData_Return_Payment_data = {
     },
 }
 
+AppProp_SaleData_Distribution_Plan_data = {
+    "62e2a55d-1054-44f1-9f30-db0829e6973d": {
+        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1823,4 +1832,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Purchase_Quotation_Request_data,
     **AppProp_SaleData_Purchase_Request_data,
     **AppProp_SaleData_Return_Payment_data,
+    **AppProp_SaleData_Distribution_Plan_data
 }

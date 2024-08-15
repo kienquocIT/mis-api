@@ -3,11 +3,11 @@ from apps.masterdata.saledata.models import ProductWareHouseSerial
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
-def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+def cast_from_base(uom, quantity):
+    return (quantity / uom.ratio) if uom.ratio else 0
 
 
-def cast_quantity_to_unit(uom, quantity):
+def cast_to_base(uom, quantity):
     return quantity * uom.ratio
 
 
@@ -64,17 +64,13 @@ class GoodsRegistration(DataAbstractModel):
                 ).first()
                 if gre_item:
                     # gắn thẻ hàng đăng kí và cập nhập gre_item
-                    if stock_info['trans_title'] == 'Goods receipt':
-                        gre_item = ProjectFunction.for_goods_receipt(stock_info, gre_item, stock_info['trans_id'])
-                    if stock_info['trans_title'] == 'Delivery':
-                        gre_item = ProjectFunction.for_delivery(stock_info, gre_item, stock_obj)
+                    gre_item = ProjectFunction.for_goods_receipt(stock_info, gre_item, stock_info['trans_id'])
+                    gre_item = ProjectFunction.for_delivery(stock_info, gre_item, stock_obj)
                     gre_item.save(update_fields=['this_registered', 'this_available'])
         else:  # vào kho chung
             # gắn thẻ hàng vào kho chung
-            if stock_info['trans_title'] == 'Goods receipt':
-                NoneProjectFunction.for_goods_receipt(stock_info, stock_info['trans_id'])
-            if stock_info['trans_title'] == 'Delivery':
-                NoneProjectFunction.for_delivery(stock_info)
+            NoneProjectFunction.for_goods_receipt(stock_info, stock_info['trans_id'])
+            NoneProjectFunction.for_delivery(stock_info, stock_obj)
         return True
 
 
@@ -107,12 +103,13 @@ class GoodsRegistrationItem(SimpleAbstractModel):
         permissions = ()
 
 
-class GoodsRegistrationItemSub(SimpleAbstractModel):
+# hàng nhập về kho dự án
+class GReItemSub(SimpleAbstractModel):
     goods_registration = models.ForeignKey(
         GoodsRegistration, on_delete=models.CASCADE, null=True
     )
     gre_item = models.ForeignKey(
-        GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_sub', null=True
+        GoodsRegistrationItem, on_delete=models.CASCADE, related_name='gre_item_sub_gre_item', null=True
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse', on_delete=models.CASCADE, related_name="gre_item_sub_warehouse", null=True
@@ -271,7 +268,7 @@ class GReItemBorrow(SimpleAbstractModel):
     def update_borrow_data_when_delivery(cls, gre_item_borrow, delivered_quantity):
         if gre_item_borrow:
             gre_item_borrow.delivered += delivered_quantity
-            gre_item_borrow.base_delivered += cast_quantity_to_unit(gre_item_borrow.uom, delivered_quantity)
+            gre_item_borrow.base_delivered += cast_to_base(gre_item_borrow.uom, delivered_quantity)
             gre_item_borrow.available = gre_item_borrow.quantity - gre_item_borrow.delivered
             gre_item_borrow.base_available = gre_item_borrow.base_quantity - gre_item_borrow.base_delivered
             gre_item_borrow.save(update_fields=[
@@ -415,7 +412,7 @@ class NoneGReItemBorrow(SimpleAbstractModel):
     def update_borrow_data_when_delivery(cls, none_gre_item_borrow, delivered_quantity):
         if none_gre_item_borrow:
             none_gre_item_borrow.delivered += delivered_quantity
-            none_gre_item_borrow.base_delivered += cast_quantity_to_unit(
+            none_gre_item_borrow.base_delivered += cast_to_base(
                 none_gre_item_borrow.uom, delivered_quantity
             )
             none_gre_item_borrow.available = none_gre_item_borrow.quantity - none_gre_item_borrow.delivered
@@ -439,17 +436,17 @@ class NoneGReItemBorrow(SimpleAbstractModel):
 class ProjectFunction:
     @classmethod
     def update_gre_item_prd_wh(cls, gre_item, stock_info):
-        casted_quantity_to_inv = cast_unit_to_inv_quantity(stock_info['product'].inventory_uom, stock_info['quantity'])
-        gre_item.this_registered += casted_quantity_to_inv * stock_info['stock_type']
+        so_uom_quantity = cast_from_base(gre_item.so_item.unit_of_measure, stock_info['quantity'])
+        gre_item.this_registered += so_uom_quantity * stock_info['stock_type']
         gre_item.this_available = gre_item.this_registered - gre_item.this_registered_borrowed
 
         # create sub, save by inventory uom
-        GoodsRegistrationItemSub.objects.create(
+        GReItemSub.objects.create(
             goods_registration=gre_item.goods_registration,
             gre_item=gre_item,
             warehouse=stock_info['warehouse'],
-            quantity=casted_quantity_to_inv,
-            cost=stock_info['value'] / casted_quantity_to_inv,
+            quantity=so_uom_quantity,
+            cost=stock_info['value'] / so_uom_quantity,
             value=stock_info['value'],
             stock_type=stock_info['stock_type'],
             uom=stock_info['product'].inventory_uom,
@@ -486,35 +483,37 @@ class ProjectFunction:
     @classmethod
     def for_goods_receipt(cls, stock_info, gre_item, goods_receipt_id):
         """ stock_info['sale_order'] is required """
-        gre_item, gre_item_prd_wh = cls.update_gre_item_prd_wh(gre_item, stock_info)
-        # create lot/sn data
-        if stock_info['product'].general_traceability_method == 1:  # lot
-            GReItemProductWarehouseLot.objects.create(
-                goods_registration=gre_item_prd_wh.goods_registration,
-                gre_item_prd_wh=gre_item_prd_wh,
-                lot_registered_id=stock_info['lot_data']['lot_id']
-            )
-        if stock_info['product'].general_traceability_method == 2:  # sn
-            bulk_info = []
-            for serial in ProductWareHouseSerial.objects.filter(
-                    goods_receipt=goods_receipt_id,
-                    purchase_request__sale_order=stock_info['sale_order']
-            ):
-                bulk_info.append(
-                    GReItemProductWarehouseSerial(
-                        goods_registration=gre_item_prd_wh.goods_registration,
-                        gre_item_prd_wh=gre_item_prd_wh,
-                        sn_registered=serial
-                    )
+        if stock_info['trans_title'] == 'Goods receipt':
+            gre_item, gre_item_prd_wh = cls.update_gre_item_prd_wh(gre_item, stock_info)
+            # create lot/sn data
+            if stock_info['product'].general_traceability_method == 1:  # lot
+                GReItemProductWarehouseLot.objects.create(
+                    goods_registration=gre_item_prd_wh.goods_registration,
+                    gre_item_prd_wh=gre_item_prd_wh,
+                    lot_registered_id=stock_info['lot_data']['lot_id']
                 )
-            GReItemProductWarehouseSerial.objects.bulk_create(bulk_info)
+            if stock_info['product'].general_traceability_method == 2:  # sn
+                bulk_info = []
+                for serial in ProductWareHouseSerial.objects.filter(
+                        goods_receipt=goods_receipt_id,
+                        purchase_request__sale_order=stock_info['sale_order']
+                ):
+                    bulk_info.append(
+                        GReItemProductWarehouseSerial(
+                            goods_registration=gre_item_prd_wh.goods_registration,
+                            gre_item_prd_wh=gre_item_prd_wh,
+                            sn_registered=serial
+                        )
+                    )
+                GReItemProductWarehouseSerial.objects.bulk_create(bulk_info)
         return gre_item
 
     @classmethod
     def for_delivery(cls, stock_info, gre_item, stock_obj):
-        gre_item, _ = cls.update_gre_item_prd_wh(gre_item, stock_info)
-        # case borrow
-        ProjectFunction.call_update_borrow_data(gre_item=gre_item, stock_obj=stock_obj, stock_info=stock_info)
+        if stock_info['trans_title'] == 'Delivery':
+            gre_item, _ = cls.update_gre_item_prd_wh(gre_item, stock_info)
+            # case borrow
+            ProjectFunction.call_update_borrow_data(gre_item=gre_item, stock_obj=stock_obj, stock_info=stock_info)
         return gre_item
 
     @classmethod
@@ -561,33 +560,50 @@ class NoneProjectFunction:
 
         # tạo obj đếm SL đăng kí
         regis_quantity_obj = NoneGReItemProductRegisQuantity.objects.filter(product=stock_info['product']).first()
-        if regis_quantity_obj:
+        if not regis_quantity_obj:
             NoneGReItemProductRegisQuantity.objects.create(product=stock_info['product'])
+        else:
+            regis_quantity_obj.keep_for_project += stock_info['quantity'] * stock_info['stock_type']
+            regis_quantity_obj.save(update_fields=['keep_for_project'])
 
         return none_gre_item_prd_wh
 
     @classmethod
     def for_goods_receipt(cls, stock_info, goods_receipt_id):
-        none_gre_item_prd_wh = cls.update_none_gre_item_prd_wh(stock_info)
-        # create lot/sn data
-        if stock_info['product'].general_traceability_method == 1:  # lot
-            NoneGReItemProductWarehouseLot.objects.create(
-                none_gre_item_prd_wh=none_gre_item_prd_wh,
-                lot_mapped_id=stock_info['lot_data']['lot_id']
-            )
-        if stock_info['product'].general_traceability_method == 2:  # sn
-            bulk_info = []
-            for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
-                bulk_info.append(
-                    NoneGReItemProductWarehouseSerial(
-                        none_gre_item_prd_wh=none_gre_item_prd_wh,
-                        sn_mapped=serial
-                    )
+        if stock_info['trans_title'] == 'Goods receipt':
+            none_gre_item_prd_wh = cls.update_none_gre_item_prd_wh(stock_info)
+            # create lot/sn data
+            if stock_info['product'].general_traceability_method == 1:  # lot
+                NoneGReItemProductWarehouseLot.objects.create(
+                    none_gre_item_prd_wh=none_gre_item_prd_wh,
+                    lot_mapped_id=stock_info['lot_data']['lot_id']
                 )
-            NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info)
+            if stock_info['product'].general_traceability_method == 2:  # sn
+                bulk_info = []
+                for serial in ProductWareHouseSerial.objects.filter(goods_receipt=goods_receipt_id):
+                    bulk_info.append(
+                        NoneGReItemProductWarehouseSerial(
+                            none_gre_item_prd_wh=none_gre_item_prd_wh,
+                            sn_mapped=serial
+                        )
+                    )
+                NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
-    def for_delivery(cls, stock_info):
+    def for_delivery(cls, stock_info, stock_obj):
         _ = cls.update_none_gre_item_prd_wh(stock_info)
+        # case borrow
+        if stock_obj.order_delivery and 'product' in stock_info:
+            main_so = stock_obj.order_delivery.sale_order
+            gre_item = stock_info['product'].gre_item_product.filter(so_item__sale_order=main_so).first()
+            if gre_item:
+                none_borrow_obj = gre_item.none_gre_item_src_borrow.filter(
+                    gre_source__sale_order=main_so
+                ).first()
+                if none_borrow_obj:
+                    none_borrow_obj.update_borrow_data_when_delivery(
+                        gre_item_borrow=none_borrow_obj,
+                        delivered_quantity=stock_info.get('quantity', 0)
+                    )
         return True

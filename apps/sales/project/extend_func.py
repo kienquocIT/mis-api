@@ -131,6 +131,8 @@ def calc_update_task(task_obj):
 
 def re_calc_work_group(work):
     list_task = ProjectMapTasks.objects.filter(work=work)
+    work.w_rate = 0
+    work.work_status = 0
     if list_task:
         total_w = 0
         for item in list_task:
@@ -138,7 +140,7 @@ def re_calc_work_group(work):
         if total_w > 0:
             work.w_rate = round(total_w / list_task.count(), 1)
             work.work_status = 1
-            work.save()
+    work.save()
     # calc rate group
     group_map = work.project_groupmapwork_work.all()
     if group_map.exists():

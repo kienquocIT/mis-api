@@ -94,6 +94,14 @@ msgid "The value is not support"
 msgstr "Giá trị không được hỗ trợ"
 
 #
+msgid "Only one selection is allowed per row. All rows mandatory fields are required."
+msgstr "Chỉ một lựa chọn trên mỗi dòng. Tất cả các dòng đều phải có nếu trường này bắt buộc."
+
+#
+msgid "Only one selection is allowed per column. All columns mandatory fields are required."
+msgstr "Chỉ một lựa chọn trên mỗi cột. Tất cả các cột đều phải có nếu trường này là bắt buộc."
+
+#
 msgid "The date format is not support"
 msgstr "Định dạng ngày không hỗ trợ"
 

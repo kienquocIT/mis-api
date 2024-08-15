@@ -433,7 +433,7 @@ class OrderDeliverySub(DataAbstractModel):
                     quantity = pw_data.quantity_delivery
                     lot_data = pw_data.lot_data
                     sn_data = pw_data.serial_data
-                    if sale_order_obj and warehouse_obj and uom_obj and quantity > 0:
+                    if warehouse_obj and uom_obj and quantity > 0:
                         if product_obj.general_traceability_method == 0:  # None
                             casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
                             stock_data.append({
