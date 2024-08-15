@@ -7,7 +7,7 @@ from apps.sales.inventory.models import (
     GReItemProductWarehouseLot,
     GReItemProductWarehouse,
     GReItemBorrow,
-    GoodsRegistrationItemSub,
+    GReItemSub,
     GoodsRegistrationItem,
     NoneGReItemBorrow,
     NoneGReItemProductWarehouse,
@@ -132,14 +132,14 @@ class GoodsRegistrationUpdateSerializer(serializers.ModelSerializer):
 
 
 # lấy dữ liệu chi tiết nhập-xuất hàng của dự án
-class GoodsRegistrationItemSubSerializer(serializers.ModelSerializer):
+class GReItemSubSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     lot_mapped = serializers.SerializerMethodField()
 
     class Meta:
-        model = GoodsRegistrationItemSub
+        model = GReItemSub
         fields = (
             'id',
             'sale_order',
