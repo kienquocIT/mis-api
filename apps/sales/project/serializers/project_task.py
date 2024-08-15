@@ -2,6 +2,7 @@ __all__ = ['ProjectTaskListSerializers', 'ProjectTaskDetailSerializers']
 
 from rest_framework import serializers
 
+from apps.shared import ProjectMsg
 from ..extend_func import re_calc_work_group
 from ..models import ProjectMapTasks
 
@@ -57,6 +58,14 @@ class ProjectTaskDetailSerializers(serializers.ModelSerializer):
         fields = (
             'work',
         )
+
+    def validate(self, attrs):
+        work = attrs['work'] if 'work' in attrs else None
+        # nếu có work và loại qh là FS và work chưa finish
+        if work and work.work_dependencies_parent and work.work_dependencies_type == 1 and \
+                work.work_dependencies_parent.w_rate != 100:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_UPDATE_WORK_ERROR})
+        return attrs
 
     def update(self, instance, validated_data):
         unlink = self.context.get('unlink_work', None)

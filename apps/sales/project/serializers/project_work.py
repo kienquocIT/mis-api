@@ -7,20 +7,24 @@ from ..extend_func import calc_weight_work_in_group, calc_weight_all, reorder_wo
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
 
 
-def validated_date_work(attrs):
+def validated_date_work(attrs, w_rate=None):
     if 'work_dependencies_parent' in attrs and hasattr(attrs['work_dependencies_parent'], 'id'):
         work_type = attrs['work_dependencies_type'] if 'work_dependencies_type' in attrs else 0
+        work_parent = attrs['work_dependencies_parent']
 
         # nếu loại bắt đầu là "finish to start" và ngày kết thúc lớn hơn ngày bắt đầu của work tạo
-        if work_type == 1 and hasattr(attrs['work_dependencies_parent'], 'id') \
-                and attrs['work_dependencies_parent'].w_end_date >= attrs['w_start_date'] \
-                or attrs['w_start_date'] < attrs['work_dependencies_parent'].w_start_date:
+        if work_type == 1 and work_parent.w_end_date >= attrs['w_start_date'] \
+                or attrs['w_start_date'] < work_parent.w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE})
 
         # nếu công việc tự phụ thuộc chính nó thì báo lỗi
-        parent_id = getattr(attrs.get('work_dependencies_parent'), 'id', None)
+        parent_id = getattr(work_parent, 'id', None)
         if parent_id and parent_id == attrs.get('id'):
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DEPENDENCIES_ERROR})
+
+        # nếu loại "FS" và work dc phụ thuộc chưa finish, và work rate > 0
+        if work_type == 1 and (w_rate and w_rate > 0) and work_parent.w_rate != 100:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_UPDATE_WORK_ERROR})
 
     if 'group' in attrs:
         group_flt = ProjectGroups.objects.filter(id=attrs['group'])
@@ -178,11 +182,12 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
+        w_rate = self.instance.w_rate
         w_start_date = attrs['w_start_date']
         w_end_date = attrs['w_end_date']
         if w_end_date < w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
-        return validated_date_work(attrs)
+        return validated_date_work(attrs, w_rate)
 
     @classmethod
     def check_update_with_group(cls, instance_work, validated_group):
