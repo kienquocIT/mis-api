@@ -1126,3 +1126,11 @@ msgstr "Dự án Đường cơ sở"
 #
 msgid "Error! Date end larger than Date start"
 msgstr "Lỗi! Ngày kết thúc lớn hơn ngày bắt đầu"
+
+#
+msgid "Current work is in progress can not select dependencies type \"Finish to start\""
+msgstr "Công việc hiện tại đang thực hiện, không thể chọn loại quan hệ \"Hoàn thành để bắt đầu\""
+
+#
+msgid "Can not add in progress task to work has type \"Finish to start\""
+msgstr "Không thể thêm Giao việc đang làm vào Công việc có loại là \"Hoàn thành để bắt đầu\""

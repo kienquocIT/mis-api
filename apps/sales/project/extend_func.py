@@ -99,15 +99,25 @@ def calc_update_task(task_obj):
         if list_task:
             # get all task and re-update % complete per work
             total_w = 0
+            is_pending = False
             for item in list_task:
                 total_w += item.task.percent_completed
+                if item.task.task_status.task_kind == 3:
+                    is_pending = True
+
             if total_w > 0:
                 work.w_rate = round(total_w / list_task.count(), 1)
-                work.work_status = 1
+                if work.w_rate == 100:
+                    work.work_status = 3
+                else:
+                    work.work_status = 1
+                if is_pending:
+                    work.work_status = 2
                 work.save()
             # calc rate group
             if hasattr(work, 'project_groupmapwork_work'):
                 group_map = work.project_groupmapwork_work.all()
+
                 if group_map:
                     group_obj = group_map.first().group
                     list_work = group_obj.works.all()
@@ -115,12 +125,14 @@ def calc_update_task(task_obj):
                     for work in list_work:
                         rate_w += work.w_rate
                     if rate_w > 0:
-                        group_obj.gr_rate = round(rate_w / list_work.count(), 1)
+                        group_obj.gr_rate = round(rate_w/list_work.count(), 1)
                         group_obj.save()
 
 
 def re_calc_work_group(work):
     list_task = ProjectMapTasks.objects.filter(work=work)
+    work.w_rate = 0
+    work.work_status = 0
     if list_task:
         total_w = 0
         for item in list_task:
@@ -128,7 +140,7 @@ def re_calc_work_group(work):
         if total_w > 0:
             work.w_rate = round(total_w / list_task.count(), 1)
             work.work_status = 1
-            work.save()
+    work.save()
     # calc rate group
     group_map = work.project_groupmapwork_work.all()
     if group_map.exists():

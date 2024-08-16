@@ -15,3 +15,5 @@ class ProjectMsg:
     PROJECT_CREATE_BASELINE = _('Create baseline error please reload and try again')
     PROJECT_DATE_ERROR = _('Error! Date end larger than Date start')
     PROJECT_DEPENDENCIES_ERROR = _('Work dependencies not found!')
+    PROJECT_UPDATE_WORK_ERROR = _('Current work is in progress can not select dependencies type "Finish to start"')
+    PROJECT_UPDATE_WORK_ERROR = _('Can not add in progress task to work has type "Finish to start"')
