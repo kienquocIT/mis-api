@@ -4,11 +4,11 @@ __init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd',
 from typing import Union
 
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
-from apps.sales.project.models import Project, ProjectMapMember
+from apps.sales.project.models import Project, ProjectMapMember, ProjectBaseline
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
@@ -36,6 +36,13 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
         'employee_created_id',
         'employee_inherit',
     ]
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch('project_projectmapwork_project'),
+            Prefetch('project_projectmaptasks_project'),
+            Prefetch('project_projectbaseline_project_related'),
+        )
 
     @classmethod
     def get_prj_allowed(cls, item_data):
