@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouseSerial,
     SubPeriods
 )
-from apps.sales.inventory.models.goods_registration import GoodsRegistrationItemSub, GReItemProductWarehouse
+from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
@@ -312,9 +312,9 @@ class GoodsTransfer(DataAbstractModel):
         casted_quantity = (
                 goods_transfer_item.quantity / goods_transfer_item.product.inventory_uom.ratio
         ) if goods_transfer_item.product.inventory_uom.ratio else 0
-        GoodsRegistrationItemSub.objects.bulk_create(
+        GReItemSub.objects.bulk_create(
             [
-                GoodsRegistrationItemSub(
+                GReItemSub(
                     goods_registration=goods_registration,
                     gre_item=gre_item,
                     warehouse=goods_transfer_item.warehouse,
@@ -328,7 +328,7 @@ class GoodsTransfer(DataAbstractModel):
                     trans_title='Goods transfer (out)',
                     system_date=goods_transfer.date_approved
                 ),
-                GoodsRegistrationItemSub(
+                GReItemSub(
                     goods_registration=goods_registration,
                     gre_item=gre_item,
                     warehouse=goods_transfer_item.end_warehouse,
