@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     GoodsRegistration,
@@ -435,8 +436,21 @@ class GoodsRegisBorrowList(BaseListMixin):
     }
     serializer_list = GoodsRegisBorrowListSerializer
 
-    # def get_queryset(self):
-    #     return super().get_queryset()
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'gre_item_prd_wh',
+                queryset=GReItemProductWarehouse.objects.select_related('warehouse'),
+            ),
+            Prefetch(
+                'gre_item_src_borrow',
+                queryset=GReItemBorrow.objects.select_related('uom'),
+            ),
+            Prefetch(
+                'none_gre_item_src_borrow',
+                queryset=NoneGReItemBorrow.objects.select_related('uom'),
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary="Goods Registration Borrow List",

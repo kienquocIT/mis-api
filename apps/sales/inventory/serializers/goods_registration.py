@@ -650,7 +650,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             return {
                 'id': gre_item.product_id,
@@ -662,7 +662,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             if gre_item.product:
                 if gre_item.product.general_uom_group:
