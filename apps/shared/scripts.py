@@ -1905,3 +1905,81 @@ def make_sure_project_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).project_config()
     print('Project config is done!')
+
+
+def parse_data_json_quo_so():
+    for quotation in Quotation.objects.all():
+        for data in quotation.quotation_products_data:
+            data.update({
+                'product_id': data.get('product', {}).get('id', None),
+                'product_data': data.get('product', {}),
+                'promotion_id': data.get('promotion', {}).get('id', None),
+                'promotion_data': data.get('promotion', {}),
+                'shipping_id': data.get('shipping', {}).get('id', None),
+                'shipping_data': data.get('shipping', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        for data in quotation.quotation_costs_data:
+            data.update({
+                'product_id': data.get('product', {}).get('id', None),
+                'product_data': data.get('product', {}),
+                'shipping_id': data.get('shipping', {}).get('id', None),
+                'shipping_data': data.get('shipping', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        for data in quotation.quotation_expenses_data:
+            data.update({
+                'expense_id': data.get('expense', {}).get('id', None),
+                'expense_data': data.get('expense', {}),
+                'expense_item_id': data.get('expense_item', {}).get('id', None),
+                'expense_item_data': data.get('expense_item', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        quotation.save(update_fields=['quotation_products_data', 'quotation_costs_data', 'quotation_expenses_data'])
+    for order in SaleOrder.objects.all():
+        for data in order.sale_order_products_data:
+            data.update({
+                'product_id': data.get('product', {}).get('id', None),
+                'product_data': data.get('product', {}),
+                'promotion_id': data.get('promotion', {}).get('id', None),
+                'promotion_data': data.get('promotion', {}),
+                'shipping_id': data.get('shipping', {}).get('id', None),
+                'shipping_data': data.get('shipping', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        for data in order.sale_order_costs_data:
+            data.update({
+                'product_id': data.get('product', {}).get('id', None),
+                'product_data': data.get('product', {}),
+                'shipping_id': data.get('shipping', {}).get('id', None),
+                'shipping_data': data.get('shipping', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        for data in order.sale_order_expenses_data:
+            data.update({
+                'expense_id': data.get('expense', {}).get('id', None),
+                'expense_data': data.get('expense', {}),
+                'expense_item_id': data.get('expense_item', {}).get('id', None),
+                'expense_item_data': data.get('expense_item', {}),
+                'unit_of_measure_id': data.get('unit_of_measure', {}).get('id', None),
+                'uom_data': data.get('unit_of_measure', {}),
+                'tax_id': data.get('tax', {}).get('id', None),
+                'tax_data': data.get('tax', {}),
+            })
+        order.save(update_fields=['sale_order_products_data', 'sale_order_costs_data', 'sale_order_expenses_data'])
+    print('parse_data_json_quo_so done.')

@@ -208,7 +208,7 @@ class DeliFinishHandler:
         if instance.order_delivery:
             if instance.order_delivery.sale_order:
                 for deli_product in instance.delivery_product_delivery_sub.all():
-                    if deli_product.product:
+                    if deli_product.product and deli_product.picked_quantity > 0:
                         list_data_indicator.append({
                             'tenant_id': instance.tenant_id,
                             'company_id': instance.company_id,
@@ -237,9 +237,6 @@ class DeliFinishHandler:
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse', 'stock')):
-                    # cost = deli_product.product.get_unit_cost_by_warehouse(
-                    #     warehouse_id=data_deli.get('warehouse', None), get_type=1
-                    # )
                     cost = deli_product.product.get_current_unit_cost(
                         get_type=1,
                         **{
