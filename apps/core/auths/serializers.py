@@ -20,26 +20,21 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):  # pylint: disable
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
         # Add custom claims
-        token['first_name'] = user.first_name
-        token['last_name'] = user.last_name
+        # token['first_name'] = user.first_name
+        # token['last_name'] = user.last_name
         # ...
-
         return token
 
     @classmethod
     def get_full_token(cls, user):
-        data = {}
-
-        refresh = super().get_token(user)
-
-        data["refresh"] = str(refresh)
-        data["access"] = str(refresh.access_token)
-
+        refresh = cls.get_token(user)
+        data = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
         if getattr(settings, 'UPDATE_LAST_LOGIN', True):
             update_last_login(None, user)
-
         return data
 
 

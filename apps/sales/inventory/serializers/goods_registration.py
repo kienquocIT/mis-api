@@ -548,13 +548,15 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        last_borrow = validated_data['last_borrow']
-        last_borrow.quantity += validated_data['quantity']
-        last_borrow.available = last_borrow.quantity - last_borrow.delivered
-        last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
-        last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
-        last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
-        return last_borrow
+        if 'last_borrow' in validated_data:
+            last_borrow = validated_data['last_borrow']
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
+            last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+            last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+            last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
+            return last_borrow
+        raise serializers.ValidationError({'last_borrow': 'Can not find last borrow item.'})
 
     def create(self, validated_data):
         instance = self.for_borrow(
@@ -782,13 +784,16 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        last_borrow = validated_data['last_borrow']
-        last_borrow.quantity += validated_data['quantity']
-        last_borrow.available = last_borrow.quantity - last_borrow.delivered
-        last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
-        last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
-        last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
-        return last_borrow
+        if 'last_borrow' in validated_data:
+            last_borrow = validated_data['last_borrow']
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
+            last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+            last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+            last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
+            return last_borrow
+        raise serializers.ValidationError({'last_borrow': 'Can not find last borrow item.'})
+
 
     def create(self, validated_data):
         instance = self.for_borrow(
