@@ -592,9 +592,10 @@ class NoneProjectFunction:
 
     @classmethod
     def for_delivery(cls, stock_info, stock_obj):
-        _ = cls.update_none_gre_item_prd_wh(stock_info)
-        # case borrow
-        NoneProjectFunction.call_update_borrow_data(stock_obj=stock_obj, stock_info=stock_info)
+        if stock_info['trans_title'] == 'Delivery':
+            _ = cls.update_none_gre_item_prd_wh(stock_info)
+            # case borrow
+            NoneProjectFunction.call_update_borrow_data(stock_obj=stock_obj, stock_info=stock_info)
         return True
 
     @classmethod
