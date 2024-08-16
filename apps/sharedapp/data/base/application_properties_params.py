@@ -138,7 +138,7 @@ Quotation_data__params = {
     'c6ed86ba-dbcb-4b87-93f8-92b9c7db2360': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Title',
-        'code': 'quotation_products_data___product__title',
+        'code': 'quotation_products_data___product_data__title',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -146,7 +146,7 @@ Quotation_data__params = {
     '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Description',
-        'code': 'quotation_products_data___product__description',
+        'code': 'quotation_products_data___product_data__description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -154,7 +154,7 @@ Quotation_data__params = {
     'd009e1de-a98c-4b06-a648-ccf53a8d9248': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Code',
-        'code': 'quotation_products_data___product__code',
+        'code': 'quotation_products_data___product_data__code',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -373,7 +373,7 @@ SaleOrder_data__params = {
     '857b93b3-b400-4678-ba7c-2386c7b4cde2': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Title',
-        'code': 'sale_order_products_data___product__title',
+        'code': 'sale_order_products_data___product_data__title',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -381,7 +381,7 @@ SaleOrder_data__params = {
     '8ab488ab-35ef-44fd-bc27-4183b25f6a29': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Description',
-        'code': 'sale_order_products_data___product__description',
+        'code': 'sale_order_products_data___product_data__description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -389,7 +389,7 @@ SaleOrder_data__params = {
     '8942c26a-71a9-4843-82ff-8735f4163971': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Code',
-        'code': 'sale_order_products_data___product__code',
+        'code': 'sale_order_products_data___product_data__code',
         'remark': '',
         'type': 1,
         'is_print': True,
