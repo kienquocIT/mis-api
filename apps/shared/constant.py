@@ -212,8 +212,9 @@ PERMISSION_OPTION_RANGE = (
 # Purchase request
 REQUEST_FOR = [
     (0, _('For Sale Order')),
-    (1, _('For Stock')),
+    (1, _('For Stock Free')),
     (2, _('For Other')),
+    (3, _('For Stock Plan')),
 ]
 
 PURCHASE_STATUS = [

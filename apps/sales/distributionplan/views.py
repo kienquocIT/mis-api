@@ -18,6 +18,9 @@ class DistributionPlanList(BaseListMixin, BaseCreateMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'system_status': ['exact'],
+    }
     serializer_list = DistributionPlanListSerializer
     serializer_create = DistributionPlanCreateSerializer
     serializer_detail = DistributionPlanDetailSerializer
