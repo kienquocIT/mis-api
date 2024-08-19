@@ -76,9 +76,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_inventory_uom(cls, obj):
         return {
-            "id": str(obj.inventory_uom.id),
-            "title": obj.inventory_uom.title,
-            'ratio': obj.inventory_uom.ratio
+            "id": str(obj.inventory_uom.id), "title": obj.inventory_uom.title, 'ratio': obj.inventory_uom.ratio
         } if obj.inventory_uom else {}
 
     @classmethod
@@ -119,34 +117,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'description',
-            'product_choice',
+            'code', 'title', 'description', 'product_choice',
             # General
             'general_product_category',
             'general_uom_group',
             'general_traceability_method',
-            'width',
-            'height',
-            'length',
-            'volume',
-            'weight',
+            'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            'sale_default_uom',
-            'sale_tax',
-            'sale_currency_using',
-            'online_price_list',
-            'available_notify',
-            'available_notify_quantity',
+            'sale_default_uom', 'sale_tax', 'sale_currency_using', 'online_price_list',
+            'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom',
-            'inventory_level_min',
-            'inventory_level_max',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             # Purchase
-            'purchase_default_uom',
-            'purchase_tax',
-            'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website'
         )
 
     @classmethod
@@ -344,13 +327,9 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'general_product_category',
-            'general_uom_group',
-            'general_traceability_method',
-            'sale_default_uom',
-            'sale_tax',
+            'code', 'title',
+            'general_product_category', 'general_uom_group', 'general_traceability_method',
+            'sale_default_uom', 'sale_tax',
         )
 
     @classmethod
@@ -517,14 +496,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 )
         result = {
             'default_uom': {
-                'id': obj.sale_default_uom_id,
-                'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code
+                'id': obj.sale_default_uom_id, 'title': obj.sale_default_uom.title, 'code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
-                'id': obj.sale_tax_id,
-                'title': obj.sale_tax.title,
-                'code': obj.sale_tax.code
+                'id': obj.sale_tax_id, 'title': obj.sale_tax.title, 'code': obj.sale_tax.code
             } if obj.sale_tax else {},
             'currency_using': {
                 'id': obj.sale_currency_using_id,
@@ -534,8 +509,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.sale_currency_using else {},
             'sale_product_price_list': sale_product_price_list,
             'price_list_for_online_sale': {
-                'id': obj.online_price_list_id,
-                'title': obj.online_price_list.title,
+                'id': obj.online_price_list_id, 'title': obj.online_price_list.title,
             } if obj.online_price_list else {},
             'available_notify': obj.available_notify,
             'available_notify_quantity': obj.available_notify_quantity
@@ -583,9 +557,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 result.append({
                     'id': item.id,
                     'warehouse': {
-                        'id': item.warehouse_id,
-                        'title': item.warehouse.title,
-                        'code': item.warehouse.code,
+                        'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': casted_stock_amount,
                     'cost': obj.get_unit_cost_by_warehouse(
@@ -673,34 +645,18 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'description',
-            'product_choice',
+            'code', 'title', 'description', 'product_choice',
             # General
-            'general_product_category',
-            'general_uom_group',
+            'general_product_category', 'general_uom_group',
             # 'general_traceability_method',
-            'width',
-            'height',
-            'length',
-            'volume',
-            'weight',
+            'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            'sale_default_uom',
-            'sale_tax',
-            'sale_currency_using',
-            'online_price_list',
-            'available_notify',
-            'available_notify_quantity',
+            'sale_default_uom', 'sale_tax', 'sale_currency_using',
+            'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom',
-            'inventory_level_min',
-            'inventory_level_max',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             # Purchase
-            'purchase_default_uom',
-            'purchase_tax',
-            'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website'
         )
 
     def validate_code(self, value):
@@ -908,8 +864,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'code',
-            'title', 'description',
+            'id', 'code', 'title', 'description',
             'general_information', 'purchase_information',
             'sale_information', 'purchase_information',
             'price_list', 'product_choice',
