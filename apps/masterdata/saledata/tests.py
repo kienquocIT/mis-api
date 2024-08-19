@@ -371,6 +371,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_choice',
                 'general_price',
                 'inventory_uom',
+                'purchase_information',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',
