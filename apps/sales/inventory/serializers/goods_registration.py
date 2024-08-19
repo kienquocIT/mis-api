@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import ProductWareHouseLot, UnitOfMeasure
+from apps.masterdata.saledata.serializers import ProductWareHouseListSerializer
 from apps.sales.inventory.models import (
     GoodsRegistration,
     GReItemProductWarehouseSerial,
@@ -632,6 +633,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     borrow_uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
+    regis_data = serializers.SerializerMethodField()
 
     class Meta:
         model = NoneGReItemBorrow
@@ -644,12 +646,13 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
             'base_quantity',
             'base_available',
             'uom',
-            'borrow_uom'
+            'borrow_uom',
+            'regis_data',
         )
 
     @classmethod
     def get_product(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             return {
                 'id': gre_item.product_id,
@@ -661,7 +664,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             if gre_item.product:
                 if gre_item.product.general_uom_group:
@@ -685,6 +688,18 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_stock(cls, obj):
         return obj.base_available
+
+    @classmethod
+    def get_regis_data(cls, obj):
+        if obj.gre_item_source:
+            if obj.gre_item_source.product:
+                result = ProductWareHouseListSerializer(
+                        obj.gre_item_source.product.product_warehouse_product.all(), many=True
+                ).data
+                for pw_data in result:
+                    pw_data.update({'is_pw': True, 'common_stock': obj.base_available})
+                return result
+        return []
 
 
 class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):

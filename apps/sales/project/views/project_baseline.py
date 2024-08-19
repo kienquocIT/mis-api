@@ -28,6 +28,10 @@ class ProjectListBaseline(BaseListMixin, BaseCreateMixin):
         'tenant_id', 'company_id',
         'employee_created_id',
     ]
+    filterset_fields = {
+        'project_related__employee_inherit__id': ['exact', ],
+        'system_status': ['exact', ],
+    }
 
     @swagger_auto_schema(
         operation_summary="Project baseline list",
@@ -39,8 +43,6 @@ class ProjectListBaseline(BaseListMixin, BaseCreateMixin):
         skip_filter_employee=True
     )
     def get(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

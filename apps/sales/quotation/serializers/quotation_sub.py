@@ -12,7 +12,6 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
     QuotationIndicator, QuotationAppConfig
-from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg, WarehouseMsg, \
     DisperseModel
 from apps.shared.translations.expense import ExpenseMsg
@@ -21,82 +20,11 @@ from apps.shared.translations.expense import ExpenseMsg
 class QuotationCommonCreate:
 
     @classmethod
-    def validate_product_cost_expense(cls, dict_data, is_product=False, is_expense=False, is_cost=False):
-        product = {}
-        expense = {}
-        expense_item = {}
-        unit_of_measure = {}
-        tax = {}
-        promotion = {}
-        shipping = {}
-        warehouse = {}
-        if 'product' in dict_data:
-            product = dict_data['product']
-            del dict_data['product']
-        if 'expense' in dict_data:
-            expense = dict_data['expense']
-            del dict_data['expense']
-        if 'expense_item' in dict_data:
-            expense_item = dict_data['expense_item']
-            del dict_data['expense_item']
-        if 'unit_of_measure' in dict_data:
-            unit_of_measure = dict_data['unit_of_measure']
-            del dict_data['unit_of_measure']
-        if 'tax' in dict_data:
-            tax = dict_data['tax']
-            del dict_data['tax']
-        if 'promotion' in dict_data:
-            promotion = dict_data['promotion']
-            del dict_data['promotion']
-        if 'shipping' in dict_data:
-            shipping = dict_data['shipping']
-            del dict_data['shipping']
-        if 'warehouse' in dict_data:
-            warehouse = dict_data['warehouse']
-            del dict_data['warehouse']
-        if is_product is True:
-            return {
-                'product': product,
-                'unit_of_measure': unit_of_measure,
-                'tax': tax,
-                'promotion': promotion,
-                'shipping': shipping
-            }
-        if is_expense is True:
-            return {
-                'expense': expense,
-                'expense_item': expense_item,
-                'product': product,
-                'unit_of_measure': unit_of_measure,
-                'tax': tax,
-            }
-        if is_cost is True:
-            return {
-                'product': product,
-                'unit_of_measure': unit_of_measure,
-                'tax': tax,
-                'shipping': shipping,
-                'warehouse': warehouse,
-            }
-        return {}
-
-    @classmethod
     def create_product(cls, validated_data, instance):
-        for quotation_product in validated_data['quotation_products_data']:
-            data = cls.validate_product_cost_expense(
-                dict_data=quotation_product,
-                is_product=True
-            )
-            if data:
-                QuotationProduct.objects.create(
-                    quotation=instance,
-                    product_id=data['product'].get('id', None),
-                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
-                    tax_id=data['tax'].get('id', None),
-                    promotion_id=data['promotion'].get('id', None),
-                    shipping_id=data['shipping'].get('id', None),
-                    **quotation_product
-                )
+        QuotationProduct.objects.bulk_create([
+            QuotationProduct(quotation=instance, **quotation_product)
+            for quotation_product in validated_data['quotation_products_data']
+        ])
         return True
 
     @classmethod
@@ -133,42 +61,18 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_cost(cls, validated_data, instance):
-        for quotation_cost in validated_data['quotation_costs_data']:
-            data = cls.validate_product_cost_expense(
-                dict_data=quotation_cost,
-                is_cost=True
-            )
-            if data:
-                QuotationCost.objects.create(
-                    quotation=instance,
-                    product_id=data['product'].get('id', None),
-                    warehouse_id=data['warehouse'].get('id', None),
-                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
-                    tax_id=data['tax'].get('id', None),
-                    shipping_id=data['shipping'].get('id', None),
-                    **quotation_cost
-                )
+        QuotationCost.objects.bulk_create([
+            QuotationCost(quotation=instance, **quotation_cost)
+            for quotation_cost in validated_data['quotation_costs_data']
+        ])
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
-        for quotation_expense in validated_data['quotation_expenses_data']:
-            data = cls.validate_product_cost_expense(
-                dict_data=quotation_expense,
-                is_expense=True
-            )
-            if data:
-                QuotationExpense.objects.create(
-                    quotation=instance,
-                    expense_id=data['expense'].get('id', None),
-                    expense_item_id=data['expense_item'].get('id', None),
-                    product_id=data['product'].get('id', None),
-                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
-                    tax_id=data['tax'].get('id', None),
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    **quotation_expense
-                )
+        QuotationExpense.objects.bulk_create([
+            QuotationExpense(quotation=instance, **quotation_expense)
+            for quotation_expense in validated_data['quotation_expenses_data']
+        ])
         return True
 
     @classmethod
@@ -241,10 +145,7 @@ class QuotationCommonCreate:
         if 'quotation_products_data' in validated_data:
             if is_update is True:
                 cls.delete_old_product(instance=instance)
-            cls.create_product(
-                validated_data=validated_data,
-                instance=instance
-            )
+            cls.create_product(validated_data=validated_data, instance=instance)
         if 'quotation_term_data' in validated_data:
             if is_update is True:
                 cls.delete_old_term(instance=instance)
@@ -262,17 +163,11 @@ class QuotationCommonCreate:
         if 'quotation_costs_data' in validated_data:
             if is_update is True:
                 cls.delete_old_cost(instance=instance)
-            cls.create_cost(
-                validated_data=validated_data,
-                instance=instance
-            )
+            cls.create_cost(validated_data=validated_data, instance=instance)
         if 'quotation_expenses_data' in validated_data:
             if is_update is True:
                 cls.delete_old_expense(instance=instance)
-            cls.create_expense(
-                validated_data=validated_data,
-                instance=instance
-            )
+            cls.create_expense(validated_data=validated_data, instance=instance)
         # indicator tab
         if 'quotation_indicators_data' in validated_data:
             if is_update is True:
@@ -319,65 +214,40 @@ class QuotationCommonValidate:
     @classmethod
     def validate_product(cls, value):
         try:
-            if value is None:
-                return {}
-            product = Product.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return ProductForSaleListSerializer(product).data
+            Product.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
     def validate_unit_of_measure(cls, value):
         try:
-            if value is None:
-                return {}
-            uom = UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(uom.id),
-                'title': uom.title,
-                'code': uom.code
-            }
+            UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
 
     @classmethod
     def validate_tax(cls, value):
         try:
-            tax = Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(tax.id),
-                'title': tax.title,
-                'code': tax.code,
-                'rate': tax.rate
-            }
+            Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
 
     @classmethod
     def validate_expense(cls, value):
         try:
-            if value is None:
-                return {}
-            expense = Expense.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(expense.id),
-                'title': expense.title,
-                'code': expense.code
-            }
+            Expense.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except Expense.DoesNotExist:
             raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
     def validate_expense_item(cls, value):
         try:
-            if value is None:
-                return {}
-            expense_item = ExpenseItem.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(expense_item.id),
-                'title': expense_item.title,
-                'code': expense_item.code
-            }
+            ExpenseItem.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except ExpenseItem.DoesNotExist:
             raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
 
@@ -403,53 +273,16 @@ class QuotationCommonValidate:
     @classmethod
     def validate_promotion(cls, value):
         try:
-            if value is None:
-                return {}
-            promotion = Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(promotion.id),
-                'title': promotion.title,
-                'code': promotion.code,
-                'valid_date_start': str(promotion.valid_date_start),
-                'valid_date_end': str(promotion.valid_date_end),
-                'remark': promotion.remark,
-                'currency': {
-                    'id': str(promotion.currency_id),
-                    'title': promotion.currency.title,
-                    'abbreviation': promotion.currency.abbreviation,
-                } if promotion.currency else {},
-                'customer_type': promotion.customer_type,
-                'customer_by_list': promotion.customer_by_list,
-                'customer_by_condition': promotion.customer_by_condition,
-                'customer_remark': promotion.customer_remark,
-                'is_discount': promotion.is_discount,
-                'is_gift': promotion.is_gift,
-                'discount_method': promotion.discount_method,
-                'gift_method': promotion.gift_method,
-                'sale_order_used': [
-                    {
-                        'customer_id': str(order_used[0]),
-                        'date_created': str(order_used[1]),
-                    } for order_used in promotion.sale_order_product_promotion.values_list(
-                        'sale_order__customer_id',
-                        'sale_order__date_created'
-                    )
-                ]
-            }
+            Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
     @classmethod
     def validate_shipping(cls, value):
         try:
-            if value is None:
-                return {}
-            shipping = Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(shipping.id),
-                'title': shipping.title,
-                'code': shipping.code
-            }
+            Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 
@@ -497,14 +330,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_warehouse(cls, value):
         try:
-            if value is None:
-                return {}
-            warehouse = WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return {
-                'id': str(warehouse.id),
-                'title': warehouse.title,
-                'code': warehouse.code
-            }
+            WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return str(value)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
 
@@ -561,18 +388,21 @@ class QuotationRuleValidate:
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(allow_null=True)
-    unit_of_measure = serializers.UUIDField(allow_null=True)
-    tax = serializers.UUIDField(required=False)
-    promotion = serializers.UUIDField(allow_null=True)
-    shipping = serializers.UUIDField(allow_null=True)
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
+    promotion_id = serializers.UUIDField(required=False, allow_null=True)
+    shipping_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = QuotationProduct
         fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
+            'product_id',
+            'product_data',
+            'unit_of_measure_id',
+            'uom_data',
+            'tax_id',
+            'tax_data',
             # product information
             'product_title',
             'product_code',
@@ -590,32 +420,34 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'is_promotion',
-            'promotion',
+            'promotion_id',
+            'promotion_data',
             'is_shipping',
-            'shipping',
+            'shipping_id',
+            'shipping_data',
             'is_group',
             'group_title',
             'group_order',
         )
 
     @classmethod
-    def validate_product(cls, value):
+    def validate_product_id(cls, value):
         return QuotationCommonValidate().validate_product(value=value)
 
     @classmethod
-    def validate_unit_of_measure(cls, value):
+    def validate_unit_of_measure_id(cls, value):
         return QuotationCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
-    def validate_tax(cls, value):
+    def validate_tax_id(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
 
     @classmethod
-    def validate_promotion(cls, value):
+    def validate_promotion_id(cls, value):
         return QuotationCommonValidate().validate_promotion(value=value)
 
     @classmethod
-    def validate_shipping(cls, value):
+    def validate_shipping_id(cls, value):
         return QuotationCommonValidate().validate_shipping(value=value)
 
     @classmethod
@@ -625,104 +457,6 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_unit_price(cls, value):
         return QuotationValueValidate.validate_price(value=value)
-
-
-class QuotationProductsListSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    unit_of_measure = serializers.SerializerMethodField()
-    tax = serializers.SerializerMethodField()
-    promotion = serializers.SerializerMethodField()
-    shipping = serializers.SerializerMethodField()
-
-    class Meta:
-        model = QuotationProduct
-        fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
-            # product information
-            'product_title',
-            'product_code',
-            'product_description',
-            'product_uom_title',
-            'product_uom_code',
-            'product_quantity',
-            'product_unit_price',
-            'product_discount_value',
-            'product_discount_amount',
-            'product_tax_title',
-            'product_tax_value',
-            'product_tax_amount',
-            'product_subtotal_price',
-            'product_subtotal_price_after_tax',
-            'order',
-            'is_promotion',
-            'promotion',
-            'is_shipping',
-            'shipping'
-        )
-
-    @classmethod
-    def get_product(cls, obj):
-        return ProductForSaleListSerializer(obj.product).data
-
-    @classmethod
-    def get_unit_of_measure(cls, obj):
-        return {
-            'id': obj.unit_of_measure_id,
-            'title': obj.unit_of_measure.title,
-            'code': obj.unit_of_measure.code
-        } if obj.unit_of_measure else {}
-
-    @classmethod
-    def get_tax(cls, obj):
-        return {
-            'id': obj.tax_id,
-            'title': obj.tax.title,
-            'code': obj.tax.code,
-            'rate': obj.tax.rate,
-        } if obj.tax else {}
-
-    @classmethod
-    def get_promotion(cls, obj):
-        return {
-            'id': obj.promotion_id,
-            'title': obj.promotion.title,
-            'code': obj.promotion.code,
-            'valid_date_start': obj.promotion.valid_date_start,
-            'valid_date_end': obj.promotion.valid_date_end,
-            'remark': obj.promotion.remark,
-            'currency': {
-                'id': obj.promotion.currency_id,
-                'title': obj.promotion.currency.title,
-                'abbreviation': obj.promotion.currency.abbreviation,
-            } if obj.promotion.currency else {},
-            'customer_type': obj.promotion.customer_type,
-            'customer_by_list': obj.promotion.customer_by_list,
-            'customer_by_condition': obj.promotion.customer_by_condition,
-            'customer_remark': obj.promotion.customer_remark,
-            'is_discount': obj.promotion.is_discount,
-            'is_gift': obj.promotion.is_gift,
-            'discount_method': obj.promotion.discount_method,
-            'gift_method': obj.promotion.gift_method,
-            'sale_order_used': [
-                {
-                    'customer_id': order_used[0],
-                    'date_created': order_used[1],
-                } for order_used in obj.promotion.sale_order_product_promotion.values_list(
-                    'sale_order__customer_id',
-                    'sale_order__date_created'
-                )
-            ]
-        } if obj.promotion else {}
-
-    @classmethod
-    def get_shipping(cls, obj):
-        return {
-            'id': obj.shipping_id,
-            'title': obj.shipping.title,
-            'code': obj.shipping.code
-        } if obj.shipping else {}
 
 
 class QuotationTermSerializer(serializers.ModelSerializer):
@@ -762,19 +496,23 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
 
 
 class QuotationCostSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(allow_null=True)
-    unit_of_measure = serializers.UUIDField(allow_null=True)
-    tax = serializers.UUIDField(required=False)
-    shipping = serializers.UUIDField(allow_null=True)
-    warehouse = serializers.UUIDField(allow_null=True, required=False)
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
+    shipping_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = QuotationCost
         fields = (
-            'product',
-            'warehouse',
-            'unit_of_measure',
-            'tax',
+            'product_id',
+            'product_data',
+            'warehouse_id',
+            'warehouse_data',
+            'unit_of_measure_id',
+            'uom_data',
+            'tax_id',
+            'tax_data',
             # product information
             'product_title',
             'product_code',
@@ -789,27 +527,28 @@ class QuotationCostSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'is_shipping',
-            'shipping',
+            'shipping_id',
+            'shipping_data',
         )
 
     @classmethod
-    def validate_product(cls, value):
+    def validate_product_id(cls, value):
         return QuotationCommonValidate().validate_product(value=value)
 
     @classmethod
-    def validate_unit_of_measure(cls, value):
+    def validate_unit_of_measure_id(cls, value):
         return QuotationCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
-    def validate_tax(cls, value):
+    def validate_tax_id(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
 
     @classmethod
-    def validate_shipping(cls, value):
+    def validate_shipping_id(cls, value):
         return QuotationCommonValidate().validate_shipping(value=value)
 
     @classmethod
-    def validate_warehouse(cls, value):
+    def validate_warehouse_id(cls, value):
         return QuotationCommonValidate().validate_warehouse(value=value)
 
     @classmethod
@@ -817,90 +556,23 @@ class QuotationCostSerializer(serializers.ModelSerializer):
         return QuotationValueValidate.validate_quantity(value=value)
 
 
-class QuotationCostsListSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    unit_of_measure = serializers.SerializerMethodField()
-    tax = serializers.SerializerMethodField()
-    shipping = serializers.SerializerMethodField()
-
-    class Meta:
-        model = QuotationCost
-        fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
-            # product information
-            'product_title',
-            'product_code',
-            'product_uom_title',
-            'product_uom_code',
-            'product_quantity',
-            'product_cost_price',
-            'product_tax_title',
-            'product_tax_value',
-            'product_tax_amount',
-            'product_subtotal_price',
-            'product_subtotal_price_after_tax',
-            'order',
-            'is_shipping',
-            'shipping',
-        )
-
-    @classmethod
-    def get_product(cls, obj):
-        return ProductForSaleListSerializer(obj.product).data
-
-    @classmethod
-    def get_unit_of_measure(cls, obj):
-        return {
-            'id': obj.unit_of_measure_id,
-            'title': obj.unit_of_measure.title,
-            'code': obj.unit_of_measure.code
-        } if obj.unit_of_measure else {}
-
-    @classmethod
-    def get_tax(cls, obj):
-        return {
-            'id': obj.tax_id,
-            'title': obj.tax.title,
-            'code': obj.tax.code,
-            'rate': obj.tax.rate,
-        } if obj.tax else {}
-
-    @classmethod
-    def get_shipping(cls, obj):
-        return {
-            'id': obj.shipping_id,
-            'title': obj.shipping.title,
-            'code': obj.shipping.code
-        } if obj.shipping else {}
-
-
 class QuotationExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
-    expense_item = serializers.UUIDField(
-        allow_null=True,
-    )
-    product = serializers.UUIDField(
-        allow_null=True,
-        required=False,
-    )
-    unit_of_measure = serializers.UUIDField()
-    tax = serializers.UUIDField(
-        required=False,
-    )
+    expense_id = serializers.UUIDField(required=False, allow_null=True)
+    expense_item_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField()
+    tax_id = serializers.UUIDField(required=False)
 
     class Meta:
         model = QuotationExpense
         fields = (
-            'expense',
-            'expense_item',
-            'product',
-            'unit_of_measure',
-            'tax',
+            'expense_id',
+            'expense_data',
+            'expense_item_id',
+            'expense_item_data',
+            'unit_of_measure_id',
+            'uom_data',
+            'tax_id',
+            'tax_data',
             # expense information
             'expense_title',
             'expense_code',
@@ -922,23 +594,19 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_expense(cls, value):
+    def validate_expense_id(cls, value):
         return QuotationCommonValidate().validate_expense(value=value)
 
     @classmethod
-    def validate_expense_item(cls, value):
+    def validate_expense_item_id(cls, value):
         return QuotationCommonValidate().validate_expense_item(value=value)
 
     @classmethod
-    def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
-
-    @classmethod
-    def validate_unit_of_measure(cls, value):
+    def validate_unit_of_measure_id(cls, value):
         return QuotationCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
-    def validate_tax(cls, value):
+    def validate_tax_id(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
 
 

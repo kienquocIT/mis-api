@@ -53,7 +53,7 @@ class GoodsRegistration(DataAbstractModel):
         return None
 
     @classmethod
-    def update_registration_inventory(cls, stock_info):
+    def update_registration_inventory(cls, stock_info, stock_obj=None):
         sale_order = stock_info.get('sale_order')
         if sale_order and sale_order.opportunity:  # vào kho từng dự án
             gre = sale_order.goods_registration_so.first()
@@ -65,12 +65,12 @@ class GoodsRegistration(DataAbstractModel):
                 if gre_item:
                     # gắn thẻ hàng đăng kí và cập nhập gre_item
                     gre_item = ProjectFunction.for_goods_receipt(stock_info, gre_item, stock_info['trans_id'])
-                    gre_item = ProjectFunction.for_delivery(stock_info, gre_item)
+                    gre_item = ProjectFunction.for_delivery(stock_info, gre_item, stock_obj)
                     gre_item.save(update_fields=['this_registered', 'this_available'])
         else:  # vào kho chung
             # gắn thẻ hàng vào kho chung
             NoneProjectFunction.for_goods_receipt(stock_info, stock_info['trans_id'])
-            NoneProjectFunction.for_delivery(stock_info)
+            NoneProjectFunction.for_delivery(stock_info, stock_obj)
         return True
 
 
@@ -509,10 +509,29 @@ class ProjectFunction:
         return gre_item
 
     @classmethod
-    def for_delivery(cls, stock_info, gre_item):
+    def for_delivery(cls, stock_info, gre_item, stock_obj):
         if stock_info['trans_title'] == 'Delivery':
             gre_item, _ = cls.update_gre_item_prd_wh(gre_item, stock_info)
+            # case borrow
+            ProjectFunction.call_update_borrow_data(gre_item=gre_item, stock_obj=stock_obj, stock_info=stock_info)
         return gre_item
+
+    @classmethod
+    def call_update_borrow_data(cls, gre_item, stock_obj, stock_info):
+        if stock_obj.order_delivery:
+            main_so_id = stock_obj.order_delivery.sale_order_id
+            so_obj = stock_info.get('sale_order', None)
+            if so_obj and main_so_id:
+                if so_obj.id != main_so_id:
+                    borrow_obj = gre_item.gre_item_des_borrow.filter(
+                        gre_source__sale_order_id=main_so_id
+                    ).first()
+                    if borrow_obj:
+                        borrow_obj.update_borrow_data_when_delivery(
+                            gre_item_borrow=borrow_obj,
+                            delivered_quantity=stock_info.get('quantity', 0)
+                        )
+        return True
 
 
 class NoneProjectFunction:
@@ -572,6 +591,25 @@ class NoneProjectFunction:
         return True
 
     @classmethod
-    def for_delivery(cls, stock_info):
-        _ = cls.update_none_gre_item_prd_wh(stock_info)
+    def for_delivery(cls, stock_info, stock_obj):
+        if stock_info['trans_title'] == 'Delivery':
+            _ = cls.update_none_gre_item_prd_wh(stock_info)
+            # case borrow
+            NoneProjectFunction.call_update_borrow_data(stock_obj=stock_obj, stock_info=stock_info)
+        return True
+
+    @classmethod
+    def call_update_borrow_data(cls, stock_obj, stock_info):
+        if stock_obj.order_delivery and 'product' in stock_info:
+            main_so = stock_obj.order_delivery.sale_order
+            gre_item = stock_info['product'].gre_item_product.filter(so_item__sale_order=main_so).first()
+            if gre_item:
+                none_borrow_obj = gre_item.none_gre_item_src_borrow.filter(
+                    gre_source__sale_order=main_so
+                ).first()
+                if none_borrow_obj:
+                    none_borrow_obj.update_borrow_data_when_delivery(
+                        none_gre_item_borrow=none_borrow_obj,
+                        delivered_quantity=stock_info.get('quantity', 0)
+                    )
         return True

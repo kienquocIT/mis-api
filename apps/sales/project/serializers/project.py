@@ -16,8 +16,8 @@ class ProjectListSerializers(serializers.ModelSerializer):
     tasks = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     project_pm = serializers.SerializerMethodField()
-    baseline = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    baseline = serializers.SerializerMethodField()
 
     @classmethod
     def get_works(cls, obj):
@@ -43,13 +43,13 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        if obj.employee_inherit:
+        if obj.employee_inherit_data:
             return obj.employee_inherit_data
         return {}
 
     @classmethod
     def get_project_pm(cls, obj):
-        if obj.project_pm:
+        if obj.project_pm_data:
             return obj.project_pm_data
         return {}
 
@@ -60,9 +60,10 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'count': 0,
             'new_t_month': 0
         }
-        if obj.project_projectbaseline_project_related.all():
+        lst_prj = obj.project_projectbaseline_project_related.all()
+        if lst_prj:
             crt = datetime.now()
-            for item in obj.project_projectbaseline_project_related.all():
+            for item in lst_prj:
                 if item.system_status <= 1:
                     continue
                 project_data = item.project_data
@@ -114,7 +115,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'tasks',
             'system_status',
             'baseline',
-            'date_created'
+            'date_created',
         )
 
 

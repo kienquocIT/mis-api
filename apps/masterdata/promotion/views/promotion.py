@@ -78,6 +78,8 @@ class PromotionCheckList(BaseListMixin):
     filterset_fields = {
         'customer_type': ['exact'],
         'customers_map_promotion__id': ['exact'],
+        'valid_date_start': ['lte', 'gte'],
+        'valid_date_end': ['lte', 'gte'],
     }
     serializer_list = PromotionDetailSerializer
     serializer_detail = PromotionDetailSerializer

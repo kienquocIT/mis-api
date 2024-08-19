@@ -125,6 +125,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                 tenant_id=tenant_id,
                 company_id=company_id,
                 product_warehouse_id=obj.id,
+                product_id=obj.product_id,
                 serial_data=serial_data
             )
 
@@ -452,11 +453,14 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
             tenant_id,
             company_id,
             product_warehouse_id,
+            product_id,
             serial_data
     ):
         serial_data_valid = [
             serial for serial in serial_data
-            if not cls.objects.filter(serial_number=serial.get('serial_number', '')).exists()
+            if not cls.objects.filter(
+                serial_number=serial.get('serial_number', ''), product_warehouse__product_id=product_id,
+            ).exists()
         ]
         cls.objects.bulk_create([cls(
             **data,
