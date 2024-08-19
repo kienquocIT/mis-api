@@ -2,7 +2,7 @@ from datetime import datetime
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
-from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.models import ReportStockLog
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
@@ -394,14 +394,21 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validated_data):
-        validated_data['product_choice'] = [0, 1, 2]
-        validated_data['sale_default_uom'] = validated_data['sale_default_uom']
-        validated_data['inventory_uom'] = validated_data['sale_default_uom']
-        validated_data['purchase_default_uom'] = validated_data['sale_default_uom']
-        validated_data['purchase_tax'] = validated_data['sale_tax']
+        validated_data['product_choice'] = [0]
+        default_price_list = Price.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_default=True
+        ).first()
+        if default_price_list:
+            validated_data['default_price_list'] = default_price_list
+        else:
+            raise serializers.ValidationError({'default_price_list': ProductMsg.DOES_NOT_EXIST})
         return validated_data
 
     def create(self, validated_data):
+        default_pr = validated_data['default_price_list']
+        del validated_data['default_price_list']
         validated_data['sale_currency_using'] = Currency.objects.filter(
             tenant_id=validated_data['tenant_id'],
             company_id=validated_data['company_id'],
@@ -410,6 +417,15 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         product = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
             product, self.initial_data.get('product_types_mapped_list', [])
+        )
+
+        ProductPriceList.objects.create(
+            product=product,
+            price_list=default_pr,
+            price=0,
+            currency_using=product.sale_currency_using,
+            uom_using=product.sale_default_uom,
+            uom_group_using=product.general_uom_group
         )
         return product
 
