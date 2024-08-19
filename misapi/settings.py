@@ -117,6 +117,9 @@ INSTALLED_APPS = \
         'apps.sales.distributionplan',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
+    ] + [
+        # authenticate
+        'django_otp',
     ]
 
 MIDDLEWARE = [
@@ -435,6 +438,16 @@ CUSTOM_PAGE_MAXIMUM_SIZE = 1500
 
 AUTH_USER_MODEL = 'account.User'
 
+# Authenticate 2FA and JWT
+PASSWORD_TOTP_2FA = os.environ.get('PASSWORD_TOTP_2FA', 'totp-2fa-L47*s2uFT+bw7!fpSJ@9J2aaaf^hFQrd')
+LOGO_TOTP_2FA = os.environ.get(
+    'LOGO_TOTP_2FA',
+    'https://www.bflow.vn/images/brand/bflow-by-mts/png/bflow-by-mts-original.png'
+)
+ISSUER_TOTP_2FA = os.environ.get('ISSUER_TOTP_2FA', 'Bflow.vn')
+LOCKED_OUT_FAILED_AMOUNT = int(os.environ.get('LOCKED_OUT_FAILED_AMOUNT', 5))
+JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
+JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -443,7 +456,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
 
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': 'HEk5@d&z7Kvq)GFp32SKdumR4h2E@H@D',  # SECRET_KEY,
+    'SIGNING_KEY': os.environ.get('JWT_SIGNING_KEY', 'HEk5@d&z7Kvq)GFp32SKdumR4h2E@H@D'),
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,

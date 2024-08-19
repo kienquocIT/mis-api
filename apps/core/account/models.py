@@ -1,6 +1,15 @@
+import base64
+import binascii
+import os
 import random
+from io import BytesIO
+from urllib.parse import quote, urlencode
 from datetime import timedelta
 from uuid import uuid4
+
+import qrcode
+
+from django_otp.oath import TOTP
 from jsonfield import JSONField
 
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -13,7 +22,8 @@ from django.utils import timezone
 from apps.core.account.manager import AccountManager
 from apps.shared import (
     AuthMsg, StringHandler, FORMATTING, DisperseModel, CoreSignalRegisterMetaClass,
-    OTP_TYPE, TeleBotPushNotify
+    OTP_TYPE, TeleBotPushNotify,
+    SimpleEncryptor,
 )
 
 
@@ -118,6 +128,17 @@ class User(AuthUser):  # pylint: disable=R0902
         related_name='all_company_of_user'
     )
     is_mail_welcome = models.SmallIntegerField(default=0, verbose_name='Mail Welcome counter')
+
+    auth_2fa = models.BooleanField(default=False)
+    auth_locked_out = models.BooleanField(default=False)
+    # if you want unlocked out:
+    #   1. change auth_locked_out = True
+    #   2. change TOTPUser.throttling_failure_count = 0
+    #   3. change TOTPUser.locked_out = False
+    # if you want disabled 2FA:
+    #   1. change auth_locked_out = True
+    #   2. change auth_2fa = False
+    # Keep one user per one TOTPUser / or zero
 
     def update_username_field_data(self):
         setattr(self, self.USERNAME_FIELD, self.convert_username_field_data(self.username, self.tenant_current))
@@ -327,5 +348,211 @@ class ValidateUser(models.Model):
         verbose_name = 'Validate User'
         verbose_name_plural = 'Validate User'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class TOTPUser(models.Model):  # pylint: disable=R0902
+    id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    secret_key = models.TextField(blank=True, null=True)
+    confirmed = models.BooleanField(default=False)
+    enabled = models.BooleanField(default=False)
+    locked_out = models.BooleanField(default=False)
+
+    date_created = models.DateTimeField(default=timezone.now, editable=False)
+    date_modified = models.DateTimeField(auto_now_add=True)
+
+    verified_success = models.JSONField(default=list)
+    verified_failed = models.JSONField(default=list)
+
+    step = models.PositiveSmallIntegerField(
+        default=30, help_text="The time step in seconds."
+    )
+    t0 = models.BigIntegerField(
+        default=0, help_text="The Unix time at which to begin counting steps."
+    )
+    digits = models.PositiveSmallIntegerField(
+        choices=[(6, 6), (8, 8)],
+        default=6,
+        help_text="The number of digits to expect in a token.",
+    )
+    tolerance = models.PositiveSmallIntegerField(
+        default=1, help_text="The number of time steps in the past or future to allow."
+    )
+    drift = models.SmallIntegerField(
+        default=0,
+        help_text="The number of time steps the prover is known to deviate from our clock.",
+    )
+    last_t = models.BigIntegerField(
+        default=-1,
+        help_text="The t value of the latest verified token. The next token must be at a higher time step.",
+    )
+
+    throttling_failure_timestamp = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=(
+            "A timestamp of the last failed verification attempt. Null if last attempt"
+            " succeeded."
+        ),
+    )
+
+    throttling_failure_count = models.PositiveIntegerField(
+        default=0, help_text="Number of successive failed attempts."
+    )
+
+    last_used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="The most recent date and time this device was used.",
+    )
+
+    def generate_secret_key(self, is_override=False):
+        if not self.secret_key or (self.secret_key and is_override is True):
+            secret_key = binascii.hexlify(os.urandom(16)).decode()
+            key = SimpleEncryptor().generate_key(password=settings.PASSWORD_TOTP_2FA)
+            cryptor = SimpleEncryptor(key=key)
+            self.secret_key = cryptor.encrypt(secret_key)
+            self.save()
+
+    def get_secret_key(self):
+        key = SimpleEncryptor().generate_key(password=settings.PASSWORD_TOTP_2FA)
+        cryptor = SimpleEncryptor(key=key)
+        secret_key = cryptor.decrypt(self.secret_key)
+        return secret_key
+
+    def generate_otp_qri(self):
+        otp_uri = self.config_url
+        qr_obj = qrcode.QRCode(box_size=10, border=5)
+        qr_obj.add_data(otp_uri)
+        qr_obj.make(fit=True)
+        img = qr_obj.make_image(fill='black', back_color='white')
+        buf = BytesIO()
+        img.save(buf)
+        img_b64 = base64.b64encode(buf.getvalue()).decode()
+        return img_b64
+
+    @property
+    def config_url(self):
+        """
+        A URL for configuring Google Authenticator or similar.
+
+        See https://github.com/google/google-authenticator/wiki/Key-Uri-Format.
+        The issuer is taken from :setting:`OTP_TOTP_ISSUER`, if available.
+        The image (for e.g. FreeOTP) is taken from :setting:`OTP_TOTP_IMAGE`, if available.
+
+        """
+        label = str(self.user.username)
+        secret_key = self.get_secret_key()
+        secret_key_b32 = base64.b32encode(secret_key.encode('utf-8')).decode('utf-8').replace('=', '')
+        params = {
+            'secret': secret_key_b32,
+            # 'algorithm': 'SHA1',
+            'digits': self.digits,
+            'period': self.step,
+        }
+        urlencoded_params = urlencode(params)
+
+        issuer = settings.ISSUER_TOTP_2FA
+        if issuer:
+            issuer = issuer.replace(':', '')
+            label = f'{issuer}:{label}'
+            urlencoded_params += f'&issuer={quote(issuer)}'  # encode issuer as per RFC 3986, not quote_plus
+
+        # image = settings.LOGO_TOTP_2FA
+        # if image:
+        #     urlencoded_params += "&image={}".format(quote(image, safe=':/'))
+
+        url = f'otpauth://totp/{quote(label)}?{urlencoded_params}'
+
+        return url
+
+    def throttle_reset(self, commit=True):
+        self.locked_out = False
+        self.throttling_failure_count = 0
+        self.throttling_failure_timestamp = None
+
+        verified_success = list(self.verified_success)
+        if isinstance(verified_success, list):
+            verified_success.append(timezone.now().strftime('%Y-%m-%d, %H:%M:%S'))
+            self.verified_success = verified_success
+        if commit is True:
+            self.save()
+        return True
+
+    def throttle_increment(self, commit=True):
+        self.throttling_failure_count += 1
+        self.throttling_failure_timestamp = timezone.now()
+        verified_failed = list(self.verified_failed)
+        if isinstance(verified_failed, list):
+            verified_failed.append(timezone.now().strftime('%Y-%m-%d, %H:%M:%S'))
+            self.verified_failed = verified_failed
+        if self.throttling_failure_count >= settings.LOCKED_OUT_FAILED_AMOUNT:
+            self.locked_out = True
+            self.user.auth_locked_out = True
+            self.user.save(update_fields=['auth_locked_out'])
+        if commit is True:
+            self.save()
+        return True
+
+    def verify(self, otp) -> list[bool, str]:
+        """
+
+        Args:
+            otp:
+
+        Returns:
+            bool: Allow verifying process
+            None: User was locked out!
+        """
+        if self.locked_out is True:
+            return [False, 'LOCKED_OUT']
+
+        verified = False
+        try:
+            otp = int(otp)
+        except ValueError:
+            verified = False
+        else:
+            secret_key = self.get_secret_key()
+            if secret_key:
+                totp = TOTP(
+                    key=secret_key.encode('utf-8'),
+                    step=self.step, digits=self.digits,
+                    t0=self.t0, drift=self.drift,
+                )
+                verified = totp.verify(otp, tolerance=0)
+                if verified:
+                    if totp.t() == self.last_t:
+                        # same OTP in live circle token
+                        return [False, 'OTP_USED']
+
+                    self.last_t = totp.t()
+                    self.last_used_at = timezone.now()
+                    # if OTP_TOTP_SYNC:
+                    #     self.drift = totp.drift
+                    self.throttle_reset(commit=False)
+                    self.save()
+        if not verified:
+            self.throttle_increment()
+            self.save()
+            return [False, 'FAILED']
+        return [True, 'SUCCESS']
+
+    def set_confirmed(self, state: bool, commit=True):
+        # In the future, check all TOTP if user don't have confirmed device, so turn off auth_2fa in user.
+        self.confirmed = state
+        self.user.auth_2fa = state
+        if commit is True:
+            self.save()
+        self.user.save(update_fields=['auth_2fa'])
+        return True
+
+    class Meta:
+        verbose_name = 'TOTP of User'
+        verbose_name_plural = 'TOTP of User'
+        ordering = ('-last_t',)
         default_permissions = ()
         permissions = ()

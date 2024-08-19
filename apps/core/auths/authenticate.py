@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils import translation
+from rest_framework import exceptions
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
@@ -45,8 +46,31 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         # device_id = request.headers.get('Device-ID', '')
         # print('Device-ID:', device_id)
 
+        url_excludes = [
+            '/api/auth/2fa',
+        ]
+
         if user and token and isinstance(user, self.user_model):
-            if settings.DEBUG_PERMIT:
-                print('active language [authenticate]:', user.language if user.language else 'vi', user, user.id)
-            translation.activate(user.language if user.language else 'vi')
+            is_2fa_verified = token.payload.get(settings.JWT_KEY_2FA_VERIFIED, None)
+            if user.auth_locked_out is True:
+                # deny when locked out
+                is_2fa_state = False
+            elif user.auth_2fa is True:
+                # state by token key
+                is_2fa_state = is_2fa_verified is True
+            else:
+                # not lock, not auth -> auto True
+                is_2fa_state = True
+            request.is_2fa_verified = is_2fa_verified
+            request.is_2fa_enable = user.auth_2fa
+            request.is_2fa_state = is_2fa_state
+
+            if is_2fa_state is True or (is_2fa_state is False and request.path in url_excludes):
+                if settings.DEBUG_PERMIT:
+                    print('active language [authenticate]:', user.language if user.language else 'vi', user, user.id)
+                translation.activate(user.language if user.language else 'vi')
+            else:
+                if settings.DEBUG_PERMIT:
+                    print('auth 2fa failed:', request.path, token.payload)
+                raise exceptions.AuthenticationFailed(code='authentication_2fa_failed')
         return user, token

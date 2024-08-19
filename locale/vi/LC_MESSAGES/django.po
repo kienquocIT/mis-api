@@ -515,6 +515,10 @@ msgstr "Không được cấp quyền."
 msgid "Not found"
 msgstr "Không Tìm Thấy."
 
+#
+msgid "Method not allowed"
+msgstr "Phương thức không hỗ trợ"
+
 #: .\apps\shared\translations\http.py:10
 msgid "Successfully"
 msgstr "Thành công"

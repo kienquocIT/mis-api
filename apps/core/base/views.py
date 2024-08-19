@@ -304,7 +304,7 @@ class WardList(BaseListMixin):
     filterset_fields = {
         "district_id": ["exact", "in"],
     }
-    use_cache_queryset = True
+    use_cache_queryset = False
     serializer_list = WardListSerializer
 
     @swagger_auto_schema()

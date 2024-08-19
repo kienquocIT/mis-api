@@ -32,3 +32,39 @@ msgstr "Vui lòng truy cập vào quản trị tenant để thêm công ty cho n
 #
 msgid "Phone number should be a Vietnam phone number"
 msgstr "Số điện thoại phải là số điện thoại Việt Nam"
+
+#
+msgid "2FA has been integrated"
+msgstr "2FA đã được tích hợp"
+
+#
+msgid "Generate 2FA is failure"
+msgstr "Tạo 2FA thất bại"
+
+#
+msgid "2FA verify is successful and turned on"
+msgstr "Xác thực 2FA thành công và đã được bật"
+
+#
+msgid "2FA verify is failure"
+msgstr "Xác thực 2FA thất bại"
+
+#
+msgid "2FA hasn't integrated"
+msgstr "2FA chưa được tích hợp"
+
+#
+msgid "2FA was enabled"
+msgstr "2FA đã kích hoạt"
+
+#
+msgid "2FA was disabled"
+msgstr "2FA đã huỷ kích hoạt"
+
+#
+msgid "Your account has been locked due to too many incorrect OTP attempts."
+msgstr "Tài khoản của bạn đã bị khóa do quá nhiều lần nhập sai mã OTP."
+
+#
+msgid "This OTP has already been used."
+msgstr "Mã OTP này đã được sử dụng."

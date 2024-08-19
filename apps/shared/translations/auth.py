@@ -27,3 +27,14 @@ class AuthMsg:
     OTP_NOT_MATCH = _("OTP isn't match")
 
     MAX_REQUEST_FORGOT = _('Maximum {0} requests in {1} hour')
+
+    OTP_INTEGRATED_BEFORE = _("2FA has been integrated")
+    OTP_NOT_INTEGRATE = _("2FA hasn't integrated")
+    OTP_GENERATE_FAILURE = _("Generate 2FA is failure")
+    OTP_INTEGRATE_SUCCESS = _("2FA verify is successful and turned on")
+    OTP_INTEGRATE_FAILURE = _("2FA verify is failure")
+    OTP_WAS_ENABLED = _("2FA was enabled")
+    OTP_WAS_DISABLED = _("2FA was disabled")
+
+    TWO_FA_LOCKED_OUT = _("Your account has been locked due to too many incorrect OTP attempts.")
+    OTP_BEEN_USED = _("This OTP has already been used.")
