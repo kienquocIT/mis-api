@@ -319,6 +319,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
+    product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False)
@@ -327,7 +328,7 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code', 'title',
+            'code', 'title', 'product_choice',
             'general_product_category', 'general_uom_group', 'general_traceability_method',
             'sale_default_uom', 'sale_tax',
         )
@@ -373,7 +374,14 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validated_data):
-        validated_data['product_choice'] = [0]
+        if 0 not in validated_data['product_choice']:
+            raise serializers.ValidationError({'sale': 'Sale is required'})
+        if 1 in validated_data['product_choice']:
+            validated_data['inventory_uom'] = validated_data['sale_default_uom']
+        if 2 in validated_data['product_choice']:
+            validated_data['purchase_default_uom'] = validated_data['sale_default_uom']
+            validated_data['purchase_tax'] = validated_data['sale_tax']
+
         default_price_list = Price.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
