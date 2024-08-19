@@ -19,6 +19,8 @@ class ProjectBaselineListSerializers(serializers.ModelSerializer):
             'work_task_data',
             'work_expense_data',
             'baseline_version',
+            'system_status',
+            'date_created'
         )
 
 

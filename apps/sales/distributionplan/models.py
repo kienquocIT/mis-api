@@ -22,18 +22,13 @@ class DistributionPlan(DataAbstractModel):
     is_create_purchase_request = models.BooleanField(default=False)
     purchase_request_number = models.FloatField(default=0)
 
-    @classmethod
-    def generate_code(cls, company_id):
-        records = cls.objects.filter(company_id=company_id).count()
-        return f"DP00{records+1}"
-
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
                 records = DistributionPlan.objects.filter(
                     company=self.company, tenant=self.tenant, is_delete=False, system_status=3
                 )
-                self.code = 'DP.00' + str(records.count() + 1)
+                self.code = 'DP00' + str(records.count() + 1)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

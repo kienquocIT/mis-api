@@ -392,7 +392,7 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
             {
                 'customer_id': order_used[0],
                 'date_created': order_used[1],
-            } for order_used in obj.sale_order_product_promotion.values_list(
+            } for order_used in obj.sale_order_product_promotion.filter(sale_order__system_status=3).values_list(
                 'sale_order__customer_id',
                 'sale_order__date_created'
             )

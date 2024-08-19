@@ -263,7 +263,8 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             response.data['result'],
             ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date',
              'purchase_status', 'contact', 'note', 'purchase_request_product_datas', 'pretax_amount', 'taxes',
-             'total_price', 'system_status', 'workflow_runtime_id', 'is_active', ],
+             'total_price', 'system_status', 'workflow_runtime_id', 'is_active',
+             'distribution_plan', 'is_change', 'document_root_id', 'document_change_order'],
             check_sum_second=True,
         )
 
@@ -287,7 +288,8 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
-             'purchase_status', 'purchase_status_raw'],
+             'purchase_status', 'request_for_string', 'purchase_status_string',
+             'distribution_plan', 'is_change', 'document_root_id', 'document_change_order'],
             check_sum_second=True,
         )
         return response
@@ -312,7 +314,8 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             response.data['result'],
             ['id', 'title', 'code', 'request_for', 'supplier', 'contact', 'delivered_date',
              'purchase_status', 'note', 'sale_order', 'purchase_request_product_datas', 'pretax_amount',
-             'taxes', 'total_price', 'system_status', 'workflow_runtime_id', 'is_active', ],
+             'taxes', 'total_price', 'system_status', 'workflow_runtime_id', 'is_active',
+             'distribution_plan', 'is_change', 'document_root_id', 'document_change_order'],
             check_sum_second=True,
         )
         if not data_id:

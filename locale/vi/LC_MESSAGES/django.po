@@ -1138,3 +1138,27 @@ msgstr "Công việc hiện tại đang thực hiện, không thể chọn loạ
 #
 msgid "Can not add in progress task to work has type \"Finish to start\""
 msgstr "Không thể thêm Giao việc đang làm vào Công việc có loại là \"Hoàn thành để bắt đầu\""
+
+#
+msgid "Partially ordered"
+msgstr "Đã đặt hàng một phần"
+
+#
+msgid "Ordered"
+msgstr "Đã đặt hàng"
+
+#
+msgid "For Sale Order"
+msgstr "Cho Đơn hàng"
+
+#
+msgid "For Other"
+msgstr "Khác"
+
+#
+msgid "For Stock Plan"
+msgstr "Cho Kế hoạch Nhập hàng"
+
+#
+msgid "For Stock Free"
+msgstr "Cho Nhập hàng Tự do"
