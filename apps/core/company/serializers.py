@@ -159,7 +159,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_project'
         ])
         if currency_rule and all(
-            [key in currency_rule for key in ['prefix', 'suffix', 'thousands', 'decimal', 'precision']]
+            key in currency_rule for key in ['prefix', 'suffix', 'thousands', 'decimal', 'precision']
         ):
             currency_rule['allowZero'] = True
             currency_rule['affixesStay'] = True
