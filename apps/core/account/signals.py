@@ -6,9 +6,10 @@ from apps.core.account.models import TOTPUser, User
 
 @receiver(post_save, sender=TOTPUser)
 def change_totp_user(sender, instance, created, **kwargs):
-    if instance.confirmed is True and instance.user and instance.user.auth_2fa is False:
-        instance.user.auth_2fa = True
-        instance.user.save(update_fields=['auth_2fa'])
+    # if instance.confirmed is True and instance.user and instance.user.auth_2fa is False:
+    #     instance.user.auth_2fa = True
+    #     instance.user.save(update_fields=['auth_2fa'])
+    pass
 
 
 @receiver(post_delete, sender=TOTPUser)

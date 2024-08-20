@@ -68,3 +68,7 @@ msgstr "Tài khoản của bạn đã bị khóa do quá nhiều lần nhập sa
 #
 msgid "This OTP has already been used."
 msgstr "Mã OTP này đã được sử dụng."
+
+#
+msgid "Deactivate 2FA before performing deletion"
+msgstr "Vô hiệu hóa 2FA trước khi thực hiện xóa"

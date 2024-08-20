@@ -536,8 +536,7 @@ class TOTPUser(models.Model):  # pylint: disable=R0902
                     self.throttle_reset(commit=False)
                     self.save()
         if not verified:
-            self.throttle_increment()
-            self.save()
+            self.throttle_increment(commit=True)
             return [False, 'FAILED']
         return [True, 'SUCCESS']
 

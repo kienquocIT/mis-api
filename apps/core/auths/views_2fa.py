@@ -130,6 +130,38 @@ class TwoFAIntegrate(APIView):
             errors['enabled'] = BaseMsg.REQUIRED
         raise serializers.ValidationError(errors)
 
+    @mask_view(login_require=True)
+    def delete(self, request, *args, **kwargs):
+        try:
+            obj = TOTPUser.objects.get(user=request.user)
+            otp = int(request.data.get('otp', ''))
+        except (TOTPUser.DoesNotExist, TOTPUser.MultipleObjectsReturned):
+            return ResponseController.notfound_404()
+        except ValueError:
+            raise serializers.ValidationError(
+                {
+                    'otp': AuthMsg.OTP_NOT_MATCH
+                }
+            )
+        else:
+            if request.user.auth_2fa:
+                ctx = {'detail': AuthMsg.TOTP_DISABLE_BEFORE_REMOVE}
+            else:
+                ctx = {'otp': AuthMsg.OTP_NOT_MATCH}
+                state, code = obj.verify(otp)
+                if state:
+                    obj.delete()
+                    return ResponseController.success_200(
+                        data={
+                            'detail': BaseMsg.SUCCESSFULLY
+                        }
+                    )
+                if code == 'LOCKED_OUT':
+                    ctx = {'detail': AuthMsg.TWO_FA_LOCKED_OUT}
+                elif code == 'OTP_USED':
+                    ctx = {'detail': AuthMsg.OTP_BEEN_USED}
+            raise serializers.ValidationError(ctx)
+
 
 class TwoFAIntegrateDetail(APIView):
     @mask_view(login_require=True)
@@ -161,6 +193,34 @@ class TwoFAIntegrateDetail(APIView):
                 ctx = {'detail': AuthMsg.OTP_BEEN_USED}
             raise serializers.ValidationError(ctx)
 
-    # @mask_view(login_require=True)
-    # def delete(self, request, *args, pk, **kwargs):
-    #     return ResponseController.notfound_404()
+    @mask_view(login_require=True)
+    def delete(self, request, *args, pk, **kwargs):
+        try:
+            obj = TOTPUser.objects.get(user=request.user, pk=pk)
+            otp = int(request.data.get('otp', ''))
+        except TOTPUser.DoesNotExist:
+            return ResponseController.notfound_404()
+        except ValueError:
+            raise serializers.ValidationError(
+                {
+                    'otp': AuthMsg.OTP_NOT_MATCH
+                }
+            )
+        else:
+            if request.user.auth_2fa:
+                ctx = {'detail': AuthMsg.TOTP_DISABLE_BEFORE_REMOVE}
+            else:
+                ctx = {'otp': AuthMsg.OTP_NOT_MATCH}
+                state, code = obj.verify(otp)
+                if state:
+                    obj.delete()
+                    return ResponseController.success_200(
+                        data={
+                            'detail': BaseMsg.SUCCESSFULLY
+                        }
+                    )
+                if code == 'LOCKED_OUT':
+                    ctx = {'detail': AuthMsg.TWO_FA_LOCKED_OUT}
+                elif code == 'OTP_USED':
+                    ctx = {'detail': AuthMsg.OTP_BEEN_USED}
+            raise serializers.ValidationError(ctx)

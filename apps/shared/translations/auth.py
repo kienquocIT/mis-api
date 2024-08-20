@@ -38,3 +38,4 @@ class AuthMsg:
 
     TWO_FA_LOCKED_OUT = _("Your account has been locked due to too many incorrect OTP attempts.")
     OTP_BEEN_USED = _("This OTP has already been used.")
+    TOTP_DISABLE_BEFORE_REMOVE = _("Deactivate 2FA before performing deletion")
