@@ -95,6 +95,7 @@ MAP_FIELD_TITLE = {
     'assettools.assettoolsreturn': 'title',
     'acceptance.finalacceptance': 'title',
     'project.projectbaseline': 'title',
+    'contract.contractapproval': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
