@@ -1,3 +1,5 @@
+import base64
+
 from rest_framework import serializers
 from rest_framework.views import APIView
 
@@ -82,7 +84,9 @@ class TwoFAIntegrate(APIView):
                         {
                             'id': str(obj_totp.id),
                             'qrcode': obj_totp.generate_otp_qri(),
-                            'secret_key': secret_key,
+                            'secret_key_b32': base64.b32encode(secret_key.encode('utf-8')).decode('utf-8').replace(
+                                '=', ''
+                            ),
                         }
                     )
                 raise serializers.ValidationError(
@@ -109,9 +113,11 @@ class TwoFAIntegrate(APIView):
                 if state is True:
                     request.user.auth_2fa = is_enable
                     request.user.save(update_fields=['auth_2fa'])
-                    return ResponseController.success_200(data={
-                        'detail': BaseMsg.SUCCESSFULLY
-                    })
+                    return ResponseController.success_200(
+                        data={
+                            'detail': BaseMsg.SUCCESSFULLY
+                        }
+                    )
                 if code == 'LOCKED_OUT':
                     ctx = {'detail': AuthMsg.TWO_FA_LOCKED_OUT}
                 elif code == 'OTP_USED':
