@@ -40,6 +40,9 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
             'quantity_order',
             'uom_stock',
             'is_stock',
+            # goods receipt information
+            'gr_completed_quantity',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -134,6 +137,9 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
+            # goods receipt information
+            'gr_completed_quantity',
+            'gr_remain_quantity',
         )
 
     @classmethod
