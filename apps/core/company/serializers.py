@@ -158,8 +158,15 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         ])
-        if currency_rule:
-            instance.currency_rule.update(currency_rule)
+        if currency_rule and all([
+            'prefix' in currency_rule, 'suffix' in currency_rule,
+            'thousands' in currency_rule, 'decimal' in currency_rule, 'precision' in currency_rule,
+        ]):
+            currency_rule['allowZero'] = True
+            currency_rule['affixesStay'] = True
+            currency_rule['allowNegative'] = False
+            instance.currency_rule = currency_rule
+            instance.save(update_fields=['currency_rule'])
         if sub_domain:
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
