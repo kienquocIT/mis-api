@@ -20,6 +20,7 @@ django-debug-toolbar==3.8.1
 django-filter==22.1
 django-phonenumber-field==7.0.0
 django-phonenumbers==1.0.1
+django-otp==1.5.1
 django-storages[s3]==1.14.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
@@ -64,6 +65,7 @@ python-magic-bin==0.4.14; sys_platform == "win32"
 python-slugify==6.1.2
 python-telegram-bot==20.6
 pytz==2022.6
+qrcode==7.4.2
 rcssmin==1.1.0
 requests==2.31.0
 requests-toolbelt==1.0.0

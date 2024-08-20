@@ -7,6 +7,7 @@ class HttpMsg:
     LOGIN_EXPIRES = _("Login was expired. Please login and try again.")
     FORBIDDEN = _("Don't have permission.")
     NOT_FOUND = _("Not found")
+    METHOD_NOT_ALLOW = _("Method not allowed")
     SUCCESSFULLY = _("Successfully")
     GOTO_LOGIN = _('Redirect to the Login page.')
     OBJ_DONE_NO_EDIT = _("This record has been finalized and is not allow to any further modifications or destroy.")

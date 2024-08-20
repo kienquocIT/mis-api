@@ -4,6 +4,7 @@ import json
 import logging
 
 from django.conf import settings
+from rest_framework import exceptions
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import APIException
 from .response import ConvertErrors
@@ -22,6 +23,12 @@ def get_exception_handler_opts(context):
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
+
+    if isinstance(exc, exceptions.AuthenticationFailed):
+        response.data = {
+            **response.data,
+            'auth_error_code': exc.get_codes()
+        }
 
     if response is not None:
         errors = ConvertErrors(opts=get_exception_handler_opts(context)).convert(response.data, response.status_code)
