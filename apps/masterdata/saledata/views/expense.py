@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema # noqa
 from apps.masterdata.saledata.models.product import Expense
 from apps.masterdata.saledata.serializers.expense import (
     ExpenseListSerializer, ExpenseCreateSerializer,
-    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer,
+    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer, ExpenseListForBOMSerializer,
 )
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -101,6 +101,31 @@ class ExpenseForSaleList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Expense for sale list",
         operation_description="Expense for sale list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# Expense (Labor) list for BOM
+class ExpenseListForBOM(BaseListMixin, BaseCreateMixin):
+    queryset = Expense.objects
+    search_fields = ['title']
+    serializer_list = ExpenseListForBOMSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'uom_group',
+            'uom',
+            'expense_item',
+        ).prefetch_related('expense')
+
+    @swagger_auto_schema(
+        operation_summary="Expense list for BOM",
+        operation_description="Expense list for BOM",
     )
     @mask_view(
         login_require=True, auth_require=False,

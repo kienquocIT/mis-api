@@ -393,6 +393,24 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'default_price_list': ProductMsg.DOES_NOT_EXIST})
         return validated_data
 
+    @classmethod
+    def create_price_list_product(cls, product, price_list, bulk_info):
+        for item in price_list.price_parent.all():
+            bulk_info.append(
+                ProductPriceList(
+                    product=product,
+                    price_list=item,
+                    price=0,
+                    currency_using=product.sale_currency_using,
+                    uom_using=product.sale_default_uom,
+                    uom_group_using=product.general_uom_group,
+                    get_price_from_source=True
+                )
+            )
+            # đệ quy tìm bảng giá con
+            cls.create_price_list_product(product, item, bulk_info)
+        return bulk_info
+
     def create(self, validated_data):
         default_pr = validated_data['default_price_list']
         del validated_data['default_price_list']
@@ -414,6 +432,22 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             uom_using=product.sale_default_uom,
             uom_group_using=product.general_uom_group
         )
+        bulk_info = self.create_price_list_product(product, default_pr, [])
+        price_product_created = ProductPriceList.objects.bulk_create(bulk_info)
+
+        sale_product_price_list = [{
+            'price_list_id': str(default_pr.id),
+            'price_value': 0,
+            'is_auto_update': False,
+        }]
+        for price_product in price_product_created:
+            sale_product_price_list = [{
+                'price_list_id': str(price_product.price_list.id),
+                'price_value': price_product.price,
+                'is_auto_update': price_product.get_price_from_source,
+            }]
+        product.sale_product_price_list = sale_product_price_list
+        product.save(update_fields=['sale_product_price_list'])
         return product
 
 
@@ -833,10 +867,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
         )
         instance.product_measure.all().delete()
-        CommonCreateUpdateProduct.delete_price_list(
-            instance,
-            [i.get('price_list_id', None) for i in instance.sale_product_price_list]
-        )
+
+        ProductPriceList.objects.filter(
+            product=instance,
+            uom_using_id=instance.sale_default_uom_id,
+            currency_using_id=instance.sale_currency_using_id,
+        ).delete()
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
