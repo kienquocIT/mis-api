@@ -18,20 +18,26 @@ from apps.shared.translations import AuthMsg
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):  # pylint: disable=W0223  # noqa
     @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # Add custom claims
-        # token['first_name'] = user.first_name
-        # token['last_name'] = user.last_name
-        # ...
-        return token
+    def get_full_token(cls, user, is_verified):
+        refresh = cls.get_token(user)
+        refresh[settings.JWT_KEY_2FA_ENABLED] = user.auth_2fa
+        refresh[settings.JWT_KEY_2FA_VERIFIED] = is_verified
+        data = {
+            "refresh_token": str(refresh),
+            "access_token": str(refresh.access_token),
+        }
+        if getattr(settings, 'UPDATE_LAST_LOGIN', True):
+            update_last_login(None, user)
+        return data
 
     @classmethod
-    def get_full_token(cls, user):
+    def get_pre_2fa_token(cls, user):
         refresh = cls.get_token(user)
+        refresh[settings.JWT_KEY_2FA_ENABLED] = user.auth_2fa
+        refresh[settings.JWT_KEY_2FA_VERIFIED] = False
         data = {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
+            "access_token": str(refresh.access_token),
+            "refresh_token": None,
         }
         if getattr(settings, 'UPDATE_LAST_LOGIN', True):
             update_last_login(None, user)
@@ -244,6 +250,7 @@ class ValidateUserDetailSerializer(serializers.ModelSerializer):
 
                 def mask_mail_host(_host_name):
                     return "@".join([mask_name(item) for item in _host_name])
+
                 return f'{mask_name(name_email)}@{mask_mail_host(remainder)}'
 
             if name_service == 'SMS':
