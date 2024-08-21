@@ -3,7 +3,7 @@ __all__ = ['ProjectTaskListSerializers', 'ProjectTaskDetailSerializers']
 from rest_framework import serializers
 
 from apps.shared import ProjectMsg
-from ..extend_func import re_calc_work_group
+from ..extend_func import re_calc_work_group, calc_rate_project
 from ..models import ProjectMapTasks
 
 
@@ -79,4 +79,5 @@ class ProjectTaskDetailSerializers(serializers.ModelSerializer):
         instance.save()
         # re caculator percent rate after link or unlink task in work and group
         re_calc_work_group(work)
+        calc_rate_project(instance.project)
         return instance

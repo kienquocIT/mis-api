@@ -1162,3 +1162,7 @@ msgstr "Cho Kế hoạch Nhập hàng"
 #
 msgid "For Stock Free"
 msgstr "Cho Nhập hàng Tự do"
+
+#
+msgid "Weight is invalid, or total weight of project larger than 100%"
+msgstr "Trọng số không hợp lệ, hoặc tổng trọng số lớn hơn 100%"

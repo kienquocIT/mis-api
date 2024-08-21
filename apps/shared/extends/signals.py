@@ -47,7 +47,7 @@ from apps.sales.lead.models import LeadStage
 from apps.sales.project.models import ProjectMapMember, ProjectMapGroup, ProjectMapWork, ProjectConfig
 from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
-from apps.sales.project.extend_func import calc_weight_all, calc_rate_project, calc_update_task
+from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 
 logger = logging.getLogger(__name__)
 
@@ -1198,15 +1198,12 @@ def new_entry_form_publish(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=ProjectMapGroup)
 def project_group_event_destroy(sender, instance, **kwargs):
-    calc_weight_all(instance.project, True)
     calc_rate_project(instance.project)
     print('re calculator weight id Done')
 
 
 @receiver(post_delete, sender=ProjectMapWork)
 def project_work_event_destroy(sender, instance, **kwargs):
-    calc_weight_all(instance.project, True)
-    calc_update_task(instance.work)
-    calc_rate_project(instance.project)
-
-    print('re calculator rate id Done')
+    calc_rate_project(instance.project, instance)
+    re_calc_work_group(instance.work)
+    print('re calculator rate is Done')
