@@ -898,6 +898,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
+                'uom': {
+                    'id': str(price.uom_using_id), 'title': price.uom_using.title,
+                    'code': price.uom_using.code, 'ratio': price.uom_using.ratio,
+                    'rounding': price.uom_using.rounding,
+                    'is_referenced_unit': price.uom_using.is_referenced_unit,
+                }
             } for price in obj.product_price_product.all()
         ]
 
