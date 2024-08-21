@@ -96,7 +96,7 @@ def calc_update_task(task_obj):
     if task_map.count():
         work = task_map.first().work
         list_task = ProjectMapTasks.objects.filter(work=work)
-        if list_task:
+        if work and list_task:
             # get all task and re-update % complete per work
             total_w = 0
             is_pending = False
@@ -123,9 +123,9 @@ def calc_update_task(task_obj):
                     list_work = group_obj.works.all()
                     rate_w = 0
                     for work in list_work:
-                        rate_w += work.w_rate
+                        rate_w += (work.w_rate / 100) * work.w_weight
                     if rate_w > 0:
-                        group_obj.gr_rate = round(rate_w/list_work.count(), 1)
+                        group_obj.gr_rate = round(rate_w, 1)
                         group_obj.save()
 
 
@@ -147,11 +147,12 @@ def re_calc_work_group(work):
         group = group_map.first().group
         list_work = group.works.all()
         rate_w = 0
+        group.gr_rate = 0
         for work_item in list_work:
-            rate_w += work_item.w_rate
+            rate_w += (work_item.w_rate / 100) * work_item.w_weight
         if rate_w > 0:
-            group.gr_rate = round(rate_w / list_work.count(), 1)
-            group.save()
+            group.gr_rate = round(rate_w, 1)
+        group.save()
 
 
 def filter_num(num):
@@ -165,59 +166,65 @@ def filter_num(num):
     return float(int_part + '.' + dec_part[:idx + 1])
 
 
-def calc_weight_all(prj, is_delete=False):
-    models_group = prj.project_projectmapgroup_project.all()
-    models_work = prj.project_projectmapwork_project.all()
-    work_not_group = []
-    for item in models_work:
+def group_calc_weight(prj, w_value=0):
+    group_lst = prj.project_projectmapgroup_project.all()
+    work_lst = prj.project_projectmapwork_project.all()
+    weight_not_grp = 0
+    for item in work_lst:
         work = item.work.project_groupmapwork_work.all()
         if not work:
-            work_not_group.append(item.work)
+            weight_not_grp += item.work.w_weight
 
-    count = models_group.count() + len(work_not_group)
-    if not is_delete:
-        count += 1
-    new_percent = filter_num(100/count) if count > 0 else 100
-    group_lst = []
-    work_lst = []
-    for item_prj in models_group:
-        item_prj.group.gr_weight = new_percent
-        group_lst.append(item_prj.group)
-
-    for item_proj in work_not_group:
-        item_proj.w_weight = new_percent
-        work_lst.append(item_proj)
-
-    ProjectGroups.objects.bulk_update(group_lst, fields=['gr_weight'])
-    ProjectWorks.objects.bulk_update(work_lst, fields=['w_weight'])
-    return new_percent
-
-
-def calc_weight_work_in_group(group_id, is_update=False):
-    # calc weight all work in group
-    percent = 100
-    model_cls = DisperseModel(app_model='project_GroupMapWork').get_model()
-    work_lst = model_cls.objects.filter(group_id=group_id)
-    w_lst_update = []
-    if work_lst:
-        count = work_lst.count()
-        if not is_update:
-            count += 1
-        percent = filter_num(100/count)
-        for w_item in work_lst:
-            w_item.work.w_weight = percent
-            w_lst_update.append(w_item.work)
-        ProjectWorks.objects.bulk_update(w_lst_update, fields=['w_weight'])
-    return percent
-
-
-def reorder_work(group_id=None, prj=None):
-    group_obj = ProjectGroups.objects.filter(id=group_id).first()
-    if not group_obj:
+    weight_grp = 0
+    for item in group_lst:
+        weight_grp += item.group.gr_weight
+    if weight_not_grp + weight_grp + w_value > 100:
         return False
-    work_order = group_obj.order + 1
+    if w_value == 0:
+        w_value = 100 - (weight_not_grp + weight_grp)
+    return w_value
 
-    work_in_group = GroupMapWork.objects.filter(group=group_obj)
+
+def group_update_weight(prj, w_value, group):
+    group_lst = prj.project_projectmapgroup_project.all()
+    work_lst = prj.project_projectmapwork_project.all()
+    weight_not_grp = 0
+    for item in work_lst:
+        work = item.work.project_groupmapwork_work.all()
+        if not work:
+            weight_not_grp += item.work.w_weight
+
+    weight_grp = 0
+    for item in group_lst:
+        if item.group.id != group.id:
+            weight_grp += item.group.gr_weight
+    if weight_not_grp + weight_grp + w_value > 100:
+        return False
+    if w_value == 0:
+        w_value = 100 - (weight_not_grp + weight_grp)
+    return w_value
+
+
+def work_calc_weight_h_group(w_value, group, work=None):
+    work_lst = group.project_groupmapwork_group.all()
+    work_percent = 0
+    for item in work_lst:
+        if not work or work.id != item.work.id:
+            work_percent += item.work.w_weight
+
+    if work_percent + w_value > 100:
+        return False
+    if w_value == 0 and work_percent != 100:
+        w_value = 100 - work_percent
+    return w_value
+
+
+def reorder_work(group=None, prj=None):
+    if not group:
+        return False
+    work_order = group.order + 1
+
+    work_in_group = GroupMapWork.objects.filter(group=group)
     if work_in_group.exists():
         work_order = work_in_group.order_by('work__order').last().work.order + 1
 
@@ -237,21 +244,26 @@ def reorder_work(group_id=None, prj=None):
     return work_order
 
 
-def calc_rate_project(pro_obj):
+def calc_rate_project(pro_obj, obj_delete=None):
     group_lst = ProjectMapGroup.objects.filter(project=pro_obj)
     work_lst = ProjectMapWork.objects.filter(project=pro_obj)
     rate_all = 0
+    pro_obj.completion_rate = 0
+    group_obj = obj_delete.group if hasattr(obj_delete, 'group') else None
+    work_obj = obj_delete.work if hasattr(obj_delete, 'work') else None
     for group_m in group_lst:
         group = group_m.group
         if group.gr_rate and group.gr_weight:
-            rate_all += (group.gr_rate / 100) * group.gr_weight
+            if not group_obj or group_obj.id != group.id:
+                rate_all += (group.gr_rate / 100) * group.gr_weight
 
     for work_m in work_lst:
         work = work_m.work
-        if work.w_rate and work.w_weight:
-            bellow_group = work.project_groupmapwork_work.all()
-            if not bellow_group.exists():
-                rate_all += (work.w_rate / 100) * work.w_weight
+        bellow_group = work.project_groupmapwork_work.all()
+        if not bellow_group.exists():
+            if work.w_rate and work.w_weight:
+                if not work_obj or work_obj.id != work.id:
+                    rate_all += (work.w_rate / 100) * work.w_weight
     if rate_all > 0:
         pro_obj.completion_rate = filter_num(rate_all)
-        pro_obj.save()
+    pro_obj.save()

@@ -1134,3 +1134,7 @@ msgstr "Công việc hiện tại đang thực hiện, không thể chọn loạ
 #
 msgid "Can not add in progress task to work has type \"Finish to start\""
 msgstr "Không thể thêm Giao việc đang làm vào Công việc có loại là \"Hoàn thành để bắt đầu\""
+
+#
+msgid "Weight is invalid, or total weight of project larger than 100%"
+msgstr "Trọng số không hợp lệ, hoặc tổng trọng số lớn hơn 100%"
