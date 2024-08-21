@@ -882,12 +882,10 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def check_status_price(cls, valid_time_start, valid_time_end):
         current_time = datetime.now().date()
         if (not valid_time_start.date() >= current_time) and (valid_time_end.date() >= current_time):
-            return 'Valid'
-        if valid_time_end.date() < current_time:
-            return 'Expired'
-        if valid_time_start.date() >= current_time:
-            return 'Invalid'
-        return 'Undefined'
+            return 1
+        if valid_time_end.date() < current_time or valid_time_start.date() >= current_time:
+            return 0
+        return None
 
     @classmethod
     def get_price_list(cls, obj):

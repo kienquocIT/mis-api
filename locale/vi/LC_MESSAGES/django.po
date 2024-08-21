@@ -1162,3 +1162,32 @@ msgstr "Cho Kế hoạch Nhập hàng"
 #
 msgid "For Stock Free"
 msgstr "Cho Nhập hàng Tự do"
+
+#
+msgid "Create document"
+msgstr "Tạo phiếu"
+
+#
+msgid "Receive document"
+msgstr "Tiếp nhận phiếu"
+
+#
+msgid "Edit data by zones"
+msgstr "Chỉnh sửa dữ liệu theo vùng"
+
+#
+msgid "Return to creator"
+msgstr "Trả về người tạo"
+
+#
+msgid "Rerun workflow"
+msgstr "Chạy lại quy trình"
+
+#
+msgid "Workflow ended"
+msgstr "Quy trình kết thúc"
+
+#
+msgid "Rejected"
+msgstr "Từ chối"
+
