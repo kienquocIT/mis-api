@@ -63,6 +63,14 @@ WORKFLOW_IN_WF_POSITION = (
 class WorkflowMsgNotify:
     new_task = 'New Task'
     was_return_begin = 'Was return owner'
+    create_document = 'Create document'
+    receive_document = 'Receive document'
+    approved = 'Approved'
+    rejected = 'Rejected'
+    edit_by_zone = 'Edit data by zones'
+    return_creator = 'Return to creator'
+    rerun_workflow = 'Rerun workflow'
+    end_workflow = 'Workflow ended'
 
     @classmethod
     def translate_msg(cls, msg):
