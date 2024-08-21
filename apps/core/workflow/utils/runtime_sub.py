@@ -90,7 +90,7 @@ class HookEventHandler:
                             'tenant_id': self.runtime_obj.tenant_id,
                             'company_id': self.runtime_obj.company_id,
                             'title': self.runtime_obj.doc_title,
-                            'msg': WorkflowMsgNotify.was_return_begin if self.is_return else WorkflowMsgNotify.new_task,
+                            'msg': WorkflowMsgNotify.return_creator if self.is_return else WorkflowMsgNotify.new_task,
                             'date_created': timezone.now(),
                             'doc_id': self.runtime_obj.doc_id,
                             'doc_app': self.runtime_obj.app_code,

@@ -2,7 +2,7 @@ from datetime import datetime
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
-from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.models import ReportStockLog
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
@@ -18,29 +18,23 @@ class ProductListSerializer(serializers.ModelSerializer):
     general_price = serializers.SerializerMethodField()
     general_uom_group = serializers.SerializerMethodField()
     inventory_uom = serializers.SerializerMethodField()
+    purchase_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
+            'id', 'code', 'title', 'description',
+            'product_choice',
             'general_product_types_mapped',
             'general_product_category',
             'general_traceability_method',
             'general_uom_group',
-            'sale_tax',
-            'sale_default_uom',
-            'product_choice',
             'general_price',
+            'sale_tax', 'sale_default_uom',
             'inventory_uom',
+            'purchase_information',
             # Transaction information
-            'stock_amount',
-            'wait_delivery_amount',
-            'wait_receipt_amount',
-            'available_amount',
-            'is_public_website'
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'is_public_website'
         )
 
     @classmethod
@@ -82,10 +76,25 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_inventory_uom(cls, obj):
         return {
-            "id": str(obj.inventory_uom.id),
-            "title": obj.inventory_uom.title,
-            'ratio': obj.inventory_uom.ratio
+            "id": str(obj.inventory_uom.id), "title": obj.inventory_uom.title, 'ratio': obj.inventory_uom.ratio
         } if obj.inventory_uom else {}
+
+    @classmethod
+    def get_purchase_information(cls, obj):
+        result = {
+            'default_uom': {
+                'id': obj.purchase_default_uom_id,
+                'title': obj.purchase_default_uom.title,
+                'code': obj.purchase_default_uom.code
+            } if obj.purchase_default_uom else {},
+            'tax': {
+                'id': obj.purchase_tax_id,
+                'title': obj.purchase_tax.title,
+                'code': obj.purchase_tax.code,
+                'rate': obj.purchase_tax.rate,
+            } if obj.purchase_tax else {},
+        }
+        return result
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -108,34 +117,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'description',
-            'product_choice',
+            'code', 'title', 'description', 'product_choice',
             # General
             'general_product_category',
             'general_uom_group',
             'general_traceability_method',
-            'width',
-            'height',
-            'length',
-            'volume',
-            'weight',
+            'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            'sale_default_uom',
-            'sale_tax',
-            'sale_currency_using',
-            'online_price_list',
-            'available_notify',
-            'available_notify_quantity',
+            'sale_default_uom', 'sale_tax', 'sale_currency_using', 'online_price_list',
+            'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom',
-            'inventory_level_min',
-            'inventory_level_max',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             # Purchase
-            'purchase_default_uom',
-            'purchase_tax',
-            'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website'
         )
 
     @classmethod
@@ -325,6 +319,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
+    product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False)
@@ -333,13 +328,9 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'general_product_category',
-            'general_uom_group',
-            'general_traceability_method',
-            'sale_default_uom',
-            'sale_tax',
+            'code', 'title', 'product_choice',
+            'general_product_category', 'general_uom_group', 'general_traceability_method',
+            'sale_default_uom', 'sale_tax',
         )
 
     @classmethod
@@ -383,14 +374,28 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validated_data):
-        validated_data['product_choice'] = [0, 1, 2]
-        validated_data['sale_default_uom'] = validated_data['sale_default_uom']
-        validated_data['inventory_uom'] = validated_data['sale_default_uom']
-        validated_data['purchase_default_uom'] = validated_data['sale_default_uom']
-        validated_data['purchase_tax'] = validated_data['sale_tax']
+        if 0 not in validated_data['product_choice']:
+            raise serializers.ValidationError({'sale': 'Sale is required'})
+        if 1 in validated_data['product_choice']:
+            validated_data['inventory_uom'] = validated_data['sale_default_uom']
+        if 2 in validated_data['product_choice']:
+            validated_data['purchase_default_uom'] = validated_data['sale_default_uom']
+            validated_data['purchase_tax'] = validated_data['sale_tax']
+
+        default_price_list = Price.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_default=True
+        ).first()
+        if default_price_list:
+            validated_data['default_price_list'] = default_price_list
+        else:
+            raise serializers.ValidationError({'default_price_list': ProductMsg.DOES_NOT_EXIST})
         return validated_data
 
     def create(self, validated_data):
+        default_pr = validated_data['default_price_list']
+        del validated_data['default_price_list']
         validated_data['sale_currency_using'] = Currency.objects.filter(
             tenant_id=validated_data['tenant_id'],
             company_id=validated_data['company_id'],
@@ -399,6 +404,15 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         product = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
             product, self.initial_data.get('product_types_mapped_list', [])
+        )
+
+        ProductPriceList.objects.create(
+            product=product,
+            price_list=default_pr,
+            price=0,
+            currency_using=product.sale_currency_using,
+            uom_using=product.sale_default_uom,
+            uom_group_using=product.general_uom_group
         )
         return product
 
@@ -424,24 +438,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
+            'id', 'code', 'title', 'description',
+            'product_choice',
+            'product_warehouse_detail',
             'general_information',
             'inventory_information',
             'sale_information',
             'purchase_information',
-            'product_choice',
-            'product_warehouse_detail',
-            # Transaction information
-            'stock_amount',
-            'wait_delivery_amount',
-            'wait_receipt_amount',
-            'available_amount',
-            'is_public_website',
             'product_variant_attribute_list',
-            'product_variant_item_list'
+            'product_variant_item_list',
+            # Transaction information
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'is_public_website'
         )
 
     @classmethod
@@ -497,14 +504,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 )
         result = {
             'default_uom': {
-                'id': obj.sale_default_uom_id,
-                'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code
+                'id': obj.sale_default_uom_id, 'title': obj.sale_default_uom.title, 'code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
-                'id': obj.sale_tax_id,
-                'title': obj.sale_tax.title,
-                'code': obj.sale_tax.code
+                'id': obj.sale_tax_id, 'title': obj.sale_tax.title, 'code': obj.sale_tax.code
             } if obj.sale_tax else {},
             'currency_using': {
                 'id': obj.sale_currency_using_id,
@@ -514,8 +517,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.sale_currency_using else {},
             'sale_product_price_list': sale_product_price_list,
             'price_list_for_online_sale': {
-                'id': obj.online_price_list_id,
-                'title': obj.online_price_list.title,
+                'id': obj.online_price_list_id, 'title': obj.online_price_list.title,
             } if obj.online_price_list else {},
             'available_notify': obj.available_notify,
             'available_notify_quantity': obj.available_notify_quantity
@@ -563,9 +565,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 result.append({
                     'id': item.id,
                     'warehouse': {
-                        'id': item.warehouse_id,
-                        'title': item.warehouse.title,
-                        'code': item.warehouse.code,
+                        'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                     } if item.warehouse else {},
                     'stock_amount': casted_stock_amount,
                     'cost': obj.get_unit_cost_by_warehouse(
@@ -653,34 +653,18 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code',
-            'title',
-            'description',
-            'product_choice',
+            'code', 'title', 'description', 'product_choice',
             # General
-            'general_product_category',
-            'general_uom_group',
+            'general_product_category', 'general_uom_group',
             # 'general_traceability_method',
-            'width',
-            'height',
-            'length',
-            'volume',
-            'weight',
+            'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            'sale_default_uom',
-            'sale_tax',
-            'sale_currency_using',
-            'online_price_list',
-            'available_notify',
-            'available_notify_quantity',
+            'sale_default_uom', 'sale_tax', 'sale_currency_using',
+            'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom',
-            'inventory_level_min',
-            'inventory_level_max',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             # Purchase
-            'purchase_default_uom',
-            'purchase_tax',
-            'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website'
         )
 
     def validate_code(self, value):
@@ -888,8 +872,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'code',
-            'title', 'description',
+            'id', 'code', 'title', 'description',
             'general_information', 'purchase_information',
             'sale_information', 'purchase_information',
             'price_list', 'product_choice',
@@ -915,6 +898,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'price_status': cls.check_status_price(
                     price.price_list.valid_time_start, price.price_list.valid_time_end
                 ), 'price_type': price.price_list.price_list_type,
+                'uom': {
+                    'id': str(price.uom_using_id), 'title': price.uom_using.title,
+                    'code': price.uom_using.code, 'ratio': price.uom_using.ratio,
+                    'rounding': price.uom_using.rounding,
+                    'is_referenced_unit': price.uom_using.is_referenced_unit,
+                }
             } for price in obj.product_price_product.all()
         ]
 

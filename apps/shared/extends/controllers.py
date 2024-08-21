@@ -81,6 +81,15 @@ class ResponseController:
         )
 
     @classmethod
+    def notfound_405(cls, msg=None) -> cus_response:
+        return cus_response(
+            {
+                "status": status.HTTP_405_METHOD_NOT_ALLOWED,
+                "detail": msg if msg else HttpMsg.METHOD_NOT_ALLOW
+            }, status=status.HTTP_405_METHOD_NOT_ALLOWED, is_errors=True,
+        )
+
+    @classmethod
     def internal_server_error_500(cls, msg=None):
         return cus_response(
             {

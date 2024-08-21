@@ -63,6 +63,14 @@ WORKFLOW_IN_WF_POSITION = (
 class WorkflowMsgNotify:
     new_task = 'New Task'
     was_return_begin = 'Was return owner'
+    create_document = 'Create document'
+    receive_document = 'Receive document'
+    approved = 'Approved'
+    rejected = 'Rejected'
+    edit_by_zone = 'Edit data by zones'
+    return_creator = 'Return to creator'
+    rerun_workflow = 'Rerun workflow'
+    end_workflow = 'Workflow ended'
 
     @classmethod
     def translate_msg(cls, msg):
@@ -95,6 +103,7 @@ MAP_FIELD_TITLE = {
     'assettools.assettoolsreturn': 'title',
     'acceptance.finalacceptance': 'title',
     'project.projectbaseline': 'title',
+    'contract.contractapproval': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -212,8 +221,9 @@ PERMISSION_OPTION_RANGE = (
 # Purchase request
 REQUEST_FOR = [
     (0, _('For Sale Order')),
-    (1, _('For Stock')),
+    (1, _('For Stock Free')),
     (2, _('For Other')),
+    (3, _('For Stock Plan')),
 ]
 
 PURCHASE_STATUS = [

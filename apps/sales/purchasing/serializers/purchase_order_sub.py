@@ -74,8 +74,8 @@ class PurchaseOrderCommonCreate:
                 purchase_order=instance,
                 purchase_request_product_id=purchase_request_product['purchase_request_product'],
                 sale_order_product_id=purchase_request_product['sale_order_product'],
-                quantity_order=purchase_request_product['quantity_order'],
-                gr_remain_quantity=purchase_request_product['quantity_order'],
+                quantity_order=purchase_request_product.get('quantity_order', 0),
+                gr_remain_quantity=purchase_request_product.get('gr_remain_quantity', 0),
             ) for purchase_request_product in validated_data['purchase_request_products_data']
         ])
 
@@ -85,11 +85,10 @@ class PurchaseOrderCommonCreate:
             data = cls.validate_product(dict_data=purchase_order_product)
             order_product = PurchaseOrderProduct.objects.create(
                 purchase_order=instance,
-                product_id=data['product'].get('id', None),
-                uom_order_request_id=data['uom_order_request'].get('id', None),
-                uom_order_actual_id=data['uom_order_actual'].get('id', None),
-                tax_id=data['tax'].get('id', None),
-                gr_remain_quantity=purchase_order_product.get('product_quantity_order_actual', 0),
+                product_id=data.get('product', {}).get('id', None),
+                uom_order_request_id=data.get('uom_order_request', {}).get('id', None),
+                uom_order_actual_id=data.get('uom_order_actual', {}).get('id', None),
+                tax_id=data.get('tax', {}).get('id', None),
                 **purchase_order_product
             )
             if order_product:
@@ -100,8 +99,8 @@ class PurchaseOrderCommonCreate:
                             purchase_request_product_id=purchase_request_product.get('purchase_request_product', None),
                             purchase_order_product=order_product,
                             sale_order_product_id=purchase_request_product.get('sale_order_product', None),
-                            quantity_order=purchase_request_product['quantity_order'],
-                            gr_remain_quantity=purchase_request_product['quantity_order'],
+                            quantity_order=purchase_request_product.get('quantity_order', 0),
+                            gr_remain_quantity=purchase_request_product.get('gr_remain_quantity', 0),
                             uom_stock_id=purchase_request_product.get('uom_stock', {}).get('id', None),
                             is_stock=purchase_request_product.get('is_stock', False),
                         ) for purchase_request_product in data['purchase_request_products_data']

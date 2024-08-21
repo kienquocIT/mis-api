@@ -8,6 +8,8 @@ __all__ = [
     'call_log_update_at_zone',
 ]
 
+from apps.shared import WorkflowMsgNotify
+
 
 @shared_task
 def call_log_update_at_zone(task_id: Union[UUID, str], employee_id: Union[UUID, str], is_system: bool = False):
@@ -22,7 +24,7 @@ def call_log_update_at_zone(task_id: Union[UUID, str], employee_id: Union[UUID, 
         stage=rt_assignee.stage,
         kind=1,  # in doc
         action=0,
-        msg='Update data at zone',
+        msg=WorkflowMsgNotify.edit_by_zone,
         is_system=is_system,
     )
     rt_assignee.action_perform.append('update')
