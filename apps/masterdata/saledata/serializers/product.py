@@ -30,11 +30,11 @@ class ProductListSerializer(serializers.ModelSerializer):
             'general_traceability_method',
             'general_uom_group',
             'general_price',
-            'sale_tax', 'sale_default_uom',
+            'sale_tax', 'sale_default_uom', 'is_public_website',
             'inventory_uom',
             'purchase_information',
             # Transaction information
-            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'is_public_website'
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
         )
 
     @classmethod
@@ -93,6 +93,7 @@ class ProductListSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_tax.code,
                 'rate': obj.purchase_tax.rate,
             } if obj.purchase_tax else {},
+            'supplied_by': obj.supplied_by
         }
         return result
 
@@ -117,7 +118,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code', 'title', 'description', 'product_choice',
+            'code', 'title', 'description', 'product_choice', 'part_number',
             # General
             'general_product_category',
             'general_uom_group',
@@ -127,9 +128,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_default_uom', 'sale_tax', 'sale_currency_using', 'online_price_list',
             'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
             # Purchase
-            'purchase_default_uom', 'purchase_tax', 'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'supplied_by'
         )
 
     @classmethod
@@ -460,7 +461,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'code', 'title', 'description',
+            'id', 'code', 'title', 'description', 'part_number',
             'product_choice',
             'product_warehouse_detail',
             'general_information',
@@ -469,8 +470,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'purchase_information',
             'product_variant_attribute_list',
             'product_variant_item_list',
+            'is_public_website',
             # Transaction information
-            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'is_public_website'
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
         )
 
     @classmethod
@@ -566,6 +568,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'tax': {
                 'id': obj.purchase_tax_id, 'title': obj.purchase_tax.title, 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
+            'supplied_by': obj.supplied_by
         }
         return result
 
@@ -671,13 +674,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'code', 'title', 'description', 'product_choice',
+            'code', 'title', 'description', 'product_choice', 'part_number',
             'general_product_category', 'general_uom_group',
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
-            'purchase_default_uom', 'purchase_tax', 'is_public_website'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
     def validate_code(self, value):

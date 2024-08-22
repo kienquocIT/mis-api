@@ -221,6 +221,8 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             'price_list_type',
             'price_list_mapped',
             'is_default',
+            'valid_time_start',
+            'valid_time_end',
             'status',
         )
 
