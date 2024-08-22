@@ -3023,7 +3023,7 @@ class PriceListTestCase(AdvanceTestCase):
             response.data['result'][0],
             [
                 'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
-                'price_list_mapped', 'is_default', 'status'
+                'price_list_mapped', 'is_default', 'status', 'valid_time_start', 'valid_time_end',
             ],
             check_sum_second=True,
         )
