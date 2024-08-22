@@ -18,3 +18,4 @@ class ProjectMsg:
     PROJECT_UPDATE_WORK_ERROR = _('Current work is in progress can not select dependencies type "Finish to start"')
     PROJECT_UPDATE_WORK_ERROR = _('Can not add in progress task to work has type "Finish to start"')
     PROJECT_WEIGHT_ERROR = _('Weight is invalid, or total weight of project larger than 100%')
+    PROJECT_DATE_VALID_ERROR = _('Star date or finish date not in range of project date')

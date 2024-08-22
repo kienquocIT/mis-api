@@ -199,6 +199,17 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         )
 
     @classmethod
+    def re_calc_rate(cls, group):
+        work_map = group.project_groupmapwork_group.all()
+        if work_map:
+            group.gr_rate = 0
+            for item in work_map:
+                item_w = item.work
+                if item_w.w_weight and item_w.w_rate:
+                    group.gr_rate += (item_w.w_rate / 100) * item_w.w_weight
+            group.save()
+
+    @classmethod
     def validate_group(cls, value):
         try:
             group = ProjectGroups.objects.get_current(
@@ -217,7 +228,7 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         if w_end_date < w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
         # valid group
-        project_map = self.instance.project_projectmapwork_work.all().first()
+        project = self.instance.project_projectmapwork_work.all().first().project
         group = attrs['group'] if 'group' in attrs else None
         if group:
             value = work_calc_weight_h_group(attrs['w_weight'], group, self.instance)
@@ -225,24 +236,28 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
             attrs['w_weight'] = value
         else:
-            attrs['w_weight'] = group_calc_weight(project_map.project, attrs['w_weight'])
+            attrs['w_weight'] = group_calc_weight(project, attrs['w_weight'])
+
+        if w_start_date < project.start_date or w_start_date > project.finish_date or \
+                w_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
         return validated_date_work(attrs, w_rate)
 
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
         prj_id = self.context.get('project', None)
         prj_obj = Project.objects.get(id=prj_id)
-        if group and prj_obj:
-            validated_data['order'] = reorder_work(group, prj_obj)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         # create or update group
         if group:
             GroupMapWork.objects.get_or_create(group=group, work=instance)
+            self.re_calc_rate(group)
         else:
-            old_g_obj = GroupMapWork.objects.get(work=instance)
-            old_g_obj.delete()
-        # re calc rate of project after update work
+            old_g_obj = GroupMapWork.objects.filter(work=instance)
+            if old_g_obj.exists():
+                old_g_obj.delete()
+        # re SUM all rate group, work in project
         calc_rate_project(prj_obj)
         return instance

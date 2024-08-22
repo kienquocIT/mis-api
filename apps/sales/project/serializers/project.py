@@ -299,14 +299,13 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         model = Project
         fields = (
             'title',
-            'start_date',
             'finish_date',
             'project_pm',
             'employee_inherit',
             'system_status',
             'expense_data',
             'work_expense_data',
-            'delete_expense_lst'
+            'delete_expense_lst',
         )
 
     @classmethod
