@@ -890,9 +890,8 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'code', 'title', 'description',
-            'general_information', 'purchase_information',
-            'sale_information', 'purchase_information',
-            'price_list', 'product_choice',
+            'general_information', 'purchase_information', 'sale_information', 'purchase_information',
+            'price_list', 'product_choice', 'supplied_by',
         )
 
     @classmethod
@@ -969,7 +968,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'tax': {
                 'id': str(obj.purchase_tax_id), 'title': obj.purchase_tax.title,
                 'code': obj.purchase_tax.code, 'rate': obj.purchase_tax.rate,
-            } if obj.purchase_tax else {},
+            } if obj.purchase_tax else {}
         }
 
 
