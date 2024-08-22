@@ -103,20 +103,26 @@ class GroupDetailSerializers(serializers.ModelSerializer):
     def validate(self, attrs):
         gr_end_date = attrs['gr_end_date']
         gr_start_date = attrs['gr_start_date']
+        project = self.instance.project_projectmapgroup_group.all().first().project
         if gr_end_date < gr_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
 
+        if gr_start_date < project.start_date or gr_start_date > project.finish_date or \
+                gr_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
         # valid weight
-        project = self.instance.project_projectmapgroup_group.all().first()
-        value = group_update_weight(project.project, attrs['gr_weight'], self.instance)
+        value = group_update_weight(project, attrs['gr_weight'], self.instance)
         if bool(value) is False:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
         return attrs
 
     def update(self, instance, validated_data):
+        weight_before = instance.gr_weight
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if validated_data['gr_weight'] != weight_before:
+            calc_rate_project(instance.project_projectmapgroup_group.all().first().project)
         return instance
 
 

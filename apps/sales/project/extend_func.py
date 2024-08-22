@@ -91,6 +91,17 @@ def check_permit_add_member_pj(task, emp_crt):
     return False
 
 
+def filter_num(num):
+    str_num = str(num)
+    int_part, dec_part = str_num.split('.')
+
+    # Find the index of the first non-zero digit in the decimal part
+    idx = next((i for i, x in enumerate(dec_part) if x != '0'), len(dec_part))
+
+    # Return the number up to the first non-zero digit in the decimal part
+    return float(int_part + '.' + dec_part[:idx + 1])
+
+
 def calc_update_task(task_obj):
     task_map = task_obj.project_projectmaptasks_task.all()
     if task_map.count():
@@ -153,17 +164,6 @@ def re_calc_work_group(work):
         if rate_w > 0:
             group.gr_rate = round(rate_w, 1)
         group.save()
-
-
-def filter_num(num):
-    str_num = str(num)
-    int_part, dec_part = str_num.split('.')
-
-    # Find the index of the first non-zero digit in the decimal part
-    idx = next((i for i, x in enumerate(dec_part) if x != '0'), len(dec_part))
-
-    # Return the number up to the first non-zero digit in the decimal part
-    return float(int_part + '.' + dec_part[:idx + 1])
 
 
 def group_calc_weight(prj, w_value=0):
@@ -245,6 +245,7 @@ def reorder_work(group=None, prj=None):
 
 
 def calc_rate_project(pro_obj, obj_delete=None):
+    # get all group and work and sum total all rate of group and work (exclude work in group)
     group_lst = ProjectMapGroup.objects.filter(project=pro_obj)
     work_lst = ProjectMapWork.objects.filter(project=pro_obj)
     rate_all = 0
