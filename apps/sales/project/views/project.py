@@ -8,7 +8,7 @@ from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
-from apps.sales.project.models import Project, ProjectMapMember, ProjectMapWork, ProjectMapTasks, ProjectBaseline
+from apps.sales.project.models import Project, ProjectMapMember, ProjectMapWork, ProjectMapTasks
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
