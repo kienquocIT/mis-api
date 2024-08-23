@@ -1162,3 +1162,40 @@ msgstr "Cho Kế hoạch Nhập hàng"
 #
 msgid "For Stock Free"
 msgstr "Cho Nhập hàng Tự do"
+
+#
+msgid "Weight is invalid, or total weight of project larger than 100%"
+msgstr "Trọng số không hợp lệ, hoặc tổng trọng số lớn hơn 100%"
+
+#
+msgid "Create document"
+msgstr "Tạo phiếu"
+
+#
+msgid "Receive document"
+msgstr "Tiếp nhận phiếu"
+
+#
+msgid "Edit data by zones"
+msgstr "Chỉnh sửa dữ liệu theo vùng"
+
+#
+msgid "Return to creator"
+msgstr "Trả về người tạo"
+
+#
+msgid "Rerun workflow"
+msgstr "Chạy lại quy trình"
+
+#
+msgid "Workflow ended"
+msgstr "Quy trình kết thúc"
+
+#
+msgid "Rejected"
+msgstr "Từ chối"
+
+
+#
+msgid "Star date or finish date not in range of project date"
+msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"

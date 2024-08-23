@@ -49,9 +49,8 @@ class ProjectTaskList(BaseListMixin):
                 filter_kwargs = Q(project_id__in=prj_has_view_ids)
                 if 'project_id' in params and 'work_id' in params:
                     filter_kwargs &= Q(
-                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id': params.get('work_id')}) | Q(
-                            **{'work_id__isnull': True}
-                        )
+                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id': params.get('work_id')}) |
+                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id__isnull': True})
                     )
                 return filter_kwargs
             return self.filter_kwargs_q__from_config()

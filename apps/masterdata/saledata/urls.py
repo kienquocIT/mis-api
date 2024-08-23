@@ -8,7 +8,7 @@ from apps.masterdata.saledata.views.accounts import (
     AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
-from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
+from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList, ExpenseListForBOM
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.periods import PeriodsList, PeriodsDetail
 from apps.masterdata.saledata.views.product import (
@@ -118,6 +118,8 @@ urlpatterns += [
 
 urlpatterns += [
     path('expenses', ExpenseList.as_view(), name='ExpenseList'),
+    path('labor-list-for-BOM', ExpenseListForBOM.as_view(), name='ExpenseListForBOM'),
+
     path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail'),
     path('expenses-sale', ExpenseForSaleList.as_view(), name='ExpenseForSaleList'),
 ]

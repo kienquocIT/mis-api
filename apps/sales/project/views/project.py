@@ -8,7 +8,7 @@ from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
-from apps.sales.project.models import Project, ProjectMapMember
+from apps.sales.project.models import Project, ProjectMapMember, ProjectMapWork, ProjectMapTasks
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
@@ -39,8 +39,10 @@ class ProjectList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            Prefetch('project_projectmapwork_project'),
-            Prefetch('project_projectmaptasks_project'),
+            Prefetch('project_projectmapwork_project', queryset=ProjectMapWork.objects.select_related(
+                "work")),
+            Prefetch('project_projectmaptasks_project', queryset=ProjectMapTasks.objects.select_related(
+                "task")),
             Prefetch('project_projectbaseline_project_related'),
         )
 

@@ -19,6 +19,11 @@ TRACEABILITY_METHOD_SELECTION = [
     (2, _('Serial number'))
 ]
 
+SUPPLIED_BY = [
+    (0, _('Purchasing')),
+    (1, _('Making')),
+]
+
 
 ATTRIBUTE_CONFIG = [
     (0, _('Dropdown List')),
@@ -93,6 +98,7 @@ class UnitOfMeasure(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
         default=list,
         help_text='product for sale: 0, inventory: 1, purchase:2'
@@ -195,6 +201,8 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
+
     # Stock information
     stock_amount = models.FloatField(
         default=0,
@@ -210,6 +218,11 @@ class Product(DataAbstractModel):
         default=0,
         verbose_name='Wait Receipt Amount',
         help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
+    )
+    production_amount = models.FloatField(
+        default=0,
+        verbose_name='Production Amount',
+        help_text='Amount product that making by company - not purchase'
     )
     available_amount = models.FloatField(
         default=0,

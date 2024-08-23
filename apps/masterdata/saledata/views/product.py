@@ -393,7 +393,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-# Products use for sale/ purchase/ inventory applications
+# Products use for sale/ purchase/ inventory
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title']
@@ -413,7 +413,7 @@ class ProductForSaleList(BaseListMixin):
             'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
-                queryset=ProductPriceList.objects.select_related('price_list'),
+                queryset=ProductPriceList.objects.select_related('price_list', 'uom_using'),
             ),
         )
 

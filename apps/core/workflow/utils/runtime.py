@@ -838,7 +838,7 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Re-run begin station' if is_return else 'Create document',
+            msg=WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
             is_system=self.is_system,
         )
 
@@ -849,7 +849,7 @@ class RuntimeLogHandler:
             "stage": self.stage_obj,
             "kind": 2,
             "action": 0,
-            "msg": WorkflowMsgNotify.was_return_begin if is_return else WorkflowMsgNotify.new_task,
+            "msg": WorkflowMsgNotify.return_creator if is_return else WorkflowMsgNotify.receive_document,
             "is_system": self.is_system,
         }
         if perform_created is True:
@@ -925,7 +925,7 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': f'Return to initial node ({self.remark})',  # edit by PO's request
+                'msg': f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
                 'task_workflow_id': None,
             },
         )
@@ -935,14 +935,14 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg=f'Return to initial node ({self.remark})',  # edit by PO's request
+            msg=f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
             is_system=self.is_system,
         )
 
     def log_finish_station_doc(self, final_state_num=1, msg_log=''):
         final_state_choices = {
-            1: 'Approved',
-            2: 'Reject',
+            1: WorkflowMsgNotify.approved,
+            2: WorkflowMsgNotify.rejected,
         }
         runtime_obj = self.stage_obj.runtime
         if runtime_obj:
@@ -964,7 +964,7 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Finish flow' + f' with {final_state_choices[final_state_num].lower()}',
+            msg=f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
             is_system=self.is_system,
         )
 
@@ -986,6 +986,6 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=1,  # in doc
             action=0,
-            msg='Update data at zone',
+            msg=WorkflowMsgNotify.edit_by_zone,
             is_system=self.is_system,
         )
