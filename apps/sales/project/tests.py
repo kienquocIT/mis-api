@@ -26,7 +26,7 @@ class ProjectTestCase(AdvanceTestCase):
             'project_pm': str(self.employee.id),
             'employee_inherit': str(self.employee.id),
             'start_date': time_now.strftime('%Y-%m-%d'),
-            'end_date': (time_now + timedelta(weeks=12)).strftime('%Y-%m-%d'),
+            'finish_date': (time_now + timedelta(weeks=12)).strftime('%Y-%m-%d'),
         }
         response = self.client.post(reverse('ProjectList'), data, format='json')
         self.assertEqual(response.status_code, 201)
