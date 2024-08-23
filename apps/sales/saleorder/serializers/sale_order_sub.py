@@ -631,6 +631,7 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             'is_shipping',
             'shipping_id',
             'shipping_data',
+            'supplied_by',
         )
 
     @classmethod
