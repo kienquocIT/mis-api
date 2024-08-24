@@ -1,0 +1,15 @@
+from django.urls import path
+from apps.sales.production.views.bom import (
+    LaborListForBOM, ProductMaterialListForBOM, ProductToolsListForBOM,
+    BOMList, BOMDetail
+)
+
+urlpatterns = [
+    path('labor-list-for-BOM', LaborListForBOM.as_view(), name='LaborListForBOM'),
+    path('product-material-list-for-BOM', ProductMaterialListForBOM.as_view(), name='ProductMaterialListForBOM'),
+    path('product-tool-list-for-BOM', ProductToolsListForBOM.as_view(), name='ProductToolsListForBOM'),
+    # BEGIN
+    path('bom/list', BOMList.as_view(), name='BOMList'),
+    path('bom/<str:pk>', BOMDetail.as_view(), name='BOMDetail'),
+]
+
