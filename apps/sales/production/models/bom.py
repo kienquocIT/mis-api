@@ -1,6 +1,6 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
 from django.utils.translation import gettext_lazy as _
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 BOM_TYPE = [
     (0, _('For production')),
