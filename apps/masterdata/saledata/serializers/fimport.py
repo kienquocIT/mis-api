@@ -699,9 +699,9 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
         tax_code = validate_data.get('tax_code', None)
         total_employees = validate_data.get('total_employees', None)
         if account_type_selection:
-            if tax_code:
+            if not tax_code:
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
-            if total_employees:
+            if not total_employees:
                 raise serializers.ValidationError({"total_employees": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
         else:
             validate_data['tax_code'] = None
