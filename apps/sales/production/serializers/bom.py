@@ -1,10 +1,8 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Product, ProductType, Expense, UnitOfMeasure
-from apps.sales.production.models import BOM, BOM_TYPE, BOMProcess, BOMSummaryProcess, BOMMaterialComponent, BOMTool
-from apps.shared import SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
-    AbstractListSerializerModel
+from apps.masterdata.saledata.models import Product, Expense, UnitOfMeasure
+from apps.sales.production.models import BOM, BOMProcess, BOMSummaryProcess, BOMMaterialComponent, BOMTool
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 
 
 class LaborListForBOMSerializer(serializers.ModelSerializer):
