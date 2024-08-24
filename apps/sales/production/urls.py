@@ -12,4 +12,3 @@ urlpatterns = [
     path('bom/list', BOMList.as_view(), name='BOMList'),
     path('bom/<str:pk>', BOMDetail.as_view(), name='BOMDetail'),
 ]
-
