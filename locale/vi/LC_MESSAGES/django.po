@@ -515,6 +515,10 @@ msgstr "Không được cấp quyền."
 msgid "Not found"
 msgstr "Không Tìm Thấy."
 
+#
+msgid "Method not allowed"
+msgstr "Phương thức không hỗ trợ"
+
 #: .\apps\shared\translations\http.py:10
 msgid "Successfully"
 msgstr "Thành công"
@@ -1126,3 +1130,72 @@ msgstr "Dự án Đường cơ sở"
 #
 msgid "Error! Date end larger than Date start"
 msgstr "Lỗi! Ngày kết thúc lớn hơn ngày bắt đầu"
+
+#
+msgid "Current work is in progress can not select dependencies type \"Finish to start\""
+msgstr "Công việc hiện tại đang thực hiện, không thể chọn loại quan hệ \"Hoàn thành để bắt đầu\""
+
+#
+msgid "Can not add in progress task to work has type \"Finish to start\""
+msgstr "Không thể thêm Giao việc đang làm vào Công việc có loại là \"Hoàn thành để bắt đầu\""
+
+#
+msgid "Partially ordered"
+msgstr "Đã đặt hàng một phần"
+
+#
+msgid "Ordered"
+msgstr "Đã đặt hàng"
+
+#
+msgid "For Sale Order"
+msgstr "Cho Đơn hàng"
+
+#
+msgid "For Other"
+msgstr "Khác"
+
+#
+msgid "For Stock Plan"
+msgstr "Cho Kế hoạch Nhập hàng"
+
+#
+msgid "For Stock Free"
+msgstr "Cho Nhập hàng Tự do"
+
+#
+msgid "Weight is invalid, or total weight of project larger than 100%"
+msgstr "Trọng số không hợp lệ, hoặc tổng trọng số lớn hơn 100%"
+
+#
+msgid "Create document"
+msgstr "Tạo phiếu"
+
+#
+msgid "Receive document"
+msgstr "Tiếp nhận phiếu"
+
+#
+msgid "Edit data by zones"
+msgstr "Chỉnh sửa dữ liệu theo vùng"
+
+#
+msgid "Return to creator"
+msgstr "Trả về người tạo"
+
+#
+msgid "Rerun workflow"
+msgstr "Chạy lại quy trình"
+
+#
+msgid "Workflow ended"
+msgstr "Quy trình kết thúc"
+
+#
+msgid "Rejected"
+msgstr "Từ chối"
+
+
+#
+msgid "Star date or finish date not in range of project date"
+msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"

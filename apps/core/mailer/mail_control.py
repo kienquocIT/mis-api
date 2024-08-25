@@ -96,45 +96,57 @@ class SendMailController:  # pylint: disable=R0902
             self.from_email = self.kwargs['username']
         return self
 
+    def confirm_config(self):
+        return self.kwargs['host'] and self.kwargs['port'] and self.kwargs['username'] and self.kwargs['password']
+
     def send(self, mail_to, template, data):
-        try:
-            with self.connection as connection:
-                data = self.data_resolve(data=data)
-                html_content = HTMLController(html_str=template, is_unescape=True).handle_params(data=data).to_string()
+        if self.confirm_config():
+            try:
+                with self.connection as connection:
+                    data = self.data_resolve(data=data)
+                    html_content = HTMLController(
+                        html_str=template, is_unescape=True
+                    ).handle_params(data=data).to_string()
 
-                # send_mail(
-                #     subject=self.subject,
-                #     message=json.dumps(data),
-                #     from_email=self.from_email,
-                #     recipient_list=mail_to if isinstance(mail_to, list) else [mail_to],
-                #     connection=connection,
-                #     html_message=HTMLController.unescape(html_content),
-                # )
+                    # send_mail(
+                    #     subject=self.subject,
+                    #     message=json.dumps(data),
+                    #     from_email=self.from_email,
+                    #     recipient_list=mail_to if isinstance(mail_to, list) else [mail_to],
+                    #     connection=connection,
+                    #     html_message=HTMLController.unescape(html_content),
+                    # )
 
-                headers = {
-                    'Content-Language': 'en',
-                    'Content-Type': 'text/html; charset=UTF-8',
-                    # 'MIME-Version': '1.0'
-                    'Return-Path': self.from_email,
-                    # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
-                    'Importance': 'High',
-                    'X-Priority': '1 (Highest)',
-                }
-                if self.reply_to:
-                    headers['Reply-To'] = self.reply_to
-                elif settings.EMAIL_SERVER_DEFAULT_REPLY:
-                    headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
-                email = EmailMultiAlternatives(
-                    subject=self.subject,
-                    body=json.dumps(data),
-                    from_email=self.from_email,
-                    to=mail_to if isinstance(mail_to, list) else [mail_to],
-                    connection=connection,
-                    headers=headers
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                return True
-        except Exception as err:
-            print('[SendMailController][send]', str(err))
-            return f'Errors: {str(err)}'
+                    headers = {
+                        'Content-Language': 'en',
+                        'Content-Type': 'text/html; charset=UTF-8',
+                        # 'MIME-Version': '1.0'
+                        'Return-Path': self.from_email,
+                        # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
+                        'Importance': 'High',
+                        'X-Priority': '1 (Highest)',
+                    }
+                    if self.reply_to:
+                        headers['Reply-To'] = self.reply_to
+                    elif settings.EMAIL_SERVER_DEFAULT_REPLY:
+                        headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
+                    email = EmailMultiAlternatives(
+                        subject=self.subject,
+                        body=json.dumps(data),
+                        from_email=self.from_email,
+                        to=mail_to if isinstance(mail_to, list) else [mail_to],
+                        connection=connection,
+                        headers=headers
+                    )
+                    email.attach_alternative(html_content, "text/html")
+                    email.send()
+                    return True
+            except Exception as err:
+                print('[SendMailController][send]', str(err))
+                raise ValueError(f'[SendMailController] Errors: {str(err)}')
+        else:
+            info_config = ",".join([
+                f"Host: {self.kwargs['host']}",
+                f"Mail To: {mail_to}",
+            ])
+            return f"[SendMailController] Skip send mail before confirm_config is false: {info_config}"

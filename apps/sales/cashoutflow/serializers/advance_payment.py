@@ -6,8 +6,10 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import Currency, ExpenseItem
 from apps.sales.cashoutflow.models.advance_payment import AdvancePaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, \
+from apps.shared import (
+    AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel,
     AbstractListSerializerModel, AbstractCreateSerializerModel
+)
 
 
 class AdvancePaymentListSerializer(AbstractListSerializerModel):
@@ -21,8 +23,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
     opportunity_mapped = serializers.SerializerMethodField()
     opportunity_id = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    system_status_raw = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -45,7 +45,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             'expense_items',
             'opportunity_id',
             'system_status',
-            'system_status_raw'
         )
 
     @classmethod
@@ -186,65 +185,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             return obj.sale_order_mapped.opportunity_id
         return None
 
-    @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_system_status_raw(cls, obj):
-        return obj.system_status
-
-
-def create_expense_items(advance_payment_obj, expense_valid_list):
-    vnd_currency = Currency.objects.filter_current(
-        fill__tenant=True,
-        fill__company=True,
-        abbreviation='VND'
-    ).first()
-    if vnd_currency:
-        bulk_info = []
-        advance_value = 0
-        for item in expense_valid_list:
-            advance_value += item.get('expense_after_tax_price', 0)
-            bulk_info.append(AdvancePaymentCost(
-                **item,
-                advance_payment=advance_payment_obj,
-                sale_order_mapped=advance_payment_obj.sale_order_mapped,
-                quotation_mapped=advance_payment_obj.quotation_mapped,
-                opportunity_mapped=advance_payment_obj.opportunity_mapped,
-                currency=vnd_currency
-            ))
-        if len(bulk_info) > 0:
-            AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
-            AdvancePaymentCost.objects.bulk_create(bulk_info)
-            advance_payment_obj.advance_value = advance_value
-
-            opp = advance_payment_obj.opportunity_mapped
-            quotation = advance_payment_obj.quotation_mapped
-            sale_order = advance_payment_obj.sale_order_mapped
-            sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
-            advance_payment_obj.sale_code = sale_code
-
-            advance_payment_obj.save(update_fields=['advance_value', 'sale_code'])
-        return True
-    return False
-
-
-def create_files_mapped(ap_obj, file_id_list):
-    try:
-        bulk_data_file = []
-        for index, file_id in enumerate(file_id_list):
-            bulk_data_file.append(AdvancePaymentAttachmentFile(
-                advance_payment=ap_obj,
-                attachment_id=file_id,
-                order=index
-            ))
-        AdvancePaymentAttachmentFile.objects.filter(advance_payment=ap_obj).delete()
-        AdvancePaymentAttachmentFile.objects.bulk_create(bulk_data_file)
-        return True
-    except Exception as err:
-        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
-
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
@@ -263,8 +203,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'money_gave',
             'opportunity_mapped',
             'quotation_mapped',
-            'sale_order_mapped',
-            'system_status'
+            'sale_order_mapped'
         )
 
     @classmethod
@@ -286,6 +225,10 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
+        if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is not allowed.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
@@ -299,10 +242,10 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
-        create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
+        APCommonFunction.create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(ap_obj, attachment.strip().split(','))
+            APCommonFunction.create_files_mapped(ap_obj, attachment.strip().split(','))
         return ap_obj
 
 
@@ -328,6 +271,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'return_date',
             'sale_code_type',
             'advance_value',
+            'advance_value_by_words',
             'advance_payment_type',
             'expense_items',
             'opportunity_mapped',
@@ -344,10 +288,12 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     def get_expense_items(cls, obj):
         all_item = obj.advance_payment.all()
         expense_items = []
+        order = 1
         for item in all_item:
             expense_items.append(
                 {
                     'id': item.id,
+                    'order': order,
                     'expense_name': item.expense_name,
                     'expense_type': {
                         'id': item.expense_type_id,
@@ -369,6 +315,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                     'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
                 }
             )
+            order += 1
         return expense_items
 
     @classmethod
@@ -496,8 +443,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             'supplier',
             'method',
             'return_date',
-            'money_gave',
-            'system_status',
+            'money_gave'
         )
 
     @classmethod
@@ -513,6 +459,10 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is required.')})
+        if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier'):
+            raise serializers.ValidationError({'Supplier': _('Supplier is not allowed.')})
         if self.initial_data.get('expense_valid_list', []):
             if not ExpenseItem.objects.filter(
                     id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
@@ -520,6 +470,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.opportunity_mapped:
             if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:
@@ -527,11 +478,11 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_expense_items(instance, self.initial_data.get('expense_valid_list', []))
+        APCommonFunction.create_expense_items(instance, self.initial_data.get('expense_valid_list', []))
 
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(instance, attachment.strip().split(','))
+            APCommonFunction.create_files_mapped(instance, attachment.strip().split(','))
         return instance
 
 
@@ -566,3 +517,92 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
         if obj.expense_tax:
             return {'id': obj.expense_tax_id, 'code': obj.expense_tax.code, 'title': obj.expense_tax.title}
         return {}
+
+
+class APCommonFunction:
+    @classmethod
+    def read_money_vnd(cls, num):
+        text1 = ' mươi'
+        text2 = ' trăm'
+
+        xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
+        xe1 = ['', 'mười'] + [f'{pre}{text1}' for pre in xe0[2:]]
+        xe2 = [''] + [f'{pre}{text2}' for pre in xe0[1:]]
+
+        result = ""
+        str_n = str(num)
+        len_n = len(str_n)
+
+        if len_n == 1:
+            result = xe0[num]
+        elif len_n == 2:
+            if num == 10:
+                result = "mười"
+            else:
+                result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
+        elif len_n == 3:
+            result = xe2[int(str_n[0])] + " " + cls.read_money_vnd(int(str_n[1:]))
+        elif len_n <= 6:
+            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn, " + cls.read_money_vnd(int(str_n[-3:]))
+        elif len_n <= 9:
+            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu, " + cls.read_money_vnd(int(str_n[-6:]))
+        elif len_n <= 12:
+            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
+
+        return str(result.strip()).lower()
+
+    @classmethod
+    def create_expense_items(cls, advance_payment_obj, expense_valid_list):
+        vnd_currency = Currency.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            abbreviation='VND'
+        ).first()
+        if vnd_currency:
+            bulk_info = []
+            advance_value = 0
+            for item in expense_valid_list:
+                advance_value += item.get('expense_after_tax_price', 0)
+                bulk_info.append(AdvancePaymentCost(
+                    **item,
+                    advance_payment=advance_payment_obj,
+                    sale_order_mapped=advance_payment_obj.sale_order_mapped,
+                    quotation_mapped=advance_payment_obj.quotation_mapped,
+                    opportunity_mapped=advance_payment_obj.opportunity_mapped,
+                    currency=vnd_currency
+                ))
+            if len(bulk_info) > 0:
+                AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
+                AdvancePaymentCost.objects.bulk_create(bulk_info)
+                advance_payment_obj.advance_value = advance_value
+                advance_value_by_words = APCommonFunction.read_money_vnd(advance_value).capitalize()
+                if advance_value_by_words[-1] == ',':
+                    advance_value_by_words = advance_value_by_words[:-1] + ' đồng'
+                advance_payment_obj.advance_value_by_words = advance_value_by_words
+
+                opp = advance_payment_obj.opportunity_mapped
+                quotation = advance_payment_obj.quotation_mapped
+                sale_order = advance_payment_obj.sale_order_mapped
+                sale_code = sale_order.code if (
+                    sale_order) else quotation.code if quotation else opp.code if opp else None
+                advance_payment_obj.sale_code = sale_code
+
+                advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])
+            return True
+        return False
+
+    @classmethod
+    def create_files_mapped(cls, ap_obj, file_id_list):
+        try:
+            bulk_data_file = []
+            for index, file_id in enumerate(file_id_list):
+                bulk_data_file.append(AdvancePaymentAttachmentFile(
+                    advance_payment=ap_obj,
+                    attachment_id=file_id,
+                    order=index
+                ))
+            AdvancePaymentAttachmentFile.objects.filter(advance_payment=ap_obj).delete()
+            AdvancePaymentAttachmentFile.objects.bulk_create(bulk_data_file)
+            return True
+        except Exception as err:
+            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})

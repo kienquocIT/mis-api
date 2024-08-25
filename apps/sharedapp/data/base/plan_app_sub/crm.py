@@ -540,7 +540,6 @@ DELIVERY_APP_CONFIG = {
     "allow_print": True,
     "allow_mail": True,
     "allow_permit": True,
-    "allow_print": True,
 }
 
 PRICES_APP_CONFIG = {
@@ -1016,7 +1015,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
     "code": "purchaserequest",
     "model_code": "purchaserequest",
     "app_label": "purchasing",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
@@ -1293,7 +1292,7 @@ INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "code": "inventoryadjustment",
     "model_code": "inventoryadjustment",
     "app_label": "inventory",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
@@ -1522,7 +1521,7 @@ AR_INVOICE_APP_CONFIG = {
     "code": "arinvoice",
     "model_code": "arinvoice",
     "app_label": "arinvoice",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
@@ -1573,7 +1572,7 @@ AP_INVOICE_APP_CONFIG = {
     "code": "apinvoice",
     "model_code": "apinvoice",
     "app_label": "apinvoice",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
         "81a111ef-9c32-4cbd-8601-a3cce884badb",  # Purchase Order
@@ -1786,7 +1785,7 @@ LEAD_APP_CONFIG = {
     "code": "lead",
     "model_code": "lead",
     "app_label": "lead",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
@@ -2029,6 +2028,84 @@ REGISTRATION_APP_CONFIG = {
     "allow_permit": True,
 }
 
+DISTRIBUTION_PLAN_CONFIG = {
+    "id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",
+    "title": "Distribution Plan",
+    "code": "distributionplan",
+    "model_code": "distributionplan",
+    "app_label": "distributionplan",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+CONTRACT_APPROVAL_APP_CONFIG = {
+    "id": "58385bcf-f06c-474e-a372-cadc8ea30ecc",
+    "title": "Contract Approval",
+    "code": "contractapproval",
+    "model_code": "contractapproval",
+    "app_label": "contract",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2198,7 +2275,7 @@ Application_crm_data = {
     ),
     "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data(
         depend_follow_main=False,
-        filtering_inheritor=False,
+        filtering_inheritor=True,
     ),
     "a943adf4-e00d-4cae-bb3e-78cca3efb09a": ApplicationConfigFrame(**GOODS_DETAIL_APP_CONFIG).data(
         depend_follow_main=False,
@@ -2258,7 +2335,7 @@ Application_crm_data = {
     ),
     "710c5a94-3a29-4e0e-973c-e6cace96c1e7": ApplicationConfigFrame(**FINAL_ACCEPTANCE_APP_CONFIG).data(
         depend_follow_main=False,
-        filtering_inheritor=False,
+        filtering_inheritor=True,
     ),
     "e696a636-0f36-4b20-970d-70035d6e1e37": ApplicationConfigFrame(**REPORT_PURCHASING_APP_CONFIG).data(
         depend_follow_main=False,
@@ -2277,6 +2354,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "20ad27de-ea68-48a9-82bf-8833d7ab6da7": ApplicationConfigFrame(**REGISTRATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "57a32d5a-3580-43b7-bf31-953a1afc68f4": ApplicationConfigFrame(**DISTRIBUTION_PLAN_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "58385bcf-f06c-474e-a372-cadc8ea30ecc": ApplicationConfigFrame(**CONTRACT_APPROVAL_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

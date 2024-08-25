@@ -334,7 +334,9 @@ class ProductTestCase(AdvanceTestCase):
                 'available_amount',
                 'is_public_website',
                 'product_variant_attribute_list',
-                'product_variant_item_list'
+                'product_variant_item_list',
+                'part_number',
+                'production_amount'
             ],
             check_sum_second=True,
         )
@@ -371,12 +373,14 @@ class ProductTestCase(AdvanceTestCase):
                 'product_choice',
                 'general_price',
                 'inventory_uom',
+                'purchase_information',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
                 'available_amount',
-                'is_public_website'
+                'is_public_website',
+                'production_amount'
             ],
             check_sum_second=True,
         )
@@ -418,7 +422,9 @@ class ProductTestCase(AdvanceTestCase):
                 'available_amount',
                 'is_public_website',
                 'product_variant_attribute_list',
-                'product_variant_item_list'
+                'product_variant_item_list',
+                'part_number',
+                'production_amount'
             ],
             check_sum_second=True,
         )
@@ -3017,7 +3023,7 @@ class PriceListTestCase(AdvanceTestCase):
             response.data['result'][0],
             [
                 'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
-                'price_list_mapped', 'is_default', 'status'
+                'price_list_mapped', 'is_default', 'status', 'valid_time_start', 'valid_time_end',
             ],
             check_sum_second=True,
         )

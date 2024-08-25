@@ -3,7 +3,7 @@ import json
 from django.db import models
 
 from apps.shared import (
-    SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION,
+    SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION, MasterDataAbstractModel,
 )
 
 __all__ = [
@@ -405,6 +405,7 @@ class OrderPickingProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    picking_data = models.JSONField(default=list, help_text='list data of picking this product by sale orders')
 
     def _put_backup_data(self):
         if self.product and not self.product_data:
@@ -446,8 +447,29 @@ class OrderPickingProduct(SimpleAbstractModel):
         new_obj.before_save()
         return new_obj
 
+    def push_picking_product_warehouse(self):
+        pw_data = [
+            {
+                'sale_order_id': picking_data.get('sale_order', None),
+                'sale_order_data': picking_data.get('sale_order_data', {}),
+                'warehouse_id': picking_data.get('warehouse', None),
+                'warehouse_data': picking_data.get('warehouse_data', {}),
+                'uom_id': picking_data.get('uom', None),
+                'uom_data': picking_data.get('uom_data', {}),
+                'picked_quantity': picking_data.get('done', 0),
+            } for picking_data in self.picking_data
+        ]
+        OrderPickingProductWarehouse.create(
+            picking_product_id=self.id,
+            tenant_id=self.picking_sub.tenant_id,
+            company_id=self.picking_sub.company_id,
+            pw_data=pw_data
+        )
+        return True
+
     def save(self, *args, **kwargs):
         self.before_save()
+        self.push_picking_product_warehouse()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -457,3 +479,60 @@ class OrderPickingProduct(SimpleAbstractModel):
         # unique_together = ('picking_sub', 'product')
         default_permissions = ()
         permissions = ()
+
+
+class OrderPickingProductWarehouse(MasterDataAbstractModel):
+    picking_product = models.ForeignKey(
+        'delivery.OrderPickingProduct',
+        on_delete=models.CASCADE,
+        verbose_name="picking product",
+        related_name="picking_pw_picking_product",
+    )
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="picking_pw_sale_order",
+        help_text="main sale order of this picking or sale order from other project (borrow)",
+        null=True,
+    )
+    sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="picking_pw_warehouse",
+    )
+    warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom",
+        related_name="picking_pw_uom",
+        help_text='uom ordered',
+    )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was picked')
+
+    class Meta:
+        verbose_name = 'Picking Product Order'
+        verbose_name_plural = 'Picking Product Orders'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            picking_product_id,
+            tenant_id,
+            company_id,
+            pw_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            picking_product_id=picking_product_id,
+            tenant_id=tenant_id,
+            company_id=company_id,
+        ) for data in pw_data])
+        return True

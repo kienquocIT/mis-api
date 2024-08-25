@@ -1,6 +1,7 @@
 __all__ = ['WorkExpenseListSerializers', 'ProjectExpenseHomeListSerializers']
 from rest_framework import serializers
 
+from apps.shared import ProjectMsg
 from ..models import WorkMapExpense
 
 
@@ -63,9 +64,21 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
 
 
 class ProjectExpenseHomeListSerializers(serializers.ModelSerializer):
+    project = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_project(cls, obj):
+        work = obj.work.project_projectmapwork_work.all().first()
+        if work:
+            return {
+                'id': str(work.project_id),
+                'title': work.project.title
+            }
+        raise ValueError(ProjectMsg.PROJECT_NOT_EXIST)
 
     class Meta:
         model = WorkMapExpense
         fields = (
             'sub_total',
+            'project',
         )

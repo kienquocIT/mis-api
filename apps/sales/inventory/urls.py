@@ -11,7 +11,7 @@ from apps.sales.inventory.views import (
     GReItemProductWarehouseSerialList,
     GReItemProductWarehouseList,
     ProjectProductList, GReItemBorrowList, GReItemBorrowDetail,
-    GoodsRegistrationItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
+    GReItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity
 )
 
@@ -72,7 +72,7 @@ urlpatterns += [
 urlpatterns += [
     path('goods-registration/list', GoodsRegistrationList.as_view(), name='GoodsRegistrationList'),
     path('goods-registration/<str:pk>', GoodsRegistrationDetail.as_view(), name='GoodsRegistrationDetail'),
-    path('gre-item-sub/list', GoodsRegistrationItemSubList.as_view(), name='GoodsRegistrationItemSubList'),
+    path('gre-item-sub/list', GReItemSubList.as_view(), name='GReItemSubList'),
     path('gre-item-prd-wh', GReItemProductWarehouseList.as_view(), name='GReItemProductWarehouseList'),
     path('gre-item-prd-wh-lot', GReItemProductWarehouseLotList.as_view(), name='GReItemProductWarehouseLotList'),
     path(

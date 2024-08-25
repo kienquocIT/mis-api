@@ -300,7 +300,15 @@ _PlanApplication_sale_data = {
     },
     "20ad27de-ea68-48a9-82bf-8833d7ab6da7": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "20ad27de-ea68-48a9-82bf-8833d7ab6da7",  # Report Budget
+        "application_id": "20ad27de-ea68-48a9-82bf-8833d7ab6da7",  # Registration
+    },
+    "57a32d5a-3580-43b7-bf31-953a1afc68f4": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Distribution plan
+    },
+    "58385bcf-f06c-474e-a372-cadc8ea30ecc": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "58385bcf-f06c-474e-a372-cadc8ea30ecc",  # Contract Approval
     },
 }
 

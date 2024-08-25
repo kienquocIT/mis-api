@@ -291,7 +291,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             log_order_number += 1
 
             if 'sale_order_id' in kw_parameter:  # Project
-                GoodsRegistration.update_registration_inventory(item)
+                GoodsRegistration.update_registration_inventory(item, stock_obj)
 
         return cls.objects.bulk_create(bulk_info)
 

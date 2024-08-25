@@ -63,6 +63,14 @@ WORKFLOW_IN_WF_POSITION = (
 class WorkflowMsgNotify:
     new_task = 'New Task'
     was_return_begin = 'Was return owner'
+    create_document = 'Create document'
+    receive_document = 'Receive document'
+    approved = 'Approved'
+    rejected = 'Rejected'
+    edit_by_zone = 'Edit data by zones'
+    return_creator = 'Return to creator'
+    rerun_workflow = 'Rerun workflow'
+    end_workflow = 'Workflow ended'
 
     @classmethod
     def translate_msg(cls, msg):
@@ -88,21 +96,27 @@ MAP_FIELD_TITLE = {
     'delivery.orderdeliverysub': 'title',
     'purchasing.purchaseorder': 'title',
     'inventory.goodsreceipt': 'title',
-    'purchasing.purchaserequest': 'title',
     'leave.leaverequest': 'title',
-    'cashoutflow.payment': 'title',
     'businesstrip.businessrequest': 'title',
-    'cashoutflow.advancepayment': 'title',
-    'cashoutflow.returnadvance': 'title',
     'assettools.assettoolsprovide': 'title',
     'assettools.assettoolsdelivery': 'title',
     'assettools.assettoolsreturn': 'title',
-    'inventory.goodsissue': 'title',
     'acceptance.finalacceptance': 'title',
-    'inventory.goodstransfer': 'title',
-    'inventory.goodsreturn': 'title',
-    'lead.lead': 'title',
     'project.projectbaseline': 'title',
+    'contract.contractapproval': 'title',
+    # haind
+    'cashoutflow.advancepayment': 'title',
+    'apinvoice.apinvoice': 'title',
+    'arinvoice.arinvoice': 'title',
+    'inventory.goodsissue': 'title',
+    'inventory.goodsreturn': 'title',
+    'inventory.goodstransfer': 'title',
+    'cashoutflow.payment': 'title',
+    'purchasing.purchasequotation': 'title',
+    'purchasing.purchasequotationrequest': 'title',
+    'purchasing.purchaserequest': 'title',
+    'cashoutflow.returnadvance': 'title',
+    'distributionplan.distributionplan': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -207,8 +221,9 @@ PERMISSION_OPTION_RANGE = (
 # Purchase request
 REQUEST_FOR = [
     (0, _('For Sale Order')),
-    (1, _('For Stock')),
+    (1, _('For Stock Free')),
     (2, _('For Other')),
+    (3, _('For Stock Plan')),
 ]
 
 PURCHASE_STATUS = [

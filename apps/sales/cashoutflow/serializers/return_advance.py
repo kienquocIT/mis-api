@@ -2,12 +2,11 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
-from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel, AbstractCreateSerializerModel
+from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSerializerModel
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
-class ReturnAdvanceListSerializer(AbstractListSerializerModel):
+class ReturnAdvanceListSerializer(serializers.ModelSerializer):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
 
@@ -71,7 +70,7 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
 
-class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
+class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
     cost = ReturnAdvanceCostCreateSerializer(required=True, many=True)
 
     class Meta:
@@ -207,7 +206,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
         return list_result
 
 
-class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
+class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     method = serializers.IntegerField(required=False)
     money_received = serializers.BooleanField(required=False)
@@ -223,6 +222,7 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
             'system_status'
         )
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         if instance.advance_payment.system_status != 3:
             raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})

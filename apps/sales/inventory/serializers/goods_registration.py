@@ -1,13 +1,14 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import ProductWareHouseLot, UnitOfMeasure
+from apps.masterdata.saledata.serializers import ProductWareHouseListSerializer
 from apps.sales.inventory.models import (
     GoodsRegistration,
     GReItemProductWarehouseSerial,
     GReItemProductWarehouseLot,
     GReItemProductWarehouse,
     GReItemBorrow,
-    GoodsRegistrationItemSub,
+    GReItemSub,
     GoodsRegistrationItem,
     NoneGReItemBorrow,
     NoneGReItemProductWarehouse,
@@ -132,14 +133,14 @@ class GoodsRegistrationUpdateSerializer(serializers.ModelSerializer):
 
 
 # lấy dữ liệu chi tiết nhập-xuất hàng của dự án
-class GoodsRegistrationItemSubSerializer(serializers.ModelSerializer):
+class GReItemSubSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     lot_mapped = serializers.SerializerMethodField()
 
     class Meta:
-        model = GoodsRegistrationItemSub
+        model = GReItemSub
         fields = (
             'id',
             'sale_order',
@@ -547,13 +548,15 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        last_borrow = validated_data['last_borrow']
-        last_borrow.quantity += validated_data['quantity']
-        last_borrow.available = last_borrow.quantity - last_borrow.delivered
-        last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
-        last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
-        last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
-        return last_borrow
+        if 'last_borrow' in validated_data:
+            last_borrow = validated_data['last_borrow']
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
+            last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+            last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+            last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
+            return last_borrow
+        raise serializers.ValidationError({'last_borrow': 'Can not find last borrow item.'})
 
     def create(self, validated_data):
         instance = self.for_borrow(
@@ -630,6 +633,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     borrow_uom = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
+    regis_data = serializers.SerializerMethodField()
 
     class Meta:
         model = NoneGReItemBorrow
@@ -642,12 +646,13 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
             'base_quantity',
             'base_available',
             'uom',
-            'borrow_uom'
+            'borrow_uom',
+            'regis_data',
         )
 
     @classmethod
     def get_product(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             return {
                 'id': gre_item.product_id,
@@ -659,7 +664,7 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom(cls, obj):
-        gre_item = obj.gre_item_source if obj.gre_item_source else obj.gre_item_destination
+        gre_item = obj.gre_item_source
         if gre_item:
             if gre_item.product:
                 if gre_item.product.general_uom_group:
@@ -683,6 +688,18 @@ class NoneGReItemBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_available_stock(cls, obj):
         return obj.base_available
+
+    @classmethod
+    def get_regis_data(cls, obj):
+        if obj.gre_item_source:
+            if obj.gre_item_source.product:
+                result = ProductWareHouseListSerializer(
+                        obj.gre_item_source.product.product_warehouse_product.all(), many=True
+                ).data
+                for pw_data in result:
+                    pw_data.update({'is_pw': True, 'common_stock': obj.base_available})
+                return result
+        return []
 
 
 class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
@@ -767,13 +784,16 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def for_return_back(cls, validated_data):
-        last_borrow = validated_data['last_borrow']
-        last_borrow.quantity += validated_data['quantity']
-        last_borrow.available = last_borrow.quantity - last_borrow.delivered
-        last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
-        last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
-        last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
-        return last_borrow
+        if 'last_borrow' in validated_data:
+            last_borrow = validated_data['last_borrow']
+            last_borrow.quantity += validated_data['quantity']
+            last_borrow.available = last_borrow.quantity - last_borrow.delivered
+            last_borrow.base_quantity = cast_quantity_to_unit(last_borrow.uom, last_borrow.quantity)
+            last_borrow.base_available = cast_quantity_to_unit(last_borrow.uom, last_borrow.available)
+            last_borrow.save(update_fields=['quantity', 'available', 'base_quantity', 'base_available'])
+            return last_borrow
+        raise serializers.ValidationError({'last_borrow': 'Can not find last borrow item.'})
+
 
     def create(self, validated_data):
         instance = self.for_borrow(

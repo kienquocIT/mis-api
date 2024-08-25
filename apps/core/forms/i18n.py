@@ -41,6 +41,8 @@ class FormMsg:
     SELECT_TITLE_UNIQUE = _("The titles must be unique")
     SELECT_OPTION_REQUIRED = _("The options must be required")
     OPTIONS_FAIL = _("The value is not support")
+    OPTIONS_INCORRECT_ROW = _("Only one selection is allowed per row. All rows mandatory fields are required.")
+    OPTIONS_INCORRECT_COL = _("Only one selection is allowed per column. All columns mandatory fields are required.")
 
     DATE_TYPE_NOT_SUPPORT = _("The date format is not support")
     DATE_FORMAT_INCORRECT = _("The value is not date format")

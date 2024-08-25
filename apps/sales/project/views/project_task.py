@@ -49,9 +49,8 @@ class ProjectTaskList(BaseListMixin):
                 filter_kwargs = Q(project_id__in=prj_has_view_ids)
                 if 'project_id' in params and 'work_id' in params:
                     filter_kwargs &= Q(
-                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id': params.get('work_id')}) | Q(
-                            **{'work_id__isnull': True}
-                        )
+                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id': params.get('work_id')}) |
+                        Q(**{'project_id': params.get('project_id')}) & Q(**{'work_id__isnull': True})
                     )
                 return filter_kwargs
             return self.filter_kwargs_q__from_config()
@@ -116,7 +115,7 @@ class ProjectTaskDetail(BaseUpdateMixin, BaseDestroyMixin):
         if emp_id and str(project_map_task.employee_inherit_id) == str(emp_id):
             return True
         obj_of_current_user = get_prj_mem_of_crt_user(
-            prj_obj=project_map_task, employee_current=self.cls_check.employee_attr
+            prj_obj=project_map_task, employee_current=self.cls_check.employee_attr.employee_current
         )
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw

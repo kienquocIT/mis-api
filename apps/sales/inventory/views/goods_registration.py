@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     GoodsRegistration,
@@ -5,7 +6,7 @@ from apps.sales.inventory.models import (
     GReItemProductWarehouseLot,
     GReItemProductWarehouse,
     GReItemBorrow,
-    GoodsRegistrationItemSub, GoodsRegistrationItem, NoneGReItemBorrow, NoneGReItemProductWarehouse
+    GReItemSub, GoodsRegistrationItem, NoneGReItemBorrow, NoneGReItemProductWarehouse
 )
 from apps.sales.inventory.serializers import (
     GoodsRegistrationListSerializer,
@@ -20,7 +21,7 @@ from apps.sales.inventory.serializers import (
     GReItemBorrowCreateSerializer,
     GReItemBorrowDetailSerializer,
     GReItemBorrowUpdateSerializer,
-    GoodsRegistrationItemSubSerializer,
+    GReItemSubSerializer,
     GoodsRegistrationItemAvailableQuantitySerializer, GoodsRegisBorrowListSerializer, NoneGReItemBorrowListSerializer,
     NoneGReItemBorrowCreateSerializer, NoneGReItemBorrowDetailSerializer, NoneGReItemBorrowUpdateSerializer,
     NoneGoodsRegistrationItemAvailableQuantitySerializer
@@ -100,10 +101,10 @@ class GoodsRegistrationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 # lấy dữ liệu chi tiết nhập-xuất hàng của dự án
-class GoodsRegistrationItemSubList(BaseListMixin):
-    queryset = GoodsRegistrationItemSub.objects
+class GReItemSubList(BaseListMixin):
+    queryset = GReItemSub.objects
     filterset_fields = {'gre_item_id': ['exact']}
-    serializer_list = GoodsRegistrationItemSubSerializer
+    serializer_list = GReItemSubSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -435,8 +436,21 @@ class GoodsRegisBorrowList(BaseListMixin):
     }
     serializer_list = GoodsRegisBorrowListSerializer
 
-    # def get_queryset(self):
-    #     return super().get_queryset()
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'gre_item_prd_wh',
+                queryset=GReItemProductWarehouse.objects.select_related('warehouse'),
+            ),
+            Prefetch(
+                'gre_item_src_borrow',
+                queryset=GReItemBorrow.objects.select_related('uom'),
+            ),
+            Prefetch(
+                'none_gre_item_src_borrow',
+                queryset=NoneGReItemBorrow.objects.select_related('uom'),
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary="Goods Registration Borrow List",
