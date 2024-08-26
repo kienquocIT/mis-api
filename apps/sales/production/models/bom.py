@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 BOM_TYPE = [
     (0, _('For production')),
@@ -44,7 +44,7 @@ class BOM(DataAbstractModel):
         super().save(*args, **kwargs)
 
 
-class BOMProcess(SimpleAbstractModel):
+class BOMProcess(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
         on_delete=models.CASCADE,
@@ -70,12 +70,12 @@ class BOMProcess(SimpleAbstractModel):
     class Meta:
         verbose_name = 'BOM process'
         verbose_name_plural = 'BOM processes'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
-class BOMSummaryProcess(SimpleAbstractModel):
+class BOMSummaryProcess(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
         on_delete=models.CASCADE,
@@ -99,12 +99,12 @@ class BOMSummaryProcess(SimpleAbstractModel):
     class Meta:
         verbose_name = 'BOM summary process'
         verbose_name_plural = 'BOM summary processes'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
-class BOMMaterialComponent(SimpleAbstractModel):
+class BOMMaterialComponent(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
         on_delete=models.CASCADE,
@@ -136,12 +136,12 @@ class BOMMaterialComponent(SimpleAbstractModel):
     class Meta:
         verbose_name = 'BOM material component'
         verbose_name_plural = 'BOM materials components'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
-class BOMTool(SimpleAbstractModel):
+class BOMTool(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
         on_delete=models.CASCADE,
@@ -170,6 +170,6 @@ class BOMTool(SimpleAbstractModel):
     class Meta:
         verbose_name = 'BOM tool'
         verbose_name_plural = 'BOM tools'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
