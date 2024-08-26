@@ -128,8 +128,6 @@ class BOMMaterialComponent(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_material_uom'
     )
-    unit_price = models.FloatField(default=0)
-    subtotal_price = models.FloatField(default=0)
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
 

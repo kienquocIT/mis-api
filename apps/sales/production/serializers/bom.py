@@ -51,7 +51,6 @@ class LaborListForBOMSerializer(serializers.ModelSerializer):
 
 class BOMProductMaterialListSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.SerializerMethodField()
-    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -61,7 +60,6 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'title',
             'sale_default_uom',
             'general_uom_group',
-            'price_list'
         )
 
     @classmethod
@@ -71,25 +69,6 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'code': obj.sale_default_uom.code,
             'title': obj.sale_default_uom.title
         } if obj.sale_default_uom else {}
-
-    @classmethod
-    def get_price_list(cls, obj):
-        price_list = []
-        for item in obj.product_price_product.all():
-            price_list.append({
-                'price': {
-                    'id': str(item.price_list_id),
-                    'code': item.price_list.code,
-                    'title': item.price_list.title,
-                } if item.price_list else {},
-                'price_value': item.price,
-                'uom': {
-                    'id': str(item.uom_using_id),
-                    'code': item.uom_using.code,
-                    'title': item.uom_using.title
-                } if item.uom_using else {}
-            })
-        return price_list
 
 
 class BOMProductToolListSerializer(serializers.ModelSerializer):
@@ -214,14 +193,9 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
     def validate_bom_material_component_data(cls, bom_material_component_data):
         try:
             for item in bom_material_component_data:
-                if all([
-                    float(item.get('quantity', 0)) > 0,
-                    float(item.get('unit_price', 0)) > 0,
-                    item.get('bom_process_order')
-                ]):
+                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
                     item['material'] = Product.objects.get(id=item.get('material')) if item.get('material') else None
                     item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
                 else:
                     raise serializers.ValidationError({'bom_process_data': "Material/component data is missing field"})
             return bom_material_component_data
@@ -359,20 +333,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                 'material': {
                     'id': str(material_component_item.material_id),
                     'code': material_component_item.material.code,
-                    'title': material_component_item.material.title,
-                    'price_list': [{
-                        'price': {
-                            'id': str(item.price_list_id),
-                            'code': item.price_list.code,
-                            'title': item.price_list.title,
-                        } if item.price_list else {},
-                        'price_value': item.price,
-                        'uom': {
-                            'id': str(item.uom_using_id),
-                            'code': item.uom_using.code,
-                            'title': item.uom_using.title
-                        } if item.uom_using else {}
-                    } for item in material_component_item.material.product_price_product.all()]
+                    'title': material_component_item.material.title
                 } if material_component_item.material else {},
                 'quantity': material_component_item.quantity,
                 'uom': {
@@ -382,8 +343,6 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                     'ratio': material_component_item.uom.ratio,
                     'group_id': str(material_component_item.uom.group_id)
                 } if material_component_item.uom else {},
-                'unit_price': material_component_item.unit_price,
-                'subtotal_price': material_component_item.subtotal_price,
                 'disassemble': material_component_item.disassemble,
                 'note': material_component_item.note
             })
