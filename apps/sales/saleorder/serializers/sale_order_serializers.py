@@ -569,33 +569,33 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
         product_data = []
         for item in so_product:
             product_data.append({
-                    'id': item.id,
-                    'product_quantity': item.product_quantity,
-                    'remain_for_purchase_request': item.remain_for_purchase_request,
-                    'product': {
-                        'id': item.product_id,
-                        'title': item.product.title,
-                        'code': item.product.code,
-                        'description': item.product.description,
-                        'product_choice': item.product.product_choice,
-                        'uom': {
-                            'id': item.product.purchase_default_uom_id,
-                            'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
-                        } if item.product.purchase_default_uom else {},
-                        'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else ''
-                    } if item.product else {},
+                'id': item.id,
+                'product_quantity': item.product_quantity,
+                'remain_for_purchase_request': item.remain_for_purchase_request,
+                'product': {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'code': item.product.code,
+                    'description': item.product.description,
+                    'product_choice': item.product.product_choice,
                     'uom': {
-                        'id': item.unit_of_measure_id,
-                        'title': item.unit_of_measure.title,
-                        'code': item.unit_of_measure.code,
-                        'ratio': item.unit_of_measure.ratio
-                    } if item.unit_of_measure else {},
-                    'tax': {
-                        'id': item.tax_id,
-                        'title': item.tax.title,
-                        'rate': item.tax.rate
-                    } if item.tax else {},
-                })
+                        'id': item.product.purchase_default_uom_id,
+                        'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
+                    } if item.product.purchase_default_uom else {},
+                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else ''
+                } if item.product else {},
+                'uom': {
+                    'id': item.unit_of_measure_id,
+                    'title': item.unit_of_measure.title,
+                    'code': item.unit_of_measure.code,
+                    'ratio': item.unit_of_measure.ratio
+                } if item.unit_of_measure else {},
+                'tax': {
+                    'id': item.tax_id,
+                    'title': item.tax.title,
+                    'rate': item.tax.rate
+                } if item.tax else {},
+            })
         return product_data
 
 
