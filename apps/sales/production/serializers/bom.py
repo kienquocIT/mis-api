@@ -293,7 +293,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_bom_process_data(cls, obj):
         bom_process_data = []
-        for process_item in obj.bom_process_bom.all().order_by('order'):
+        for process_item in obj.bom_process_bom.all():
             bom_process_data.append({
                 'order': process_item.order,
                 'task_name': process_item.task_name,
@@ -332,7 +332,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_bom_summary_process_data(cls, obj):
         bom_summary_process_data = []
-        for summary_process_item in obj.bom_summary_process_bom.all().order_by('order'):
+        for summary_process_item in obj.bom_summary_process_bom.all():
             bom_summary_process_data.append({
                 'order': summary_process_item.order,
                 'labor': {
@@ -356,7 +356,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_bom_material_component_data(cls, obj):
         bom_material_component_data = []
-        for material_component_item in obj.bom_material_component_bom.all().order_by('order'):
+        for material_component_item in obj.bom_material_component_bom.all():
             bom_material_component_data.append({
                 'order': material_component_item.order,
                 'bom_process_order': material_component_item.bom_process_order,
@@ -396,7 +396,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_bom_tool_data(cls, obj):
         bom_tool_data = []
-        for tool_item in obj.bom_tool_bom.all().order_by('order'):
+        for tool_item in obj.bom_tool_bom.all():
             bom_tool_data.append({
                 'order': tool_item.order,
                 'bom_process_order': tool_item.bom_process_order,
