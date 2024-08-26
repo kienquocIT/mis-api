@@ -104,7 +104,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related()
+        return super().get_queryset().select_related('product')
 
     @swagger_auto_schema(
         operation_summary="BOM List",
@@ -138,7 +138,17 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related().prefetch_related()
+        return super().get_queryset().select_related('product').prefetch_related(
+            'bom_process_bom__labor__expense__uom',
+            'bom_process_bom__labor__expense__price',
+            'bom_process_bom__uom',
+            'bom_summary_process_bom__labor',
+            'bom_summary_process_bom__uom',
+            'bom_material_component_bom__material',
+            'bom_material_component_bom__uom',
+            'bom_tool_bom__tool',
+            'bom_tool_bom__uom'
+        )
 
     @swagger_auto_schema(
         operation_summary="BOM detail",
