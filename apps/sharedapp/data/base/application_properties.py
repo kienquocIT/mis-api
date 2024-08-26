@@ -1805,6 +1805,15 @@ AppProp_SaleData_Distribution_Plan_data = {
     },
 }
 
+AppProp_SaleData_BOM_data = {
+    "216b4c85-3793-4425-84fb-64f0b6102661": {
+        "application_id": "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1832,5 +1841,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Purchase_Quotation_Request_data,
     **AppProp_SaleData_Purchase_Request_data,
     **AppProp_SaleData_Return_Payment_data,
-    **AppProp_SaleData_Distribution_Plan_data
+    **AppProp_SaleData_Distribution_Plan_data,
+    **AppProp_SaleData_BOM_data
 }
