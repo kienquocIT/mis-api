@@ -108,7 +108,7 @@ class BOMListSerializer(AbstractListSerializerModel):
 
 class BOMCreateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
-    product = serializers.UUIDField()
+    product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
     bom_process_data = serializers.ListField()
@@ -120,7 +120,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         model = BOM
         fields = (
             'bom_type',
-            'product',
+            'product_id',
             'sum_price',
             'sum_time',
             'bom_process_data',
@@ -129,91 +129,16 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
             'bom_tool_data',
         )
 
-    @classmethod
-    def validate_bom_type(cls, value):
-        if value in [0, 1, 2, 3]:
-            return value
-        raise serializers.ValidationError({'bom_type': "Bom type is not valid"})
-
-    @classmethod
-    def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': "Product is not exist"})
-
-    @classmethod
-    def validate_sum_price(cls, value):
-        if value and value > 0:
-            return value
-        raise serializers.ValidationError({'sum_price': "Sum price is not valid"})
-
-    @classmethod
-    def validate_sum_time(cls, value):
-        if value and value > 0:
-            return value
-        raise serializers.ValidationError({'sum_time': "Sum time is not valid"})
-
-    @classmethod
-    def validate_bom_process_data(cls, bom_process_data):
-        try:
-            for item in bom_process_data:
-                if all([
-                    item.get('task_name'),
-                    float(item.get('quantity', 0)) > 0,
-                    float(item.get('unit_price', 0)) > 0
-                ]):
-                    item['labor'] = Expense.objects.get(id=item.get('labor'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
-            return bom_process_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Process data is not valid"})
-
-    @classmethod
-    def validate_bom_summary_process_data(cls, bom_summary_process_data):
-        try:
-            for item in bom_summary_process_data:
-                if all([
-                    float(item.get('quantity', 0)) > 0,
-                    float(item.get('unit_price', 0)) > 0
-                ]):
-                    item['labor'] = Expense.objects.get(id=item.get('labor'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
-            return bom_summary_process_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
-
-    @classmethod
-    def validate_bom_material_component_data(cls, bom_material_component_data):
-        try:
-            for item in bom_material_component_data:
-                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                    item['material'] = Product.objects.get(id=item.get('material')) if item.get('material') else None
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Material/component data is missing field"})
-            return bom_material_component_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
-
-    @classmethod
-    def validate_bom_tool_data(cls, bom_tool_data):
-        try:
-            for item in bom_tool_data:
-                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                    item['tool'] = Product.objects.get(id=item.get('tool'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                else:
-                    raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
-            return bom_tool_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
+    def validate(self, validate_data):
+        BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_product_id(validate_data)
+        BOMCommonFunction.validate_sum_price(validate_data)
+        BOMCommonFunction.validate_sum_time(validate_data)
+        BOMCommonFunction.validate_bom_process_data(validate_data)
+        BOMCommonFunction.validate_bom_summary_process_data(validate_data)
+        BOMCommonFunction.validate_bom_material_component_data(validate_data)
+        BOMCommonFunction.validate_bom_tool_data(validate_data)
+        return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
@@ -375,7 +300,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
 
 class BOMUpdateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
-    product = serializers.UUIDField()
+    product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
     bom_process_data = serializers.ListField()
@@ -387,7 +312,7 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
         model = BOM
         fields = (
             'bom_type',
-            'product',
+            'product_id',
             'sum_price',
             'sum_time',
             'bom_process_data',
@@ -396,91 +321,16 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
             'bom_tool_data',
         )
 
-    @classmethod
-    def validate_bom_type(cls, value):
-        if value in [0, 1, 2, 3]:
-            return value
-        raise serializers.ValidationError({'bom_type': "Bom type is not valid"})
-
-    @classmethod
-    def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': "Product is not exist"})
-
-    @classmethod
-    def validate_sum_price(cls, value):
-        if value and value > 0:
-            return value
-        raise serializers.ValidationError({'sum_price': "Sum price is not valid"})
-
-    @classmethod
-    def validate_sum_time(cls, value):
-        if value and value > 0:
-            return value
-        raise serializers.ValidationError({'sum_time': "Sum time is not valid"})
-
-    @classmethod
-    def validate_bom_process_data(cls, bom_process_data):
-        try:
-            for item in bom_process_data:
-                if all([
-                    item.get('task_name'),
-                    float(item.get('quantity', 0)) > 0,
-                    float(item.get('unit_price', 0)) > 0
-                ]):
-                    item['labor'] = Expense.objects.get(id=item.get('labor'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
-            return bom_process_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Process data is not valid"})
-
-    @classmethod
-    def validate_bom_summary_process_data(cls, bom_summary_process_data):
-        try:
-            for item in bom_summary_process_data:
-                if all([
-                    float(item.get('quantity', 0)) > 0,
-                    float(item.get('unit_price', 0)) > 0
-                ]):
-                    item['labor'] = Expense.objects.get(id=item.get('labor'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
-            return bom_summary_process_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
-
-    @classmethod
-    def validate_bom_material_component_data(cls, bom_material_component_data):
-        try:
-            for item in bom_material_component_data:
-                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                    item['material'] = Product.objects.get(id=item.get('material')) if item.get('material') else None
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                else:
-                    raise serializers.ValidationError({'bom_process_data': "Material/component data is missing field"})
-            return bom_material_component_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
-
-    @classmethod
-    def validate_bom_tool_data(cls, bom_tool_data):
-        try:
-            for item in bom_tool_data:
-                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                    item['tool'] = Product.objects.get(id=item.get('tool'))
-                    item['uom'] = UnitOfMeasure.objects.get(id=item.get('uom'))
-                else:
-                    raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
-            return bom_tool_data
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
+    def validate(self, validate_data):
+        BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_product_id(validate_data)
+        BOMCommonFunction.validate_sum_price(validate_data)
+        BOMCommonFunction.validate_sum_time(validate_data)
+        BOMCommonFunction.validate_bom_process_data(validate_data)
+        BOMCommonFunction.validate_bom_summary_process_data(validate_data)
+        BOMCommonFunction.validate_bom_material_component_data(validate_data)
+        BOMCommonFunction.validate_bom_tool_data(validate_data)
+        return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
@@ -502,13 +352,119 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
 
 class BOMCommonFunction:
     @classmethod
+    def validate_bom_type(cls, validate_data):
+        bom_type = validate_data.get('bom_type')
+        if bom_type in [0, 1, 2, 3]:
+            print('1. validate_bom_type --- ok')
+            validate_data['bom_type'] = bom_type
+            return True
+        raise serializers.ValidationError({'bom_type': "Bom type is not valid"})
+
+    @classmethod
+    def validate_product_id(cls, validate_data):
+        try:
+            print('2. validate_product --- ok')
+            validate_data['product_id'] = str(Product.objects.get(id=validate_data.get('product_id')).id)
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'product': "Product is not exist"})
+
+    @classmethod
+    def validate_sum_price(cls, validate_data):
+        sum_price = validate_data.get('sum_price')
+        if sum_price and sum_price > 0:
+            print('3. validate_sum_price --- ok')
+            validate_data['sum_price'] = sum_price
+            return True
+        raise serializers.ValidationError({'sum_price': "Sum price is not valid"})
+
+    @classmethod
+    def validate_sum_time(cls, validate_data):
+        sum_time = validate_data.get('sum_time')
+        if sum_time and sum_time > 0:
+            print('4. validate_sum_time --- ok')
+            validate_data['sum_time'] = sum_time
+            return True
+        raise serializers.ValidationError({'sum_time': "Sum time is not valid"})
+
+    @classmethod
+    def validate_bom_process_data(cls, validate_data):
+        bom_process_data = validate_data.get('bom_process_data')
+        try:
+            for item in bom_process_data:
+                if all([
+                    item.get('task_name'),
+                    float(item.get('quantity', 0)) > 0,
+                    float(item.get('unit_price', 0)) > 0
+                ]):
+                    item['labor_id'] = str(Expense.objects.get(id=item.get('labor_id')).id)
+                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
+                else:
+                    raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
+            print('5. validate_bom_process_data --- ok')
+            validate_data['bom_process_data'] = bom_process_data
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'bom_process_data': "Process data is not valid"})
+
+    @classmethod
+    def validate_bom_summary_process_data(cls, validate_data):
+        bom_summary_process_data = validate_data.get('bom_summary_process_data')
+        try:
+            for item in bom_summary_process_data:
+                if all([float(item.get('quantity', 0)) > 0, float(item.get('unit_price', 0)) > 0]):
+                    item['labor_id'] = str(Expense.objects.get(id=item.get('labor_id')).id)
+                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                    item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
+                else:
+                    raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
+            print('6. validate_bom_summary_process_data --- ok')
+            validate_data['bom_summary_process_data'] = bom_summary_process_data
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
+
+    @classmethod
+    def validate_bom_material_component_data(cls, validate_data):
+        bom_material_component_data = validate_data.get('bom_material_component_data')
+        try:
+            for item in bom_material_component_data:
+                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
+                    item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
+                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                else:
+                    raise serializers.ValidationError({'bom_process_data': "Material/component data is missing field"})
+            print('7. validate_bom_material_component_data --- ok')
+            validate_data['bom_material_component_data'] = bom_material_component_data
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
+
+    @classmethod
+    def validate_bom_tool_data(cls, validate_data):
+        bom_tool_data = validate_data.get('bom_tool_data')
+        try:
+            for item in bom_tool_data:
+                if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
+                    item['tool_id'] = str(Product.objects.get(id=item.get('tool_id')).id)
+                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                else:
+                    raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
+            print('8. validate_bom_tool_data --- ok')
+            validate_data['bom_tool_data'] = bom_tool_data
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
+
+    @classmethod
     def create_bom_process_data(cls, bom_process_data, bom_obj):
         bulk_info = []
         for item in bom_process_data:
             bulk_info.append(BOMProcess(bom=bom_obj, **item))
         BOMProcess.objects.filter(bom=bom_obj).delete()
         BOMProcess.objects.bulk_create(bulk_info)
-        print('bom_process_data --- ok')
+        print('9. create_bom_process_data --- ok')
         return True
 
     @classmethod
@@ -518,7 +474,7 @@ class BOMCommonFunction:
             bulk_info.append(BOMSummaryProcess(bom=bom_obj, **item))
         BOMSummaryProcess.objects.filter(bom=bom_obj).delete()
         BOMSummaryProcess.objects.bulk_create(bulk_info)
-        print('bom_summary_process_data --- ok')
+        print('10. create_bom_summary_process_data --- ok')
         return True
 
     @classmethod
@@ -530,7 +486,7 @@ class BOMCommonFunction:
                 bulk_info.append(BOMMaterialComponent(bom=bom_obj, bom_process=bom_process_obj, **item))
         BOMMaterialComponent.objects.filter(bom=bom_obj).delete()
         BOMMaterialComponent.objects.bulk_create(bulk_info)
-        print('bom_material_component_data --- ok')
+        print('11. create_bom_material_component_data --- ok')
         return True
 
     @classmethod
@@ -542,5 +498,5 @@ class BOMCommonFunction:
                 bulk_info.append(BOMTool(bom=bom_obj, bom_process=bom_process_obj, **item))
         BOMTool.objects.filter(bom=bom_obj).delete()
         BOMTool.objects.bulk_create(bulk_info)
-        print('bom_tool_data --- ok')
+        print('12. create_bom_tool_data --- ok')
         return True

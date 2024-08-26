@@ -543,11 +543,11 @@ class APCommonFunction:
         elif len_n == 3:
             result = xe2[int(str_n[0])] + " " + cls.read_money_vnd(int(str_n[1:]))
         elif len_n <= 6:
-            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn, " + cls.read_money_vnd(int(str_n[-3:]))
+            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn " + cls.read_money_vnd(int(str_n[-3:]))
         elif len_n <= 9:
-            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu, " + cls.read_money_vnd(int(str_n[-6:]))
+            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu " + cls.read_money_vnd(int(str_n[-6:]))
         elif len_n <= 12:
-            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
+            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ " + cls.read_money_vnd(int(str_n[-9:]))
 
         return str(result.strip()).lower()
 
