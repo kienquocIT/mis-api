@@ -4,7 +4,7 @@ from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.masterdata.saledata.models import Product, ProductType, Expense
 from apps.sales.production.models import BOM
 from apps.sales.production.serializers.bom import BOMProductMaterialListSerializer, LaborListForBOMSerializer, \
-    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer
+    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer, BOMOrderListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -111,7 +111,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         operation_description="Get BOM List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -123,7 +123,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         request_body=BOMCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='production', model_code='bom', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -145,7 +145,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get BOM detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -157,8 +157,27 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BOMUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='production', model_code='bom', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class BOMOrderList(BaseListMixin, BaseCreateMixin):
+    queryset = BOM.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {'product_id': ['exact']}
+    serializer_list = BOMOrderListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="BOM List For Order",
+        operation_description="Get BOM List For Order",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
