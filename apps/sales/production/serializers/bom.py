@@ -247,10 +247,10 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         bom_summary_process_data = validated_data.get('bom_summary_process_data')
         bom_material_component_data = validated_data.get('bom_material_component_data')
         bom_tool_data = validated_data.get('bom_tool_data')
-        del validated_data['bom_process_data']
-        del validated_data['bom_summary_process_data']
-        del validated_data['bom_material_component_data']
-        del validated_data['bom_tool_data']
+        validated_data.pop('bom_process_data', [])
+        validated_data.pop('bom_summary_process_data', [])
+        validated_data.pop('bom_material_component_data', [])
+        validated_data.pop('bom_tool_data', [])
 
         instance = BOM.objects.create(**validated_data)
         BOMCommonFunction.create_bom_process_data(bom_process_data, instance)
