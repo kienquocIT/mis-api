@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 import abc
+import os
 import sys
 
 from django.utils import timezone
@@ -101,21 +102,24 @@ class MongoViewParse:
 if not (settings.MONGO_HOST and settings.MONGO_PORT and settings.MONGO_DB_NAME):
     raise errors.ConfigurationError('Host, port, database name must be required for connect to MongoDB')
 
-client = MongoClient(
-    **{
-        'host': settings.MONGO_HOST,
-        'port': settings.MONGO_PORT,
-
-    },
-    **(
-        {
-            'username': settings.MONGO_USERNAME,
-            'password': settings.MONGO_PASSWORD,
-        } if settings.MONGO_USERNAME and settings.MONGO_PASSWORD else {}
-    )
-)
-if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
+MONGO_MOCK_ENABLE = os.environ.get('MONGO_MOCK_ENABLE', '0') in [1, '1']
+if MONGO_MOCK_ENABLE is True:
+    sys.stdout.writelines(Colors.RED + 'Mongo Mock is enabled!' + '\n' + Colors.END_C)
     client = mongomock.MongoClient()
+else:
+    client = MongoClient(
+        **{
+            'host': settings.MONGO_HOST,
+            'port': settings.MONGO_PORT,
+
+        },
+        **(
+            {
+                'username': settings.MONGO_USERNAME,
+                'password': settings.MONGO_PASSWORD,
+            } if settings.MONGO_USERNAME and settings.MONGO_PASSWORD else {}
+        )
+    )
 
 db_connector = client[settings.MONGO_DB_NAME]
 
