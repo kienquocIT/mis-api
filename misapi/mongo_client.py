@@ -341,12 +341,12 @@ mongo_objs = [
 class MyMongoClient:
     @staticmethod
     def check_connection():
-        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
             client.admin.command('ping')
 
     @staticmethod
     def migrate():
-        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
             sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
             for obj in mongo_objs:
                 obj.create_collection()
@@ -354,7 +354,7 @@ class MyMongoClient:
 
     @staticmethod
     def check_collection():
-        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
             collection_not_found = []
             for obj in mongo_objs:
                 collection_name = obj.collection_name()
