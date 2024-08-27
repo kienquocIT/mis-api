@@ -366,3 +366,15 @@ TYPE_LOT_TRANSACTION = (
     (3, 'Goods transfer'),
     (4, 'Goods issue')
 )
+
+# Production order
+TYPE_PRODUCTION = (
+    (0, 'Production'),
+    (1, 'Assembly'),
+    (2, 'Disassembly'),
+)
+
+STATUS_PRODUCTION = (
+    (0, 'Planned'),
+    (1, 'Done'),
+)

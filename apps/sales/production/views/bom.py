@@ -111,7 +111,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         operation_description="Get BOM List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -123,7 +123,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         request_body=BOMCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='bom', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -145,7 +145,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get BOM detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -157,7 +157,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BOMUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='bom', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
