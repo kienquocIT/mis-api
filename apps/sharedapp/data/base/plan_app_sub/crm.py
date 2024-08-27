@@ -2106,6 +2106,45 @@ CONTRACT_APPROVAL_APP_CONFIG = {
     "allow_permit": True,
 }
 
+BOM_APP_CONFIG = {
+    "id": "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",
+    "title": "Bill of material",
+    "code": "bom",
+    "model_code": "bom",
+    "app_label": "production",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2362,6 +2401,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "58385bcf-f06c-474e-a372-cadc8ea30ecc": ApplicationConfigFrame(**CONTRACT_APPROVAL_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "2de9fb91-4fb9-48c8-b54e-c03bd12f952b": ApplicationConfigFrame(**BOM_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
