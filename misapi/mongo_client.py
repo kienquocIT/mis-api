@@ -32,6 +32,7 @@ import sys
 
 from django.utils import timezone
 from pymongo import MongoClient, errors
+import mongomock
 
 from django.conf import settings
 
@@ -113,6 +114,9 @@ client = MongoClient(
         } if settings.MONGO_USERNAME and settings.MONGO_PASSWORD else {}
     )
 )
+if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
+    client = mongomock.MongoClient()
+
 db_connector = client[settings.MONGO_DB_NAME]
 
 
@@ -341,32 +345,29 @@ mongo_objs = [
 class MyMongoClient:
     @staticmethod
     def check_connection():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            client.admin.command('ping')
+        client.admin.command('ping')
 
     @staticmethod
     def migrate():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
-            for obj in mongo_objs:
-                obj.create_collection()
-                sys.stdout.write("\n")
+        sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
+        for obj in mongo_objs:
+            obj.create_collection()
+            sys.stdout.write("\n")
 
     @staticmethod
     def check_collection():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            collection_not_found = []
-            for obj in mongo_objs:
-                collection_name = obj.collection_name()
-                if collection_name not in db_connector.list_collection_names():
-                    collection_not_found.append(collection_name)
-            if collection_not_found:
-                sys.stdout.writelines(
-                    Colors.RED + '[mongodb] Collection is not found: '
-                    + str(collection_not_found) +
-                    '. Please execute commands: mongo_migrate' + Colors.END_C
-                    + '\n'
-                )
+        collection_not_found = []
+        for obj in mongo_objs:
+            collection_name = obj.collection_name()
+            if collection_name not in db_connector.list_collection_names():
+                collection_not_found.append(collection_name)
+        if collection_not_found:
+            sys.stdout.writelines(
+                Colors.RED + '[mongodb] Collection is not found: '
+                + str(collection_not_found) +
+                '. Please execute commands: mongo_migrate' + Colors.END_C
+                + '\n'
+            )
 
 
 MyMongoClient.check_collection()
