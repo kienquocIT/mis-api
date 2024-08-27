@@ -28,10 +28,12 @@ __all__ = [
 ]
 
 import abc
+import os
 import sys
 
 from django.utils import timezone
 from pymongo import MongoClient, errors
+import mongomock
 
 from django.conf import settings
 
@@ -100,19 +102,25 @@ class MongoViewParse:
 if not (settings.MONGO_HOST and settings.MONGO_PORT and settings.MONGO_DB_NAME):
     raise errors.ConfigurationError('Host, port, database name must be required for connect to MongoDB')
 
-client = MongoClient(
-    **{
-        'host': settings.MONGO_HOST,
-        'port': settings.MONGO_PORT,
+MONGO_MOCK_ENABLE = os.environ.get('MONGO_MOCK_ENABLE', '0') in [1, '1']
+if MONGO_MOCK_ENABLE is True:
+    sys.stdout.writelines(Colors.RED + 'Mongo Mock is enabled!' + '\n' + Colors.END_C)
+    client = mongomock.MongoClient()
+else:
+    client = MongoClient(
+        **{
+            'host': settings.MONGO_HOST,
+            'port': settings.MONGO_PORT,
 
-    },
-    **(
-        {
-            'username': settings.MONGO_USERNAME,
-            'password': settings.MONGO_PASSWORD,
-        } if settings.MONGO_USERNAME and settings.MONGO_PASSWORD else {}
+        },
+        **(
+            {
+                'username': settings.MONGO_USERNAME,
+                'password': settings.MONGO_PASSWORD,
+            } if settings.MONGO_USERNAME and settings.MONGO_PASSWORD else {}
+        )
     )
-)
+
 db_connector = client[settings.MONGO_DB_NAME]
 
 
@@ -201,13 +209,13 @@ class MongoMapInterface(abc.ABC):
 
     def _insert_one(self, data: dict[str, any]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.insert_one(self.fill_item(data))
         return None
 
     def _insert_many(self, data_list: list[dict[str, any]]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.insert_many(
                 [
                     self.fill_item(item) for item in data_list
@@ -225,7 +233,7 @@ class MongoMapInterface(abc.ABC):
 
     def find(self, filter_data: dict[str, any], sort: dict = None, skip: int = None, limit: int = None):
         collection = self.collection
-        if collection:
+        if collection is not None:
             cursor = self.collection.find(filter_data)
             if sort:
                 cursor = cursor.sort(sort)
@@ -238,13 +246,15 @@ class MongoMapInterface(abc.ABC):
 
     def aggregate(self, stages: list[dict[str, any]]):
         collection = self.collection
-        if collection:
+        if collection is not None:
+            if MONGO_MOCK_ENABLE is True:
+                return []
             return self.collection.aggregate(stages)
         return []
 
     def count_documents(self, filter_data: dict[str, any]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.count_documents(filter_data)
         return 0
 
@@ -341,32 +351,29 @@ mongo_objs = [
 class MyMongoClient:
     @staticmethod
     def check_connection():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            client.admin.command('ping')
+        client.admin.command('ping')
 
     @staticmethod
     def migrate():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
-            for obj in mongo_objs:
-                obj.create_collection()
-                sys.stdout.write("\n")
+        sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
+        for obj in mongo_objs:
+            obj.create_collection()
+            sys.stdout.write("\n")
 
     @staticmethod
     def check_collection():
-        if not (settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True):
-            collection_not_found = []
-            for obj in mongo_objs:
-                collection_name = obj.collection_name()
-                if collection_name not in db_connector.list_collection_names():
-                    collection_not_found.append(collection_name)
-            if collection_not_found:
-                sys.stdout.writelines(
-                    Colors.RED + '[mongodb] Collection is not found: '
-                    + str(collection_not_found) +
-                    '. Please execute commands: mongo_migrate' + Colors.END_C
-                    + '\n'
-                )
+        collection_not_found = []
+        for obj in mongo_objs:
+            collection_name = obj.collection_name()
+            if collection_name not in db_connector.list_collection_names():
+                collection_not_found.append(collection_name)
+        if collection_not_found:
+            sys.stdout.writelines(
+                Colors.RED + '[mongodb] Collection is not found: '
+                + str(collection_not_found) +
+                '. Please execute commands: mongo_migrate' + Colors.END_C
+                + '\n'
+            )
 
 
 MyMongoClient.check_collection()
