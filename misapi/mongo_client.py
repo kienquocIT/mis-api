@@ -186,7 +186,7 @@ class MongoMapInterface(abc.ABC):
 
     @property
     def collection(self):
-        return getattr(self.connector, self.collection_name())
+        return getattr(self.connector, self.collection_name(), None)
 
     def fill_item(self, data: dict):
         if self.key__metadata not in data:
@@ -200,14 +200,20 @@ class MongoMapInterface(abc.ABC):
         return data
 
     def _insert_one(self, data: dict[str, any]):
-        return self.collection.insert_one(self.fill_item(data))
+        collection = self.collection
+        if collection:
+            return self.collection.insert_one(self.fill_item(data))
+        return None
 
     def _insert_many(self, data_list: list[dict[str, any]]):
-        return self.collection.insert_many(
-            [
-                self.fill_item(item) for item in data_list
-            ]
-        )
+        collection = self.collection
+        if collection:
+            return self.collection.insert_many(
+                [
+                    self.fill_item(item) for item in data_list
+                ]
+            )
+        return None
 
     @abc.abstractmethod
     def insert_one(self, *args, **kwargs):
@@ -218,20 +224,29 @@ class MongoMapInterface(abc.ABC):
         pass
 
     def find(self, filter_data: dict[str, any], sort: dict = None, skip: int = None, limit: int = None):
-        cursor = self.collection.find(filter_data)
-        if sort:
-            cursor = cursor.sort(sort)
-        if skip:
-            cursor = cursor.skip(skip)
-        if limit:
-            cursor = cursor.limit(limit)
-        return cursor
+        collection = self.collection
+        if collection:
+            cursor = self.collection.find(filter_data)
+            if sort:
+                cursor = cursor.sort(sort)
+            if skip:
+                cursor = cursor.skip(skip)
+            if limit:
+                cursor = cursor.limit(limit)
+            return cursor
+        return None
 
     def aggregate(self, stages: list[dict[str, any]]):
-        return self.collection.aggregate(stages)
+        collection = self.collection
+        if collection:
+            return self.collection.aggregate(stages)
+        return []
 
     def count_documents(self, filter_data: dict[str, any]):
-        return self.collection.count_documents(filter_data)
+        collection = self.collection
+        if collection:
+            return self.collection.count_documents(filter_data)
+        return 0
 
 
 class MongoAuthLog(MongoMapInterface):
@@ -326,29 +341,32 @@ mongo_objs = [
 class MyMongoClient:
     @staticmethod
     def check_connection():
-        client.admin.command('ping')
+        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+            client.admin.command('ping')
 
     @staticmethod
     def migrate():
-        sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
-        for obj in mongo_objs:
-            obj.create_collection()
-            sys.stdout.write("\n")
+        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+            sys.stdout.writelines(Colors.RED + 'Integrate to MongoDB is running...' + Colors.END_C + '\n')
+            for obj in mongo_objs:
+                obj.create_collection()
+                sys.stdout.write("\n")
 
     @staticmethod
     def check_collection():
-        collection_not_found = []
-        for obj in mongo_objs:
-            collection_name = obj.collection_name()
-            if collection_name not in db_connector.list_collection_names():
-                collection_not_found.append(collection_name)
-        if collection_not_found:
-            sys.stdout.writelines(
-                Colors.RED + '[mongodb] Collection is not found: '
-                + str(collection_not_found) +
-                '. Please execute commands: mongo_migrate' + Colors.END_C
-                + '\n'
-            )
+        if settings.CICD_ENABLED__USE_DB_MOCKUP is True and settings.DB_SQLITE_MOCKUP is True:
+            collection_not_found = []
+            for obj in mongo_objs:
+                collection_name = obj.collection_name()
+                if collection_name not in db_connector.list_collection_names():
+                    collection_not_found.append(collection_name)
+            if collection_not_found:
+                sys.stdout.writelines(
+                    Colors.RED + '[mongodb] Collection is not found: '
+                    + str(collection_not_found) +
+                    '. Please execute commands: mongo_migrate' + Colors.END_C
+                    + '\n'
+                )
 
 
 MyMongoClient.check_collection()
