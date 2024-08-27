@@ -14,7 +14,6 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContractDocument
         fields = (
-            'id',
             'title',
             'remark',
             # 'attachment',

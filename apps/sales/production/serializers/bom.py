@@ -572,11 +572,6 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
                 'id': bom_task.id,
                 'order': bom_task.order,
                 'task_title': bom_task.task_name,
-                'labor_data': {
-                    'id': str(bom_task.labor_id),
-                    'code': bom_task.labor.code,
-                    'title': bom_task.labor.title,
-                } if bom_task.labor else {},
                 'quantity_bom': bom_task.quantity,
                 'uom_data': {
                     'id': str(bom_task.uom_id),
