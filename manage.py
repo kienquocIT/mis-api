@@ -4,6 +4,7 @@ import os
 import sys
 
 from misapi.opentelemetry import init as open_telemetry_init
+from misapi.mongo_client import MyMongoClient
 
 
 def main():
@@ -11,6 +12,8 @@ def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'misapi.settings')
 
     open_telemetry_init()
+
+    MyMongoClient.check_connection()
 
     try:
         from django.core.management import execute_from_command_line
