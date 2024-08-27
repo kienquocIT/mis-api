@@ -209,13 +209,13 @@ class MongoMapInterface(abc.ABC):
 
     def _insert_one(self, data: dict[str, any]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.insert_one(self.fill_item(data))
         return None
 
     def _insert_many(self, data_list: list[dict[str, any]]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.insert_many(
                 [
                     self.fill_item(item) for item in data_list
@@ -233,7 +233,7 @@ class MongoMapInterface(abc.ABC):
 
     def find(self, filter_data: dict[str, any], sort: dict = None, skip: int = None, limit: int = None):
         collection = self.collection
-        if collection:
+        if collection is not None:
             cursor = self.collection.find(filter_data)
             if sort:
                 cursor = cursor.sort(sort)
@@ -246,13 +246,15 @@ class MongoMapInterface(abc.ABC):
 
     def aggregate(self, stages: list[dict[str, any]]):
         collection = self.collection
-        if collection:
+        if collection is not None:
+            if MONGO_MOCK_ENABLE is True:
+                return []
             return self.collection.aggregate(stages)
         return []
 
     def count_documents(self, filter_data: dict[str, any]):
         collection = self.collection
-        if collection:
+        if collection is not None:
             return self.collection.count_documents(filter_data)
         return 0
 

@@ -190,12 +190,6 @@ DATABASES = {
     }
 }
 
-DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'))
-CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP', '0') in ["1", 1]
-if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
-    # change file db of sqlite3 from default to file sqlite3
-    DATABASES['default'] = DATABASES['mockup_db_ci']
-
 DATABASE_ROUTERS = ['routers.LogRouter']
 
 # Password validation
@@ -699,6 +693,13 @@ MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
 MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'bflow')
 MONGO_USERNAME = os.environ.get('MONGO_USERNAME', '')
 MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', '')
+
+# CI Database
+DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'))
+CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP', '0') in ["1", 1]
+if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
+    # change file db of sqlite3 from default to file sqlite3
+    DATABASES['default'] = DATABASES['mockup_db_ci']
 
 
 # Display config about DB, Cache, CELERY,...
