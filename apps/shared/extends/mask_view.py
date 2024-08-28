@@ -1836,7 +1836,7 @@ class ViewChecking:
 
         # check pk in url is UUID
         for key, value in self.attr.view_kwargs.items():
-            if key.startswith('pk_'):
+            if 'pk' in key:
                 if not TypeCheck.check_uuid(value):
                     return HttpReturn.error_not_found()
 
