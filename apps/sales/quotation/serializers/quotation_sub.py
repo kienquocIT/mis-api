@@ -21,6 +21,7 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_product(cls, validated_data, instance):
+        instance.quotation_product_quotation.all().delete()
         QuotationProduct.objects.bulk_create([
             QuotationProduct(quotation=instance, **quotation_product)
             for quotation_product in validated_data['quotation_products_data']
@@ -29,6 +30,14 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_term(cls, validated_data, instance):
+        old_term = QuotationTerm.objects.filter(quotation=instance)
+        if old_term:
+            old_term_price = QuotationTermPrice.objects.filter(quotation_term__in=old_term)
+            if old_term_price:
+                old_term_price.delete()
+            old_term_discount = QuotationTermDiscount.objects.filter(quotation_term__in=old_term)
+            if old_term_discount:
+                old_term_discount.delete()
         price_list = []
         payment_term = {}
         if 'price_list' in validated_data['quotation_term_data']:
@@ -53,6 +62,9 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_logistic(cls, validated_data, instance):
+        old_logistic = QuotationLogistic.objects.filter(quotation=instance)
+        if old_logistic:
+            old_logistic.delete()
         QuotationLogistic.objects.create(
             **validated_data['quotation_logistic_data'],
             quotation=instance
@@ -61,6 +73,7 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_cost(cls, validated_data, instance):
+        instance.quotation_cost_quotation.all().delete()
         QuotationCost.objects.bulk_create([
             QuotationCost(quotation=instance, **quotation_cost)
             for quotation_cost in validated_data['quotation_costs_data']
@@ -69,6 +82,7 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_expense(cls, validated_data, instance):
+        instance.quotation_expense_quotation.all().delete()
         QuotationExpense.objects.bulk_create([
             QuotationExpense(quotation=instance, **quotation_expense)
             for quotation_expense in validated_data['quotation_expenses_data']
@@ -77,6 +91,7 @@ class QuotationCommonCreate:
 
     @classmethod
     def create_indicator(cls, validated_data, instance):
+        instance.quotation_indicator_quotation.all().delete()
         for quotation_indicator in validated_data['quotation_indicators_data']:
             indicator_id = quotation_indicator.get('indicator', {}).get('id')
             indicator_code = quotation_indicator.get('indicator', {}).get('code')
@@ -93,85 +108,26 @@ class QuotationCommonCreate:
         return True
 
     @classmethod
-    def delete_old_product(cls, instance):
-        old_product = QuotationProduct.objects.filter(quotation=instance)
-        if old_product:
-            old_product.delete()
-        return True
-
-    @classmethod
-    def delete_old_term(cls, instance):
-        old_term = QuotationTerm.objects.filter(quotation=instance)
-        if old_term:
-            old_term_price = QuotationTermPrice.objects.filter(quotation_term__in=old_term)
-            if old_term_price:
-                old_term_price.delete()
-            old_term_discount = QuotationTermDiscount.objects.filter(quotation_term__in=old_term)
-            if old_term_discount:
-                old_term_discount.delete()
-        return True
-
-    @classmethod
-    def delete_old_logistic(cls, instance):
-        old_logistic = QuotationLogistic.objects.filter(quotation=instance)
-        if old_logistic:
-            old_logistic.delete()
-        return True
-
-    @classmethod
-    def delete_old_cost(cls, instance):
-        old_cost = QuotationCost.objects.filter(quotation=instance)
-        if old_cost:
-            old_cost.delete()
-        return True
-
-    @classmethod
-    def delete_old_expense(cls, instance):
-        old_expense = QuotationExpense.objects.filter(quotation=instance)
-        if old_expense:
-            old_expense.delete()
-        return True
-
-    @classmethod
-    def delete_old_indicator(cls, instance):
-        old_indicator = QuotationIndicator.objects.filter(quotation=instance)
-        if old_indicator:
-            old_indicator.delete()
-        return True
-
-    @classmethod
-    def create_quotation_sub_models(cls, validated_data, instance, is_update=False):
+    def create_quotation_sub_models(cls, validated_data, instance):
         # quotation tabs
         if 'quotation_products_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_product(instance=instance)
             cls.create_product(validated_data=validated_data, instance=instance)
         if 'quotation_term_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_term(instance=instance)
             cls.create_term(
                 validated_data=validated_data,
                 instance=instance
             )
         if 'quotation_logistic_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_logistic(instance=instance)
             cls.create_logistic(
                 validated_data=validated_data,
                 instance=instance
             )
         if 'quotation_costs_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_cost(instance=instance)
             cls.create_cost(validated_data=validated_data, instance=instance)
         if 'quotation_expenses_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_expense(instance=instance)
             cls.create_expense(validated_data=validated_data, instance=instance)
         # indicator tab
         if 'quotation_indicators_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_indicator(instance=instance)
             cls.create_indicator(
                 validated_data=validated_data,
                 instance=instance

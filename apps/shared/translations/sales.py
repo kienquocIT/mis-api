@@ -28,6 +28,11 @@ class SaleMsg:
     SO_CONFIG_ROLE_CHECK = _('Role can only in short sales or long sales')
     SO_CONFIG_SS_ROLE_CHECK = _('Opportunity is not allowed because employee in short sales roles')
     SO_CONFIG_LS_ROLE_CHECK = _('Opportunity is required because employee in long sales roles')
+    BOM_NOT_EXIST = _('Bill of material does not exist.')
+    PRODUCT_NOT_EXIST = _('Product does not exist.')
+    UOM_NOT_EXIST = _('Unit of measure does not exist.')
+    WAREHOUSE_NOT_EXIST = _('Unit of measure does not exist.')
+    GROUP_NOT_EXIST = _('Group does not exist.')
 
 
 class SaleTask:

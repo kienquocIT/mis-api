@@ -22,6 +22,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_product(cls, validated_data, instance):
+        instance.sale_order_product_sale_order.all().delete()
         SaleOrderProduct.objects.bulk_create([
             SaleOrderProduct(sale_order=instance, **sale_order_product)
             for sale_order_product in validated_data['sale_order_products_data']
@@ -30,6 +31,9 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_logistic(cls, validated_data, instance):
+        old_logistic = SaleOrderLogistic.objects.filter(sale_order=instance)
+        if old_logistic:
+            old_logistic.delete()
         SaleOrderLogistic.objects.create(
             **validated_data['sale_order_logistic_data'],
             sale_order=instance
@@ -38,6 +42,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_cost(cls, validated_data, instance):
+        instance.sale_order_cost_sale_order.all().delete()
         SaleOrderCost.objects.bulk_create([
             SaleOrderCost(sale_order=instance, **sale_order_cost)
             for sale_order_cost in validated_data['sale_order_costs_data']
@@ -46,6 +51,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_expense(cls, validated_data, instance):
+        instance.sale_order_expense_sale_order.all().delete()
         SaleOrderExpense.objects.bulk_create([
             SaleOrderExpense(sale_order=instance, **sale_order_expense)
             for sale_order_expense in validated_data['sale_order_expenses_data']
@@ -54,6 +60,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_indicator(cls, validated_data, instance):
+        instance.sale_order_indicator_sale_order.all().delete()
         for sale_order_indicator in validated_data['sale_order_indicators_data']:
             # indicator_id = sale_order_indicator.get('indicator', {}).get('id')
             quotation_indicator_id = sale_order_indicator.get('quotation_indicator', {}).get('id')
@@ -75,6 +82,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_payment_stage(cls, validated_data, instance):
+        instance.payment_stage_sale_order.all().delete()
         SaleOrderPaymentStage.objects.bulk_create(
             [SaleOrderPaymentStage(
                 sale_order=instance,
@@ -86,80 +94,26 @@ class SaleOrderCommonCreate:
         return True
 
     @classmethod
-    def delete_old_product(cls, instance):
-        old_product = SaleOrderProduct.objects.filter(sale_order=instance)
-        if old_product:
-            old_product.delete()
-        return True
-
-    @classmethod
-    def delete_old_logistic(cls, instance):
-        old_logistic = SaleOrderLogistic.objects.filter(sale_order=instance)
-        if old_logistic:
-            old_logistic.delete()
-        return True
-
-    @classmethod
-    def delete_old_cost(cls, instance):
-        old_cost = SaleOrderCost.objects.filter(sale_order=instance)
-        if old_cost:
-            old_cost.delete()
-        return True
-
-    @classmethod
-    def delete_old_expense(cls, instance):
-        old_expense = SaleOrderExpense.objects.filter(sale_order=instance)
-        if old_expense:
-            old_expense.delete()
-        return True
-
-    @classmethod
-    def delete_old_indicator(cls, instance):
-        old_indicator = SaleOrderIndicator.objects.filter(sale_order=instance)
-        if old_indicator:
-            old_indicator.delete()
-        return True
-
-    @classmethod
-    def delete_old_payment_stage(cls, instance):
-        old_payment_stage = SaleOrderPaymentStage.objects.filter(sale_order=instance)
-        if old_payment_stage:
-            old_payment_stage.delete()
-        return True
-
-    @classmethod
-    def create_sale_order_sub_models(cls, validated_data, instance, is_update=False):
+    def create_sale_order_sub_models(cls, validated_data, instance):
         if 'sale_order_products_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_product(instance=instance)
             cls.create_product(validated_data=validated_data, instance=instance)
         if 'sale_order_logistic_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_logistic(instance=instance)
             cls.create_logistic(
                 validated_data=validated_data,
                 instance=instance
             )
         if 'sale_order_costs_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_cost(instance=instance)
             cls.create_cost(validated_data=validated_data, instance=instance)
         if 'sale_order_expenses_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_expense(instance=instance)
             cls.create_expense(validated_data=validated_data, instance=instance)
         # indicator tab
         if 'sale_order_indicators_data' in validated_data:
-            if is_update is True:
-                cls.delete_old_indicator(instance=instance)
             cls.create_indicator(
                 validated_data=validated_data,
                 instance=instance
             )
         # payment stage tab
         if 'sale_order_payment_stage' in validated_data:
-            if is_update is True:
-                cls.delete_old_payment_stage(instance=instance)
             cls.create_payment_stage(
                 validated_data=validated_data,
                 instance=instance

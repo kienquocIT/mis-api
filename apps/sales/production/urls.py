@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.sales.production.views import ProductionOrderList
+from apps.sales.production.views import ProductionOrderList, ProductionOrderDetail
 from apps.sales.production.views.bom import (
     LaborListForBOM, ProductMaterialListForBOM, ProductToolsListForBOM,
     BOMList, BOMDetail, BOMOrderList
@@ -18,4 +18,5 @@ urlpatterns = [
 
     # Production order
     path('production-order/list', ProductionOrderList.as_view(), name='ProductionOrderList'),
+    path('production-order/<str:pk>', ProductionOrderDetail.as_view(), name='ProductionOrderDetail'),
 ]

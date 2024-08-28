@@ -376,5 +376,6 @@ TYPE_PRODUCTION = (
 
 STATUS_PRODUCTION = (
     (0, 'Planned'),
-    (1, 'Done'),
+    (1, 'In production'),
+    (2, 'Done'),
 )

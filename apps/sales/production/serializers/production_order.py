@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.production.models import ProductionOrder, ProductionOrderTask
-from apps.sales.production.serializers.production_order_sub import ProductionOrderSub
+from apps.sales.production.serializers.production_order_sub import ProductionOrderSub, ProductionOrderValid
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel
 
 
@@ -49,13 +49,29 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
         fields = (
             'id',
             'title',
-            'code',
+            'bom_data',
+            'type_production',
+            'product_data',
+            'quantity',
+            'uom_data',
+            'warehouse_data',
+            'sale_order',
+            'sale_order_data',
+            'status_production',
+            'date_start',
+            'date_end',
+            'group_data',
+            'time',
             'task_data',
         )
 
 
 class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    bom_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
+    group_id = serializers.UUIDField(required=False, allow_null=True)
     task_data = POTaskCreateSerializer(many=True, required=False)
 
     class Meta:
@@ -83,6 +99,26 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
             'task_data',
         )
 
+    @classmethod
+    def validate_bom_id(cls, value):
+        return ProductionOrderValid.validate_bom_id(value=value)
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionOrderValid.validate_uom_id(value=value)
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        return ProductionOrderValid.validate_warehouse_id(value=value)
+
+    @classmethod
+    def validate_group_id(cls, value):
+        return ProductionOrderValid.validate_group_id(value=value)
+
     @decorator_run_workflow
     def create(self, validated_data):
         production_order = ProductionOrder.objects.create(**validated_data)
@@ -91,19 +127,62 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
 
 
 class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
+    bom_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
+    group_id = serializers.UUIDField(required=False, allow_null=True)
     task_data = POTaskCreateSerializer(many=True, required=False)
 
     class Meta:
         model = ProductionOrder
         fields = (
             'title',
+            'bom_id',
+            'bom_data',
+            'type_production',
+            'product_id',
+            'product_data',
+            'quantity',
+            'uom_id',
+            'uom_data',
+            'warehouse_id',
+            'warehouse_data',
+            'sale_order',
+            'sale_order_data',
+            'status_production',
+            'date_start',
+            'date_end',
+            'group_id',
+            'group_data',
+            'time',
             'task_data',
         )
 
-    # @decorator_run_workflow
+    @classmethod
+    def validate_bom_id(cls, value):
+        return ProductionOrderValid.validate_bom_id(value=value)
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionOrderValid.validate_uom_id(value=value)
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        return ProductionOrderValid.validate_warehouse_id(value=value)
+
+    @classmethod
+    def validate_group_id(cls, value):
+        return ProductionOrderValid.validate_group_id(value=value)
+
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        ProductionOrderSub.create_sub_models(validated_data=validated_data, instance=instance, is_update=True)
+        ProductionOrderSub.create_sub_models(validated_data=validated_data, instance=instance)
         return instance

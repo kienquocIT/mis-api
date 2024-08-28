@@ -1,6 +1,9 @@
-# from rest_framework import serializers
+from rest_framework import serializers
 
-from apps.sales.production.models import ProductionOrderTask, ProductionOrderTaskTool, ProductionOrderSaleOrder
+from apps.core.hr.models import Group
+from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse
+from apps.sales.production.models import ProductionOrderTask, ProductionOrderTaskTool, ProductionOrderSaleOrder, BOM
+from apps.shared import SaleMsg
 
 
 class ProductionOrderSub:
@@ -31,9 +34,44 @@ class ProductionOrderSub:
         return True
 
     @classmethod
-    def create_sub_models(cls, validated_data, instance, is_update=False):
-        # if 'task_data' in validated_data:
-        #     if is_update is True:
-        #         cls.delete_old_task(instance=instance)
+    def create_sub_models(cls, validated_data, instance):
         cls.create_sub(validated_data=validated_data, instance=instance)
         return True
+
+
+class ProductionOrderValid:
+
+    @classmethod
+    def validate_bom_id(cls, value):
+        try:
+            return BOM.objects.get(id=value).id
+        except BOM.DoesNotExist:
+            raise serializers.ValidationError({'bom': SaleMsg.BOM_NOT_EXIST})
+
+    @classmethod
+    def validate_product_id(cls, value):
+        try:
+            return Product.objects.get(id=value).id
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'product': SaleMsg.PRODUCT_NOT_EXIST})
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        try:
+            return UnitOfMeasure.objects.get(id=value).id
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'uom': SaleMsg.UOM_NOT_EXIST})
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        try:
+            return WareHouse.objects.get(id=value).id
+        except WareHouse.DoesNotExist:
+            raise serializers.ValidationError({'warehouse': SaleMsg.WAREHOUSE_NOT_EXIST})
+
+    @classmethod
+    def validate_group_id(cls, value):
+        try:
+            return Group.objects.get(id=value).id
+        except Group.DoesNotExist:
+            raise serializers.ValidationError({'group': SaleMsg.GROUP_NOT_EXIST})
