@@ -681,25 +681,21 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         try:
             field_hidden = self.get_object__field_hidden
             filter_kwargs = self.get_lookup_url_kwarg()
-            try:
-                if self.query_extend_base_model:
-                    obj = queryset.get(
-                        **filter_kwargs,
-                        **field_hidden,
-                        force_cache=self.use_cache_object
-                    )
-                else:
-                    obj = queryset.get(
-                        **filter_kwargs,
-                        **field_hidden,
-                    )
-            except DjangoValidationError:
-                raise exceptions.NotFound
-
+            if self.query_extend_base_model:
+                obj = queryset.get(
+                    **filter_kwargs,
+                    **field_hidden,
+                    force_cache=self.use_cache_object
+                )
+            else:
+                obj = queryset.get(
+                    **filter_kwargs,
+                    **field_hidden,
+                )
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
-        except queryset.model.DoesNotExist:
+        except (queryset.model.DoesNotExist, DjangoValidationError):
             raise exceptions.NotFound
 
     @classmethod
