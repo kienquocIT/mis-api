@@ -11,10 +11,13 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 from misapi.opentelemetry import init as open_telemetry_init
+from misapi.mongo_client import MyMongoClient
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'misapi.settings')
 
 open_telemetry_init()
+
+MyMongoClient.check_connection()
 
 application = get_wsgi_application()

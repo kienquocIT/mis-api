@@ -1,0 +1,167 @@
+from uuid import UUID
+import datetime
+
+from django.utils import timezone
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
+
+from apps.sales.task.tasks import opp_task_summary
+from apps.sales.task.models import OpportunityTask, OpportunityTaskSummaryDaily
+from apps.sales.task.tasks import log_task_status
+from apps.shared import call_task_background, Caching
+
+
+class OppTaskSummaryHandler:
+    @property
+    def key_cache(self):
+        return f'opp_task_daily_{str(self.employee_id)}_{timezone.now().strftime("%Y_%m_%d")}'
+
+    @classmethod
+    def report_set_cache(cls, cls_cache: Caching, key, value):
+        date_now = timezone.now()
+        # timeout is next day with time 00:00:01.0000
+        timeout = (
+                datetime.datetime.combine(
+                    date_now.date() + datetime.timedelta(days=1),
+                    datetime.time(second=1)
+                ) - date_now
+        ).seconds
+        return cls_cache.set(key=key, value=value, timeout=timeout)
+
+    def __init__(self, employee_id):
+        self.employee_id = employee_id
+
+    def get_obj(self):
+        cls_cache = Caching()
+        key_cache = self.key_cache
+        value_cache = cls_cache.get(key=key_cache)
+        if isinstance(value_cache, self.__class__):
+            if getattr(value_cache, 'state', 0) == 1:
+                return value_cache
+            return None
+        else:
+            try:
+                obj = OpportunityTaskSummaryDaily.objects.get(employee_id=self.employee_id)
+            except OpportunityTaskSummaryDaily.DoesNotExist:
+                OpportunityTaskSummaryDaily.objects.create(
+                    employee_id=self.employee_id,
+                    state=0,
+                    updated_at=timezone.now(),
+                )
+                call_task_background(
+                    my_task=opp_task_summary,
+                    **{
+                        'employee_id': self.employee_id,
+                    }
+                )
+            else:
+                if obj.updated_at.date() == timezone.now().date():
+                    if obj.state == 1:
+                        self.report_set_cache(cls_cache=cls_cache, key=key_cache, value=obj)
+                        return obj
+                    return None
+                else:
+                    obj.state = 0
+                    obj.updated_at = timezone.now()
+                    obj.save(update_fields=['state', 'updated_at'])
+                    call_task_background(
+                        my_task=opp_task_summary,
+                        **{
+                            'employee_id': self.employee_id,
+                        }
+                    )
+        return None
+
+    @classmethod
+    def summary_report(cls, obj: OpportunityTaskSummaryDaily):
+        return obj.get_detail()
+
+
+@receiver(post_save, sender=OpportunityTask)
+def opp_task_pre_save(sender, instance, *args, **kwargs):
+    try:
+        employee_inherit_id = None
+        if instance.id:
+            employee_inherit_id = OpportunityTask.objects.get(pk=instance.id).employee_inherit_id
+        instance.__employee_inherit_id = employee_inherit_id
+    except OpportunityTask.DoesNotExist:
+        pass
+
+
+@receiver(post_save, sender=OpportunityTask)
+def opp_task_changes(sender, instance, created, **kwargs):
+    if instance.employee_inherit_id and instance.task_status:
+        prev_employee_inherit_id = getattr(instance, '__employee_inherit_id', 'unknown')  # get from pre_save
+
+        if (prev_employee_inherit_id is None and instance.employee_inherit_id) \
+                or (
+                isinstance(prev_employee_inherit_id, UUID)
+                and prev_employee_inherit_id != instance.employee_inherit_id
+        ) \
+                or created is True:
+            call_task_background(
+                my_task=log_task_status,
+                **{
+                    'task_id': str(instance.id),
+                    'tenant_id': str(instance.tenant_id),
+                    'company_id': str(instance.company_id),
+                    'employee_inherit_id': str(instance.employee_inherit_id),
+                    'status': "ASSIGN_TASK",
+                    'status_translate': "",
+                    'date_changes': instance.date_modified,
+                    'task_color': '',
+                }
+            )
+
+        if instance.percent_completed in ['100', 100]:
+            call_task_background(
+                my_task=log_task_status,
+                **{
+                    'task_id': str(instance.id),
+                    'tenant_id': str(instance.tenant_id),
+                    'company_id': str(instance.company_id),
+                    'employee_inherit_id': str(instance.employee_inherit_id),
+                    'status': "FINISH_TASK",
+                    'status_translate': "",
+                    'date_changes': instance.date_modified,
+                    'task_color': '',
+                }
+            )
+        else:
+            call_task_background(
+                my_task=log_task_status,
+                **{
+                    'task_id': str(instance.id),
+                    'tenant_id': str(instance.tenant_id),
+                    'company_id': str(instance.company_id),
+                    'employee_inherit_id': str(instance.employee_inherit_id),
+                    'status': instance.task_status.title,
+                    'status_translate': instance.task_status.translate_name,
+                    'date_changes': instance.date_modified,
+                    'task_color': instance.task_status.task_color,
+                }
+            )
+
+        call_task_background(
+            my_task=opp_task_summary,
+            **{
+                'employee_id': instance.employee_inherit_id,
+            }
+        )
+        if isinstance(prev_employee_inherit_id, UUID) and prev_employee_inherit_id != instance.employee_inherit_id:
+            call_task_background(
+                my_task=opp_task_summary,
+                **{
+                    'employee_id': prev_employee_inherit_id,
+                }
+            )
+
+
+@receiver(post_save, sender=OpportunityTaskSummaryDaily)
+def post_save_opp_task_summary(sender, instance, created, **kwargs):
+    summary_obj = OppTaskSummaryHandler(employee_id=instance.employee_id)
+    summary_obj.report_set_cache(
+        cls_cache=Caching(),
+        key=summary_obj.key_cache,
+        value=instance,
+    )

@@ -161,7 +161,7 @@ class Caching:
         Args:
             key:
             value:
-            timeout:
+            timeout: seconds
 
         Returns:
 

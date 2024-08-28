@@ -566,8 +566,9 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
             sale_order=obj,
             product__isnull=False
         )
-        return [
-            {
+        product_data = []
+        for item in so_product:
+            product_data.append({
                 'id': item.id,
                 'product_quantity': item.product_quantity,
                 'remain_for_purchase_request': item.remain_for_purchase_request,
@@ -594,9 +595,8 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'title': item.tax.title,
                     'rate': item.tax.rate
                 } if item.tax else {},
-            }
-            for item in so_product
-        ]
+            })
+        return product_data
 
 
 class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):

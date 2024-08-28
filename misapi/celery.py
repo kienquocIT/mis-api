@@ -41,5 +41,9 @@ app.conf.beat_schedule = {
     'clean_form_session_expired': {
         'task': 'apps.core.forms.tasks.clean_form_auth_expired',
         'schedule': crontab(minute=5),
-    }
+    },
+    'summary_opp_task_daily': {
+        'task': 'apps.sales.task.tasks.summary_task_by_change_daily',
+        'schedule': crontab(hour=0, minute=1),
+    },
 }

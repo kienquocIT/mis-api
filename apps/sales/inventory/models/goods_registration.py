@@ -1,6 +1,6 @@
 from django.db import models
 from apps.masterdata.saledata.models import ProductWareHouseSerial
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 def cast_from_base(uom, quantity):
@@ -139,7 +139,7 @@ class GReItemSub(SimpleAbstractModel):
         permissions = ()
 
 
-class GReItemProductWarehouse(SimpleAbstractModel):
+class GReItemProductWarehouse(MasterDataAbstractModel):
     goods_registration = models.ForeignKey(
         GoodsRegistration, on_delete=models.CASCADE, null=True
     )
@@ -168,7 +168,7 @@ class GReItemProductWarehouse(SimpleAbstractModel):
         permissions = ()
 
 
-class GReItemProductWarehouseLot(SimpleAbstractModel):
+class GReItemProductWarehouseLot(MasterDataAbstractModel):
     goods_registration = models.ForeignKey(
         GoodsRegistration, on_delete=models.CASCADE, null=True
     )
@@ -192,7 +192,7 @@ class GReItemProductWarehouseLot(SimpleAbstractModel):
         permissions = ()
 
 
-class GReItemProductWarehouseSerial(SimpleAbstractModel):
+class GReItemProductWarehouseSerial(MasterDataAbstractModel):
     goods_registration = models.ForeignKey(
         GoodsRegistration, on_delete=models.CASCADE, null=True
     )

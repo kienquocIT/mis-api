@@ -1,23 +1,31 @@
 import json
+from datetime import timedelta
 
 from django.db import models
+from django.db.models import Count
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
-from .config import OpportunityTaskConfig
+from apps.shared import (
+    MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel,
+    TASK_PRIORITY, TASK_KIND,
+)
 
-__all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
+__all__ = [
+    'OpportunityTask', 'OpportunityTaskStatus',
+    'OpportunityLogWork', 'TaskAttachmentFile',
+    'OpportunityTaskSummaryDaily',
+]
 
-from ..utils import TaskHandler
+from apps.sales.task.utils import TaskHandler
 
 
 class OpportunityTaskStatus(MasterDataAbstractModel):
     title = models.CharField(verbose_name='Title Status', max_length=100)
     translate_name = models.CharField(verbose_name='Title Status translated', max_length=100)
     task_config = models.ForeignKey(
-        OpportunityTaskConfig,
+        'task.OpportunityTaskConfig',
         on_delete=models.CASCADE,
         verbose_name='Task Config',
     )
@@ -48,7 +56,7 @@ class OpportunityTaskStatus(MasterDataAbstractModel):
 
 class OpportunityTask(DataAbstractModel):
     task_status = models.ForeignKey(
-        OpportunityTaskStatus,
+        'task.OpportunityTaskStatus',
         on_delete=models.CASCADE,
         verbose_name='Task status',
     )
@@ -254,5 +262,144 @@ class TaskAttachmentFile(M2MFilesAbstractModel):
     class Meta:
         verbose_name = 'Opportunity Attachment Task'
         verbose_name_plural = 'Opportunity Attachment Task'
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityTaskSummaryDaily(SimpleAbstractModel):  # pylint: disable=R0902
+    employee = models.OneToOneField('hr.Employee', unique=True, on_delete=models.CASCADE)
+    updated_at = models.DateTimeField(default=timezone.now)
+    state = models.PositiveSmallIntegerField(
+        default=0,
+        choices=(
+            (0, 'wait'),
+            (1, 'Ready'),
+        )
+    )
+
+    actives = models.PositiveSmallIntegerField(default=0)
+    overdue = models.PositiveSmallIntegerField(default=0)
+    upcoming_today = models.PositiveSmallIntegerField(default=0)
+    upcoming_soon = models.PositiveSmallIntegerField(default=0)
+    today_created = models.PositiveSmallIntegerField(default=0)
+    start_today = models.PositiveSmallIntegerField(default=0)
+
+    by_status = models.JSONField(default=list)
+
+    def get_detail(self):
+        return {
+            'actives': self.actives,
+            'overdue': self.overdue,
+            'upcoming_today': self.upcoming_today,
+            'upcoming_soon': self.upcoming_soon,
+            'today_created': self.today_created,
+            'start_today': self.start_today,
+            'by_status': self.by_status,
+        }
+
+    def update_all(self):
+        self.update_actives(update=True, commit=False)
+        self.update_overdue(update=True, commit=False)
+        self.update_upcoming_today(update=True, commit=False)
+        self.update_upcoming_soon(update=True, commit=False)
+        self.update_today_created(update=True, commit=False)
+        self.update_start_today(update=True, commit=False)
+        self.update_by_status(update=True, commit=False)
+        self.updated_at = timezone.now()
+        self.state = 1
+        return True
+
+    def update_actives(self, update=False, commit=False):
+        amount = OpportunityTask.objects.filter(employee_inherit=self.employee, percent_completed__lt=100).count()
+        if update is True:
+            self.actives = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_overdue(self, update=False, commit=False):
+        date_now = timezone.now().date()
+        amount = OpportunityTask.objects.filter(
+            employee_inherit=self.employee, percent_completed__lt=100, end_date__date__lt=date_now
+        ).count()
+        if update is True:
+            self.overdue = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_upcoming_today(self, update=False, commit=False):
+        date_now = timezone.now().date()
+        amount = OpportunityTask.objects.filter(
+            employee_inherit=self.employee, percent_completed__lt=100, end_date__date=date_now
+        ).count()
+        if update is True:
+            self.upcoming_today = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_upcoming_soon(self, update=False, commit=False):
+        date_now = timezone.now().date() + timedelta(days=3)
+        amount = OpportunityTask.objects.filter(
+            employee_inherit=self.employee,
+            percent_completed__lt=100,
+            end_date__date__gt=date_now,
+        ).count()
+        if update is True:
+            self.upcoming_soon = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_today_created(self, update=False, commit=False):
+        date_now = timezone.now().date()
+        amount = OpportunityTask.objects.filter(
+            employee_inherit=self.employee, date_created__date=date_now
+        ).count()
+        if update is True:
+            self.today_created = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_start_today(self, update=False, commit=False):
+        date_now = timezone.now().date()
+        amount = OpportunityTask.objects.filter(employee_inherit=self.employee, start_date__date=date_now).count()
+        if update is True:
+            self.start_today = amount
+        if commit is True:
+            self.save()
+        return amount
+
+    def update_by_status(self, update=False, commit=False):
+        status_data = OpportunityTaskStatus.objects.filter(company=self.employee.company).order_by('order').values(
+            'id', 'title', 'translate_name', 'task_color',
+        )
+        task_data = OpportunityTask.objects.filter(
+            employee_inherit=self.employee, task_status_id__in=[item['id'] for item in status_data]
+        ).values('task_status_id').annotate(count=Count('task_status_id'))
+
+        data_count = {}
+        for item in task_data:
+            data_count[str(item['task_status_id'])] = item['count']
+
+        data = []
+        for status_detail in status_data:
+            data.append({
+                **status_detail,
+                'id': str(status_detail['id']),
+                'count': data_count.get(str(status_detail['id']), 0),
+            })
+
+        if update is True:
+            self.by_status = data
+        if commit is True:
+            self.save()
+        return data
+
+    class Meta:
+        verbose_name = 'Opportunity Task Summary Daily'
+        verbose_name_plural = 'Opportunity Task Summary Daily'
         default_permissions = ()
         permissions = ()
