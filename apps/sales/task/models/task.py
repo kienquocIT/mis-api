@@ -3,6 +3,7 @@ import json
 from django.db import models
 from django.utils import timezone
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
 from .config import OpportunityTaskConfig
@@ -125,7 +126,15 @@ class OpportunityTask(DataAbstractModel):
     attach = models.JSONField(
         default=list,
         null=True,
-        verbose_name='attachment file',
+        verbose_name='attachment file of assigner',
+        help_text=json.dumps(
+            ["uuid4", "uuid4"]
+        )
+    )
+    attach_assignee = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='attachment file of assignee',
         help_text=json.dumps(
             ["uuid4", "uuid4"]
         )
@@ -133,6 +142,13 @@ class OpportunityTask(DataAbstractModel):
     percent_completed = models.SmallIntegerField(
         verbose_name='percent completed',
         default=0, null=True,
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='TaskAttachmentFile',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_task_request',
     )
 
     def create_code_task(self):
@@ -218,22 +234,22 @@ class OpportunityLogWork(MasterDataAbstractModel):
         permissions = ()
 
 
-class TaskAttachmentFile(MasterDataAbstractModel):
-    attachment = models.OneToOneField(
-        'attachments.Files',
-        on_delete=models.CASCADE,
-        verbose_name='Task attachment files',
-        help_text='Task had one/many attachment file',
-        related_name='task_attachment_file',
-    )
+class TaskAttachmentFile(M2MFilesAbstractModel):
     task = models.ForeignKey(
-        OpportunityTask,
+        'task.OpportunityTask',
         on_delete=models.CASCADE,
         verbose_name='Attachment file of task'
     )
-    order = models.SmallIntegerField(
-        default=1
+    is_assignee_file = models.BooleanField(
+        default=False,
+        verbose_name='is assignee file',
+        help_text='is true if this file of assignee post'
     )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        # field name là foreignkey của request trên bảng này
+        return 'task'
 
     class Meta:
         verbose_name = 'Opportunity Attachment Task'
