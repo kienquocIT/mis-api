@@ -5,7 +5,7 @@ from typing import Union
 from uuid import UUID
 
 from django.conf import settings
-from django.core.exceptions import EmptyResultSet
+from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -681,17 +681,21 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         try:
             field_hidden = self.get_object__field_hidden
             filter_kwargs = self.get_lookup_url_kwarg()
-            if self.query_extend_base_model:
-                obj = queryset.get(
-                    **filter_kwargs,
-                    **field_hidden,
-                    force_cache=self.use_cache_object
-                )
-            else:
-                obj = queryset.get(
-                    **filter_kwargs,
-                    **field_hidden,
-                )
+            try:
+                if self.query_extend_base_model:
+                    obj = queryset.get(
+                        **filter_kwargs,
+                        **field_hidden,
+                        force_cache=self.use_cache_object
+                    )
+                else:
+                    obj = queryset.get(
+                        **filter_kwargs,
+                        **field_hidden,
+                    )
+            except DjangoValidationError:
+                raise exceptions.NotFound
+
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
