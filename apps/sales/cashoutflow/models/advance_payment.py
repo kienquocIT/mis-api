@@ -63,11 +63,6 @@ class AdvancePayment(DataAbstractModel):
         verbose_name='AdvancePayment method',
         help_text='0 is Cash, 1 is Bank Transfer'
     )
-    creator_name = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='advance_creator_name'
-    )
     return_date = models.DateTimeField()
     money_gave = models.BooleanField(default=False)
     advance_value = models.FloatField(default=0)
