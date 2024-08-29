@@ -405,8 +405,8 @@ class BOMCommonFunction:
             print('5. validate_bom_process_data --- ok')
             validate_data['bom_process_data'] = bom_process_data
             return True
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'bom_process_data': "Process data is not valid"})
+        except Exception as err:
+            raise serializers.ValidationError({'bom_process_data': f"Process data is not valid. {err}"})
 
     @classmethod
     def validate_bom_summary_process_data(cls, validate_data):

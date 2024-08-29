@@ -197,7 +197,6 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'advance_payment_type',
             'supplier',
             'method',
-            'creator_name',
             'employee_inherit',
             'return_date',
             'money_gave',
@@ -254,7 +253,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    creator_name = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -278,7 +277,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'quotation_mapped',
             'sale_order_mapped',
             'supplier',
-            'creator_name',
+            'employee_created',
             'employee_inherit',
             'attachment',
             'sale_code'
@@ -393,21 +392,21 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_creator_name(cls, obj):
+    def get_employee_created(cls, obj):
         return {
-            'id': obj.creator_name_id,
-            'first_name': obj.creator_name.first_name,
-            'last_name': obj.creator_name.last_name,
-            'email': obj.creator_name.email,
-            'full_name': obj.creator_name.get_full_name(2),
-            'code': obj.creator_name.code,
-            'is_active': obj.creator_name.is_active,
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
             'group': {
-                'id': obj.creator_name.group_id,
-                'title': obj.creator_name.group.title,
-                'code': obj.creator_name.group.code
-            } if obj.creator_name.group else {}
-        } if obj.creator_name else {}
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):

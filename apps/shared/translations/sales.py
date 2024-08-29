@@ -28,6 +28,9 @@ class SaleMsg:
     SO_CONFIG_ROLE_CHECK = _('Role can only in short sales or long sales')
     SO_CONFIG_SS_ROLE_CHECK = _('Opportunity is not allowed because employee in short sales roles')
     SO_CONFIG_LS_ROLE_CHECK = _('Opportunity is required because employee in long sales roles')
+    AP_NOT_EXIST = _('Advance payment does not exist.')
+    AP_METHOD_INVALID = _('Advance payment method not valid.')
+    EMPLOYEE_NOT_EXIST = _('Employee does not exist.')
 
 
 class SaleTask:

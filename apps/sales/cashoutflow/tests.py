@@ -24,7 +24,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
             'method': 1,  # bank
-            'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
             'return_date': '2023-06-06',
             'money_gave': True,
@@ -58,7 +57,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'quotation_mapped',
                 'sale_order_mapped',
                 'supplier',
-                'creator_name',
+                'employee_created',
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
@@ -151,7 +150,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'quotation_mapped',
                 'sale_order_mapped',
                 'supplier',
-                'creator_name',
+                'employee_created',
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
@@ -589,7 +588,6 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
             'method': 1,  # bank
-            'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
             'return_date': '2023-06-06',
             'money_gave': True,
@@ -636,7 +634,6 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'quotation_mapped',
                 'sale_order_mapped',
                 'supplier',
-                'creator_name',
                 'employee_inherit',
                 'attachment',
                 'workflow_runtime_id',
@@ -671,14 +668,10 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
 
         data = {
             "title": 'Hoan ung thang 5',
-            "advance_payment": advance_payment.data['result']['id'],
+            "advance_payment_id": advance_payment.data['result']['id'],
             "method": 0,
-            "employee_created": employee_id,
-            "employee_inherit_id": employee_id,
-            "system_status": 1,
             "money_received": True,
-            "cost": cost_data,
-            "return_total": return_total,
+            "returned_list": cost_data,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
