@@ -123,7 +123,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         request_body=BOMCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='bom', perm_code='create',
     )
     def post(self, request, *args, **kwargs):

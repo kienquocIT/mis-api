@@ -25,7 +25,7 @@ class POTaskCreateSerializer(serializers.ModelSerializer):
             'warehouse_data',
             'stock',
             'available',
-            'tool',
+            'tool_data',
             'order',
         )
 
@@ -55,7 +55,6 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
             'quantity',
             'uom_data',
             'warehouse_data',
-            'sale_order',
             'sale_order_data',
             'status_production',
             'date_start',

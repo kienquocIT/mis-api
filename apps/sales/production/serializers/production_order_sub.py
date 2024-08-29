@@ -12,7 +12,7 @@ class ProductionOrderSub:
     def create_sub(cls, validated_data, instance):
         instance.production_sale_order_production.all().delete()
         ProductionOrderSaleOrder.objects.bulk_create([ProductionOrderSaleOrder(
-            production_order=instance, sale_order=sale_order_data.get('id', None)
+            production_order=instance, sale_order_id=sale_order_data.get('id', None)
         ) for sale_order_data in instance.sale_order_data])
         instance.po_task_production_order.all().delete()
         tasks = ProductionOrderTask.objects.bulk_create([
@@ -22,10 +22,11 @@ class ProductionOrderSub:
             ) for task_data in validated_data['task_data']
         ])
         for task in tasks:
-            task.po_task_tool_task.all().delete()
-            ProductionOrderTaskTool.objects.bulk_create([ProductionOrderTaskTool(
-                po_task=task, tool_id=tool_data.get('id', None)
-            ) for tool_data in task.tool_data])
+            if task.is_task is True:
+                task.po_task_tool_task.all().delete()
+                ProductionOrderTaskTool.objects.bulk_create([ProductionOrderTaskTool(
+                    po_task=task, tool_id=tool_data.get('id', None)
+                ) for tool_data in task.tool_data])
         return True
 
     @classmethod
