@@ -3,6 +3,7 @@ __all__ = ['AssetToolsConfigDetailSerializers', 'AssetToolsConfigDetailUpdateSer
 from rest_framework import serializers
 
 from apps.eoffice.assettools.models import AssetToolsConfig, AssetToolsConfigWarehouse, AssetToolsConfigEmployee
+from apps.masterdata.saledata.models import ProductType
 from apps.shared import TypeCheck
 
 
@@ -89,6 +90,16 @@ class AssetToolsConfigDetailUpdateSerializers(serializers.ModelSerializer):
         AssetToolsConfigEmployee.objects.bulk_create(list_create)
         return True
 
+    @classmethod
+    def set_is_asset_tool_product_type(cls, instance):
+        for asset_tool in ProductType.objects.filter(company_id=instance.company_id, is_asset_tool=True):
+            asset_tool.is_asset_tool = False
+            asset_tool.save(update_fields=['is_asset_tool'])
+        if instance.product_type:
+            instance.product_type.is_asset_tool = True
+            instance.product_type.save(update_fields=['is_asset_tool'])
+        return True
+
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -99,4 +110,6 @@ class AssetToolsConfigDetailUpdateSerializers(serializers.ModelSerializer):
         if 'employee_tools_list_access' in self.initial_data and len(self.initial_data['employee_tools_list_access']):
             employee_list = self.initial_data['employee_tools_list_access']
             self.cover_employee_tools_list_access(instance, employee_list)
+        # update flag is_asset_tool of MD product type
+        self.set_is_asset_tool_product_type(instance=instance)
         return instance

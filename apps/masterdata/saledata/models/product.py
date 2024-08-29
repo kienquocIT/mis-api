@@ -39,6 +39,19 @@ class ProductType(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
 
+    is_goods = models.BooleanField(
+        default=False, help_text='flag to know this type is goods (purchased) of company'
+    )
+    is_finished_goods = models.BooleanField(
+        default=False, help_text='flag to know this type is finished goods (production) of company'
+    )
+    is_material = models.BooleanField(
+        default=False, help_text='flag to know this type is material of company'
+    )
+    is_asset_tool = models.BooleanField(
+        default=False, help_text='flag to know this type is asset tool of company'
+    )
+
     class Meta:
         verbose_name = 'ProductType'
         verbose_name_plural = 'ProductTypes'

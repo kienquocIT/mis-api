@@ -500,3 +500,85 @@ class BOMCommonFunction:
         BOMTool.objects.bulk_create(bulk_info)
         print('12. create_bom_tool_data --- ok')
         return True
+
+
+# BOM use for production order
+class BOMOrderListSerializer(AbstractDetailSerializerModel):
+    bom_task = serializers.SerializerMethodField()
+    bom_material = serializers.SerializerMethodField()
+    bom_tool = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BOM
+        fields = (
+            'id',
+            'code',
+            'bom_type',
+            'sum_price',
+            'sum_time',
+            'bom_task',
+            'bom_material',
+            'bom_tool',
+        )
+
+    @classmethod
+    def get_bom_task(cls, obj):
+        return [
+            {
+                'id': bom_task.id,
+                'order': bom_task.order,
+                'task_title': bom_task.task_name,
+                'quantity_bom': bom_task.quantity,
+                'uom_data': {
+                    'id': str(bom_task.uom_id),
+                    'code': bom_task.uom.code,
+                    'title': bom_task.uom.title,
+                    'ratio': bom_task.uom.ratio,
+                    'group_id': str(bom_task.uom.group_id)
+                } if bom_task.uom else {},
+            } for bom_task in obj.bom_process_bom.all()
+        ]
+
+    @classmethod
+    def get_bom_material(cls, obj):
+        return [
+            {
+                'order': bom_material.order,
+                'bom_task': {'id': bom_material.bom_process_id, 'order': bom_material.bom_process.order},
+                'product_data': {
+                    'id': str(bom_material.material_id),
+                    'code': bom_material.material.code,
+                    'title': bom_material.material.title,
+                } if bom_material.material else {},
+                'quantity_bom': bom_material.quantity,
+                'uom_data': {
+                    'id': str(bom_material.uom_id),
+                    'code': bom_material.uom.code,
+                    'title': bom_material.uom.title,
+                    'ratio': bom_material.uom.ratio,
+                    'group_id': str(bom_material.uom.group_id)
+                } if bom_material.uom else {},
+            } for bom_material in obj.bom_material_component_bom.all()
+        ]
+
+    @classmethod
+    def get_bom_tool(cls, obj):
+        return [
+            {
+                'order': bom_tool.order,
+                'bom_task': {'id': bom_tool.bom_process_id, 'order': bom_tool.bom_process.order},
+                'product_data': {
+                    'id': str(bom_tool.tool_id),
+                    'code': bom_tool.tool.code,
+                    'title': bom_tool.tool.title
+                } if bom_tool.tool else {},
+                'quantity_bom': bom_tool.quantity,
+                'uom': {
+                    'id': str(bom_tool.uom_id),
+                    'code': bom_tool.uom.code,
+                    'title': bom_tool.uom.title,
+                    'ratio': bom_tool.uom.ratio,
+                    'group_id': str(bom_tool.uom.group_id)
+                } if bom_tool.uom else {},
+            } for bom_tool in obj.bom_tool_bom.all()
+        ]

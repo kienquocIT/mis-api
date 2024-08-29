@@ -216,6 +216,13 @@ class DataAbstractModel(SimpleAbstractModel):
         model_name = cls._meta.model_name
         return f"{app_label}.{model_name}".lower()
 
+    def save(self, *args, **kwargs):
+        if 'update_fields' in kwargs and isinstance(kwargs['update_fields'], list):
+            auto_update_modified = kwargs.pop('auto_update_modified', True)
+            if auto_update_modified is True:
+                kwargs['update_fields'].append('date_modified')
+        super().save(*args, **kwargs)
+
     class Meta:
         abstract = True
         default_permissions = ()
@@ -241,7 +248,7 @@ class DataAbstractModel(SimpleAbstractModel):
         related_name='%(app_label)s_%(class)s_employee_modifier'
     )
     date_modified = models.DateTimeField(
-        auto_now_add=True,
+        auto_now=True,
         help_text='Date modified this record in last',
     )
     employee_inherit = models.ForeignKey(

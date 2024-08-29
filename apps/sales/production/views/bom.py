@@ -4,7 +4,7 @@ from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.masterdata.saledata.models import Product, ProductType, Expense
 from apps.sales.production.models import BOM
 from apps.sales.production.serializers.bom import BOMProductMaterialListSerializer, LaborListForBOMSerializer, \
-    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer
+    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer, BOMOrderListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -172,3 +172,22 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class BOMOrderList(BaseListMixin, BaseCreateMixin):
+    queryset = BOM.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {'product_id': ['exact']}
+    serializer_list = BOMOrderListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="BOM List For Order",
+        operation_description="Get BOM List For Order",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

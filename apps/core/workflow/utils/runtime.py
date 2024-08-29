@@ -90,6 +90,9 @@ class DocHandler:
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
+            HookEventHandler(runtime_obj=runtime_obj).push_notify_end_workflow(
+                doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
+            )
             return True
         return False
 

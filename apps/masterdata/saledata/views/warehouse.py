@@ -122,11 +122,6 @@ class ProductWareHouseList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_class = ProductWareHouseListFilter
 
-    # filterset_fields = {
-    #     "product_id": ["exact"],
-    #     "warehouse_id": ["exact"],
-    # }
-
     def get_queryset(self):
         queryset_custom = super().get_queryset().select_related(
             'product', 'warehouse', 'uom',

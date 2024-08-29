@@ -336,10 +336,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
-        SaleOrderCommonCreate().create_sale_order_sub_models(
-            validated_data=validated_data,
-            instance=sale_order
-        )
+        SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=sale_order)
         return sale_order
 
 
@@ -504,11 +501,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        SaleOrderCommonCreate().create_sale_order_sub_models(
-            validated_data=validated_data,
-            instance=instance,
-            is_update=True
-        )
+        SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=instance)
         return instance
 
 
