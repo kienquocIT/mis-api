@@ -3,7 +3,6 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     ReturnAdvance, ReturnAdvanceCost, AdvancePayment, AdvancePaymentCost
 )
-from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import ExpenseItem
 from apps.shared import (
     RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg,

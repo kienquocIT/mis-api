@@ -1,6 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.eoffice.assettools.models import AssetToolsConfig
 from apps.masterdata.saledata.models import Product, Expense
 from apps.sales.production.models import BOM
 from apps.sales.production.serializers.bom import (

@@ -442,9 +442,9 @@ class BOMCommonFunction:
                         raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
                 print('5. validate_bom_process_data --- ok')
                 validate_data['bom_process_data'] = bom_process_data
-                return True
             except Exception as err:
                 raise serializers.ValidationError({'bom_process_data': f"Process data is not valid. {err}"})
+        return True
 
     @classmethod
     def validate_bom_summary_process_data(cls, validate_data):
@@ -460,9 +460,9 @@ class BOMCommonFunction:
                         raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
                 print('6. validate_bom_summary_process_data --- ok')
                 validate_data['bom_summary_process_data'] = bom_summary_process_data
-                return True
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
+        return True
 
     @classmethod
     def validate_bom_material_component_data(cls, validate_data):
@@ -488,9 +488,9 @@ class BOMCommonFunction:
                         })
             print('7. validate_bom_material_component_data --- ok')
             validate_data['bom_material_component_data'] = bom_material_component_data
-            return True
         except Product.DoesNotExist:
             raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
+        return True
 
     @classmethod
     def validate_bom_tool_data(cls, validate_data):
