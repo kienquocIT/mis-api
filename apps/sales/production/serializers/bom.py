@@ -505,9 +505,9 @@ class BOMCommonFunction:
                         raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
                 print('8. validate_bom_tool_data --- ok')
                 validate_data['bom_tool_data'] = bom_tool_data
-                return True
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
+        return True
 
     @classmethod
     def create_bom_process_data(cls, bom_process_data, bom_obj):
