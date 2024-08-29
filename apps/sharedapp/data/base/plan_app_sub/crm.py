@@ -2145,6 +2145,45 @@ BOM_APP_CONFIG = {
     "allow_permit": True,
 }
 
+PRODUCTION_ORDER_APP_CONFIG = {
+    "id": "a4a99ba0-5596-4ff8-8bd9-68414b5af579",
+    "title": "Production Order",
+    "code": "productionorder",
+    "model_code": "productionorder",
+    "app_label": "production",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2405,6 +2444,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "2de9fb91-4fb9-48c8-b54e-c03bd12f952b": ApplicationConfigFrame(**BOM_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "a4a99ba0-5596-4ff8-8bd9-68414b5af579": ApplicationConfigFrame(**PRODUCTION_ORDER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
