@@ -21,6 +21,7 @@ class POTaskCreateSerializer(serializers.ModelSerializer):
             'uom_data',
             'quantity_bom',
             'quantity',
+            'is_all_warehouse',
             'warehouse_id',
             'warehouse_data',
             'stock',
