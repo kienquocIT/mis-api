@@ -12,6 +12,7 @@ BOM_TYPE = [
 
 class BOM(DataAbstractModel):
     bom_type = models.SmallIntegerField(choices=BOM_TYPE, default=0)
+    for_outsourcing = models.BooleanField(default=False)
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -40,10 +41,14 @@ class BOM(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                self.product.has_bom = True
+                self.product.save(update_fields=['has_bom'])
         # hit DB
         super().save(*args, **kwargs)
 
 
+# Standard
 class BOMProcess(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
@@ -126,7 +131,7 @@ class BOMMaterialComponent(MasterDataAbstractModel):
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        related_name='bom_material_uom'
+        related_name='bom_material_component_uom'
     )
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
@@ -168,6 +173,36 @@ class BOMTool(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'BOM tool'
         verbose_name_plural = 'BOM tools'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# For Outsourcing
+class BOMMaterialComponentOutsourcing(MasterDataAbstractModel):
+    bom = models.ForeignKey(
+        BOM,
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_bom'
+    )
+    order = models.IntegerField(default=1)
+    material = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_material'
+    )
+    quantity = models.FloatField(default=0)
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_uom'
+    )
+    disassemble = models.BooleanField(default=False)
+    note = models.TextField()
+
+    class Meta:
+        verbose_name = 'BOM Material Component Outsourcing'
+        verbose_name_plural = 'BOM Materials Components Outsourcing'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
