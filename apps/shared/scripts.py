@@ -1983,3 +1983,19 @@ def parse_data_json_quo_so():
             })
         order.save(update_fields=['sale_order_products_data', 'sale_order_costs_data', 'sale_order_expenses_data'])
     print('parse_data_json_quo_so done.')
+
+
+def update_product_type_default_data():
+    ProductType.objects.filter(title='Sản phẩm', is_default=1).update(
+        code='goods', title='Hàng hóa', is_default=1, is_goods=1
+    )
+    ProductType.objects.filter(title='Bán thành phẩm', is_default=1).update(
+        code='finished_goods', title='Thành phẩm', is_default=1, is_finished_goods=1
+    )
+    ProductType.objects.filter(title='Nguyên vật liệu', is_default=1).update(
+        code='material', title='Nguyên vật liệu', is_default=1, is_material=1
+    )
+    ProductType.objects.filter(title='Dịch vụ', is_default=1).update(
+        code='asset_tool', title='Tài sản - Công cụ dụng cụ', is_default=1, is_asset_tool=1
+    )
+    return True

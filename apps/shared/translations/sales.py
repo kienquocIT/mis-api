@@ -33,6 +33,9 @@ class SaleMsg:
     UOM_NOT_EXIST = _('Unit of measure does not exist.')
     WAREHOUSE_NOT_EXIST = _('Unit of measure does not exist.')
     GROUP_NOT_EXIST = _('Group does not exist.')
+    AP_NOT_EXIST = _('Advance payment does not exist.')
+    AP_METHOD_INVALID = _('Advance payment method not valid.')
+    EMPLOYEE_NOT_EXIST = _('Employee does not exist.')
 
 
 class SaleTask:
