@@ -402,7 +402,7 @@ class RuntimeStageHandler:
             stage_obj=stage_runtime_currently,
             actor_obj=self.runtime_obj.doc_employee_created,
             is_system=True,
-        ).log_finish_station_doc(final_state_num=2, msg_log='Document was rejected')  # reject
+        ).log_finish_station_doc(final_state_num=2)  # reject
         return True
 
     def return_begin_runtime_by_assignee(
@@ -702,7 +702,7 @@ class RuntimeStageHandler:
                     stage_obj=stage_obj,
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
-                ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
+                ).log_finish_station_doc(final_state_num=1)
         # update current_stage for document
         if stage_obj:
             DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)
@@ -830,7 +830,7 @@ class RuntimeLogHandler:
                     'automated_logging': True,
                     'user_id': None,
                     'employee_id': None,
-                    'msg': 'Re-run begin station' if is_return else 'Runtime Workflow is successfully',
+                    'msg': WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
                     'data_change': {},
                     'change_partial': False,
                 },
@@ -887,8 +887,8 @@ class RuntimeLogHandler:
 
     def log_approval_task(self, action_number):
         action_choices = {
-            1: 'Approved',
-            2: f'Rejected ({self.remark})',
+            1: WorkflowMsgNotify.approved,
+            2: f'{WorkflowMsgNotify.rejected} ({self.remark})',
         }
         # msg choice in: ['Approved']
         call_task_background(
@@ -942,7 +942,7 @@ class RuntimeLogHandler:
             is_system=self.is_system,
         )
 
-    def log_finish_station_doc(self, final_state_num=1, msg_log=''):
+    def log_finish_station_doc(self, final_state_num=1):
         final_state_choices = {
             1: WorkflowMsgNotify.approved,
             2: WorkflowMsgNotify.rejected,
@@ -958,7 +958,7 @@ class RuntimeLogHandler:
                     'doc_id': runtime_obj.doc_id,
                     'doc_app': runtime_obj.app_code,
                     'automated_logging': True,
-                    'msg': msg_log,
+                    'msg': f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
                 },
             )
         return RuntimeLog.objects.create(
