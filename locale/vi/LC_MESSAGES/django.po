@@ -363,6 +363,10 @@ msgstr "Mật khẩu mới không thể trùng với mật khẩu hiện tại"
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Yêu cầu có dữ liệu, tối đa 150 ký tự chỉ bao gồm chữ cái, số."
 
+#
+msgid "The account has been locked due to unusual activity. If this is incorrect, please contact your organization administrator or Bflow support team for assistance."
+msgstr "Tài khoản đã bị khoá do phát hiện hoạt động bất thường. Nếu không đúng, vui lòng liên hệ quản trị viên tổ chức của bạn hoặc đội hỗ trợ Bflow để được hỗ trợ."
+
 #: .\apps\shared\translations\auth.py:9
 msgid "The feature require employee information in your account."
 msgstr "Chức năng yêu cầu người dùng có liên kết với nhân viên để thao tác."

@@ -7,6 +7,10 @@ class AuthMsg:
     USERNAME_OR_PASSWORD_INCORRECT = _('Username and password are incorrect.')
     USERNAME_ALREADY_EXISTS = _('A user with that username already exists.')
     USERNAME_REQUIRE = _('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.')
+    USER_WAS_LOCKED_OUT = _(
+        "The account has been locked due to unusual activity. If this is incorrect, please contact your organization "
+        "administrator or Bflow support team for assistance."
+    )
 
     EMPLOYEE_REQUIRE = _('The feature require employee information in your account.')
 
@@ -39,3 +43,5 @@ class AuthMsg:
     TWO_FA_LOCKED_OUT = _("Your account has been locked due to too many incorrect OTP attempts.")
     OTP_BEEN_USED = _("This OTP has already been used.")
     TOTP_DISABLE_BEFORE_REMOVE = _("Deactivate 2FA before performing deletion")
+
+    LOGOUT_REQUIRE_REFRESH_TOKEN = _("The refresh token must be required")

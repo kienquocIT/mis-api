@@ -1968,7 +1968,7 @@ def mask_view(**parent_kwargs):
                     except rest_framework.exceptions.PermissionDenied as err:
                         return ResponseController.forbidden_403(msg=str(err.detail))
                     except rest_framework.exceptions.AuthenticationFailed as err:
-                        return ResponseController.unauthorized_401(msg=str(err.detail))
+                        return ResponseController.unauthorized_401(msg=str(err.detail), auth_error_code=err.get_codes())
                     except rest_framework.exceptions.NotFound:
                         return ResponseController.notfound_404()
                     except Empty200:

@@ -54,11 +54,12 @@ class ResponseController:
         )
 
     @classmethod
-    def unauthorized_401(cls, msg=None) -> cus_response:
+    def unauthorized_401(cls, msg=None, auth_error_code=None) -> cus_response:
         return cus_response(
             {
                 "status": status.HTTP_401_UNAUTHORIZED,
                 "detail": msg if msg else HttpMsg.LOGIN_EXPIRES,
+                "auth_error_code": auth_error_code,
             }, status=status.HTTP_401_UNAUTHORIZED, is_errors=True,
         )
 

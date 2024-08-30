@@ -64,6 +64,7 @@ INSTALLED_APPS = \
     ] + [  # extend library
         'drf_yasg',  # API Document Page
         'rest_framework',  # rest API
+        'rest_framework_simplejwt.token_blacklist',
         'compressor',  # Compress Assets File
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
@@ -426,7 +427,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ),
     'DEFAULT_PAGINATION_CLASS': 'apps.shared.extends.pagination.CustomResultsSetPagination',
-    'PAGE_SIZE': 100,
+    'PAGE_SIZE': 50,
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
 }
@@ -445,7 +446,8 @@ LOCKED_OUT_FAILED_AMOUNT = int(os.environ.get('LOCKED_OUT_FAILED_AMOUNT', 5))
 JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
 JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    # 'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -461,6 +463,7 @@ SIMPLE_JWT = {
 
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'AUTH_HEADER_NAME_REFRESH_TOKEN': 'HTTP_AUTHORIZATION_REFRESH',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',

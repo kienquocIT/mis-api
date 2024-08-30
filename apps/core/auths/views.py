@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Union
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.utils import translation, timezone
@@ -9,6 +10,7 @@ from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 from apps.core.account.models import User, ValidateUser
 from apps.core.auths.serializers import (
@@ -118,6 +120,9 @@ class AuthLogin(generics.GenericAPIView):
         # get user object from serializer
         user_obj = ser.validated_data
         if user_obj:
+            if user_obj.auth_locked_out is True:
+                return ResponseController.bad_request_400(AuthMsg.USER_WAS_LOCKED_OUT)
+
             # info employee_id, space_id make sure correct
             self.check_and_update_globe(user_obj)
 
@@ -149,6 +154,17 @@ class AuthLogout(APIView):
         # if integrate device accept call:
         #   -> remove device from allowed_devices
         # else: nothing was destroyed
+        access_token = getattr(request, 'auth', None)
+        if not isinstance(access_token, AccessToken):
+            return ResponseController.unauthorized_401()
+        try:
+            refresh_token_str = request.headers.get(settings.SIMPLE_JWT['AUTH_HEADER_NAME_REFRESH_TOKEN'])
+            refresh_token = RefreshToken(refresh_token_str)
+        except Exception as errs:  # pylint: disable=W0612
+            return ResponseController.bad_request_400({
+                'refresh_token': AuthMsg.LOGOUT_REQUIRE_REFRESH_TOKEN
+            })
+        refresh_token.blacklist()
         mongo_log_auth.insert_one(
             metadata=mongo_log_auth.metadata(user_id=str(request.user.id)),
             endpoint="LOGOUT",
@@ -185,6 +201,8 @@ class MyProfile(APIView):
 
 
 class AliveCheckView(APIView):
+    permission_classes = [AllowAny]
+
     @swagger_auto_schema(operation_summary='Check session is alive')
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
