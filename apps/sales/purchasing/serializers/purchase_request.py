@@ -449,7 +449,9 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
                     'purchase_request_code': item.purchase_request.code,
                     'product_unit_price': item.unit_price,
                     'product_subtotal_price': item.sub_total_price,
-                    'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
+                    'tax': {
+                        'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate
+                    } if item.tax else {},
                 }
             )
         return product_list
