@@ -372,7 +372,12 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         work_expense_lst = validated_data.pop('work_expense_data', None)
         delete_expense_lst = validated_data.pop('delete_expense_lst', None)
         system_status = validated_data.pop('system_status', None)
-        validated_data['project_status'] = system_status
+        if system_status == 2:
+            validated_data['project_status'] = instance.prev_status
+        if system_status == 3:
+            validated_data['prev_status'] = instance.project_status
+        else:
+            validated_data['project_status'] = system_status
         # - delete all expense(user delete)
         # - create and update
         # - update work info

@@ -162,7 +162,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': django.utils.translation.gettext_lazy("End date is required.")}
+            {'title': SaleTask.DATE_TIME_IS_REQUIRED}
         )
 
     @classmethod
@@ -236,6 +236,12 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             if check_permit:
                 return attrs
             raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+
+        if 'percent_completed' in attrs:
+            pc_value = attrs['percent_completed']
+            if pc_value == 100 and (
+                    'log_time' not in attrs or ['start_date', 'end_date', 'time_spent'] not in attrs['log_time']):
+                raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
         return attrs
 
     def create(self, validated_data):
