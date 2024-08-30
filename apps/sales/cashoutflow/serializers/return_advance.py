@@ -63,7 +63,7 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     def validate_advance_payment_id(cls, value):
         try:
             ap_obj = AdvancePayment.objects.get(id=value)
-            if hasattr(ap_obj, 'opportunity_mapped'):
+            if ap_obj.opportunity_mapped:
                 if ap_obj.opportunity_mapped.is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             print('1. validated_advance_payment --- ok')
@@ -94,6 +94,12 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
             return returned_list
         except Exception as err:
             raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
+
+    @classmethod
+    def validate(cls, validate_data):
+        ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
+        validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
+        return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
@@ -223,7 +229,7 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
     def validate_advance_payment_id(cls, value):
         try:
             ap_obj = AdvancePayment.objects.get(id=value)
-            if hasattr(ap_obj, 'opportunity_mapped'):
+            if ap_obj.opportunity_mapped:
                 if ap_obj.opportunity_mapped.is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             return str(ap_obj.id)
