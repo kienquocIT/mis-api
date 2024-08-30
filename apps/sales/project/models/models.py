@@ -88,7 +88,10 @@ class Project(DataAbstractModel):
         null=True
     )
     project_status = models.SmallIntegerField(
-        # choices=SYSTEM_STATUS,
+        default=1,
+        help_text='choices= ' + str(SYSTEM_STATUS),
+    )
+    prev_status = models.SmallIntegerField(
         default=1,
         help_text='choices= ' + str(SYSTEM_STATUS),
     )

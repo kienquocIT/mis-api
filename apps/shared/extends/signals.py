@@ -1204,6 +1204,6 @@ def project_group_event_destroy(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=ProjectMapWork)
 def project_work_event_destroy(sender, instance, **kwargs):
-    calc_rate_project(instance.project, instance)
     re_calc_work_group(instance.work)
+    calc_rate_project(instance.project, instance)
     print('re calculator rate is Done')
