@@ -168,7 +168,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             self.assertEqual(response.data['result']['id'], data_id)
         return response
 
-#
+
 # class PaymentTestCase(AdvanceTestCase):
 #     def setUp(self) -> None:
 #         self.maxDiff = None
@@ -543,8 +543,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
 #         else:
 #             self.assertEqual(response.data['result']['id'], data_id)
 #         return response
-#
-#
+
+
 # class ReturnAdvanceTestCase(AdvanceTestCase):
 #     def setUp(self) -> None:
 #         self.maxDiff = None
@@ -634,6 +634,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
 #                 'sale_order_mapped',
 #                 'supplier',
 #                 'employee_inherit',
+#                 'employee_created',
 #                 'attachment',
 #                 'workflow_runtime_id',
 #                 'system_status',

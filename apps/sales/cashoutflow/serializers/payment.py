@@ -136,6 +136,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
 
 class PaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
+    employee_inherit_id = serializers.UUIDField()
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -147,6 +148,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         model = Payment
         fields = (
             'title',
+            'employee_inherit_id',
             'sale_code_type',
             'method',
             'is_internal_payment',
@@ -157,6 +159,15 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'sale_order_mapped_id',
             'payment_expense_valid_list',
         )
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        if value:
+            try:
+                return str(Employee.objects.get(id=value).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        return None
 
     @classmethod
     def validate_sale_code_type(cls, attrs):
