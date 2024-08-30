@@ -13,3 +13,4 @@ from .expense_item import *
 from .contacts import *
 from .periods import *
 from .revenue_plan_config import *
+from .product_custom import *
