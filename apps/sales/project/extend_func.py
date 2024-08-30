@@ -267,4 +267,6 @@ def calc_rate_project(pro_obj, obj_delete=None):
                     rate_all += (work.w_rate / 100) * work.w_weight
     if rate_all > 0:
         pro_obj.completion_rate = filter_num(rate_all)
+    if rate_all == 100:
+        pro_obj.project_status = 3
     pro_obj.save()
