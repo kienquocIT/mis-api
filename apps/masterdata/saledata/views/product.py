@@ -397,6 +397,13 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title']
+    filterset_fields = {
+        'id': ['exact'],
+        'general_product_types_mapped__is_goods': ['exact'],
+        'general_product_types_mapped__is_finished_goods': ['exact'],
+        'general_product_types_mapped__is_material': ['exact'],
+        'general_product_types_mapped__is_asset_tool': ['exact'],
+    }
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

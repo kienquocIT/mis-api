@@ -14,7 +14,6 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContractDocument
         fields = (
-            'id',
             'title',
             'remark',
             # 'attachment',
@@ -73,15 +72,7 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        doc_map_attach = {}
-        attachment = []
-        if 'attachment' in validated_data:
-            attachment = validated_data['attachment']
-            del validated_data['attachment']
-        for doc in validated_data.get('document_data', []):
-            if 'order' in doc and 'attachment' in doc:
-                doc_map_attach.update({doc.get('order', 0): doc.get('attachment', [])})
-                del doc['attachment']
+        attachment = validated_data.pop('attachment', [])
         contract = ContractApproval.objects.create(**validated_data)
         ContractCommonCreate.handle_attach_file(instance=contract, attachment_result=attachment)
         ContractCommonCreate.create_sub_models(
@@ -93,19 +84,34 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
 
 class ContractUpdateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = ContractApproval
         fields = (
             'title',
             'document_data',
+            'attachment',
         )
+
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = ContractAttachment.valid_change(
+                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
     # @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        ContractCommonCreate.handle_attach_file(instance=instance, attachment_result=attachment)
         ContractCommonCreate.create_sub_models(
             validated_data=validated_data,
             instance=instance,

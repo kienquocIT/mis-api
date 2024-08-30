@@ -412,55 +412,38 @@ Trong các phương thức test, ta sử dụng các phương thức khác của
 ## Cách áp dụng WF cho chức năng:
 #### API
 ```python
-# serializer.py
-from apps.core.workflow.tasks import decorator_run_workflow
+# QUAN TRỌNG (search trong source code theo các keyword để hiểu rõ hơn)
 
-class XCreateSerializer(serializers.ModelSerializer):
-    system_status = serializers.ChoiceField(
-        choices=[0, 1],
-        help_text='0: draft, 1: created',
-        default=0,
-    )
-
-     class Meta:
-        ...
-        fields = (..., "system_status")
-
-    @decorator_run_workflow
-    def create(self, validated_data):
-        ...
-        instance = X.objects.create(**validated_data)
-        ...
-        return instance
-
-class XDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        ...
-        fields = (..., "workflow_runtime_id")
-```
-```python
-# views.py
-from .serializers import XCreateSerializer, XDetailSerializer
-
-class XList(BaseCreateMixin): # noqa
-    serializer_create = XCreateSerializer
-    serializer_detail = XDetailSerializer
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
-
-    ....
-
-class XDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    serializer_detail = XDetailSerializer
-    update_hidden_field = ['employee_modified_id']
-
-```
-```python
-# apps\shared\constant.py
-MAP_FIELD_TITLE = {
-    'saledata.contact': 'fullname',
-    'saledata.account': 'name',
-    '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
-}
+1/ SerializerList kế thừa class AbstractListSerializerModel
+   VD: class QuotationListSerializer(AbstractListSerializerModel):
+      ...
+   
+2/ SerializerDetail kế thừa class AbstractDetailSerializerModel
+   VD: class QuotationDetailSerializer(AbstractDetailSerializerModel):
+      
+3/ SerializerCreate & SerializerUpdate kế thừa class AbstractCreateSerializerModel
+   VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
+   VD: class QuotationUpdateSerializer(AbstractCreateSerializerModel):
+      
+4/ Thêm decorator @decorator_run_workflow ngay trên hàm def create() trong SerializerCreate
+    VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
+            @decorator_run_workflow
+            def create(self, validated_data):
+               ...
+5/ Thêm decorator @decorator_run_workflow ngay trên hàm def update() trong SerializerUpdate
+    VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
+            @decorator_run_workflow
+            def update(self, instance, validated_data):
+               ...
+            
+6/ Thêm MAP_FIELD_TITLE (apps/shared/constant.py)
+    VD: MAP_FIELD_TITLE = {
+             'quotation.quotation': 'title',
+             '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
+         }
+    
+# BỔ SUNG THÊM
+- Định nghĩa ApplicationProperty cho chức năng trong file (apps/sharedapp/data/base/application_properties.py)
 
 ```
 ---
