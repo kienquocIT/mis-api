@@ -257,6 +257,11 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
         except Exception as err:
             raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
 
+    def validate(self, validate_data):
+        ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
+        validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
+        return validate_data
+
     @decorator_run_workflow
     def update(self, instance, validated_data):
         returned_list = validated_data.pop('returned_list')
