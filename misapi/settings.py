@@ -446,8 +446,8 @@ LOCKED_OUT_FAILED_AMOUNT = int(os.environ.get('LOCKED_OUT_FAILED_AMOUNT', 5))
 JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
 JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
-    # 'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=10),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    # 'ACCESS_TOKEN_LIFETIME': timedelta(seconds=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
