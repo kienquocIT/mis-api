@@ -361,7 +361,7 @@ class AuthLogReport(APIView):
         if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
             try:
                 range_selected = int(request.query_params.dict().get('range', 7))
-                if range_selected in [7, 14, 30]:
+                if range_selected not in [7, 14, 30]:
                     raise ValueError()
             except ValueError:
                 range_selected = 7
@@ -378,7 +378,7 @@ class AuthLogReport(APIView):
                 pipeline = [
                     {
                         "$match": {
-                            "timestamp": {"$gte": start_time, "$lt": end_time},
+                            "timestamp": {"$gte": start_time},
                             "metadata.service_name": "AUTH",
                             "metadata.user_id": str(request.user.id),
                         },
