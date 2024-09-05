@@ -59,12 +59,16 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
             if user.auth_locked_out is True:
                 # deny when locked out
                 is_2fa_state = False
-            elif user.auth_2fa is True:
-                # state by token key
-                is_2fa_state = is_2fa_verified is True
             else:
-                # not lock, not auth -> auto True
-                is_2fa_state = True
+                if settings.SYNC_2FA_ENABLED is False:
+                    # skip 2FA checking
+                    is_2fa_state = True
+                elif user.auth_2fa is True:
+                    # state by token key
+                    is_2fa_state = is_2fa_verified is True
+                else:
+                    # not lock, not auth -> auto True
+                    is_2fa_state = True
             request.is_2fa_verified = is_2fa_verified
             request.is_2fa_enable = user.auth_2fa
             request.is_2fa_state = is_2fa_state
