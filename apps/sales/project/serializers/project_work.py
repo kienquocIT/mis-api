@@ -208,10 +208,12 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         work_map = group.project_groupmapwork_group.all()
         if work_map:
             group.gr_rate = 0
+            g_rate_temp = 0
             for item in work_map:
                 item_w = item.work
                 if item_w.w_weight and item_w.w_rate:
-                    group.gr_rate += (item_w.w_rate / 100) * item_w.w_weight
+                    g_rate_temp += (item_w.w_rate / 100) * item_w.w_weight
+            group.gr_rate = round(g_rate_temp, 1)
             group.save()
 
     @classmethod
