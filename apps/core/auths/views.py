@@ -127,14 +127,16 @@ class AuthLogin(generics.GenericAPIView):
             self.check_and_update_globe(user_obj)
 
             user_detail = user_obj.get_detail()
-            if user_obj.auth_2fa is True:
+            if settings.SYNC_2FA_ENABLED is True and user_obj.auth_2fa is True:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_pre_2fa_token(user=user_obj),
+                    'need_verify_2fa': True,
                     **user_detail,
                 }
             else:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_full_token(user=user_obj, is_verified=False),
+                    'need_verify_2fa': False,
                     **user_detail,
                 }
             mongo_log_auth.insert_one(
