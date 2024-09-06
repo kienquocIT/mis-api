@@ -70,6 +70,9 @@ class GoodsReceipt(DataAbstractModel):
         blank=True,
         related_name='file_of_goods_receipt',
     )
+    gr_products_data = models.JSONField(
+        default=list, help_text='data JSON of gr products, records in GoodsReceiptProduct'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt'
@@ -329,6 +332,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_product",
         null=True
     )
+    product_data = models.JSONField(default=dict, help_text='data JSON of product')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -336,6 +340,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -343,6 +348,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict, help_text='data JSON of tax')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -350,7 +356,11 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_warehouse",
         null=True
     )
-    quantity_import = models.FloatField(default=0)
+    warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
+    product_quantity_order_actual = models.FloatField(default=0, help_text='quantity order')
+    gr_remain_quantity = models.FloatField(default=0, help_text='quantity remain need to be goods receipt')
+    gr_completed_quantity = models.FloatField(default=0, help_text='quantity has been goods receipt')
+    quantity_import = models.FloatField(default=0, help_text='quantity goods receipt this time')
     product_title = models.CharField(
         max_length=100,
         blank=True,
@@ -380,6 +390,12 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     )
     is_added = models.BooleanField(
         default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
+    )
+    pr_products_data = models.JSONField(
+        default=list, help_text='data JSON of pr products, records in GoodsReceiptRequestProduct'
+    )
+    gr_warehouse_data = models.JSONField(
+        default=list, help_text='data JSON of gr warehouse, records in GoodsReceiptWarehouse'
     )
 
     class Meta:
@@ -418,10 +434,18 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         related_name="goods_receipt_request_product_pr_product",
         null=True
     )
-    quantity_import = models.FloatField(default=0)
+    purchase_request_data = models.JSONField(default=dict, help_text='data JSON of purchase request')
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom request')
+    quantity_order = models.FloatField(default=0, help_text='quantity purchase order')
+    gr_remain_quantity = models.FloatField(default=0, help_text='quantity remain need to be goods receipt')
+    gr_completed_quantity = models.FloatField(default=0, help_text='quantity has been goods receipt')
+    quantity_import = models.FloatField(default=0, help_text='quantity goods receipt')
     is_stock = models.BooleanField(
         default=False,
         help_text="True if GR direct to stock, stock is created from PO when quantity order > quantity request"
+    )
+    gr_warehouse_data = models.JSONField(
+        default=list, help_text='data JSON of gr warehouse, records in GoodsReceiptWarehouse'
     )
 
     class Meta:
@@ -460,6 +484,8 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
         related_name="goods_receipt_warehouse_warehouse",
         null=True
     )
+    warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
     quantity_import = models.FloatField(default=0)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
@@ -467,6 +493,8 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
     is_added = models.BooleanField(
         default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
     )
+    lot_data = models.JSONField(default=list, help_text='data JSON of lots, records in GoodsReceiptLot')
+    serial_data = models.JSONField(default=list, help_text='data JSON of serials, records in GoodsReceiptSerial')
 
     class Meta:
         verbose_name = 'Goods Receipt Warehouse'

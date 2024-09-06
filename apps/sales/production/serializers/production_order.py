@@ -50,6 +50,7 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
         fields = (
             'id',
             'title',
+            'code',
             'bom_data',
             'type_production',
             'product_data',
