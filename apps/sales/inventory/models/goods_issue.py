@@ -58,7 +58,7 @@ class GoodsIssue(DataAbstractModel):
                                 'lot_id': str(prd_wh_lot.id),
                                 'lot_number': prd_wh_lot.lot_number,
                                 'lot_quantity': quantity,
-                                'lot_value': item.unit_cost * quantity,
+                                'lot_value': 0,  # theo gia cost,
                                 'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                             }
                         })

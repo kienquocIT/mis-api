@@ -22,9 +22,8 @@ class InventoryAdjustment(DataAbstractModel):
     state = models.BooleanField(default=False)
 
     def update_ia_state(self):
-        all_item = self.inventory_adjustment_item_mapped.all()
-        done = all_item.filter(action_status=True)
-        self.state = all_item.count() == done.count()
+        all_item_select = self.inventory_adjustment_item_mapped.filter(select_for_action=True)
+        self.state = all_item_select.count() == all_item_select.filter(action_status=True).count()
         self.save(update_fields=['state'])
         return True
 
