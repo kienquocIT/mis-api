@@ -10,7 +10,17 @@ from apps.shared import ProductMsg
 class ProductTypeListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'description', 'is_default')
+        fields = (
+            'id',
+            'title',
+            'description',
+            'is_default',
+            'is_goods',
+            'is_finished_goods',
+            'is_material',
+            'is_asset_tool',
+            'is_service',
+        )
 
 
 class ProductTypeCreateSerializer(serializers.ModelSerializer):

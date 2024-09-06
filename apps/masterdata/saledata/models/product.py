@@ -51,11 +51,14 @@ class ProductType(MasterDataAbstractModel):  # noqa
     is_asset_tool = models.BooleanField(
         default=False, help_text='flag to know this type is asset tool of company'
     )
+    is_service = models.BooleanField(
+        default=False, help_text='flag to know this type is service of company'
+    )
 
     class Meta:
         verbose_name = 'ProductType'
         verbose_name_plural = 'ProductTypes'
-        ordering = ('date_created',)
+        ordering = ('-is_default', 'date_created',)
         default_permissions = ()
         permissions = ()
 

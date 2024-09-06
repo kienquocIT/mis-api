@@ -74,8 +74,10 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
     product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
-    book_quantity = models.IntegerField()
-    count = models.IntegerField()
+    book_quantity = models.FloatField(default=0)
+    count = models.FloatField(default=0)
+    issued_quantity = models.FloatField(default=0)
+    receipted_quantity = models.FloatField(default=0)
     action_type = models.SmallIntegerField(
         choices=IA_ITEM_ACTION_TYPE,
         verbose_name='check increase, decrease or equal stock amount',
@@ -99,6 +101,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Inventory Adjustment Item'
         verbose_name_plural = 'Inventory Adjustment Items'
-        ordering = ('-date_created',)
+        ordering = ('product_mapped__code',)
         default_permissions = ()
         permissions = ()

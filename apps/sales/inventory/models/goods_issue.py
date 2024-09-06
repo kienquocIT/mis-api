@@ -1,8 +1,8 @@
 import json
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, SubPeriods
+from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
 
@@ -21,40 +21,8 @@ class GoodsIssue(DataAbstractModel):
     )
     note = models.CharField(
         max_length=1000,
-        default='',
         blank=True,
-    )
-    date_issue = models.DateTimeField()
-    goods_issue_datas = models.JSONField(
-        help_text=json.dumps(
-            [
-                {
-                    'warehouse': {
-                        'id': 'warehouse_id',
-                        'title': 'warehouse_title',
-                    },
-                    'product': {  # product in warehouse
-                        'id': 'id',
-                        'product_data': {
-                            'id': 'product_id',
-                            'title': 'product_title',
-                        }
-                    },
-                    'uom': {
-                        'id': 'uom_id',
-                        'title': 'uom_title'
-                    },
-                    'quantity': 2,
-                    'product_warehouse_id': 'product_warehouse_id',
-                    'inventory_adjustment_item_id': 'inventory_adjustment_item_id',
-                    'description': 'xxx',
-                    'unit_cost': 500000,
-                    'subtotal_cost': 1000000,
-                    'lot_changes': [],
-                    'sn_changes': []
-                }
-            ]
-        )
+        null=True
     )
 
     class Meta:
@@ -120,12 +88,8 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     @classmethod
-    def update_product_amount(cls, data):
-        ProductWareHouse.pop_from_transfer(
-            product_warehouse_id=data['product_warehouse']['id'],
-            amount=data['quantity'],
-            data=data
-        )
+    def update_product_warehouse_data(cls, data):
+        pass
         return True
 
     @classmethod
@@ -163,8 +127,8 @@ class GoodsIssue(DataAbstractModel):
                 self.prepare_data_for_logging(self)
 
                 if self.inventory_adjustment:
-                    for item in self.goods_issue_datas:
-                        self.update_product_amount(item)
+                    for item in self.goods_issue_product.all():
+                        self.update_product_warehouse_data(item)
                         self.update_status_inventory_adjustment_item(
                             self.inventory_adjustment,
                             item.get('inventory_adjustment_item'),
@@ -174,16 +138,11 @@ class GoodsIssue(DataAbstractModel):
         super().save(*args, **kwargs)
 
 
-class GoodsIssueProduct(MasterDataAbstractModel):
+class GoodsIssueProduct(SimpleAbstractModel):
     goods_issue = models.ForeignKey(
         GoodsIssue,
         on_delete=models.CASCADE,
         related_name='goods_issue_product'
-    )
-    product_warehouse = models.ForeignKey(
-        'saledata.ProductWareHouse',
-        on_delete=models.CASCADE,
-        related_name='product_warehouse_goods_issue',
     )
     inventory_adjustment_item = models.ForeignKey(
         'inventory.InventoryAdjustmentItem',
@@ -191,43 +150,34 @@ class GoodsIssueProduct(MasterDataAbstractModel):
         related_name='ia_item_goods_issue',
         null=True,
     )
+    product_warehouse = models.ForeignKey(
+        'saledata.ProductWareHouse',
+        on_delete=models.CASCADE,
+        related_name='product_warehouse_goods_issue',
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name='product_goods_issue',
-    )
-    product_title = models.CharField(
-        max_length=500,
-    )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='uom_goods_issue',
-    )
-    uom_title = models.CharField(
-        max_length=500,
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='warehouse_goods_issue',
     )
-    warehouse_title = models.CharField(
-        max_length=500,
-    )
-    description = models.CharField(
-        max_length=1000,
-        blank=True
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='uom_goods_issue',
     )
     lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'old_quantity': ..., 'quantity': ...}]
     sn_data = models.JSONField(default=list)  # [..., ..., ...]
-    quantity = models.FloatField()
-    unit_cost = models.FloatField()
-    subtotal = models.FloatField()
+    limit_quantity = models.FloatField(default=0)
+    quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Issue Product'
         verbose_name_plural = 'Goods Issue Products'
-        ordering = ()
+        ordering = ('product__code',)
         default_permissions = ()
         permissions = ()

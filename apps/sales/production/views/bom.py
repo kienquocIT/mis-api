@@ -9,18 +9,18 @@ from apps.sales.production.serializers.bom import (
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class FinishProductListForBOM(BaseListMixin):
+class ProductListForBOM(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title']
+    filterset_fields = {
+        'general_product_types_mapped__is_finished_goods': ['exact'],
+        'general_product_types_mapped__is_service': ['exact'],
+    }
     serializer_list = FinishProductForBOMSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(
-            has_bom=False,
-            general_product_types_mapped__code='finished_goods',
-            general_product_types_mapped__is_finished_goods=True
-        ).select_related().prefetch_related()
+        return super().get_queryset().filter(has_bom=False).select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Finish Product List For BOM",
