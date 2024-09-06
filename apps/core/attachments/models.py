@@ -60,7 +60,7 @@ def generate_path_public_file(instance, filename):
 class BastionFiles(MasterDataAbstractModel):
     file_name = models.TextField()
     file_size = models.IntegerField()
-    file_type = models.CharField(max_length=50)
+    file_type = models.CharField(max_length=100)
     file = models.FileField(storage=FileSystemStorage, upload_to=generate_path_file)
     remarks = models.TextField(blank=True)
 
