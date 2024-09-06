@@ -178,9 +178,9 @@ class GoodsIssueCommonFunction:
     @classmethod
     def validate_inventory_adjustment_id(cls, validate_data):
         try:
-            validate_data['inventory_adjustment_id'] = InventoryAdjustment.objects.get(
+            validate_data['inventory_adjustment_id'] = str(InventoryAdjustment.objects.get(
                 id=validate_data.get('inventory_adjustment_id')
-            ).id
+            ).id)
             print('2. validate_inventory_adjustment_id  --- ok')
             return True
         except InventoryAdjustment.DoesNotExist:
@@ -197,11 +197,11 @@ class GoodsIssueCommonFunction:
                     prd_wh_obj.stock_amount >= float(item.get('quantity')),
                     ia_item.book_quantity - ia_item.count - ia_item.issued_quantity >= float(item.get('quantity'))
                 ]):
-                    item['inventory_adjustment_item_id'] = ia_item.id
-                    item['product_warehouse_id'] = prd_wh_obj.id
-                    item['product_id'] = Product.objects.get(id=item.get('product_id')).id
-                    item['warehouse_id'] = WareHouse.objects.get(id=item.get('warehouse_id')).id
-                    item['uom_id'] = UnitOfMeasure.objects.get(id=item.get('uom_id')).id
+                    item['inventory_adjustment_item_id'] = str(ia_item.id)
+                    item['product_warehouse_id'] = str(prd_wh_obj.id)
+                    item['product_id'] = str(Product.objects.get(id=item.get('product_id')).id)
+                    item['warehouse_id'] = str(WareHouse.objects.get(id=item.get('warehouse_id')).id)
+                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
                 else:
                     raise serializers.ValidationError({'stock_quantity': "Issue quantity can't > Stock quantity."})
             validate_data['detail_data_ia'] = detail_data_ia

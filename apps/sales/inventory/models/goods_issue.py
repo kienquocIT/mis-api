@@ -1,5 +1,5 @@
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods
+from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
@@ -88,16 +88,42 @@ class GoodsIssue(DataAbstractModel):
 
     @classmethod
     def update_product_warehouse_data(cls, data):
-        print(data)
+        if data.product.general_traceability_method == 0:
+            data.product_warehouse.sold_amount += data.quantity
+            data.product_warehouse.stock_amount = (
+                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+            )
+            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+        elif data.product.general_traceability_method == 1:
+            sum_lot_issue = 0
+            for lot in data.lot_data:
+                if float(lot.get('quantity', 0)) > 0:
+                    lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
+                    if lot_obj:
+                        sum_lot_issue += float(lot.get('quantity', 0))
+                        lot_obj.quantity_import -= float(lot.get('quantity', 0))
+                        lot_obj.save(update_fields=['quantity_import'])
+            data.product_warehouse.sold_amount += sum_lot_issue
+            data.product_warehouse.stock_amount = (
+                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+            )
+            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+        elif data.product.general_traceability_method == 2:
+            sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data)
+            if len(data.sn_data) == sn_list.count():
+                sn_list.update(is_delete=True)
+                data.product_warehouse.sold_amount += len(data.sn_data)
+                data.product_warehouse.stock_amount = (
+                        data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+                )
+                data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
         return True
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, ia_obj, ia_item_id):
-        item = ia_obj.inventory_adjustment_item_mapped.filter(id=ia_item_id).first()
-        if item:
-            item.action_status = True
-            item.select_for_action = True
-            item.save(update_fields=['action_status', 'select_for_action'])
+    def update_status_inventory_adjustment_item(cls, ia_item_obj):
+        ia_item_obj.action_status = ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity == 0
+        ia_item_obj.select_for_action = True
+        ia_item_obj.save(update_fields=['action_status', 'select_for_action'])
         return True
 
     def save(self, *args, **kwargs):
@@ -112,10 +138,8 @@ class GoodsIssue(DataAbstractModel):
                 goods_issue = GoodsIssue.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False, system_status=3
                 ).count()
-                char = "GI"
                 temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-                code = f"{char}{temper}"
-                self.code = code
+                self.code = f"GI{temper}"
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
@@ -127,11 +151,10 @@ class GoodsIssue(DataAbstractModel):
 
                 if self.inventory_adjustment:
                     for item in self.goods_issue_product.all():
-                        # self.update_product_warehouse_data(item)
-                        self.update_status_inventory_adjustment_item(
-                            self.inventory_adjustment,
-                            item.get('inventory_adjustment_item'),
-                        )
+                        item.inventory_adjustment_item.issued_quantity += item.quantity
+                        item.inventory_adjustment_item.save(update_fields=['issued_quantity'])
+                        self.update_product_warehouse_data(item)
+                        self.update_status_inventory_adjustment_item(item.inventory_adjustment_item)
                     self.inventory_adjustment.update_ia_state()
 
         super().save(*args, **kwargs)
