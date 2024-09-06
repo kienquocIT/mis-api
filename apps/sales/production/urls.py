@@ -3,11 +3,11 @@ from django.urls import path
 from apps.sales.production.views import ProductionOrderList, ProductionOrderDetail
 from apps.sales.production.views.bom import (
     LaborListForBOM, ProductMaterialListForBOM, ProductToolsListForBOM,
-    BOMList, BOMDetail, BOMOrderList, FinishProductListForBOM
+    BOMList, BOMDetail, BOMOrderList, ProductListForBOM
 )
 
 urlpatterns = [
-    path('finish-product-list-for-BOM', FinishProductListForBOM.as_view(), name='FinishProductListForBOM'),
+    path('product-list-for-BOM', ProductListForBOM.as_view(), name='ProductListForBOM'),
     path('labor-list-for-BOM', LaborListForBOM.as_view(), name='LaborListForBOM'),
     path('product-material-list-for-BOM', ProductMaterialListForBOM.as_view(), name='ProductMaterialListForBOM'),
     path('product-tool-list-for-BOM', ProductToolsListForBOM.as_view(), name='ProductToolsListForBOM'),

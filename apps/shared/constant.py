@@ -292,6 +292,7 @@ IA_ITEM_ACTION_TYPE = (
 GOODS_ISSUE_TYPE = (
     (0, _('For Inventory Adjustment')),
     (1, _('Liquidation')),
+    (2, _('For Production Order')),
 )
 
 RETURN_ADVANCE_MONEY_RECEIVED = (

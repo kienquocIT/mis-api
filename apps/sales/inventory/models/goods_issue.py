@@ -1,8 +1,7 @@
-import json
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouse, SubPeriods
+from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, GOODS_ISSUE_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
 
@@ -21,40 +20,8 @@ class GoodsIssue(DataAbstractModel):
     )
     note = models.CharField(
         max_length=1000,
-        default='',
         blank=True,
-    )
-    date_issue = models.DateTimeField()
-    goods_issue_datas = models.JSONField(
-        help_text=json.dumps(
-            [
-                {
-                    'warehouse': {
-                        'id': 'warehouse_id',
-                        'title': 'warehouse_title',
-                    },
-                    'product': {  # product in warehouse
-                        'id': 'id',
-                        'product_data': {
-                            'id': 'product_id',
-                            'title': 'product_title',
-                        }
-                    },
-                    'uom': {
-                        'id': 'uom_id',
-                        'title': 'uom_title'
-                    },
-                    'quantity': 2,
-                    'product_warehouse_id': 'product_warehouse_id',
-                    'inventory_adjustment_item_id': 'inventory_adjustment_item_id',
-                    'description': 'xxx',
-                    'unit_cost': 500000,
-                    'subtotal_cost': 1000000,
-                    'lot_changes': [],
-                    'sn_changes': []
-                }
-            ]
-        )
+        null=True
     )
 
     class Meta:
@@ -91,7 +58,7 @@ class GoodsIssue(DataAbstractModel):
                                 'lot_id': str(prd_wh_lot.id),
                                 'lot_number': prd_wh_lot.lot_number,
                                 'lot_quantity': quantity,
-                                'lot_value': item.unit_cost * quantity,
+                                'lot_value': 0,  # theo gia cost,
                                 'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                             }
                         })
@@ -120,21 +87,43 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     @classmethod
-    def update_product_amount(cls, data):
-        ProductWareHouse.pop_from_transfer(
-            product_warehouse_id=data['product_warehouse']['id'],
-            amount=data['quantity'],
-            data=data
-        )
+    def update_product_warehouse_data(cls, data):
+        if data.product.general_traceability_method == 0:
+            data.product_warehouse.sold_amount += data.quantity
+            data.product_warehouse.stock_amount = (
+                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+            )
+            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+        elif data.product.general_traceability_method == 1:
+            sum_lot_issue = 0
+            for lot in data.lot_data:
+                if float(lot.get('quantity', 0)) > 0:
+                    lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
+                    if lot_obj:
+                        sum_lot_issue += float(lot.get('quantity', 0))
+                        lot_obj.quantity_import -= float(lot.get('quantity', 0))
+                        lot_obj.save(update_fields=['quantity_import'])
+            data.product_warehouse.sold_amount += sum_lot_issue
+            data.product_warehouse.stock_amount = (
+                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+            )
+            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+        elif data.product.general_traceability_method == 2:
+            sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data)
+            if len(data.sn_data) == sn_list.count():
+                sn_list.update(is_delete=True)
+                data.product_warehouse.sold_amount += len(data.sn_data)
+                data.product_warehouse.stock_amount = (
+                        data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
+                )
+                data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
         return True
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, ia_obj, ia_item_id):
-        item = ia_obj.inventory_adjustment_item_mapped.filter(id=ia_item_id).first()
-        if item:
-            item.action_status = True
-            item.select_for_action = True
-            item.save(update_fields=['action_status', 'select_for_action'])
+    def update_status_inventory_adjustment_item(cls, ia_item_obj):
+        ia_item_obj.action_status = ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity == 0
+        ia_item_obj.select_for_action = True
+        ia_item_obj.save(update_fields=['action_status', 'select_for_action'])
         return True
 
     def save(self, *args, **kwargs):
@@ -149,10 +138,8 @@ class GoodsIssue(DataAbstractModel):
                 goods_issue = GoodsIssue.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False, system_status=3
                 ).count()
-                char = "GI"
                 temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-                code = f"{char}{temper}"
-                self.code = code
+                self.code = f"GI{temper}"
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
@@ -163,27 +150,21 @@ class GoodsIssue(DataAbstractModel):
                 self.prepare_data_for_logging(self)
 
                 if self.inventory_adjustment:
-                    for item in self.goods_issue_datas:
-                        self.update_product_amount(item)
-                        self.update_status_inventory_adjustment_item(
-                            self.inventory_adjustment,
-                            item.get('inventory_adjustment_item'),
-                        )
+                    for item in self.goods_issue_product.all():
+                        item.inventory_adjustment_item.issued_quantity += item.quantity
+                        item.inventory_adjustment_item.save(update_fields=['issued_quantity'])
+                        self.update_product_warehouse_data(item)
+                        self.update_status_inventory_adjustment_item(item.inventory_adjustment_item)
                     self.inventory_adjustment.update_ia_state()
 
         super().save(*args, **kwargs)
 
 
-class GoodsIssueProduct(MasterDataAbstractModel):
+class GoodsIssueProduct(SimpleAbstractModel):
     goods_issue = models.ForeignKey(
         GoodsIssue,
         on_delete=models.CASCADE,
         related_name='goods_issue_product'
-    )
-    product_warehouse = models.ForeignKey(
-        'saledata.ProductWareHouse',
-        on_delete=models.CASCADE,
-        related_name='product_warehouse_goods_issue',
     )
     inventory_adjustment_item = models.ForeignKey(
         'inventory.InventoryAdjustmentItem',
@@ -191,43 +172,34 @@ class GoodsIssueProduct(MasterDataAbstractModel):
         related_name='ia_item_goods_issue',
         null=True,
     )
+    product_warehouse = models.ForeignKey(
+        'saledata.ProductWareHouse',
+        on_delete=models.CASCADE,
+        related_name='product_warehouse_goods_issue',
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name='product_goods_issue',
-    )
-    product_title = models.CharField(
-        max_length=500,
-    )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='uom_goods_issue',
-    )
-    uom_title = models.CharField(
-        max_length=500,
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='warehouse_goods_issue',
     )
-    warehouse_title = models.CharField(
-        max_length=500,
-    )
-    description = models.CharField(
-        max_length=1000,
-        blank=True
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='uom_goods_issue',
     )
     lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'old_quantity': ..., 'quantity': ...}]
     sn_data = models.JSONField(default=list)  # [..., ..., ...]
-    quantity = models.FloatField()
-    unit_cost = models.FloatField()
-    subtotal = models.FloatField()
+    limit_quantity = models.FloatField(default=0)
+    quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Issue Product'
         verbose_name_plural = 'Goods Issue Products'
-        ordering = ()
+        ordering = ('product__code',)
         default_permissions = ()
         permissions = ()

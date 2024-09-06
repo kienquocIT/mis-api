@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
@@ -91,9 +90,7 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_state(cls, obj):
-        if obj.state:
-            return _("Finished")
-        return _("Opening")
+        return int(obj.state)
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
@@ -151,15 +148,14 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
             data.append(
                 {
                     'id': item.id,
-                    'product_warehouse_mapped': {
-                        'id': item.product_warehouse_id,
-                        'code': item.product_warehouse.code,
-                        'title': item.product_warehouse.title
-                    } if item.product_mapped else {},
+                    'product_warehouse_mapped_id': item.product_warehouse_id,
+                    'stock_quantity': item.product_warehouse.stock_amount,
                     'product_mapped': {
                         'id': item.product_mapped_id,
                         'code': item.product_mapped.code,
-                        'title': item.product_mapped.title
+                        'title': item.product_mapped.title,
+                        'description': item.product_mapped.description,
+                        'general_traceability_method': item.product_mapped.general_traceability_method,
                     } if item.product_mapped else {},
                     'warehouse_mapped': {
                         'id': item.warehouse_mapped_id,
@@ -173,17 +169,21 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
                     } if item.uom_mapped else {},
                     'book_quantity': item.book_quantity,
                     'count': item.count,
+                    'limit_quantity': (
+                        item.book_quantity - item.count - item.issued_quantity
+                    ) if item.action_type == 1 else (
+                        item.book_quantity - item.count - item.receipted_quantity
+                    ) if item.action_type == 2 else 0,
                     'select_for_action': item.select_for_action,
-                    'action_status': item.action_status
+                    'action_status': item.action_status,
+                    'action_type': item.action_type
                 }
             )
         return data
 
     @classmethod
     def get_state(cls, obj):
-        if obj.state:
-            return _('Finished')
-        return _('Opening')
+        return int(obj.state)
 
 
 class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):

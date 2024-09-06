@@ -188,6 +188,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
+    employee_inherit_id = serializers.UUIDField()
 
     class Meta:
         model = AdvancePayment
@@ -197,7 +198,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'advance_payment_type',
             'supplier',
             'method',
-            'employee_inherit',
+            'employee_inherit_id',
             'return_date',
             'money_gave',
             'opportunity_mapped',
