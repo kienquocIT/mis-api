@@ -127,14 +127,16 @@ class AuthLogin(generics.GenericAPIView):
             self.check_and_update_globe(user_obj)
 
             user_detail = user_obj.get_detail()
-            if user_obj.auth_2fa is True:
+            if settings.SYNC_2FA_ENABLED is True and user_obj.auth_2fa is True:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_pre_2fa_token(user=user_obj),
+                    'need_verify_2fa': True,
                     **user_detail,
                 }
             else:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_full_token(user=user_obj, is_verified=False),
+                    'need_verify_2fa': False,
                     **user_detail,
                 }
             mongo_log_auth.insert_one(
@@ -359,7 +361,7 @@ class AuthLogReport(APIView):
         if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
             try:
                 range_selected = int(request.query_params.dict().get('range', 7))
-                if range_selected in [7, 14, 30]:
+                if range_selected not in [7, 14, 30]:
                     raise ValueError()
             except ValueError:
                 range_selected = 7
@@ -376,7 +378,7 @@ class AuthLogReport(APIView):
                 pipeline = [
                     {
                         "$match": {
-                            "timestamp": {"$gte": start_time, "$lt": end_time},
+                            "timestamp": {"$gte": start_time},
                             "metadata.service_name": "AUTH",
                             "metadata.user_id": str(request.user.id),
                         },
