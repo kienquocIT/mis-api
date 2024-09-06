@@ -9,6 +9,7 @@ from rest_framework import serializers
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
 from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense
+from ...task.models import TaskAttachmentFile
 
 
 class ProjectListSerializers(serializers.ModelSerializer):
@@ -172,6 +173,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     project_pm = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    assignee_attachment = serializers.SerializerMethodField()
 
     @classmethod
     def get_groups(cls, obj):
@@ -256,6 +258,20 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             return self.instance.project_status
         return ''
 
+    @classmethod
+    def get_assignee_attachment(cls, obj):
+        lst_task = obj.project_projectmaptasks_project.all()
+        lst = []
+        if lst_task.exists():
+            for obj_proj in lst_task:
+                att_objs = TaskAttachmentFile.objects.select_related('attachment').filter(task=obj_proj.task)
+                if att_objs.exists():
+                    for item in att_objs:
+                        f_detail = item.attachment.get_detail()
+                        f_detail['is_assignee_file'] = item.is_assignee_file
+                        lst.append(f_detail)
+        return lst
+
     class Meta:
         model = Project
         fields = (
@@ -271,6 +287,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'works',
             'groups',
             'members',
+            'assignee_attachment'
         )
 
 

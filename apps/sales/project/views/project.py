@@ -126,7 +126,12 @@ class ProjectDetail(BaseRetrieveMixin):
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related("members", )
+        return super().get_queryset().prefetch_related(
+            "members",
+            Prefetch(
+                'project_projectmaptasks_project',
+            ),
+        )
 
     def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:  # pylint: disable=R0911,R0912
         # This function automatically runs when a user using the put method
