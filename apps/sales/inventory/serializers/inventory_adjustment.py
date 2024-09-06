@@ -91,9 +91,7 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_state(cls, obj):
-        if obj.state:
-            return _("Finished")
-        return _("Opening")
+        return int(obj.state)
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
@@ -186,9 +184,7 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_state(cls, obj):
-        if obj.state:
-            return _('Finished')
-        return _('Opening')
+        return int(obj.state)
 
 
 class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
