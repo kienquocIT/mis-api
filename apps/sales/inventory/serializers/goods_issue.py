@@ -1,10 +1,8 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
-from apps.shared import ProductMsg, WarehouseMsg, GOODS_ISSUE_TYPE, SYSTEM_STATUS, AbstractDetailSerializerModel, \
-    AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
 __all__ = [

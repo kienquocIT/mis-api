@@ -1,4 +1,3 @@
-import json
 from django.db import models
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods
 from apps.sales.report.models import ReportStockLog
@@ -89,7 +88,7 @@ class GoodsIssue(DataAbstractModel):
 
     @classmethod
     def update_product_warehouse_data(cls, data):
-        pass
+        print(data)
         return True
 
     @classmethod
@@ -128,7 +127,7 @@ class GoodsIssue(DataAbstractModel):
 
                 if self.inventory_adjustment:
                     for item in self.goods_issue_product.all():
-                        self.update_product_warehouse_data(item)
+                        # self.update_product_warehouse_data(item)
                         self.update_status_inventory_adjustment_item(
                             self.inventory_adjustment,
                             item.get('inventory_adjustment_item'),
