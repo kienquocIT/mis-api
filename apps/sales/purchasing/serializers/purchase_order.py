@@ -302,10 +302,11 @@ class PORequestProductGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_gr_completed_quantity(cls, obj):
-        return 0 if obj else 0
+        return obj.quantity_order - obj.gr_remain_quantity
 
 
 class POProductGRListSerializer(serializers.ModelSerializer):
+    purchase_order_product_id = serializers.SerializerMethodField()
     pr_products_data = serializers.SerializerMethodField()
     product_data = serializers.SerializerMethodField()
     uom_request_data = serializers.SerializerMethodField()
@@ -316,7 +317,7 @@ class POProductGRListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderProduct
         fields = (
-            'id',
+            'purchase_order_product_id',
             'product_data',
             'uom_request_data',
             'uom_data',
@@ -338,6 +339,10 @@ class POProductGRListSerializer(serializers.ModelSerializer):
             'gr_completed_quantity',
             'gr_remain_quantity',
         )
+
+    @classmethod
+    def get_purchase_order_product_id(cls, obj):
+        return obj.id
 
     @classmethod
     def get_pr_products_data(cls, obj):
@@ -373,7 +378,7 @@ class POProductGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_gr_completed_quantity(cls, obj):
-        return 0 if obj else 0
+        return obj.product_quantity_order_actual - obj.gr_remain_quantity
 
 
 class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):

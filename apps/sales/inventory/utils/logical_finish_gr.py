@@ -6,23 +6,18 @@ class GRFinishHandler:
     @classmethod
     def update_gr_info_for_po(cls, instance):
         if instance.goods_receipt_type == 0:  # check type GR for PO
-            for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
-                if gr_po_product.purchase_order_product:
-                    cls.run_update_gr_info_for_po(gr_product=gr_po_product)
-        return True
-
-    @classmethod
-    def run_update_gr_info_for_po(cls, gr_product):
-        gr_product.gr_completed_quantity += round(gr_product.quantity_import, 2)
-        gr_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
-        po_product = gr_product.purchase_order_product
-        check1 = gr_product.gr_completed_quantity <= gr_product.product_quantity_order_actual
-        check2 = gr_product.gr_remain_quantity >= 0
-        if po_product and check1 and check2:
-            gr_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
-            po_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
-            if po_product.gr_remain_quantity >= 0:
-                po_product.save(update_fields=['gr_remain_quantity'])
+            for gr_product in instance.goods_receipt_product_goods_receipt.all():
+                po_product = gr_product.purchase_order_product
+                if po_product:
+                    po_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+                    if po_product.gr_remain_quantity >= 0:
+                        po_product.save(update_fields=['gr_remain_quantity'])
+            for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
+                po_request_product = gr_pr_product.purchase_order_request_product
+                if po_request_product:
+                    po_request_product.gr_remain_quantity -= round(gr_pr_product.quantity_import, 2)
+                    if po_request_product.gr_remain_quantity >= 0:
+                        po_request_product.save(update_fields=['gr_remain_quantity'])
         return True
 
     @classmethod

@@ -358,8 +358,6 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     )
     warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
     product_quantity_order_actual = models.FloatField(default=0, help_text='quantity order')
-    gr_remain_quantity = models.FloatField(default=0, help_text='quantity remain need to be goods receipt')
-    gr_completed_quantity = models.FloatField(default=0, help_text='quantity has been goods receipt')
     quantity_import = models.FloatField(default=0, help_text='quantity goods receipt this time')
     product_title = models.CharField(
         max_length=100,
@@ -437,8 +435,6 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
     purchase_request_data = models.JSONField(default=dict, help_text='data JSON of purchase request')
     uom_data = models.JSONField(default=dict, help_text='data JSON of uom request')
     quantity_order = models.FloatField(default=0, help_text='quantity purchase order')
-    gr_remain_quantity = models.FloatField(default=0, help_text='quantity remain need to be goods receipt')
-    gr_completed_quantity = models.FloatField(default=0, help_text='quantity has been goods receipt')
     quantity_import = models.FloatField(default=0, help_text='quantity goods receipt')
     is_stock = models.BooleanField(
         default=False,
