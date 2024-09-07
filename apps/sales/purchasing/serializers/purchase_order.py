@@ -250,6 +250,7 @@ class PORequestProductGRListSerializer(serializers.ModelSerializer):
     purchase_order_request_product_id = serializers.SerializerMethodField()
     purchase_request_data = serializers.SerializerMethodField()
     uom_data = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderRequestProduct
@@ -299,6 +300,10 @@ class PORequestProductGRListSerializer(serializers.ModelSerializer):
             } if obj.purchase_request_product.uom else {}
         return {}
 
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        return 0 if obj else 0
+
 
 class POProductGRListSerializer(serializers.ModelSerializer):
     pr_products_data = serializers.SerializerMethodField()
@@ -306,6 +311,7 @@ class POProductGRListSerializer(serializers.ModelSerializer):
     uom_request_data = serializers.SerializerMethodField()
     uom_data = serializers.SerializerMethodField()
     tax_data = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderProduct
@@ -364,6 +370,10 @@ class POProductGRListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        return 0 if obj else 0
 
 
 class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):

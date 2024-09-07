@@ -178,7 +178,7 @@ class PurchaseOrderSaleList(
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
-        'is_all_receipted': ['exact'],
+        'receipt_status': ['exact', 'in'],
         'system_status': ['exact'],
     }
     serializer_list = PurchaseOrderSaleListSerializer

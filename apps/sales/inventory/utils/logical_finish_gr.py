@@ -8,31 +8,36 @@ class GRFinishHandler:
         if instance.goods_receipt_type == 0:  # check type GR for PO
             for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
                 if gr_po_product.purchase_order_product:
-                    cls.run_update_gr_info_for_po(
-                        gr_product=gr_po_product, order_request_product=gr_po_product.purchase_order_product,
-                    )
-            for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
-                if gr_pr_product.purchase_order_request_product:
-                    cls.run_update_gr_info_for_po(
-                        gr_product=gr_pr_product, order_request_product=gr_pr_product.purchase_order_request_product,
-                    )
+                    cls.run_update_gr_info_for_po(gr_product=gr_po_product)
         return True
 
     @classmethod
-    def run_update_gr_info_for_po(cls, gr_product, order_request_product):
-        order_request_product.gr_completed_quantity += gr_product.quantity_import
-        order_request_product.gr_completed_quantity = round(
-            order_request_product.gr_completed_quantity, 2
-        )
-        order_request_product.gr_remain_quantity -= gr_product.quantity_import
-        order_request_product.gr_remain_quantity = round(
-            order_request_product.gr_remain_quantity, 2
-        )
-        order_request_product.save(update_fields=[
-            'gr_completed_quantity', 'gr_remain_quantity'
-        ])
+    def run_update_gr_info_for_po(cls, gr_product):
+        gr_product.gr_completed_quantity += round(gr_product.quantity_import, 2)
+        gr_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+        po_product = gr_product.purchase_order_product
+        check1 = gr_product.gr_completed_quantity <= gr_product.product_quantity_order_actual
+        check2 = gr_product.gr_remain_quantity >= 0
+        if po_product and check1 and check2:
+            gr_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+            po_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+            if po_product.gr_remain_quantity >= 0:
+                po_product.save(update_fields=['gr_remain_quantity'])
         return True
 
+    @classmethod
+    def update_is_all_receipted_po(cls, instance):
+        if instance.goods_receipt_type == 0 and instance.purchase_order:
+            po_product = instance.purchase_order.purchase_order_product_order.all()
+            po_product_done = instance.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
+            if po_product.count() == po_product_done.count():
+                instance.purchase_order.receipt_status = 3
+            else:
+                instance.purchase_order.receipt_status = 2
+            instance.purchase_order.save(update_fields=['receipt_status'])
+        return True
+
+    # IA GR_INFO
     @classmethod
     def update_gr_info_for_ia(cls, instance):
         if instance.goods_receipt_type == 1:  # check type GR for IA
@@ -47,20 +52,6 @@ class GRFinishHandler:
                         gr_ia_product.ia_item.gr_remain_quantity, 2
                     )
                     gr_ia_product.ia_item.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
-        return True
-
-    @classmethod
-    def update_is_all_receipted_po(cls, instance):
-        if instance.goods_receipt_type == 0 and instance.purchase_order:
-            po_product = instance.purchase_order.purchase_order_product_order.all()
-            po_product_done = instance.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
-            if po_product.count() == po_product_done.count():
-                instance.purchase_order.receipt_status = 3
-                instance.purchase_order.is_all_receipted = True
-                instance.purchase_order.save(update_fields=['receipt_status', 'is_all_receipted'])
-            else:
-                instance.purchase_order.receipt_status = 2
-                instance.purchase_order.save(update_fields=['receipt_status'])
         return True
 
     @classmethod

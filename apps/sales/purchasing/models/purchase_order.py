@@ -73,10 +73,6 @@ class PurchaseOrder(DataAbstractModel):
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
     )
-    is_all_receipted = models.BooleanField(
-        default=False,
-        help_text="True if all products are receipted by Goods Receipt"
-    )
     purchase_order_payment_stage = models.JSONField(
         default=list,
         help_text="read data payment stage, use for get list or detail purchase order"
@@ -265,10 +261,6 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     product_subtotal_price_after_tax = models.FloatField(default=0)
     order = models.IntegerField(default=1)
     # goods receipt information
-    gr_completed_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is goods receipted, update when GR finish"
-    )
     gr_remain_quantity = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
@@ -326,10 +318,6 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         help_text="True if quantity order > quantity request => create quantity stock"
     )
     # goods receipt information
-    gr_completed_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is goods receipted, update when GR finish"
-    )
     gr_remain_quantity = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
