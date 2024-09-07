@@ -35,7 +35,7 @@ class GoodsReceiptCommonCreate:
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             if len(pr_products_data) > 0:
                 for pr_product in pr_products_data:
-                    gr_warehouse_data = pr_product.get('warehouse_data', [])
+                    gr_warehouse_data = pr_product.get('gr_warehouse_data', [])
                     new_pr_product = GoodsReceiptRequestProduct.objects.create(
                         goods_receipt=instance,
                         goods_receipt_product=new_gr_product,
@@ -70,18 +70,20 @@ class GoodsReceiptCommonCreate:
                 **warehouse
             )
             # create sub model GoodsReceiptLot + GoodsReceiptSerial mapping goods_receipt_warehouse
-            for lot in lot_data:
-                GoodsReceiptLot.objects.create(
+            GoodsReceiptLot.objects.bulk_create([
+                GoodsReceiptLot(
                     goods_receipt=instance,
                     goods_receipt_warehouse=new_warehouse,
                     **lot
-                )
-            for serial in serial_data:
-                GoodsReceiptSerial.objects.create(
+                ) for lot in lot_data
+            ])
+            GoodsReceiptSerial.objects.bulk_create([
+                GoodsReceiptSerial(
                     goods_receipt=instance,
                     goods_receipt_warehouse=new_warehouse,
                     **serial
-                )
+                ) for serial in serial_data
+            ])
         return True
 
     @classmethod
