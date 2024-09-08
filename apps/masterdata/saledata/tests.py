@@ -2254,15 +2254,20 @@ class WareHouseTestCase(AdvanceTestCase):
         response = self.client.get(url_with_query_string, format='json')
         return response
 
-    def get_ward(self):
+    def get_ward(self, district_id):
+        params = {
+            'district_id': district_id
+        }
         url = reverse("WardList")
-        response = self.client.get(url, format='json')
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
         return response
 
     def test_warehouse_create(self):
-        city = [item for item in self.get_city().data['result'] if item['title'] == 'Thành Phố Hồ Chí Minh']
-        district = [item for item in self.get_district(city[0]['id']).data['result'] if item['title'] == 'Quận 7']
-        ward = self.get_ward().data['result'][0]['id']
+        city = self.get_city().data['result'][0]
+        district = self.get_district(city['id']).data['result'][0]
+        ward = self.get_ward(district['id']).data['result'][0]
 
         url = reverse("WareHouseList")
         data = {
@@ -2272,9 +2277,9 @@ class WareHouseTestCase(AdvanceTestCase):
             'address': 'chung cư ABC',
             'warehouse_type': 0,
             'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, Thành Phố Hồ Chí Minh',
-            'city': city[0]['id'],
-            'district': district[0]['id'],
-            'ward': ward,
+            'city': city['id'],
+            'district': district['id'],
+            'ward': ward['id'],
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(

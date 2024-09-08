@@ -63,6 +63,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'workflow_runtime_id',
+                'system_status'
             ],
             check_sum_second=True,
         )
@@ -149,13 +151,13 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'employee_created',
                 'employee_inherit',
-                'system_status',
-                'workflow_runtime_id',
                 'attachment',
                 'is_change',
                 'sale_code',
                 'document_root_id',
                 'document_change_order',
+                'system_status',
+                'workflow_runtime_id',
             ],
             check_sum_second=True,
         )
