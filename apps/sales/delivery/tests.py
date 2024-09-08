@@ -162,6 +162,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response, data_uom_gr
 
+    def get_city(self):
+        url = reverse("CityList")
+        response = self.client.get(url, format='json')
+        return response
+
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
