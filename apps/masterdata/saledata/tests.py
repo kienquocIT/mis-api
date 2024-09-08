@@ -2266,11 +2266,11 @@ class WareHouseTestCase(AdvanceTestCase):
 
     def test_warehouse_create(self):
         city_list = self.get_city().data['result']
-        city = city_list[0] if len(city_list) > 0 else None
+        city = city_list[0].get('id') if len(city_list) > 0 else None
         district_list = self.get_district(city['id']).data['result'] if city else None
-        district = district_list[0] if len(district_list) > 0 else None
+        district = district_list[0].get('id') if len(district_list) > 0 else None
         ward_list = self.get_ward(district['id']).data['result'] if district else None
-        ward = ward_list[0] if len(ward_list) > 0 else None
+        ward = ward_list[0].get('id') if len(ward_list) > 0 else None
 
         url = reverse("WareHouseList")
         data = {
@@ -2280,9 +2280,9 @@ class WareHouseTestCase(AdvanceTestCase):
             'address': 'chung cư ABC',
             'warehouse_type': 0,
             'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, Thành Phố Hồ Chí Minh',
-            'city': city['id'],
-            'district': district['id'],
-            'ward': ward['id'],
+            'city': city,
+            'district': district,
+            'ward': ward,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
