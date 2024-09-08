@@ -47,7 +47,7 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
 class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     advance_payment_id = serializers.UUIDField()
     method = serializers.IntegerField()
-    returned_list = serializers.ListField()
+    returned_list = serializers.ListField(required=False)
 
     class Meta:
         model = ReturnAdvance
@@ -103,7 +103,7 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        returned_list = validated_data.pop('returned_list')
+        returned_list = validated_data.pop('returned_list', [])
         return_advance_obj = ReturnAdvance.objects.create(**validated_data)
         ReturnAdvanceCommonFunction.common_create_return_advance_cost(returned_list, return_advance_obj)
         return return_advance_obj
@@ -212,7 +212,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
 
 
 class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
-    returned_list = serializers.ListField()
+    returned_list = serializers.ListField(required=False)
     advance_payment_id = serializers.UUIDField()
 
     class Meta:
@@ -266,7 +266,7 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        returned_list = validated_data.pop('returned_list')
+        returned_list = validated_data.pop('returned_list', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
