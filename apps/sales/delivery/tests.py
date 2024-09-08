@@ -167,6 +167,26 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
+    def get_district(self, city_id):
+        params = {
+            'city_id': city_id
+        }
+        url = reverse("DistrictList")
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
+        return response
+
+    def get_ward(self, district_id):
+        params = {
+            'district_id': district_id
+        }
+        url = reverse("WardList")
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
+        return response
+
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
@@ -324,9 +344,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         self.sale_order = response
         self.url = reverse("ProductList")
-        prod = ProductTestCase.test_create_product(self)
+        prod = ProductTestCase().test_create_product()
         prod_detail = prod.data['result']
-        warehouse = WareHouseTestCase.test_warehouse_create(self)
+        warehouse = WareHouseTestCase().test_warehouse_create()
         self.warehouse = warehouse
         good_receipt_url = reverse("GoodReceiptList")
         good_receipt_data = {
