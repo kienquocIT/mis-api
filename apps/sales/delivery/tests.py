@@ -344,9 +344,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         self.sale_order = response
         self.url = reverse("ProductList")
-        prod = ProductTestCase().test_create_product()
+        prod = ProductTestCase.test_create_product(self)
         prod_detail = prod.data['result']
-        warehouse = WareHouseTestCase().test_warehouse_create()
+        warehouse = WareHouseTestCase.test_warehouse_create(self)
         self.warehouse = warehouse
         good_receipt_url = reverse("GoodReceiptList")
         good_receipt_data = {
