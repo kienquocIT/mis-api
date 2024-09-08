@@ -18,12 +18,12 @@ class CashOutflowQuotationListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_sale_order(cls, obj):
-        so = obj.sale_order_quotation.filter(system_status=3).first()
+        sale_order_obj = obj.sale_order_quotation.filter(system_status=3).first()
         return {
-            'id': so.id,
-            'title': so.title,
-            'code': so.code,
-        } if so else {}
+            'id': sale_order_obj.id,
+            'title': sale_order_obj.title,
+            'code': sale_order_obj.code,
+        } if sale_order_obj else {}
 
 
 class CashOutflowSaleOrderListSerializer(AbstractListSerializerModel):

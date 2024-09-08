@@ -12,7 +12,7 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
-    AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel,
+    AdvancePaymentMsg, SaleMsg, AbstractDetailSerializerModel,
     AbstractListSerializerModel, AbstractCreateSerializerModel
 )
 
@@ -216,8 +216,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'ap_item_list'
         )
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         APCommonFunction.validate_opportunity_mapped_id(validate_data)
         APCommonFunction.validate_quotation_mapped_id(validate_data)
         APCommonFunction.validate_sale_order_mapped_id(validate_data)
@@ -449,8 +448,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             'ap_item_list'
         )
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         APCommonFunction.validate_opportunity_mapped_id(validate_data)
         APCommonFunction.validate_quotation_mapped_id(validate_data)
         APCommonFunction.validate_sale_order_mapped_id(validate_data)
