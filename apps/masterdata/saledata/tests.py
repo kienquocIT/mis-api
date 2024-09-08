@@ -2267,9 +2267,9 @@ class WareHouseTestCase(AdvanceTestCase):
     def test_warehouse_create(self):
         city_list = self.get_city().data['result']
         city = city_list[0] if len(city_list) > 0 else None
-        district = self.get_district(city['id']).data['result'][0] if city else None
+        district_list = self.get_district(city['id']).data['result'] if city else None
+        district = district_list[0] if len(district_list) > 0 else None
         ward_list = self.get_ward(district['id']).data['result'] if district else None
-
         ward = ward_list[0] if len(ward_list) > 0 else None
 
         url = reverse("WareHouseList")
