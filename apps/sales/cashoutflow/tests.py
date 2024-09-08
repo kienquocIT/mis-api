@@ -58,8 +58,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'employee_created',
                 'employee_inherit',
-                'system_status',
-                'workflow_runtime_id',
                 'attachment',
                 'sale_code',
                 'is_change',

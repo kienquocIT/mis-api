@@ -197,7 +197,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     sale_order_mapped_id = serializers.UUIDField(required=False)
     employee_inherit_id = serializers.UUIDField()
     supplier_id = serializers.UUIDField(required=False)
-    ap_item_list = serializers.ListField()
+    ap_item_list = serializers.ListField(required=False)
 
     class Meta:
         model = AdvancePayment
@@ -232,7 +232,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        ap_item_list = validated_data.pop('ap_item_list')
+        ap_item_list = validated_data.pop('ap_item_list', [])
         ap_obj = AdvancePayment.objects.create(**validated_data)
         APCommonFunction.create_expense_items(ap_obj, ap_item_list)
         attachment = self.initial_data.get('attachment', '')
@@ -430,7 +430,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
     sale_order_mapped_id = serializers.UUIDField(required=False)
     employee_inherit_id = serializers.UUIDField()
     supplier_id = serializers.UUIDField(required=False)
-    ap_item_list = serializers.ListField()
+    ap_item_list = serializers.ListField(required=False)
 
     class Meta:
         model = AdvancePayment
@@ -464,7 +464,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        ap_item_list = validated_data.pop('ap_item_list')
+        ap_item_list = validated_data.pop('ap_item_list', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
