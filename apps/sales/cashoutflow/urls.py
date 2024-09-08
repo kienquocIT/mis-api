@@ -5,9 +5,12 @@ from apps.sales.cashoutflow.views import (
     ReturnAdvanceList, ReturnAdvanceDetail, PaymentConfigList,
     AdvancePaymentCostList, PaymentCostList, APListForReturn
 )
-
+from apps.sales.cashoutflow.views.cashouflow_common import CashOutflowQuotationList, CashOutflowSaleOrderList
 
 urlpatterns = [
+    path('quotation-list', CashOutflowQuotationList.as_view(), name='CashOutflowQuotationList'),
+    path('sale-order-list', CashOutflowSaleOrderList.as_view(), name='CashOutflowSaleOrderList'),
+
     path('advances-payments', AdvancePaymentList.as_view(), name='AdvancePaymentList'),
     path('advances-payments/<str:pk>', AdvancePaymentDetail.as_view(), name='AdvancePaymentDetail'),
     path('advances-payments-cost-list/lists', AdvancePaymentCostList.as_view(), name='AdvancePaymentCostList'),
