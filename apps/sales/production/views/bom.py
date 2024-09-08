@@ -1,11 +1,36 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.masterdata.saledata.models import Product, ProductType, Expense
+from apps.masterdata.saledata.models import Product, Expense
 from apps.sales.production.models import BOM
-from apps.sales.production.serializers.bom import BOMProductMaterialListSerializer, LaborListForBOMSerializer, \
-    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer
+from apps.sales.production.serializers.bom import (
+    BOMProductMaterialListSerializer, LaborListForBOMSerializer,
+    BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer, BOMOrderListSerializer,
+    FinishProductForBOMSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+
+class ProductListForBOM(BaseListMixin):
+    queryset = Product.objects
+    search_fields = ['title']
+    filterset_fields = {
+        'general_product_types_mapped__is_finished_goods': ['exact'],
+        'general_product_types_mapped__is_service': ['exact'],
+    }
+    serializer_list = FinishProductForBOMSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(has_bom=False).select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Finish Product List For BOM",
+        operation_description="Finish Product List For BOM",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class LaborListForBOM(BaseListMixin):
@@ -37,20 +62,10 @@ class ProductMaterialListForBOM(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        material_type = ProductType.objects.filter(
-            title='Nguyên vật liệu',
-            company=self.request.user.company_current,
-            tenant=self.request.user.tenant_current
-        ).first()
-        if material_type:
-            return super().get_queryset().filter(
-                general_product_types_mapped__in=[material_type.id]
-            ).select_related(
-                'sale_default_uom'
-            ).prefetch_related(
-                'product_price_product__uom_using', 'product_price_product__price_list'
-            )
-        return super().get_queryset().none()
+        return super().get_queryset().filter(
+            general_product_types_mapped__code='material',
+            general_product_types_mapped__is_material=True
+        ).select_related('sale_default_uom').prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="BOM Product Material List",
@@ -70,16 +85,10 @@ class ProductToolsListForBOM(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        tool_config_type = AssetToolsConfig.objects.filter(
-            employee_tools_list_access__in=[self.request.user.employee_current_id],
-            company=self.request.user.company_current,
-        ).first()
-        if tool_config_type:
-            tool_type = tool_config_type.product_type
-            return super().get_queryset().filter(
-                general_product_types_mapped__in=[tool_type.id]
-            ).select_related().prefetch_related()
-        return super().get_queryset().none()
+        return super().get_queryset().filter(
+            general_product_types_mapped__code='asset_tool',
+            general_product_types_mapped__is_asset_tool=True
+        ).select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="BOM Product Material List",
@@ -172,3 +181,22 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class BOMOrderList(BaseListMixin, BaseCreateMixin):
+    queryset = BOM.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {'product_id': ['exact']}
+    serializer_list = BOMOrderListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="BOM List For Order",
+        operation_description="Get BOM List For Order",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

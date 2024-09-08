@@ -1,8 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.cashoutflow.models import ReturnAdvance
+from apps.sales.cashoutflow.models import ReturnAdvance, AdvancePayment
 from apps.sales.cashoutflow.serializers.return_advance import (
     ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer,
-    ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer
+    ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer, APListForReturnSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -18,7 +18,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
         ap_list_id = self.request.query_params.get('advance_payment_id_list', None)
@@ -79,3 +79,35 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class APListForReturn(BaseListMixin):
+    queryset = AdvancePayment.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    serializer_list = APListForReturnSerializer
+    filterset_fields = {
+        'opportunity_mapped_id': ['exact'],
+        'system_status': ['exact'],
+    }
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'advance_payment__currency',
+            'advance_payment__expense_type',
+            'advance_payment__expense_tax',
+        ).select_related()
+
+    @swagger_auto_schema(
+        operation_summary="AdvancePayment list for return",
+        operation_description="AdvancePayment list for return",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

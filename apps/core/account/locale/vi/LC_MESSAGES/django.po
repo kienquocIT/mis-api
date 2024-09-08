@@ -72,3 +72,7 @@ msgstr "Mã OTP này đã được sử dụng."
 #
 msgid "Deactivate 2FA before performing deletion"
 msgstr "Vô hiệu hóa 2FA trước khi thực hiện xóa"
+
+#
+msgid "The refresh token must be required"
+msgstr "Mã làm mới là bắt buộc"

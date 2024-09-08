@@ -45,9 +45,7 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().order_by('code')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -68,9 +66,7 @@ class WareHouseDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail a warehouse')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -103,9 +99,7 @@ class WareHouseCheckAvailableProductList(BaseListMixin):
         }
 
     @swagger_auto_schema()
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, product_id, uom_id, **kwargs):
         self.ser_context = {
             'product_id': product_id,
@@ -122,11 +116,6 @@ class ProductWareHouseList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_class = ProductWareHouseListFilter
 
-    # filterset_fields = {
-    #     "product_id": ["exact"],
-    #     "warehouse_id": ["exact"],
-    # }
-
     def get_queryset(self):
         queryset_custom = super().get_queryset().select_related(
             'product', 'warehouse', 'uom',
@@ -141,9 +130,7 @@ class ProductWareHouseList(BaseListMixin):
         return queryset_custom
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -172,9 +159,7 @@ class ProductWareHouseListForGoodsTransfer(BaseListMixin):
         ).order_by('product__code')
 
     @swagger_auto_schema(operation_summary='Product WareHouse For Goods Transfer')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -192,9 +177,7 @@ class WareHouseListForInventoryAdjustment(BaseListMixin):
         return super().get_queryset().order_by('code')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -222,9 +205,7 @@ class ProductWareHouseLotList(BaseListMixin):
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Lot')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -250,9 +231,7 @@ class ProductWareHouseSerialList(BaseListMixin):
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -271,9 +250,7 @@ class ProductWareHouseAssetToolsList(BaseListMixin):
         )
 
     @swagger_auto_schema(operation_summary='Product Asset list')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -290,9 +267,7 @@ class WarehouseEmployeeConfigList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().select_related('employee').prefetch_related('wh_emp_config_detail_cf')
 
     @swagger_auto_schema(operation_summary='Warehouse Employee Config List')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -314,9 +289,7 @@ class WarehouseEmployeeConfigDetail(BaseRetrieveMixin, BaseDestroyMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail a warehouse-employee')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 

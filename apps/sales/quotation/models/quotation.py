@@ -553,6 +553,7 @@ class QuotationCost(SimpleAbstractModel):
         null=True
     )
     shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
+    supplied_by = models.SmallIntegerField(default=0)  # (0: 'purchasing', 1: 'making')
 
     class Meta:
         verbose_name = 'Quotation Cost'

@@ -104,6 +104,7 @@ MAP_FIELD_TITLE = {
     'acceptance.finalacceptance': 'title',
     'project.projectbaseline': 'title',
     'contract.contractapproval': 'title',
+    'production.productionorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -291,6 +292,7 @@ IA_ITEM_ACTION_TYPE = (
 GOODS_ISSUE_TYPE = (
     (0, _('For Inventory Adjustment')),
     (1, _('Liquidation')),
+    (2, _('For Production Order')),
 )
 
 RETURN_ADVANCE_MONEY_RECEIVED = (
@@ -365,4 +367,17 @@ TYPE_LOT_TRANSACTION = (
     (2, 'Goods return'),
     (3, 'Goods transfer'),
     (4, 'Goods issue')
+)
+
+# Production order
+TYPE_PRODUCTION = (
+    (0, 'Production'),
+    (1, 'Assembly'),
+    (2, 'Disassembly'),
+)
+
+STATUS_PRODUCTION = (
+    (0, 'Planned'),
+    (1, 'In production'),
+    (2, 'Done'),
 )

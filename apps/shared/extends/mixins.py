@@ -5,7 +5,7 @@ from typing import Union
 from uuid import UUID
 
 from django.conf import settings
-from django.core.exceptions import EmptyResultSet
+from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -695,7 +695,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
-        except queryset.model.DoesNotExist:
+        except (queryset.model.DoesNotExist, DjangoValidationError):
             raise exceptions.NotFound
 
     @classmethod

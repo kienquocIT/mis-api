@@ -39,10 +39,26 @@ class ProductType(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
 
+    is_goods = models.BooleanField(
+        default=False, help_text='flag to know this type is goods (purchased) of company'
+    )
+    is_finished_goods = models.BooleanField(
+        default=False, help_text='flag to know this type is finished goods (production) of company'
+    )
+    is_material = models.BooleanField(
+        default=False, help_text='flag to know this type is material of company'
+    )
+    is_asset_tool = models.BooleanField(
+        default=False, help_text='flag to know this type is asset tool of company'
+    )
+    is_service = models.BooleanField(
+        default=False, help_text='flag to know this type is service of company'
+    )
+
     class Meta:
         verbose_name = 'ProductType'
         verbose_name_plural = 'ProductTypes'
-        ordering = ('date_created',)
+        ordering = ('-is_default', 'date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -98,10 +114,11 @@ class UnitOfMeasure(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    has_bom = models.BooleanField(default=False)
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
         default=list,
-        help_text='product for sale: 0, inventory: 1, purchase:2'
+        help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
     description = models.CharField(blank=True, max_length=500)

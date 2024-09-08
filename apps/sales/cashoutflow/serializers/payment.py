@@ -1,14 +1,20 @@
 from rest_framework import serializers
+
+from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
-from apps.masterdata.saledata.models import Currency
+from apps.masterdata.saledata.models import Currency, Account, ExpenseItem, Tax
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
+from apps.sales.opportunity.models import Opportunity
+from apps.sales.quotation.models import Quotation
+from apps.sales.saleorder.models import SaleOrder
+from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel
 
 
-class PaymentListSerializer(serializers.ModelSerializer):
+class PaymentListSerializer(AbstractListSerializerModel):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
@@ -26,9 +32,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'sale_code_type',
             'supplier',
             'method',
-            'creator_name',
+            'employee_created',
             'employee_inherit',
-            'converted_value_list',
             'return_value_list',
             'payment_value',
             'date_created',
@@ -36,6 +41,7 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
+            'converted_value_list'
         )
 
     @classmethod
@@ -128,78 +134,40 @@ class PaymentListSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
-def create_payment_cost_items(payment_obj, payment_expense_valid_list):
-    vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
-    if vnd_currency:
-        bulk_info = []
-        payment_value = 0
-        for item in payment_expense_valid_list:
-            if float(item['real_value']) + float(item['converted_value']) == float(item['sum_value']):
-                payment_value += item.get('expense_after_tax_price', 0)
-                bulk_info.append(
-                    PaymentCost(
-                        **item,
-                        payment=payment_obj,
-                        currency=vnd_currency,
-                        sale_order_mapped=payment_obj.sale_order_mapped,
-                        quotation_mapped=payment_obj.quotation_mapped,
-                        opportunity_mapped=payment_obj.opportunity_mapped
-                    )
-                )
-            else:
-                raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
-
-        PaymentCost.objects.filter(payment=payment_obj).delete()
-        PaymentCost.objects.bulk_create(bulk_info)
-        payment_obj.advance_value = payment_value
-
-        opp = payment_obj.opportunity_mapped
-        quotation = payment_obj.quotation_mapped
-        sale_order = payment_obj.sale_order_mapped
-        sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
-        payment_obj.sale_code = sale_code
-
-        payment_obj.save(update_fields=['payment_value', 'sale_code'])
-        return True
-    return False
-
-
-def create_files_mapped(payment_obj, file_id_list):
-    try:
-        bulk_data_file = []
-        for index, file_id in enumerate(file_id_list):
-            bulk_data_file.append(PaymentAttachmentFile(
-                payment=payment_obj,
-                attachment_id=file_id,
-                order=index
-            ))
-        PaymentAttachmentFile.objects.filter(payment=payment_obj).delete()
-        PaymentAttachmentFile.objects.bulk_create(bulk_data_file)
-        return True
-    except Exception as err:
-        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
-
-
-class PaymentCreateSerializer(serializers.ModelSerializer):
+class PaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
+    employee_inherit_id = serializers.UUIDField()
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
+    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    payment_expense_valid_list = serializers.ListField()
 
     class Meta:
         model = Payment
         fields = (
             'title',
+            'employee_inherit_id',
             'sale_code_type',
-            'supplier',
-            'employee_payment',
-            'is_internal_payment',
             'method',
-            'creator_name',
-            'employee_inherit',
-            'opportunity_mapped',
-            'quotation_mapped',
-            'sale_order_mapped',
-            # system
-            'system_status',
+            'is_internal_payment',
+            'supplier_id',
+            'employee_payment_id',
+            'opportunity_mapped_id',
+            'quotation_mapped_id',
+            'sale_order_mapped_id',
+            'payment_expense_valid_list',
         )
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        if value:
+            try:
+                return str(Employee.objects.get(id=value).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        return None
 
     @classmethod
     def validate_sale_code_type(cls, attrs):
@@ -213,29 +181,90 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
-    def validate(self, validate_data):
-        if validate_data.get('opportunity_mapped', None):
-            if validate_data['opportunity_mapped'].is_close_lost or validate_data['opportunity_mapped'].is_deal_close:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+    @classmethod
+    def validate_supplier_id(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value).id
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'supplier_id': 'Supplier is not exist'})
+        return None
 
+    @classmethod
+    def validate_employee_payment_id(cls, value):
+        if value:
+            try:
+                return str(Employee.objects.get(id=value).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_payment_id': 'Employee payment is not exist'})
+        return None
+
+    @classmethod
+    def validate_opportunity_mapped_id(cls, value):
+        if value:
+            try:
+                opp_obj = Opportunity.objects.get(id=value)
+                if opp_obj.is_deal_close:
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                return str(opp_obj.id)
+            except Opportunity.DoesNotExist:
+                raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist'})
+        return None
+
+    @classmethod
+    def validate_quotation_mapped_id(cls, value):
+        if value:
+            try:
+                return str(Quotation.objects.get(id=value).id)
+            except Quotation.DoesNotExist:
+                raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist'})
+        return None
+
+    @classmethod
+    def validate_sale_order_mapped_id(cls, value):
+        if value:
+            try:
+                return str(SaleOrder.objects.get(id=value).id)
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order_mapped_id': 'Sale Order is not exist'})
+        return None
+
+    @classmethod
+    def validate_payment_expense_valid_list(cls, payment_expense_valid_list):
+        try:
+            for item in payment_expense_valid_list:
+                if not all([
+                    item.get('expense_uom_name'),
+                    float(item.get('expense_quantity', 0)) > 0,
+                    float(item.get('expense_unit_price', 0)) > 0,
+                    item.get('document_number'),
+                    float(item.get('sum_value')) == float(item.get('expense_after_tax_price'))
+                ]):
+                    raise serializers.ValidationError({'line_detail_row_data': 'Tab Line detail is not valid.'})
+
+                item['expense_type_id'] = str(ExpenseItem.objects.get(id=item.get('expense_type_id')).id)
+                if item.get('expense_tax_id'):
+                    item['expense_tax_id'] = str(Tax.objects.get(id=item.get('expense_tax_id')).id)
+                return payment_expense_valid_list
+        except Exception as err:
+            raise serializers.ValidationError({'payment_expense_valid_list': f"Payment data is not valid. {err}"})
+
+    def validate(self, validate_data):
+        print(validate_data.get('is_internal_payment'))
         if validate_data.get('is_internal_payment'):
-            if 'supplier' in validate_data:
-                validate_data.pop('supplier')
+            validate_data.pop('supplier_id')
         else:
-            if 'employee_payment' in validate_data:
-                validate_data.pop('employee_payment')
+            validate_data.pop('employee_payment_id')
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
+        payment_expense_valid_list = validated_data.pop('payment_expense_valid_list', [])
         payment_obj = Payment.objects.create(**validated_data)
-        create_payment_cost_items(
-            payment_obj,
-            self.initial_data.get('payment_expense_valid_list', [])
-        )
+        PaymentCommonFunction.create_payment_cost_items(payment_obj, payment_expense_valid_list)
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(payment_obj, attachment.strip().split(','))
+            PaymentCommonFunction.create_files_mapped(payment_obj, attachment.strip().split(','))
         return payment_obj
 
 
@@ -247,7 +276,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     supplier = serializers.SerializerMethodField()
     employee_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    creator_name = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -266,7 +295,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'supplier',
             'employee_payment',
             'is_internal_payment',
-            'creator_name',
+            'employee_created',
             'employee_inherit',
             'attachment'
         )
@@ -395,21 +424,21 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_creator_name(cls, obj):
+    def get_employee_created(cls, obj):
         return {
-            'id': obj.creator_name_id,
-            'first_name': obj.creator_name.first_name,
-            'last_name': obj.creator_name.last_name,
-            'email': obj.creator_name.email,
-            'full_name': obj.creator_name.get_full_name(2),
-            'code': obj.creator_name.code,
-            'is_active': obj.creator_name.is_active,
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
             'group': {
-                'id': obj.creator_name.group_id,
-                'title': obj.creator_name.group.title,
-                'code': obj.creator_name.group.code
-            } if obj.creator_name.group else {}
-        } if obj.creator_name else {}
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -434,20 +463,29 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return [item.attachment.get_detail() for item in att_objs]
 
 
-class PaymentUpdateSerializer(serializers.ModelSerializer):
+class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
+    payment_expense_valid_list = serializers.ListField()
 
     class Meta:
         model = Payment
         fields = (
             'title',
-            'supplier',
-            'employee_payment',
-            'is_internal_payment',
+            'sale_code_type',
             'method',
-            # system
-            'system_status',
+            'is_internal_payment',
+            'supplier_id',
+            'employee_payment_id',
+            'payment_expense_valid_list',
         )
+
+    @classmethod
+    def validate_sale_code_type(cls, attrs):
+        if attrs in [0, 1, 2, 3]:
+            return attrs
+        raise serializers.ValidationError({'Sale code type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     @classmethod
     def validate_method(cls, attrs):
@@ -455,29 +493,123 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
+    @classmethod
+    def validate_supplier_id(cls, value):
+        if value:
+            try:
+                account = Account.objects.get(id=value)
+                return str(account.id)
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'supplier_id': 'Supplier is not exist'})
+        return None
+
+    @classmethod
+    def validate_employee_payment_id(cls, value):
+        if value:
+            try:
+                return str(Employee.objects.get(id=value).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_payment_id': 'Employee payment is not exist'})
+        return None
+
+    @classmethod
+    def validate_payment_expense_valid_list(cls, payment_expense_valid_list):
+        try:
+            for item in payment_expense_valid_list:
+                if not all([
+                    item.get('expense_uom_name'),
+                    float(item.get('expense_quantity', 0)) > 0,
+                    float(item.get('expense_unit_price', 0)) > 0,
+                    item.get('document_number'),
+                    float(item.get('sum_value')) == float(item.get('expense_after_tax_price'))
+                ]):
+                    raise serializers.ValidationError({'line_detail_row_data': 'Tab Line detail is not valid.'})
+
+                item['expense_type_id'] = str(ExpenseItem.objects.get(id=item.get('expense_type_id')).id)
+                if item.get('expense_tax_id'):
+                    item['expense_tax_id'] = str(Tax.objects.get(id=item.get('expense_tax_id')).id)
+                return payment_expense_valid_list
+        except Exception as err:
+            raise serializers.ValidationError({'payment_expense_valid_list': f"Payment data is not valid. {err}"})
+
     def validate(self, validate_data):
+        print(validate_data.get('is_internal_payment'))
         if validate_data.get('is_internal_payment'):
-            if 'supplier' in validate_data:
-                validate_data.pop('supplier')
+            validate_data.pop('supplier_id')
         else:
-            if 'employee_payment' in validate_data:
-                validate_data.pop('employee_payment')
+            validate_data.pop('employee_payment_id')
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        if instance.opportunity_mapped:
-            if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        payment_expense_valid_list = validated_data.pop('payment_expense_valid_list', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_payment_cost_items(instance, self.initial_data.get('payment_expense_valid_list', []))
+        PaymentCommonFunction.create_payment_cost_items(instance, payment_expense_valid_list)
 
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(instance, attachment.strip().split(','))
+            PaymentCommonFunction.create_files_mapped(instance, attachment.strip().split(','))
         return instance
+
+
+class PaymentCommonFunction:
+    @classmethod
+    def create_payment_cost_items(cls, payment_obj, payment_expense_valid_list):
+        vnd_currency = Currency.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            abbreviation='VND'
+        ).first()
+        if vnd_currency:
+            bulk_info = []
+            payment_value = 0
+            for item in payment_expense_valid_list:
+                if float(item['real_value']) + float(item['converted_value']) == float(item['sum_value']):
+                    payment_value += item.get('expense_after_tax_price', 0)
+                    bulk_info.append(
+                        PaymentCost(
+                            **item,
+                            payment=payment_obj,
+                            currency=vnd_currency,
+                            sale_order_mapped=payment_obj.sale_order_mapped,
+                            quotation_mapped=payment_obj.quotation_mapped,
+                            opportunity_mapped=payment_obj.opportunity_mapped
+                        )
+                    )
+                else:
+                    raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
+
+            PaymentCost.objects.filter(payment=payment_obj).delete()
+            PaymentCost.objects.bulk_create(bulk_info)
+            payment_obj.advance_value = payment_value
+
+            opp = payment_obj.opportunity_mapped
+            quotation = payment_obj.quotation_mapped
+            sale_order = payment_obj.sale_order_mapped
+            sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
+            payment_obj.sale_code = sale_code
+
+            payment_obj.save(update_fields=['payment_value', 'sale_code'])
+            return True
+        return False
+
+    @classmethod
+    def create_files_mapped(cls, payment_obj, file_id_list):
+        try:
+            bulk_data_file = []
+            for index, file_id in enumerate(file_id_list):
+                bulk_data_file.append(PaymentAttachmentFile(
+                    payment=payment_obj,
+                    attachment_id=file_id,
+                    order=index
+                ))
+            PaymentAttachmentFile.objects.filter(payment=payment_obj).delete()
+            PaymentAttachmentFile.objects.bulk_create(bulk_data_file)
+            return True
+        except Exception as err:
+            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
 class PaymentConfigListSerializer(serializers.ModelSerializer):

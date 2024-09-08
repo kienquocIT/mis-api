@@ -188,6 +188,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
+    employee_inherit_id = serializers.UUIDField()
 
     class Meta:
         model = AdvancePayment
@@ -197,8 +198,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'advance_payment_type',
             'supplier',
             'method',
-            'creator_name',
-            'employee_inherit',
+            'employee_inherit_id',
             'return_date',
             'money_gave',
             'opportunity_mapped',
@@ -254,7 +254,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    creator_name = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -278,7 +278,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'quotation_mapped',
             'sale_order_mapped',
             'supplier',
-            'creator_name',
+            'employee_created',
             'employee_inherit',
             'attachment',
             'sale_code'
@@ -393,21 +393,21 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_creator_name(cls, obj):
+    def get_employee_created(cls, obj):
         return {
-            'id': obj.creator_name_id,
-            'first_name': obj.creator_name.first_name,
-            'last_name': obj.creator_name.last_name,
-            'email': obj.creator_name.email,
-            'full_name': obj.creator_name.get_full_name(2),
-            'code': obj.creator_name.code,
-            'is_active': obj.creator_name.is_active,
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
             'group': {
-                'id': obj.creator_name.group_id,
-                'title': obj.creator_name.group.title,
-                'code': obj.creator_name.group.code
-            } if obj.creator_name.group else {}
-        } if obj.creator_name else {}
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -543,11 +543,11 @@ class APCommonFunction:
         elif len_n == 3:
             result = xe2[int(str_n[0])] + " " + cls.read_money_vnd(int(str_n[1:]))
         elif len_n <= 6:
-            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn, " + cls.read_money_vnd(int(str_n[-3:]))
+            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn " + cls.read_money_vnd(int(str_n[-3:]))
         elif len_n <= 9:
-            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu, " + cls.read_money_vnd(int(str_n[-6:]))
+            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu " + cls.read_money_vnd(int(str_n[-6:]))
         elif len_n <= 12:
-            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ, " + cls.read_money_vnd(int(str_n[-9:]))
+            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ " + cls.read_money_vnd(int(str_n[-9:]))
 
         return str(result.strip()).lower()
 

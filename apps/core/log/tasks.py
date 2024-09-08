@@ -69,6 +69,7 @@ def force_new_notify(
         is_submit: bool = True,
         application_id=None,
         comment_mentions_id=None,
+        notify_type: int = 0,
 ):
     obj = Notifications(
         tenant_id=tenant_id,
@@ -84,6 +85,7 @@ def force_new_notify(
         is_done=False,
         application_id=application_id,
         comment_mentions_id=comment_mentions_id,
+        notify_type=notify_type,
     )
     obj.before_save(force_insert=True)
     if is_submit:

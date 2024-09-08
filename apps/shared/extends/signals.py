@@ -60,10 +60,10 @@ __all__ = [
 
 class SaleDefaultData:
     ProductType_data = [
-        {'title': 'Sản phẩm', 'is_default': 1},
-        {'title': 'Bán thành phẩm', 'is_default': 1},
-        {'title': 'Nguyên vật liệu', 'is_default': 1},
-        {'title': 'Dịch vụ', 'is_default': 1},
+        {'code': 'goods', 'title': 'Hàng hóa', 'is_default': 1, 'is_goods': 1},
+        {'code': 'material', 'title': 'Nguyên vật liệu', 'is_default': 1, 'is_material': 1},
+        {'code': 'finished_goods', 'title': 'Thành phẩm', 'is_default': 1, 'is_finished_goods': 1},
+        {'code': 'asset_tool', 'title': 'Tài sản - Công cụ dụng cụ', 'is_default': 1, 'is_asset_tool': 1},
     ]
     TaxCategory_data = [
         {'title': 'Thuế GTGT', 'is_default': 1},
@@ -1204,6 +1204,6 @@ def project_group_event_destroy(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=ProjectMapWork)
 def project_work_event_destroy(sender, instance, **kwargs):
-    calc_rate_project(instance.project, instance)
     re_calc_work_group(instance.work)
+    calc_rate_project(instance.project, instance)
     print('re calculator rate is Done')

@@ -31,10 +31,15 @@ class GroupCreateSerializers(serializers.ModelSerializer):
     def validate(self, attrs):
         gr_end_date = attrs['gr_end_date']
         gr_start_date = attrs['gr_start_date']
+        project = attrs['project']
+
         if gr_end_date < gr_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
+
+        if gr_start_date < project.start_date or gr_start_date > project.finish_date or \
+                gr_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
         # valid weight
-        project = attrs['project']
         value = group_calc_weight(project, attrs['gr_weight'])
         if attrs['gr_weight'] == 0:
             attrs['gr_weight'] = value

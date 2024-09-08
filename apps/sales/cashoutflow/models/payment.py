@@ -69,11 +69,6 @@ class Payment(DataAbstractModel):
         verbose_name='Payment method',
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
-    creator_name = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='payment_creator_name'
-    )
     payment_value = models.FloatField(default=0)
     sale_code = models.CharField(max_length=100, null=True)
 

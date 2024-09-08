@@ -2,7 +2,8 @@ from django.urls import path
 from apps.sales.cashoutflow.views import (
     AdvancePaymentList, AdvancePaymentDetail,
     PaymentList, PaymentDetail,
-    ReturnAdvanceList, ReturnAdvanceDetail, PaymentConfigList, AdvancePaymentCostList, PaymentCostList
+    ReturnAdvanceList, ReturnAdvanceDetail, PaymentConfigList,
+    AdvancePaymentCostList, PaymentCostList, APListForReturn
 )
 
 
@@ -18,4 +19,5 @@ urlpatterns = [
 
     path('return-advances', ReturnAdvanceList.as_view(), name='ReturnAdvanceList'),
     path('return-advance/<str:pk>', ReturnAdvanceDetail.as_view(), name='ReturnAdvanceDetail'),
+    path('ap-list-for-return', APListForReturn.as_view(), name='APListForReturn'),
 ]

@@ -91,6 +91,7 @@ class HookEventHandler:
                             'company_id': self.runtime_obj.company_id,
                             'title': self.runtime_obj.doc_title,
                             'msg': WorkflowMsgNotify.return_creator if self.is_return else WorkflowMsgNotify.new_task,
+                            'notify_type': 11 if self.is_return else 10,
                             'date_created': timezone.now(),
                             'doc_id': self.runtime_obj.doc_id,
                             'doc_app': self.runtime_obj.app_code,
@@ -99,6 +100,34 @@ class HookEventHandler:
                             'employee_sender_id': None,
                         }
                     )
+            if len(args_arr) > 0:
+                call_task_background(
+                    force_new_notify_many,
+                    **{
+                        'data_list': args_arr,
+                    }
+                )
+            return True
+        except Exception as err:
+            print('push_base_notify: ', str(err))
+        return False
+
+    def push_notify_end_workflow(self, doc_obj, end_type=0):
+        try:
+            type_msg = WorkflowMsgNotify.approved if end_type == 0 else WorkflowMsgNotify.rejected
+            args_arr = [{
+                'tenant_id': self.runtime_obj.tenant_id,
+                'company_id': self.runtime_obj.company_id,
+                'title': self.runtime_obj.doc_title,
+                'msg': f'{WorkflowMsgNotify.end_workflow} ({type_msg})',
+                'notify_type': 12,
+                'date_created': timezone.now(),
+                'doc_id': self.runtime_obj.doc_id,
+                'doc_app': self.runtime_obj.app_code,
+                'user_id': None,
+                'employee_id': doc_obj.employee_inherit_id,
+                'employee_sender_id': None,
+            }]
             if len(args_arr) > 0:
                 call_task_background(
                     force_new_notify_many,

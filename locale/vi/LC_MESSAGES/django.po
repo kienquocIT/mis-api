@@ -174,6 +174,10 @@ msgstr "Prices"
 msgid "Product"
 msgstr "Sản phẩm"
 
+# a4a99ba0-5596-4ff8-8bd9-68414b5af579
+msgid "Production Order"
+msgstr "Lệnh sản xuất"
+
 # f57b9e92-cb01-42e3-b7fe-6166ecd18e9c
 msgid "Promotions"
 msgstr "Promotions"
@@ -362,6 +366,10 @@ msgstr "Mật khẩu mới không thể trùng với mật khẩu hiện tại"
 #: .\apps\shared\translations\auth.py:7
 msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
 msgstr "Yêu cầu có dữ liệu, tối đa 150 ký tự chỉ bao gồm chữ cái, số."
+
+#
+msgid "The account has been locked due to unusual activity. If this is incorrect, please contact your organization administrator or Bflow support team for assistance."
+msgstr "Tài khoản đã bị khoá do phát hiện hoạt động bất thường. Nếu không đúng, vui lòng liên hệ quản trị viên tổ chức của bạn hoặc đội hỗ trợ Bflow để được hỗ trợ."
 
 #: .\apps\shared\translations\auth.py:9
 msgid "The feature require employee information in your account."
@@ -1194,7 +1202,6 @@ msgstr "Quy trình kết thúc"
 #
 msgid "Rejected"
 msgstr "Từ chối"
-
 
 #
 msgid "Star date or finish date not in range of project date"

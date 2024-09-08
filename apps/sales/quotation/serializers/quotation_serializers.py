@@ -309,10 +309,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
-        QuotationCommonCreate().create_quotation_sub_models(
-            validated_data=validated_data,
-            instance=quotation
-        )
+        QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
         return quotation
 
 
@@ -463,11 +460,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        QuotationCommonCreate().create_quotation_sub_models(
-            validated_data=validated_data,
-            instance=instance,
-            is_update=True
-        )
+        QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=instance)
         return instance
 
 

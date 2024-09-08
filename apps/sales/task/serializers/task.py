@@ -2,9 +2,7 @@ import re
 from datetime import datetime
 from django.conf import settings
 from rest_framework import serializers
-import django.utils.translation
 
-from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task, calc_rate_project
@@ -12,7 +10,8 @@ from apps.sales.project.models import ProjectMapTasks
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
-from apps.shared import HRMsg, BaseMsg, ProjectMsg
+from apps.shared import HRMsg, ProjectMsg
+from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
@@ -20,45 +19,22 @@ __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', '
            'OpportunityTaskStatusListSerializer', 'OpportunityTaskUpdateSerializer']
 
 
-def handle_attachment(user, instance, attachments, create_method):
-    if attachments:
-        relate_app = Application.objects.get(id="e66cfb5a-b3ce-4694-a4da-47618f53de4c")
-
-        # destroy current attachment
-        current_attach = TaskAttachmentFile.objects.filter(task=instance)
-        if current_attach:
-            current_attach.delete()
-
-        employee_id = getattr(user, 'employee_current_id', None)
-        if not employee_id:
-            raise serializers.ValidationError({'User': BaseMsg.USER_NOT_MAP_EMPLOYEE})
-
-        # check files
-        state, att_objs = Files.check_media_file(file_ids=attachments, employee_id=employee_id, doc_id=instance.id)
+def handle_attachment(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.get(id="49fe2eb9-39cd-44af-b74a-f690d7b61b67")
+        state = TaskAttachmentFile.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
         if state:
-            # regis file
-            file_objs = Files.regis_media_file(
-                relate_app=relate_app, relate_doc_id=instance.id, file_objs_or_ids=att_objs,
-            )
-
-            # create m2m
-            m2m_obj = []
-            for counter, obj in enumerate(file_objs):
-                m2m_obj.append(
-                    TaskAttachmentFile(
-                        task=instance,
-                        attachment=obj,
-                        order=counter+1,
-                    )
-                )
-            TaskAttachmentFile.objects.bulk_create(m2m_obj)
-
-            instance.attach = attachments
-            if create_method:
-                instance.save(update_fields=['attach'])
             return True
-        raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
+
+
+def update_models_attachment_assignee(attachment_list):
+    attach_lst = list(map(lambda x: str(x.id), attachment_list))
+    all_task = TaskAttachmentFile.objects.filter(attachment_id__in=attach_lst)
+    all_task.update(is_assignee_file=True)
 
 
 def map_task_with_project(task, work):
@@ -178,14 +154,14 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach', 'percent_completed', 'project', 'work')
+                  'log_time', 'attach', 'attach_assignee', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_end_time(cls, attrs):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': django.utils.translation.gettext_lazy("End date is required.")}
+            {'title': SaleTask.DATE_TIME_IS_REQUIRED}
         )
 
     @classmethod
@@ -229,6 +205,28 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
+    def validate_attach(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    def validate_attach_assignee(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def validate(self, attrs):
         if 'project' in attrs:
             prj_obj = attrs['project']
@@ -237,13 +235,25 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             if check_permit:
                 return attrs
             raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
+
+        if 'percent_completed' in attrs:
+            pc_value = attrs['percent_completed']
+            if pc_value == 100 and (
+                    'log_time' not in attrs or ['start_date', 'end_date', 'time_spent'] not in attrs['log_time']):
+                raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
         return attrs
 
     def create(self, validated_data):
         user = self.context.get('user', None)
         project_work = validated_data.pop('work', None)
+        attachment = validated_data.pop('attach', None)
+        attach_assignee = validated_data.pop('attach_assignee', None)
         task = OpportunityTask.objects.create(**validated_data)
-        handle_attachment(user, task, validated_data.get('attach', None), True)
+        if attachment is not None:
+            handle_attachment(task, attachment)
+        if attach_assignee is not None:
+            handle_attachment(task, attach_assignee)
+            update_models_attachment_assignee(attach_assignee['new'])
         if task and 'log_time' in validated_data:
             log_time = validated_data['log_time']
             employee = OpportunityTaskLogWorkSerializer.valid_employee_log_work(user.employee_current, task)
@@ -351,34 +361,13 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attach(cls, obj):
-        if obj.attach:  # noqa
-            one_attach = obj.attach[0]
-            file = TaskAttachmentFile.objects.filter(
-                task=obj,
-                media_file=one_attach
-            )
-            if file.exists():
-                # obj.attachments = list((lambda x: x.files, attach))
-                attachments = []
-                # obj.attachments = list(map(lambda x: x['files'], attach))
-                for item in file:
-                    files = item.attachment
-                    attachments.append(
-                        {
-                            'files': {
-                                "id": str(files.id),
-                                "relate_app_id": str(files.relate_app_id),
-                                "relate_app_code": files.relate_app_code,
-                                "relate_doc_id": str(files.relate_doc_id),
-                                "media_file_id": str(files.media_file_id),
-                                "file_name": files.file_name,
-                                "file_size": int(files.file_size),
-                                "file_type": files.file_type
-                            }
-                        }
-                    )
-                return attachments
-        return []
+        att_objs = TaskAttachmentFile.objects.select_related('attachment').filter(task=obj)
+        lst = []
+        for item in att_objs:
+            f_detail = item.attachment.get_detail()
+            f_detail['is_assignee_file'] = item.is_assignee_file
+            lst.append(f_detail)
+        return lst
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -411,9 +400,28 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OpportunityTask
-        fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity',
-                  'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'task_log_work', 'attach', 'sub_task_list', 'percent_completed', 'project')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'task_status',
+            'start_date',
+            'end_date',
+            'estimate',
+            'opportunity',
+            'priority',
+            'label',
+            'employee_inherit',
+            'remark',
+            'checklist',
+            'parent_n',
+            'employee_created',
+            'task_log_work',
+            'attach',
+            'sub_task_list',
+            'percent_completed',
+            'project',
+        )
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
@@ -424,7 +432,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'opportunity', 'percent_completed', 'project', 'work')
+                  'attach', 'attach_assignee', 'opportunity', 'percent_completed', 'project', 'work')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -488,6 +496,30 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             {'system': SaleTask.NOT_CONFIG}
         )
 
+    def validate_attach(self, attrs):
+        user = self.context.get('user', None)
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    def validate_attach_assignee(self, attrs):
+        user = self.context.get('user', None)
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def validate(self, attrs):
         if 'project' in attrs:
             employee_current = self.context.get('user', None).employee_current
@@ -500,10 +532,19 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         self.valid_config_task(instance, validated_data, user)
+        attachment = validated_data.pop('attach', None)
+        attach_assignee = validated_data.pop('attach_assignee', None)
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
-        handle_attachment(user, instance, validated_data.get('attach', None), False)
         instance.save()
+
+        if attachment is not None:
+            handle_attachment(instance, attachment)
+        if attach_assignee is not None:
+            handle_attachment(instance, attach_assignee)
+            if len(attach_assignee['new']):
+                update_models_attachment_assignee(attach_assignee['new'])
 
         if instance.project:
             project_work = validated_data.pop('work', None)

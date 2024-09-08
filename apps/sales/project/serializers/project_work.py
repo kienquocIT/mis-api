@@ -94,10 +94,15 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         attrs['employee_inherit'] = attrs['project'].employee_inherit
         w_start_date = attrs['w_start_date']
         w_end_date = attrs['w_end_date']
+        project = attrs['project']
+
         if w_end_date < w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
 
-        project = attrs['project']
+        if w_start_date < project.start_date or w_start_date > project.finish_date or \
+                w_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
+
         group = attrs['group'] if 'group' in attrs else None
         if group:
             value = work_calc_weight_h_group(attrs['w_weight'], group)
@@ -203,10 +208,12 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         work_map = group.project_groupmapwork_group.all()
         if work_map:
             group.gr_rate = 0
+            g_rate_temp = 0
             for item in work_map:
                 item_w = item.work
                 if item_w.w_weight and item_w.w_rate:
-                    group.gr_rate += (item_w.w_rate / 100) * item_w.w_weight
+                    g_rate_temp += (item_w.w_rate / 100) * item_w.w_weight
+            group.gr_rate = round(g_rate_temp, 1)
             group.save()
 
     @classmethod

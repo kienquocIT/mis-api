@@ -1,5 +1,7 @@
+from datetime import timedelta, datetime
 from typing import Union
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.utils import translation, timezone
@@ -8,6 +10,7 @@ from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
 from apps.core.account.models import User, ValidateUser
 from apps.core.auths.serializers import (
@@ -16,8 +19,9 @@ from apps.core.auths.serializers import (
     ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
 from apps.shared import (
-    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck,
+    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck, FORMATTING, Caching,
 )
+from misapi.mongo_client import mongo_log_auth, MongoViewParse
 
 
 # LOGIN:
@@ -116,22 +120,58 @@ class AuthLogin(generics.GenericAPIView):
         # get user object from serializer
         user_obj = ser.validated_data
         if user_obj:
+            if user_obj.auth_locked_out is True:
+                return ResponseController.bad_request_400(AuthMsg.USER_WAS_LOCKED_OUT)
+
             # info employee_id, space_id make sure correct
             self.check_and_update_globe(user_obj)
 
             user_detail = user_obj.get_detail()
-            if user_obj.auth_2fa is True:
+            if settings.SYNC_2FA_ENABLED is True and user_obj.auth_2fa is True:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_pre_2fa_token(user=user_obj),
+                    'need_verify_2fa': True,
                     **user_detail,
                 }
             else:
                 result = {
                     'token': MyTokenObtainPairSerializer.get_full_token(user=user_obj, is_verified=False),
+                    'need_verify_2fa': False,
                     **user_detail,
                 }
+            mongo_log_auth.insert_one(
+                metadata=mongo_log_auth.metadata(user_id=str(user_obj.id)),
+                endpoint="LOGIN",
+                return_type="PRE_2FA_TOKEN" if user_obj.auth_2fa is True else "FULL_TOKEN",
+            )
             return ResponseController.success_200(result, key_data='result')
         return ResponseController.bad_request_400(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
+
+
+class AuthLogout(APIView):
+    @swagger_auto_schema(operation_summary='User logout')
+    @mask_view(login_require=True)
+    def delete(self, request, *args, **kwargs):
+        # records user sign-out in device
+        # if integrate device accept call:
+        #   -> remove device from allowed_devices
+        # else: nothing was destroyed
+        access_token = getattr(request, 'auth', None)
+        if not isinstance(access_token, AccessToken):
+            return ResponseController.unauthorized_401()
+        try:
+            refresh_token_str = request.headers.get(settings.SIMPLE_JWT['AUTH_HEADER_NAME_REFRESH_TOKEN'])
+            refresh_token = RefreshToken(refresh_token_str)
+        except Exception as errs:  # pylint: disable=W0612
+            return ResponseController.bad_request_400({
+                'refresh_token': AuthMsg.LOGOUT_REQUIRE_REFRESH_TOKEN
+            })
+        refresh_token.blacklist()
+        mongo_log_auth.insert_one(
+            metadata=mongo_log_auth.metadata(user_id=str(request.user.id)),
+            endpoint="LOGOUT",
+        )
+        return ResponseController.no_content_204()
 
 
 class AuthRefreshLogin(generics.GenericAPIView):
@@ -163,6 +203,8 @@ class MyProfile(APIView):
 
 
 class AliveCheckView(APIView):
+    permission_classes = [AllowAny]
+
     @swagger_auto_schema(operation_summary='Check session is alive')
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
@@ -265,3 +307,121 @@ class ForgotPasswordDetailView(APIView):
                 return ResponseController.success_200(data={'new_password': new_password})
             raise serializers.ValidationError({'': AuthMsg.VALIDATE_OTP_EXPIRED})
         return ResponseController.notfound_404()
+
+
+class AuthLogsView(APIView):
+    @swagger_auto_schema(operation_summary="Get log of user's authentication")
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
+            view_parse = MongoViewParse(request=request)
+            page_size = view_parse.get_page_size()
+            page_index = view_parse.get_page_index()
+            record_skip = page_size * (page_index - 1)
+            ordering = view_parse.get_ordering(
+                default_data={
+                    'timestamp': -1,
+                }
+            )
+            filter_data = {
+                'metadata.service_name': 'AUTH',
+                'metadata.user_id': str(request.user.id),
+            }
+            count = mongo_log_auth.count_documents(filter_data)
+            queries = mongo_log_auth.find(
+                filter_data,
+                sort=ordering,
+                skip=record_skip,
+                limit=page_size
+            )
+            results = [
+                {
+                    'timestamp': FORMATTING.parse_datetime(item['timestamp']),
+                    'service_name': item.get('endpoint', ''),
+                    'log_level': item.get('log_level', ''),
+                    'errors': item.get('errors', ''),
+                } for item in queries
+            ]
+            return ResponseController.success_200(
+                data=MongoViewParse.parse_return(
+                    results=results,
+                    page_index=page_index,
+                    page_size=page_size,
+                    count=count,
+                ),
+                key_data='',
+            )
+        return ResponseController.success_200(data=MongoViewParse.parse_return(results=[]))
+
+
+class AuthLogReport(APIView):
+    @swagger_auto_schema(operation_summary='Chart report data since 7 days')
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
+            try:
+                range_selected = int(request.query_params.dict().get('range', 7))
+                if range_selected not in [7, 14, 30]:
+                    raise ValueError()
+            except ValueError:
+                range_selected = 7
+
+            key_of_cache = f'auth_log_${str(request.user.id)}_{range_selected}'
+            data_cached = Caching().get(key_of_cache)
+            if data_cached:
+                results = data_cached
+            else:
+                end_time = timezone.now()
+                start_time = datetime(year=end_time.year, month=end_time.month, day=end_time.day) - timedelta(
+                    days=range_selected
+                )
+                pipeline = [
+                    {
+                        "$match": {
+                            "timestamp": {"$gte": start_time},
+                            "metadata.service_name": "AUTH",
+                            "metadata.user_id": str(request.user.id),
+                        },
+                    },
+                    {
+                        "$addFields": {"date": {"$dateTrunc": {"date": "$timestamp", "unit": "day"}}}
+                    }, {
+                        "$group": {
+                            "_id": {
+                                "date": "$date",
+                                "endpoint": "$endpoint",
+                                "log_level": "$log_level"
+                            },
+                            "count": {
+                                "$sum": 1
+                            }
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": "$_id.date",
+                            "details": {
+                                "$push": {
+                                    "endpoint": "$_id.endpoint",
+                                    "log_level": "$_id.log_level",
+                                    "count": "$count"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "$sort": {"_id": 1}
+                    },
+                ]
+                queries = mongo_log_auth.aggregate(pipeline)
+
+                results = [
+                    {
+                        'date': result['_id'],
+                        'details': result['details'],
+                    }
+                    for result in queries
+                ]
+                Caching().set(key_of_cache, results, timeout=60)
+            return ResponseController.success_200(data=results)
+        return ResponseController.success_200(data=MongoViewParse.parse_return(results=[]))
