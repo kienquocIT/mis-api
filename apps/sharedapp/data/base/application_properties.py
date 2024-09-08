@@ -1647,7 +1647,7 @@ AppProp_SaleData_Advance_Payment_data = {
     "51840528-2a9f-448b-afcb-ad0f421fd523": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "*Line detail table",
-        "code": "expense_valid_list",
+        "code": "ap_item_list",
         "type": 1,
     },
     "72848cc3-54b5-44d9-9deb-6c503cd64d04": {
