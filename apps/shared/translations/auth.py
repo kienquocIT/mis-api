@@ -45,3 +45,7 @@ class AuthMsg:
     TOTP_DISABLE_BEFORE_REMOVE = _("Deactivate 2FA before performing deletion")
 
     LOGOUT_REQUIRE_REFRESH_TOKEN = _("The refresh token must be required")
+
+    HOME_DAY_CALENDAR_FORMAT_INCORRECT = _(
+        "The format day is incorrect. The format should be year[yyyy]-month[mm]-day[dd]"
+    )

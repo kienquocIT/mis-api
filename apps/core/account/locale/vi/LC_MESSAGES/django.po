@@ -76,3 +76,7 @@ msgstr "Vô hiệu hóa 2FA trước khi thực hiện xóa"
 #
 msgid "The refresh token must be required"
 msgstr "Mã làm mới là bắt buộc"
+
+#
+msgid "The format day is incorrect. The format should be year[yyyy]-month[mm]-day[dd]"
+msgstr "Định dạng ngày không chính xác. Định dạng nên là năm[yyyy]-tháng[mm]-ngày[dd]"
