@@ -33,7 +33,7 @@ class PromotionTestCase(AdvanceTestCase):
             "rate": 0.45
         }
         currency = self.client.post(reverse("CurrencyList"), currency_data, format='json')
-        product_type = ProductTestCase.create_product_type(self).data['result']  # noqa
+        product_type = ProductTestCase().product_type
         product_category = ProductTestCase().product_category
         unit_of_measure, uom_group = ProductTestCase().uom, ProductTestCase().uom_group
         data1 = {
