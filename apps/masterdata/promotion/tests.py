@@ -34,8 +34,8 @@ class PromotionTestCase(AdvanceTestCase):
         }
         currency = self.client.post(reverse("CurrencyList"), currency_data, format='json')
         product_type = ProductTestCase.create_product_type(self).data['result']  # noqa
-        product_category = ProductTestCase.create_product_category(self).data['result']
-        unit_of_measure, uom_group = ProductTestCase.create_uom(self)
+        product_category = ProductTestCase().product_category
+        unit_of_measure, uom_group = ProductTestCase().uom, ProductTestCase().uom_group
         data1 = {
             "code": 'PRD123',
             "title": "Laptop HP 6R",
