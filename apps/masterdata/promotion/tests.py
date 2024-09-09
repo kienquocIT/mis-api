@@ -33,18 +33,7 @@ class PromotionTestCase(AdvanceTestCase):
             "rate": 0.45
         }
         currency = self.client.post(reverse("CurrencyList"), currency_data, format='json')
-        product_type = ProductTestCase.get_product_type()
-        product_category = ProductTestCase.get_product_category()
-        unit_of_measure, uom_group = ProductTestCase.get_uom(), ProductTestCase.get_uom_group()
-        data1 = {
-            "code": 'PRD123',
-            "title": "Laptop HP 6R",
-            "product_choice": [],
-            'product_types_mapped_list': [product_type['id']],
-            'general_product_category': product_category['id'],
-            'general_uom_group': uom_group.data['result']['id']
-        }
-        product = self.client.post(reverse("ProductList"), data1, format='json')
+        product = ProductTestCase().test_create_product()
         data = {
             'title': 'promotion test',
             'currency': currency.data['result']['id'],
