@@ -14,6 +14,33 @@ class PromotionTestCase(AdvanceTestCase):
         self.authenticated()
 
     # for using test create promotion
+
+    def create_product_type(self):
+        url = reverse('ProductTypeList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'San pham 1',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def create_product_category(self):
+        url = reverse('ProductCategoryList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Hardware',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
     def create_uom_group(self):
         url = reverse('UnitOfMeasureGroupList')
         response = self.client.post(
@@ -33,7 +60,18 @@ class PromotionTestCase(AdvanceTestCase):
             "rate": 0.45
         }
         currency = self.client.post(reverse("CurrencyList"), currency_data, format='json')
-        product = ProductTestCase().test_create_product()
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
+        uom_group = self.create_uom_group()
+        data1 = {
+            "code": 'PRD123',
+            "title": "Laptop HP 6R",
+            "product_choice": [],
+            'product_types_mapped_list': [product_type['id']],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id']
+        }
+        product = self.client.post(reverse("ProductList"), data1, format='json')
         data = {
             'title': 'promotion test',
             'currency': currency.data['result']['id'],
