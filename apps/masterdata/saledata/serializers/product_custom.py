@@ -19,7 +19,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
-            'price_list', 'product_choice', 'supplied_by', 'inventory_information'
+            'price_list', 'product_choice', 'supplied_by', 'inventory_information',
         )
 
     @classmethod
@@ -63,6 +63,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'id': str(obj.general_uom_group_id), 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
             } if obj.general_uom_group else {},
+            'general_traceability_method': obj.general_traceability_method,
         }
 
     @classmethod

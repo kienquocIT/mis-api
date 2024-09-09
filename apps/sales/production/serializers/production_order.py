@@ -64,6 +64,7 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'date_created',
         )
 
 
