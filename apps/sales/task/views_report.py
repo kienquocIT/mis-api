@@ -73,10 +73,10 @@ class MyTaskReportView(APIView):
         return results
 
     def get_by_day_report(self, start_time, end_time):
-        task_status_specials = [
-            "FINISH_TASK",
-            "ASSIGN_TASK",
-        ]
+        # task_status_specials = [
+        #     "FINISH_TASK",
+        #     "ASSIGN_TASK",
+        # ]
         pipeline = [
             {
                 "$match": {
@@ -84,9 +84,9 @@ class MyTaskReportView(APIView):
                     "metadata.employee_inherit_id": str(self.request.user.employee_current_id),
                     "metadata.tenant_id": str(self.request.user.tenant_current_id),
                     "metadata.company_id": str(self.request.user.company_current_id),
-                    "task_status": {
-                        "$in": task_status_specials
-                    },
+                    # "task_status": {
+                    #     "$in": task_status_specials
+                    # },
                 },
             },
             {
@@ -102,7 +102,9 @@ class MyTaskReportView(APIView):
                         "task_id": "$task_id",
                         "task_status": "$task_status",
                         "date": "$date"
-                    }
+                    },
+                    "task_status_translate": {"$first": "$task_status_translate"},
+                    "task_color": {"$first": "$task_color"},
                 }
             },
             {
@@ -111,7 +113,9 @@ class MyTaskReportView(APIView):
                         "date": "$_id.date",
                         "task_status": "$_id.task_status"
                     },
-                    "count": {"$sum": 1}
+                    "count": {"$sum": 1},
+                    "task_status_translate": {"$first": "$task_status_translate"},
+                    "task_color": {"$first": "$task_color"},
                 }
             },
             {
@@ -120,7 +124,9 @@ class MyTaskReportView(APIView):
                     "details": {
                         "$push": {
                             "task_status": "$_id.task_status",
-                            "count": "$count"
+                            "task_status_translate": "$task_status_translate",
+                            "task_color": "$task_color",
+                            "count": "$count",
                         }
                     }
                 }
@@ -145,7 +151,7 @@ class MyTaskReportView(APIView):
         report_type = request.query_params.get('report_type', 'ratio')
         try:
             range_selected = int(request.query_params.dict().get('range', 7))
-            if range_selected in [7, 14, 30]:
+            if range_selected not in [7, 14, 30]:
                 raise ValueError()
         except ValueError:
             range_selected = 7
@@ -166,7 +172,7 @@ class MyTaskReportView(APIView):
             results = results_cached
         else:
             results = {
-                'ratio': self.get_ratio_report(start_time=start_time, end_time=end_time),
+                # 'ratio': self.get_ratio_report(start_time=start_time, end_time=end_time),
                 'by_day': self.get_by_day_report(start_time=start_time, end_time=end_time),
             }
 

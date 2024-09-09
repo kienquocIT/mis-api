@@ -177,9 +177,14 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         response = self.client.get(url_with_query_string, format='json')
         return response
 
-    def get_ward(self):
+    def get_ward(self, district_id):
+        params = {
+            'district_id': district_id
+        }
         url = reverse("WardList")
-        response = self.client.get(url, format='json')
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
         return response
 
     def create_new_tax_category(self):

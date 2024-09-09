@@ -127,7 +127,7 @@ class AdvancePaymentCost(SimpleAbstractModel):
     expense_name = models.CharField(max_length=150, null=True)
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_uom_name = models.CharField(max_length=150, null=True)
-    expense_quantity = models.IntegerField()
+    expense_quantity = models.FloatField()
     expense_unit_price = models.FloatField(default=0)
     expense_tax = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
     expense_tax_price = models.FloatField(default=0)

@@ -108,6 +108,7 @@ def save_comment(sender, instance, created, **kwargs):  # pylint: disable=W0613
                         'company_id': instance.company_id,
                         'title': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
                         'msg': instance.contents_txt,
+                        'notify_type': 20,
                         'date_created': instance.date_created,
                         'doc_id': instance.doc_id,
                         'doc_app': instance.application.get_prefix_permit(),

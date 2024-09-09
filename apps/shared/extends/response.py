@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils.functional import Promise
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.response import Response
 
@@ -64,6 +65,8 @@ class ConvertErrors:
             elif isinstance(value, dict):
                 for key_dict, value_dict in value.items():
                     self.handle_dict(key=key_dict, value=value_dict)
+            elif isinstance(value, Promise):
+                self.result = {key: value}
         return True
 
     def convert(self, errors: dict, status_code: str or int):

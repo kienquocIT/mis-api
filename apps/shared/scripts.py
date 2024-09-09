@@ -1999,3 +1999,16 @@ def update_product_type_default_data():
         code='asset_tool', title='Tài sản - Công cụ dụng cụ', is_default=1, is_asset_tool=1
     )
     return True
+
+
+def add_product_type_service():
+    for company in Company.objects.all():
+        ProductType.objects.create(
+            code='service',
+            title='Dịch vụ',
+            is_default=1,
+            is_service=1,
+            company=company,
+            tenant=company.tenant
+        )
+    return True

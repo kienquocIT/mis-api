@@ -43,6 +43,7 @@ class NotifyListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'msg',
+            'notify_type',
             'doc_id',
             'doc_app',
             'application_id',

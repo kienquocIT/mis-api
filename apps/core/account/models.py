@@ -417,10 +417,12 @@ class TOTPUser(models.Model):  # pylint: disable=R0902
             self.secret_key = cryptor.encrypt(secret_key)
             self.save()
 
-    def get_secret_key(self):
+    def get_secret_key(self, b32encode=False):
         key = SimpleEncryptor().generate_key(password=settings.PASSWORD_TOTP_2FA)
         cryptor = SimpleEncryptor(key=key)
         secret_key = cryptor.decrypt(self.secret_key)
+        if b32encode is True:
+            return base64.b32encode(secret_key.encode('utf-8')).decode('utf-8')
         return secret_key
 
     def generate_otp_qri(self):

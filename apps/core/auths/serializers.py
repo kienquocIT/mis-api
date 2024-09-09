@@ -11,8 +11,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.core.tenant.models import Tenant
 from apps.core.company.models import Company, CompanyUserEmployee
-from apps.shared import ServerMsg, AccountMsg
-from apps.core.account.models import User, ValidateUser
+from apps.shared import ServerMsg, AccountMsg, BaseMsg
+from apps.core.account.models import User, ValidateUser, TOTPUser
 from apps.shared.translations import AuthMsg
 
 
@@ -155,6 +155,7 @@ class ChangePasswordSerializer(serializers.Serializer):  # noqa
     current_password = serializers.CharField(min_length=6)
     new_password = serializers.CharField(min_length=6)
     new_password_again = serializers.CharField(min_length=6)
+    otp = serializers.CharField(required=False)
 
     def validate_current_password(self, attrs):
         if self.instance and hasattr(self.instance, 'check_password'):
@@ -209,6 +210,29 @@ class ChangePasswordSerializer(serializers.Serializer):  # noqa
         new_pass_again = attrs['new_password_again']
         if new_pass == new_pass_again:
             if old_pass != new_pass:
+                otp = attrs.get('otp', None)
+                if self.instance.auth_2fa is True:
+                    if not otp:
+                        raise serializers.ValidationError(
+                            {
+                                'otp': BaseMsg.REQUIRED,
+                            }
+                        )
+                    try:
+                        totp = TOTPUser.objects.get(user=self.instance)
+                    except TOTPUser.DoesNotExist:
+                        raise serializers.ValidationError(
+                            {
+                                'otp': AuthMsg.OTP_INTEGRATE_FAILURE,
+                            }
+                        )
+                    state = totp.verify(otp)
+                    if not state:
+                        raise serializers.ValidationError(
+                            {
+                                'otp': AuthMsg.OTP_NOT_MATCH,
+                            }
+                        )
                 return attrs
             raise serializers.ValidationError(
                 {

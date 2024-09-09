@@ -53,6 +53,7 @@ class SaleTask:
     ERROR_NOT_LOGWORK = _('You do not permission to change start/end date')
     NOT_CHANGE_ESTIMATE = _('You do not permission to change estimate')
     NOT_CONFIG = _('Missing default info please contact with admin')
+    DATE_TIME_IS_REQUIRED = _('Date start/end is required.')
 
 
 class PurchaseRequestMsg:

@@ -167,6 +167,15 @@ class ActivityLog(models.Model):
         ]
 
 
+NOTIFY_TYPES = (
+    (0, ''),
+    (10, 'WF_NEW_TASK'),
+    (11, 'WF_RETURN'),
+    (12, 'WF_END'),
+    (20, 'MENTION'),
+)
+
+
 class Notifications(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     tenant = models.ForeignKey(
@@ -258,6 +267,9 @@ class Notifications(models.Model):
     #
     application = models.ForeignKey('base.Application', null=True, on_delete=models.SET_NULL)
     comment_mentions = models.ForeignKey('comment.Comments', null=True, on_delete=models.SET_NULL)
+
+    # type of notify
+    notify_type = models.PositiveSmallIntegerField(default=0, choices=NOTIFY_TYPES)
 
     def get_msg_minimal(self, max_length=100) -> str:
         if self.msg:
