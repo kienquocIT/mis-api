@@ -123,23 +123,41 @@ class ProductTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
         self.authenticated()
-        self.product_type = ProductType.objects.create(**{'title': 'May mac'})
-        self.product_category = ProductCategory.objects.create(**{'title': 'Det may'})
-        self.uom_group = UnitOfMeasureGroup.objects.create(**{'title': 'Don vi'})
-        self.uom = UnitOfMeasure.objects.create(**{
+
+    @classmethod
+    def get_product_type(cls):
+        return ProductType.objects.create(**{'title': 'May mac'})
+
+    @classmethod
+    def get_product_category(cls):
+        return ProductCategory.objects.create(**{'title': 'Det may'})
+
+    @classmethod
+    def get_uom_group(cls):
+        return UnitOfMeasureGroup.objects.create(**{'title': 'Don vi'})
+
+    @classmethod
+    def get_uom(cls):
+        return UnitOfMeasure.objects.create(**{
             'code': 'BO',
             'title': 'Bộ',
-            'group': self.uom_group,
+            'group': cls.get_uom_group(),
             'ratio': 1,
             'rounding': 1,
             'is_referenced_unit': True
         })
-        self.tax_category = TaxCategory.objects.create(**{'title': 'Thuế XXX'})
-        self.tax = Tax.objects.create(**{
+
+    @classmethod
+    def get_tax_category(cls):
+        return TaxCategory.objects.create(**{'title': 'Thuế XXX'})
+
+    @classmethod
+    def get_tax(cls):
+        return Tax.objects.create(**{
             'title': 'Thuế bán hành VAT-10%',
             'code': 'VAT-10',
             'rate': 10,
-            'category': self.tax_category,
+            'category': cls.get_tax_category(),
             'tax_type': 0
         })
 
@@ -161,17 +179,17 @@ class ProductTestCase(AdvanceTestCase):
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
-            'product_types_mapped_list': [self.product_type.id],
-            'general_product_category': self.product_category.id,
-            'general_uom_group': self.uom_group.id,
+            'product_types_mapped_list': [self.get_product_type().id],
+            'general_product_category': self.get_product_category().id,
+            'general_uom_group': self.get_uom_group().id,
             'length': 50,
             'width': 30,
             'height': 10,
             'volume': 15000,
             'weight': 200,
             # sale
-            'sale_default_uom': self.uom.id,
-            'sale_tax': self.tax.id,
+            'sale_default_uom': self.get_uom().id,
+            'sale_tax': self.get_tax().id,
             'sale_currency_using': currency['id'],
             'sale_product_price_list': [
                 {
@@ -181,12 +199,12 @@ class ProductTestCase(AdvanceTestCase):
                 }
             ],
             # inventory
-            'inventory_uom': self.uom.id,
+            'inventory_uom': self.get_uom().id,
             'inventory_level_min': 5,
             'inventory_level_max': 20,
             # purchase
-            'purchase_default_uom': self.uom.id,
-            'purchase_tax': self.tax.id,
+            'purchase_default_uom': self.get_uom().id,
+            'purchase_tax': self.get_tax().id,
         }
         response = self.client.post(
             self.url,
