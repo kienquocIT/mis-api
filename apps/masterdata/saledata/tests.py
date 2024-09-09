@@ -172,24 +172,24 @@ class ProductTestCase(AdvanceTestCase):
         return response
 
     def test_create_product(self):
-        price_list = self.get_price_list().data['result'][0]
-        currency = self.get_currency().data['result'][3]
+        price_list = ProductTestCase().get_price_list().data['result'][0]
+        currency = ProductTestCase().get_currency().data['result'][3]
         data = {
             "code": 'PRD123',
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
-            'product_types_mapped_list': [self.get_product_type().id],
-            'general_product_category': self.get_product_category().id,
-            'general_uom_group': self.get_uom_group().id,
+            'product_types_mapped_list': [ProductTestCase().get_product_type().id],
+            'general_product_category': ProductTestCase().get_product_category().id,
+            'general_uom_group': ProductTestCase().get_uom_group().id,
             'length': 50,
             'width': 30,
             'height': 10,
             'volume': 15000,
             'weight': 200,
             # sale
-            'sale_default_uom': self.get_uom().id,
-            'sale_tax': self.get_tax().id,
+            'sale_default_uom': ProductTestCase().get_uom().id,
+            'sale_tax': ProductTestCase().get_tax().id,
             'sale_currency_using': currency['id'],
             'sale_product_price_list': [
                 {
@@ -199,12 +199,12 @@ class ProductTestCase(AdvanceTestCase):
                 }
             ],
             # inventory
-            'inventory_uom': self.get_uom().id,
+            'inventory_uom': ProductTestCase().get_uom().id,
             'inventory_level_min': 5,
             'inventory_level_max': 20,
             # purchase
-            'purchase_default_uom': self.get_uom().id,
-            'purchase_tax': self.get_tax().id,
+            'purchase_default_uom': ProductTestCase().get_uom().id,
+            'purchase_tax': ProductTestCase().get_tax().id,
         }
         response = self.client.post(
             self.url,
