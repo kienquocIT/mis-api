@@ -192,12 +192,12 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
-    opportunity_mapped_id = serializers.UUIDField(required=False)
-    quotation_mapped_id = serializers.UUIDField(required=False)
-    sale_order_mapped_id = serializers.UUIDField(required=False)
+    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField()
-    supplier_id = serializers.UUIDField(required=False)
-    ap_item_list = serializers.ListField(required=False)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    ap_item_list = serializers.ListField(required=False, allow_null=True)
 
     class Meta:
         model = AdvancePayment
@@ -233,7 +233,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         ap_item_list = validated_data.pop('ap_item_list', [])
         ap_obj = AdvancePayment.objects.create(**validated_data)
-        APCommonFunction.create_expense_items(ap_obj, ap_item_list)
+        APCommonFunction.create_ap_items(ap_obj, ap_item_list)
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             APCommonFunction.create_files_mapped(ap_obj, attachment.strip().split(','))
@@ -286,20 +286,11 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                     'id': item.id,
                     'order': order,
                     'expense_name': item.expense_name,
-                    'expense_type': {
-                        'id': item.expense_type_id,
-                        'code': item.expense_type.code,
-                        'title': item.expense_type.title,
-                    } if item.expense_type else {},
+                    'expense_type': item.expense_type_data,
                     'expense_uom_name': item.expense_uom_name,
                     'expense_quantity': item.expense_quantity,
                     'expense_unit_price': item.expense_unit_price,
-                    'expense_tax': {
-                        'id': item.expense_tax_id,
-                        'code': item.expense_tax.code,
-                        'title': item.expense_tax.title,
-                        'rate': item.expense_tax.rate
-                    } if item.expense_tax else {},
+                    'expense_tax': item.expense_tax_data,
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
                     'expense_after_tax_price': item.expense_after_tax_price,
@@ -424,12 +415,12 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
-    opportunity_mapped_id = serializers.UUIDField(required=False)
-    quotation_mapped_id = serializers.UUIDField(required=False)
-    sale_order_mapped_id = serializers.UUIDField(required=False)
+    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField()
-    supplier_id = serializers.UUIDField(required=False)
-    ap_item_list = serializers.ListField(required=False)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    ap_item_list = serializers.ListField(required=False, allow_null=True)
 
     class Meta:
         model = AdvancePayment
@@ -466,7 +457,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        APCommonFunction.create_expense_items(instance, ap_item_list)
+        APCommonFunction.create_ap_items(instance, ap_item_list)
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             APCommonFunction.create_files_mapped(instance, attachment.strip().split(','))
@@ -603,16 +594,32 @@ class APCommonFunction:
                     item.get('expense_uom_name'),
                     float(item.get('expense_quantity', 0)) > 0,
                     float(item.get('expense_unit_price')) > 0,
-                    item.get('expense_tax_price', 0),
+                    item.get('expense_tax_price', 0) >= 0,
                 ]):
-                    item['expense_type_id'] = str(ExpenseItem.objects.get(id=item.get('expense_type_id')).id)
-                    item['expense_tax_id'] = str(Tax.objects.get(id=item.get('expense_tax_id')).id)
+                    expense_type = ExpenseItem.objects.get(id=item.get('expense_type_id'))
+                    item['expense_type_id'] = str(expense_type.id)
+                    item['expense_type_data'] = {
+                        'id': str(expense_type.id),
+                        'code': expense_type.code,
+                        'title': expense_type.title
+                    }
+                    if item.get('expense_tax_id'):
+                        expense_tax = Tax.objects.get(id=item.get('expense_tax_id'))
+                        item['expense_tax_id'] = str(expense_tax.id)
+                        item['expense_tax_data'] = {
+                            'id': str(expense_tax.id),
+                            'code': expense_tax.code,
+                            'title': expense_tax.title,
+                            'rate': expense_tax.rate
+                        }
                     item['expense_subtotal_price'] = (
                             float(item['expense_quantity']) * float(item['expense_unit_price'])
                     )
                     item['expense_after_tax_price'] = (
                             item['expense_subtotal_price'] + float(item.get('expense_tax_price', 0))
                     )
+                    print('9. validate_ap_item_list --- ok')
+                    return validate_data
                 else:
                     raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
         except Exception as err:
@@ -658,7 +665,7 @@ class APCommonFunction:
         return str(result.strip()).lower()
 
     @classmethod
-    def create_expense_items(cls, advance_payment_obj, expense_valid_list):
+    def create_ap_items(cls, advance_payment_obj, ap_item_list):
         vnd_currency = Currency.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -667,8 +674,8 @@ class APCommonFunction:
         if vnd_currency:
             bulk_info = []
             advance_value = 0
-            for item in expense_valid_list:
-                advance_value += item.get('expense_after_tax_price', 0)
+            for item in ap_item_list:
+                advance_value += float(item.get('expense_after_tax_price', 0))
                 bulk_info.append(AdvancePaymentCost(
                     **item,
                     advance_payment=advance_payment_obj,

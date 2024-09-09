@@ -12,7 +12,8 @@ from apps.sales.inventory.views import (
     GReItemProductWarehouseList,
     ProjectProductList, GReItemBorrowList, GReItemBorrowDetail,
     GReItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
-    NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity
+    NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
+    ProductionOrderDetailForGIS
 )
 
 urlpatterns = [
@@ -44,6 +45,17 @@ urlpatterns += [
 urlpatterns += [
     path('goods-issue/list', GoodsIssueList.as_view(), name='GoodsIssueList'),
     path('goods-issue/<str:pk>', GoodsIssueDetail.as_view(), name='GoodsIssueDetail'),
+    # Production order for GIS
+    path(
+        'production-order-for-gis/list',
+        ProductionOrderListForGIS.as_view(),
+        name='ProductionOrderListForGIS'
+    ),
+    path(
+        'production-order-for-gis/<str:pk>',
+        ProductionOrderDetailForGIS.as_view(),
+        name='ProductionOrderDetailForGIS'
+    ),
 ]
 
 # goods return
