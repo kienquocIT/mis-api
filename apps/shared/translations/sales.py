@@ -36,6 +36,7 @@ class SaleMsg:
     AP_NOT_EXIST = _('Advance payment does not exist.')
     AP_METHOD_INVALID = _('Advance payment method not valid.')
     EMPLOYEE_NOT_EXIST = _('Employee does not exist.')
+    PRODUCTION_ORDER_NOT_EXIST = _('Production order does not exist.')
 
 
 class SaleTask:

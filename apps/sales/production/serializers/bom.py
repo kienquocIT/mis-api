@@ -588,6 +588,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
                 'order': bom_task.order,
                 'task_title': bom_task.task_name,
                 'quantity_bom': bom_task.quantity,
+                'uom_id': str(bom_task.uom_id),
                 'uom_data': {
                     'id': str(bom_task.uom_id),
                     'code': bom_task.uom.code,

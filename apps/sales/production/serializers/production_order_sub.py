@@ -30,11 +30,6 @@ class ProductionOrderSub:
         return True
 
     @classmethod
-    def delete_old_task(cls, instance):
-        instance.po_task_production_order.all().delete()
-        return True
-
-    @classmethod
     def create_sub_models(cls, validated_data, instance):
         cls.create_sub(validated_data=validated_data, instance=instance)
         return True
@@ -45,34 +40,34 @@ class ProductionOrderValid:
     @classmethod
     def validate_bom_id(cls, value):
         try:
-            return BOM.objects.get(id=value).id
+            return str(BOM.objects.get(id=value).id)
         except BOM.DoesNotExist:
             raise serializers.ValidationError({'bom': SaleMsg.BOM_NOT_EXIST})
 
     @classmethod
     def validate_product_id(cls, value):
         try:
-            return Product.objects.get(id=value).id
+            return str(Product.objects.get(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': SaleMsg.PRODUCT_NOT_EXIST})
 
     @classmethod
     def validate_uom_id(cls, value):
         try:
-            return UnitOfMeasure.objects.get(id=value).id
+            return str(UnitOfMeasure.objects.get(id=value).id)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': SaleMsg.UOM_NOT_EXIST})
 
     @classmethod
     def validate_warehouse_id(cls, value):
         try:
-            return WareHouse.objects.get(id=value).id
+            return str(WareHouse.objects.get(id=value).id)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': SaleMsg.WAREHOUSE_NOT_EXIST})
 
     @classmethod
     def validate_group_id(cls, value):
         try:
-            return Group.objects.get(id=value).id
+            return str(Group.objects.get(id=value).id)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'group': SaleMsg.GROUP_NOT_EXIST})
