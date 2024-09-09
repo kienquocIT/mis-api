@@ -28,6 +28,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
                 system_status=3,
                 return_date__month__gte=datetime.datetime.now().month,
                 return_date__day__gte=datetime.datetime.now().day,
+                return_date__year__gte=datetime.datetime.now().year,
             ).order_by('return_date').prefetch_related(
                 'advance_payment__currency',
                 'advance_payment__expense_type',
