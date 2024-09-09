@@ -620,8 +620,7 @@ class APCommonFunction:
                     )
                     print('9. validate_ap_item_list --- ok')
                     return validate_data
-                else:
-                    raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
+                raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
         except Exception as err:
             raise serializers.ValidationError({'ap_item_list': f'AP item list is not valid. {err}'})
 
