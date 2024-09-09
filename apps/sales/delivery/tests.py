@@ -5,7 +5,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
 import calendar
-from apps.masterdata.saledata.models import Periods, SubPeriods
+from apps.masterdata.saledata.models import Periods, SubPeriods, ProductType, ProductCategory, UnitOfMeasureGroup, \
+    UnitOfMeasure, TaxCategory, Tax
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
 from apps.sales.delivery.models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, \
@@ -65,11 +66,6 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, 201)
         return response
 
-    def get_price_list(self):
-        url = reverse('PriceList')
-        response = self.client.get(url, format='json')
-        return response
-
     def create_new_tax(self):
         url_tax = reverse("TaxList")
         tax_category = self.create_new_tax_category()
@@ -101,66 +97,52 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
+    @classmethod
+    def get_product_type(cls):
+        return ProductType.objects.create(**{'title': 'May mac'})
+
+    @classmethod
+    def get_product_category(cls):
+        return ProductCategory.objects.create(**{'title': 'Det may'})
+
+    @classmethod
+    def get_uom_group(cls):
+        return UnitOfMeasureGroup.objects.create(**{'title': 'Don vi'})
+
+    @classmethod
+    def get_uom(cls):
+        return UnitOfMeasure.objects.create(**{
+            'code': 'BO',
+            'title': 'Bộ',
+            'group': cls.get_uom_group(),
+            'ratio': 1,
+            'rounding': 1,
+            'is_referenced_unit': True
+        })
+
+    @classmethod
+    def get_tax_category(cls):
+        return TaxCategory.objects.create(**{'title': 'Thuế XXX'})
+
+    @classmethod
+    def get_tax(cls):
+        return Tax.objects.create(**{
+            'title': 'Thuế bán hành VAT-10%',
+            'code': 'VAT-10',
+            'rate': 10,
+            'category': cls.get_tax_category(),
+            'tax_type': 0
+        })
+
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
     def get_currency(self):
         url = reverse('CurrencyList')
         response = self.client.get(url, format='json')
         return response
-
-    def create_product_type(self):
-        url = reverse('ProductTypeList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'San pham 1',
-                'description': '',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response
-
-    def create_product_category(self):
-        url = reverse('ProductCategoryList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'Hardware',
-                'description': '',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response
-
-    def create_uom_group(self):
-        url = reverse('UnitOfMeasureGroupList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'Time',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response
-
-    def create_uom(self):
-        data_uom_gr = self.create_uom_group()
-        url = reverse('UnitOfMeasureList')
-        response = self.client.post(
-            url,
-            {
-                "code": "MIN",
-                "title": "minute",
-                "group": data_uom_gr.data['result']['id'],
-                "ratio": 1,
-                "rounding": 5,
-                "is_referenced_unit": True
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response, data_uom_gr
 
     def get_city(self):
         url = reverse("CityList")
