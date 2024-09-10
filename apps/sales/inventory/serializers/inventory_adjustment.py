@@ -313,21 +313,27 @@ class IAGRListSerializer(serializers.ModelSerializer):
                 'title': ia_product.uom_mapped.title,
                 'code': ia_product.uom_mapped.code,
             } if ia_product.uom_mapped else {},
-            'warehouse_id': str(ia_product.warehouse_mapped_id),
-            'warehouse_data': {
-                'id': ia_product.warehouse_mapped_id,
-                'title': ia_product.warehouse_mapped.title,
-                'code': ia_product.warehouse_mapped.code,
-            } if ia_product.warehouse_mapped else {},
+            'gr_warehouse_data': [
+                {
+                    'warehouse_id': str(ia_product.warehouse_mapped_id),
+                    'warehouse_data': {
+                        'id': ia_product.warehouse_mapped_id,
+                        'title': ia_product.warehouse_mapped.title,
+                        'code': ia_product.warehouse_mapped.code,
+                    } if ia_product.warehouse_mapped else {},
+                }
+            ],
             'product_quantity_order_actual': (ia_product.count - ia_product.book_quantity),
             'quantity_import': (ia_product.count - ia_product.book_quantity),
             'select_for_action': ia_product.select_for_action,
             'action_status': ia_product.action_status,
-            'product_unit_price': 0,
+            'product_unit_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+            ),
             'product_subtotal_price': 0,
             'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
                 warehouse_id=ia_product.warehouse_mapped_id, get_type=1
             ),
             'gr_completed_quantity': (ia_product.count - ia_product.book_quantity) - ia_product.gr_remain_quantity,
             'gr_remain_quantity': ia_product.gr_remain_quantity,
-        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2, action_status=False)]
+        } for ia_product in obj.inventory_adjustment_item_mapped.all()]

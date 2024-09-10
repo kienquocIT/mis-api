@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
@@ -203,6 +203,15 @@ class GoodsReceiptCommonValidate:
         except PurchaseOrderProduct.DoesNotExist:
             raise serializers.ValidationError({
                 'purchase_order_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_ia_item_id(cls, value):
+        try:
+            return str(InventoryAdjustmentItem.objects.get(id=value).id)
+        except InventoryAdjustmentItem.DoesNotExist:
+            raise serializers.ValidationError({
+                'ia_item': 'inventory adjustment item does not exist'
             })
 
     @classmethod

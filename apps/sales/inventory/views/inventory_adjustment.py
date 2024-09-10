@@ -105,7 +105,7 @@ class InventoryAdjustmentProductList(BaseListMixin):
 
 
 # Inventory adjustment list use GR
-class InventoryAdjustmentOtherList(BaseListMixin):
+class InventoryAdjustmentGRList(BaseListMixin):
     queryset = InventoryAdjustment.objects
     filterset_fields = {
         'state': ['exact'],

@@ -129,7 +129,7 @@ class PurchaseOrderDetail(
         return self.update(request, *args, **kwargs)
 
 
-class PurchaseOrderProductList(BaseListMixin):
+class PurchaseOrderProductGRList(BaseListMixin):
     queryset = PurchaseOrderProduct.objects
     filterset_fields = {
         'purchase_order_id': ['in', 'exact'],

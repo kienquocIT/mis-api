@@ -2,27 +2,35 @@ from apps.masterdata.saledata.models import ProductWareHouse
 
 
 class GRFinishHandler:
-    # PO GR_INFO
+    # GR_INFO FOR PO/IA/PRODUCTION
     @classmethod
-    def update_gr_info_for_po(cls, instance):
-        if instance.goods_receipt_type == 0:  # check type GR for PO
-            for gr_product in instance.goods_receipt_product_goods_receipt.all():
-                po_product = gr_product.purchase_order_product
-                if po_product:
-                    po_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
-                    if po_product.gr_remain_quantity >= 0:
-                        po_product.save(update_fields=['gr_remain_quantity'])
-            for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
-                po_request_product = gr_pr_product.purchase_order_request_product
-                if po_request_product:
-                    po_request_product.gr_remain_quantity -= round(gr_pr_product.quantity_import, 2)
-                    if po_request_product.gr_remain_quantity >= 0:
-                        po_request_product.save(update_fields=['gr_remain_quantity'])
+    def push_gr_info_for_po_ia_production(cls, instance):
+        if instance.goods_receipt_type == 0:
+            GRFinishHandler.gr_info_for_po(instance=instance)
+            GRFinishHandler.receipt_status_po(instance=instance)
+        if instance.goods_receipt_type == 1:
+            GRFinishHandler.gr_info_for_ia(instance=instance)
+            GRFinishHandler.state_ia(instance=instance)
+
+    @classmethod
+    def gr_info_for_po(cls, instance):
+        for gr_product in instance.goods_receipt_product_goods_receipt.all():
+            if gr_product.purchase_order_product:
+                gr_product.purchase_order_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+                if gr_product.purchase_order_product.gr_remain_quantity >= 0:
+                    gr_product.purchase_order_product.save(update_fields=['gr_remain_quantity'])
+
+        for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
+            po_request_product = gr_pr_product.purchase_order_request_product
+            if po_request_product:
+                po_request_product.gr_remain_quantity -= round(gr_pr_product.quantity_import, 2)
+                if po_request_product.gr_remain_quantity >= 0:
+                    po_request_product.save(update_fields=['gr_remain_quantity'])
         return True
 
     @classmethod
-    def update_is_all_receipted_po(cls, instance):
-        if instance.goods_receipt_type == 0 and instance.purchase_order:
+    def receipt_status_po(cls, instance):
+        if instance.purchase_order:
             po_product = instance.purchase_order.purchase_order_product_order.all()
             po_product_done = instance.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
             if po_product.count() == po_product_done.count():
@@ -32,26 +40,18 @@ class GRFinishHandler:
             instance.purchase_order.save(update_fields=['receipt_status'])
         return True
 
-    # IA GR_INFO
     @classmethod
-    def update_gr_info_for_ia(cls, instance):
-        if instance.goods_receipt_type == 1:  # check type GR for IA
-            for gr_ia_product in instance.goods_receipt_product_goods_receipt.all():
-                if gr_ia_product.ia_item:
-                    gr_ia_product.ia_item.gr_completed_quantity += gr_ia_product.quantity_import
-                    gr_ia_product.ia_item.gr_completed_quantity = round(
-                        gr_ia_product.ia_item.gr_completed_quantity, 2
-                    )
-                    gr_ia_product.ia_item.gr_remain_quantity -= gr_ia_product.quantity_import
-                    gr_ia_product.ia_item.gr_remain_quantity = round(
-                        gr_ia_product.ia_item.gr_remain_quantity, 2
-                    )
-                    gr_ia_product.ia_item.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+    def gr_info_for_ia(cls, instance):
+        for gr_product in instance.goods_receipt_product_goods_receipt.all():
+            if gr_product.ia_item:
+                gr_product.ia_item.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+                if gr_product.ia_item.gr_remain_quantity >= 0:
+                    gr_product.ia_item.save(update_fields=['gr_remain_quantity'])
         return True
 
     @classmethod
-    def update_is_all_receipted_ia(cls, instance):
-        if instance.goods_receipt_type == 1 and instance.inventory_adjustment:
+    def state_ia(cls, instance):
+        if instance.inventory_adjustment:
             ia_product = instance.inventory_adjustment.inventory_adjustment_item_mapped.all()
             ia_product_done = instance.inventory_adjustment.inventory_adjustment_item_mapped.filter(
                 gr_remain_quantity=0

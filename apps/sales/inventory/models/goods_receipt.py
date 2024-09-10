@@ -273,10 +273,7 @@ class GoodsReceipt(DataAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
-                    GRFinishHandler.update_gr_info_for_po(instance=self)
-                    GRFinishHandler.update_gr_info_for_ia(instance=self)
-                    GRFinishHandler.update_is_all_receipted_po(instance=self)
-                    GRFinishHandler.update_is_all_receipted_ia(instance=self)
+                    GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
             self.prepare_data_for_logging(self)
 

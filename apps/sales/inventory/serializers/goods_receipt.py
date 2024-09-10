@@ -195,21 +195,22 @@ class GoodsReceiptRequestProductListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptProductSerializer(serializers.ModelSerializer):
-    purchase_order_product_id = serializers.UUIDField(required=False)
-    product_id = serializers.UUIDField(required=False)
-    uom_id = serializers.UUIDField(required=False)
-    tax_id = serializers.UUIDField(required=False)
-    warehouse_id = serializers.UUIDField(required=False)
+    purchase_order_product_id = serializers.UUIDField(required=False, allow_null=True)
+    ia_item_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField()
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     product_unit_price = serializers.FloatField()
     quantity_import = serializers.FloatField()
     pr_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     gr_warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
-    ia_item = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = GoodsReceiptProduct
         fields = (
             'purchase_order_product_id',
+            'ia_item_id',
             'product_id',
             'product_data',
             'uom_id',
@@ -230,12 +231,15 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'pr_products_data',
             'gr_warehouse_data',
             'is_additional',
-            'ia_item'
         )
 
     @classmethod
     def validate_purchase_order_product_id(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_order_product_id(value=value)
+
+    @classmethod
+    def validate_ia_item_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_ia_item_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -260,15 +264,6 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_unit_price(cls, value):
         return GoodsReceiptCommonValidate().validate_price(value=value)
-
-    @classmethod
-    def validate_ia_item(cls, value):
-        try:
-            if value is None:
-                return None
-            return InventoryAdjustmentItem.objects.get(id=value)
-        except InventoryAdjustmentItem.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': 'IA item not exist'})
 
     @classmethod
     def check_lot_serial_exist(cls, gr_warehouse_data, product_id):
