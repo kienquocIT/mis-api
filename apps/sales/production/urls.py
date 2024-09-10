@@ -6,7 +6,7 @@ from apps.sales.production.views.bom import (
     BOMList, BOMDetail, BOMOrderList, ProductListForBOM
 )
 from apps.sales.production.views.production_report import ProductionReportList, ProductionReportDetail, \
-    ProductionReportDDList
+    ProductionReportDDList, ProductionReportGRList
 
 urlpatterns = [
     path('product-list-for-BOM', ProductListForBOM.as_view(), name='ProductListForBOM'),
@@ -28,4 +28,5 @@ urlpatterns = [
     path('production-report/list', ProductionReportList.as_view(), name='ProductionReportList'),
     path('production-report/<str:pk>', ProductionReportDetail.as_view(), name='ProductionReportDetail'),
     path('production-report-dd/list', ProductionReportDDList.as_view(), name='ProductionReportDDList'),
+    path('production-report-gr/list', ProductionReportGRList.as_view(), name='ProductionReportGRList'),
 ]

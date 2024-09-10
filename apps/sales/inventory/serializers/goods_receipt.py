@@ -4,7 +4,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustmentItem, GoodsReceiptAttachment
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, GoodsReceiptAttachment
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
@@ -200,7 +200,6 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField()
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
-    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     product_unit_price = serializers.FloatField()
     quantity_import = serializers.FloatField()
     pr_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
@@ -217,8 +216,6 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'uom_data',
             'tax_id',
             'tax_data',
-            'warehouse_id',
-            'warehouse_data',
             'product_quantity_order_actual',
             'quantity_import',
             'product_title',
@@ -252,10 +249,6 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax_id(cls, value):
         return GoodsReceiptCommonValidate.validate_tax_id(value=value)
-
-    @classmethod
-    def validate_warehouse_id(cls, value):
-        return GoodsReceiptCommonValidate.validate_warehouse_id(value=value)
 
     @classmethod
     def validate_quantity_import(cls, value):

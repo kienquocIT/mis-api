@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.production.models import ProductionReport
 from apps.sales.production.serializers.production_report import ProductionReportListSerializer, \
-    ProductionReportCreateSerializer, ProductionReportDetailSerializer, ProductionReportUpdateSerializer
+    ProductionReportCreateSerializer, ProductionReportDetailSerializer, ProductionReportUpdateSerializer, \
+    ProductionReportGRSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -92,6 +93,29 @@ class ProductionReportDDList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Production Report DD List",
         operation_description="Get Production Report DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='production', model_code='productionreport', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
+    queryset = ProductionReport.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'production_order_id': ['exact'],
+        'product_id': ['exact'],
+        'employee_inherit_id': ['exact'],
+    }
+    serializer_list = ProductionReportGRSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Production Report GR List",
+        operation_description="Get Production Report GR List",
     )
     @mask_view(
         login_require=True, auth_require=False,

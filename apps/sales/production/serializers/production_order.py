@@ -8,6 +8,9 @@ from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerM
 
 # SUB
 class POTaskCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ProductionOrderTask
@@ -29,6 +32,18 @@ class POTaskCreateSerializer(serializers.ModelSerializer):
             'tool_data',
             'order',
         )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionOrderValid.validate_uom_id(value=value)
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        return ProductionOrderValid.validate_warehouse_id(value=value)
 
 
 # PRODUCTION ORDER BEGIN

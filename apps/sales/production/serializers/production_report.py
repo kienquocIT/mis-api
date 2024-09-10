@@ -78,6 +78,7 @@ class ProductionReportCreateSerializer(serializers.ModelSerializer):
             'quantity_finished',
             'quantity_ng',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -125,6 +126,7 @@ class ProductionReportUpdateSerializer(serializers.ModelSerializer):
             'quantity_finished',
             'quantity_ng',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -149,3 +151,45 @@ class ProductionReportUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         ProductionReportSub.create_sub_models(validated_data=validated_data, instance=instance)
         return instance
+
+
+class ProductionReportGRSerializer(serializers.ModelSerializer):
+    production_report_id = serializers.SerializerMethodField()
+    product_quantity_order_actual = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
+    pr_products_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductionReport
+        fields = (
+            'id',
+            'production_report_id',
+            'title',
+            'code',
+            'product_id',
+            'product_data',
+            'quantity',
+            'uom_id',
+            'uom_data',
+            'warehouse_data',
+            'product_quantity_order_actual',
+            'gr_completed_quantity',
+            'gr_remain_quantity',
+            'pr_products_data',
+        )
+
+    @classmethod
+    def get_production_report_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_product_quantity_order_actual(cls, obj):
+        return obj.quantity_finished
+
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        return obj.quantity_finished - obj.gr_remain_quantity
+
+    @classmethod
+    def get_pr_products_data(cls, obj):
+        return [] if obj else None
