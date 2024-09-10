@@ -192,6 +192,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -415,6 +416,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)

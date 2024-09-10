@@ -135,6 +135,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
 
 
 class PaymentCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -375,6 +376,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class PaymentUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
