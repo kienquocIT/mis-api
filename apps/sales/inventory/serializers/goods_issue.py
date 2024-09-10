@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
+from apps.sales.production.models import ProductionOrder
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
@@ -9,7 +10,9 @@ __all__ = [
     'GoodsIssueListSerializer',
     'GoodsIssueCreateSerializer',
     'GoodsIssueDetailSerializer',
-    'GoodsIssueUpdateSerializer'
+    'GoodsIssueUpdateSerializer',
+    'ProductionOrderListSerializerForGIS',
+    'ProductionOrderDetailSerializerForGIS'
 ]
 
 
@@ -230,3 +233,26 @@ class GoodsIssueCommonFunction:
         GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
         GoodsIssueProduct.objects.bulk_create(bulk_data)
         return True
+
+
+# related serializers
+class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
+
+    class Meta:
+        model = ProductionOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
+class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
+
+    class Meta:
+        model = ProductionOrder
+        fields = (
+            'id',
+            'title',
+            'task_data',
+        )

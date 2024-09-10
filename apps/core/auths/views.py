@@ -1,4 +1,3 @@
-from datetime import timedelta, datetime
 from typing import Union
 
 from django.conf import settings
@@ -19,9 +18,9 @@ from apps.core.auths.serializers import (
     ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
 from apps.shared import (
-    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck, FORMATTING, Caching,
+    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck,
 )
-from misapi.mongo_client import mongo_log_auth, MongoViewParse
+from misapi.mongo_client import mongo_log_auth
 
 
 # LOGIN:
@@ -202,18 +201,6 @@ class MyProfile(APIView):
         return ResponseController.success_200(data={'data': obj.get_detail()}, key_data='result')
 
 
-class AliveCheckView(APIView):
-    permission_classes = [AllowAny]
-
-    @swagger_auto_schema(operation_summary='Check session is alive')
-    @mask_view(login_require=True)
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        if not user or user.is_authenticated is False or user.is_anonymous is True:
-            return ResponseController.unauthorized_401()
-        return ResponseController.success_200(data={'state': 'You are still alive.'}, key_data='result')
-
-
 class SwitchCompanyView(APIView):
     @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
     @mask_view(login_require=True)
@@ -307,121 +294,3 @@ class ForgotPasswordDetailView(APIView):
                 return ResponseController.success_200(data={'new_password': new_password})
             raise serializers.ValidationError({'': AuthMsg.VALIDATE_OTP_EXPIRED})
         return ResponseController.notfound_404()
-
-
-class AuthLogsView(APIView):
-    @swagger_auto_schema(operation_summary="Get log of user's authentication")
-    @mask_view(login_require=True)
-    def get(self, request, *args, **kwargs):
-        if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
-            view_parse = MongoViewParse(request=request)
-            page_size = view_parse.get_page_size()
-            page_index = view_parse.get_page_index()
-            record_skip = page_size * (page_index - 1)
-            ordering = view_parse.get_ordering(
-                default_data={
-                    'timestamp': -1,
-                }
-            )
-            filter_data = {
-                'metadata.service_name': 'AUTH',
-                'metadata.user_id': str(request.user.id),
-            }
-            count = mongo_log_auth.count_documents(filter_data)
-            queries = mongo_log_auth.find(
-                filter_data,
-                sort=ordering,
-                skip=record_skip,
-                limit=page_size
-            )
-            results = [
-                {
-                    'timestamp': FORMATTING.parse_datetime(item['timestamp']),
-                    'service_name': item.get('endpoint', ''),
-                    'log_level': item.get('log_level', ''),
-                    'errors': item.get('errors', ''),
-                } for item in queries
-            ]
-            return ResponseController.success_200(
-                data=MongoViewParse.parse_return(
-                    results=results,
-                    page_index=page_index,
-                    page_size=page_size,
-                    count=count,
-                ),
-                key_data='',
-            )
-        return ResponseController.success_200(data=MongoViewParse.parse_return(results=[]))
-
-
-class AuthLogReport(APIView):
-    @swagger_auto_schema(operation_summary='Chart report data since 7 days')
-    @mask_view(login_require=True)
-    def get(self, request, *args, **kwargs):
-        if request.user and request.user.is_authenticated and not isinstance(request.user, AnonymousUser):
-            try:
-                range_selected = int(request.query_params.dict().get('range', 7))
-                if range_selected not in [7, 14, 30]:
-                    raise ValueError()
-            except ValueError:
-                range_selected = 7
-
-            key_of_cache = f'auth_log_${str(request.user.id)}_{range_selected}'
-            data_cached = Caching().get(key_of_cache)
-            if data_cached:
-                results = data_cached
-            else:
-                end_time = timezone.now()
-                start_time = datetime(year=end_time.year, month=end_time.month, day=end_time.day) - timedelta(
-                    days=range_selected
-                )
-                pipeline = [
-                    {
-                        "$match": {
-                            "timestamp": {"$gte": start_time},
-                            "metadata.service_name": "AUTH",
-                            "metadata.user_id": str(request.user.id),
-                        },
-                    },
-                    {
-                        "$addFields": {"date": {"$dateTrunc": {"date": "$timestamp", "unit": "day"}}}
-                    }, {
-                        "$group": {
-                            "_id": {
-                                "date": "$date",
-                                "endpoint": "$endpoint",
-                                "log_level": "$log_level"
-                            },
-                            "count": {
-                                "$sum": 1
-                            }
-                        }
-                    },
-                    {
-                        "$group": {
-                            "_id": "$_id.date",
-                            "details": {
-                                "$push": {
-                                    "endpoint": "$_id.endpoint",
-                                    "log_level": "$_id.log_level",
-                                    "count": "$count"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "$sort": {"_id": 1}
-                    },
-                ]
-                queries = mongo_log_auth.aggregate(pipeline)
-
-                results = [
-                    {
-                        'date': result['_id'],
-                        'details': result['details'],
-                    }
-                    for result in queries
-                ]
-                Caching().set(key_of_cache, results, timeout=60)
-            return ResponseController.success_200(data=results)
-        return ResponseController.success_200(data=MongoViewParse.parse_return(results=[]))

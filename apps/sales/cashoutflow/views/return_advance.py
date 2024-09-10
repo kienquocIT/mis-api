@@ -89,6 +89,7 @@ class APListForReturn(BaseListMixin):
     ]
     serializer_list = APListForReturnSerializer
     filterset_fields = {
+        'id': ['exact'],
         'opportunity_mapped_id': ['exact'],
         'system_status': ['exact'],
     }

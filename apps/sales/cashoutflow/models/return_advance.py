@@ -88,6 +88,7 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         null=True,
         related_name='return_advance_expense'
     )
+    expense_type_data = models.JSONField(default=dict)
     expense_name = models.CharField(
         max_length=150,
         null=True

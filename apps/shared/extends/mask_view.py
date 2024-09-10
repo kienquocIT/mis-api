@@ -1877,8 +1877,10 @@ class ViewChecking:
             if self.decor.auth_require is True:
                 # always check by permit config
                 if not self.decor.config_check_permit:
-                    return HttpReturn.error_config_view_incorrect()
-                pass_auth_permit = state_tmp
+                    pass_auth_permit = False
+                    # return HttpReturn.error_config_view_incorrect()
+                else:
+                    pass_auth_permit = state_tmp
             else:
                 pass_auth_permit = True
 
