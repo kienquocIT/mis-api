@@ -1,4 +1,3 @@
-import datetime
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.sales.cashoutflow.serializers import (
