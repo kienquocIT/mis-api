@@ -142,7 +142,7 @@ class WorkingCalendarConfig(MasterDataAbstractModel):
         permissions = ()
 
 
-class WorkingYearConfig(SimpleAbstractModel):
+class WorkingYearConfig(MasterDataAbstractModel):
     working_calendar = models.ForeignKey(
         'leave.WorkingCalendarConfig',
         on_delete=models.CASCADE,
@@ -156,7 +156,7 @@ class WorkingYearConfig(SimpleAbstractModel):
     )
 
 
-class WorkingHolidayConfig(SimpleAbstractModel):
+class WorkingHolidayConfig(MasterDataAbstractModel):
     holiday_date_from = models.DateField(verbose_name='holiday from', null=True)
     holiday_date_to = models.DateField(verbose_name='holiday to', null=True)
     year = models.ForeignKey(
