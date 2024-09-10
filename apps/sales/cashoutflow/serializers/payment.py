@@ -554,8 +554,8 @@ class PaymentCommonFunction:
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
                     }
-                print('9. validate_payment_item_list --- ok')
-                return validate_data
+            print('9. validate_payment_item_list --- ok')
+            return validate_data
         except Exception as err:
             raise serializers.ValidationError({'payment_item_list': f"Payment data is not valid. {err}"})
 

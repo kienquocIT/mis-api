@@ -589,38 +589,39 @@ class APCommonFunction:
     def validate_ap_item_list(cls, validate_data):
         try:
             for item in validate_data.get('ap_item_list', []):
-                if all([
+                if not all([
                     item.get('expense_name'),
                     item.get('expense_uom_name'),
                     float(item.get('expense_quantity', 0)) > 0,
                     float(item.get('expense_unit_price')) > 0,
                     item.get('expense_tax_price', 0) >= 0,
                 ]):
-                    expense_type = ExpenseItem.objects.get(id=item.get('expense_type_id'))
-                    item['expense_type_id'] = str(expense_type.id)
-                    item['expense_type_data'] = {
-                        'id': str(expense_type.id),
-                        'code': expense_type.code,
-                        'title': expense_type.title
+                    raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
+
+                expense_type = ExpenseItem.objects.get(id=item.get('expense_type_id'))
+                item['expense_type_id'] = str(expense_type.id)
+                item['expense_type_data'] = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+                if item.get('expense_tax_id'):
+                    expense_tax = Tax.objects.get(id=item.get('expense_tax_id'))
+                    item['expense_tax_id'] = str(expense_tax.id)
+                    item['expense_tax_data'] = {
+                        'id': str(expense_tax.id),
+                        'code': expense_tax.code,
+                        'title': expense_tax.title,
+                        'rate': expense_tax.rate
                     }
-                    if item.get('expense_tax_id'):
-                        expense_tax = Tax.objects.get(id=item.get('expense_tax_id'))
-                        item['expense_tax_id'] = str(expense_tax.id)
-                        item['expense_tax_data'] = {
-                            'id': str(expense_tax.id),
-                            'code': expense_tax.code,
-                            'title': expense_tax.title,
-                            'rate': expense_tax.rate
-                        }
-                    item['expense_subtotal_price'] = (
-                            float(item['expense_quantity']) * float(item['expense_unit_price'])
-                    )
-                    item['expense_after_tax_price'] = (
-                            item['expense_subtotal_price'] + float(item.get('expense_tax_price', 0))
-                    )
-                    print('9. validate_ap_item_list --- ok')
-                    return validate_data
-                raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
+                item['expense_subtotal_price'] = (
+                        float(item['expense_quantity']) * float(item['expense_unit_price'])
+                )
+                item['expense_after_tax_price'] = (
+                        item['expense_subtotal_price'] + float(item.get('expense_tax_price', 0))
+                )
+            print('9. validate_ap_item_list --- ok')
+            return validate_data
         except Exception as err:
             raise serializers.ValidationError({'ap_item_list': f'AP item list is not valid. {err}'})
 
