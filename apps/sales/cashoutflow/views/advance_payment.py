@@ -1,4 +1,3 @@
-import datetime
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.sales.cashoutflow.serializers import (
@@ -25,10 +24,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         if 'return_date_expiring_sort' in self.request.query_params:
             return super().get_queryset().filter(
-                system_status=3,
-                return_date__month__gte=datetime.datetime.now().month,
-                return_date__day__gte=datetime.datetime.now().day,
-                return_date__year__gte=datetime.datetime.now().year,
+                system_status=3
             ).order_by('return_date').prefetch_related(
                 'advance_payment__currency',
                 'advance_payment__expense_type',

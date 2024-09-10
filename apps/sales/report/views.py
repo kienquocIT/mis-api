@@ -406,7 +406,7 @@ class ReportStockList(BaseListMixin):
             not sub_period.run_report_inventory or sub_period.report_inventory_cost_sub_period.count() == 0,
             int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month
         ]):
-            if sub_period_order == 12:
+            if int(sub_period_order) == 12:
                 last_sub_period_order = 1
                 last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()
             else:

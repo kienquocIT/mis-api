@@ -43,6 +43,7 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
 
 
 class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
     returned_list = serializers.ListField(required=False)
 
@@ -168,6 +169,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
 
 
 class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
     returned_list = serializers.ListField(required=False)
 
