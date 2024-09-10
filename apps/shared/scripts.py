@@ -38,7 +38,7 @@ from ..core.hr.models import (
     PlanRole, PlanRoleApp,
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
-from ..eoffice.leave.models import LeaveAvailable
+from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
@@ -2012,3 +2012,17 @@ def add_product_type_service():
             tenant=company.tenant
         )
     return True
+
+
+def run_working_year():
+    for year in WorkingYearConfig.objects.all():
+        year.tenant = year.working_calendar.tenant
+        year.company = year.working_calendar.company
+        if not year.tenant:
+            year.tenant = year.company.tenant
+        year.save(update_fields=['tenant', 'company'])
+    for holiday in WorkingHolidayConfig.objects.all():
+        holiday.tenant = holiday.year.tenant
+        holiday.company = holiday.year.company
+        holiday.save(update_fields=['tenant', 'company'])
+    print('update company is done')
