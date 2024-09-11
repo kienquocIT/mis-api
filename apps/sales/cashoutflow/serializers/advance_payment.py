@@ -56,7 +56,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_advance_payment_type(cls, obj):
-        return "To Supplier" if obj.advance_payment_type else "To Employee"
+        return obj.advance_payment_type
 
     @classmethod
     def get_to_payment(cls, obj):

@@ -32,6 +32,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'sale_code_type',
             'supplier',
             'method',
+            'sale_code',
             'employee_created',
             'employee_inherit',
             'return_value_list',
