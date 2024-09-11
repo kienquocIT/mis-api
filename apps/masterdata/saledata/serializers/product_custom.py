@@ -19,7 +19,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
-            'price_list', 'product_choice', 'supplied_by', 'inventory_information',
+            'price_list', 'product_choice', 'supplied_by', 'inventory_information', 'general_traceability_method',
         )
 
     @classmethod

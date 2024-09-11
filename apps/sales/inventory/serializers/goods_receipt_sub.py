@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem
+from apps.sales.production.models import ProductionOrder, ProductionReport
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
@@ -211,7 +212,16 @@ class GoodsReceiptCommonValidate:
             return str(InventoryAdjustmentItem.objects.get(id=value).id)
         except InventoryAdjustmentItem.DoesNotExist:
             raise serializers.ValidationError({
-                'ia_item': 'inventory adjustment item does not exist'
+                'ia_item': SaleMsg.IA_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_production_order_id(cls, value):
+        try:
+            return str(ProductionOrder.objects.get(id=value).id)
+        except ProductionOrder.DoesNotExist:
+            raise serializers.ValidationError({
+                'production_order_id': SaleMsg.PRODUCTION_ORDER_NOT_EXIST
             })
 
     @classmethod
@@ -234,6 +244,17 @@ class GoodsReceiptCommonValidate:
         except PurchaseRequestProduct.DoesNotExist:
             raise serializers.ValidationError({
                 'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_production_report_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(ProductionReport.objects.get(id=value).id)
+        except ProductionReport.DoesNotExist:
+            raise serializers.ValidationError({
+                'production_report_id': SaleMsg.PRODUCTION_REPORT_NOT_EXIST
             })
 
     @classmethod

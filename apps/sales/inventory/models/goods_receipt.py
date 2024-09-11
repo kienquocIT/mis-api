@@ -43,6 +43,9 @@ class GoodsReceipt(DataAbstractModel):
         blank=True,
         related_name='goods_receipt_map_pr'
     )
+    purchase_requests_data = models.JSONField(
+        default=list, help_text='data json of purchase request, records in GoodsReceiptPurchaseRequest'
+    )
     # FIELDS OF TYPE 1(For inventory adjustment)
     inventory_adjustment = models.ForeignKey(
         'inventory.InventoryAdjustment',
@@ -56,6 +59,27 @@ class GoodsReceipt(DataAbstractModel):
         help_text="read data inventory_adjustment, use for get list or detail"
     )
     # FIELDS OF TYPE 2(For production)
+    production_order = models.ForeignKey(
+        'production.ProductionOrder',
+        on_delete=models.CASCADE,
+        verbose_name="production order",
+        related_name="goods_receipt_production_order",
+        null=True,
+    )
+    production_order_data = models.JSONField(
+        default=dict,
+        help_text="read data production_order, use for get list or detail"
+    )
+    production_reports = models.ManyToManyField(
+        'production.ProductionReport',
+        through="GoodsReceiptProductionReport",
+        symmetrical=False,
+        blank=True,
+        related_name='goods_receipt_map_production_report'
+    )
+    production_reports_data = models.JSONField(
+        default=list, help_text='data json of production report, records in GoodsReceiptProductionReport'
+    )
     # COMMON FIELDS
     remarks = models.TextField(
         blank=True,
@@ -308,6 +332,28 @@ class GoodsReceiptPurchaseRequest(SimpleAbstractModel):
         permissions = ()
 
 
+class GoodsReceiptProductionReport(SimpleAbstractModel):
+    goods_receipt = models.ForeignKey(
+        GoodsReceipt,
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="goods_receipt_production_report_receipt",
+    )
+    production_report = models.ForeignKey(
+        'production.ProductionReport',
+        on_delete=models.CASCADE,
+        verbose_name="production report",
+        related_name="goods_receipt_production_report_report",
+    )
+
+    class Meta:
+        verbose_name = 'Goods Receipt Production Report'
+        verbose_name_plural = 'Goods Receipt Production Reports'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
 class GoodsReceiptProduct(SimpleAbstractModel):
     goods_receipt = models.ForeignKey(
         GoodsReceipt,
@@ -320,6 +366,13 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="po product",
         related_name="goods_receipt_product_po_product",
+        null=True
+    )
+    production_order = models.ForeignKey(
+        'production.ProductionOrder',
+        on_delete=models.CASCADE,
+        verbose_name="production order",
+        related_name="goods_receipt_product_production_order",
         null=True
     )
     product = models.ForeignKey(
@@ -430,6 +483,14 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         null=True
     )
     purchase_request_data = models.JSONField(default=dict, help_text='data JSON of purchase request')
+    production_report = models.ForeignKey(
+        'production.ProductionReport',
+        on_delete=models.CASCADE,
+        verbose_name="production report",
+        related_name="gr_request_product_production_report",
+        null=True
+    )
+    production_report_data = models.JSONField(default=dict, help_text='data JSON of production report')
     uom_data = models.JSONField(default=dict, help_text='data JSON of uom request')
     quantity_order = models.FloatField(default=0, help_text='quantity purchase order')
     quantity_import = models.FloatField(default=0, help_text='quantity goods receipt')
