@@ -248,6 +248,7 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
 
 
 class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
+    task_data = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductionOrder
@@ -256,3 +257,34 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
             'title',
             'task_data',
         )
+
+    @classmethod
+    def get_task_data(cls, obj):
+        task_data = []
+        for item in obj.po_task_production_order.filter(is_task=False):
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product_data else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom_data else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse_data else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'max_issued_quantity': item.quantity,
+                'sum_issued_quantity': 0
+            })
+        return task_data

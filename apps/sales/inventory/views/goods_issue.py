@@ -113,6 +113,9 @@ class ProductionOrderDetailForGIS(BaseRetrieveMixin):
     serializer_detail = ProductionOrderDetailSerializerForGIS
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
     @swagger_auto_schema(
         operation_summary="Production Order Detail",
         operation_description="Get Production Order Detail By ID",
