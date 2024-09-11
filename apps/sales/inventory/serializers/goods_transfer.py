@@ -5,7 +5,10 @@ from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfM
     ProductWareHouseSerial, Product
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.shared import (
+    WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel,
+    AbstractCreateSerializerModel, AbstractListSerializerModel
+)
 from apps.shared.translations.goods_transfer import GTMsg
 
 __all__ = [
@@ -22,7 +25,7 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
     warehouse = serializers.UUIDField()
     end_warehouse = serializers.UUIDField()
     uom = serializers.UUIDField()
-    sale_order = serializers.UUIDField(required=False)
+    sale_order = serializers.UUIDField(required=False, allow_null=True)
     sn_data = serializers.ListField(default=[])
     lot_data = serializers.ListField(default=[])
 
@@ -65,10 +68,13 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_sale_order(cls, value):
-        try:
-            return SaleOrder.objects.get(id=value)
-        except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'sale order': SaleMsg.SALE_ORDER_NOT_EXIST})
+        if value:
+            try:
+                return SaleOrder.objects.get(id=value)
+            except WareHouse.DoesNotExist:
+                raise serializers.ValidationError({'sale order': SaleMsg.SALE_ORDER_NOT_EXIST})
+        else:
+            return None
 
     @classmethod
     def validate_end_warehouse(cls, value):
@@ -88,7 +94,7 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
         return validated_data
 
 
-class GoodsTransferListSerializer(serializers.ModelSerializer):
+class GoodsTransferListSerializer(AbstractListSerializerModel):
     system_status = serializers.SerializerMethodField()
     raw_system_status = serializers.SerializerMethodField()
 
@@ -112,7 +118,7 @@ class GoodsTransferListSerializer(serializers.ModelSerializer):
         return obj.system_status
 
 
-class GoodsTransferCreateSerializer(serializers.ModelSerializer):
+class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):
     goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
@@ -296,7 +302,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
         return goods_transfer_data
 
 
-class GoodsTransferUpdateSerializer(serializers.ModelSerializer):
+class GoodsTransferUpdateSerializer(AbstractCreateSerializerModel):
     goods_transfer_data = serializers.ListField(child=GoodsTransferProductSerializer())
     agency = serializers.UUIDField(required=False)
     date_transfer = serializers.DateTimeField()
