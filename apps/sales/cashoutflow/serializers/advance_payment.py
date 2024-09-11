@@ -545,28 +545,31 @@ class APCommonFunction:
 
     @classmethod
     def validate_sale_code_type(cls, validate_data):
-        if validate_data.get('sale_code_type') in [0, 1, 2]:
-            print('4. validate_sale_code_type --- ok')
-            return validate_data
-        raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+        if validate_data.get('sale_code_type'):
+            if validate_data.get('sale_code_type') not in [0, 1, 2]:
+                raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+        print('4. validate_sale_code_type --- ok')
+        return validate_data
 
     @classmethod
     def validate_employee_inherit_id(cls, validate_data):
-        try:
-            validate_data['employee_inherit_id'] = str(Employee.objects.get(
-                id=validate_data.get('employee_inherit_id')
-            ).id)
-            print('5. validate_employee_inherit_id --- ok')
-            return validate_data
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        if validate_data.get('employee_inherit_id'):
+            try:
+                validate_data['employee_inherit_id'] = str(Employee.objects.get(
+                    id=validate_data.get('employee_inherit_id')
+                ).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        print('5. validate_employee_inherit_id --- ok')
+        return validate_data
 
     @classmethod
     def validate_advance_payment_type(cls, validate_data):
-        if validate_data['advance_payment_type'] in [0, 1]:
-            print('6. validate_advance_payment_type --- ok')
-            return validate_data
-        raise serializers.ValidationError({'advance_payment_type': AdvancePaymentMsg.TYPE_ERROR})
+        if validate_data.get('advance_payment_type'):
+            if validate_data.get('advance_payment_type') not in [0, 1]:
+                raise serializers.ValidationError({'advance_payment_type': AdvancePaymentMsg.TYPE_ERROR})
+        print('6. validate_advance_payment_type --- ok')
+        return validate_data
 
     @classmethod
     def validate_supplier_id(cls, validate_data):
@@ -582,10 +585,11 @@ class APCommonFunction:
 
     @classmethod
     def validate_method(cls, validate_data):
-        if validate_data.get('method') in [0, 1]:
-            print('8. validate_method --- ok')
-            return validate_data
-        raise serializers.ValidationError({'method': 'Method is not valid.'})
+        if validate_data.get('method'):
+            if validate_data.get('method') not in [0, 1]:
+                raise serializers.ValidationError({'method': 'Method is not valid.'})
+        print('8. validate_method --- ok')
+        return validate_data
 
     @classmethod
     def validate_ap_item_list(cls, validate_data):
@@ -629,10 +633,11 @@ class APCommonFunction:
 
     @classmethod
     def validate_common(cls, validate_data):
-        if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier_id'):
-            raise serializers.ValidationError({'supplier': _('Supplier is required.')})
-        if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier_id'):
-            raise serializers.ValidationError({'supplier_id': _('Supplier is not allowed.')})
+        if validate_data.get('advance_payment_type'):
+            if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier': _('Supplier is required.')})
+            if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier_id': _('Supplier is not allowed.')})
         return validate_data
 
     @classmethod
