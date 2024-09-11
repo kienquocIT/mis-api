@@ -2030,46 +2030,6 @@ def run_working_year():
 
 def update_data_json_advance_payment():
     for ap in AdvancePayment.objects.all():
-        if ap.opportunity_mapped:
-            opportunity_mapped = ap.opportunity_mapped
-            ap.opportunity_mapped_data = {
-                'id': str(opportunity_mapped.id),
-                'code': opportunity_mapped.code,
-                'title': opportunity_mapped.title,
-                'customer': opportunity_mapped.customer.name if opportunity_mapped.customer else '',
-                'sale_order_mapped': {
-                    'id': str(opportunity_mapped.sale_order_id),
-                    'code': opportunity_mapped.sale_order.code,
-                    'title': opportunity_mapped.sale_order.title,
-                } if opportunity_mapped.sale_order else {},
-                'quotation_mapped': {
-                    'id': str(opportunity_mapped.quotation_id),
-                    'code': opportunity_mapped.quotation.code,
-                    'title': opportunity_mapped.quotation.title,
-                } if opportunity_mapped.quotation else {}
-            } if opportunity_mapped else {}
-        if ap.quotation_mapped:
-            quotation_mapped = ap.quotation_mapped
-            ap.quotation_mapped_data = {
-                'id': str(quotation_mapped.id),
-                'code': quotation_mapped.code,
-                'title': quotation_mapped.title,
-                'customer': quotation_mapped.customer.name if quotation_mapped.customer else '',
-            } if quotation_mapped else {}
-        if ap.sale_order_mapped:
-            sale_order_mapped = ap.sale_order_mapped
-            ap.sale_order_mapped_data = {
-                'id': str(sale_order_mapped.id),
-                'code': sale_order_mapped.code,
-                'title': sale_order_mapped.title,
-                'customer': sale_order_mapped.customer.name if sale_order_mapped.customer else '',
-                'quotation_mapped': {
-                    'id': str(sale_order_mapped.quotation_id),
-                    'code': sale_order_mapped.quotation.code,
-                    'title': sale_order_mapped.quotation.title,
-                } if sale_order_mapped.quotation else {}
-            } if sale_order_mapped else {}
-        ap.save(update_fields=['opportunity_mapped_data', 'quotation_mapped_data', 'sale_order_mapped_data'])
         for item in ap.advance_payment.all():
             if item.expense_type:
                 expense_type = item.expense_type

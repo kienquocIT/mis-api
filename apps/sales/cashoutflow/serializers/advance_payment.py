@@ -56,9 +56,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_advance_payment_type(cls, obj):
-        if obj.advance_payment_type:
-            return "To Supplier"
-        return "To Employee"
+        return "To Supplier" if obj.advance_payment_type else "To Employee"
 
     @classmethod
     def get_to_payment(cls, obj):
@@ -302,11 +300,31 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_opportunity_mapped(cls, obj):
-        return obj.opportunity_mapped_data if obj.opportunity_mapped else {}
+        return {
+            'id': str(obj.opportunity_mapped.id),
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title,
+            'customer': obj.opportunity_mapped.customer.name if obj.opportunity_mapped.customer else '',
+            'sale_order_mapped': {
+                'id': str(obj.opportunity_mapped.sale_order_id),
+                'code': obj.opportunity_mapped.sale_order.code,
+                'title': obj.opportunity_mapped.sale_order.title,
+            } if obj.opportunity_mapped.sale_order else {},
+            'quotation_mapped': {
+                'id': str(obj.opportunity_mapped.quotation_id),
+                'code': obj.opportunity_mapped.quotation.code,
+                'title': obj.opportunity_mapped.quotation.title,
+            } if obj.opportunity_mapped.quotation else {}
+        } if obj.opportunity_mapped else {}
 
     @classmethod
     def get_quotation_mapped(cls, obj):
-        return obj.quotation_mapped_data if obj.quotation_mapped else {}
+        return {
+            'id': str(obj.quotation_mapped.id),
+            'code': obj.quotation_mapped.code,
+            'title': obj.quotation_mapped.title,
+            'customer': obj.quotation_mapped.customer.name if obj.quotation_mapped.customer else '',
+        } if obj.quotation_mapped else {}
 
     @classmethod
     def get_sale_order_mapped(cls, obj):
@@ -324,7 +342,28 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_supplier(cls, obj):
-        return obj.supplier_data if obj.supplier else {}
+        return {
+            'id': str(obj.supplier.id),
+            'code': obj.supplier.code,
+            'name': obj.supplier.name,
+            'owner': {
+                'id': str(obj.supplier.owner_id),
+                'fullname': obj.supplier.owner.fullname
+            } if obj.supplier.owner else {},
+            'industry': {
+                'id': str(obj.supplier.industry_id),
+                'title': obj.supplier.industry.title
+            } if obj.supplier.industry else {},
+            'bank_accounts_mapped': [{
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.supplier.account_banks_mapped.all()]
+        } if obj.supplier else {}
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -445,27 +484,10 @@ class APCommonFunction:
                 if opportunity_mapped.is_close_lost or opportunity_mapped.is_deal_close:
                     raise serializers.ValidationError({'opportunity_mapped_id': SaleMsg.OPPORTUNITY_CLOSED})
                 validate_data['opportunity_mapped_id'] = str(opportunity_mapped.id)
-                validate_data['opportunity_mapped_data'] = {
-                    'id': str(opportunity_mapped.id),
-                    'code': opportunity_mapped.code,
-                    'title': opportunity_mapped.title,
-                    'customer': opportunity_mapped.customer.name if opportunity_mapped.customer else '',
-                    'sale_order_mapped': {
-                        'id': str(opportunity_mapped.sale_order_id),
-                        'code': opportunity_mapped.sale_order.code,
-                        'title': opportunity_mapped.sale_order.title,
-                    } if opportunity_mapped.sale_order else {},
-                    'quotation_mapped': {
-                        'id': str(opportunity_mapped.quotation_id),
-                        'code': opportunity_mapped.quotation.code,
-                        'title': opportunity_mapped.quotation.title,
-                    } if opportunity_mapped.quotation else {}
-                } if opportunity_mapped else {}
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
         else:
             validate_data['opportunity_mapped_id'] = None
-            validate_data['opportunity_mapped_data'] = {}
         print('1. validate_opportunity_mapped_id --- ok')
         return validate_data
 
@@ -475,17 +497,10 @@ class APCommonFunction:
             try:
                 quotation_mapped = Quotation.objects.get(id=validate_data.get('quotation_mapped_id'))
                 validate_data['quotation_mapped_id'] = str(quotation_mapped.id)
-                validate_data['quotation_mapped_data'] = {
-                    'id': str(quotation_mapped.id),
-                    'code': quotation_mapped.code,
-                    'title': quotation_mapped.title,
-                    'customer': quotation_mapped.customer.name if quotation_mapped.customer else '',
-                } if quotation_mapped else {}
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
         else:
             validate_data['quotation_mapped_id'] = None
-            validate_data['quotation_mapped_data'] = {}
         print('2. validate_quotation_mapped_id --- ok')
         return validate_data
 
@@ -495,22 +510,10 @@ class APCommonFunction:
             try:
                 sale_order_mapped = SaleOrder.objects.get(id=validate_data.get('sale_order_mapped_id'))
                 validate_data['sale_order_mapped_id'] = str(sale_order_mapped.id)
-                validate_data['sale_order_mapped_data'] = {
-                    'id': str(sale_order_mapped.id),
-                    'code': sale_order_mapped.code,
-                    'title': sale_order_mapped.title,
-                    'customer': sale_order_mapped.customer.name if sale_order_mapped.customer else '',
-                    'quotation_mapped': {
-                        'id': str(sale_order_mapped.quotation_id),
-                        'code': sale_order_mapped.quotation.code,
-                        'title': sale_order_mapped.quotation.title,
-                    } if sale_order_mapped.quotation else {}
-                } if sale_order_mapped else {}
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'sale_order_mapped_id': 'Sale order is not exist.'})
         else:
             validate_data['sale_order_mapped_id'] = None
-            validate_data['sale_order_mapped_data'] = {}
         print('3. validate_sale_order_mapped_id --- ok')
         return validate_data
 
@@ -548,33 +551,10 @@ class APCommonFunction:
             try:
                 supplier = Account.objects.get(id=validate_data.get('supplier_id'))
                 validate_data['supplier_id'] = str(supplier.id)
-                validate_data['supplier_data'] = {
-                    'id': str(supplier.id),
-                    'code': supplier.code,
-                    'name': supplier.name,
-                    'owner': {
-                        'id': str(supplier.owner_id),
-                        'fullname': supplier.owner.fullname
-                    } if supplier.owner else {},
-                    'industry': {
-                        'id': str(supplier.industry_id),
-                        'title': supplier.industry.title
-                    } if supplier.industry else {},
-                    'bank_accounts_mapped': [{
-                        'bank_country_id': str(item.country_id),
-                        'bank_name': item.bank_name,
-                        'bank_code': item.bank_code,
-                        'bank_account_name': item.bank_account_name,
-                        'bank_account_number': item.bank_account_number,
-                        'bic_swift_code': item.bic_swift_code,
-                        'is_default': item.is_default
-                    } for item in supplier.account_banks_mapped.all()]
-                }
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'supplier_id': 'Supplier is not exist.'})
         else:
             validate_data['supplier_id'] = None
-            validate_data['supplier_data'] = {}
         print('7. validate_supplier_id --- ok')
         return validate_data
 

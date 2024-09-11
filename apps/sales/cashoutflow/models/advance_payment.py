@@ -32,19 +32,16 @@ class AdvancePayment(DataAbstractModel):
         on_delete=models.CASCADE, null=True,
         related_name="ap_opportunity_mapped"
     )
-    opportunity_mapped_data = models.JSONField(default=dict)
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
         related_name="ap_quotation_mapped"
     )
-    quotation_mapped_data = models.JSONField(default=dict)
     sale_order_mapped = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE, null=True,
         related_name="ap_sale_order_mapped"
     )
-    sale_order_mapped_data = models.JSONField(default=dict)
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
         help_text='0 is Sale, 1 is Purchase, 2 is None-sale'
@@ -61,7 +58,6 @@ class AdvancePayment(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
-    supplier_data = models.JSONField(default=dict)
     method = models.SmallIntegerField(
         choices=ADVANCE_PAYMENT_METHOD,
         verbose_name='AdvancePayment method',
@@ -79,12 +75,6 @@ class AdvancePayment(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    # @classmethod
-    # def update_money_gave(cls, instance):
-    #     instance.money_gave = True
-    #     instance.save(update_fields=['money_gave'])
-    #     return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
