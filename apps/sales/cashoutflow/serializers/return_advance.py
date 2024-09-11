@@ -5,7 +5,7 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import ExpenseItem
 from apps.shared import (
-    RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg,
+    SaleMsg,
     AbstractDetailSerializerModel,
     AbstractCreateSerializerModel,
     AbstractListSerializerModel
