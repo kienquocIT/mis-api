@@ -417,10 +417,6 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
-    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    employee_inherit_id = serializers.UUIDField()
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     ap_item_list = serializers.ListField(required=False, allow_null=True)
 
@@ -428,11 +424,6 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         model = AdvancePayment
         fields = (
             'title',
-            'opportunity_mapped_id',
-            'quotation_mapped_id',
-            'sale_order_mapped_id',
-            'sale_code_type',
-            'employee_inherit_id',
             'advance_payment_type',
             'supplier_id',
             'method',
@@ -442,11 +433,6 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
-        APCommonFunction.validate_opportunity_mapped_id(validate_data)
-        APCommonFunction.validate_quotation_mapped_id(validate_data)
-        APCommonFunction.validate_sale_order_mapped_id(validate_data)
-        APCommonFunction.validate_sale_code_type(validate_data)
-        APCommonFunction.validate_employee_inherit_id(validate_data)
         APCommonFunction.validate_advance_payment_type(validate_data)
         APCommonFunction.validate_method(validate_data)
         APCommonFunction.validate_ap_item_list(validate_data)
