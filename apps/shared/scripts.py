@@ -2091,3 +2091,22 @@ def update_datetime_for_meeting_eoffice():
             meeting.meeting_end_datetime = meeting.meeting_start_datetime + timedelta(minutes=duration)
         meeting.save(update_fields=['meeting_start_datetime', 'meeting_end_datetime'])
     print('Done :))')
+
+
+def update_account_type_flag():
+    for account in Account.objects.all():
+        for item in account.account_account_types_mapped.all():
+            if item.account_type.account_type_order == 0:
+                account.is_customer_account = True
+            elif item.account_type.account_type_order == 1:
+                account.is_supplier_account = True
+            elif item.account_type.account_type_order == 2:
+                account.is_partner_account = True
+            elif item.account_type.account_type_order == 3:
+                account.is_competitor_account = True
+            account.save(update_fields=[
+                'is_customer_account', 'is_supplier_account', 'is_partner_account', 'is_competitor_account'
+            ])
+            print(f'--- Updated for {account.name} successfully!')
+    print('Done :))')
+
