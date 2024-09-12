@@ -109,6 +109,7 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
         'production_order_id': ['exact'],
         'product_id': ['exact'],
         'employee_inherit_id': ['exact'],
+        'id': ['exact', 'in'],
     }
     serializer_list = ProductionReportGRSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

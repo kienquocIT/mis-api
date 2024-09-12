@@ -11,6 +11,8 @@ class GRFinishHandler:
         if instance.goods_receipt_type == 1:
             GRFinishHandler.gr_info_for_ia(instance=instance)
             GRFinishHandler.state_ia(instance=instance)
+        if instance.goods_receipt_type == 2:
+            GRFinishHandler.gr_info_for_production(instance=instance)
 
     @classmethod
     def gr_info_for_po(cls, instance):
@@ -59,6 +61,21 @@ class GRFinishHandler:
             if ia_product.count() == ia_product_done.count():
                 instance.inventory_adjustment.state = True
                 instance.inventory_adjustment.save(update_fields=['state'])
+        return True
+
+    @classmethod
+    def gr_info_for_production(cls, instance):
+        for gr_product in instance.goods_receipt_product_goods_receipt.all():
+            if gr_product.production_order:
+                gr_product.production_order.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+                if gr_product.production_order.gr_remain_quantity >= 0:
+                    gr_product.production_order.save(update_fields=['gr_remain_quantity'])
+
+        for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
+            if gr_pr_product.production_report:
+                gr_pr_product.production_report.gr_remain_quantity -= round(gr_pr_product.quantity_import, 2)
+                if gr_pr_product.production_report.gr_remain_quantity >= 0:
+                    gr_pr_product.production_report.save(update_fields=['gr_remain_quantity'])
         return True
 
     # PRODUCT_WAREHOUSE
