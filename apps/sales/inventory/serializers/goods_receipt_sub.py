@@ -5,7 +5,8 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem, \
+    GoodsReceiptProductionReport
 from apps.sales.production.models import ProductionOrder, ProductionReport
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
@@ -20,6 +21,15 @@ class GoodsReceiptCommonCreate:
             goods_receipt=instance,
             purchase_request_id=purchase_request_id,
         ) for purchase_request_id in purchase_requests])
+        return True
+
+    @classmethod
+    def create_m2m_goods_receipt_report(cls, instance):
+        instance.goods_receipt_production_report_receipt.all().delete()
+        GoodsReceiptProductionReport.objects.bulk_create([GoodsReceiptProductionReport(
+            goods_receipt=instance,
+            production_report_id=production_report_data.get('id', None),
+        ) for production_report_data in instance.production_reports_data])
         return True
 
     @classmethod
@@ -134,6 +144,7 @@ class GoodsReceiptCommonCreate:
                 purchase_requests=purchase_requests,
                 instance=instance
             )
+        cls.create_m2m_goods_receipt_report(instance=instance)
         if goods_receipt_product:
             if is_update is True:
                 cls.delete_old_goods_receipt_product(instance=instance)
@@ -147,41 +158,41 @@ class GoodsReceiptCommonCreate:
 class GoodsReceiptCommonValidate:
 
     @classmethod
-    def validate_purchase_order(cls, value):
+    def validate_purchase_order_id(cls, value):
         if value is None:
             return value
         try:
-            return PurchaseOrder.objects.get_current(
+            return str(PurchaseOrder.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id)
         except PurchaseOrder.DoesNotExist:
             raise serializers.ValidationError({'purchase_order': PurchasingMsg.PURCHASE_ORDER_NOT_EXIST})
 
     @classmethod
-    def validate_inventory_adjustment(cls, value):
+    def validate_inventory_adjustment_id(cls, value):
         if value is None:
             return value
         try:
-            return InventoryAdjustment.objects.get_current(
+            return str(InventoryAdjustment.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id)
         except InventoryAdjustment.DoesNotExist:
             raise serializers.ValidationError({'inventory_adjustment': InventoryMsg.INVENTORY_ADJUSTMENT_NOT_EXIST})
 
     @classmethod
-    def validate_supplier(cls, value):
+    def validate_supplier_id(cls, value):
         if value is None:
             return value
         try:
-            return Account.objects.get_current(
+            return str(Account.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'supplier': AccountsMsg.ACCOUNT_NOT_EXIST})
 

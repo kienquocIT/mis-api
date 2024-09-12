@@ -444,8 +444,6 @@ def handle_attach_file(instance, attachment_result):
 
 
 class GoodsReceiptListSerializer(AbstractListSerializerModel):
-    purchase_order = serializers.SerializerMethodField()
-    inventory_adjustment = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -454,27 +452,12 @@ class GoodsReceiptListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'goods_receipt_type',
-            'purchase_order',
-            'inventory_adjustment',
+            'purchase_order_data',
+            'inventory_adjustment_data',
+            'production_order_data',
             'date_received',
             'system_status',
         )
-
-    @classmethod
-    def get_purchase_order(cls, obj):
-        return {
-            'id': obj.purchase_order_id,
-            'title': obj.purchase_order.title,
-            'code': obj.purchase_order.code,
-        } if obj.purchase_order else {}
-
-    @classmethod
-    def get_inventory_adjustment(cls, obj):
-        return {
-            'id': obj.inventory_adjustment_id,
-            'title': obj.inventory_adjustment.title,
-            'code': obj.inventory_adjustment.code,
-        } if obj.inventory_adjustment else {}
 
 
 class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
@@ -491,8 +474,10 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'goods_receipt_type',
             'purchase_order_data',
             'inventory_adjustment_data',
+            'production_order_data',
             'supplier_data',
             'purchase_requests',
+            'production_reports_data',
             'remarks',
             'date_received',
             # line detail
@@ -533,9 +518,10 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
 
 class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
-    purchase_order = serializers.UUIDField(required=False, allow_null=True)
-    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
-    supplier = serializers.UUIDField(required=False, allow_null=True)
+    purchase_order_id = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
+    production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
     date_received = serializers.DateTimeField()
@@ -546,13 +532,16 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'goods_receipt_type',
             'title',
-            'purchase_order',
+            'purchase_order_id',
             'purchase_order_data',
-            'inventory_adjustment',
+            'inventory_adjustment_id',
             'inventory_adjustment_data',
-            'supplier',
+            'production_order_id',
+            'production_order_data',
+            'supplier_id',
             'supplier_data',
             'purchase_requests',
+            'production_reports_data',
             'remarks',
             'date_received',
             # tab product
@@ -562,16 +551,20 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
-    def validate_purchase_order(cls, value):
-        return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+    def validate_purchase_order_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_order_id(value=value)
 
     @classmethod
-    def validate_inventory_adjustment(cls, value):
-        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
+    def validate_inventory_adjustment_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment_id(value=value)
 
     @classmethod
-    def validate_supplier(cls, value):
-        return GoodsReceiptCommonValidate.validate_supplier(value=value)
+    def validate_production_order_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_production_order_id(value=value)
+
+    @classmethod
+    def validate_supplier_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_supplier_id(value=value)
 
     @classmethod
     def validate_purchase_requests(cls, value):
@@ -605,9 +598,10 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
 
 
 class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
-    purchase_order = serializers.UUIDField(required=False, allow_null=True)
-    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
-    supplier = serializers.UUIDField(required=False, allow_null=True)
+    purchase_order_id = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
+    production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
     date_received = serializers.DateTimeField(required=False, allow_null=True)
@@ -618,13 +612,16 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'goods_receipt_type',
             'title',
-            'purchase_order',
+            'purchase_order_id',
             'purchase_order_data',
-            'inventory_adjustment',
+            'inventory_adjustment_id',
             'inventory_adjustment_data',
-            'supplier',
+            'production_order_id',
+            'production_order_data',
+            'supplier_id',
             'supplier_data',
             'purchase_requests',
+            'production_reports_data',
             'remarks',
             'date_received',
             # tab product
@@ -634,16 +631,20 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
-    def validate_purchase_order(cls, value):
-        return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+    def validate_purchase_order_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_order_id(value=value)
 
     @classmethod
-    def validate_inventory_adjustment(cls, value):
-        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
+    def validate_inventory_adjustment_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment_id(value=value)
 
     @classmethod
-    def validate_supplier(cls, value):
-        return GoodsReceiptCommonValidate.validate_supplier(value=value)
+    def validate_production_order_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_production_order_id(value=value)
+
+    @classmethod
+    def validate_supplier_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_supplier_id(value=value)
 
     @classmethod
     def validate_purchase_requests(cls, value):
