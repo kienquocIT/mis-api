@@ -333,6 +333,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         for account_type in validate_data.get("account_types", []):
             account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
+            validate_data['is_customer_account'] = False
+            validate_data['is_supplier_account'] = False
+            validate_data['is_partner_account'] = False
+            validate_data['is_competitor_account'] = False
             if account_type_obj:
                 if account_type_obj.account_type_order == 0:
                     validate_data['is_customer_account'] = True
@@ -758,6 +762,10 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
         for account_type in validate_data.get("account_types", []):
             account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
+            validate_data['is_customer_account'] = False
+            validate_data['is_supplier_account'] = False
+            validate_data['is_partner_account'] = False
+            validate_data['is_competitor_account'] = False
             if account_type_obj:
                 if account_type_obj.account_type_order == 0:
                     validate_data['is_customer_account'] = True
