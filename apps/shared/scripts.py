@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.utils import timezone
 
@@ -39,6 +39,7 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
+from ..eoffice.meeting.models import MeetingSchedule
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
@@ -2028,7 +2029,7 @@ def run_working_year():
     print('update company is done')
 
 
-def update_data_json_advance_payment():
+def update_data_json_cash_outflow():
     for ap in AdvancePayment.objects.all():
         for item in ap.advance_payment.all():
             if item.expense_type:
@@ -2047,4 +2048,46 @@ def update_data_json_advance_payment():
                     'rate': expense_tax.rate
                 } if expense_tax else {}
             item.save(update_fields=['expense_type_data', 'expense_tax_data'])
+    print('Done Advance Payment :))')
+    for payment in Payment.objects.all():
+        for item in payment.payment.all():
+            if item.expense_type:
+                expense_type = item.expense_type
+                item.expense_type_data = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+            if item.expense_tax:
+                expense_tax = item.expense_tax
+                item.expense_tax_data = {
+                    'id': str(expense_tax.id),
+                    'code': expense_tax.code,
+                    'title': expense_tax.title,
+                    'rate': expense_tax.rate
+                } if expense_tax else {}
+            item.save(update_fields=['expense_type_data', 'expense_tax_data'])
+    print('Done Payment :))')
+    for return_ap in ReturnAdvance.objects.all():
+        for item in return_ap.return_advance.all():
+            if item.expense_type:
+                expense_type = item.expense_type
+                item.expense_type_data = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+            item.save(update_fields=['expense_type_data'])
+    print('Done Return Payment :))')
+
+
+def update_datetime_for_meeting_eoffice():
+    for meeting in MeetingSchedule.objects.all():
+        start_date = meeting.meeting_start_date
+        start_time = meeting.meeting_start_time
+        duration = meeting.meeting_duration
+        if start_date and start_time and duration:
+            meeting.meeting_start_datetime = datetime.combine(start_date, start_time)
+            meeting.meeting_end_datetime = meeting.meeting_start_datetime + timedelta(minutes=duration)
+        meeting.save(update_fields=['meeting_start_datetime', 'meeting_end_datetime'])
     print('Done :))')
