@@ -32,6 +32,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'sale_code_type',
             'supplier',
             'method',
+            'sale_code',
             'employee_created',
             'employee_inherit',
             'return_value_list',
@@ -381,10 +382,6 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
 class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
-    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    employee_inherit_id = serializers.UUIDField()
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
@@ -393,11 +390,6 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         model = Payment
         fields = (
             'title',
-            'opportunity_mapped_id',
-            'quotation_mapped_id',
-            'sale_order_mapped_id',
-            'sale_code_type',
-            'employee_inherit_id',
             'supplier_id',
             'is_internal_payment',
             'employee_payment_id',
@@ -414,11 +406,6 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             validate_data.pop('employee_payment_id', None)
             if not validate_data.get('supplier_id'):
                 raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
-        PaymentCommonFunction.validate_opportunity_mapped_id(validate_data)
-        PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_code_type(validate_data)
-        PaymentCommonFunction.validate_employee_inherit_id(validate_data)
         PaymentCommonFunction.validate_supplier_id(validate_data)
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)

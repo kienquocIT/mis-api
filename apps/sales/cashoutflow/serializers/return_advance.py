@@ -5,7 +5,7 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import ExpenseItem
 from apps.shared import (
-    RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg,
+    SaleMsg,
     AbstractDetailSerializerModel,
     AbstractCreateSerializerModel,
     AbstractListSerializerModel
@@ -34,12 +34,28 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
         return {
             'id': obj.advance_payment.id,
             'code': obj.advance_payment.code,
-            'title': obj.advance_payment.title
+            'title': obj.advance_payment.title,
+            'sale_code': obj.advance_payment.sale_code,
+            'opportunity_mapped': {
+                'id': obj.advance_payment.opportunity_mapped_id,
+                'code': obj.advance_payment.opportunity_mapped.code,
+                'title': obj.advance_payment.opportunity_mapped.title
+            } if obj.advance_payment.opportunity_mapped else {},
+            'quotation_mapped': {
+                'id': obj.advance_payment.quotation_mapped_id,
+                'code': obj.advance_payment.quotation_mapped.code,
+                'title': obj.advance_payment.quotation_mapped.title,
+            } if obj.advance_payment.quotation_mapped else {},
+            'sale_order_mapped': {
+                'id': obj.advance_payment.sale_order_mapped_id,
+                'code': obj.advance_payment.sale_order_mapped.code,
+                'title': obj.advance_payment.sale_order_mapped.title
+            } if obj.advance_payment.sale_order_mapped else {}
         } if obj.advance_payment else {}
 
     @classmethod
     def get_money_received(cls, obj):
-        return str(dict(RETURN_ADVANCE_MONEY_RECEIVED).get(obj.money_received))
+        return obj.money_received
 
 
 class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
