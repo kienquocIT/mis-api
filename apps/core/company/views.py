@@ -1,10 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 
 from apps.core.company.models import CompanyUserEmployee, CompanyConfig
 from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
+from apps.core.hr.models import Employee
 from apps.shared import (
     mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin, ResponseController,
     HttpMsg,
@@ -145,18 +147,26 @@ class CompanyUploadLogo(BaseUpdateMixin):
 
     def get_object(self):
         instance = super().get_object()
-        if instance and self.request.user.company_current == instance:
-            return instance
-        return ResponseController.notfound_404()
+        if instance and instance.tenant_id == self.cls_check.attr.tenant_current_id:
+            if self.cls_check.attr.is_admin_tenant is True:
+                return instance
+
+            if self.cls_check.attr.employee_current:
+                if self.cls_check.employee_attr.company_id == instance.id:
+                    if self.cls_check.employee_attr.is_admin_company is True:
+                        return instance
+                else:
+                    employee_obj = Employee.objects.filter_current(fill__tenant=True, company_id=instance.id).first()
+                    if employee_obj and employee_obj.is_admin_company is True:
+                        return instance
+        raise exceptions.NotFound
 
     def write_log(self, *args, **kwargs):
         kwargs['request_data'] = {}
         super().write_log(*args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUploadLogoSerializer)
-    @mask_view(
-        login_require=True, auth_require=False, allow_admin_tenant=True, allow_admin_company=True,
-    )
+    @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True)
     def post(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
