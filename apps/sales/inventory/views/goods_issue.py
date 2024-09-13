@@ -1,6 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.masterdata.saledata.filters import ProductWareHouseListFilter
 from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot, ProductWareHouse
 from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment
 from apps.sales.inventory.serializers import (
@@ -9,9 +7,12 @@ from apps.sales.inventory.serializers import (
 from apps.sales.inventory.serializers.goods_issue import (
     GoodsIssueUpdateSerializer,
     ProductionOrderListSerializerForGIS,
-    ProductionOrderDetailSerializerForGIS, InventoryAdjustmentListSerializerForGIS,
-    InventoryAdjustmentDetailSerializerForGIS, ProductWarehouseSerialListSerializerForGIS,
-    ProductWarehouseLotListSerializerForGIS, ProductWareHouseListSerializerForGIS
+    ProductionOrderDetailSerializerForGIS,
+    InventoryAdjustmentListSerializerForGIS,
+    InventoryAdjustmentDetailSerializerForGIS,
+    ProductWarehouseSerialListSerializerForGIS,
+    ProductWarehouseLotListSerializerForGIS,
+    ProductWareHouseListSerializerForGIS
 )
 from apps.sales.production.models import ProductionOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin

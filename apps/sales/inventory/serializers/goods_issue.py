@@ -15,7 +15,12 @@ __all__ = [
     'GoodsIssueDetailSerializer',
     'GoodsIssueUpdateSerializer',
     'ProductionOrderListSerializerForGIS',
-    'ProductionOrderDetailSerializerForGIS'
+    'ProductionOrderDetailSerializerForGIS',
+    'InventoryAdjustmentListSerializerForGIS',
+    'InventoryAdjustmentDetailSerializerForGIS',
+    'ProductWarehouseSerialListSerializerForGIS',
+    'ProductWarehouseLotListSerializerForGIS',
+    'ProductWareHouseListSerializerForGIS'
 ]
 
 
