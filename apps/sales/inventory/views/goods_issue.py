@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot
+from apps.masterdata.saledata.filters import ProductWareHouseListFilter
+from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot, ProductWareHouse
 from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment
 from apps.sales.inventory.serializers import (
     GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer
@@ -10,7 +11,7 @@ from apps.sales.inventory.serializers.goods_issue import (
     ProductionOrderListSerializerForGIS,
     ProductionOrderDetailSerializerForGIS, InventoryAdjustmentListSerializerForGIS,
     InventoryAdjustmentDetailSerializerForGIS, ProductWarehouseSerialListSerializerForGIS,
-    ProductWarehouseLotListSerializerForGIS
+    ProductWarehouseLotListSerializerForGIS, ProductWareHouseListSerializerForGIS
 )
 from apps.sales.production.models import ProductionOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -171,6 +172,25 @@ class ProductionOrderDetailForGIS(BaseRetrieveMixin):
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
+
+
+class ProductWareHouseListForGIS(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWareHouseListSerializerForGIS
+    filterset_fields = {
+        "id": ["exact"],
+        "product_id": ["exact"],
+        "warehouse_id": ["exact"],
+    }
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(operation_summary='Product WareHouse')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class ProductWareHouseLotListForGIS(BaseListMixin):

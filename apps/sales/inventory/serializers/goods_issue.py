@@ -340,6 +340,15 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
         return task_data
 
 
+class ProductWareHouseListSerializerForGIS(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'stock_amount'
+        )
+
+
 class ProductWarehouseLotListSerializerForGIS(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouseLot
