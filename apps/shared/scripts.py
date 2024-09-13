@@ -68,6 +68,7 @@ from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct,
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus
+from ..sales.production.models import BOM
 
 
 def update_sale_default_data_old_company():
@@ -2157,4 +2158,11 @@ def update_goods_issue_item_json_data():
                 'title': item.warehouse.title
             } if item.warehouse else {}
             item.save(update_fields=['product_data', 'uom_data', 'warehouse_data'])
+    print('Done :))')
+
+
+def update_bom_title():
+    for bom in BOM.objects.all():
+        bom.title = f"BOM - {bom.product.title}"
+        bom.save(update_fields=['title'])
     print('Done :))')

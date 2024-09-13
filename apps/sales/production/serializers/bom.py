@@ -104,6 +104,7 @@ class BOMListSerializer(AbstractListSerializerModel):
         fields = (
             'id',
             'code',
+            'title',
             'bom_type',
             'for_outsourcing',
             'product',
@@ -442,7 +443,9 @@ class BOMCommonFunction:
     @classmethod
     def validate_product_id(cls, validate_data):
         try:
-            validate_data['product_id'] = str(Product.objects.get(id=validate_data.get('product_id')).id)
+            product_obj = Product.objects.get(id=validate_data.get('product_id'))
+            validate_data['product_id'] = str(product_obj.id)
+            validate_data['title'] = f"BOM - {product_obj.title}"
             print('3. validate_product --- ok')
             return True
         except Product.DoesNotExist:
