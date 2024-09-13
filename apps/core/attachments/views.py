@@ -63,11 +63,14 @@ class FilesDownload(BaseRetrieveMixin):
     def get(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             obj = self.get_object()
-            with open(obj.file.path, 'rb') as f_open:
-                contents = f_open.read()
-                response = HttpResponse(contents, content_type=obj.file_type)
-                response['Content-Disposition'] = f'attachment; filename={obj.file_name}'
-                return response
+            try:
+                with open(obj.file.path, 'rb') as f_open:
+                    contents = f_open.read()
+                    response = HttpResponse(contents, content_type=obj.file_type)
+                    response['Content-Disposition'] = f'attachment; filename={obj.file_name}'
+                    return response
+            except FileNotFoundError:
+                pass
         return ResponseController.notfound_404()
 
 
