@@ -84,4 +84,7 @@ PASSWORD_TOTP_2FA=totp-*
 # throttling: misapi.throttling
 THROTTLE_AUTH=200
 THROTTLE_ANON=50
+
+# file
+FILE_ENABLE_MAGIC_CHECK=0
 ```

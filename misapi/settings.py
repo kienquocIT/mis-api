@@ -331,6 +331,7 @@ FILE_SIZE_OF_EMPLOYEE_TOTAL = int(
     os.getenv('FILE_SIZE_OF_EMPLOYEE_TOTAL', 5 * 1024 * 1024 * 1024)  # defaults: 5 Gigabytes
 )
 FILE_STORAGE_EXPIRED = 60 * 5  # unit: seconds
+FILE_ENABLE_MAGIC_CHECK = os.environ.get('FILE_ENABLE_MAGIC_CHECK', '0') in [1, '1']
 USE_S3 = os.getenv('USE_S3', '0') == '1'
 if USE_S3:
     # aws settings
