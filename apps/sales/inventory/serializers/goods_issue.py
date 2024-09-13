@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
+from apps.sales.production.models import ProductionOrder
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 from apps.shared.translations.goods_issue import GIMsg
 
@@ -9,7 +10,9 @@ __all__ = [
     'GoodsIssueListSerializer',
     'GoodsIssueCreateSerializer',
     'GoodsIssueDetailSerializer',
-    'GoodsIssueUpdateSerializer'
+    'GoodsIssueUpdateSerializer',
+    'ProductionOrderListSerializerForGIS',
+    'ProductionOrderDetailSerializerForGIS'
 ]
 
 
@@ -230,3 +233,58 @@ class GoodsIssueCommonFunction:
         GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
         GoodsIssueProduct.objects.bulk_create(bulk_data)
         return True
+
+
+# related serializers
+class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
+
+    class Meta:
+        model = ProductionOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
+class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
+    task_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductionOrder
+        fields = (
+            'id',
+            'title',
+            'task_data',
+        )
+
+    @classmethod
+    def get_task_data(cls, obj):
+        task_data = []
+        for item in obj.po_task_production_order.filter(is_task=False):
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product_data else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom_data else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse_data else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'max_issued_quantity': item.quantity,
+                'sum_issued_quantity': 0
+            })
+        return task_data

@@ -181,8 +181,8 @@ class LeadListForOpportunity(BaseListMixin):
         operation_description="Lead list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='lead', model_code='lead', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         LeadChartInformation.create_update_chart_information(

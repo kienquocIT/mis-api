@@ -1,10 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.inventory.models import GoodsIssue
-from apps.sales.inventory.serializers import GoodsIssueListSerializer, GoodsIssueCreateSerializer, \
-    GoodsIssueDetailSerializer
-from apps.sales.inventory.serializers.goods_issue import GoodsIssueUpdateSerializer
-
+from apps.sales.inventory.serializers import (
+    GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer
+)
+from apps.sales.inventory.serializers.goods_issue import (
+    GoodsIssueUpdateSerializer,
+    ProductionOrderListSerializerForGIS,
+    ProductionOrderDetailSerializerForGIS
+)
+from apps.sales.production.models import ProductionOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -79,3 +83,46 @@ class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# related views
+class ProductionOrderListForGIS(BaseListMixin):
+    queryset = ProductionOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'employee_inherit_id': ['exact'],
+        'system_status': ['exact', 'in'],
+    }
+    serializer_list = ProductionOrderListSerializerForGIS
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Production Order List",
+        operation_description="Get Production Order List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='production', model_code='productionorder', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductionOrderDetailForGIS(BaseRetrieveMixin):
+    queryset = ProductionOrder.objects
+    serializer_detail = ProductionOrderDetailSerializerForGIS
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Production Order Detail",
+        operation_description="Get Production Order Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='production', model_code='productionorder', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)

@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from copy import deepcopy
 from functools import wraps
 from typing import Union, Literal
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 import numpy as np
 
@@ -157,6 +157,12 @@ class EmployeeAttribute:
         return self._company_id
 
     @property
+    def is_admin_company(self):
+        if not self._is_admin_company and self.employee_current and hasattr(self.employee_current, 'is_admin_company'):
+            self._is_admin_company = self.employee_current.is_admin_company
+        return self._is_admin_company
+
+    @property
     def group_id_of_employee_current(self) -> str:
         if not self._group_id_of_employee_current and self.employee_current and self.employee_current.group_id:
             self._group_id_of_employee_current = str(self.employee_current.group_id)
@@ -261,6 +267,7 @@ class EmployeeAttribute:
         self._employee_same_group_ids = []
         self._employee_in_company_ids = []
         self._roles: list[dict] = None
+        self._is_admin_company: bool = False
 
         self.employee_current = employee_obj
         self.employee_current_id = employee_obj.id if employee_obj and hasattr(employee_obj, 'id') else None
@@ -319,6 +326,22 @@ class ViewAttribute:
             if self.user and hasattr(self.user, 'employee_current') and hasattr(self.user.employee_current, 'id'):
                 self._is_admin_company = self.user.employee_current.is_admin_company
         return self._is_admin_company
+
+    @property
+    def tenant_current_id(self):
+        if not self._tenant_current_id:
+            if self.user and hasattr(self.user, 'tenant_current_id') and isinstance(self.user.tenant_current_id, UUID):
+                self._tenant_current_id = self.user.tenant_current_id
+        return self._tenant_current_id
+
+    @property
+    def company_current_id(self):
+        if not self._company_current_id:
+            if self.user and hasattr(self.user, 'company_current_id') and isinstance(
+                    self.user.company_current_id, UUID
+            ):
+                self._tenant_current_id = self.user.company_current_id
+        return self._company_current_id
 
     #######################################
     # Properties from Request View Object
@@ -545,6 +568,8 @@ class ViewAttribute:
         self._employee_current = None
         self._is_admin_tenant: bool = False
         self._is_admin_company: bool = False
+        self._tenant_current_id = None
+        self._company_current_id = None
         self._has_dropdown_list: bool = False
         self._has_check_perm: bool = False
         self._view_args: list = []
@@ -1877,8 +1902,10 @@ class ViewChecking:
             if self.decor.auth_require is True:
                 # always check by permit config
                 if not self.decor.config_check_permit:
-                    return HttpReturn.error_config_view_incorrect()
-                pass_auth_permit = state_tmp
+                    pass_auth_permit = False
+                    # return HttpReturn.error_config_view_incorrect()
+                else:
+                    pass_auth_permit = state_tmp
             else:
                 pass_auth_permit = True
 

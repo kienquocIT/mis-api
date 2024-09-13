@@ -27,20 +27,20 @@ ADVANCE_PAYMENT_METHOD = [
 
 
 class AdvancePayment(DataAbstractModel):
-    sale_order_mapped = models.ForeignKey(
-        'saleorder.SaleOrder',
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
-        related_name="ap_sale_order_mapped"
+        related_name="ap_opportunity_mapped"
     )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
         related_name="ap_quotation_mapped"
     )
-    opportunity_mapped = models.ForeignKey(
-        'opportunity.Opportunity',
+    sale_order_mapped = models.ForeignKey(
+        'saleorder.SaleOrder',
         on_delete=models.CASCADE, null=True,
-        related_name="ap_opportunity_mapped"
+        related_name="ap_sale_order_mapped"
     )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
@@ -75,12 +75,6 @@ class AdvancePayment(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    # @classmethod
-    # def update_money_gave(cls, instance):
-    #     instance.money_gave = True
-    #     instance.save(update_fields=['money_gave'])
-    #     return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
@@ -126,10 +120,12 @@ class AdvancePaymentCost(SimpleAbstractModel):
     )
     expense_name = models.CharField(max_length=150, null=True)
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
+    expense_type_data = models.JSONField(default=dict)
     expense_uom_name = models.CharField(max_length=150, null=True)
     expense_quantity = models.FloatField()
     expense_unit_price = models.FloatField(default=0)
     expense_tax = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    expense_tax_data = models.JSONField(default=dict)
     expense_tax_price = models.FloatField(default=0)
     expense_subtotal_price = models.FloatField(default=0)
     expense_after_tax_price = models.FloatField(default=0)

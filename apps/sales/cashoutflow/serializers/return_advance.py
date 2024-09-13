@@ -5,7 +5,7 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import ExpenseItem
 from apps.shared import (
-    RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg,
+    SaleMsg,
     AbstractDetailSerializerModel,
     AbstractCreateSerializerModel,
     AbstractListSerializerModel
@@ -31,22 +31,36 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_advance_payment(cls, obj):
-        if obj.advance_payment:
-            return {
-                'id': obj.advance_payment.id,
-                'code': obj.advance_payment.code,
-                'title': obj.advance_payment.title
-            }
-        return {}
+        return {
+            'id': obj.advance_payment.id,
+            'code': obj.advance_payment.code,
+            'title': obj.advance_payment.title,
+            'sale_code': obj.advance_payment.sale_code,
+            'opportunity_mapped': {
+                'id': obj.advance_payment.opportunity_mapped_id,
+                'code': obj.advance_payment.opportunity_mapped.code,
+                'title': obj.advance_payment.opportunity_mapped.title
+            } if obj.advance_payment.opportunity_mapped else {},
+            'quotation_mapped': {
+                'id': obj.advance_payment.quotation_mapped_id,
+                'code': obj.advance_payment.quotation_mapped.code,
+                'title': obj.advance_payment.quotation_mapped.title,
+            } if obj.advance_payment.quotation_mapped else {},
+            'sale_order_mapped': {
+                'id': obj.advance_payment.sale_order_mapped_id,
+                'code': obj.advance_payment.sale_order_mapped.code,
+                'title': obj.advance_payment.sale_order_mapped.title
+            } if obj.advance_payment.sale_order_mapped else {}
+        } if obj.advance_payment else {}
 
     @classmethod
     def get_money_received(cls, obj):
-        return str(dict(RETURN_ADVANCE_MONEY_RECEIVED).get(obj.money_received))
+        return obj.money_received
 
 
 class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
-    method = serializers.IntegerField()
     returned_list = serializers.ListField(required=False)
 
     class Meta:
@@ -59,43 +73,10 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
             'returned_list',
         )
 
-    @classmethod
-    def validate_advance_payment_id(cls, value):
-        try:
-            ap_obj = AdvancePayment.objects.get(id=value)
-            if ap_obj.opportunity_mapped:
-                if ap_obj.opportunity_mapped.is_deal_close:
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-            print('1. validated_advance_payment --- ok')
-            return str(ap_obj.id)
-        except AdvancePayment.DoesNotExist:
-            raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
-
-    @classmethod
-    def validate_method(cls, value):
-        if value in [0, 1]:
-            print('2. validated_method --- ok')
-            return value
-        raise serializers.ValidationError({'method': SaleMsg.AP_METHOD_INVALID})
-
-    @classmethod
-    def validate_returned_list(cls, returned_list):
-        try:
-            for item in returned_list:
-                ap_cost = AdvancePaymentCost.objects.get(id=item['advance_payment_cost_id'])
-                item['advance_payment_cost_id'] = str(ap_cost.id)
-                item['expense_type_id'] = str(ExpenseItem.objects.get(id=item['expense_type_id']).id)
-                if float(item.get('return_value', 0)) <= 0:
-                    raise serializers.ValidationError({'compare': "Value must be greater than 0."})
-                remain_value = ap_cost.expense_after_tax_price - ap_cost.sum_return_value - ap_cost.sum_converted_value
-                if remain_value < float(item.get('return_value', 0)):
-                    raise serializers.ValidationError({'compare': "Return value is greater than remain value."})
-            print('3. validated_returned_list --- ok')
-            return returned_list
-        except Exception as err:
-            raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
-
     def validate(self, validate_data):
+        ReturnAdvanceCommonFunction.validate_advance_payment_id(validate_data)
+        ReturnAdvanceCommonFunction.validate_method(validate_data)
+        ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
         ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
         validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
         print('*validate done')
@@ -134,28 +115,26 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_advance_payment(cls, obj):
-        if obj.advance_payment:
-            return {
-                'id': obj.advance_payment_id,
-                'title': obj.advance_payment.title,
-                'sale_code': obj.advance_payment.sale_code,
-                'opportunity_mapped': {
-                    'id': obj.advance_payment.opportunity_mapped_id,
-                    'code': obj.advance_payment.opportunity_mapped.code,
-                    'title': obj.advance_payment.opportunity_mapped.title,
-                } if obj.advance_payment.opportunity_mapped else {},
-                'quotation_mapped': {
-                    'id': obj.advance_payment.quotation_mapped_id,
-                    'code': obj.advance_payment.quotation_mapped.code,
-                    'title': obj.advance_payment.quotation_mapped.title,
-                } if obj.advance_payment.quotation_mapped else {},
-                'sale_order_mapped': {
-                    'id': obj.advance_payment.sale_order_mapped_id,
-                    'code': obj.advance_payment.sale_order_mapped.code,
-                    'title': obj.advance_payment.sale_order_mapped.title,
-                } if obj.advance_payment.sale_order_mapped else {}
-            }
-        return {}
+        return {
+            'id': obj.advance_payment_id,
+            'title': obj.advance_payment.title,
+            'sale_code': obj.advance_payment.sale_code,
+            'opportunity_mapped': {
+                'id': obj.advance_payment.opportunity_mapped_id,
+                'code': obj.advance_payment.opportunity_mapped.code,
+                'title': obj.advance_payment.opportunity_mapped.title,
+            } if obj.advance_payment.opportunity_mapped else {},
+            'quotation_mapped': {
+                'id': obj.advance_payment.quotation_mapped_id,
+                'code': obj.advance_payment.quotation_mapped.code,
+                'title': obj.advance_payment.quotation_mapped.title,
+            } if obj.advance_payment.quotation_mapped else {},
+            'sale_order_mapped': {
+                'id': obj.advance_payment.sale_order_mapped_id,
+                'code': obj.advance_payment.sale_order_mapped.code,
+                'title': obj.advance_payment.sale_order_mapped.title,
+            } if obj.advance_payment.sale_order_mapped else {}
+        } if obj.advance_payment else {}
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -193,27 +172,22 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_returned_list(cls, obj):
-        costs = ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type')
         list_result = []
-        for cost in costs:
-            list_result.append(
-                {
-                    'id': cost.advance_payment_cost_id,
-                    'expense_name': cost.expense_name,
-                    'expense_type': {
-                        'id': cost.expense_type_id,
-                        'title': cost.expense_type.title,
-                    },
-                    'remain_total': cost.remain_value,
-                    'return_value': cost.return_value,
-                }
-            )
+        for item in ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type'):
+            list_result.append({
+                'id': item.advance_payment_cost_id,
+                'expense_name': item.expense_name,
+                'expense_type': item.expense_type_data,
+                'remain_total': item.remain_value,
+                'return_value': item.return_value
+            })
         return list_result
 
 
 class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
-    returned_list = serializers.ListField(required=False)
+    title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
+    returned_list = serializers.ListField(required=False)
 
     class Meta:
         model = ReturnAdvance
@@ -225,40 +199,10 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
             'returned_list',
         )
 
-    @classmethod
-    def validate_advance_payment_id(cls, value):
-        try:
-            ap_obj = AdvancePayment.objects.get(id=value)
-            if ap_obj.opportunity_mapped:
-                if ap_obj.opportunity_mapped.is_deal_close:
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-            return str(ap_obj.id)
-        except AdvancePayment.DoesNotExist:
-            raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
-
-    @classmethod
-    def validate_method(cls, value):
-        if value in [0, 1]:
-            return value
-        raise serializers.ValidationError({'method': SaleMsg.AP_METHOD_INVALID})
-
-    @classmethod
-    def validate_returned_list(cls, returned_list):
-        try:
-            for item in returned_list:
-                ap_cost = AdvancePaymentCost.objects.get(id=item['advance_payment_cost_id'])
-                item['advance_payment_cost_id'] = str(ap_cost.id)
-                item['expense_type_id'] = str(ExpenseItem.objects.get(id=item['expense_type_id']).id)
-                if float(item.get('return_value', 0)) <= 0:
-                    raise serializers.ValidationError({'compare': "Value must be greater than 0."})
-                remain_value = ap_cost.expense_after_tax_price - ap_cost.sum_return_value - ap_cost.sum_converted_value
-                if remain_value < float(item.get('return_value', 0)):
-                    raise serializers.ValidationError({'compare': "Return value is greater than remain value."})
-            return returned_list
-        except Exception as err:
-            raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
-
     def validate(self, validate_data):
+        ReturnAdvanceCommonFunction.validate_advance_payment_id(validate_data)
+        ReturnAdvanceCommonFunction.validate_method(validate_data)
+        ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
         ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
         validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
         print('*validate done')
@@ -275,6 +219,51 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class ReturnAdvanceCommonFunction:
+    @classmethod
+    def validate_advance_payment_id(cls, validate_data):
+        try:
+            ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
+            if ap_obj.opportunity_mapped:
+                if ap_obj.opportunity_mapped.is_deal_close:
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+            validate_data['advance_payment_id'] = str(ap_obj.id)
+            print('1. validate_advance_payment_id --- ok')
+            return validate_data
+        except AdvancePayment.DoesNotExist:
+            raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+
+    @classmethod
+    def validate_method(cls, validate_data):
+        if validate_data['method'] in [0, 1]:
+            print('2. validated_method --- ok')
+            return validate_data
+        raise serializers.ValidationError({'method': SaleMsg.AP_METHOD_INVALID})
+
+    @classmethod
+    def validate_returned_list(cls, validate_data):
+        try:
+            for item in validate_data.get('returned_list', []):
+                ap_cost = AdvancePaymentCost.objects.get(id=item['advance_payment_cost_id'])
+                item['advance_payment_cost_id'] = str(ap_cost.id)
+                expense_type = ExpenseItem.objects.get(id=item['expense_type_id'])
+                item['expense_type_id'] = str(expense_type.id)
+                item['expense_type_data'] = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+                if float(item.get('return_value', 0)) < 0:
+                    raise serializers.ValidationError({'returned_list': "Value must be greater than 0."})
+                remain_value_valid = (
+                        ap_cost.expense_after_tax_price - ap_cost.sum_return_value - ap_cost.sum_converted_value
+                )
+                if remain_value_valid < float(item.get('return_value', 0)):
+                    raise serializers.ValidationError({'returned_list': "Return value is greater than remain value."})
+            print('3. validated_returned_list --- ok')
+            return validate_data
+        except Exception as err:
+            raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
+
     @classmethod
     def common_create_return_advance_cost(cls, returned_list, return_advance_obj):
         data_bulk = []
@@ -314,31 +303,20 @@ class APListForReturnSerializer(AbstractListSerializerModel):
         expense_items = []
         order = 1
         for item in all_item:
-            expense_items.append(
-                {
-                    'id': item.id,
-                    'order': order,
-                    'expense_name': item.expense_name,
-                    'expense_type': {
-                        'id': item.expense_type_id,
-                        'code': item.expense_type.code,
-                        'title': item.expense_type.title,
-                    } if item.expense_type else {},
-                    'expense_uom_name': item.expense_uom_name,
-                    'expense_quantity': item.expense_quantity,
-                    'expense_unit_price': item.expense_unit_price,
-                    'expense_tax': {
-                        'id': item.expense_tax_id,
-                        'code': item.expense_tax.code,
-                        'title': item.expense_tax.title,
-                        'rate': item.expense_tax.rate
-                    } if item.expense_tax else {},
-                    'expense_tax_price': item.expense_tax_price,
-                    'expense_subtotal_price': item.expense_subtotal_price,
-                    'expense_after_tax_price': item.expense_after_tax_price,
-                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
-                }
-            )
+            expense_items.append({
+                'id': item.id,
+                'order': order,
+                'expense_name': item.expense_name,
+                'expense_type': item.expense_type_data,
+                'expense_uom_name': item.expense_uom_name,
+                'expense_quantity': item.expense_quantity,
+                'expense_unit_price': item.expense_unit_price,
+                'expense_tax': item.expense_tax_data,
+                'expense_tax_price': item.expense_tax_price,
+                'expense_subtotal_price': item.expense_subtotal_price,
+                'expense_after_tax_price': item.expense_after_tax_price,
+                'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
+            })
             order += 1
         return expense_items
 
