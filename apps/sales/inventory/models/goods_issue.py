@@ -1,5 +1,6 @@
 from django.db import models
-from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial
+from django.db import transaction
+from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
@@ -69,7 +70,7 @@ class GoodsIssue(DataAbstractModel):
                             }
                         })
             else:
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.issued_quantity)
                 activities_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
@@ -94,43 +95,49 @@ class GoodsIssue(DataAbstractModel):
 
     @classmethod
     def update_product_warehouse_data(cls, data):
-        if data.product.general_traceability_method == 0:
-            data.product_warehouse.sold_amount += data.quantity
-            data.product_warehouse.stock_amount = (
-                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
-            )
-            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
-        elif data.product.general_traceability_method == 1:
-            sum_lot_issue = 0
-            for lot in data.lot_data:
-                if float(lot.get('quantity', 0)) > 0:
-                    lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
-                    if lot_obj:
-                        sum_lot_issue += float(lot.get('quantity', 0))
-                        lot_obj.quantity_import -= float(lot.get('quantity', 0))
-                        lot_obj.save(update_fields=['quantity_import'])
-            data.product_warehouse.sold_amount += sum_lot_issue
-            data.product_warehouse.stock_amount = (
-                    data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
-            )
-            data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
-        elif data.product.general_traceability_method == 2:
-            sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data)
-            if len(data.sn_data) == sn_list.count():
-                sn_list.update(is_delete=True)
-                data.product_warehouse.sold_amount += len(data.sn_data)
-                data.product_warehouse.stock_amount = (
-                        data.product_warehouse.receipt_amount - data.product_warehouse.sold_amount
-                )
-                data.product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
-        return True
+        product_warehouse = ProductWareHouse.objects.filter(product=data.product, warehouse=data.warehouse).first()
+        if product_warehouse and product_warehouse.stock_amount - data.issued_quantity >= 0:
+            if data.product.general_traceability_method == 0:
+                product_warehouse.sold_amount += data.issued_quantity
+                product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+                product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+            elif data.product.general_traceability_method == 1:
+                sum_lot_issue = 0
+                for lot in data.lot_data:
+                    if float(lot.get('quantity', 0)) > 0:
+                        lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
+                        if lot_obj and lot_obj.quantity_import >= float(lot.get('quantity', 0)):
+                            sum_lot_issue += float(lot.get('quantity', 0))
+                            lot_obj.quantity_import -= float(lot.get('quantity', 0))
+                            lot_obj.save(update_fields=['quantity_import'])
+                        else:
+                            raise ValueError('Issued quantity cannot > lot stock quantity.')
+                product_warehouse.sold_amount += sum_lot_issue
+                product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+                product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+            elif data.product.general_traceability_method == 2:
+                sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data, is_delete=False)
+                if len(data.sn_data) == sn_list.count():
+                    sn_list.update(is_delete=True)
+                    product_warehouse.sold_amount += len(data.sn_data)
+                    product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+                    product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
+                else:
+                    raise ValueError('Some serials selected for issued have not existed already.')
+            return True
+        raise ValueError('Stock quantity cannot < 0.')
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, ia_item_obj):
-        ia_item_obj.action_status = ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity == 0
-        ia_item_obj.select_for_action = True
-        ia_item_obj.save(update_fields=['action_status', 'select_for_action'])
-        return True
+    def update_status_inventory_adjustment_item(cls, ia_item_obj, this_issue_quantity):
+        if ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity - this_issue_quantity >= 0:
+            ia_item_obj.action_status = (
+                ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity - this_issue_quantity
+            ) == 0
+            ia_item_obj.select_for_action = True
+            ia_item_obj.issued_quantity += this_issue_quantity
+            ia_item_obj.save(update_fields=['action_status', 'select_for_action', 'issued_quantity'])
+            return True
+        raise ValueError('Issued quantity cannot > max issue quantity remaining.')
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -156,12 +163,17 @@ class GoodsIssue(DataAbstractModel):
                 self.prepare_data_for_logging(self)
 
                 if self.inventory_adjustment:
-                    for item in self.goods_issue_product.all():
-                        item.inventory_adjustment_item.issued_quantity += item.quantity
-                        item.inventory_adjustment_item.save(update_fields=['issued_quantity'])
-                        self.update_product_warehouse_data(item)
-                        self.update_status_inventory_adjustment_item(item.inventory_adjustment_item)
-                    self.inventory_adjustment.update_ia_state()
+                    try:
+                        with transaction.atomic():
+                            for item in self.goods_issue_product.all():
+                                self.update_product_warehouse_data(item)
+                                self.update_status_inventory_adjustment_item(
+                                    item.inventory_adjustment_item, item.issued_quantity
+                                )
+                            self.inventory_adjustment.update_ia_state()
+                    except Exception as err:
+                        print(err)
+                        raise err
 
         super().save(*args, **kwargs)
 
@@ -184,30 +196,30 @@ class GoodsIssueProduct(SimpleAbstractModel):
         related_name='po_item_goods_issue',
         null=True,
     )
-    product_warehouse = models.ForeignKey(
-        'saledata.ProductWareHouse',
-        on_delete=models.CASCADE,
-        related_name='product_warehouse_goods_issue',
-    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name='product_goods_issue',
     )
+    product_data = models.JSONField(default=dict)
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         related_name='warehouse_goods_issue',
     )
+    warehouse_data = models.JSONField(default=dict)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='uom_goods_issue',
     )
+    uom_data = models.JSONField(default=dict)
+
+    before_quantity = models.FloatField(default=0)
+    remain_quantity = models.FloatField(default=0)
+    issued_quantity = models.FloatField(default=0)
     lot_data = models.JSONField(default=list)  # [{'lot_id': ..., 'old_quantity': ..., 'quantity': ...}]
     sn_data = models.JSONField(default=list)  # [..., ..., ...]
-    limit_quantity = models.FloatField(default=0)
-    quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Issue Product'

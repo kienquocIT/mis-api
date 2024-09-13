@@ -71,8 +71,11 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         default=None,
     )
     product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    product_mapped_data = models.JSONField(default=dict)
     warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    warehouse_mapped_data = models.JSONField(default=dict)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
+    uom_mapped_data = models.JSONField(default=dict)
     book_quantity = models.FloatField(default=0)
     count = models.FloatField(default=0)
     issued_quantity = models.FloatField(default=0)

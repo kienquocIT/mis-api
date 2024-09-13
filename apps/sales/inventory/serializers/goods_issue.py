@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product
+from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product, ProductWareHouseSerial, \
+    ProductWareHouseLot
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 from apps.sales.production.models import ProductionOrder
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
@@ -102,31 +103,16 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             ia_item = item.inventory_adjustment_item
             detail_data_ia.append({
                 'id': ia_item.id,
-                'product_warehouse_mapped_id': item.product_warehouse_id,
-                'stock_quantity': item.product_warehouse.stock_amount,
-                'product_mapped': {
-                    'id': item.product_id,
-                    'code': item.product.code,
-                    'title': item.product.title,
-                    'description': item.product.description,
-                    'general_traceability_method': item.product.general_traceability_method
-                },
-                'uom_mapped': {
-                    'id': item.uom_id,
-                    'code': item.uom.code,
-                    'title': item.uom.title
-                },
-                'warehouse_mapped': {
-                    'id': item.warehouse_id,
-                    'code': item.warehouse.code,
-                    'title': item.warehouse.title
-                },
-                'limit_quantity': (
-                    ia_item.book_quantity - ia_item.count - ia_item.issued_quantity
-                ) if ia_item.action_type == 1 else (
-                    ia_item.book_quantity - ia_item.count - ia_item.receipted_quantity
-                ) if ia_item.action_type == 2 else 0,
-                'quantity': item.quantity,
+                'product_mapped': item.product_data,
+                'uom_mapped': item.uom_data,
+                'warehouse_mapped': item.warehouse_data,
+                'before_quantity': (
+                        item.before_quantity + item.issued_quantity
+                ) if obj.system_status == 3 else item.before_quantity,
+                'remain_quantity': (
+                        item.remain_quantity - item.issued_quantity
+                ) if obj.system_status == 3 else item.remain_quantity,
+                'issued_quantity': item.issued_quantity,
                 'lot_data': item.lot_data,
                 'sn_data': item.sn_data
             })
@@ -194,19 +180,38 @@ class GoodsIssueCommonFunction:
         try:
             detail_data_ia = validate_data.get('detail_data_ia')
             for item in detail_data_ia:
-                prd_wh_obj = ProductWareHouse.objects.get(id=item.get('product_warehouse_id'))
+                prd = Product.objects.get(id=item.get('product_id'))
+                wh = WareHouse.objects.get(id=item.get('warehouse_id'))
+                uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                prd_wh_obj = ProductWareHouse.objects.get(product=prd, warehouse=wh)
                 ia_item = InventoryAdjustmentItem.objects.get(id=item.get('inventory_adjustment_item_id'))
-                if all([
-                    prd_wh_obj.stock_amount >= float(item.get('quantity')),
-                    ia_item.book_quantity - ia_item.count - ia_item.issued_quantity >= float(item.get('quantity'))
-                ]):
-                    item['inventory_adjustment_item_id'] = str(ia_item.id)
-                    item['product_warehouse_id'] = str(prd_wh_obj.id)
-                    item['product_id'] = str(Product.objects.get(id=item.get('product_id')).id)
-                    item['warehouse_id'] = str(WareHouse.objects.get(id=item.get('warehouse_id')).id)
-                    item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
-                else:
-                    raise serializers.ValidationError({'stock_quantity': "Issue quantity can't > Stock quantity."})
+                if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
+                    raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
+                if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
+                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
+                if ia_item.book_quantity - ia_item.count - ia_item.issued_quantity < float(item.get('issued_quantity')):
+                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
+                item['inventory_adjustment_item_id'] = str(ia_item.id)
+                item['product_id'] = str(prd.id)
+                item['product_data'] = {
+                    'id': str(prd.id),
+                    'code': prd.code,
+                    'title': prd.title,
+                    'description': prd.description,
+                    'general_traceability_method': prd.general_traceability_method
+                }
+                item['warehouse_id'] = str(wh.id)
+                item['warehouse_data'] = {
+                    'id': str(wh.id),
+                    'code': wh.code,
+                    'title': wh.title
+                }
+                item['uom_id'] = str(uom.id)
+                item['uom_data'] = {
+                    'id': str(uom.id),
+                    'code': uom.code,
+                    'title': uom.title
+                }
             validate_data['detail_data_ia'] = detail_data_ia
             print('3. validate_detail_data_ia --- ok')
             return True
@@ -217,18 +222,7 @@ class GoodsIssueCommonFunction:
     def create_issue_item(cls, instance, data):
         bulk_data = []
         for item in data:
-            obj = GoodsIssueProduct(
-                goods_issue=instance,
-                inventory_adjustment_item_id=item['inventory_adjustment_item_id'],
-                product_warehouse_id=item['product_warehouse_id'],
-                product_id=item['product_id'],
-                warehouse_id=item['warehouse_id'],
-                uom_id=item['uom_id'],
-                limit_quantity=item['limit_quantity'],
-                quantity=item['quantity'],
-                lot_data=item['lot_data'],
-                sn_data=item['sn_data']
-            )
+            obj = GoodsIssueProduct(goods_issue=instance, **item)
             bulk_data.append(obj)
         GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
         GoodsIssueProduct.objects.bulk_create(bulk_data)
@@ -236,6 +230,61 @@ class GoodsIssueCommonFunction:
 
 
 # related serializers
+class InventoryAdjustmentListSerializerForGIS(AbstractListSerializerModel):
+
+    class Meta:
+        model = InventoryAdjustment
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
+class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
+    ia_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryAdjustment
+        fields = (
+            'id',
+            'title',
+            'ia_data',
+        )
+
+    @classmethod
+    def get_ia_data(cls, obj):
+        ia_data = []
+        order = 1
+        for item in obj.inventory_adjustment_item_mapped.filter(action_type=1).order_by('product_mapped__code'):
+            ia_data.append({
+                'id': item.id,
+                'order': order,
+                'product_mapped': {
+                    'id': item.product_mapped_data.get('id'),
+                    'code': item.product_mapped_data.get('code'),
+                    'title': item.product_mapped_data.get('title'),
+                    'description': item.product_mapped_data.get('description'),
+                    'general_traceability_method': item.product_mapped_data.get('general_traceability_method')
+                } if item.product_mapped_data else {},
+                'uom_mapped': {
+                    'id': item.uom_mapped_data.get('id'),
+                    'code': item.uom_mapped_data.get('code'),
+                    'title': item.uom_mapped_data.get('title'),
+                    'ratio': item.uom_mapped_data.get('ratio')
+                } if item.uom_mapped_data else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_mapped_data.get('id'),
+                    'code': item.warehouse_mapped_data.get('code'),
+                    'title': item.warehouse_mapped_data.get('title')
+                } if item.warehouse_mapped_data else {},
+                'before_quantity': item.issued_quantity,
+                'remain_quantity': item.book_quantity - item.count - item.issued_quantity,
+            })
+            order += 1
+        return ia_data
+
+
 class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
 
     class Meta:
@@ -284,7 +333,34 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
                     'title': item.warehouse_data.get('title')
                 } if item.warehouse_data else {},
                 'is_all_warehouse': item.is_all_warehouse,
-                'max_issued_quantity': item.quantity,
+                'limit_quantity': item.quantity,
                 'sum_issued_quantity': 0
             })
         return task_data
+
+
+class ProductWarehouseLotListSerializerForGIS(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouseLot
+        fields = (
+            'id',
+            'lot_number',
+            'quantity_import',
+            'expire_date',
+            'manufacture_date'
+        )
+
+
+class ProductWarehouseSerialListSerializerForGIS(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouseSerial
+        fields = (
+            'id',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+            'is_delete'
+        )

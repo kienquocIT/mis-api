@@ -13,7 +13,8 @@ from apps.sales.inventory.views import (
     ProjectProductList, GReItemBorrowList, GReItemBorrowDetail,
     GReItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
-    ProductionOrderDetailForGIS
+    ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
+    ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS
 )
 
 urlpatterns = [
@@ -45,6 +46,17 @@ urlpatterns += [
 urlpatterns += [
     path('goods-issue/list', GoodsIssueList.as_view(), name='GoodsIssueList'),
     path('goods-issue/<str:pk>', GoodsIssueDetail.as_view(), name='GoodsIssueDetail'),
+    # Inventory Adjustment for GIS
+    path(
+        'inventory-adjustment-for-gis/list',
+        InventoryAdjustmentListForGIS.as_view(),
+        name='InventoryAdjustmentListForGIS'
+    ),
+    path(
+        'inventory-adjustment-for-gis/<str:pk>',
+        InventoryAdjustmentDetailForGIS.as_view(),
+        name='InventoryAdjustmentDetailForGIS'
+    ),
     # Production order for GIS
     path(
         'production-order-for-gis/list',
@@ -55,6 +67,16 @@ urlpatterns += [
         'production-order-for-gis/<str:pk>',
         ProductionOrderDetailForGIS.as_view(),
         name='ProductionOrderDetailForGIS'
+    ),
+    path(
+        'lot-list-for-gis/list',
+        ProductWareHouseLotListForGIS.as_view(),
+        name='ProductWareHouseLotListForGIS'
+    ),
+    path(
+        'serial-list-for-gis/list',
+        ProductWareHouseSerialListForGIS.as_view(),
+        name='ProductWareHouseSerialListForGIS'
     ),
 ]
 

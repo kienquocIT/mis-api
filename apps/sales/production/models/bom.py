@@ -6,7 +6,8 @@ BOM_TYPE = [
     (0, _('For production')),
     (1, _('For service')),
     (2, _('For sale')),
-    (3, _('For internal expense'))
+    (3, _('For internal expense')),
+    (4, _('For project'))
 ]
 
 
@@ -20,6 +21,13 @@ class BOM(DataAbstractModel):
     )
     sum_price = models.FloatField(default=0)
     sum_time = models.FloatField(default=0)
+
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='bom_opportunity_mapped'
+    )
 
     class Meta:
         verbose_name = 'Bill of material'

@@ -43,6 +43,26 @@ def create_inventory_adjustment_items(obj, data):
         )
     InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentItem.objects.bulk_create(bulk_info)
+    for item in obj.inventory_adjustment_item_mapped.all():
+        item.product_mapped_data = {
+            'id': str(item.product_mapped.id),
+            'code': item.product_mapped.code,
+            'title': item.product_mapped.title,
+            'description': item.product_mapped.description,
+            'general_traceability_method': item.product_mapped.general_traceability_method
+        } if item.product_mapped else {}
+        item.uom_mapped_data = {
+            'id': str(item.uom_mapped.id),
+            'code': item.uom_mapped.code,
+            'title': item.uom_mapped.title,
+            'ratio': item.uom_mapped.ratio
+        } if item.uom_mapped else {}
+        item.warehouse_mapped_data = {
+            'id': str(item.warehouse_mapped.id),
+            'code': item.warehouse_mapped.code,
+            'title': item.warehouse_mapped.title
+        } if item.warehouse_mapped else {}
+        item.save(update_fields=['product_mapped_data', 'uom_mapped_data', 'warehouse_mapped_data'])
     return True
 
 
@@ -169,11 +189,6 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
                     } if item.uom_mapped else {},
                     'book_quantity': item.book_quantity,
                     'count': item.count,
-                    'limit_quantity': (
-                        item.book_quantity - item.count - item.issued_quantity
-                    ) if item.action_type == 1 else (
-                        item.book_quantity - item.count - item.receipted_quantity
-                    ) if item.action_type == 2 else 0,
                     'select_for_action': item.select_for_action,
                     'action_status': item.action_status,
                     'action_type': item.action_type
@@ -211,7 +226,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
 class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryAdjustment
-        fields = ()
+        fields = ('title',)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():

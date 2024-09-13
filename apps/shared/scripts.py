@@ -48,7 +48,7 @@ from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnProductDetail, GoodsReceiptLot
+    GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
@@ -2110,3 +2110,51 @@ def update_account_type_flag():
             print(f'--- Updated for {account.name} successfully!')
     print('Done :))')
 
+
+def update_inventory_adjustment_item_json_data():
+    for ia in InventoryAdjustment.objects.all():
+        for item in ia.inventory_adjustment_item_mapped.all():
+            item.product_mapped_data = {
+                'id': str(item.product_mapped.id),
+                'code': item.product_mapped.code,
+                'title': item.product_mapped.title,
+                'description': item.product_mapped.description,
+                'general_traceability_method': item.product_mapped.general_traceability_method
+            } if item.product_mapped else {}
+            item.uom_mapped_data = {
+                'id': str(item.uom_mapped.id),
+                'code': item.uom_mapped.code,
+                'title': item.uom_mapped.title,
+                'ratio': item.uom_mapped.ratio
+            } if item.uom_mapped else {}
+            item.warehouse_mapped_data = {
+                'id': str(item.warehouse_mapped.id),
+                'code': item.warehouse_mapped.code,
+                'title': item.warehouse_mapped.title
+            } if item.warehouse_mapped else {}
+            item.save(update_fields=['product_mapped_data', 'uom_mapped_data', 'warehouse_mapped_data'])
+    print('Done :))')
+
+
+def update_goods_issue_item_json_data():
+    for gis in GoodsIssue.objects.all():
+        for item in gis.goods_issue_product.all():
+            item.product_data = {
+                'id': str(item.product.id),
+                'code': item.product.code,
+                'title': item.product.title,
+                'description': item.product.description,
+                'general_traceability_method': item.product.general_traceability_method
+            } if item.product else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title
+            } if item.uom else {}
+            item.warehouse_data = {
+                'id': str(item.warehouse.id),
+                'code': item.warehouse.code,
+                'title': item.warehouse.title
+            } if item.warehouse else {}
+            item.save(update_fields=['product_data', 'uom_data', 'warehouse_data'])
+    print('Done :))')

@@ -105,7 +105,9 @@ class ProductToolsListForBOM(BaseListMixin):
 class BOMList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
+    filterset_fields = {
+        'bom_type': ['exact']
+    }
     serializer_list = BOMListSerializer
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
