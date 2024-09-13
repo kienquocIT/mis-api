@@ -230,6 +230,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
 class PORequestProductGRListSerializer(serializers.ModelSerializer):
     purchase_order_request_product_id = serializers.SerializerMethodField()
     purchase_request_data = serializers.SerializerMethodField()
+    uom_id = serializers.SerializerMethodField()
     uom_data = serializers.SerializerMethodField()
     gr_completed_quantity = serializers.SerializerMethodField()
 
@@ -242,6 +243,7 @@ class PORequestProductGRListSerializer(serializers.ModelSerializer):
             'purchase_order_product_id',
             'sale_order_product_id',
             'quantity_order',
+            'uom_id',
             'uom_data',
             'is_stock',
             # goods receipt information
@@ -262,6 +264,14 @@ class PORequestProductGRListSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_request_product.purchase_request.code,
             } if obj.purchase_request_product.purchase_request else {}
         return {}
+
+    @classmethod
+    def get_uom_id(cls, obj):
+        if obj.is_stock is True and obj.uom_stock:
+            return str(obj.uom_stock_id)
+        if obj.purchase_request_product:
+            return str(obj.purchase_request_product.uom_id) if obj.purchase_request_product.uom else None
+        return None
 
     @classmethod
     def get_uom_data(cls, obj):

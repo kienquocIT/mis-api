@@ -132,6 +132,7 @@ class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
     purchase_order_request_product_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_request_product_id = serializers.UUIDField(required=False, allow_null=True)
     production_report_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
     gr_warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
@@ -142,6 +143,7 @@ class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
             'purchase_request_data',
             'production_report_id',
             'production_report_data',
+            'uom_id',
             'uom_data',
             'quantity_order',
             'quantity_import',
@@ -160,6 +162,10 @@ class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_production_report_id(cls, value):
         return GoodsReceiptCommonValidate.validate_production_report_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_uom_id(value=value)
 
 
 class GoodsReceiptRequestProductListSerializer(serializers.ModelSerializer):
