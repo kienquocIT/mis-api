@@ -80,4 +80,8 @@ MONGO_DB_NAME=bflow
 # 2fa
 SYNC_2FA_ENABLED=1
 PASSWORD_TOTP_2FA=totp-*
+
+# throttling: misapi.throttling
+THROTTLE_AUTH=200
+THROTTLE_ANON=50
 ```

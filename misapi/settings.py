@@ -430,8 +430,18 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
+
+    # rate limit && throttle
+    'DEFAULT_THROTTLE_CLASSES': [
+        'misapi.throttling.AuthThrottle',
+        'misapi.throttling.AnonThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': f"{os.environ.get('THROTTLE_AUTH', '200')}/minute",
+        'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
+    }
 }
-CUSTOM_PAGE_MAXIMUM_SIZE = 1500
+CUSTOM_PAGE_MAXIMUM_SIZE = 1000
 
 AUTH_USER_MODEL = 'account.User'
 
