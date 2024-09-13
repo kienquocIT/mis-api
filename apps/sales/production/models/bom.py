@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 BOM_TYPE = [
@@ -52,6 +54,10 @@ class BOM(DataAbstractModel):
 
                 self.product.has_bom = True
                 self.product.save(update_fields=['has_bom'])
+
+        # opportunity log
+        AdvanceHandler.push_opportunity_log(instance=self)
+
         # hit DB
         super().save(*args, **kwargs)
 

@@ -106,6 +106,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                 'product_mapped': item.product_data,
                 'uom_mapped': item.uom_data,
                 'warehouse_mapped': item.warehouse_data,
+                'sum_quantity': ia_item.book_quantity - ia_item.count,
                 'before_quantity': (
                         item.before_quantity + item.issued_quantity
                 ) if obj.system_status == 3 else item.before_quantity,

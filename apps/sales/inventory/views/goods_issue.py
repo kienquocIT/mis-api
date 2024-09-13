@@ -187,9 +187,9 @@ class ProductWareHouseLotListForGIS(BaseListMixin):
 
     def get_queryset(self):
         if 'detail_list' in self.request.query_params:
-            return super().get_queryset().filter(
-                id__in=self.request.query_params.get('detail_list', '').split(',')
-            )
+            detail_list = self.request.query_params.get('detail_list', '')
+            if detail_list:
+                return super().get_queryset().filter(id__in=detail_list.split(','))
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Product WareHouse Lot')
@@ -213,9 +213,9 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
 
     def get_queryset(self):
         if 'detail_list' in self.request.query_params:
-            return super().get_queryset().filter(
-                id__in=self.request.query_params.get('detail_list', '').split(',')
-            )
+            detail_list = self.request.query_params.get('detail_list', '')
+            if detail_list:
+                return super().get_queryset().filter(id__in=detail_list.split(','))
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial For GIS')
