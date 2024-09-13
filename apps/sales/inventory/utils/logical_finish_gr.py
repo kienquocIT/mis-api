@@ -110,11 +110,6 @@ class GRFinishHandler:
             if instance.goods_receipt_type == 0:
                 if gr_warehouse.goods_receipt_request_product.purchase_request_product:
                     pr_id = gr_warehouse.goods_receipt_request_product.purchase_request_product.purchase_request_id
-            if instance.goods_receipt_type == 1:
-                ...
-            if instance.goods_receipt_type == 2:
-                if gr_warehouse.goods_receipt_request_product.production_report:
-                    pr_id = gr_warehouse.goods_receipt_request_product.production_report_id
         final_ratio = cls.get_final_uom_ratio(
             product_obj=product_obj, uom_transaction=uom_gr
         )
@@ -162,7 +157,7 @@ class GRFinishHandler:
     # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
-        if instance.purchase_order:  # GR for PO
+        if instance.goods_receipt_type == 0 and instance.purchase_order:  # GR for PO
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
@@ -179,7 +174,7 @@ class GRFinishHandler:
                     },
                     'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                 })
-        else:  # GR for IA
+        if instance.goods_receipt_type == 1 and instance.inventory_adjustment:  # GR for IA
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 if product_receipt.is_additional is False:
@@ -193,6 +188,23 @@ class GRFinishHandler:
                         'system_status': instance.system_status,
                     },
                     'update_fields': ['available_amount', 'stock_amount']
+                })
+        if instance.goods_receipt_type == 2 and instance.production_order:  # GR for Production
+            for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                quantity_receipt_actual = 0
+                for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
+                    if product_wh.is_additional is False:
+                        quantity_receipt_actual += product_wh.quantity_import
+                final_ratio = cls.get_final_uom_ratio(
+                    product_obj=product_receipt.product, uom_transaction=product_receipt.uom
+                )
+                product_receipt.product.save(**{
+                    'update_stock_info': {
+                        'quantity_receipt_production': product_receipt.quantity_import * final_ratio,
+                        'quantity_receipt_actual': quantity_receipt_actual * final_ratio,
+                        'system_status': instance.system_status,
+                    },
+                    'update_fields': ['production_amount', 'available_amount', 'stock_amount']
                 })
         return True
 

@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.sales.production.models import ProductionReportTask, ProductionReport
 from apps.sales.production.serializers.production_report_sub import ProductionReportValid, ProductionReportSub
+from apps.sales.production.utils import ProductionReportHandler
 
 
 # SUB
@@ -100,6 +101,7 @@ class ProductionReportCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         production_report = ProductionReport.objects.create(**validated_data)
         ProductionReportSub.create_sub_models(validated_data=validated_data, instance=production_report)
+        ProductionReportHandler.push_product_info(instance=production_report)
         return production_report
 
 
