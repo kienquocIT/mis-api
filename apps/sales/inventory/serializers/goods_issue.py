@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import UnitOfMeasure, WareHouse, ProductWareHouse, Product, ProductWareHouseSerial, \
-    ProductWareHouseLot
+from apps.masterdata.saledata.models import (
+    UnitOfMeasure, WareHouse, ProductWareHouse, Product,
+    ProductWareHouseSerial, ProductWareHouseLot
+)
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 from apps.sales.production.models import ProductionOrder
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
@@ -181,10 +183,10 @@ class GoodsIssueCommonFunction:
         try:
             detail_data_ia = validate_data.get('detail_data_ia')
             for item in detail_data_ia:
-                prd = Product.objects.get(id=item.get('product_id'))
-                wh = WareHouse.objects.get(id=item.get('warehouse_id'))
+                product_obj = Product.objects.get(id=item.get('product_id'))
+                warehouse_obj = WareHouse.objects.get(id=item.get('warehouse_id'))
                 uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
-                prd_wh_obj = ProductWareHouse.objects.get(product=prd, warehouse=wh)
+                prd_wh_obj = ProductWareHouse.objects.get(product=product_obj, warehouse=warehouse_obj)
                 ia_item = InventoryAdjustmentItem.objects.get(id=item.get('inventory_adjustment_item_id'))
                 if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
                     raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
@@ -193,19 +195,19 @@ class GoodsIssueCommonFunction:
                 if ia_item.book_quantity - ia_item.count - ia_item.issued_quantity < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
                 item['inventory_adjustment_item_id'] = str(ia_item.id)
-                item['product_id'] = str(prd.id)
+                item['product_id'] = str(product_obj.id)
                 item['product_data'] = {
-                    'id': str(prd.id),
-                    'code': prd.code,
-                    'title': prd.title,
-                    'description': prd.description,
-                    'general_traceability_method': prd.general_traceability_method
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'description': product_obj.description,
+                    'general_traceability_method': product_obj.general_traceability_method
                 }
-                item['warehouse_id'] = str(wh.id)
+                item['warehouse_id'] = str(warehouse_obj.id)
                 item['warehouse_data'] = {
-                    'id': str(wh.id),
-                    'code': wh.code,
-                    'title': wh.title
+                    'id': str(warehouse_obj.id),
+                    'code': warehouse_obj.code,
+                    'title': warehouse_obj.title
                 }
                 item['uom_id'] = str(uom.id)
                 item['uom_data'] = {
