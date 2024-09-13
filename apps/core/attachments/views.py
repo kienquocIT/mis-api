@@ -1,8 +1,13 @@
 from django.conf import settings
+from django.http import HttpResponse
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 
-from apps.shared import BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import (
+    BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
+    ResponseController,
+)
 
 from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.core.attachments.serializers import (
@@ -43,6 +48,27 @@ class FilesUpload(BaseCreateMixin):
             'user_obj': self.request.user
         }
         return self.create(request, *args, **kwargs)
+
+
+class FilesDownload(BaseRetrieveMixin):
+    def get_object(self) -> Files:
+        try:
+            return Files.objects.get_current(fill__tenant=True, fill__company=True, pk=self.kwargs['pk'])
+        except Files.DoesNotExist:
+            pass
+        raise exceptions.NotFound
+
+    @swagger_auto_schema(operation_summary='Download file')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            obj = self.get_object()
+            with open(obj.file.path, 'rb') as f_open:
+                contents = f_open.read()
+                response = HttpResponse(contents, content_type=obj.file_type)
+                response['Content-Disposition'] = f'attachment; filename={obj.file_name}'
+                return response
+        return ResponseController.notfound_404()
 
 
 class FilesUnused(BaseListMixin):
