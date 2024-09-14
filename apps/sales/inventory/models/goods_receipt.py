@@ -491,7 +491,14 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         null=True
     )
     production_report_data = models.JSONField(default=dict, help_text='data JSON of production report')
-    uom_data = models.JSONField(default=dict, help_text='data JSON of uom request')
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of measure",
+        related_name="gr_request_product_uom",
+        null=True
+    )
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
     quantity_order = models.FloatField(default=0, help_text='quantity purchase order')
     quantity_import = models.FloatField(default=0, help_text='quantity goods receipt')
     is_stock = models.BooleanField(

@@ -80,6 +80,7 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
             'time',
             'task_data',
             'date_created',
+            'gr_remain_quantity',
         )
 
 
@@ -113,6 +114,7 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -172,6 +174,7 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod
