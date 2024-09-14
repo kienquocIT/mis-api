@@ -197,7 +197,7 @@ class PeriodInventoryFunction:
                         warehouse=wh_obj,
                         uom=prd_obj.general_uom_group.uom_reference,
                         unit_price=float(item.get('value')) / float(item.get('quantity')),
-                        tax=prd_obj.purchase_tax,
+                        tax=None,
                         stock_amount=float(item.get('quantity')),
                         receipt_amount=float(item.get('quantity')),
                         sold_amount=0,
@@ -219,12 +219,7 @@ class PeriodInventoryFunction:
                             "code": prd_obj.general_uom_group.uom_reference.code,
                             "title": prd_obj.general_uom_group.uom_reference.title
                         } if prd_obj.general_uom_group.uom_reference else {},
-                        tax_data={
-                            "id": str(prd_obj.purchase_tax_id),
-                            "code": prd_obj.purchase_tax.code,
-                            "rate": prd_obj.purchase_tax.rate,
-                            "title": prd_obj.purchase_tax.title
-                        } if prd_obj.purchase_tax else {}
+                        tax_data={}
                     )
                 )
                 for serial in item.get('data_sn', []):
@@ -261,7 +256,7 @@ class PeriodInventoryFunction:
                     warehouse=wh_obj,
                     uom=prd_obj.general_uom_group.uom_reference,
                     unit_price=float(item.get('value')) / float(item.get('quantity')),
-                    tax=prd_obj.purchase_tax,
+                    tax=None,
                     stock_amount=float(item.get('quantity')),
                     receipt_amount=float(item.get('quantity')),
                     sold_amount=0,
@@ -275,12 +270,7 @@ class PeriodInventoryFunction:
                         "code": prd_obj.general_uom_group.uom_reference.code,
                         "title": prd_obj.general_uom_group.uom_reference.title
                     } if prd_obj.general_uom_group.uom_reference else {},
-                    tax_data={
-                        "id": str(prd_obj.purchase_tax_id),
-                        "code": prd_obj.purchase_tax.code,
-                        "rate": prd_obj.purchase_tax.rate,
-                        "title": prd_obj.purchase_tax.title
-                    } if prd_obj.purchase_tax else {}
+                    tax_data={}
                 )
             )
             for lot in item.get('data_lot', []):
@@ -318,7 +308,7 @@ class PeriodInventoryFunction:
                     warehouse=wh_obj,
                     uom=prd_obj.general_uom_group.uom_reference,
                     unit_price=float(item.get('value')) / float(item.get('quantity')),
-                    tax=prd_obj.purchase_tax,
+                    tax=None,
                     stock_amount=float(item.get('quantity')),
                     receipt_amount=float(item.get('quantity')),
                     sold_amount=0,
@@ -340,12 +330,7 @@ class PeriodInventoryFunction:
                         "code": prd_obj.general_uom_group.uom_reference.code,
                         "title": prd_obj.general_uom_group.uom_reference.title
                     } if prd_obj.general_uom_group.uom_reference else {},
-                    tax_data={
-                        "id": str(prd_obj.purchase_tax_id),
-                        "code": prd_obj.purchase_tax.code,
-                        "rate": prd_obj.purchase_tax.rate,
-                        "title": prd_obj.purchase_tax.title
-                    } if prd_obj.purchase_tax else {}
+                    tax_data={}
                 )
             )
             return bulk_info_prd_wh, [], []
