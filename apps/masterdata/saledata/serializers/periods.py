@@ -218,7 +218,7 @@ class PeriodInventoryFunction:
                             "id": str(prd_obj.general_uom_group.uom_reference_id),
                             "code": prd_obj.general_uom_group.uom_reference.code,
                             "title": prd_obj.general_uom_group.uom_reference.title
-                        } if prd_obj.general_uom_group else {},
+                        } if prd_obj.general_uom_group.uom_reference else {},
                         tax_data={
                             "id": str(prd_obj.purchase_tax_id),
                             "code": prd_obj.purchase_tax.code,
@@ -274,13 +274,13 @@ class PeriodInventoryFunction:
                         "id": str(prd_obj.general_uom_group.uom_reference_id),
                         "code": prd_obj.general_uom_group.uom_reference.code,
                         "title": prd_obj.general_uom_group.uom_reference.title
-                    },
+                    } if prd_obj.general_uom_group.uom_reference else {},
                     tax_data={
                         "id": str(prd_obj.purchase_tax_id),
                         "code": prd_obj.purchase_tax.code,
                         "rate": prd_obj.purchase_tax.rate,
                         "title": prd_obj.purchase_tax.title
-                    }
+                    } if prd_obj.purchase_tax else {}
                 )
             )
             for lot in item.get('data_lot', []):
@@ -325,19 +325,27 @@ class PeriodInventoryFunction:
                     picked_ready=0,
                     used_amount=0,
                     # backup data
-                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                    product_data={
+                        "id": str(prd_obj.id),
+                        "code": prd_obj.code,
+                        "title": prd_obj.title
+                    },
+                    warehouse_data={
+                        "id": str(wh_obj.id),
+                        "code": wh_obj.code,
+                        "title": wh_obj.title
+                    },
                     uom_data={
                         "id": str(prd_obj.general_uom_group.uom_reference_id),
                         "code": prd_obj.general_uom_group.uom_reference.code,
                         "title": prd_obj.general_uom_group.uom_reference.title
-                    },
+                    } if prd_obj.general_uom_group.uom_reference else {},
                     tax_data={
                         "id": str(prd_obj.purchase_tax_id),
                         "code": prd_obj.purchase_tax.code,
                         "rate": prd_obj.purchase_tax.rate,
                         "title": prd_obj.purchase_tax.title
-                    }
+                    } if prd_obj.purchase_tax else {}
                 )
             )
             return bulk_info_prd_wh, [], []
