@@ -42,6 +42,7 @@ class ProductionOrderList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+
 class ProductionOrderDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
@@ -74,3 +75,25 @@ class ProductionOrderDetail(
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class ProductionOrderDDList(BaseListMixin, BaseCreateMixin):
+    queryset = ProductionOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'employee_inherit_id': ['exact'],
+        'system_status': ['exact', 'in'],
+    }
+    serializer_list = ProductionOrderDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Production Order DD List",
+        operation_description="Get Production Order DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='production', model_code='productionorder', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

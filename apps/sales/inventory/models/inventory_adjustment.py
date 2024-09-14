@@ -91,10 +91,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         default=timezone.now
     )
     # goods receipt information
-    gr_completed_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is goods receipted, update when GR finish"
-    )
     gr_remain_quantity = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"

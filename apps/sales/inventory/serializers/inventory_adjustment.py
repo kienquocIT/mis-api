@@ -296,8 +296,8 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
 
 
 # Inventory adjustment list use for other apps
-class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
-    inventory_adjustment_product = serializers.SerializerMethodField()
+class IAGRListSerializer(serializers.ModelSerializer):
+    gr_products_data = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustment
@@ -305,37 +305,50 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'inventory_adjustment_product',
+            'gr_products_data',
         )
 
     @classmethod
-    def get_inventory_adjustment_product(cls, obj):
+    def get_gr_products_data(cls, obj):
         return [{
-            'id': ia_product.id,
-            'product': {
-                'id': ia_product.product_mapped_id,
+            'ia_item_id': str(ia_product.id),
+            'pr_products_data': [],
+            'product_id': str(ia_product.product_mapped_id),
+            'product_data': {
+                'id': str(ia_product.product_mapped_id),
                 'title': ia_product.product_mapped.title,
                 'code': ia_product.product_mapped.code,
                 'general_traceability_method': ia_product.product_mapped.general_traceability_method,
                 'description': ia_product.product_mapped.description,
+                'product_choice': ia_product.product_mapped.product_choice,
             } if ia_product.product_mapped else {},
-            'uom': {
-                'id': ia_product.uom_mapped_id,
+            'uom_id': str(ia_product.uom_mapped_id),
+            'uom_data': {
+                'id': str(ia_product.uom_mapped_id),
                 'title': ia_product.uom_mapped.title,
                 'code': ia_product.uom_mapped.code,
             } if ia_product.uom_mapped else {},
-            'warehouse': {
-                'id': ia_product.warehouse_mapped_id,
-                'title': ia_product.warehouse_mapped.title,
-                'code': ia_product.warehouse_mapped.code,
-            } if ia_product.warehouse_mapped else {},
-            'quantity_ia': (ia_product.count - ia_product.book_quantity),
+            'gr_warehouse_data': [
+                {
+                    'warehouse_id': str(ia_product.warehouse_mapped_id),
+                    'warehouse_data': {
+                        'id': ia_product.warehouse_mapped_id,
+                        'title': ia_product.warehouse_mapped.title,
+                        'code': ia_product.warehouse_mapped.code,
+                    } if ia_product.warehouse_mapped else {},
+                }
+            ],
+            'product_quantity_order_actual': (ia_product.count - ia_product.book_quantity),
             'quantity_import': (ia_product.count - ia_product.book_quantity),
             'select_for_action': ia_product.select_for_action,
             'action_status': ia_product.action_status,
-            'product_unit_price': 0,
+            'product_unit_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+            ),
             'product_subtotal_price': 0,
             'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
                 warehouse_id=ia_product.warehouse_mapped_id, get_type=1
-            )
-        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2, action_status=False)]
+            ),
+            'gr_completed_quantity': (ia_product.count - ia_product.book_quantity) - ia_product.gr_remain_quantity,
+            'gr_remain_quantity': ia_product.gr_remain_quantity,
+        } for ia_product in obj.inventory_adjustment_item_mapped.all()]
