@@ -402,9 +402,7 @@ class ReportStockList(BaseListMixin):
     @classmethod
     def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
         sub_period = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        print(int(sub_period_order), company.software_start_using_time.month, sub_period.run_report_inventory)
         if not sub_period.run_report_inventory:
-            print('go')
             if int(sub_period_order) == 1:
                 last_sub_period_order = 12
                 last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()

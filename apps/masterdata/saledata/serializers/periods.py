@@ -156,20 +156,20 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                     warehouse_id=self.initial_data.get('warehouse_id')
             ).exists():
                 raise serializers.ValidationError(
-                    {"Has trans": f'The transactions of this product are existed in this warehouse.'}
+                    {"Has trans": 'The transactions of this product are existed in this warehouse.'}
                 )
-            else:
-                try:
-                    with transaction.atomic():
-                        PeriodInventoryFunction.clear_balance_data(
-                            instance,
-                            self.initial_data.get('product_id'),
-                            self.initial_data.get('warehouse_id')
-                        )
-                        SubPeriods.objects.filter(period_mapped=instance).update(run_report_inventory=False)
-                    return instance
-                except Exception as err:
-                    return err
+
+            try:
+                with transaction.atomic():
+                    PeriodInventoryFunction.clear_balance_data(
+                        instance,
+                        self.initial_data.get('product_id'),
+                        self.initial_data.get('warehouse_id')
+                    )
+                    SubPeriods.objects.filter(period_mapped=instance).update(run_report_inventory=False)
+                return instance
+            except Exception as err:
+                return err
         return instance
 
 
@@ -558,5 +558,4 @@ class PeriodInventoryFunction:
                 product_warehouse__warehouse=wh_obj
             ).delete()
             return True
-        else:
-            raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+        raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
