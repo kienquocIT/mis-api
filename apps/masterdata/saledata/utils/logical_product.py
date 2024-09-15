@@ -9,15 +9,20 @@ class ProductHandler:
         # If product have inventory choice
         if 'system_status' in update_info:
             cls.by_purchase(instance=instance, update_info=update_info)
+            cls.by_production(instance=instance, update_info=update_info)
             cls.by_receipt_po(instance=instance, update_info=update_info)
             cls.by_receipt_ia(instance=instance, update_info=update_info)
+            cls.by_receipt_production(instance=instance, update_info=update_info)
             cls.by_order(instance=instance, update_info=update_info)
             cls.by_delivery(instance=instance, update_info=update_info)
             cls.by_return(instance=instance, update_info=update_info)
             cls.by_return_redelivery(instance=instance, update_info=update_info)
-            instance.available_amount = (
-                    instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
-            )
+            # update product
+            stock = instance.stock_amount
+            sale = instance.wait_delivery_amount
+            purchase = instance.wait_receipt_amount
+            production = instance.production_amount
+            instance.available_amount = stock - sale + purchase + production
         return kwargs
 
     @classmethod
@@ -27,6 +32,13 @@ class ProductHandler:
                 instance.wait_receipt_amount += update_info['quantity_purchase']
             if update_info['system_status'] == 4:
                 instance.wait_receipt_amount -= update_info['quantity_purchase']
+        return True
+
+    @classmethod
+    def by_production(cls, instance, update_info):
+        if 'quantity_production' in update_info:
+            if update_info['system_status'] == 3:
+                instance.production_amount += update_info['quantity_production']
         return True
 
     @classmethod
@@ -45,6 +57,17 @@ class ProductHandler:
         if 'quantity_receipt_ia' in update_info:
             if update_info['system_status'] == 3:
                 instance.stock_amount += update_info['quantity_receipt_ia']
+        return True
+
+    @classmethod
+    def by_receipt_production(cls, instance, update_info):
+        if 'quantity_receipt_production' in update_info and 'quantity_receipt_actual' in update_info:
+            if update_info['system_status'] == 3:
+                instance.production_amount -= update_info['quantity_receipt_production']
+                instance.stock_amount += update_info['quantity_receipt_actual']
+            if update_info['system_status'] == 4:
+                instance.production_amount += update_info['quantity_receipt_production']
+                instance.stock_amount -= update_info['quantity_receipt_actual']
         return True
 
     @classmethod

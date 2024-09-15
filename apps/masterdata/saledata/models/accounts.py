@@ -217,6 +217,10 @@ class Account(DataAbstractModel):
         related_name='payment_term_supplier_mapped'
     )
     credit_limit_supplier = models.FloatField(null=True)
+    is_customer_account = models.BooleanField(default=False)
+    is_supplier_account = models.BooleanField(default=False)
+    is_partner_account = models.BooleanField(default=False)
+    is_competitor_account = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Account'

@@ -331,6 +331,22 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         except Currency.DoesNotExist:
             raise serializers.ValidationError({"Currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
 
+        for account_type in validate_data.get("account_types", []):
+            account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
+            validate_data['is_customer_account'] = False
+            validate_data['is_supplier_account'] = False
+            validate_data['is_partner_account'] = False
+            validate_data['is_competitor_account'] = False
+            if account_type_obj:
+                if account_type_obj.account_type_order == 0:
+                    validate_data['is_customer_account'] = True
+                elif account_type_obj.account_type_order == 1:
+                    validate_data['is_supplier_account'] = True
+                elif account_type_obj.account_type_order == 2:
+                    validate_data['is_partner_account'] = True
+                elif account_type_obj.account_type_order == 3:
+                    validate_data['is_competitor_account'] = True
+
         return validate_data
 
     def create(self, validated_data):
@@ -743,6 +759,23 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
             if 'total_employees' not in validate_data:
                 raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
+
+        for account_type in validate_data.get("account_types", []):
+            account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
+            validate_data['is_customer_account'] = False
+            validate_data['is_supplier_account'] = False
+            validate_data['is_partner_account'] = False
+            validate_data['is_competitor_account'] = False
+            if account_type_obj:
+                if account_type_obj.account_type_order == 0:
+                    validate_data['is_customer_account'] = True
+                elif account_type_obj.account_type_order == 1:
+                    validate_data['is_supplier_account'] = True
+                elif account_type_obj.account_type_order == 2:
+                    validate_data['is_partner_account'] = True
+                elif account_type_obj.account_type_order == 3:
+                    validate_data['is_competitor_account'] = True
+
         return validate_data
 
     # @decorator_run_workflow

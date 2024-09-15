@@ -71,6 +71,7 @@ class WorkflowMsgNotify:
     return_creator = 'Return to creator'
     rerun_workflow = 'Rerun workflow'
     end_workflow = 'Workflow ended'
+    document_returned = 'Document was returned'
 
     @classmethod
     def translate_msg(cls, msg):

@@ -105,6 +105,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'opportunity_mapped',
                 'expense_items',
                 'opportunity_id',
+                'sale_code',
                 'system_status',
                 'is_change',
                 'document_root_id',

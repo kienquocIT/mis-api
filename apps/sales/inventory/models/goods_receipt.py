@@ -43,6 +43,9 @@ class GoodsReceipt(DataAbstractModel):
         blank=True,
         related_name='goods_receipt_map_pr'
     )
+    purchase_requests_data = models.JSONField(
+        default=list, help_text='data json of purchase request, records in GoodsReceiptPurchaseRequest'
+    )
     # FIELDS OF TYPE 1(For inventory adjustment)
     inventory_adjustment = models.ForeignKey(
         'inventory.InventoryAdjustment',
@@ -56,6 +59,27 @@ class GoodsReceipt(DataAbstractModel):
         help_text="read data inventory_adjustment, use for get list or detail"
     )
     # FIELDS OF TYPE 2(For production)
+    production_order = models.ForeignKey(
+        'production.ProductionOrder',
+        on_delete=models.CASCADE,
+        verbose_name="production order",
+        related_name="goods_receipt_production_order",
+        null=True,
+    )
+    production_order_data = models.JSONField(
+        default=dict,
+        help_text="read data production_order, use for get list or detail"
+    )
+    production_reports = models.ManyToManyField(
+        'production.ProductionReport',
+        through="GoodsReceiptProductionReport",
+        symmetrical=False,
+        blank=True,
+        related_name='goods_receipt_map_production_report'
+    )
+    production_reports_data = models.JSONField(
+        default=list, help_text='data json of production report, records in GoodsReceiptProductionReport'
+    )
     # COMMON FIELDS
     remarks = models.TextField(
         blank=True,
@@ -69,6 +93,9 @@ class GoodsReceipt(DataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='file_of_goods_receipt',
+    )
+    gr_products_data = models.JSONField(
+        default=list, help_text='data JSON of gr products, records in GoodsReceiptProduct'
     )
 
     class Meta:
@@ -270,10 +297,7 @@ class GoodsReceipt(DataAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
-                    GRFinishHandler.update_gr_info_for_po(instance=self)
-                    GRFinishHandler.update_gr_info_for_ia(instance=self)
-                    GRFinishHandler.update_is_all_receipted_po(instance=self)
-                    GRFinishHandler.update_is_all_receipted_ia(instance=self)
+                    GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
             self.prepare_data_for_logging(self)
 
@@ -308,6 +332,28 @@ class GoodsReceiptPurchaseRequest(SimpleAbstractModel):
         permissions = ()
 
 
+class GoodsReceiptProductionReport(SimpleAbstractModel):
+    goods_receipt = models.ForeignKey(
+        GoodsReceipt,
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt",
+        related_name="goods_receipt_production_report_receipt",
+    )
+    production_report = models.ForeignKey(
+        'production.ProductionReport',
+        on_delete=models.CASCADE,
+        verbose_name="production report",
+        related_name="goods_receipt_production_report_report",
+    )
+
+    class Meta:
+        verbose_name = 'Goods Receipt Production Report'
+        verbose_name_plural = 'Goods Receipt Production Reports'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
 class GoodsReceiptProduct(SimpleAbstractModel):
     goods_receipt = models.ForeignKey(
         GoodsReceipt,
@@ -322,6 +368,13 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_po_product",
         null=True
     )
+    production_order = models.ForeignKey(
+        'production.ProductionOrder',
+        on_delete=models.CASCADE,
+        verbose_name="production order",
+        related_name="goods_receipt_product_production_order",
+        null=True
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -329,6 +382,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_product",
         null=True
     )
+    product_data = models.JSONField(default=dict, help_text='data JSON of product')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -336,6 +390,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -343,6 +398,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict, help_text='data JSON of tax')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -350,7 +406,9 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         related_name="goods_receipt_product_warehouse",
         null=True
     )
-    quantity_import = models.FloatField(default=0)
+    warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
+    product_quantity_order_actual = models.FloatField(default=0, help_text='quantity order')
+    quantity_import = models.FloatField(default=0, help_text='quantity goods receipt this time')
     product_title = models.CharField(
         max_length=100,
         blank=True,
@@ -380,6 +438,12 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     )
     is_added = models.BooleanField(
         default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
+    )
+    pr_products_data = models.JSONField(
+        default=list, help_text='data JSON of pr products, records in GoodsReceiptRequestProduct'
+    )
+    gr_warehouse_data = models.JSONField(
+        default=list, help_text='data JSON of gr warehouse, records in GoodsReceiptWarehouse'
     )
 
     class Meta:
@@ -418,10 +482,31 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         related_name="goods_receipt_request_product_pr_product",
         null=True
     )
-    quantity_import = models.FloatField(default=0)
+    purchase_request_data = models.JSONField(default=dict, help_text='data JSON of purchase request')
+    production_report = models.ForeignKey(
+        'production.ProductionReport',
+        on_delete=models.CASCADE,
+        verbose_name="production report",
+        related_name="gr_request_product_production_report",
+        null=True
+    )
+    production_report_data = models.JSONField(default=dict, help_text='data JSON of production report')
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of measure",
+        related_name="gr_request_product_uom",
+        null=True
+    )
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
+    quantity_order = models.FloatField(default=0, help_text='quantity purchase order')
+    quantity_import = models.FloatField(default=0, help_text='quantity goods receipt')
     is_stock = models.BooleanField(
         default=False,
         help_text="True if GR direct to stock, stock is created from PO when quantity order > quantity request"
+    )
+    gr_warehouse_data = models.JSONField(
+        default=list, help_text='data JSON of gr warehouse, records in GoodsReceiptWarehouse'
     )
 
     class Meta:
@@ -460,6 +545,8 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
         related_name="goods_receipt_warehouse_warehouse",
         null=True
     )
+    warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
+    uom_data = models.JSONField(default=dict, help_text='data JSON of uom')
     quantity_import = models.FloatField(default=0)
     is_additional = models.BooleanField(
         default=False, help_text='flag to know enter quantity first, add lot/serial later'
@@ -467,6 +554,8 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
     is_added = models.BooleanField(
         default=False, help_text='flag to know that lot/serial is all added by Goods Detail'
     )
+    lot_data = models.JSONField(default=list, help_text='data JSON of lots, records in GoodsReceiptLot')
+    serial_data = models.JSONField(default=list, help_text='data JSON of serials, records in GoodsReceiptSerial')
 
     class Meta:
         verbose_name = 'Goods Receipt Warehouse'

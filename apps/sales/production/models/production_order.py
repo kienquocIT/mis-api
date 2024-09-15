@@ -58,6 +58,10 @@ class ProductionOrder(DataAbstractModel):
     group_data = models.JSONField(default=dict, help_text='data json of group')
     time = models.FloatField(default=0, help_text='total time for production')
     task_data = models.JSONField(default=list, help_text='data json of task, records in ProductionOrderTask')
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
+    )
 
     class Meta:
         verbose_name = 'Production order'

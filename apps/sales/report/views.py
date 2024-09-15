@@ -402,12 +402,9 @@ class ReportStockList(BaseListMixin):
     @classmethod
     def create_this_sub_record(cls, tenant, company, employee_current, period_mapped, sub_period_order):
         sub_period = SubPeriods.objects.filter(period_mapped=period_mapped, order=sub_period_order).first()
-        if all([
-            not sub_period.run_report_inventory or sub_period.report_inventory_cost_sub_period.count() == 0,
-            int(sub_period_order) > company.software_start_using_time.month - period_mapped.space_month
-        ]):
-            if int(sub_period_order) == 12:
-                last_sub_period_order = 1
+        if not sub_period.run_report_inventory:
+            if int(sub_period_order) == 1:
+                last_sub_period_order = 12
                 last_period_mapped = Periods.objects.filter(fiscal_year=period_mapped.fiscal_year - 1).first()
             else:
                 last_sub_period_order = int(sub_period_order) - 1
@@ -444,11 +441,14 @@ class ReportStockList(BaseListMixin):
                             bulk_info, bulk_info_wh
                         )
 
-            if len(bulk_info) > 0:
-                ReportInventoryCost.objects.bulk_create(bulk_info)
-                ReportInventoryCostWH.objects.bulk_create(bulk_info_wh)
+            ReportInventoryCost.objects.bulk_create(bulk_info)
+            ReportInventoryCostWH.objects.bulk_create(bulk_info_wh)
+            last_period = SubPeriods.objects.filter(
+                period_mapped=last_period_mapped, order=last_sub_period_order
+            ).first()
+            if last_period.run_report_inventory or int(sub_period_order) == company.software_start_using_time.month:
                 sub_period.run_report_inventory = True
-                sub_period.save(update_fields=['run_report_inventory'])
+            sub_period.save(update_fields=['run_report_inventory'])
         return True
 
     def get_queryset(self):

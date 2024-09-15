@@ -71,8 +71,11 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         default=None,
     )
     product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    product_mapped_data = models.JSONField(default=dict)
     warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    warehouse_mapped_data = models.JSONField(default=dict)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
+    uom_mapped_data = models.JSONField(default=dict)
     book_quantity = models.FloatField(default=0)
     count = models.FloatField(default=0)
     issued_quantity = models.FloatField(default=0)
@@ -88,10 +91,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         default=timezone.now
     )
     # goods receipt information
-    gr_completed_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is goods receipted, update when GR finish"
-    )
     gr_remain_quantity = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"

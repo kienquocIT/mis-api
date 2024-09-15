@@ -648,7 +648,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             stock = 0
             for product_wh in obj.product_warehouse_product.all():
                 stock += product_wh.stock_amount
-            available = stock - obj.wait_delivery_amount + obj.wait_receipt_amount
+            available = stock - obj.wait_delivery_amount + obj.wait_receipt_amount + obj.production_amount
             return available / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
         return 0
 

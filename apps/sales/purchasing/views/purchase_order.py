@@ -5,7 +5,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, 
     PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
-    PurchaseOrderSaleListSerializer, PurchaseOrderProductGRListSerializer
+    PurchaseOrderSaleListSerializer, POProductGRListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -129,12 +129,12 @@ class PurchaseOrderDetail(
         return self.update(request, *args, **kwargs)
 
 
-class PurchaseOrderProductList(BaseListMixin):
+class PurchaseOrderProductGRList(BaseListMixin):
     queryset = PurchaseOrderProduct.objects
     filterset_fields = {
         'purchase_order_id': ['in', 'exact'],
     }
-    serializer_list = PurchaseOrderProductGRListSerializer
+    serializer_list = POProductGRListSerializer
     list_hidden_field = []
 
     def get_queryset(self):
@@ -178,7 +178,7 @@ class PurchaseOrderSaleList(
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
-        'is_all_receipted': ['exact'],
+        'receipt_status': ['exact', 'in'],
         'system_status': ['exact'],
     }
     serializer_list = PurchaseOrderSaleListSerializer

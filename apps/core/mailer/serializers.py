@@ -155,11 +155,13 @@ class MailConfigUpdateSerializer(serializers.ModelSerializer):
     def handle_valid_file(file_obj, max_size):
         if file_obj and hasattr(file_obj, 'size'):
             if isinstance(file_obj.size, int) and file_obj.size < max_size:
-                file_obj.seek(0)
-                magic_check_content_type = magic.from_buffer(file_obj.read(), mime=True)
-                if magic_check_content_type in ['text/plain', file_obj.content_type]:
-                    return file_obj
-                raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                if settings.FILE_ENABLE_MAGIC_CHECK is True:
+                    file_obj.seek(0)
+                    magic_check_content_type = magic.from_buffer(file_obj.read(), mime=True)
+                    if magic_check_content_type in ['text/plain', file_obj.content_type]:
+                        return file_obj
+                    raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                return file_obj
             file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
                 FORMATTING.size_to_text(max_size)
             )
