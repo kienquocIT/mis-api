@@ -214,6 +214,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                     "progress": item.work.w_rate,
                     "weight": item.work.w_weight,
                     "expense_data": item.work.expense_data,
+                    "bom_data": item.work.bom_data
                 }
                 group_mw = item.work.project_groupmapwork_work.all()
                 if group_mw:
