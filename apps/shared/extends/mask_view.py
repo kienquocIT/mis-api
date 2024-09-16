@@ -10,7 +10,7 @@ import rest_framework.exceptions
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.utils import translation
 
 from rest_framework import status, serializers
@@ -1975,7 +1975,7 @@ def mask_view(**parent_kwargs):
                     #   3. Tuple: (data, status)
                     try:
                         view_return = func_view(self, *args, **kwargs)  # --> {'user_list': user_list}
-                        if isinstance(view_return, HttpResponse):
+                        if isinstance(view_return, (HttpResponse, StreamingHttpResponse)):
                             return view_return
                         if isinstance(view_return, Exception):
                             return view_return
