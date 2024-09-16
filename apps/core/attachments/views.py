@@ -116,7 +116,8 @@ class FilesInformation(BaseRetrieveMixin):
             'folder': {
                 'id': obj.folder.id,
                 'title': obj.folder.title,
-            } if obj.folder else {}
+            } if obj.folder else {},
+            'date_created': obj.date_created,
         }
 
     @swagger_auto_schema(operation_summary='Download file')
