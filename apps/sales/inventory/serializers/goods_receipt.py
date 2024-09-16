@@ -660,7 +660,7 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
             state, result = GoodsReceiptAttachment.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+                current_ids=value, employee_id=user.employee_current_id, doc_id=self.instance.id
             )
             if state is True:
                 return result
