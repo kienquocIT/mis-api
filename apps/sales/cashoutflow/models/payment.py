@@ -241,6 +241,10 @@ class PaymentAttachmentFile(M2MFilesAbstractModel):
         related_name='payment_attachments'
     )
 
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'payment'
+
     class Meta:
         verbose_name = 'Payment attachment'
         verbose_name_plural = 'Payment attachments'

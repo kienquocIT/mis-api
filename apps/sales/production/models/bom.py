@@ -158,6 +158,39 @@ class BOMMaterialComponent(MasterDataAbstractModel):
         permissions = ()
 
 
+class BOMReplacementMaterialComponent(MasterDataAbstractModel):
+    bom = models.ForeignKey(
+        BOM,
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_bom'
+    )
+    material = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_material'
+    )
+    quantity = models.FloatField(default=0)
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_uom'
+    )
+    disassemble = models.BooleanField(default=False)
+    note = models.TextField()
+    replace_for = models.ForeignKey(
+        BOMMaterialComponent,
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_replace_for'
+    )
+
+    class Meta:
+        verbose_name = 'BOM replacement material component'
+        verbose_name_plural = 'BOM replacement materials components'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
 class BOMTool(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
