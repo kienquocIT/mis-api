@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from apps.core.base.models import Application
 from django.utils.translation import gettext_lazy as _
+from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
