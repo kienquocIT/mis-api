@@ -331,6 +331,7 @@ FILE_SIZE_OF_EMPLOYEE_TOTAL = int(
     os.getenv('FILE_SIZE_OF_EMPLOYEE_TOTAL', 5 * 1024 * 1024 * 1024)  # defaults: 5 Gigabytes
 )
 FILE_STORAGE_EXPIRED = 60 * 5  # unit: seconds
+FILE_ENABLE_MAGIC_CHECK = os.environ.get('FILE_ENABLE_MAGIC_CHECK', '0') in [1, '1']
 USE_S3 = os.getenv('USE_S3', '0') == '1'
 if USE_S3:
     # aws settings
@@ -430,8 +431,18 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
+
+    # rate limit && throttle
+    'DEFAULT_THROTTLE_CLASSES': [
+        'misapi.throttling.AuthThrottle',
+        'misapi.throttling.AnonThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'auth': f"{os.environ.get('THROTTLE_AUTH', '200')}/minute",
+        'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
+    }
 }
-CUSTOM_PAGE_MAXIMUM_SIZE = 1500
+CUSTOM_PAGE_MAXIMUM_SIZE = 1000
 
 AUTH_USER_MODEL = 'account.User'
 

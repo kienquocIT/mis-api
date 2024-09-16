@@ -79,6 +79,16 @@ class DocHandler:
         return True
 
     @classmethod
+    def force_return_owner(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
+        )
+        if obj:
+            HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj)
+            return True
+        return False
+
+    @classmethod
     def force_finish_with_runtime(cls, runtime_obj, approved_or_rejected='approved'):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
@@ -374,6 +384,8 @@ class RuntimeHandler:
                     # update data for RuntimeAssignee
                     rt_assignee.remark = remark
                     rt_assignee.save(update_fields=['remark'])
+                    # update doc to return
+                    DocHandler.force_return_owner(runtime_obj=runtime_obj)
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
                         assignee_action_return=rt_assignee.employee,  # who click action return (edit by PO's request)
@@ -962,33 +974,24 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            actor=None,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg=f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
+            actor=None, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg=f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
             is_system=self.is_system,
         )
 
     def log_action_perform(self):
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg='Perform a action',
+            actor=self.actor_obj, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg='Perform a action',
             is_system=self.is_system,
         )
 
     def log_update_at_zone(self):
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=1,  # in doc
-            action=0,
-            msg=WorkflowMsgNotify.edit_by_zone,
+            actor=self.actor_obj, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=1,  # in doc
+            action=0, msg=WorkflowMsgNotify.edit_by_zone,
             is_system=self.is_system,
         )

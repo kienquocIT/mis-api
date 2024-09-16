@@ -11,7 +11,10 @@ from misapi.mongo_client import MongoViewParse, mongo_log_auth
 
 from apps.eoffice.meeting.models import MeetingSchedule
 from apps.eoffice.businesstrip.models import BusinessRequest
-from apps.eoffice.leave.models import LeaveRequestDateListRegister
+from apps.eoffice.leave.models import (
+    LeaveRequestDateListRegister, WorkingHolidayConfig, WorkingCalendarConfig,
+    WorkingYearConfig,
+)
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityMeetingEmployeeAttended
 from apps.shared import mask_view, ResponseController, FORMATTING, Caching, AuthMsg
 
@@ -160,17 +163,19 @@ class CalendarByDay(APIView):
         )
 
     @swagger_auto_schema(operation_summary='Get event at day')
-    @mask_view(login_require=True, employee_require=True)
-    def get(self, request, *args, **kwargs):
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):  # pylint: disable=R0914,R0912
         result = {}
         day_check = request.query_params.get('day', None)
-        if day_check:
+        if day_check:  # pylint: disable=R1702
             day_check = self.parse_day(date_str=day_check)
             if day_check:
                 employee_id = request.user.employee_current_id
                 if employee_id:
                     category = request.query_params.get('category', None)
-                    category = [category] if category else ['meeting', 'meeting_opp', 'business_trip', 'leave']
+                    category = [category] if category else [
+                        'meeting', 'meeting_opp', 'business_trip', 'leave', 'holiday'
+                    ]
                     if 'meeting' in category:
                         objs = MeetingSchedule.objects.select_related('meeting_room_mapped').filter(
                             meeting_start_date=day_check,
@@ -180,20 +185,22 @@ class CalendarByDay(APIView):
                         result['meeting'] = []
                         for obj in objs:
                             date_start = datetime.combine(obj.meeting_start_date, obj.meeting_start_time)
-                            result['meeting'].append({
-                                'category': 'EOffice Meeting',
-                                'id': obj.id,
-                                'title': obj.title,
-                                'remark': obj.meeting_content,
-                                'start_date': date_start,
-                                'end_date': date_start + timedelta(minutes=obj.meeting_duration),
-                                **(
-                                    {
-                                        'location_address': obj.meeting_room_mapped.location,
-                                        'location_title': obj.meeting_room_mapped.title,
-                                    } if obj.meeting_room_mapped else {}
-                                ),
-                            })
+                            result['meeting'].append(
+                                {
+                                    'category': 'EOffice Meeting',
+                                    'id': obj.id,
+                                    'title': obj.title,
+                                    'remark': obj.meeting_content,
+                                    'start_date': date_start,
+                                    'end_date': date_start + timedelta(minutes=obj.meeting_duration),
+                                    **(
+                                        {
+                                            'location_address': obj.meeting_room_mapped.location,
+                                            'location_title': obj.meeting_room_mapped.title,
+                                        } if obj.meeting_room_mapped else {}
+                                    ),
+                                }
+                            )
                     if 'meeting_opp' in category:
                         opp_meet_ids = OpportunityMeeting.objects.filter(
                             meeting_date__date=day_check
@@ -210,16 +217,18 @@ class CalendarByDay(APIView):
                             date_end = datetime.combine(
                                 obj.meeting_mapped.meeting_date, obj.meeting_mapped.meeting_to_time
                             )
-                            result['meeting_opp'].append({
-                                'category': 'Opportunity Meeting',
-                                'id': obj.meeting_mapped.id,
-                                'title': obj.meeting_mapped.subject,
-                                'remark': '',
-                                'start_date': date_start,
-                                'end_date': date_end,
-                                'location_address': obj.meeting_mapped.room_location,
-                                'location_title': obj.meeting_mapped.meeting_address,
-                            })
+                            result['meeting_opp'].append(
+                                {
+                                    'category': 'Opportunity Meeting',
+                                    'id': obj.meeting_mapped.id,
+                                    'title': obj.meeting_mapped.subject,
+                                    'remark': '',
+                                    'start_date': date_start,
+                                    'end_date': date_end,
+                                    'location_address': obj.meeting_mapped.room_location,
+                                    'location_title': obj.meeting_mapped.meeting_address,
+                                }
+                            )
                     if 'business_trip' in category:
                         objs = BusinessRequest.objects.select_related('departure', 'destination').filter(
                             date_f__date=day_check,
@@ -261,6 +270,29 @@ class CalendarByDay(APIView):
                                     'location_title': '',
                                 }
                             )
+                    if 'holiday' in category:
+                        result['holiday'] = []
+                        working_config = WorkingCalendarConfig.objects.filter_current(fill__company=True).first()
+                        if working_config:
+                            year_config = WorkingYearConfig.objects.filter(
+                                working_calendar=working_config, config_year=timezone.now().year
+                            ).first()
+                            if year_config:
+                                objs = WorkingHolidayConfig.objects.filter(holiday_date_to=day_check, year=year_config)
+                                for obj in objs:
+                                    result['holiday'].append(
+                                        {
+                                            'category': 'Holiday',
+                                            'id': obj.id,
+                                            'title': obj.remark,
+                                            'remark': '',
+                                            'start_date': None,
+                                            'end_date': None,
+                                            'location_address': '',
+                                            'location_title': '',
+                                        }
+                                    )
+
                     if result:
                         cache_key = f'home_calendar_of_{str(employee_id)}'
                         Caching().set(key=cache_key, value=result, timeout=60 * 5)  # 5 minutes

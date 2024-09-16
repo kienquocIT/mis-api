@@ -41,7 +41,6 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
             'uom_stock',
             'is_stock',
             # goods receipt information
-            'gr_completed_quantity',
             'gr_remain_quantity',
         )
 
@@ -72,9 +71,6 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
             'quantity_order',
             'uom_stock',
             'is_stock',
-            # goods receipt information
-            'gr_completed_quantity',
-            'gr_remain_quantity',
         )
 
     @classmethod
@@ -138,7 +134,6 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             # goods receipt information
-            'gr_completed_quantity',
             'gr_remain_quantity',
         )
 
@@ -173,7 +168,6 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
     uom_order_request = serializers.SerializerMethodField()
     uom_order_actual = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
-    goods_receipt_info = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderProduct
@@ -197,8 +191,6 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
-            # goods receipt
-            'goods_receipt_info'
         )
 
     @classmethod
@@ -234,35 +226,95 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'rate': obj.tax.rate,
         } if obj.tax else {}
 
+
+class PORequestProductGRListSerializer(serializers.ModelSerializer):
+    purchase_order_request_product_id = serializers.SerializerMethodField()
+    purchase_request_data = serializers.SerializerMethodField()
+    uom_id = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseOrderRequestProduct
+        fields = (
+            'purchase_order_request_product_id',
+            'purchase_request_product_id',
+            'purchase_request_data',
+            'purchase_order_product_id',
+            'sale_order_product_id',
+            'quantity_order',
+            'uom_id',
+            'uom_data',
+            'is_stock',
+            # goods receipt information
+            'gr_completed_quantity',
+            'gr_remain_quantity',
+        )
+
     @classmethod
-    def get_goods_receipt_info(cls, obj):
-        gr_completed_quantity = 0
-        for gr_product in obj.goods_receipt_product_po_product.all():
-            if gr_product.goods_receipt.system_status in [2, 3]:
-                gr_completed_quantity += gr_product.quantity_import
-        return {
-            'gr_completed_quantity': gr_completed_quantity,
-            'gr_remain_quantity': (obj.product_quantity_order_actual - gr_completed_quantity)
-        }
+    def get_purchase_order_request_product_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_purchase_request_data(cls, obj):
+        if obj.purchase_request_product:
+            return {
+                'id': obj.purchase_request_product.purchase_request_id,
+                'title': obj.purchase_request_product.purchase_request.title,
+                'code': obj.purchase_request_product.purchase_request.code,
+            } if obj.purchase_request_product.purchase_request else {}
+        return {}
+
+    @classmethod
+    def get_uom_id(cls, obj):
+        if obj.is_stock is True and obj.uom_stock:
+            return str(obj.uom_stock_id)
+        if obj.purchase_request_product:
+            return str(obj.purchase_request_product.uom_id) if obj.purchase_request_product.uom else None
+        return None
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        if obj.is_stock is True and obj.uom_stock:
+            return {
+                'id': obj.uom_stock_id,
+                'title': obj.uom_stock.title,
+                'code': obj.uom_stock.code,
+                'ratio': obj.uom_stock.ratio,
+            }
+        if obj.purchase_request_product:
+            return {
+                'id': obj.purchase_request_product.uom_id,
+                'title': obj.purchase_request_product.uom.title,
+                'code': obj.purchase_request_product.uom.code,
+                'ratio': obj.purchase_request_product.uom.ratio,
+            } if obj.purchase_request_product.uom else {}
+        return {}
+
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        return obj.quantity_order - obj.gr_remain_quantity
 
 
-class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
-    purchase_request_products_data = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    uom_order_request = serializers.SerializerMethodField()
-    uom_order_actual = serializers.SerializerMethodField()
-    tax = serializers.SerializerMethodField()
+class POProductGRListSerializer(serializers.ModelSerializer):
+    purchase_order_product_id = serializers.SerializerMethodField()
+    pr_products_data = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    uom_request_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+    tax_data = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderProduct
         fields = (
-            'id',
-            'product',
-            'uom_order_request',
-            'uom_order_actual',
-            'tax',
+            'purchase_order_product_id',
+            'product_data',
+            'uom_request_data',
+            'uom_data',
+            'tax_data',
             'stock',
-            'purchase_request_products_data',
+            'pr_products_data',
             # product information
             'product_title',
             'product_code',
@@ -280,11 +332,15 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_purchase_request_products_data(cls, obj):
-        return PurchaseOrderRequestProductListSerializer(obj.purchase_order_request_order_product.all(), many=True).data
+    def get_purchase_order_product_id(cls, obj):
+        return obj.id
 
     @classmethod
-    def get_product(cls, obj):
+    def get_pr_products_data(cls, obj):
+        return PORequestProductGRListSerializer(obj.purchase_order_request_order_product.all(), many=True).data
+
+    @classmethod
+    def get_product_data(cls, obj):
         return {
             'id': obj.product_id,
             'title': obj.product.title,
@@ -295,21 +351,25 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
     @classmethod
-    def get_uom_order_request(cls, obj):
+    def get_uom_request_data(cls, obj):
         return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_request, uom_id=obj.uom_order_request_id)
 
     @classmethod
-    def get_uom_order_actual(cls, obj):
+    def get_uom_data(cls, obj):
         return PurchaseOrderCommonGet.get_uom(uom_obj=obj.uom_order_actual, uom_id=obj.uom_order_actual_id)
 
     @classmethod
-    def get_tax(cls, obj):
+    def get_tax_data(cls, obj):
         return {
             'id': obj.tax_id,
             'title': obj.tax.title,
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        return obj.product_quantity_order_actual - obj.gr_remain_quantity
 
 
 class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):

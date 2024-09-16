@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.utils import timezone
 
@@ -39,6 +39,7 @@ from ..core.hr.models import (
 )
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
+from ..eoffice.meeting.models import MeetingSchedule
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
@@ -47,7 +48,7 @@ from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnProductDetail, GoodsReceiptLot
+    GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
@@ -67,6 +68,7 @@ from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct,
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus
+from ..sales.production.models import BOM
 
 
 def update_sale_default_data_old_company():
@@ -2026,3 +2028,141 @@ def run_working_year():
         holiday.company = holiday.year.company
         holiday.save(update_fields=['tenant', 'company'])
     print('update company is done')
+
+
+def update_data_json_cash_outflow():
+    for ap in AdvancePayment.objects.all():
+        for item in ap.advance_payment.all():
+            if item.expense_type:
+                expense_type = item.expense_type
+                item.expense_type_data = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+            if item.expense_tax:
+                expense_tax = item.expense_tax
+                item.expense_tax_data = {
+                    'id': str(expense_tax.id),
+                    'code': expense_tax.code,
+                    'title': expense_tax.title,
+                    'rate': expense_tax.rate
+                } if expense_tax else {}
+            item.save(update_fields=['expense_type_data', 'expense_tax_data'])
+    print('Done Advance Payment :))')
+    for payment in Payment.objects.all():
+        for item in payment.payment.all():
+            if item.expense_type:
+                expense_type = item.expense_type
+                item.expense_type_data = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+            if item.expense_tax:
+                expense_tax = item.expense_tax
+                item.expense_tax_data = {
+                    'id': str(expense_tax.id),
+                    'code': expense_tax.code,
+                    'title': expense_tax.title,
+                    'rate': expense_tax.rate
+                } if expense_tax else {}
+            item.save(update_fields=['expense_type_data', 'expense_tax_data'])
+    print('Done Payment :))')
+    for return_ap in ReturnAdvance.objects.all():
+        for item in return_ap.return_advance.all():
+            if item.expense_type:
+                expense_type = item.expense_type
+                item.expense_type_data = {
+                    'id': str(expense_type.id),
+                    'code': expense_type.code,
+                    'title': expense_type.title
+                }
+            item.save(update_fields=['expense_type_data'])
+    print('Done Return Payment :))')
+
+
+def update_datetime_for_meeting_eoffice():
+    for meeting in MeetingSchedule.objects.all():
+        start_date = meeting.meeting_start_date
+        start_time = meeting.meeting_start_time
+        duration = meeting.meeting_duration
+        if start_date and start_time and duration:
+            meeting.meeting_start_datetime = datetime.combine(start_date, start_time)
+            meeting.meeting_end_datetime = meeting.meeting_start_datetime + timedelta(minutes=duration)
+        meeting.save(update_fields=['meeting_start_datetime', 'meeting_end_datetime'])
+    print('Done :))')
+
+
+def update_account_type_flag():
+    for account in Account.objects.all():
+        for item in account.account_account_types_mapped.all():
+            if item.account_type.account_type_order == 0:
+                account.is_customer_account = True
+            elif item.account_type.account_type_order == 1:
+                account.is_supplier_account = True
+            elif item.account_type.account_type_order == 2:
+                account.is_partner_account = True
+            elif item.account_type.account_type_order == 3:
+                account.is_competitor_account = True
+            account.save(update_fields=[
+                'is_customer_account', 'is_supplier_account', 'is_partner_account', 'is_competitor_account'
+            ])
+            print(f'--- Updated for {account.name} successfully!')
+    print('Done :))')
+
+
+def update_inventory_adjustment_item_json_data():
+    for ia in InventoryAdjustment.objects.all():
+        for item in ia.inventory_adjustment_item_mapped.all():
+            item.product_mapped_data = {
+                'id': str(item.product_mapped.id),
+                'code': item.product_mapped.code,
+                'title': item.product_mapped.title,
+                'description': item.product_mapped.description,
+                'general_traceability_method': item.product_mapped.general_traceability_method
+            } if item.product_mapped else {}
+            item.uom_mapped_data = {
+                'id': str(item.uom_mapped.id),
+                'code': item.uom_mapped.code,
+                'title': item.uom_mapped.title,
+                'ratio': item.uom_mapped.ratio
+            } if item.uom_mapped else {}
+            item.warehouse_mapped_data = {
+                'id': str(item.warehouse_mapped.id),
+                'code': item.warehouse_mapped.code,
+                'title': item.warehouse_mapped.title
+            } if item.warehouse_mapped else {}
+            item.save(update_fields=['product_mapped_data', 'uom_mapped_data', 'warehouse_mapped_data'])
+    print('Done :))')
+
+
+def update_goods_issue_item_json_data():
+    for gis in GoodsIssue.objects.all():
+        for item in gis.goods_issue_product.all():
+            item.product_data = {
+                'id': str(item.product.id),
+                'code': item.product.code,
+                'title': item.product.title,
+                'description': item.product.description,
+                'general_traceability_method': item.product.general_traceability_method
+            } if item.product else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title
+            } if item.uom else {}
+            item.warehouse_data = {
+                'id': str(item.warehouse.id),
+                'code': item.warehouse.code,
+                'title': item.warehouse.title
+            } if item.warehouse else {}
+            item.save(update_fields=['product_data', 'uom_data', 'warehouse_data'])
+    print('Done :))')
+
+
+def update_bom_title():
+    for bom in BOM.objects.all():
+        bom.title = f"BOM - {bom.product.title}"
+        bom.save(update_fields=['title'])
+    print('Done :))')

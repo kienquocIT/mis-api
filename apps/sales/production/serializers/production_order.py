@@ -8,6 +8,9 @@ from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerM
 
 # SUB
 class POTaskCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
+    warehouse_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ProductionOrderTask
@@ -30,6 +33,18 @@ class POTaskCreateSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionOrderValid.validate_uom_id(value=value)
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        return ProductionOrderValid.validate_warehouse_id(value=value)
+
 
 # PRODUCTION ORDER BEGIN
 class ProductionOrderListSerializer(AbstractListSerializerModel):
@@ -50,6 +65,7 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
         fields = (
             'id',
             'title',
+            'code',
             'bom_data',
             'type_production',
             'product_data',
@@ -63,6 +79,8 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'date_created',
+            'gr_remain_quantity',
         )
 
 
@@ -88,7 +106,6 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
             'uom_data',
             'warehouse_id',
             'warehouse_data',
-            'sale_order',
             'sale_order_data',
             'status_production',
             'date_start',
@@ -97,6 +114,7 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -148,7 +166,6 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
             'uom_data',
             'warehouse_id',
             'warehouse_data',
-            'sale_order',
             'sale_order_data',
             'status_production',
             'date_start',
@@ -157,6 +174,7 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
             'group_data',
             'time',
             'task_data',
+            'gr_remain_quantity',
         )
 
     @classmethod

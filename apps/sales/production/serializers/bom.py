@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, Expense, UnitOfMeasure
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.production.models import BOM, BOMProcess, BOMSummaryProcess, BOMMaterialComponent, BOMTool, \
     BOMMaterialComponentOutsourcing
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
@@ -96,15 +97,18 @@ class BOMProductToolListSerializer(serializers.ModelSerializer):
 # BEGIN
 class BOMListSerializer(AbstractListSerializerModel):
     product = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = BOM
         fields = (
             'id',
             'code',
+            'title',
             'bom_type',
             'for_outsourcing',
             'product',
+            'opportunity_mapped',
             'sum_price',
             'sum_time'
         )
@@ -117,9 +121,18 @@ class BOMListSerializer(AbstractListSerializerModel):
             'title': obj.product.title
         } if obj.product else {}
 
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        return {
+            'id': str(obj.opportunity_mapped_id),
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title
+        } if obj.opportunity_mapped else {}
+
 
 class BOMCreateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
+    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
@@ -133,6 +146,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'bom_type',
             'for_outsourcing',
+            'opportunity_mapped_id',
             'product_id',
             'sum_price',
             'sum_time',
@@ -171,6 +185,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
 class BOMDetailSerializer(AbstractDetailSerializerModel):
     product = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
     bom_process_data = serializers.SerializerMethodField()
     bom_summary_process_data = serializers.SerializerMethodField()
     bom_material_component_data = serializers.SerializerMethodField()
@@ -184,6 +199,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
             'bom_type',
             'for_outsourcing',
             'product',
+            'opportunity_mapped',
             'sum_price',
             'sum_time',
             'bom_process_data',
@@ -199,6 +215,19 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
             'code': obj.product.code,
             'title': obj.product.title
         } if obj.product else {}
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        return {
+            'id': str(obj.opportunity_mapped_id),
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title,
+            'sale_person': {
+                'id': str(obj.employee_inherit_id),
+                'code': obj.employee_inherit.code,
+                'full_name': obj.employee_inherit.get_full_name(2),
+            } if obj.employee_inherit else {}
+        } if obj.opportunity_mapped else {}
 
     @classmethod
     def get_bom_process_data(cls, obj):
@@ -336,6 +365,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
 
 class BOMUpdateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
+    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
@@ -349,6 +379,7 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'bom_type',
             'for_outsourcing',
+            'opportunity_mapped_id',
             'product_id',
             'sum_price',
             'sum_time',
@@ -392,17 +423,30 @@ class BOMCommonFunction:
     @classmethod
     def validate_bom_type(cls, validate_data):
         bom_type = validate_data.get('bom_type')
-        if bom_type in [0, 1, 2, 3]:
+        if bom_type in [0, 1, 2, 3, 4]:
             validate_data['bom_type'] = bom_type
             print('1. validate_bom_type --- ok')
             return True
         raise serializers.ValidationError({'bom_type': "Bom type is not valid"})
 
     @classmethod
+    def validate_opportunity_mapped_id(cls, validate_data):
+        try:
+            opportunity_mapped_obj = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
+            validate_data['opportunity_mapped_id'] = str(opportunity_mapped_obj.id)
+            validate_data['employee_inherit'] = opportunity_mapped_obj.sale_person
+            print('2. validate_opportunity_mapped_id --- ok')
+            return True
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'opportunity_mapped_id': "Opportunity mapped is not exist"})
+
+    @classmethod
     def validate_product_id(cls, validate_data):
         try:
-            validate_data['product_id'] = str(Product.objects.get(id=validate_data.get('product_id')).id)
-            print('2. validate_product --- ok')
+            product_obj = Product.objects.get(id=validate_data.get('product_id'))
+            validate_data['product_id'] = str(product_obj.id)
+            validate_data['title'] = f"BOM - {product_obj.title}"
+            print('3. validate_product --- ok')
             return True
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': "Product is not exist"})
@@ -412,7 +456,7 @@ class BOMCommonFunction:
         sum_price = validate_data.get('sum_price', 0)
         if sum_price >= 0:
             validate_data['sum_price'] = sum_price
-            print('3. validate_sum_price --- ok')
+            print('4. validate_sum_price --- ok')
             return True
         raise serializers.ValidationError({'sum_price': "Sum price is not valid"})
 
@@ -421,7 +465,7 @@ class BOMCommonFunction:
         sum_time = validate_data.get('sum_time')
         if sum_time >= 0:
             validate_data['sum_time'] = sum_time
-            print('4. validate_sum_time --- ok')
+            print('5. validate_sum_time --- ok')
             return True
         raise serializers.ValidationError({'sum_time': "Sum time is not valid"})
 
@@ -444,7 +488,7 @@ class BOMCommonFunction:
                 validate_data['bom_process_data'] = bom_process_data
             except Exception as err:
                 raise serializers.ValidationError({'bom_process_data': f"Process data is not valid. {err}"})
-        print('5. validate_bom_process_data --- ok')
+        print('6. validate_bom_process_data --- ok')
         return True
 
     @classmethod
@@ -462,7 +506,7 @@ class BOMCommonFunction:
                 validate_data['bom_summary_process_data'] = bom_summary_process_data
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
-        print('6. validate_bom_summary_process_data --- ok')
+        print('7. validate_bom_summary_process_data --- ok')
         return True
 
     @classmethod
@@ -490,7 +534,7 @@ class BOMCommonFunction:
             validate_data['bom_material_component_data'] = bom_material_component_data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
-        print('7. validate_bom_material_component_data --- ok')
+        print('8. validate_bom_material_component_data --- ok')
         return True
 
     @classmethod
@@ -507,7 +551,7 @@ class BOMCommonFunction:
                 validate_data['bom_tool_data'] = bom_tool_data
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
-        print('8. validate_bom_tool_data --- ok')
+        print('9. validate_bom_tool_data --- ok')
         return True
 
     @classmethod
@@ -517,7 +561,7 @@ class BOMCommonFunction:
             bulk_info.append(BOMProcess(bom=bom_obj, **item))
         BOMProcess.objects.filter(bom=bom_obj).delete()
         BOMProcess.objects.bulk_create(bulk_info)
-        print('9. create_bom_process_data --- ok')
+        print('10. create_bom_process_data --- ok')
         return True
 
     @classmethod
@@ -527,7 +571,7 @@ class BOMCommonFunction:
             bulk_info.append(BOMSummaryProcess(bom=bom_obj, **item))
         BOMSummaryProcess.objects.filter(bom=bom_obj).delete()
         BOMSummaryProcess.objects.bulk_create(bulk_info)
-        print('10. create_bom_summary_process_data --- ok')
+        print('11. create_bom_summary_process_data --- ok')
         return True
 
     @classmethod
@@ -546,7 +590,7 @@ class BOMCommonFunction:
                 bulk_info.append(BOMMaterialComponentOutsourcing(bom=bom_obj, **item))
             BOMMaterialComponentOutsourcing.objects.filter(bom=bom_obj).delete()
             BOMMaterialComponentOutsourcing.objects.bulk_create(bulk_info)
-        print('11. create_bom_material_component_data --- ok')
+        print('12. create_bom_material_component_data --- ok')
         return True
 
     @classmethod
@@ -558,7 +602,7 @@ class BOMCommonFunction:
                 bulk_info.append(BOMTool(bom=bom_obj, bom_process=bom_process_obj, **item))
         BOMTool.objects.filter(bom=bom_obj).delete()
         BOMTool.objects.bulk_create(bulk_info)
-        print('12. create_bom_tool_data --- ok')
+        print('13. create_bom_tool_data --- ok')
         return True
 
 
@@ -589,6 +633,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
                 'order': bom_task.order,
                 'task_title': bom_task.task_name,
                 'quantity_bom': bom_task.quantity,
+                'uom_id': str(bom_task.uom_id),
                 'uom_data': {
                     'id': str(bom_task.uom_id),
                     'code': bom_task.uom.code,

@@ -7,7 +7,7 @@ from uuid import UUID
 from django.conf import settings
 from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Model
 from django.utils import timezone
 
 from django_filters import rest_framework as filters
@@ -700,9 +700,11 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
     @classmethod
     def check_obj_change_or_delete(cls, instance):
-        if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
-            return False
-        return True
+        if isinstance(instance, Model):
+            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+                return False
+            return True
+        return False
 
     def get_default_doc_app(self) -> str:
         if not self.log_doc_app:

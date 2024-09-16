@@ -32,6 +32,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'sale_code_type',
             'supplier',
             'method',
+            'sale_code',
             'employee_created',
             'employee_inherit',
             'return_value_list',
@@ -135,6 +136,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
 
 
 class PaymentCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -162,8 +164,12 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('is_internal_payment'):
             validate_data.pop('supplier_id', None)
+            if not validate_data.get('employee_payment_id'):
+                raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
         else:
             validate_data.pop('employee_payment_id', None)
+            if not validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
         PaymentCommonFunction.validate_opportunity_mapped_id(validate_data)
         PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
         PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
@@ -375,10 +381,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class PaymentUpdateSerializer(AbstractCreateSerializerModel):
-    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    employee_inherit_id = serializers.UUIDField()
+    title = serializers.CharField(max_length=150)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
@@ -387,11 +390,6 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         model = Payment
         fields = (
             'title',
-            'opportunity_mapped_id',
-            'quotation_mapped_id',
-            'sale_order_mapped_id',
-            'sale_code_type',
-            'employee_inherit_id',
             'supplier_id',
             'is_internal_payment',
             'employee_payment_id',
@@ -402,13 +400,12 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('is_internal_payment'):
             validate_data.pop('supplier_id', None)
+            if not validate_data.get('employee_payment_id'):
+                raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
         else:
             validate_data.pop('employee_payment_id', None)
-        PaymentCommonFunction.validate_opportunity_mapped_id(validate_data)
-        PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_code_type(validate_data)
-        PaymentCommonFunction.validate_employee_inherit_id(validate_data)
+            if not validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
         PaymentCommonFunction.validate_supplier_id(validate_data)
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
@@ -476,10 +473,11 @@ class PaymentCommonFunction:
 
     @classmethod
     def validate_sale_code_type(cls, validate_data):
-        if validate_data.get('sale_code_type') in [0, 1, 2]:
-            print('4. validate_sale_code_type --- ok')
-            return validate_data
-        raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+        if validate_data.get('sale_code_type') is not None:
+            if validate_data.get('sale_code_type') not in [0, 1, 2]:
+                raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+        print('4. validate_sale_code_type --- ok')
+        return validate_data
 
     @classmethod
     def validate_employee_inherit_id(cls, validate_data):
@@ -520,10 +518,11 @@ class PaymentCommonFunction:
 
     @classmethod
     def validate_method(cls, validate_data):
-        if validate_data.get('method') in [0, 1, 2]:
-            print('8. validate_method --- ok')
-            return validate_data
-        raise serializers.ValidationError({'method': 'Method is not valid.'})
+        if validate_data.get('method') is not None:
+            if validate_data.get('method') not in [0, 1, 2]:
+                raise serializers.ValidationError({'method': 'Method is not valid.'})
+        print('8. validate_method --- ok')
+        return validate_data
 
     @classmethod
     def validate_payment_item_list(cls, validate_data):
@@ -554,8 +553,8 @@ class PaymentCommonFunction:
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
                     }
-                print('9. validate_payment_item_list --- ok')
-                return validate_data
+            print('9. validate_payment_item_list --- ok')
+            return validate_data
         except Exception as err:
             raise serializers.ValidationError({'payment_item_list': f"Payment data is not valid. {err}"})
 

@@ -19,12 +19,15 @@ class FilesUploadSerializer(serializers.ModelSerializer):
                             employee_id=employee_current_id, new_size=attrs.size
                         )
                         if state_available is True:
-                            # move control to first buffer file
-                            attrs.seek(0)
-                            # if mine type of magic != InMemoryUploadedFile.content_type => raise danger
-                            if magic.from_buffer(attrs.read(), mime=True) == attrs.content_type:
-                                return attrs
-                            raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            if settings.FILE_ENABLE_MAGIC_CHECK is True:
+                                # move control to first buffer file
+                                attrs.seek(0)
+                                # if mine type of magic != InMemoryUploadedFile.content_type => raise danger
+                                magic_check_mime = magic.from_buffer(attrs.read(), mime=True)
+                                if magic_check_mime == attrs.content_type:
+                                    return attrs
+                                raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            return attrs
                         raise serializers.ValidationError({'file': msg_err})
                     file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
                         FORMATTING.size_to_text(settings.FILE_SIZE_UPLOAD_LIMIT)
@@ -131,20 +134,26 @@ class CreateImageWebBuilderInPublicFileListSerializer(PublicFilesUploadSerialize
                 if attrs and hasattr(attrs, 'size'):
                     if isinstance(attrs.size, int) and attrs.size < settings.FILE_SIZE_WEB_BUILDER:
                         if attrs.content_type.startswith('image/'):
-                            attrs.seek(0)
-                            mine_detect = magic.from_buffer(attrs.read(), mime=True)
-                            if mine_detect == attrs.content_type:
-                                return attrs
-                            raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            if settings.FILE_ENABLE_MAGIC_CHECK is True:
+                                attrs.seek(0)
+                                mine_detect = magic.from_buffer(attrs.read(), mime=True)
+                                if mine_detect == attrs.content_type:
+                                    return attrs
+                                raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            return attrs
                         raise serializers.ValidationError({'file': AttMsg.FILE_IS_NOT_IMAGE})
                     file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
                         FORMATTING.size_to_text(settings.FILE_SIZE_WEB_BUILDER)
                     )
                     raise serializers.ValidationError({'file': file_size_limit})
                 raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
-            raise serializers.ValidationError({'file': AttMsg.WEB_BUILDER_USED_OVER_SIZE.format(
-                used_size=FORMATTING.size_to_text(settings.FILE_WEB_BUILDER_LIMIT_SIZE)
-            )})
+            raise serializers.ValidationError(
+                {
+                    'file': AttMsg.WEB_BUILDER_USED_OVER_SIZE.format(
+                        used_size=FORMATTING.size_to_text(settings.FILE_WEB_BUILDER_LIMIT_SIZE)
+                    )
+                }
+            )
         raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_REQUIRED})
 
     def validate(self, attrs):
@@ -294,12 +303,14 @@ class FolderUploadFileSerializer(serializers.ModelSerializer):
                             employee_id=employee_current_id, new_size=attrs.size
                         )
                         if state_available is True:
-                            # move control to first buffer file
-                            attrs.seek(0)
-                            # if mine type of magic != InMemoryUploadedFile.content_type => raise danger
-                            if magic.from_buffer(attrs.read(), mime=True) == attrs.content_type:
-                                return attrs
-                            raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            if settings.FILE_ENABLE_MAGIC_CHECK is True:
+                                # move control to first buffer file
+                                attrs.seek(0)
+                                # if mine type of magic != InMemoryUploadedFile.content_type => raise danger
+                                if magic.from_buffer(attrs.read(), mime=True) == attrs.content_type:
+                                    return attrs
+                                raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                            return attrs
                         raise serializers.ValidationError({'file': msg_err})
                     file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
                         FORMATTING.size_to_text(settings.FILE_SIZE_UPLOAD_LIMIT)

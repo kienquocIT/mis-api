@@ -6,7 +6,7 @@ from apps.sales.inventory.models import (
 from apps.sales.inventory.serializers.inventory_adjustment import (
     InventoryAdjustmentListSerializer, InventoryAdjustmentDetailSerializer,
     InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer, InventoryAdjustmentProductListSerializer,
-    InventoryAdjustmentOtherListSerializer)
+    IAGRListSerializer)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -104,14 +104,14 @@ class InventoryAdjustmentProductList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-# Inventory adjustment list use for other apps
-class InventoryAdjustmentOtherList(BaseListMixin):
+# Inventory adjustment list use GR
+class InventoryAdjustmentGRList(BaseListMixin):
     queryset = InventoryAdjustment.objects
     filterset_fields = {
         'state': ['exact'],
     }
-    serializer_list = InventoryAdjustmentOtherListSerializer
-    serializer_detail = InventoryAdjustmentOtherListSerializer
+    serializer_list = IAGRListSerializer
+    serializer_detail = IAGRListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):

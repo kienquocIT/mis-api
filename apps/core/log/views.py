@@ -99,6 +99,12 @@ class MyNotifySeenAll(APIView):
                 company_id=request.user.company_current_id,
                 employee_id=request.user.employee_current_id,
             )
+            cache_key = Caching.key_cache_table(
+                table_name=Notifications.__name__,
+                string_key=Notifications.cache_base_key(user_obj=request.user),
+                hash_key=True,
+            )
+            Caching().delete(key=cache_key)
         return ResponseController.success_200(data={'detail': 'Done'}, key_data='result')
 
 
@@ -114,6 +120,12 @@ class MyNotifyCleanAll(APIView):
                 company_id=request.user.company_current_id,
                 employee_id=request.user.employee_current_id,
             )
+            cache_key = Caching.key_cache_table(
+                table_name=Notifications.__name__,
+                string_key=Notifications.cache_base_key(user_obj=request.user),
+                hash_key=True,
+            )
+            Caching().delete(key=cache_key)
         return ResponseController.no_content_204()
 
 
@@ -145,6 +157,12 @@ class MyNotifyDetail(BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Update done my notify', request_body=NotifyUpdateDoneSerializer)
     @mask_view(login_require=True, employee_require=True, auth_require=False, )
     def put(self, request, *args, pk, **kwargs):
+        cache_key = Caching.key_cache_table(
+            table_name=Notifications.__name__,
+            string_key=Notifications.cache_base_key(user_obj=request.user),
+            hash_key=True,
+        )
+        Caching().delete(key=cache_key)
         return self.update(request, *args, pk, **kwargs)
 
 

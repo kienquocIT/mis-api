@@ -516,8 +516,8 @@ class QuotationCostSerializer(serializers.ModelSerializer):
 class QuotationExpenseSerializer(serializers.ModelSerializer):
     expense_id = serializers.UUIDField(required=False, allow_null=True)
     expense_item_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField()
-    tax_id = serializers.UUIDField(required=False)
+    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = QuotationExpense
