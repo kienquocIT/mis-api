@@ -35,6 +35,7 @@ class ContractListSerializer(AbstractListSerializerModel):
 
 
 class ContractDetailSerializer(AbstractDetailSerializerModel):
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = ContractApproval
@@ -43,7 +44,12 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'document_data',
+            'attachment',
         )
+
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
 
 class ContractCreateSerializer(AbstractCreateSerializerModel):
