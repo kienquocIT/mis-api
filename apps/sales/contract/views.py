@@ -1,18 +1,18 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.contract.models import ContractApproval
-from apps.sales.contract.serializers.contract import ContractListSerializer, ContractCreateSerializer, \
-    ContractDetailSerializer, ContractUpdateSerializer
+from apps.sales.contract.serializers.contract import ContractApprovalListSerializer, ContractApprovalCreateSerializer, \
+    ContractApprovalDetailSerializer, ContractApprovalUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class ContractList(BaseListMixin, BaseCreateMixin):
+class ContractApprovalList(BaseListMixin, BaseCreateMixin):
     queryset = ContractApproval.objects
     search_fields = ['title', 'code']
     filterset_fields = {}
-    serializer_list = ContractListSerializer
-    serializer_create = ContractCreateSerializer
-    serializer_detail = ContractListSerializer
+    serializer_list = ContractApprovalListSerializer
+    serializer_create = ContractApprovalCreateSerializer
+    serializer_detail = ContractApprovalListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
@@ -22,7 +22,7 @@ class ContractList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='contract', model_code='contractapproval', perm_code='view',
+        # label_code='contract', model_code='contractapproval', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -30,7 +30,7 @@ class ContractList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Create Contract",
         operation_description="Create New Contract",
-        request_body=ContractCreateSerializer,
+        request_body=ContractApprovalCreateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -42,10 +42,10 @@ class ContractList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class ContractDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class ContractApprovalDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ContractApproval.objects
-    serializer_detail = ContractDetailSerializer
-    serializer_update = ContractUpdateSerializer
+    serializer_detail = ContractApprovalDetailSerializer
+    serializer_update = ContractApprovalUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -63,7 +63,7 @@ class ContractDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Update Contract",
         operation_description="Update Contract by ID",
-        request_body=ContractUpdateSerializer,
+        request_body=ContractApprovalUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,

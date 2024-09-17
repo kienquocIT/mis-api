@@ -13,6 +13,7 @@ class ContractApproval(DataAbstractModel):
         blank=True,
         related_name='file_of_contract_approval',
     )
+    tinymce_content = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Contract Approval'

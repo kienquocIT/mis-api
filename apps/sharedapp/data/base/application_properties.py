@@ -1814,6 +1814,29 @@ AppProp_SaleData_BOM_data = {
     },
 }
 
+AppProp_SaleData_Contract_Approval_data = {
+    # 58385bcf-f06c-474e-a372-cadc8ea30ecc # contract.ContractApproval
+    '8c5568f7-3bde-4461-b6f0-73c53e645e5d': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+        'is_print': True,
+    },
+    '9820a32b-50b1-435a-bd41-bc548c2535a7': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Documents',
+        'code': 'document_data',
+        'type': 1,
+    },
+    '6dbb5d48-69d7-4b8e-a329-d7dd86ab1349': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Attachment',
+        'code': 'attachment',
+        'type': 1,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1829,6 +1852,7 @@ ApplicationProperty_data = {
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
     **AppProp_SaleData_Delivery_data,
+    **AppProp_SaleData_Contract_Approval_data,
     # haind
     **AppProp_SaleData_Advance_Payment_data,
     **AppProp_SaleData_AP_Invoice_data,
