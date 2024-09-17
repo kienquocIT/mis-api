@@ -112,13 +112,14 @@ class HookEventHandler:
             print('push_base_notify: ', str(err))
         return False
 
-    def push_notify_return_owner(self, doc_obj):
+    def push_notify_return_owner(self, doc_obj, remark=None):
         try:
             args_arr = [{
                 'tenant_id': self.runtime_obj.tenant_id,
                 'company_id': self.runtime_obj.company_id,
                 'title': self.runtime_obj.doc_title,
-                'msg': WorkflowMsgNotify.document_returned,
+                'msg': f'{WorkflowMsgNotify.document_returned} ({remark})'
+                if remark else WorkflowMsgNotify.document_returned,
                 'notify_type': 12,
                 'date_created': timezone.now(),
                 'doc_id': self.runtime_obj.doc_id,
