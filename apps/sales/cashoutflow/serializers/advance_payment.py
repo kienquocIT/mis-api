@@ -623,7 +623,7 @@ class APCommonFunction:
     def validate_attachment(cls, context_user, doc_id, validate_data):
         if context_user and hasattr(context_user, 'employee_current_id'):
             state, result = AdvancePaymentAttachmentFile.valid_change(
-                current_ids=validate_data.get('attachment'),
+                current_ids=validate_data.get('attachment', []),
                 employee_id=context_user.employee_current_id,
                 doc_id=doc_id
             )
