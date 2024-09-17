@@ -24,11 +24,11 @@ class BOM(DataAbstractModel):
     sum_price = models.FloatField(default=0)
     sum_time = models.FloatField(default=0)
 
-    opportunity_mapped = models.ForeignKey(
+    opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         null=True,
-        related_name='bom_opportunity_mapped'
+        related_name='bom_opportunity'
     )
 
     class Meta:

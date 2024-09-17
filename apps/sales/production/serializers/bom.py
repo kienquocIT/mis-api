@@ -97,7 +97,7 @@ class BOMProductToolListSerializer(serializers.ModelSerializer):
 # BEGIN
 class BOMListSerializer(AbstractListSerializerModel):
     product = serializers.SerializerMethodField()
-    opportunity_mapped = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = BOM
@@ -108,7 +108,7 @@ class BOMListSerializer(AbstractListSerializerModel):
             'bom_type',
             'for_outsourcing',
             'product',
-            'opportunity_mapped',
+            'opportunity',
             'sum_price',
             'sum_time'
         )
@@ -122,17 +122,17 @@ class BOMListSerializer(AbstractListSerializerModel):
         } if obj.product else {}
 
     @classmethod
-    def get_opportunity_mapped(cls, obj):
+    def get_opportunity(cls, obj):
         return {
-            'id': str(obj.opportunity_mapped_id),
-            'code': obj.opportunity_mapped.code,
-            'title': obj.opportunity_mapped.title
-        } if obj.opportunity_mapped else {}
+            'id': str(obj.opportunity_id),
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
 
 class BOMCreateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
-    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
@@ -146,7 +146,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'bom_type',
             'for_outsourcing',
-            'opportunity_mapped_id',
+            'opportunity_id',
             'product_id',
             'sum_price',
             'sum_time',
@@ -185,7 +185,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
 class BOMDetailSerializer(AbstractDetailSerializerModel):
     product = serializers.SerializerMethodField()
-    opportunity_mapped = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
     bom_process_data = serializers.SerializerMethodField()
     bom_summary_process_data = serializers.SerializerMethodField()
     bom_material_component_data = serializers.SerializerMethodField()
@@ -199,7 +199,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
             'bom_type',
             'for_outsourcing',
             'product',
-            'opportunity_mapped',
+            'opportunity',
             'sum_price',
             'sum_time',
             'bom_process_data',
@@ -217,17 +217,17 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
         } if obj.product else {}
 
     @classmethod
-    def get_opportunity_mapped(cls, obj):
+    def get_opportunity(cls, obj):
         return {
-            'id': str(obj.opportunity_mapped_id),
-            'code': obj.opportunity_mapped.code,
-            'title': obj.opportunity_mapped.title,
+            'id': str(obj.opportunity_id),
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title,
             'sale_person': {
                 'id': str(obj.employee_inherit_id),
                 'code': obj.employee_inherit.code,
                 'full_name': obj.employee_inherit.get_full_name(2),
             } if obj.employee_inherit else {}
-        } if obj.opportunity_mapped else {}
+        } if obj.opportunity else {}
 
     @classmethod
     def get_bom_process_data(cls, obj):
@@ -365,7 +365,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
 
 class BOMUpdateSerializer(AbstractCreateSerializerModel):
     bom_type = serializers.IntegerField()
-    opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     sum_price = serializers.FloatField()
     sum_time = serializers.FloatField()
@@ -379,7 +379,7 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'bom_type',
             'for_outsourcing',
-            'opportunity_mapped_id',
+            'opportunity_id',
             'product_id',
             'sum_price',
             'sum_time',
@@ -430,15 +430,15 @@ class BOMCommonFunction:
         raise serializers.ValidationError({'bom_type': "Bom type is not valid"})
 
     @classmethod
-    def validate_opportunity_mapped_id(cls, validate_data):
+    def validate_opportunity_id(cls, validate_data):
         try:
-            opportunity_mapped_obj = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
-            validate_data['opportunity_mapped_id'] = str(opportunity_mapped_obj.id)
-            validate_data['employee_inherit'] = opportunity_mapped_obj.sale_person
-            print('2. validate_opportunity_mapped_id --- ok')
+            opportunity_obj = Opportunity.objects.get(id=validate_data.get('opportunity_id'))
+            validate_data['opportunity_id'] = str(opportunity_obj.id)
+            validate_data['employee_inherit'] = opportunity_obj.sale_person
+            print('2. validate_opportunity_id --- ok')
             return True
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'opportunity_mapped_id': "Opportunity mapped is not exist"})
+            raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
 
     @classmethod
     def validate_product_id(cls, validate_data):
