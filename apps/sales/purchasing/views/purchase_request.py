@@ -183,8 +183,6 @@ class PurchaseRequestSaleList(
         operation_summary="Purchase Request For Sale List",
         operation_description="Get Purchase Request For Sale List",
     )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

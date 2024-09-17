@@ -118,9 +118,6 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
         operation_summary="Production Report GR List",
         operation_description="Get Production Report GR List",
     )
-    @mask_view(
-        login_require=True, auth_require=False,
-        label_code='production', model_code='productionreport', perm_code='view',
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

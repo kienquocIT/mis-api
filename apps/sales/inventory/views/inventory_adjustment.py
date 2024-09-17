@@ -130,9 +130,6 @@ class InventoryAdjustmentGRList(BaseListMixin):
         operation_summary="Inventory Adjustment Other List",
         operation_description="Get Inventory Adjustment Other List",
     )
-    @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

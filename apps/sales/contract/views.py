@@ -22,7 +22,7 @@ class ContractApprovalList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='contract', model_code='contractapproval', perm_code='view',
+        # label_code='contract', model_code='contractapproval', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
