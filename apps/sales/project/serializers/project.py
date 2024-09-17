@@ -355,7 +355,8 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
                             tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
                             sub_total=item['sub_total'],
                             sub_total_after_tax=item['sub_total_after_tax'],
-                            is_labor=item['is_labor']
+                            is_labor=item['is_labor'],
+                            is_service=item['is_service']
                         ))
                     else:
                         create_lst.append(WorkMapExpense(
@@ -372,7 +373,8 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
                             tax_id=item['tax']['id'] if 'id' in item['tax'] else None,
                             sub_total=item['sub_total'],
                             sub_total_after_tax=item['sub_total_after_tax'],
-                            is_labor=item['is_labor']
+                            is_labor=item['is_labor'],
+                            is_service=item['is_service']
                         ))
             if delete_lst:
                 WorkMapExpense.objects.filter(id__in=delete_lst).delete()

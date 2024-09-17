@@ -51,6 +51,10 @@ class WorkMapExpense(DataAbstractModel):
         default=False,
         help_text='flag to know this record is labor or not',
     )
+    is_service = models.BooleanField(
+        default=False,
+        help_text='flag to know this record reference to bom service',
+    )
 
     class Meta:
         verbose_name = 'Work map expense'
