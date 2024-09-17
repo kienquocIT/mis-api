@@ -486,8 +486,13 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'production_reports_data',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # system
             'system_status',
             'workflow_runtime_id',
@@ -552,6 +557,11 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'date_received',
             # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             'attachment',
         )
@@ -632,6 +642,11 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             'date_received',
             # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             'attachment',
         )

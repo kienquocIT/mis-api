@@ -97,6 +97,11 @@ class GoodsReceipt(DataAbstractModel):
     gr_products_data = models.JSONField(
         default=list, help_text='data JSON of gr products, records in GoodsReceiptProduct'
     )
+    # total
+    total_pretax = models.FloatField(default=0)
+    total_tax = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+    total_revenue_before_tax = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Receipt'
