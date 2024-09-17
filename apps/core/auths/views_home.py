@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from misapi.mongo_client import MongoViewParse, mongo_log_auth
+from apps.core.hr.models import Employee
 
 from apps.eoffice.meeting.models import MeetingSchedule
 from apps.eoffice.businesstrip.models import BusinessRequest
@@ -17,6 +17,8 @@ from apps.eoffice.leave.models import (
 )
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityMeetingEmployeeAttended
 from apps.shared import mask_view, ResponseController, FORMATTING, Caching, AuthMsg
+
+from misapi.mongo_client import MongoViewParse, mongo_log_auth
 
 
 class AliveCheckView(APIView):
@@ -174,7 +176,7 @@ class CalendarByDay(APIView):
                 if employee_id:
                     category = request.query_params.get('category', None)
                     category = [category] if category else [
-                        'meeting', 'meeting_opp', 'business_trip', 'leave', 'holiday'
+                        'meeting', 'meeting_opp', 'business_trip', 'leave', 'holiday', 'birthday',
                     ]
                     if 'meeting' in category:
                         objs = MeetingSchedule.objects.select_related('meeting_room_mapped').filter(
@@ -292,6 +294,28 @@ class CalendarByDay(APIView):
                                             'location_title': '',
                                         }
                                     )
+                    if 'birthday' in category:
+                        objs = Employee.objects.filter_current(
+                            fill__tenant=True,
+                            fill__company=True,
+                            dob__day=day_check.day,
+                            dob__month=day_check.month,
+                        )
+                        print(objs.query)
+                        result['birthday'] = []
+                        for obj in objs:
+                            result['birthday'].append(
+                                {
+                                    'category': 'Birthday',
+                                    'id': obj.id,
+                                    'title': obj.get_full_name(),
+                                    'remark': '',
+                                    'start_date': None,
+                                    'end_date': None,
+                                    'location_address': '',
+                                    'location_title': '',
+                                }
+                            )
 
                     if result:
                         cache_key = f'home_calendar_of_{str(employee_id)}'

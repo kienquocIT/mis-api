@@ -23,7 +23,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, PlanApplication
+from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,

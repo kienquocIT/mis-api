@@ -155,6 +155,10 @@ class AdvancePaymentAttachmentFile(M2MFilesAbstractModel):
         related_name='advance_payment_attachments'
     )
 
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'advance_payment'
+
     class Meta:
         verbose_name = 'Advance payment attachment'
         verbose_name_plural = 'Advance payment attachments'

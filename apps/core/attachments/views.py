@@ -1,5 +1,8 @@
+import os
+from wsgiref.util import FileWrapper
+
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
@@ -53,7 +56,9 @@ class FilesUpload(BaseCreateMixin):
 class FilesDownload(BaseRetrieveMixin):
     def get_object(self) -> Files:
         try:
-            return Files.objects.get_current(fill__tenant=True, fill__company=True, pk=self.kwargs['pk'])
+            return Files.objects.get_current(
+                fill__tenant=True, fill__company=True, pk=self.kwargs['pk']
+            )
         except Files.DoesNotExist:
             pass
         raise exceptions.NotFound
@@ -63,14 +68,66 @@ class FilesDownload(BaseRetrieveMixin):
     def get(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             obj = self.get_object()
-            try:
-                with open(obj.file.path, 'rb') as f_open:
-                    contents = f_open.read()
-                    response = HttpResponse(contents, content_type=obj.file_type)
-                    response['Content-Disposition'] = f'attachment; filename={obj.file_name}'
-                    return response
-            except FileNotFoundError:
-                pass
+
+            if obj and os.path.isfile(obj.file.path):
+                f_path = obj.file.path
+                chunk_size = 8192
+                response = StreamingHttpResponse(
+                    FileWrapper(
+                        open(f_path, "rb"),  # pylint: disable=R1732
+                        chunk_size,
+                    ),
+                    # content_type=mimetypes.guess_type(f_path)[0],
+                    content_type=obj.file_type,
+                )
+                response["Content-Length"] = os.path.getsize(f_path)
+                response["Content-Disposition"] = f"attachment; filename={obj.file_name}"
+                return response
+        return ResponseController.notfound_404()
+
+
+class FilesInformation(BaseRetrieveMixin):
+    def get_object(self) -> Files:
+        try:
+            return Files.objects.select_related('employee_created', 'folder', 'relate_app').get_current(
+                fill__tenant=True, fill__company=True, pk=self.kwargs['pk']
+            )
+        except Files.DoesNotExist:
+            pass
+        raise exceptions.NotFound
+
+    @classmethod
+    def get_file_metadata(cls, obj: Files):
+        return {
+            'file_name': obj.file_name,
+            'file_type': obj.file_type,
+            'file_size': obj.file_size,
+            'remarks': obj.remarks,
+            'relate_app': {
+                'title': obj.relate_app.title,
+                'plan': obj.relate_app.app_label,
+                'app': obj.relate_app.model_code,
+            } if obj.relate_app else {},
+            'relate_doc': obj.relate_doc_id,
+            'employee_created': {
+                'id': obj.employee_created.id,
+                'full_name': obj.employee_created.get_full_name(),
+            } if obj.employee_created else {},
+            'folder': {
+                'id': obj.folder.id,
+                'title': obj.folder.title,
+            } if obj.folder else {},
+            'date_created': obj.date_created,
+        }
+
+    @swagger_auto_schema(operation_summary='Download file')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            obj = self.get_object()
+
+            if obj:
+                return ResponseController.success_200(data=self.get_file_metadata(obj=obj))
         return ResponseController.notfound_404()
 
 

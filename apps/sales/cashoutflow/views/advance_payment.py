@@ -65,6 +65,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
         label_code='cashoutflow', model_code='advancepayment', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -107,7 +108,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='cashoutflow', model_code='advancepayment', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        self.serializer_class = AdvancePaymentUpdateSerializer
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 

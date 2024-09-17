@@ -292,7 +292,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             {'weight': CommonCreateUpdateProduct.sub_validate_weight_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)})
+            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
+        )
         product = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
             product, self.initial_data.get('product_types_mapped_list', [])
@@ -393,19 +394,6 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'default_price_list': ProductMsg.DOES_NOT_EXIST})
         return validated_data
 
-    @classmethod
-    def create_price_list_product(cls, product, price_list, bulk_info):
-        for item in price_list.price_parent.all():
-            bulk_info.append(ProductPriceList(
-                product=product, price_list=item, price=0,
-                currency_using=product.sale_currency_using,
-                uom_using=product.sale_default_uom,
-                uom_group_using=product.general_uom_group,
-                get_price_from_source=True
-            ))
-            cls.create_price_list_product(product, item, bulk_info)  # đệ quy tìm bảng giá con
-        return bulk_info
-
     def create(self, validated_data):
         default_pr = validated_data['default_price_list']
         del validated_data['default_price_list']
@@ -423,7 +411,7 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             uom_using=product.sale_default_uom,
             uom_group_using=product.general_uom_group
         )
-        bulk_info = self.create_price_list_product(product, default_pr, [])
+        bulk_info = CommonCreateUpdateProduct.create_price_list_product(product, default_pr, [])
         price_product_created = ProductPriceList.objects.bulk_create(bulk_info)
 
         sale_product_price_list = [{

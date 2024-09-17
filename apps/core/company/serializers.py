@@ -225,6 +225,10 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     def get_logo(cls, obj):
         return obj.logo.url if obj.logo else None
 
+    @classmethod
+    def get_icon(cls, obj):
+        return obj.icon.url if obj.icon else None
+
     class Meta:
         model = Company
         fields = (
@@ -239,6 +243,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'company_function_number',
             'sub_domain',
             'logo',
+            'icon',
             'config_inventory_management'
         )
 
@@ -394,16 +399,35 @@ class CompanyUploadLogoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'file': file_size_limit})
         raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
 
+    @classmethod
+    def validate_icon(cls, attrs):
+        if attrs and hasattr(attrs, 'size'):
+            if isinstance(attrs.size, int) and attrs.size < settings.FILE_SIZE_COMPANY_ICON:
+                return attrs
+            file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
+                FORMATTING.size_to_text(settings.FILE_SIZE_COMPANY_LOGO)
+            )
+            raise serializers.ValidationError({'file': file_size_limit})
+        raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
+
     def update(self, instance, validated_data):
-        if instance.logo:
-            instance.logo.storage.delete(instance.logo.name)
-        instance.logo = validated_data['logo']
-        instance.save()
+        logo = validated_data.get('logo', None)
+        icon = validated_data.get('icon', None)
+        if logo or icon:
+            if logo:
+                if instance.logo:
+                    instance.logo.storage.delete(instance.logo.name)
+                instance.logo = logo
+            if icon:
+                if instance.icon:
+                    instance.icon.storage.delete(instance.icon.name)
+                instance.icon = icon
+            instance.save()
         return instance
 
     class Meta:
         model = Company
-        fields = ('logo',)
+        fields = ('logo', 'icon',)
 
 
 class CompanyOverviewSerializer(serializers.ModelSerializer):
