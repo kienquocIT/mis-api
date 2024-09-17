@@ -23,7 +23,7 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
 
 
 # CONTRACT BEGIN
-class ContractListSerializer(AbstractListSerializerModel):
+class ContractApprovalListSerializer(AbstractListSerializerModel):
 
     class Meta:
         model = ContractApproval
@@ -34,7 +34,7 @@ class ContractListSerializer(AbstractListSerializerModel):
         )
 
 
-class ContractDetailSerializer(AbstractDetailSerializerModel):
+class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -52,7 +52,7 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
 
-class ContractCreateSerializer(AbstractCreateSerializerModel):
+class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
@@ -85,7 +85,7 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
         return contract
 
 
-class ContractUpdateSerializer(AbstractCreateSerializerModel):
+class ContractApprovalUpdateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
