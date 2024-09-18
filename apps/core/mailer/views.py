@@ -10,12 +10,12 @@ from apps.shared import (
     TypeCheck, ResponseController, MailMsg, DisperseModel,
 )
 
-from apps.core.mailer.models import MailTemplate, MailTemplateSystem, MailConfig
+from apps.core.mailer.models import MailTemplate, MailTemplateSystem, MailConfig, MailLog
 from apps.core.mailer.serializers import (
     MailTemplateListSerializer, MailTemplateDetailSerializer,
     MailTemplateCreateSerializer, MailTemplateUpdateSerializer, MailTemplateSystemDetailSerializer,
     MailTemplateSystemUpdateSerializer, MailConfigDetailSerializer, MailConfigUpdateSerializer,
-    MailTestConnectDataSerializer,
+    MailTestConnectDataSerializer, MailLogForFormAuthLogSerializer,
 )
 
 
@@ -282,3 +282,19 @@ class MailServerTestConnectDataAPI(MailServerTestConnectAPI):
                 use_tls=validated_data['use_tls'],
             )
         return ResponseController.notfound_404()
+
+
+class MailLogList(BaseListMixin):
+    queryset = MailLog.objects
+    serializer_list = MailLogForFormAuthLogSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        'doc_id': ['exact', 'in'],
+        'system_code': ['exact', 'in'],
+        'status_code': ['exact', 'in'],
+    }
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, allow_admin_company=True)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

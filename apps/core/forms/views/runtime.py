@@ -322,7 +322,8 @@ class RuntimeAuthenticate(APIView):
                 obj = FormPublishAuthenticateEmail.objects.create(
                     tenant=tenant_obj,
                     company=form_obj.company,
-                    form=form_obj,
+                    form=form_obj.form,
+                    form_publish=form_obj,
                     email=email,
                     **FormPublishAuthenticateEmail.generate_otp_data(),
                 )
@@ -342,7 +343,7 @@ class RuntimeAuthVerifySession(APIView):
         try:
             tenant_obj = Tenant.objects.get(code=tenant_code)
             form_obj = FormPublished.objects.get(tenant=tenant_obj, code=form_code)
-            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form=form_obj)
+            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form_publish=form_obj)
         except (Tenant.DoesNotExist, FormPublished.DoesNotExist, FormPublishAuthenticateEmail.DoesNotExist):
             return ResponseController.notfound_404()
 
@@ -358,7 +359,7 @@ class RuntimeAuthVerifySession(APIView):
         try:
             tenant_obj = Tenant.objects.get(code=tenant_code)
             form_obj = FormPublished.objects.get(tenant=tenant_obj, code=form_code)
-            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form=form_obj)
+            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form_publish=form_obj)
         except (Tenant.DoesNotExist, FormPublished.DoesNotExist, FormPublishAuthenticateEmail.DoesNotExist):
             return ResponseController.forbidden_403()
 

@@ -251,8 +251,13 @@ class FormPublishAuthenticateEmail(models.Model):
         related_name='%(app_label)s_%(class)s_belong_to_company',
     )
     form = models.ForeignKey(
-        FormPublished, null=True, on_delete=models.CASCADE,
+        Form, null=True, on_delete=models.CASCADE,
         help_text='The form claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_form',
+    )
+    form_publish = models.ForeignKey(
+        FormPublished, null=True, on_delete=models.CASCADE,
+        help_text='The form published claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_belong_to_form',
     )
 

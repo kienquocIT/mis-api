@@ -88,7 +88,8 @@ def form_send_otp(form_auth_id):
         to_mail = [obj.email]
         state_send = send_mail_form_otp(
             subject=subject, to_mail=to_mail, contents=contents, timeout=30,
-            tenant_id=obj.tenant_id, company_id=obj.company_id, form_id=obj.form_id,
+            tenant_id=obj.tenant_id, company_id=obj.company_id,
+            form_id=obj.form_id,
         )
         if state_send is True:
             return True
