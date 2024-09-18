@@ -10,24 +10,49 @@ from apps.shared import ProductMsg
 
 class CommonCreateUpdateProduct:
     @classmethod
+    def create_price_list_product(cls, product, price_list, bulk_info):
+        for item in price_list.price_parent.all():
+            bulk_info.append(ProductPriceList(
+                product=product, price_list=item, price=0,
+                currency_using=product.sale_currency_using,
+                uom_using=product.sale_default_uom,
+                uom_group_using=product.general_uom_group,
+                get_price_from_source=True
+            ))
+            cls.create_price_list_product(product, item, bulk_info)  # đệ quy tìm bảng giá con
+        return bulk_info
+
+    @classmethod
     def create_price_list(cls, product, data_price, validated_data):
         default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True, is_default=True).first()
-        if data_price and default_pr:
-            objs = []
-            for item in data_price:
-                objs.append(ProductPriceList(
+        if default_pr:
+            if len(data_price) == 0:
+                ProductPriceList.objects.create(
                     product=product,
-                    price_list_id=item.get('price_list_id', None),
-                    price=float(item.get('price_list_value', None)),
-                    currency_using=validated_data.get('sale_currency_using'),
-                    uom_using=validated_data.get('sale_default_uom'),
-                    uom_group_using=validated_data.get('general_uom_group'),
-                    get_price_from_source=item.get('is_auto_update', None) == 'true'
-                ))
-                if str(default_pr.id) == item.get('price_list_id', None):
-                    product.sale_price = float(item.get('price_list_value', None))
-                    product.save()
-            ProductPriceList.objects.bulk_create(objs)
+                    price_list=default_pr,
+                    price=0,
+                    currency_using=product.sale_currency_using,
+                    uom_using=product.sale_default_uom,
+                    uom_group_using=product.general_uom_group
+                )
+                bulk_info = cls.create_price_list_product(product, default_pr, [])
+                ProductPriceList.objects.bulk_create(bulk_info)
+            else:
+                objs = []
+                for item in data_price:
+                    objs.append(ProductPriceList(
+                        product=product,
+                        price_list_id=item.get('price_list_id', None),
+                        price=float(item.get('price_list_value', 0)),
+                        currency_using=validated_data.get('sale_currency_using'),
+                        uom_using=validated_data.get('sale_default_uom'),
+                        uom_group_using=validated_data.get('general_uom_group'),
+                        get_price_from_source=item.get('is_auto_update', None) == 'true'
+                    ))
+                    if str(default_pr.id) == item.get('price_list_id', None):
+                        product.sale_price = float(item.get('price_list_value', 0))
+                        product.save()
+                ProductPriceList.objects.bulk_create(objs)
             return True
         return False
 
@@ -84,8 +109,8 @@ class CommonCreateUpdateProduct:
         sale_price_list = initial_data.get('sale_price_list', [])
         for item in sale_price_list:
             price_list_id = item.get('price_list_id', None)
-            price_list_value = item.get('price_list_value', None)
-            if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
+            price_list_value = item.get('price_list_value', 0)
+            if not Price.objects.filter(id=price_list_id).exists() or price_list_value < 0:
                 raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
         return sale_price_list
 

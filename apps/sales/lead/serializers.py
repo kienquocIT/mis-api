@@ -201,7 +201,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
                 return []
         existed = []
 
-        all_hint = LeadHint.objects.filter(opportunity__company=obj.company)
+        all_hint = LeadHint.objects.filter(opportunity__company_id=obj.company_id)
         hints_by_phone = all_hint.filter(contact_phone=obj.mobile) if obj.mobile else []
         hints_by_mobile = all_hint.filter(contact_mobile=obj.mobile) if obj.mobile else []
         hints_by_email = all_hint.filter(contact_email=obj.email) if obj.email else []
@@ -232,7 +232,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         if config:
             if config.convert_opp:
                 return []
-        all_lead = Lead.objects.filter(tenant=obj.tenant, company=obj.company).exclude(id=obj.id)
+        all_lead = Lead.objects.filter(tenant_id=obj.tenant_id, company_id=obj.company_id).exclude(id=obj.id)
         existed = []
         for lead in all_lead:
             filter_by_contact_name = all_lead.filter(contact_name=obj.contact_name).count()

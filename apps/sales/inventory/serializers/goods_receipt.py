@@ -486,8 +486,13 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'production_reports_data',
             'remarks',
             'date_received',
-            # line detail
+            # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # system
             'system_status',
             'workflow_runtime_id',
@@ -552,6 +557,11 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'date_received',
             # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             'attachment',
         )
@@ -632,6 +642,11 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             'date_received',
             # tab product
             'gr_products_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             'attachment',
         )
@@ -660,7 +675,7 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
             state, result = GoodsReceiptAttachment.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=None
+                current_ids=value, employee_id=user.employee_current_id, doc_id=self.instance.id
             )
             if state is True:
                 return result

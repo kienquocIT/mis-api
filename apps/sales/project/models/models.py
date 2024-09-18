@@ -1,5 +1,5 @@
 __all__ = ['Project', 'ProjectGroups', 'ProjectWorks', 'ProjectMapMember', 'PlanMemberProject', 'ProjectMapGroup',
-           'ProjectMapWork', 'GroupMapWork']
+           'ProjectMapWork', 'GroupMapWork', 'WorkMapBOM']
 
 import json
 
@@ -266,6 +266,20 @@ class ProjectWorks(DataAbstractModel):
             {'price': 1000, 'tax': 100, 'total_after_tax': 1100}
         )
     )
+    bom_service = models.ManyToManyField(
+        'production.BOM',
+        through='WorkMapBOM',
+        symmetrical=False,
+        blank=True,
+        related_name='bom_related_of_work',
+    )
+    bom_data = models.JSONField(
+        default=dict,
+        verbose_name='BOM info about name code title',
+        help_text=json.dumps(
+            {'title': '', 'code': '...', 'id': '1100234234234'}
+        )
+    )
 
     def before_save(self):
         if self.employee_inherit:
@@ -455,5 +469,26 @@ class PlanMemberProject(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Plan of Employee At Project'
         verbose_name_plural = 'Plan of Employee At Project'
+        default_permissions = ()
+        permissions = ()
+
+
+class WorkMapBOM(SimpleAbstractModel):
+    bom = models.ForeignKey(
+        'production.BOM',
+        on_delete=models.CASCADE,
+        verbose_name="bom",
+        related_name="%(app_label)s_%(class)s_bom",
+    )
+    work = models.ForeignKey(
+        ProjectWorks,
+        on_delete=models.CASCADE,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_work',
+    )
+
+    class Meta:
+        verbose_name = 'Work map BOM service'
+        verbose_name_plural = 'Work map BOM service'
         default_permissions = ()
         permissions = ()

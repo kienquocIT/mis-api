@@ -13,6 +13,7 @@ class ProjectBaselineListSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProjectBaseline
         fields = (
+            'id',
             'project_data',
             'member_data',
             'member_perm_data',
@@ -27,7 +28,6 @@ class ProjectBaselineListSerializers(serializers.ModelSerializer):
 class ProjectCreateBaselineSerializers(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     project_data = serializers.DictField()
-    # ProjectDetailSerializers()
 
     class Meta:
         model = ProjectBaseline

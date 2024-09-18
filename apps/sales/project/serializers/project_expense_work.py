@@ -59,6 +59,7 @@ class WorkExpenseListSerializers(serializers.ModelSerializer):
             'sub_total',
             'sub_total_after_tax',
             'is_labor',
+            'is_service',
             'work_id',
         )
 
