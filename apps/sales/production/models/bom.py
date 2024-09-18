@@ -149,6 +149,7 @@ class BOMMaterialComponent(MasterDataAbstractModel):
     )
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
+    replacement_data = models.JSONField(default=list)
 
     class Meta:
         verbose_name = 'BOM material component'
@@ -169,18 +170,20 @@ class BOMReplacementMaterialComponent(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_replacement_material_component_material'
     )
+    material_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_replacement_material_component_uom'
     )
+    uom_data = models.JSONField(default=dict)
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
     replace_for = models.ForeignKey(
         BOMMaterialComponent,
         on_delete=models.CASCADE,
-        related_name='bom_replacement_replace_for'
+        related_name='bom_replacement_material_replace_for'
     )
 
     class Meta:
