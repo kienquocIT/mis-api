@@ -51,6 +51,16 @@ Bastion_data_params = {
         'is_mail': True,
     },
 
+    '9b6b6312-535e-44d6-9c59-9d2d5e6ba764': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'Link to detail',
+        'code': '_link_to_detail',
+        'remark': 'https://***.***.***/***/detail/***',
+        'type': 1,
+        'is_print': False,
+        'is_mail': True,
+    },
+
     # # mail general
     # 'ffd171c8-aeda-4595-9de3-6b3e32e4afd9': {
     #     'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app

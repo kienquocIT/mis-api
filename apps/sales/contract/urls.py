@@ -1,10 +1,10 @@
 from django.urls import path
 
 from .views import (
-    ContractList, ContractDetail
+    ContractApprovalList, ContractApprovalDetail
 )
 
 urlpatterns = [
-    path('list', ContractList.as_view(), name='ContractList'),
-    path('<str:pk>', ContractDetail.as_view(), name='ContractDetail'),
+    path('list', ContractApprovalList.as_view(), name='ContractApprovalList'),
+    path('<str:pk>', ContractApprovalDetail.as_view(), name='ContractApprovalDetail'),
 ]

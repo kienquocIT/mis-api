@@ -253,7 +253,12 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                             'code': item.uom.code,
                             'title': item.uom.title
                         } if item.uom else {}
-                    } for item in process_item.labor.expense.all()]
+                    } for item in process_item.labor.expense.all()],
+                    'expense_item': {
+                        'id': str(process_item.labor.expense_item.id),
+                        'title': process_item.labor.expense_item.title,
+                        'code': process_item.labor.expense_item.code
+                    }
                 } if process_item.labor else {},
                 'quantity': process_item.quantity,
                 'uom': {

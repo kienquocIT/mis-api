@@ -309,28 +309,41 @@ class RuntimeFormHasSubmitted(APIView):
 
 class RuntimeAuthenticate(APIView):
     @mask_view(login_require=False)
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email', None)
-        if email and TypeCheck.check_email(email):
-            obj = FormPublishAuthenticateEmail.objects.create(
-                email=email,
-                **FormPublishAuthenticateEmail.generate_otp_data(),
-            )
-            return ResponseController.success_200(data={
-                'id': obj.id,
-                'email': obj.email,
-                'otp_expires_seconds': obj.otp_expires_seconds,
-                'otp_expires': obj.otp_expires
-            })
-        return ResponseController.forbidden_403()
+    def post(self, request, *args, tenant_code, form_code, **kwargs):
+        if tenant_code and form_code:
+            try:
+                tenant_obj = Tenant.objects.get(code=tenant_code)
+                form_obj = FormPublished.objects.get(tenant=tenant_obj, code=form_code)
+            except (Tenant.DoesNotExist, FormPublished.DoesNotExist):
+                return ResponseController.notfound_404()
+
+            email = request.data.get('email', None)
+            if email and TypeCheck.check_email(email):
+                obj = FormPublishAuthenticateEmail.objects.create(
+                    tenant=tenant_obj,
+                    company=form_obj.company,
+                    form=form_obj,
+                    email=email,
+                    **FormPublishAuthenticateEmail.generate_otp_data(),
+                )
+                return ResponseController.success_200(data={
+                    'id': obj.id,
+                    'email': obj.email,
+                    'otp_expires_seconds': obj.otp_expires_seconds,
+                    'otp_expires': obj.otp_expires
+                })
+            return ResponseController.forbidden_403()
+        return ResponseController.notfound_404()
 
 
 class RuntimeAuthVerifySession(APIView):
     @mask_view(login_require=False)
-    def get(self, request, *args, pk_form_session, **kwargs):
+    def get(self, request, *args, tenant_code, form_code, pk_form_session, **kwargs):
         try:
-            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session)
-        except FormPublishAuthenticateEmail.DoesNotExist:
+            tenant_obj = Tenant.objects.get(code=tenant_code)
+            form_obj = FormPublished.objects.get(tenant=tenant_obj, code=form_code)
+            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form=form_obj)
+        except (Tenant.DoesNotExist, FormPublished.DoesNotExist, FormPublishAuthenticateEmail.DoesNotExist):
             return ResponseController.notfound_404()
 
         return ResponseController.success_200(data={
@@ -341,14 +354,15 @@ class RuntimeAuthVerifySession(APIView):
         })
 
     @mask_view(login_require=False)
-    @mask_view(login_require=False)
-    def put(self, request, *args, pk_form_session, **kwargs):
+    def put(self, request, *args, tenant_code, form_code, pk_form_session, **kwargs):
         try:
-            obj = FormPublishAuthenticateEmail.objects.get(pk=pk_form_session)
-        except FormPublishAuthenticateEmail.DoesNotExist:
+            tenant_obj = Tenant.objects.get(code=tenant_code)
+            form_obj = FormPublished.objects.get(tenant=tenant_obj, code=form_code)
+            obj = FormPublishAuthenticateEmail.objects.get(id=pk_form_session, tenant=tenant_obj, form=form_obj)
+        except (Tenant.DoesNotExist, FormPublished.DoesNotExist, FormPublishAuthenticateEmail.DoesNotExist):
             return ResponseController.forbidden_403()
 
-        obj.activate_valid('1d')
+        obj.activate_valid('1d', commit=True)
         return ResponseController.success_200(
             data={
                 'id': str(obj.id),

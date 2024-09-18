@@ -301,7 +301,6 @@ class CalendarByDay(APIView):
                             dob__day=day_check.day,
                             dob__month=day_check.month,
                         )
-                        print(objs.query)
                         result['birthday'] = []
                         for obj in objs:
                             result['birthday'].append(

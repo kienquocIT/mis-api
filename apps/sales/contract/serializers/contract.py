@@ -23,7 +23,7 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
 
 
 # CONTRACT BEGIN
-class ContractListSerializer(AbstractListSerializerModel):
+class ContractApprovalListSerializer(AbstractListSerializerModel):
 
     class Meta:
         model = ContractApproval
@@ -34,7 +34,7 @@ class ContractListSerializer(AbstractListSerializerModel):
         )
 
 
-class ContractDetailSerializer(AbstractDetailSerializerModel):
+class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -45,6 +45,7 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'document_data',
             'attachment',
+            'tinymce_content',
         )
 
     @classmethod
@@ -52,7 +53,7 @@ class ContractDetailSerializer(AbstractDetailSerializerModel):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
 
-class ContractCreateSerializer(AbstractCreateSerializerModel):
+class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField()
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
@@ -63,6 +64,7 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'document_data',
             'attachment',
+            'tinymce_content',
         )
 
     def validate_attachment(self, value):
@@ -85,7 +87,7 @@ class ContractCreateSerializer(AbstractCreateSerializerModel):
         return contract
 
 
-class ContractUpdateSerializer(AbstractCreateSerializerModel):
+class ContractApprovalUpdateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
@@ -95,6 +97,7 @@ class ContractUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'document_data',
             'attachment',
+            'tinymce_content',
         )
 
     def validate_attachment(self, value):
@@ -108,7 +111,7 @@ class ContractUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachment = validated_data.pop('attachment', [])
         for key, value in validated_data.items():

@@ -153,6 +153,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related('product').prefetch_related(
             'bom_process_bom__labor__expense__uom',
             'bom_process_bom__labor__expense__price',
+            'bom_process_bom__labor__expense_item',
             'bom_process_bom__uom',
             'bom_summary_process_bom__labor',
             'bom_summary_process_bom__uom',
