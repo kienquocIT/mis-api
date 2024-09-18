@@ -166,6 +166,7 @@ class ProductionOrderTask(MasterDataAbstractModel):
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     quantity_bom = models.FloatField(default=0)
     quantity = models.FloatField(default=0)
+    issued_quantity = models.FloatField(default=0)
     is_all_warehouse = models.BooleanField(
         default=False, help_text='flag to know can use this product of all warehouse'
     )

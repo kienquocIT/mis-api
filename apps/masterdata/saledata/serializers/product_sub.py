@@ -109,7 +109,7 @@ class CommonCreateUpdateProduct:
         sale_price_list = initial_data.get('sale_price_list', [])
         for item in sale_price_list:
             price_list_id = item.get('price_list_id', None)
-            price_list_value = item.get('price_list_value', 0)
+            price_list_value = float(item.get('price_list_value', 0))
             if not Price.objects.filter(id=price_list_id).exists() or price_list_value < 0:
                 raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
         return sale_price_list
