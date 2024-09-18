@@ -516,69 +516,79 @@ class BOMCommonFunction:
         return True
 
     @classmethod
+    def validate_bom_material_component_data_for_outsourcing(cls, bom_material_component_data):
+        for item in bom_material_component_data:
+            if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
+                item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
+                item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+            else:
+                raise serializers.ValidationError({
+                    'bom_material_component_data': "Material/component data is missing field"
+                })
+            for replacement_data in item.get('replacement_data'):
+                if float(replacement_data.get('quantity', 0)) > 0:
+                    material = Product.objects.get(id=replacement_data.get('material_id'))
+                    uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
+                    replacement_data['material_id'] = str(material.id)
+                    replacement_data['uom_id'] = str(uom.id)
+                    replacement_data['material_data'] = {
+                        'id': str(material.id),
+                        'code': material.code,
+                        'title': material.title
+                    }
+                    replacement_data['uom_data'] = {
+                        'id': str(uom.id),
+                        'code': uom.code,
+                        'title': uom.title,
+                        'group_id': str(uom.group_id),
+                    }
+                else:
+                    raise serializers.ValidationError({
+                        'replacement_data': "Replacement material/component data is missing field"
+                    })
+        return True
+
+    @classmethod
+    def validate_bom_material_component_data_for_normal(cls, bom_material_component_data):
+        for item in bom_material_component_data:
+            if float(item.get('quantity', 0)) > 0:
+                item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
+                item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+            else:
+                raise serializers.ValidationError({
+                    'bom_material_component_data': "Material/component outsourcing data is missing field"
+                })
+            for replacement_data in item.get('replacement_data'):
+                if float(replacement_data.get('quantity', 0)) > 0:
+                    material = Product.objects.get(id=replacement_data.get('material_id'))
+                    uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
+                    replacement_data['material_id'] = str(material.id)
+                    replacement_data['uom_id'] = str(uom.id)
+                    replacement_data['material_data'] = {
+                        'id': str(material.id),
+                        'code': material.code,
+                        'title': material.title
+                    }
+                    replacement_data['uom_data'] = {
+                        'id': str(uom.id),
+                        'code': uom.code,
+                        'title': uom.title,
+                        'group_id': str(uom.group_id),
+                    }
+                else:
+                    raise serializers.ValidationError({
+                        'replacement_data': "Replacement material/component outsourcing data is missing field"
+                    })
+        return True
+
+    @classmethod
     def validate_bom_material_component_data(cls, validate_data):
         bom_material_component_data = validate_data.get('bom_material_component_data')
         try:
             if not validate_data.get('for_outsourcing'):
-                for item in bom_material_component_data:
-                    if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                        item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
-                        item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
-                    else:
-                        raise serializers.ValidationError({
-                            'bom_material_component_data': "Material/component data is missing field"
-                        })
-                    for replacement_data in item.get('replacement_data'):
-                        if float(replacement_data.get('quantity', 0)) > 0:
-                            material = Product.objects.get(id=replacement_data.get('material_id'))
-                            uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
-                            replacement_data['material_id'] = str(material.id)
-                            replacement_data['uom_id'] = str(uom.id)
-                            replacement_data['material_data'] = {
-                                'id': str(material.id),
-                                'code': material.code,
-                                'title': material.title
-                            }
-                            replacement_data['uom_data'] = {
-                                'id': str(uom.id),
-                                'code': uom.code,
-                                'title': uom.title,
-                                'group_id': str(uom.group_id),
-                            }
-                        else:
-                            raise serializers.ValidationError({
-                                'replacement_data': "Replacement material/component data is missing field"
-                            })
+                cls.validate_bom_material_component_data_for_outsourcing(bom_material_component_data)
             else:
-                for item in bom_material_component_data:
-                    if float(item.get('quantity', 0)) > 0:
-                        item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
-                        item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
-                    else:
-                        raise serializers.ValidationError({
-                            'bom_material_component_data': "Material/component outsourcing data is missing field"
-                        })
-                    for replacement_data in item.get('replacement_data'):
-                        if float(replacement_data.get('quantity', 0)) > 0:
-                            material = Product.objects.get(id=replacement_data.get('material_id'))
-                            uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
-                            replacement_data['material_id'] = str(material.id)
-                            replacement_data['uom_id'] = str(uom.id)
-                            replacement_data['material_data'] = {
-                                'id': str(material.id),
-                                'code': material.code,
-                                'title': material.title
-                            }
-                            replacement_data['uom_data'] = {
-                                'id': str(uom.id),
-                                'code': uom.code,
-                                'title': uom.title,
-                                'group_id': str(uom.group_id),
-                            }
-                        else:
-                            raise serializers.ValidationError({
-                                'replacement_data': "Replacement material/component outsourcing data is missing field"
-                            })
+                cls.validate_bom_material_component_data_for_normal(bom_material_component_data)
             validate_data['bom_material_component_data'] = bom_material_component_data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
