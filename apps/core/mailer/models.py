@@ -14,9 +14,12 @@ from apps.core.mailer.templates import (
 from apps.shared import MasterDataAbstractModel, StringHandler, SimpleEncryptor, SimpleAbstractModel, DisperseModel
 
 MAIL_TEMPLATE_SYSTEM_CODE = (
+    (0, 'Other'),
     (1, 'Welcome'),
     (2, 'Calendar'),
     (3, 'OTP Validation'),
+    (4, 'Form'),
+    (5, 'Form OTP Validation')
 )
 
 

@@ -240,6 +240,22 @@ class FormPublishAuthenticateEmail(models.Model):
     is_valid = models.BooleanField(default=False)
     expires = models.DateTimeField(null=True)
 
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+    form = models.ForeignKey(
+        FormPublished, null=True, on_delete=models.CASCADE,
+        help_text='The form claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_form',
+    )
+
     @classmethod
     def generate_otp(cls, length=8):
         return "".join(random.choices(string.digits, k=length))
@@ -257,7 +273,7 @@ class FormPublishAuthenticateEmail(models.Model):
             'otp_expires_seconds': data_time.seconds,
         }
 
-    def activate_valid(self, expire_append='1d'):
+    def activate_valid(self, expire_append='1d', commit=False):
         self.is_valid = True
         num_time = int(expire_append[:-1])
         unit = expire_append[-1]
@@ -273,7 +289,9 @@ class FormPublishAuthenticateEmail(models.Model):
             self.expires = now + timedelta(days=num_time)
         elif unit == 'w':
             self.expires = now + timedelta(weeks=num_time)
-        self.save()
+        if commit is True:
+            self.save()
+        return self
 
     @classmethod
     def destroy_expired(cls):
