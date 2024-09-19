@@ -2,7 +2,8 @@ from django.urls import path
 
 from .views import (
     SaleOrderList, SaleOrderDetail, SaleOrderExpenseList, SaleOrderConfigDetail, SaleOrderIndicatorList,
-    SaleOrderIndicatorDetail, SaleOrderIndicatorCompanyRestore, ProductListSaleOrder, SaleOrderPurchasingStaffList
+    SaleOrderIndicatorDetail, SaleOrderIndicatorCompanyRestore, ProductListSaleOrder, SaleOrderPurchasingStaffList,
+    SOProductWOList
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('saleorder-expense-list/lists', SaleOrderExpenseList.as_view(), name='SaleOrderExpenseList'),
     path('product/list/<str:pk>', ProductListSaleOrder.as_view(), name='ProductListSaleOrder'),
     path('purchasing-staff/list', SaleOrderPurchasingStaffList.as_view(), name='SaleOrderPurchasingStaffList'),
+    path('sale-order-product-wo/list', SOProductWOList.as_view(), name='SOProductWOList'),
 ]
