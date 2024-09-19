@@ -191,7 +191,6 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
 
 
 class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -412,7 +411,6 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(max_length=150)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     ap_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
@@ -491,7 +489,7 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
 class APCommonFunction:
     @classmethod
     def validate_opportunity_mapped_id(cls, validate_data):
-        if validate_data.get('opportunity_mapped_id'):
+        if 'opportunity_mapped_id' in validate_data:
             try:
                 opportunity_mapped = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
                 if opportunity_mapped.is_close_lost or opportunity_mapped.is_deal_close:
@@ -506,7 +504,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_quotation_mapped_id(cls, validate_data):
-        if validate_data.get('quotation_mapped_id'):
+        if 'quotation_mapped_id' in validate_data:
             try:
                 quotation_mapped = Quotation.objects.get(id=validate_data.get('quotation_mapped_id'))
                 validate_data['quotation_mapped_id'] = str(quotation_mapped.id)
@@ -519,7 +517,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_sale_order_mapped_id(cls, validate_data):
-        if validate_data.get('sale_order_mapped_id'):
+        if 'sale_order_mapped_id' in validate_data:
             try:
                 sale_order_mapped = SaleOrder.objects.get(id=validate_data.get('sale_order_mapped_id'))
                 validate_data['sale_order_mapped_id'] = str(sale_order_mapped.id)
@@ -532,7 +530,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_sale_code_type(cls, validate_data):
-        if validate_data.get('sale_code_type'):
+        if 'sale_code_type' in validate_data:
             if validate_data.get('sale_code_type') not in [0, 1, 2]:
                 raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
         print('4. validate_sale_code_type --- ok')
@@ -540,7 +538,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_employee_inherit_id(cls, validate_data):
-        if validate_data.get('employee_inherit_id'):
+        if 'employee_inherit_id' in validate_data:
             try:
                 validate_data['employee_inherit_id'] = str(Employee.objects.get(
                     id=validate_data.get('employee_inherit_id')
@@ -552,7 +550,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_advance_payment_type(cls, validate_data):
-        if validate_data.get('advance_payment_type'):
+        if 'advance_payment_type' in validate_data:
             if validate_data.get('advance_payment_type') not in [0, 1]:
                 raise serializers.ValidationError({'advance_payment_type': AdvancePaymentMsg.TYPE_ERROR})
         print('6. validate_advance_payment_type --- ok')
@@ -560,7 +558,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_supplier_id(cls, validate_data):
-        if validate_data.get('supplier_id'):
+        if 'supplier_id' in validate_data:
             try:
                 supplier = Account.objects.get(id=validate_data.get('supplier_id'))
                 validate_data['supplier_id'] = str(supplier.id)
@@ -573,7 +571,7 @@ class APCommonFunction:
 
     @classmethod
     def validate_method(cls, validate_data):
-        if validate_data.get('method'):
+        if 'method' in validate_data:
             if validate_data.get('method') not in [0, 1]:
                 raise serializers.ValidationError({'method': 'Method is not valid.'})
         print('8. validate_method --- ok')
@@ -621,6 +619,21 @@ class APCommonFunction:
             raise serializers.ValidationError({'ap_item_list': f'AP item list is not valid.'})
 
     @classmethod
+    def validate_common(cls, validate_data):
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
+        if validate_data.get('advance_payment_type'):
+            if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier': _('Supplier is required.')})
+            if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier_id'):
+                raise serializers.ValidationError({'supplier_id': _('Supplier is not allowed.')})
+        print('10. validate_common --- ok')
+        return validate_data
+
+    @classmethod
     def validate_attachment(cls, context_user, doc_id, validate_data):
         if context_user and hasattr(context_user, 'employee_current_id'):
             state, result = AdvancePaymentAttachmentFile.valid_change(
@@ -630,19 +643,10 @@ class APCommonFunction:
             )
             if state is True:
                 validate_data['attachment'] = result
-                print('10. validate_attachment --- ok')
+                print('11. validate_attachment --- ok')
                 return validate_data
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-    @classmethod
-    def validate_common(cls, validate_data):
-        if validate_data.get('advance_payment_type'):
-            if validate_data.get('advance_payment_type') == 1 and not validate_data.get('supplier_id'):
-                raise serializers.ValidationError({'supplier': _('Supplier is required.')})
-            if validate_data.get('advance_payment_type') == 0 and validate_data.get('supplier_id'):
-                raise serializers.ValidationError({'supplier_id': _('Supplier is not allowed.')})
-        return validate_data
 
     @classmethod
     def read_money_vnd(cls, num):
