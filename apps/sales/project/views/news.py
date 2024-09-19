@@ -74,10 +74,7 @@ class ProjectNewsCommentDetail(BaseUpdateMixin, BaseDestroyMixin):
 
     def get_object(self):
         obj = super().get_object()
-        if obj and (
-                obj.employee_inherit_id == self.request.user.employee_current_id
-                or obj.news.employee_inherit == self.request.user.employee_current_id
-        ):
+        if obj and self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit):
             return obj
         raise exceptions.NotFound
 
@@ -105,10 +102,7 @@ class ProjectNewsCommentDetailFlows(BaseRetrieveMixin):
 
     def get_object(self):
         obj = super().get_object()
-        if obj and (
-                obj.employee_inherit_id == self.request.user.employee_current_id
-                or obj.news.employee_inherit == self.request.user.employee_current_id
-        ):
+        if obj and self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit):
             return obj
         raise exceptions.NotFound
 
