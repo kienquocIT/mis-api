@@ -1,13 +1,13 @@
+from pycparser.ply.yacc import Production
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
-    UnitOfMeasure, WareHouse, ProductWareHouse, Product,
-    ProductWareHouseSerial, ProductWareHouseLot
+    UnitOfMeasure, WareHouse, Product,
+    ProductWareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
-from apps.sales.production.models import ProductionOrder
+from apps.sales.production.models import ProductionOrder, ProductionOrderTask
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
-from apps.shared.translations.goods_issue import GIMsg
 
 __all__ = [
     'GoodsIssueListSerializer',
@@ -44,40 +44,47 @@ class GoodsIssueListSerializer(AbstractListSerializerModel):
 
 class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     goods_issue_type = serializers.IntegerField()
-    inventory_adjustment_id = serializers.UUIDField(required=False)
+    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
+    production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_po = serializers.ListField()
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
+            'note',
             'goods_issue_type',
             'inventory_adjustment_id',
-            'note',
             'detail_data_ia',
+            'production_order_id',
+            'detail_data_po'
         )
 
     def validate(self, validate_data):
         GoodsIssueCommonFunction.validate_goods_issue_type(validate_data)
         GoodsIssueCommonFunction.validate_inventory_adjustment_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
+        GoodsIssueCommonFunction.validate_production_order_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         print('*validate done')
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
+        detail_data_po = validated_data.pop('detail_data_po', [])
         instance = GoodsIssue.objects.create(**validated_data)
-        GoodsIssueCommonFunction.create_issue_item(
-            instance,
-            detail_data_ia
-        )
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         return instance
 
 
 class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     inventory_adjustment = serializers.SerializerMethodField()
     detail_data_ia = serializers.SerializerMethodField()
+    production_order = serializers.SerializerMethodField()
+    detail_data_po = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -87,74 +94,139 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'note',
             'goods_issue_type',
-            'detail_data_ia',
             'inventory_adjustment',
-            'system_status',
+            'detail_data_ia',
+            'production_order',
+            'detail_data_po',
             'date_created'
         )
 
     @classmethod
     def get_inventory_adjustment(cls, obj):
-        if obj.inventory_adjustment:
-            return {
-                'id': obj.inventory_adjustment_id,
-                'title': obj.inventory_adjustment.title,
-                'code': obj.inventory_adjustment.code,
-            }
-        return {}
+        return {
+            'id': obj.inventory_adjustment_id,
+            'title': obj.inventory_adjustment.title,
+            'code': obj.inventory_adjustment.code,
+        } if obj.inventory_adjustment else {}
 
     @classmethod
     def get_detail_data_ia(cls, obj):
         detail_data_ia = []
-        for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
-            ia_item = item.inventory_adjustment_item
-            detail_data_ia.append({
-                'id': ia_item.id,
-                'product_mapped': item.product_data,
-                'uom_mapped': item.uom_data,
-                'warehouse_mapped': item.warehouse_data,
-                'sum_quantity': ia_item.book_quantity - ia_item.count,
-                'before_quantity': item.before_quantity,
-                'remain_quantity': item.remain_quantity,
-                'issued_quantity': item.issued_quantity,
-                'lot_data': item.lot_data,
-                'sn_data': item.sn_data
-            })
+        if obj.inventory_adjustment:
+            if obj.system_status == 3:
+                for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                    ia_item = item.inventory_adjustment_item
+                    detail_data_ia.append({
+                        'id': ia_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': ia_item.book_quantity - ia_item.count,
+                        'before_quantity': item.before_quantity,
+                        'remain_quantity': item.remain_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+            else:
+                for item in obj.goods_issue_product.all():
+                    ia_item = item.inventory_adjustment_item
+                    detail_data_ia.append({
+                        'id': ia_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': ia_item.book_quantity - ia_item.count,
+                        'before_quantity': ia_item.issued_quantity,
+                        'remain_quantity': ia_item.book_quantity - ia_item.count - ia_item.issued_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
         return detail_data_ia
+
+    @classmethod
+    def get_production_order(cls, obj):
+        return {
+            'id': obj.production_order_id,
+            'title': obj.production_order.title,
+            'code': obj.production_order.code,
+        } if obj.production_order else {}
+
+    @classmethod
+    def get_detail_data_po(cls, obj):
+        detail_data_po = []
+        if obj.production_order:
+            if obj.system_status == 3:
+                for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                    po_item = item.production_order_item
+                    detail_data_po.append({
+                        'id': po_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': po_item.quantity,
+                        'before_quantity': item.before_quantity,
+                        'remain_quantity': item.remain_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+            else:
+                for item in obj.goods_issue_product.all():
+                    po_item = item.production_order_item
+                    detail_data_po.append({
+                        'id': po_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': po_item.quantity,
+                        'before_quantity': po_item.issued_quantity,
+                        'remain_quantity': po_item.quantity - po_item.issued_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+        return detail_data_po
 
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     goods_issue_type = serializers.IntegerField()
-    inventory_adjustment_id = serializers.UUIDField(required=False)
+    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
+    production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_po = serializers.ListField()
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
+            'note',
             'goods_issue_type',
             'inventory_adjustment_id',
-            'note',
             'detail_data_ia',
+            'production_order_id',
+            'detail_data_po'
         )
 
     def validate(self, validate_data):
         GoodsIssueCommonFunction.validate_goods_issue_type(validate_data)
         GoodsIssueCommonFunction.validate_inventory_adjustment_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
+        GoodsIssueCommonFunction.validate_production_order_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         print('*validate done')
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
+        detail_data_po = validated_data.pop('detail_data_po', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        GoodsIssueCommonFunction.create_issue_item(
-            instance,
-            detail_data_ia
-        )
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         return instance
 
 
@@ -170,31 +242,56 @@ class GoodsIssueCommonFunction:
 
     @classmethod
     def validate_inventory_adjustment_id(cls, validate_data):
-        try:
-            validate_data['inventory_adjustment_id'] = str(InventoryAdjustment.objects.get(
-                id=validate_data.get('inventory_adjustment_id')
-            ).id)
-            print('2. validate_inventory_adjustment_id  --- ok')
-            return True
-        except InventoryAdjustment.DoesNotExist:
-            raise serializers.ValidationError({'inventory_adjustment': GIMsg.IA_NOT_EXIST})
+        if validate_data.get('inventory_adjustment_id'):
+            try:
+                validate_data['inventory_adjustment_id'] = str(InventoryAdjustment.objects.get(
+                    id=validate_data.get('inventory_adjustment_id')
+                ).id)
+            except InventoryAdjustment.DoesNotExist:
+                raise serializers.ValidationError({'inventory_adjustment': 'Inventory adjustment is not exist'})
+        else:
+            validate_data['inventory_adjustment_id'] = None
+        print('2. validate_inventory_adjustment_id  --- ok')
+        return True
+
+    @classmethod
+    def validate_production_order_id(cls, validate_data):
+        if validate_data.get('production_order_id'):
+            try:
+                validate_data['production_order_id'] = str(ProductionOrder.objects.get(
+                    id=validate_data.get('production_order_id')
+                ).id)
+            except ProductionOrderTask.DoesNotExist:
+                raise serializers.ValidationError({'production_order': 'Product order is not exist'})
+        else:
+            validate_data['production_order_id'] = None
+        print('2. validate_production_order_id  --- ok')
+        return True
 
     @classmethod
     def validate_detail_data_ia(cls, validate_data):
         try:
-            detail_data_ia = validate_data.get('detail_data_ia')
+            detail_data_ia = validate_data.get('detail_data_ia', [])
             for item in detail_data_ia:
                 product_obj = Product.objects.get(id=item.get('product_id'))
                 warehouse_obj = WareHouse.objects.get(id=item.get('warehouse_id'))
                 uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
                 prd_wh_obj = ProductWareHouse.objects.get(product=product_obj, warehouse=warehouse_obj)
                 ia_item = InventoryAdjustmentItem.objects.get(id=item.get('inventory_adjustment_item_id'))
+
                 if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
                     raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
                 if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
                 if ia_item.book_quantity - ia_item.count - ia_item.issued_quantity < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
+
+                check_serial = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
+                if check_serial.count() != len(item.get('sn_data', [])):
+                    raise serializers.ValidationError(
+                        {'sn_data': "Some selected serials aren't currently in any warehouse."}
+                    )
+
                 item['inventory_adjustment_item_id'] = str(ia_item.id)
                 item['product_id'] = str(product_obj.id)
                 item['product_data'] = {
@@ -220,16 +317,70 @@ class GoodsIssueCommonFunction:
             print('3. validate_detail_data_ia --- ok')
             return True
         except Exception as err:
-            raise serializers.ValidationError({'detail_data_ia': f"Detail IA data is not valid. {err}"})
+            print(err)
+            raise serializers.ValidationError({'detail_data_ia': f"Detail IA data is not valid."})
+
+    @classmethod
+    def validate_detail_data_po(cls, validate_data):
+        try:
+            detail_data_po = validate_data.get('detail_data_po', [])
+            for item in detail_data_po:
+                product_obj = Product.objects.get(id=item.get('product_id'))
+                warehouse_obj = WareHouse.objects.get(id=item.get('warehouse_id'))
+                uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                prd_wh_obj = ProductWareHouse.objects.get(product=product_obj, warehouse=warehouse_obj)
+                po_item = ProductionOrderTask.objects.get(id=item.get('production_order_item_id'))
+
+                if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
+                    raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
+                if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
+                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
+                if po_item.quantity - po_item.issued_quantity < float(item.get('issued_quantity')):
+                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
+
+                check_serial = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
+                if check_serial.count() != len(item.get('sn_data', [])):
+                    raise serializers.ValidationError(
+                        {'sn_data': "Some selected serials aren't currently in any warehouse."}
+                    )
+
+                item['production_order_item_id'] = str(po_item.id)
+                item['product_id'] = str(product_obj.id)
+                item['product_data'] = {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'description': product_obj.description,
+                    'general_traceability_method': product_obj.general_traceability_method
+                }
+                item['warehouse_id'] = str(warehouse_obj.id)
+                item['warehouse_data'] = {
+                    'id': str(warehouse_obj.id),
+                    'code': warehouse_obj.code,
+                    'title': warehouse_obj.title
+                }
+                item['uom_id'] = str(uom.id)
+                item['uom_data'] = {
+                    'id': str(uom.id),
+                    'code': uom.code,
+                    'title': uom.title
+                }
+            validate_data['detail_data_po'] = detail_data_po
+            print('3. validate_detail_data_po --- ok')
+            return True
+        except Exception as err:
+            print(err)
+            raise serializers.ValidationError({'detail_data_po': f"Detail PO data is not valid."})
 
     @classmethod
     def create_issue_item(cls, instance, data):
-        bulk_data = []
-        for item in data:
-            obj = GoodsIssueProduct(goods_issue=instance, **item)
-            bulk_data.append(obj)
-        GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
-        GoodsIssueProduct.objects.bulk_create(bulk_data)
+        if len(data) > 0:
+            bulk_data = []
+            for item in data:
+                obj = GoodsIssueProduct(goods_issue=instance, **item)
+                bulk_data.append(obj)
+            GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
+            GoodsIssueProduct.objects.bulk_create(bulk_data)
         return True
 
 
@@ -316,7 +467,7 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     @classmethod
     def get_task_data(cls, obj):
         task_data = []
-        for item in obj.po_task_production_order.filter(is_task=False):
+        for item in obj.po_task_production_order.filter(is_task=False).order_by('product__code'):
             if item.quantity - item.issued_quantity > 0:
                 task_data.append({
                     'id': item.id,

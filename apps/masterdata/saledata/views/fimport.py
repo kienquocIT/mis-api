@@ -37,7 +37,8 @@ class AccountGroupImport(BaseCreateMixin):
     @swagger_auto_schema(operation_summary="Import Account Group", request_body=AccountGroupImportSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -52,7 +53,8 @@ class AccountTypeImport(BaseCreateMixin):
     @swagger_auto_schema(operation_summary="Import AccountType", request_body=AccountTypeImportSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -67,7 +69,8 @@ class IndustryImport(BaseCreateMixin):
     @swagger_auto_schema(operation_summary="Import Industry", request_body=IndustryImportSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='saledata', model_code='account', perm_code='create',
+        allow_admin_tenant=True, allow_admin_company=True,
+        # label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -95,7 +98,10 @@ class SalutationImport(BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(operation_summary="Import Salutation", request_body=SalutationImportSerializer)
-    @mask_view(login_require=True, auth_require=True, allow_admin_company=True)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 

@@ -97,6 +97,9 @@ class InventoryAdjustmentListForGIS(BaseListMixin):
     serializer_list = InventoryAdjustmentListSerializerForGIS
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter(state=False)
+
     @swagger_auto_schema(
         operation_summary="Inventory Adjustment List For GIS",
         operation_description="Get Inventory Adjustment List For GIS",
@@ -142,6 +145,9 @@ class ProductionOrderListForGIS(BaseListMixin):
     }
     serializer_list = ProductionOrderListSerializerForGIS
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(done_issue=False)
 
     @swagger_auto_schema(
         operation_summary="Production Order List",

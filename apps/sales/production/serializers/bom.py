@@ -498,7 +498,8 @@ class BOMCommonFunction:
                         raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
                 validate_data['bom_process_data'] = bom_process_data
             except Exception as err:
-                raise serializers.ValidationError({'bom_process_data': f"Process data is not valid. {err}"})
+                print(err)
+                raise serializers.ValidationError({'bom_process_data': f"Process data is not valid."})
         print('6. validate_bom_process_data --- ok')
         return True
 
@@ -515,7 +516,8 @@ class BOMCommonFunction:
                     else:
                         raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
                 validate_data['bom_summary_process_data'] = bom_summary_process_data
-            except Product.DoesNotExist:
+            except Exception as err:
+                print(err)
                 raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
         print('7. validate_bom_summary_process_data --- ok')
         return True
@@ -595,7 +597,8 @@ class BOMCommonFunction:
             else:
                 cls.validate_bom_material_component_data_for_normal(bom_material_component_data)
             validate_data['bom_material_component_data'] = bom_material_component_data
-        except Product.DoesNotExist:
+        except Exception as err:
+            print(err)
             raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
         print('8. validate_bom_material_component_data --- ok')
         return True
@@ -612,7 +615,8 @@ class BOMCommonFunction:
                     else:
                         raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
                 validate_data['bom_tool_data'] = bom_tool_data
-            except Product.DoesNotExist:
+            except Exception as err:
+                print(err)
                 raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
         print('9. validate_bom_tool_data --- ok')
         return True

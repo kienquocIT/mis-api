@@ -569,7 +569,8 @@ class PaymentCommonFunction:
             print('9. validate_payment_item_list --- ok')
             return validate_data
         except Exception as err:
-            raise serializers.ValidationError({'payment_item_list': f"Payment data is not valid. {err}"})
+            print(err)
+            raise serializers.ValidationError({'payment_item_list': f"Payment data is not valid."})
 
     @classmethod
     def validate_attachment(cls, context_user, doc_id, validate_data):

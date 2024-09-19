@@ -262,7 +262,8 @@ class ReturnAdvanceCommonFunction:
             print('3. validated_returned_list --- ok')
             return validate_data
         except Exception as err:
-            raise serializers.ValidationError({'returned_list': f"Returned data is not valid. {err}"})
+            print(err)
+            raise serializers.ValidationError({'returned_list': f"Returned data is not valid."})
 
     @classmethod
     def common_create_return_advance_cost(cls, returned_list, return_advance_obj):
