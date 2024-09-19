@@ -318,7 +318,7 @@ class GoodsIssueCommonFunction:
             return True
         except Exception as err:
             print(err)
-            raise serializers.ValidationError({'detail_data_ia': f"Detail IA data is not valid."})
+            raise serializers.ValidationError({'detail_data_ia': "Detail IA data is not valid."})
 
     @classmethod
     def validate_detail_data_po(cls, validate_data):
@@ -370,7 +370,7 @@ class GoodsIssueCommonFunction:
             return True
         except Exception as err:
             print(err)
-            raise serializers.ValidationError({'detail_data_po': f"Detail PO data is not valid."})
+            raise serializers.ValidationError({'detail_data_po': "Detail PO data is not valid."})
 
     @classmethod
     def create_issue_item(cls, instance, data):

@@ -499,7 +499,7 @@ class BOMCommonFunction:
                 validate_data['bom_process_data'] = bom_process_data
             except Exception as err:
                 print(err)
-                raise serializers.ValidationError({'bom_process_data': f"Process data is not valid."})
+                raise serializers.ValidationError({'bom_process_data': "Process data is not valid."})
         print('6. validate_bom_process_data --- ok')
         return True
 

@@ -616,7 +616,7 @@ class APCommonFunction:
             return validate_data
         except Exception as err:
             print(err)
-            raise serializers.ValidationError({'ap_item_list': f'AP item list is not valid.'})
+            raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
 
     @classmethod
     def validate_common(cls, validate_data):
