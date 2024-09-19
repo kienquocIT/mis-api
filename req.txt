@@ -24,7 +24,7 @@ django-otp==1.5.1
 django-storages[s3]==1.14.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
-drf-yasg==1.21.4
+drf-yasg==1.21.7
 Faker==22.2.0
 icalendar==5.0.11
 idna==3.4

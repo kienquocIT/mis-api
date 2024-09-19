@@ -66,12 +66,12 @@ class MailLogController:  # pylint: disable=R0902
 
     @address_to.setter
     def address_to(self, value: list[str] or str):
-        if isinstance(value, list):
+        if isinstance(value, str) and '@' in value:
+            self._address_to.append(value)
+        elif isinstance(value, list):
             for item in value:
                 if isinstance(item, str) and '@' in item:
-                    self._address_to.append(value)
-        elif isinstance(value, str) and '@' in value:
-            self._address_to.append(value)
+                    self._address_to.append(item)
 
     @property
     def employee_cc(self):

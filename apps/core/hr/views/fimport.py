@@ -22,7 +22,7 @@ class GroupLevelImport(BaseCreateMixin):
         request_body=GroupLevelImportSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -45,7 +45,7 @@ class GroupImport(BaseCreateMixin):
         request_body=GroupImportSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):

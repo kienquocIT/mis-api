@@ -3,7 +3,7 @@ from django.urls import path
 from apps.core.mailer.views import (
     MailerFeatureList, MailerFeatureDetail, MailerSystemGetByCode, MailerSystemDetail,
     MailerServerConfigGet, MailerServerConfigDetail, MailServerTestConnectAPI, MailServerTestConnectDataAPI,
-    MailerFeatureAppList, MailTemplateByApplication,
+    MailerFeatureAppList, MailTemplateByApplication, MailLogList,
 )
 
 urlpatterns = [
@@ -20,4 +20,5 @@ urlpatterns = [
     path('feature/list/<str:application_id>', MailTemplateByApplication.as_view(), name='MailTemplateByApplication'),
     path('feature/detail/<str:pk>', MailerFeatureDetail.as_view(), name='MailerConfigDetail'),
     path('feature/app/list', MailerFeatureAppList.as_view(), name='MailerFeatureAppList'),
+    path('log', MailLogList.as_view(), name='MailLogList'),
 ]

@@ -1859,9 +1859,9 @@ class ViewChecking:
         This function is checking overview some require of all requests
         """
 
-        # check pk in url is UUID
+        # check pk|id in url is UUID
         for key, value in self.attr.view_kwargs.items():
-            if 'pk' in key:
+            if key.startswith('pk') or key.endswith('pk') or key.startswith('id') or key.endswith('id'):
                 if not TypeCheck.check_uuid(value):
                     return HttpReturn.error_not_found()
 

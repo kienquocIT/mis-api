@@ -3,7 +3,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from apps.core.mailer.handle_html import HTMLController
-from apps.core.mailer.models import MailTemplate, MailTemplateSystem, MailConfig
+from apps.core.mailer.models import MailTemplate, MailTemplateSystem, MailConfig, MailLog
 from apps.shared import BaseMsg, AttMsg, FORMATTING
 
 
@@ -254,3 +254,13 @@ class MailTestConnectDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = MailConfig
         fields = ('host', 'port', 'username', 'password', 'use_tls')
+
+
+class MailLogForFormAuthLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MailLog
+        fields = (
+            'id', 'system_code', 'date_created',
+            'subject', 'address_sender', 'address_to', 'address_cc', 'address_bcc',
+            'status_code', 'status_remark',
+        )
