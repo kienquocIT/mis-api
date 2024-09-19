@@ -2,6 +2,8 @@ from uuid import UUID
 
 from celery import shared_task
 
+from apps.core.base.models import Application
+from apps.sales.project.models import ProjectNews, Project
 from apps.shared import DisperseModel, FORMATTING
 
 
@@ -98,7 +100,7 @@ def get_task_in_work(task_lst):
                     'id': str(task.id),
                     'title': task.title,
                     'code': task.code
-                }if task and hasattr(task, 'id') else {},
+                } if task and hasattr(task, 'id') else {},
                 'work': str(item.work.id) if item.work else '',
                 'percent': task.percent_completed if task.percent_completed > 0 else 0,
                 'assignee': {
@@ -182,3 +184,31 @@ def create_baseline_data(baseline_id: UUID or str, project_id: UUID or str):
         baseline_obj.save()
         return 'Success'
     return 'CREATE_BASELINE_ERROR'
+
+
+@shared_task
+def create_project_news(
+        project_id: UUID or str,
+        employee_inherit_id: UUID or str,
+        application_id: UUID or str,
+        document_id: UUID or str,
+        document_title: str,
+        title: str,
+        msg: str,
+):
+    try:
+        project_obj = Project.objects.get(pk=project_id)
+        application_obj = Application.objects.get(pk=application_id)
+    except (Project.DoesNotExist, Application.DoesNotExist) as err:
+        raise err
+    return ProjectNews.objects.create(
+        tenant_id=project_obj.tenant_id,
+        company_id=project_obj.company_id,
+        project=project_obj,
+        employee_inherit_id=employee_inherit_id,
+        application=application_obj,
+        document_id=document_id,
+        document_title=document_title,
+        title=title,
+        msg=msg,
+    )

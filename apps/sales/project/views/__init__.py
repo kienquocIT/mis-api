@@ -5,3 +5,4 @@ from .project_task import *
 from .project_expense import *
 from .project_baseline import *
 from .config import *
+from .news import *
