@@ -34,7 +34,7 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
         operation_description="Get group level list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -46,7 +46,7 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
         request_body=GroupLevelCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -67,7 +67,7 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Group level detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -79,7 +79,7 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=GroupLevelUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
@@ -119,7 +119,7 @@ class GroupList(BaseListMixin, BaseCreateMixin):
         operation_description="Get group list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
@@ -131,7 +131,7 @@ class GroupList(BaseListMixin, BaseCreateMixin):
         request_body=GroupCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -159,7 +159,7 @@ class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
         operation_description="Get Group detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -171,7 +171,7 @@ class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
         request_body=GroupUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
@@ -209,7 +209,7 @@ class GroupParentList(BaseListMixin):
         operation_description="Get group parent list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, allow_admin_company=True,
         label_code='hr', model_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
