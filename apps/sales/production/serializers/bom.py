@@ -62,7 +62,7 @@ class LaborListForBOMSerializer(serializers.ModelSerializer):
 
 
 class BOMProductMaterialListSerializer(serializers.ModelSerializer):
-    detail_bom = serializers.SerializerMethodField()
+    bom_id = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
 
     class Meta:
@@ -72,23 +72,15 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'has_bom',
-            'detail_bom',
+            'bom_id',
             'sale_default_uom',
             'general_uom_group',
         )
 
     @classmethod
-    def get_detail_bom(cls, obj):
-        all_material = []
+    def get_bom_id(cls, obj):
         bom = obj.bom_product.first()
-        if bom:
-            for item in bom.bom_material_component_bom.all():
-                all_material.append({
-                    'id': item.material_id,
-                    'code': item.material.code,
-                    'title': item.material.title,
-                })
-        return all_material
+        return str(bom.id) if bom else None
 
 
 

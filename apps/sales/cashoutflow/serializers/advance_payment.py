@@ -707,7 +707,8 @@ class APCommonFunction:
                 quotation = advance_payment_obj.quotation_mapped
                 sale_order = advance_payment_obj.sale_order_mapped
                 sale_code = sale_order.code if (
-                    sale_order) else quotation.code if quotation else opp.code if opp else None
+                    sale_order
+                ) else quotation.code if quotation else opp.code if opp else None
                 advance_payment_obj.sale_code = sale_code
 
                 advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])
