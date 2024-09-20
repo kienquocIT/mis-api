@@ -497,8 +497,6 @@ class APCommonFunction:
                 validate_data['opportunity_mapped_id'] = str(opportunity_mapped.id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
-        else:
-            validate_data['opportunity_mapped_id'] = None
         print('1. validate_opportunity_mapped_id --- ok')
         return validate_data
 
@@ -510,8 +508,6 @@ class APCommonFunction:
                 validate_data['quotation_mapped_id'] = str(quotation_mapped.id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
-        else:
-            validate_data['quotation_mapped_id'] = None
         print('2. validate_quotation_mapped_id --- ok')
         return validate_data
 
@@ -523,8 +519,6 @@ class APCommonFunction:
                 validate_data['sale_order_mapped_id'] = str(sale_order_mapped.id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'sale_order_mapped_id': 'Sale order is not exist.'})
-        else:
-            validate_data['sale_order_mapped_id'] = None
         print('3. validate_sale_order_mapped_id --- ok')
         return validate_data
 
@@ -635,18 +629,19 @@ class APCommonFunction:
 
     @classmethod
     def validate_attachment(cls, context_user, doc_id, validate_data):
-        if context_user and hasattr(context_user, 'employee_current_id'):
-            state, result = AdvancePaymentAttachmentFile.valid_change(
-                current_ids=validate_data.get('attachment', []),
-                employee_id=context_user.employee_current_id,
-                doc_id=doc_id
-            )
-            if state is True:
-                validate_data['attachment'] = result
-                print('11. validate_attachment --- ok')
-                return validate_data
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        if 'attachment' in validate_data:
+            if context_user and hasattr(context_user, 'employee_current_id'):
+                state, result = AdvancePaymentAttachmentFile.valid_change(
+                    current_ids=validate_data.get('attachment', []),
+                    employee_id=context_user.employee_current_id,
+                    doc_id=doc_id
+                )
+                if state is True:
+                    validate_data['attachment'] = result
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        print('11. validate_attachment --- ok')
+        return validate_data
 
     @classmethod
     def read_money_vnd(cls, num):
@@ -716,8 +711,7 @@ class APCommonFunction:
                 advance_payment_obj.sale_code = sale_code
 
                 advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])
-            return True
-        return False
+        return True
 
     @classmethod
     def handle_attach_file(cls, instance, attachment_result):

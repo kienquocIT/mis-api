@@ -137,7 +137,6 @@ class PaymentListSerializer(AbstractListSerializerModel):
 
 
 class PaymentCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(max_length=150)
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
@@ -165,14 +164,15 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
-        if validate_data.get('is_internal_payment'):
-            validate_data.pop('supplier_id', None)
-            if not validate_data.get('employee_payment_id'):
-                raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
-        else:
-            validate_data.pop('employee_payment_id', None)
-            if not validate_data.get('supplier_id'):
-                raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
+        if all(key in validate_data for key in ['is_internal_payment', 'supplier_id', 'employee_payment_id']):
+            if validate_data.get('is_internal_payment') is True:
+                validate_data.pop('supplier_id', None)
+                if not validate_data.get('employee_payment_id'):
+                    raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
+            else:
+                validate_data.pop('employee_payment_id', None)
+                if not validate_data.get('supplier_id'):
+                    raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
         PaymentCommonFunction.validate_opportunity_mapped_id(validate_data)
         PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
         PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
@@ -182,6 +182,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
         PaymentCommonFunction.validate_payment_item_list(validate_data)
+        PaymentCommonFunction.validate_common(validate_data)
         PaymentCommonFunction.validate_attachment(
             context_user=self.context.get('user', None),
             doc_id=None,
@@ -230,16 +231,20 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'is_internal_payment',
             'employee_created',
             'employee_inherit',
-            'attachment'
+            'attachment',
+            'sale_code',
+            'payment_value'
         )
 
     @classmethod
     def get_expense_items(cls, obj):
         all_expense_items_mapped = []
+        order = 1
         for item in obj.payment.all():
             all_expense_items_mapped.append(
                 {
                     'id': item.id,
+                    'order': order,
                     'expense_type': item.expense_type_data,
                     'expense_description': item.expense_description,
                     'expense_uom_name': item.expense_uom_name,
@@ -256,6 +261,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                     'ap_cost_converted_list': item.ap_cost_converted_list
                 }
             )
+            order += 1
         return all_expense_items_mapped
 
     @classmethod
@@ -388,7 +394,6 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class PaymentUpdateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(max_length=150)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
@@ -407,18 +412,20 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
-        if validate_data.get('is_internal_payment'):
-            validate_data.pop('supplier_id', None)
-            if not validate_data.get('employee_payment_id'):
-                raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
-        else:
-            validate_data.pop('employee_payment_id', None)
-            if not validate_data.get('supplier_id'):
-                raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
+        if all(key in validate_data for key in ['is_internal_payment', 'supplier_id', 'employee_payment_id']):
+            if validate_data.get('is_internal_payment') is True:
+                validate_data.pop('supplier_id', None)
+                if not validate_data.get('employee_payment_id'):
+                    raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
+            else:
+                validate_data.pop('employee_payment_id', None)
+                if not validate_data.get('supplier_id'):
+                    raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
         PaymentCommonFunction.validate_supplier_id(validate_data)
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
         PaymentCommonFunction.validate_payment_item_list(validate_data)
+        PaymentCommonFunction.validate_common(validate_data)
         PaymentCommonFunction.validate_attachment(
             context_user=self.context.get('user', None),
             doc_id=self.instance.id,
@@ -443,7 +450,7 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
 class PaymentCommonFunction:
     @classmethod
     def validate_opportunity_mapped_id(cls, validate_data):
-        if validate_data.get('opportunity_mapped_id'):
+        if 'opportunity_mapped_id' in validate_data:
             try:
                 opportunity_mapped = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
                 if opportunity_mapped.is_close_lost or opportunity_mapped.is_deal_close:
@@ -451,28 +458,24 @@ class PaymentCommonFunction:
                 validate_data['opportunity_mapped_id'] = str(opportunity_mapped.id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
-        else:
-            validate_data['opportunity_mapped_id'] = None
         print('1. validate_opportunity_mapped_id --- ok')
         return validate_data
 
     @classmethod
     def validate_quotation_mapped_id(cls, validate_data):
-        if validate_data.get('quotation_mapped_id'):
+        if 'quotation_mapped_id' in validate_data:
             try:
                 validate_data['quotation_mapped_id'] = str(Quotation.objects.get(
                     id=validate_data.get('quotation_mapped_id')
                 ).id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
-        else:
-            validate_data['quotation_mapped_id'] = None
         print('2. validate_quotation_mapped_id --- ok')
         return validate_data
 
     @classmethod
     def validate_sale_order_mapped_id(cls, validate_data):
-        if validate_data.get('sale_order_mapped_id'):
+        if 'sale_order_mapped_id' in validate_data:
             try:
                 validate_data['sale_order_mapped_id'] = str(SaleOrder.objects.get(
                     id=validate_data.get('sale_order_mapped_id')
@@ -486,7 +489,7 @@ class PaymentCommonFunction:
 
     @classmethod
     def validate_sale_code_type(cls, validate_data):
-        if validate_data.get('sale_code_type') is not None:
+        if 'sale_code_type' in validate_data:
             if validate_data.get('sale_code_type') not in [0, 1, 2]:
                 raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
         print('4. validate_sale_code_type --- ok')
@@ -494,30 +497,29 @@ class PaymentCommonFunction:
 
     @classmethod
     def validate_employee_inherit_id(cls, validate_data):
-        try:
-            validate_data['employee_inherit_id'] = str(Employee.objects.get(
-                id=validate_data.get('employee_inherit_id')
-            ).id)
-            print('5. validate_employee_inherit_id --- ok')
-            return validate_data
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        if 'employee_inherit_id' in validate_data:
+            try:
+                validate_data['employee_inherit_id'] = str(Employee.objects.get(
+                    id=validate_data.get('employee_inherit_id')
+                ).id)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+        print('5. validate_employee_inherit_id --- ok')
+        return validate_data
 
     @classmethod
     def validate_supplier_id(cls, validate_data):
-        if validate_data.get('supplier_id'):
+        if 'supplier_id' in validate_data:
             try:
                 validate_data['supplier_id'] = str(Account.objects.get(id=validate_data.get('supplier_id')).id)
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'supplier_id': 'Supplier is not exist.'})
-        else:
-            validate_data['supplier_id'] = None
         print('6. validate_supplier_id --- ok')
         return validate_data
 
     @classmethod
     def validate_employee_payment_id(cls, validate_data):
-        if validate_data.get('employee_payment_id'):
+        if 'employee_payment_id' in validate_data:
             try:
                 validate_data['employee_payment_id'] = str(Employee.objects.get(
                     id=validate_data.get('employee_payment_id')
@@ -531,7 +533,7 @@ class PaymentCommonFunction:
 
     @classmethod
     def validate_method(cls, validate_data):
-        if validate_data.get('method') is not None:
+        if 'method' in validate_data:
             if validate_data.get('method') not in [0, 1, 2]:
                 raise serializers.ValidationError({'method': 'Method is not valid.'})
         print('8. validate_method --- ok')
@@ -573,19 +575,61 @@ class PaymentCommonFunction:
             raise serializers.ValidationError({'payment_item_list': "Payment data is not valid."})
 
     @classmethod
+    def validate_common(cls, validate_data):
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
+        print('10. validate_common --- ok')
+        return validate_data
+
+    @classmethod
     def validate_attachment(cls, context_user, doc_id, validate_data):
-        if context_user and hasattr(context_user, 'employee_current_id'):
-            state, result = PaymentAttachmentFile.valid_change(
-                current_ids=validate_data.get('attachment', []),
-                employee_id=context_user.employee_current_id,
-                doc_id=doc_id
-            )
-            if state is True:
-                validate_data['attachment'] = result
-                print('10. validate_attachment --- ok')
-                return validate_data
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        if 'attachment' in validate_data:
+            if context_user and hasattr(context_user, 'employee_current_id'):
+                state, result = PaymentAttachmentFile.valid_change(
+                    current_ids=validate_data.get('attachment', []),
+                    employee_id=context_user.employee_current_id,
+                    doc_id=doc_id
+                )
+                if state is True:
+                    validate_data['attachment'] = result
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        print('11. validate_attachment --- ok')
+        return validate_data
+
+    @classmethod
+    def read_money_vnd(cls, num):
+        text1 = ' mươi'
+        text2 = ' trăm'
+
+        xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
+        xe1 = ['', 'mười'] + [f'{pre}{text1}' for pre in xe0[2:]]
+        xe2 = [''] + [f'{pre}{text2}' for pre in xe0[1:]]
+
+        result = ""
+        str_n = str(int(num))
+        len_n = len(str_n)
+
+        if len_n == 1:
+            result = xe0[num]
+        elif len_n == 2:
+            if num == 10:
+                result = "mười"
+            else:
+                result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
+        elif len_n == 3:
+            result = xe2[int(str_n[0])] + " " + cls.read_money_vnd(int(str_n[1:]))
+        elif len_n <= 6:
+            result = cls.read_money_vnd(int(str_n[:-3])) + " nghìn " + cls.read_money_vnd(int(str_n[-3:]))
+        elif len_n <= 9:
+            result = cls.read_money_vnd(int(str_n[:-6])) + " triệu " + cls.read_money_vnd(int(str_n[-6:]))
+        elif len_n <= 12:
+            result = cls.read_money_vnd(int(str_n[:-9])) + " tỷ " + cls.read_money_vnd(int(str_n[-9:]))
+
+        return str(result.strip()).lower()
 
     @classmethod
     def create_payment_items(cls, payment_obj, payment_item_list):
@@ -613,19 +657,23 @@ class PaymentCommonFunction:
                 else:
                     raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
 
-            PaymentCost.objects.filter(payment=payment_obj).delete()
-            PaymentCost.objects.bulk_create(bulk_info)
-            payment_obj.advance_value = payment_value
+            if len(bulk_info) > 0:
+                PaymentCost.objects.filter(payment=payment_obj).delete()
+                PaymentCost.objects.bulk_create(bulk_info)
+                payment_obj.advance_value = payment_value
+                payment_value_by_words = PaymentCommonFunction.read_money_vnd(payment_value).capitalize()
+                if payment_value_by_words[-1] == ',':
+                    payment_value_by_words = payment_value_by_words[:-1] + ' đồng'
+                payment_obj.payment_value_by_words = payment_value_by_words
 
-            opp = payment_obj.opportunity_mapped
-            quotation = payment_obj.quotation_mapped
-            sale_order = payment_obj.sale_order_mapped
-            sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
-            payment_obj.sale_code = sale_code
+                opp = payment_obj.opportunity_mapped
+                quotation = payment_obj.quotation_mapped
+                sale_order = payment_obj.sale_order_mapped
+                sale_code = sale_order.code if sale_order else quotation.code if quotation else opp.code if opp else None
+                payment_obj.sale_code = sale_code
 
-            payment_obj.save(update_fields=['payment_value', 'sale_code'])
-            return True
-        return False
+                payment_obj.save(update_fields=['payment_value', 'payment_value_by_words', 'sale_code'])
+        return True
 
     @classmethod
     def handle_attach_file(cls, instance, attachment_result):

@@ -1641,7 +1641,7 @@ AppProp_SaleData_Advance_Payment_data = {
     "1b379df0-49b6-40de-a11b-dfb7a8575da2": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Employee created",
-        "code": "employee_created",
+        "code": "employee_created_id",
         "type": 5,
         "content_type": 'hr.Employee',
     },
@@ -1668,7 +1668,7 @@ AppProp_SaleData_Advance_Payment_data = {
     "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Supplier",
-        "code": "supplier",
+        "code": "supplier_id",
         'type': 5,
         'content_type': 'saledata.Account',
     },
@@ -1783,7 +1783,7 @@ AppProp_SaleData_Payment_data = {
     "21399374-a08e-4ba9-a40f-170866fa64ee": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Employee created",
-        "code": "employee_created",
+        "code": "employee_created_id",
         "type": 5,
         "content_type": 'hr.Employee',
     },
@@ -1810,14 +1810,14 @@ AppProp_SaleData_Payment_data = {
     "67099494-859c-4ad9-adad-92175230d08f": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Employee payment",
-        "code": "employee_payment",
+        "code": "employee_payment_id",
         'type': 5,
         'content_type': 'hr.Employee',
     },
     "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Supplier",
-        "code": "supplier",
+        "code": "supplier_id",
         'type': 5,
         'content_type': 'saledata.Account',
     },
@@ -1832,6 +1832,20 @@ AppProp_SaleData_Payment_data = {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Tab detail",
         "code": "payment_expense_valid_list",
+        "type": 1,
+    },
+    # tab plan
+    "20183aa0-49b4-4918-9a8c-ea6790afa52d": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Plan Tab",
+        "code": "plan_tab",
+        "type": 1,
+    },
+    # tab file
+    "f292552c-7dd6-47fd-8ca0-457ce117dfe3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "File Tab",
+        "code": "attachment",
         "type": 1,
     },
     **Payment_data__params
