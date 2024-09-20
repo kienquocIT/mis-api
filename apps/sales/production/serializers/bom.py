@@ -87,7 +87,9 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_is_project_bom(cls, obj):
         bom = obj.bom_product.first()
-        return True if bom.opportunity else False
+        if bom:
+            return bool(bom.opportunity)
+        return False
 
     @classmethod
     def get_sale_default_uom(cls, obj):
