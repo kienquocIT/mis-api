@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Group
+from apps.core.hr.models import Group, Employee
 from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.production.models import WorkOrderTask, WorkOrderTaskTool, BOM
 from apps.shared import SaleMsg
 
@@ -21,7 +22,7 @@ class WorkOrderSub:
             if task.is_task is True:
                 task.wo_task_tool_task.all().delete()
                 WorkOrderTaskTool.objects.bulk_create([WorkOrderTaskTool(
-                    po_task=task, tool_id=tool_data.get('id', None)
+                    wo_task=task, tool_id=tool_data.get('id', None)
                 ) for tool_data in task.tool_data])
         return True
 
@@ -39,6 +40,20 @@ class WorkOrderValid:
             return str(BOM.objects.get(id=value).id)
         except BOM.DoesNotExist:
             raise serializers.ValidationError({'bom': SaleMsg.BOM_NOT_EXIST})
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        try:
+            return str(Opportunity.objects.get(id=value).id)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            return str(Employee.objects.get(id=value).id)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee': SaleMsg.EMPLOYEE_INHERIT_NOT_EXIST})
 
     @classmethod
     def validate_product_id(cls, value):

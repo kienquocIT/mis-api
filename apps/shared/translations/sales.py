@@ -39,6 +39,7 @@ class SaleMsg:
     IA_NOT_EXIST = _('Inventory adjustment does not exist.')
     PRODUCTION_ORDER_NOT_EXIST = _('Production order does not exist.')
     PRODUCTION_REPORT_NOT_EXIST = _('Production report does not exist.')
+    EMPLOYEE_INHERIT_NOT_EXIST = _('Employee inherit does not exist.')
 
 
 class SaleTask:

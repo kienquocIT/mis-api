@@ -67,12 +67,13 @@ class WorkOrderDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'bom_data',
-            'type_production',
+            'opportunity_data',
+            'employee_inherit_data',
+            'sale_order_data',
             'product_data',
             'quantity',
             'uom_data',
             'warehouse_data',
-            'sale_order_data',
             'status_production',
             'date_start',
             'date_end',
@@ -127,6 +128,14 @@ class WorkOrderCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_bom_id(cls, value):
         return WorkOrderValid.validate_bom_id(value=value)
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        return WorkOrderValid.validate_opportunity_id(value=value)
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        return WorkOrderValid.validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -194,6 +203,14 @@ class WorkOrderUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_bom_id(cls, value):
         return WorkOrderValid.validate_bom_id(value=value)
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        return WorkOrderValid.validate_opportunity_id(value=value)
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        return WorkOrderValid.validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
