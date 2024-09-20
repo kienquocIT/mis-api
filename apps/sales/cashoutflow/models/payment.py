@@ -70,6 +70,7 @@ class Payment(DataAbstractModel):
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
     payment_value = models.FloatField(default=0)
+    payment_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
 
     class Meta:
