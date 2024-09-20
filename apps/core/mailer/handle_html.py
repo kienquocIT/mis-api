@@ -223,8 +223,10 @@ class ManualNH3:  # pylint: disable=R0902
 
 class HTMLController(ManualNH3, ManualBleach):  # pylint: disable=R0902
     @staticmethod
-    def minify(data):
-        return minify_html.minify(data)  # pylint: disable=E1101
+    def minify(data, **kwargs):
+        # https://github.com/wilsonzlin/minify-html?tab=readme-ov-file
+        # https://docs.rs/minify-html/latest/minify_html/struct.Cfg.html
+        return minify_html.minify(data, **kwargs)  # pylint: disable=E1101
 
     @staticmethod
     def detect_escape(data):
@@ -282,7 +284,12 @@ class HTMLController(ManualNH3, ManualBleach):  # pylint: disable=R0902
 
         data = self.nh3_clean(**kwargs)
         if is_minify:
-            data = self.minify(data)
+            data = self.minify(
+                data,
+                keep_closing_tags=True,
+                keep_spaces_between_attributes=True,
+                keep_html_and_head_opening_tags=True,
+            )
         if is_escape:
             return self.nh3_clean_text(data=data)
         return data

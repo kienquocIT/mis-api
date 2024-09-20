@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.core.forms.models import FormPublished, FormPublishedEntries, FormPublishAuthenticateEmail
-from apps.core.mailer.tasks import send_mail_form, send_mail_from_system
+from apps.core.mailer.tasks import send_mail_form, send_mail_form_otp
 
 
 @shared_task
@@ -86,10 +86,15 @@ def form_send_otp(form_auth_id):
     if contents:
         subject = 'Your OTP code for form validation'
         to_mail = [obj.email]
-        state_send = send_mail_from_system(subject=subject, to_mail=to_mail, contents=contents, timeout=30)
+        state_send = send_mail_form_otp(
+            subject=subject, to_mail=to_mail, contents=contents, timeout=30,
+            tenant_id=obj.tenant_id, company_id=obj.company_id,
+            form_id=obj.form_id,
+        )
         if state_send is True:
             return True
-        raise ValueError(f'Send mail error: {state_send}')
+        print(f'Send mail error: {state_send}')
+        return False
     raise ValueError('Convert HTML before send OTP is failure.')
 
 

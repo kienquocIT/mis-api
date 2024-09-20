@@ -6,10 +6,11 @@ from django.conf import settings
 from django.core.mail import get_connection, EmailMultiAlternatives
 from django.core.mail.backends.smtp import EmailBackend
 from django.utils import timezone
+from django.utils.text import slugify
 
 from apps.core.mailer.handle_html import HTMLController
 
-from apps.shared import FORMATTING
+from apps.shared import FORMATTING, StringHandler
 
 
 class SendMailController:  # pylint: disable=R0902
@@ -71,6 +72,28 @@ class SendMailController:  # pylint: disable=R0902
         }
 
     @property
+    def host(self):
+        if self.kwargs and 'host' in self.kwargs:
+            return self.kwargs['host']
+        return None
+
+    @property
+    def port(self):
+        if self.kwargs and 'port' in self.kwargs:
+            return self.kwargs['port']
+        return None
+
+    @property
+    def from_email(self):
+        if self.kwargs and 'from_email' in self.kwargs:
+            return self.kwargs['from_email']
+        return None
+
+    @from_email.setter
+    def from_email(self, value):
+        self.kwargs['from_email'] = value
+
+    @property
     def connection(self) -> EmailBackend:
         return get_connection(**self.kwargs)
 
@@ -99,7 +122,15 @@ class SendMailController:  # pylint: disable=R0902
     def confirm_config(self):
         return self.kwargs['host'] and self.kwargs['port'] and self.kwargs['username'] and self.kwargs['password']
 
-    def send(self, mail_to, template, data):
+    @classmethod
+    def random_msg_id(cls, doc_id=None):
+        if not doc_id:
+            doc_id = StringHandler.random_number(10)
+        doc_id = slugify(doc_id.replace('-', '').replace('.', ''))
+        timestamp = timezone.now().timestamp()
+        return f'<{timestamp}.{doc_id}@bflow.vn>'
+
+    def send(self, mail_to, template, data, doc_id=None, previous_id=None):
         if self.confirm_config():
             try:
                 with self.connection as connection:
@@ -125,6 +156,10 @@ class SendMailController:  # pylint: disable=R0902
                         # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
                         'Importance': 'High',
                         'X-Priority': '1 (Highest)',
+                        'Message-ID': self.random_msg_id(doc_id=doc_id),
+                        **(
+                            {'In-Reply-To': previous_id} if previous_id else {}
+                        )
                     }
                     if self.reply_to:
                         headers['Reply-To'] = self.reply_to
@@ -144,9 +179,8 @@ class SendMailController:  # pylint: disable=R0902
             except Exception as err:
                 print('[SendMailController][send]', str(err))
                 raise ValueError(f'[SendMailController] Errors: {str(err)}')
-        else:
-            info_config = ",".join([
-                f"Host: {self.kwargs['host']}",
-                f"Mail To: {mail_to}",
-            ])
-            return f"[SendMailController] Skip send mail before confirm_config is false: {info_config}"
+        info_config = ",".join([
+            f"Host: {self.kwargs['host']}",
+            f"Mail To: {mail_to}",
+        ])
+        return f"[SendMailController] Skip send mail before confirm_config is false: {info_config}"

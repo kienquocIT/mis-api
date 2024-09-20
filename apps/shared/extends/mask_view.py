@@ -10,7 +10,7 @@ import rest_framework.exceptions
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.utils import translation
 
 from rest_framework import status, serializers
@@ -1859,9 +1859,9 @@ class ViewChecking:
         This function is checking overview some require of all requests
         """
 
-        # check pk in url is UUID
+        # check pk|id in url is UUID
         for key, value in self.attr.view_kwargs.items():
-            if 'pk' in key:
+            if key.startswith('pk') or key.endswith('pk') or key.startswith('id') or key.endswith('id'):
                 if not TypeCheck.check_uuid(value):
                     return HttpReturn.error_not_found()
 
@@ -1975,7 +1975,7 @@ def mask_view(**parent_kwargs):
                     #   3. Tuple: (data, status)
                     try:
                         view_return = func_view(self, *args, **kwargs)  # --> {'user_list': user_list}
-                        if isinstance(view_return, HttpResponse):
+                        if isinstance(view_return, (HttpResponse, StreamingHttpResponse)):
                             return view_return
                         if isinstance(view_return, Exception):
                             return view_return

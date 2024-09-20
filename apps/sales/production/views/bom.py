@@ -106,7 +106,8 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'bom_type': ['exact']
+        'bom_type': ['exact'],
+        'opportunity': ['exact', 'isnull'],
     }
     serializer_list = BOMListSerializer
     serializer_create = BOMCreateSerializer
@@ -122,7 +123,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
         operation_description="Get BOM List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, opp_enabled=True,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -152,6 +153,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related('product').prefetch_related(
             'bom_process_bom__labor__expense__uom',
             'bom_process_bom__labor__expense__price',
+            'bom_process_bom__labor__expense_item',
             'bom_process_bom__uom',
             'bom_summary_process_bom__labor',
             'bom_summary_process_bom__uom',

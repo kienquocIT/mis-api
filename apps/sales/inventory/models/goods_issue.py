@@ -45,9 +45,8 @@ class GoodsIssue(DataAbstractModel):
             if len(item.lot_data) > 0:
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
-                    quantity = lot_item['old_quantity'] - lot_item['quantity']
-                    if prd_wh_lot and quantity > 0:
-                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, quantity)
+                    if prd_wh_lot and lot_item.get('quantity', 0) > 0:
+                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, lot_item.get('quantity', 0))
                         activities_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
@@ -64,7 +63,7 @@ class GoodsIssue(DataAbstractModel):
                             'lot_data': {
                                 'lot_id': str(prd_wh_lot.id),
                                 'lot_number': prd_wh_lot.lot_number,
-                                'lot_quantity': quantity,
+                                'lot_quantity': lot_item.get('quantity', 0),
                                 'lot_value': 0,  # theo gia cost,
                                 'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                             }
@@ -139,6 +138,14 @@ class GoodsIssue(DataAbstractModel):
             return True
         raise ValueError('Issued quantity cannot > max issue quantity remaining.')
 
+    @classmethod
+    def update_status_production_order_item(cls, po_item_obj, this_issue_quantity):
+        if po_item_obj.quantity - po_item_obj.issued_quantity - this_issue_quantity >= 0:
+            po_item_obj.issued_quantity += this_issue_quantity
+            po_item_obj.save(update_fields=['issued_quantity'])
+            return True
+        raise ValueError('Issued quantity cannot > max issue quantity remaining.')
+
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
             self.company_id,
@@ -171,6 +178,18 @@ class GoodsIssue(DataAbstractModel):
                                     item.inventory_adjustment_item, item.issued_quantity
                                 )
                             self.inventory_adjustment.update_ia_state()
+                    except Exception as err:
+                        print(err)
+                        raise err
+                elif self.production_order:
+                    try:
+                        with transaction.atomic():
+                            for item in self.goods_issue_product.all():
+                                self.update_product_warehouse_data(item)
+                                self.update_status_production_order_item(
+                                    item.production_order_item, item.issued_quantity
+                                )
+                            self.production_order.update_production_order_issue_state()
                     except Exception as err:
                         print(err)
                         raise err

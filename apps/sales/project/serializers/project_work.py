@@ -2,9 +2,9 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 
 from rest_framework import serializers
 
-from apps.shared import HRMsg, BaseMsg, ProjectMsg
+from apps.shared import HRMsg, BaseMsg, ProjectMsg, DisperseModel
 from ..extend_func import reorder_work, calc_rate_project, group_calc_weight, work_calc_weight_h_group
-from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups
+from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups, WorkMapBOM
 
 
 def validated_date_work(attrs, w_rate=None):
@@ -59,6 +59,7 @@ class WorkListSerializers(serializers.ModelSerializer):
 class WorkCreateSerializers(serializers.ModelSerializer):
     project = serializers.UUIDField()
     group = serializers.UUIDField(required=False)
+    bom_service = serializers.UUIDField(required=False)
 
     @classmethod
     def validate_employee_inherit(cls, value):
@@ -90,6 +91,16 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         except ProjectGroups.DoesNotExist:
             return value
 
+    @classmethod
+    def validate_bom_service(cls, value):
+        try:
+            bom = DisperseModel(app_model='production.BOM').get_model().objects.get(
+                id=value,
+            )
+            return bom
+        except ValueError:
+            return value
+
     def validate(self, attrs):
         attrs['employee_inherit'] = attrs['project'].employee_inherit
         w_start_date = attrs['w_start_date']
@@ -116,9 +127,15 @@ class WorkCreateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
+        bom_service = validated_data.pop('bom_service', None)
         if group and project:
             validated_data['order'] = reorder_work(group, project)
-
+        if bom_service:
+            validated_data['bom_data'] = {
+                'id': str(bom_service.id),
+                'title': bom_service.title,
+                'code': bom_service.code
+            }
         work = ProjectWorks.objects.create(**validated_data)
         ProjectMapWork.objects.create(
             project=project, work=work,
@@ -128,6 +145,9 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         if group:
             GroupMapWork.objects.create(group=group, work=work)
         calc_rate_project(project)
+
+        if bom_service:
+            WorkMapBOM.objects.create(bom=bom_service, work=work)
         return work
 
     class Meta:
@@ -143,7 +163,8 @@ class WorkCreateSerializers(serializers.ModelSerializer):
             'project',
             'group',
             'work_dependencies_parent',
-            'work_dependencies_type'
+            'work_dependencies_type',
+            'bom_service'
         )
 
 
@@ -185,11 +206,13 @@ class WorkDetailSerializers(serializers.ModelSerializer):
             'work_dependencies_type',
             'group',
             'work_status',
+            'bom_data'
         )
 
 
 class WorkUpdateSerializers(serializers.ModelSerializer):
     group = serializers.UUIDField(required=False)
+    bom_service = serializers.UUIDField(required=False)
 
     class Meta:
         model = ProjectWorks
@@ -201,6 +224,7 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
             'work_dependencies_parent',
             'work_dependencies_type',
             'group',
+            'bom_service',
         )
 
     @classmethod
@@ -228,6 +252,16 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         except ProjectGroups.DoesNotExist:
             return value
 
+    @classmethod
+    def validate_bom_service(cls, value):
+        try:
+            bom = DisperseModel(app_model='production.BOM').get_model().objects.get(
+                id=value,
+            )
+            return bom
+        except ValueError:
+            return value
+
     def validate(self, attrs):
         w_rate = self.instance.w_rate
         w_start_date = attrs['w_start_date']
@@ -253,6 +287,16 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         group = validated_data.pop('group', None)
         prj_id = self.context.get('project', None)
+        bom_service = validated_data.pop('bom_service', None)
+        if bom_service:
+            validated_data['bom_data'] = {
+                'id': str(bom_service.id),
+                'title': bom_service.title,
+                'code': bom_service.code
+            }
+        else:
+            WorkMapBOM.objects.filter(work=instance).delete()
+            validated_data['bom_data'] = {}
         prj_obj = Project.objects.get(id=prj_id)
         for key, value in validated_data.items():
             setattr(instance, key, value)

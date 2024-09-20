@@ -24,11 +24,11 @@ class BOM(DataAbstractModel):
     sum_price = models.FloatField(default=0)
     sum_time = models.FloatField(default=0)
 
-    opportunity_mapped = models.ForeignKey(
+    opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         null=True,
-        related_name='bom_opportunity_mapped'
+        related_name='bom_opportunity'
     )
 
     class Meta:
@@ -149,11 +149,47 @@ class BOMMaterialComponent(MasterDataAbstractModel):
     )
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
+    replacement_data = models.JSONField(default=list)
 
     class Meta:
         verbose_name = 'BOM material component'
         verbose_name_plural = 'BOM materials components'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class BOMReplacementMaterialComponent(MasterDataAbstractModel):
+    bom = models.ForeignKey(
+        BOM,
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_bom'
+    )
+    material = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_material'
+    )
+    material_data = models.JSONField(default=dict)
+    quantity = models.FloatField(default=0)
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_component_uom'
+    )
+    uom_data = models.JSONField(default=dict)
+    disassemble = models.BooleanField(default=False)
+    note = models.TextField()
+    replace_for = models.ForeignKey(
+        BOMMaterialComponent,
+        on_delete=models.CASCADE,
+        related_name='bom_replacement_material_replace_for'
+    )
+
+    class Meta:
+        verbose_name = 'BOM replacement material component'
+        verbose_name_plural = 'BOM replacement materials components'
+        ordering = ()
         default_permissions = ()
         permissions = ()
 

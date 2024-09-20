@@ -1,9 +1,12 @@
 from django.urls import path
 
-from .views import ProjectList, ProjectDetail, ProjectUpdate, ProjectMemberAdd, ProjectMemberDetail, ProjectGroupList, \
-    ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD, \
-    ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate, \
-    ProjectConfigDetail, ProjectExpenseHomeList
+from .views import (
+    ProjectList, ProjectDetail, ProjectUpdate, ProjectMemberAdd, ProjectMemberDetail, ProjectGroupList,
+    ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD,
+    ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate,
+    ProjectConfigDetail, ProjectExpenseHomeList, ProjectNewsList, ProjectNewsCommentList, ProjectNewsCommentDetail,
+)
+
 
 urlpatterns = [
     path('config', ProjectConfigDetail.as_view(), name='ProjectConfigDetail'),
@@ -32,4 +35,9 @@ urlpatterns = [
     path('baseline/detail/<str:pk>', ProjectBaselineDetail.as_view(), name='ProjectBaselineDetail'),
     path('baseline/edit/<str:pk>', ProjectBaselineUpdate.as_view(), name='ProjectBaselineUpdate'),
 
+    # news
+    path('news', ProjectNewsList.as_view(), name='ProjectNewsList'),
+    path('news/comment/<str:pk>', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
+    path('news/comment/<str:pk>/flows', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
+    path('new/<str:news_id>/comments', ProjectNewsCommentList.as_view(), name='ProjectNewsCommentList'),
 ]

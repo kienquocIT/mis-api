@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
@@ -11,7 +11,8 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel, \
-    AbstractListSerializerModel
+    AbstractListSerializerModel, HRMsg
+from apps.shared.translations.base import AttachmentMsg
 
 
 class PaymentListSerializer(AbstractListSerializerModel):
@@ -144,6 +145,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Payment
@@ -158,7 +160,8 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'is_internal_payment',
             'employee_payment_id',
             'method',
-            'payment_item_list'
+            'payment_item_list',
+            'attachment'
         )
 
     def validate(self, validate_data):
@@ -179,18 +182,22 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
         PaymentCommonFunction.validate_payment_item_list(validate_data)
+        PaymentCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=None,
+            validate_data=validate_data
+        )
         print('*validate done')
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         payment_item_list = validated_data.pop('payment_item_list', [])
+        attachment = validated_data.pop('attachment', [])
+
         payment_obj = Payment.objects.create(**validated_data)
         PaymentCommonFunction.create_payment_items(payment_obj, payment_item_list)
-
-        attachment = self.initial_data.get('attachment', '')
-        if attachment:
-            PaymentCommonFunction.create_files_mapped(payment_obj, attachment.strip().split(','))
+        PaymentCommonFunction.handle_attach_file(payment_obj, attachment)
         return payment_obj
 
 
@@ -385,6 +392,7 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Payment
@@ -394,7 +402,8 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             'is_internal_payment',
             'employee_payment_id',
             'method',
-            'payment_item_list'
+            'payment_item_list',
+            'attachment'
         )
 
     def validate(self, validate_data):
@@ -410,20 +419,24 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
         PaymentCommonFunction.validate_payment_item_list(validate_data)
+        PaymentCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=self.instance.id,
+            validate_data=validate_data
+        )
         print('*validate done')
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         payment_item_list = validated_data.pop('payment_item_list', [])
+        attachment = validated_data.pop('attachment', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         PaymentCommonFunction.create_payment_items(instance, payment_item_list)
-
-        attachment = self.initial_data.get('attachment', '')
-        if attachment:
-            PaymentCommonFunction.create_files_mapped(instance, attachment.strip().split(','))
+        PaymentCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
 
@@ -556,7 +569,23 @@ class PaymentCommonFunction:
             print('9. validate_payment_item_list --- ok')
             return validate_data
         except Exception as err:
-            raise serializers.ValidationError({'payment_item_list': f"Payment data is not valid. {err}"})
+            print(err)
+            raise serializers.ValidationError({'payment_item_list': "Payment data is not valid."})
+
+    @classmethod
+    def validate_attachment(cls, context_user, doc_id, validate_data):
+        if context_user and hasattr(context_user, 'employee_current_id'):
+            state, result = PaymentAttachmentFile.valid_change(
+                current_ids=validate_data.get('attachment', []),
+                employee_id=context_user.employee_current_id,
+                doc_id=doc_id
+            )
+            if state is True:
+                validate_data['attachment'] = result
+                print('10. validate_attachment --- ok')
+                return validate_data
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def create_payment_items(cls, payment_obj, payment_item_list):
@@ -599,20 +628,17 @@ class PaymentCommonFunction:
         return False
 
     @classmethod
-    def create_files_mapped(cls, payment_obj, file_id_list):
-        try:
-            bulk_data_file = []
-            for index, file_id in enumerate(file_id_list):
-                bulk_data_file.append(PaymentAttachmentFile(
-                    payment=payment_obj,
-                    attachment_id=file_id,
-                    order=index
-                ))
-            PaymentAttachmentFile.objects.filter(payment=payment_obj).delete()
-            PaymentAttachmentFile.objects.bulk_create(bulk_data_file)
-            return True
-        except Exception as err:
-            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+    def handle_attach_file(cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            relate_app = Application.objects.filter(id="1010563f-7c94-42f9-ba99-63d5d26a1aca").first()
+            if relate_app:
+                state = PaymentAttachmentFile.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+        return True
 
 
 class PaymentConfigListSerializer(serializers.ModelSerializer):
