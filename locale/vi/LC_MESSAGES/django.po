@@ -260,7 +260,7 @@ msgstr "Kho hàng"
 
 # b698df99-3e8e-4183-ba5d-0eb55aeba1b2
 msgid "Work Order"
-msgstr "Lệnh sản xuất"
+msgstr "Yêu cầu sản xuất"
 
 # 71393401-e6e7-4a00-b481-6097154efa64
 msgid "Workflow"
