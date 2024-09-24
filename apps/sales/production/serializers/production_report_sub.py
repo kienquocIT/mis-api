@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse
-from apps.sales.production.models import ProductionReportTask, ProductionOrder
+from apps.sales.production.models import ProductionReportTask, ProductionOrder, WorkOrder
 from apps.shared import SaleMsg
 
 
@@ -29,13 +29,26 @@ class ProductionReportValid:
     @classmethod
     def validate_production_order_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(ProductionOrder.objects.get(id=value).id)
         except ProductionOrder.DoesNotExist:
             raise serializers.ValidationError({'production order': SaleMsg.PRODUCTION_ORDER_NOT_EXIST})
 
     @classmethod
+    def validate_work_order_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(WorkOrder.objects.get(id=value).id)
+        except WorkOrder.DoesNotExist:
+            raise serializers.ValidationError({'work order': SaleMsg.WORK_ORDER_NOT_EXIST})
+
+    @classmethod
     def validate_product_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Product.objects.get(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': SaleMsg.PRODUCT_NOT_EXIST})
@@ -43,6 +56,8 @@ class ProductionReportValid:
     @classmethod
     def validate_uom_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(UnitOfMeasure.objects.get(id=value).id)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': SaleMsg.UOM_NOT_EXIST})
@@ -50,6 +65,8 @@ class ProductionReportValid:
     @classmethod
     def validate_warehouse_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(WareHouse.objects.get(id=value).id)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': SaleMsg.WAREHOUSE_NOT_EXIST})
