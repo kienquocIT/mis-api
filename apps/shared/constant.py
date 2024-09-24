@@ -383,3 +383,9 @@ STATUS_PRODUCTION = (
     (1, 'In production'),
     (2, 'Done'),
 )
+
+# Production report
+PRODUCTION_REPORT_TYPE = (
+    (0, 'For production order'),
+    (1, 'For work order'),
+)
