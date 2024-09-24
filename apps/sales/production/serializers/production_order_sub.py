@@ -47,6 +47,8 @@ class ProductionOrderValid:
     @classmethod
     def validate_product_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Product.objects.get(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': SaleMsg.PRODUCT_NOT_EXIST})
@@ -54,6 +56,8 @@ class ProductionOrderValid:
     @classmethod
     def validate_uom_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(UnitOfMeasure.objects.get(id=value).id)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': SaleMsg.UOM_NOT_EXIST})
@@ -61,6 +65,8 @@ class ProductionOrderValid:
     @classmethod
     def validate_warehouse_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(WareHouse.objects.get(id=value).id)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': SaleMsg.WAREHOUSE_NOT_EXIST})
@@ -68,6 +74,8 @@ class ProductionOrderValid:
     @classmethod
     def validate_group_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Group.objects.get(id=value).id)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'group': SaleMsg.GROUP_NOT_EXIST})
