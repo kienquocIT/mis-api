@@ -421,18 +421,18 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
                         'title': item.product_mapped_data.get('title'),
                         'description': item.product_mapped_data.get('description'),
                         'general_traceability_method': item.product_mapped_data.get('general_traceability_method')
-                    } if item.product_mapped_data else {},
+                    } if item.product_mapped else {},
                     'uom_mapped': {
                         'id': item.uom_mapped_data.get('id'),
                         'code': item.uom_mapped_data.get('code'),
                         'title': item.uom_mapped_data.get('title'),
                         'ratio': item.uom_mapped_data.get('ratio')
-                    } if item.uom_mapped_data else {},
+                    } if item.uom_mapped else {},
                     'warehouse_mapped': {
                         'id': item.warehouse_mapped_data.get('id'),
                         'code': item.warehouse_mapped_data.get('code'),
                         'title': item.warehouse_mapped_data.get('title')
-                    } if item.warehouse_mapped_data else {},
+                    } if item.warehouse_mapped else {},
                     'sum_quantity': item.book_quantity - item.count,
                     'before_quantity': item.issued_quantity,
                     'remain_quantity': item.book_quantity - item.count - item.issued_quantity,
@@ -477,18 +477,18 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
                         'title': item.product_data.get('title'),
                         'description': item.product_data.get('description'),
                         'general_traceability_method': item.product.general_traceability_method
-                    } if item.product_data else {},
+                    } if item.product else {},
                     'uom_mapped': {
                         'id': item.uom_data.get('id'),
                         'code': item.uom_data.get('code'),
                         'title': item.uom_data.get('title'),
                         'ratio': item.uom_data.get('ratio')
-                    } if item.uom_data else {},
+                    } if item.uom else {},
                     'warehouse_mapped': {
                         'id': item.warehouse_data.get('id'),
                         'code': item.warehouse_data.get('code'),
                         'title': item.warehouse_data.get('title')
-                    } if item.warehouse_data else {},
+                    } if item.warehouse else {},
                     'is_all_warehouse': item.is_all_warehouse,
                     'sum_quantity': item.quantity,
                     'before_quantity': item.issued_quantity,
