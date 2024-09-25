@@ -105,10 +105,6 @@ class ProductToolsListForBOM(BaseListMixin):
 class BOMList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
-    filterset_fields = {
-        'bom_type': ['exact'],
-        'opportunity': ['exact', 'isnull'],
-    }
     serializer_list = BOMListSerializer
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
@@ -116,7 +112,13 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product')
+        if 'for_opp' in self.request.query_params:
+            return super().get_queryset().filter(bom_type=4).select_related('product', 'opportunity')
+        if 'for_production' in self.request.query_params:
+            return super().get_queryset().filter(bom_type__in=[0, 1, 2, 3]).select_related('product', 'opportunity')
+        return super().get_queryset().select_related('product', 'opportunity')
+
+
 
     @swagger_auto_schema(
         operation_summary="BOM List",

@@ -175,7 +175,6 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
-        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
@@ -183,6 +182,10 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         BOMCommonFunction.validate_bom_summary_process_data(validate_data)
         BOMCommonFunction.validate_bom_material_component_data(validate_data)
         BOMCommonFunction.validate_bom_tool_data(validate_data)
+
+        if validate_data['bom_type'] == 4 and not validate_data.get('opportunity_id'):
+            raise serializers.ValidationError({'opportunity_id': "Opportunity is required"})
+
         print('*validate done')
         return validate_data
 
@@ -416,6 +419,7 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
@@ -463,8 +467,6 @@ class BOMCommonFunction:
                 validate_data['employee_inherit'] = opportunity_obj.sale_person
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
-        else:
-            validate_data['opportunity_id'] = None
         print('2. validate_opportunity_id --- ok')
         return True
 
