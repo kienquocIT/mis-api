@@ -118,8 +118,6 @@ class BOMList(BaseListMixin, BaseCreateMixin):
             return super().get_queryset().filter(bom_type__in=[0, 1, 2, 3]).select_related('product', 'opportunity')
         return super().get_queryset().select_related('product', 'opportunity')
 
-
-
     @swagger_auto_schema(
         operation_summary="BOM List",
         operation_description="Get BOM List",
