@@ -106,6 +106,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
     },
+    "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",  # UOM
+    },
     "296a1410-8d72-46a8-a0a1-1821f196e66c": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity

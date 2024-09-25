@@ -53,6 +53,16 @@ SALUTATION_APP_CONFIG = {
     "allow_import": True,
 }
 
+UOM_GROUP_APP_CONFIG = {
+    "id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",
+    "title": "Unit Of Measure Group",
+    "code": "UnitOfMeasureGroup",
+    "permit_mapping": {},
+    "model_code": "unitofmeasuregroup",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 CONTACT_APP_CONFIG = {
     "id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
     "title": "Contact",
@@ -2250,6 +2260,7 @@ Application_crm_data = {
     '35b38745-ba92-4d97-b1f7-4675a46585d3': ApplicationConfigFrame(**ACCOUNT_GROUP_APP_CONFIG).data(),
     'b22a58d3-cc9e-4913-a06d-beee11afba60': ApplicationConfigFrame(**ACCOUNT_TYPE_APP_CONFIG).data(),
     '37eb1961-8103-46c5-ad2e-236f3a6585f5': ApplicationConfigFrame(**INDUSTRY_APP_CONFIG).data(),
+    'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(
