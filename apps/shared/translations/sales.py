@@ -31,7 +31,7 @@ class SaleMsg:
     BOM_NOT_EXIST = _('Bill of material does not exist.')
     PRODUCT_NOT_EXIST = _('Product does not exist.')
     UOM_NOT_EXIST = _('Unit of measure does not exist.')
-    WAREHOUSE_NOT_EXIST = _('Unit of measure does not exist.')
+    WAREHOUSE_NOT_EXIST = _('Warehouse does not exist.')
     GROUP_NOT_EXIST = _('Group does not exist.')
     AP_NOT_EXIST = _('Advance payment does not exist.')
     AP_METHOD_INVALID = _('Advance payment method not valid.')
@@ -40,6 +40,7 @@ class SaleMsg:
     PRODUCTION_ORDER_NOT_EXIST = _('Production order does not exist.')
     PRODUCTION_REPORT_NOT_EXIST = _('Production report does not exist.')
     EMPLOYEE_INHERIT_NOT_EXIST = _('Employee inherit does not exist.')
+    WORK_ORDER_NOT_EXIST = _('Work order does not exist.')
 
 
 class SaleTask:

@@ -107,6 +107,7 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'production_order_id': ['exact'],
+        'work_order_id': ['exact'],
         'product_id': ['exact'],
         'employee_inherit_id': ['exact'],
         'id': ['exact', 'in'],

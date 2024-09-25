@@ -198,7 +198,10 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class BOMOrderList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
-    filterset_fields = {'product_id': ['exact']}
+    filterset_fields = {
+        'product_id': ['exact'],
+        'opportunity_id': ['exact', 'isnull'],
+    }
     serializer_list = BOMOrderListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

@@ -1,16 +1,29 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, PRODUCTION_REPORT_TYPE
 
 
 class ProductionReport(DataAbstractModel):
+    production_report_type = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(PRODUCTION_REPORT_TYPE),
+    )
     production_order = models.ForeignKey(
         'production.ProductionOrder',
         on_delete=models.CASCADE,
         verbose_name="production order",
         related_name="production_report_production_order",
+        null=True,
     )
     production_order_data = models.JSONField(default=dict, help_text='data json of production order')
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.CASCADE,
+        verbose_name="work order",
+        related_name="production_report_work_order",
+        null=True,
+    )
+    work_order_data = models.JSONField(default=dict, help_text='data json of work order')
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
