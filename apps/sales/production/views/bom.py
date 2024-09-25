@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Product, Expense
 from apps.sales.production.models import BOM
@@ -20,7 +21,14 @@ class ProductListForBOM(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(has_bom=False).select_related().prefetch_related()
+        if 'get_finished_goods_and_services' in self.request.query_params:
+            return super().get_queryset().filter(
+                has_bom=False
+            ).filter(
+                Q(general_product_types_mapped__is_finished_goods=True) |
+                Q(general_product_types_mapped__is_service=True)
+            )
+        return super().get_queryset().filter(has_bom=False)
 
     @swagger_auto_schema(
         operation_summary="Finish Product List For BOM",
