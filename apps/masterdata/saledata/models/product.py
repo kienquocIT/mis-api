@@ -219,6 +219,7 @@ class Product(DataAbstractModel):
         default=None
     )
     supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
+    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Stock information
     stock_amount = models.FloatField(
