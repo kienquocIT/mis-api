@@ -861,4 +861,3 @@ class ProductUOMGroupImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
         fields = ('id', 'title')
-
