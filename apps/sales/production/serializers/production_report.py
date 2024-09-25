@@ -187,6 +187,7 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'production_order_id',
+            'work_order_id',
             'production_report_id',
             'production_report_data',
             'title',

@@ -70,6 +70,10 @@ class GRFinishHandler:
                 gr_product.production_order.gr_remain_quantity -= round(gr_product.quantity_import, 2)
                 if gr_product.production_order.gr_remain_quantity >= 0:
                     gr_product.production_order.save(update_fields=['gr_remain_quantity'])
+            if gr_product.work_order:
+                gr_product.work_order.gr_remain_quantity -= round(gr_product.quantity_import, 2)
+                if gr_product.work_order.gr_remain_quantity >= 0:
+                    gr_product.work_order.save(update_fields=['gr_remain_quantity'])
 
         for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
             if gr_pr_product.production_report:
@@ -189,7 +193,7 @@ class GRFinishHandler:
                     },
                     'update_fields': ['available_amount', 'stock_amount']
                 })
-        if instance.goods_receipt_type == 2 and instance.production_order:  # GR for Production
+        if instance.goods_receipt_type == 2 and (instance.production_order or instance.work_order):  # GR for Production
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
