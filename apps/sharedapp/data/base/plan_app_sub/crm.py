@@ -2030,7 +2030,7 @@ REGISTRATION_APP_CONFIG = {
 
 DISTRIBUTION_PLAN_CONFIG = {
     "id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",
-    "title": "Distribution Plan",
+    "title": "Goods Stock Plan",
     "code": "distributionplan",
     "model_code": "distributionplan",
     "app_label": "distributionplan",

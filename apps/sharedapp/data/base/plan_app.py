@@ -304,7 +304,7 @@ _PlanApplication_sale_data = {
     },
     "57a32d5a-3580-43b7-bf31-953a1afc68f4": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Distribution plan
+        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Goods stock plan
     },
     "58385bcf-f06c-474e-a372-cadc8ea30ecc": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
