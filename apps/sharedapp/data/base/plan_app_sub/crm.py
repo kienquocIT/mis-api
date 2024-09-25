@@ -17,7 +17,7 @@ CURRENCY_APP_CONFIG = {
 ACCOUNT_GROUP_APP_CONFIG = {
     "id": "35b38745-ba92-4d97-b1f7-4675a46585d3",
     "title": "Account Group",
-    "code": "AccountGroup",
+    "code": "accountgroup",
     "permit_mapping": {},
     "model_code": "accountgroup",
     "app_label": "saledata",
@@ -27,7 +27,7 @@ ACCOUNT_GROUP_APP_CONFIG = {
 ACCOUNT_TYPE_APP_CONFIG = {
     "id": "b22a58d3-cc9e-4913-a06d-beee11afba60",
     "title": "Account Type",
-    "code": "AccountType",
+    "code": "accounttype",
     "permit_mapping": {},
     "model_code": "accounttype",
     "app_label": "saledata",
@@ -56,7 +56,7 @@ SALUTATION_APP_CONFIG = {
 UOM_GROUP_APP_CONFIG = {
     "id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",
     "title": "Unit Of Measure Group",
-    "code": "UnitOfMeasureGroup",
+    "code": "unitofmeasuregroup",
     "permit_mapping": {},
     "model_code": "unitofmeasuregroup",
     "app_label": "saledata",
