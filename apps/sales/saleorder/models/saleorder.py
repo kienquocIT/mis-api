@@ -387,6 +387,10 @@ class SaleOrderProduct(SimpleAbstractModel):
     is_group = models.BooleanField(default=False, help_text="flag to know product group not product")
     group_title = models.CharField(max_length=100, blank=True, null=True)
     group_order = models.IntegerField(default=1)
+    quantity_wo_remain = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not work ordered yet, update when WO finish"
+    )
 
     class Meta:
         verbose_name = 'Sale Order Product'

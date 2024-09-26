@@ -50,6 +50,7 @@ class PurchaseOrderListReportSerializer(serializers.ModelSerializer):
     def get_product_data(cls, obj):
         product_data = []
         for item in obj.purchase_order_product_order.all():
+            received_quantity = item.product_quantity_order_actual - item.gr_remain_quantity
             product_data.append({
                 'product': {
                     'id': item.product_id,
@@ -64,10 +65,10 @@ class PurchaseOrderListReportSerializer(serializers.ModelSerializer):
                     'title': item.uom_order_actual.title
                 } if item.uom_order_actual else {},
                 'order_quantity': item.product_quantity_order_actual,
-                'received_quantity': item.gr_completed_quantity,
+                'received_quantity': received_quantity,
                 'remaining_quantity': item.gr_remain_quantity,
                 'order_value': item.product_quantity_order_actual * item.product_unit_price,
-                'received_value': item.gr_completed_quantity * item.product_unit_price,
+                'received_value': received_quantity * item.product_unit_price,
                 'remaining_value': item.gr_remain_quantity * item.product_unit_price,
             })
         return product_data
