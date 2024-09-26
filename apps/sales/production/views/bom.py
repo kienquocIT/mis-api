@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Product, Expense
 from apps.sales.production.models import BOM
@@ -20,7 +21,14 @@ class ProductListForBOM(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(has_bom=False).select_related().prefetch_related()
+        if 'get_finished_goods_and_services' in self.request.query_params:
+            return super().get_queryset().filter(
+                has_bom=False
+            ).filter(
+                Q(general_product_types_mapped__is_finished_goods=True) |
+                Q(general_product_types_mapped__is_service=True)
+            )
+        return super().get_queryset().filter(has_bom=False)
 
     @swagger_auto_schema(
         operation_summary="Finish Product List For BOM",
@@ -105,9 +113,6 @@ class ProductToolsListForBOM(BaseListMixin):
 class BOMList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
-    filterset_fields = {
-        'bom_type': ['exact']
-    }
     serializer_list = BOMListSerializer
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
@@ -115,14 +120,18 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product')
+        if 'for_opp' in self.request.query_params:
+            return super().get_queryset().filter(bom_type=4).select_related('product', 'opportunity')
+        if 'for_production' in self.request.query_params:
+            return super().get_queryset().filter(bom_type__in=[0, 1, 2, 3]).select_related('product', 'opportunity')
+        return super().get_queryset().select_related('product', 'opportunity')
 
     @swagger_auto_schema(
         operation_summary="BOM List",
         operation_description="Get BOM List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=True, opp_enabled=True,
         label_code='production', model_code='bom', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -152,6 +161,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related('product').prefetch_related(
             'bom_process_bom__labor__expense__uom',
             'bom_process_bom__labor__expense__price',
+            'bom_process_bom__labor__expense_item',
             'bom_process_bom__uom',
             'bom_summary_process_bom__labor',
             'bom_summary_process_bom__uom',
@@ -188,7 +198,10 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class BOMOrderList(BaseListMixin, BaseCreateMixin):
     queryset = BOM.objects
     search_fields = ['title', 'code']
-    filterset_fields = {'product_id': ['exact']}
+    filterset_fields = {
+        'product_id': ['exact'],
+        'opportunity_id': ['exact', 'isnull'],
+    }
     serializer_list = BOMOrderListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

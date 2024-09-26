@@ -405,6 +405,7 @@ class ProductForSaleList(BaseListMixin):
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],
         'general_product_types_mapped__is_asset_tool': ['exact'],
+        'bom_product__opportunity_id': ['exact', 'isnull'],
     }
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

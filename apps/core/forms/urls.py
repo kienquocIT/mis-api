@@ -37,8 +37,12 @@ urlpatterns = [
     ),
 
     # authenticate
-    path('runtime/auth', RuntimeAuthenticate.as_view(), name='RuntimeAuthenticate'),
-    path('runtime/auth/<str:pk_form_session>', RuntimeAuthVerifySession.as_view(), name='RuntimeAuthVerifySession'),
+    path('runtime/auth/<str:tenant_code>/<str:form_code>', RuntimeAuthenticate.as_view(), name='RuntimeAuthenticate'),
+    path(
+        'runtime/auth/<str:tenant_code>/<str:form_code>/<str:pk_form_session>',
+        RuntimeAuthVerifySession.as_view(),
+        name='RuntimeAuthVerifySession'
+    ),
 
     # entries
     path('entries/<str:pk>/list', FormEntriesList.as_view(), name='FormEntriesList'),

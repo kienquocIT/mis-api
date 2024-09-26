@@ -79,12 +79,12 @@ class DocHandler:
         return True
 
     @classmethod
-    def force_return_owner(cls, runtime_obj):
+    def force_return_owner(cls, runtime_obj, remark):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
-            HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj)
+            HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj, remark=remark)
             return True
         return False
 
@@ -382,10 +382,11 @@ class RuntimeHandler:
                     )
                 case 3:  # return
                     # update data for RuntimeAssignee
+                    rt_assignee.is_done = True
                     rt_assignee.remark = remark
-                    rt_assignee.save(update_fields=['remark'])
+                    rt_assignee.save(update_fields=['is_done', 'remark'])
                     # update doc to return
-                    DocHandler.force_return_owner(runtime_obj=runtime_obj)
+                    DocHandler.force_return_owner(runtime_obj=runtime_obj, remark=remark)
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
                         assignee_action_return=rt_assignee.employee,  # who click action return (edit by PO's request)
@@ -424,7 +425,6 @@ class RuntimeStageHandler:
     ):
         RuntimeLogHandler(
             stage_obj=stage_runtime_currently,
-            # actor_obj=self.runtime_obj.doc_employee_created,
             actor_obj=assignee_action_return,
             is_system=False,
             remark=remark,
@@ -435,7 +435,7 @@ class RuntimeStageHandler:
             _is_next_stage, next_stage = self.create_stage(
                 node_passed=initial_node,
                 from_stage=stage_runtime_currently,
-                **{'is_return': True},
+                **{'is_return': True, 'remark': remark},
             )
             if next_stage:
                 self.runtime_obj.stage_currents = next_stage
@@ -558,7 +558,9 @@ class RuntimeStageHandler:
             pass
         return {}
 
-    def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> (bool, list[RuntimeAssignee]):
+    def _create_assignee_and_zone(
+            self, stage_obj: RuntimeStage, is_return: bool, **kwargs
+    ) -> (bool, list[RuntimeAssignee]):
         if stage_obj.node:
             try:
                 # get assignee and zone
@@ -586,14 +588,13 @@ class RuntimeStageHandler:
                     obj_assignee.before_save(force_insert=True)
                     objs.append(obj_assignee)
 
-                    obj_created = RuntimeAssignee.objects.create(
+                    objs_created.append(RuntimeAssignee.objects.create(
                         stage=stage_obj,
                         employee_id=emp_id,
                         zone_and_properties=zone_and_properties.get('zone_edit', []),
                         zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
                         is_edit_all_zone=zone_and_properties.get('is_edit_all_zone', False),
-                    )
-                    objs_created.append(obj_created)
+                    ))
                     # create instance log
                     log_obj_tmp = RuntimeLogHandler(
                         stage_obj=stage_obj,
@@ -602,6 +603,7 @@ class RuntimeStageHandler:
                     ).log_new_assignee(
                         perform_created=False,
                         is_return=is_return,
+                        remark=kwargs.pop('remark', '')
                     )
                     # update some field need call save() (call bulk don't hit save())
                     log_obj_tmp.before_save(force_insert=True)
@@ -679,6 +681,7 @@ class RuntimeStageHandler:
             RuntimeStage Object
         """
         is_return = kwargs.pop('is_return', False)
+        remark = kwargs.pop('remark', '')
         actions = self.replace_actions(node_passed.actions, is_return=is_return)
         stage_obj = RuntimeStage.objects.create(
             runtime=self.runtime_obj,
@@ -719,7 +722,9 @@ class RuntimeStageHandler:
         if stage_obj:
             DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)
         # create assignee and zone (task)
-        is_success, assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
+        is_success, assignee_created = self._create_assignee_and_zone(
+            stage_obj=stage_obj, is_return=is_return, **{'remark': remark},
+        )
         if is_success is False:
             return False, stage_obj
         if len(assignee_created) == 0:
@@ -848,23 +853,23 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg=WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
+            actor=self.actor_obj, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg=WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
             is_system=self.is_system,
         )
 
-    def log_new_assignee(self, perform_created: bool = True, is_return: bool = False):
+    def log_new_assignee(self, perform_created: bool = True, is_return: bool = False, remark=None):
+        msg = WorkflowMsgNotify.receive_document
+        if is_return and remark:
+            msg = f'{WorkflowMsgNotify.document_returned} ({remark})'
         data = {
             "actor": self.actor_obj,
             "runtime": self.stage_obj.runtime,
             "stage": self.stage_obj,
             "kind": 2,
             "action": 0,
-            "msg": WorkflowMsgNotify.return_creator if is_return else WorkflowMsgNotify.receive_document,
+            "msg": msg,
             "is_system": self.is_system,
         }
         if perform_created is True:
@@ -887,13 +892,9 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            # actor=self.actor_obj,
-            actor=None,  # edit by PO's request
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg='Approved',
+            actor=None, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg='Approved',
             is_system=self.is_system,
         )
 
@@ -919,12 +920,9 @@ class RuntimeLogHandler:
             },
         )
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg=action_choices[action_number],
+            actor=self.actor_obj, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg=action_choices[action_number],
             is_system=self.is_system,
         )
 
@@ -945,12 +943,9 @@ class RuntimeLogHandler:
             },
         )
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
-            runtime=self.stage_obj.runtime,
-            stage=self.stage_obj,
-            kind=2,
-            action=0,
-            msg=f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
+            actor=self.actor_obj, runtime=self.stage_obj.runtime,
+            stage=self.stage_obj, kind=2,
+            action=0, msg=f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
             is_system=self.is_system,
         )
 

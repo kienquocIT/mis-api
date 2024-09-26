@@ -27,14 +27,10 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'sale_person',
             'date_created',
             'indicator_revenue',
-            'system_status',
             'opportunity',
             'quotation',
             'delivery_call',
             'delivery_status',
-            'is_change',
-            'document_change_order',
-            'document_root_id',
         )
 
     @classmethod
@@ -609,3 +605,27 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
     def get_is_create_purchase_request(cls, obj):
         so_product = obj.sale_order_product_sale_order.all()
         return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)
+
+
+class SOProductWOListSerializer(serializers.ModelSerializer):
+    quantity_so = serializers.SerializerMethodField()
+    quantity_wo_completed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'product_data',
+            'uom_data',
+            'quantity_so',
+            'quantity_wo_completed',
+            'quantity_wo_remain',
+            'order',
+        )
+
+    @classmethod
+    def get_quantity_so(cls, obj):
+        return obj.product_quantity
+
+    @classmethod
+    def get_quantity_wo_completed(cls, obj):
+        return obj.product_quantity - obj.quantity_wo_remain

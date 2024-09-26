@@ -107,6 +107,7 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'production_order_id': ['exact'],
+        'work_order_id': ['exact'],
         'product_id': ['exact'],
         'employee_inherit_id': ['exact'],
         'id': ['exact', 'in'],
@@ -118,9 +119,6 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
         operation_summary="Production Report GR List",
         operation_description="Get Production Report GR List",
     )
-    @mask_view(
-        login_require=True, auth_require=False,
-        label_code='production', model_code='productionreport', perm_code='view',
-    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

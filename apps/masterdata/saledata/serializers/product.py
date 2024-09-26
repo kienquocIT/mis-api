@@ -292,7 +292,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             {'weight': CommonCreateUpdateProduct.sub_validate_weight_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)})
+            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
+        )
         product = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
             product, self.initial_data.get('product_types_mapped_list', [])
@@ -393,19 +394,6 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'default_price_list': ProductMsg.DOES_NOT_EXIST})
         return validated_data
 
-    @classmethod
-    def create_price_list_product(cls, product, price_list, bulk_info):
-        for item in price_list.price_parent.all():
-            bulk_info.append(ProductPriceList(
-                product=product, price_list=item, price=0,
-                currency_using=product.sale_currency_using,
-                uom_using=product.sale_default_uom,
-                uom_group_using=product.general_uom_group,
-                get_price_from_source=True
-            ))
-            cls.create_price_list_product(product, item, bulk_info)  # đệ quy tìm bảng giá con
-        return bulk_info
-
     def create(self, validated_data):
         default_pr = validated_data['default_price_list']
         del validated_data['default_price_list']
@@ -423,7 +411,7 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             uom_using=product.sale_default_uom,
             uom_group_using=product.general_uom_group
         )
-        bulk_info = self.create_price_list_product(product, default_pr, [])
+        bulk_info = CommonCreateUpdateProduct.create_price_list_product(product, default_pr, [])
         price_product_created = ProductPriceList.objects.bulk_create(bulk_info)
 
         sale_product_price_list = [{
@@ -441,7 +429,9 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
 
 
 def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+    if inventory_uom:
+        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+    return 0
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -577,23 +567,24 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         product_warehouse = obj.product_warehouse_product.all().select_related(
             'warehouse', 'uom'
         ).order_by('warehouse__code')
-        for item in product_warehouse:
-            if item.stock_amount > 0:
-                casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                config_inventory_management = ReportStockLog.get_config_inventory_management(
-                    obj.company.company_config
-                )
+        if obj.inventory_uom:
+            for item in product_warehouse:
+                if item.stock_amount > 0:
+                    casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
+                    config_inventory_management = ReportStockLog.get_config_inventory_management(
+                        obj.company.company_config
+                    )
 
-                result.append({
-                    'id': item.id,
-                    'warehouse': {
-                        'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
-                    } if item.warehouse else {},
-                    'stock_amount': casted_stock_amount,
-                    'cost': obj.get_unit_cost_by_warehouse(
-                        warehouse_id=item.warehouse_id, get_type=2
-                    ) / casted_stock_amount if config_inventory_management == [1] else None
-                })
+                    result.append({
+                        'id': item.id,
+                        'warehouse': {
+                            'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
+                        } if item.warehouse else {},
+                        'stock_amount': casted_stock_amount,
+                        'cost': obj.get_unit_cost_by_warehouse(
+                            warehouse_id=item.warehouse_id, get_type=2
+                        ) / casted_stock_amount if config_inventory_management == [1] else None
+                    })
         return result
 
     @classmethod

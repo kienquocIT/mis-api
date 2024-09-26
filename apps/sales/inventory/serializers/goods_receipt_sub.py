@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem, \
     GoodsReceiptProductionReport
-from apps.sales.production.models import ProductionOrder, ProductionReport
+from apps.sales.production.models import ProductionOrder, ProductionReport, WorkOrder
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
@@ -229,10 +229,23 @@ class GoodsReceiptCommonValidate:
     @classmethod
     def validate_production_order_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(ProductionOrder.objects.get(id=value).id)
         except ProductionOrder.DoesNotExist:
             raise serializers.ValidationError({
                 'production_order_id': SaleMsg.PRODUCTION_ORDER_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_work_order_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(WorkOrder.objects.get(id=value).id)
+        except WorkOrder.DoesNotExist:
+            raise serializers.ValidationError({
+                'work_order_id': SaleMsg.WORK_ORDER_NOT_EXIST
             })
 
     @classmethod

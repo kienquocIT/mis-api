@@ -31,12 +31,23 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('app_path', type=str, help='Đường dẫn đến ứng dụng')
-        parser.add_argument('--file_name', dest='file_name', type=str, default='django.po')
+        parser.add_argument(
+            '--file_name', dest='file_name', type=str, default='django.po',
+            help='Tên tệp translate cần tạo, mặc định là django.po'
+        )
+        parser.add_argument(
+            '--language', dest='language', type=str, default='vi',
+            help="Ngôn ngữ cần tạo translate, chọn trong vi hoặc en, mặc định là vi"
+        )
 
     def handle(self, *args, **kwargs):
         app_label = kwargs['app_path']
         file_name = kwargs['file_name']
-        self.stdout.write(self.style.SUCCESS(f'Processing: {app_label} → {file_name}'))
+        language = kwargs['language'].lower()
+        if language not in ['vi', 'en']:
+            raise ValueError(f"Only support language: vi or en, not {language}")
+
+        self.stdout.write(self.style.SUCCESS(f'Processing: {app_label} → [{language}] {file_name}'))
 
         app_path = app_label.replace('.', '/')
 
@@ -46,7 +57,7 @@ class Command(BaseCommand):
         if not os.path.exists(app_path):
             raise CommandError(f'Thư mục {app_path} không tồn tại')
 
-        locale_dir = os.path.join(app_path, 'locale/vi/LC_MESSAGES')
+        locale_dir = os.path.join(app_path, f'locale/{language}/LC_MESSAGES')
         os.makedirs(locale_dir, exist_ok=True)
 
         file_dir = os.path.join(locale_dir, file_name)

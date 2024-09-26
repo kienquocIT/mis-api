@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.purchasing.utils import PRHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
@@ -178,5 +179,24 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
         verbose_name = 'Purchase Request Product'
         verbose_name_plural = 'Purchase Request Products'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseRequestAttachmentFile(M2MFilesAbstractModel):
+    purchase_request = models.ForeignKey(
+        PurchaseRequest,
+        on_delete=models.CASCADE,
+        related_name='purchase_request_attachments'
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'purchase_request'
+
+    class Meta:
+        verbose_name = 'Purchase Request attachment'
+        verbose_name_plural = 'Purchase Request attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

@@ -4,7 +4,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
 
 
 class GoodsReceipt(DataAbstractModel):
@@ -59,6 +59,10 @@ class GoodsReceipt(DataAbstractModel):
         help_text="read data inventory_adjustment, use for get list or detail"
     )
     # FIELDS OF TYPE 2(For production)
+    production_report_type = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(PRODUCTION_REPORT_TYPE),
+    )
     production_order = models.ForeignKey(
         'production.ProductionOrder',
         on_delete=models.CASCADE,
@@ -69,6 +73,17 @@ class GoodsReceipt(DataAbstractModel):
     production_order_data = models.JSONField(
         default=dict,
         help_text="read data production_order, use for get list or detail"
+    )
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.CASCADE,
+        verbose_name="work order",
+        related_name="goods_receipt_work_order",
+        null=True,
+    )
+    work_order_data = models.JSONField(
+        default=dict,
+        help_text="read data work_order, use for get list or detail"
     )
     production_reports = models.ManyToManyField(
         'production.ProductionReport',
@@ -97,6 +112,11 @@ class GoodsReceipt(DataAbstractModel):
     gr_products_data = models.JSONField(
         default=list, help_text='data JSON of gr products, records in GoodsReceiptProduct'
     )
+    # total
+    total_pretax = models.FloatField(default=0)
+    total_tax = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+    total_revenue_before_tax = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Receipt'
@@ -373,6 +393,13 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="production order",
         related_name="goods_receipt_product_production_order",
+        null=True
+    )
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.CASCADE,
+        verbose_name="work order",
+        related_name="goods_receipt_product_work_order",
         null=True
     )
     product = models.ForeignKey(

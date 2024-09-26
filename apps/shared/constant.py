@@ -106,6 +106,7 @@ MAP_FIELD_TITLE = {
     'project.projectbaseline': 'title',
     'contract.contractapproval': 'title',
     'production.productionorder': 'title',
+    'production.workorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -381,4 +382,10 @@ STATUS_PRODUCTION = (
     (0, 'Planned'),
     (1, 'In production'),
     (2, 'Done'),
+)
+
+# Production report
+PRODUCTION_REPORT_TYPE = (
+    (0, 'For production order'),
+    (1, 'For work order'),
 )

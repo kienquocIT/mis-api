@@ -14,6 +14,6 @@ logs/*
 .env*
 */.env
 !env/*
-z_testing_*.py
+z_test*.py
 build/*
 *.egg-info/*

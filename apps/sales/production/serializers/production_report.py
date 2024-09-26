@@ -33,6 +33,7 @@ class ProductionReportListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'production_report_type',
         )
 
 
@@ -44,7 +45,9 @@ class ProductionReportDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'production_report_type',
             'production_order_data',
+            'work_order_data',
             'product_data',
             'quantity',
             'uom_data',
@@ -58,6 +61,7 @@ class ProductionReportDetailSerializer(serializers.ModelSerializer):
 
 class ProductionReportCreateSerializer(serializers.ModelSerializer):
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
@@ -67,8 +71,11 @@ class ProductionReportCreateSerializer(serializers.ModelSerializer):
         model = ProductionReport
         fields = (
             'title',
+            'production_report_type',
             'production_order_id',
             'production_order_data',
+            'work_order_id',
+            'work_order_data',
             'product_id',
             'product_data',
             'quantity',
@@ -85,6 +92,10 @@ class ProductionReportCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_production_order_id(cls, value):
         return ProductionReportValid.validate_production_order_id(value=value)
+
+    @classmethod
+    def validate_work_order_id(cls, value):
+        return ProductionReportValid.validate_work_order_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -107,6 +118,7 @@ class ProductionReportCreateSerializer(serializers.ModelSerializer):
 
 class ProductionReportUpdateSerializer(serializers.ModelSerializer):
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
@@ -116,8 +128,11 @@ class ProductionReportUpdateSerializer(serializers.ModelSerializer):
         model = ProductionReport
         fields = (
             'title',
+            'production_report_type',
             'production_order_id',
             'production_order_data',
+            'work_order_id',
+            'work_order_data',
             'product_id',
             'product_data',
             'quantity',
@@ -134,6 +149,10 @@ class ProductionReportUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_production_order_id(cls, value):
         return ProductionReportValid.validate_production_order_id(value=value)
+
+    @classmethod
+    def validate_work_order_id(cls, value):
+        return ProductionReportValid.validate_work_order_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -168,6 +187,7 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'production_order_id',
+            'work_order_id',
             'production_report_id',
             'production_report_data',
             'title',

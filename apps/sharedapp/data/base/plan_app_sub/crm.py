@@ -17,7 +17,7 @@ CURRENCY_APP_CONFIG = {
 ACCOUNT_GROUP_APP_CONFIG = {
     "id": "35b38745-ba92-4d97-b1f7-4675a46585d3",
     "title": "Account Group",
-    "code": "AccountGroup",
+    "code": "accountgroup",
     "permit_mapping": {},
     "model_code": "accountgroup",
     "app_label": "saledata",
@@ -27,7 +27,7 @@ ACCOUNT_GROUP_APP_CONFIG = {
 ACCOUNT_TYPE_APP_CONFIG = {
     "id": "b22a58d3-cc9e-4913-a06d-beee11afba60",
     "title": "Account Type",
-    "code": "AccountType",
+    "code": "accounttype",
     "permit_mapping": {},
     "model_code": "accounttype",
     "app_label": "saledata",
@@ -49,6 +49,16 @@ SALUTATION_APP_CONFIG = {
     "title": "Salutation",
     "code": "salutation",
     "model_code": "salutation",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+UOM_GROUP_APP_CONFIG = {
+    "id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",
+    "title": "Unit Of Measure Group",
+    "code": "unitofmeasuregroup",
+    "permit_mapping": {},
+    "model_code": "unitofmeasuregroup",
     "app_label": "saledata",
     "allow_import": True,
 }
@@ -841,7 +851,7 @@ EMAIL_LOG_APP_CONFIG = {
 
 MEETING_LOG_APP_CONFIG = {
     "id": "2fe959e3-9628-4f47-96a1-a2ef03e867e3",
-    "title": "Meetting With Customer",
+    "title": "Meeting With Customer",
     "code": "meetingwithcustomer",
     "model_code": "meetingwithcustomer",
     "app_label": "opportunity",
@@ -2030,7 +2040,7 @@ REGISTRATION_APP_CONFIG = {
 
 DISTRIBUTION_PLAN_CONFIG = {
     "id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",
-    "title": "Distribution Plan",
+    "title": "Goods Stock Plan",
     "code": "distributionplan",
     "model_code": "distributionplan",
     "app_label": "distributionplan",
@@ -2108,7 +2118,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
 
 BOM_APP_CONFIG = {
     "id": "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",
-    "title": "Bill of material",
+    "title": "Bill Of Material",
     "code": "bom",
     "model_code": "bom",
     "app_label": "production",
@@ -2184,6 +2194,45 @@ PRODUCTION_ORDER_APP_CONFIG = {
     "allow_permit": True,
 }
 
+WORK_ORDER_APP_CONFIG = {
+    "id": "b698df99-3e8e-4183-ba5d-0eb55aeba1b2",
+    "title": "Work Order",
+    "code": "workorder",
+    "model_code": "workorder",
+    "app_label": "production",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2211,6 +2260,7 @@ Application_crm_data = {
     '35b38745-ba92-4d97-b1f7-4675a46585d3': ApplicationConfigFrame(**ACCOUNT_GROUP_APP_CONFIG).data(),
     'b22a58d3-cc9e-4913-a06d-beee11afba60': ApplicationConfigFrame(**ACCOUNT_TYPE_APP_CONFIG).data(),
     '37eb1961-8103-46c5-ad2e-236f3a6585f5': ApplicationConfigFrame(**INDUSTRY_APP_CONFIG).data(),
+    'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(
@@ -2448,6 +2498,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "a4a99ba0-5596-4ff8-8bd9-68414b5af579": ApplicationConfigFrame(**PRODUCTION_ORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "b698df99-3e8e-4183-ba5d-0eb55aeba1b2": ApplicationConfigFrame(**WORK_ORDER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.saleorder.models import (
-    SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
+    SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, SaleOrderProduct
 )
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
-    SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
+    SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer,
+    SOProductWOListSerializer
 )
 from apps.sales.saleorder.serializers.sale_order_config import (
     SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
@@ -270,6 +271,25 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Sale Order List For Purchasing Staff",
         operation_description="Get Sale Order List For Purchasing Staff"
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SOProductWOList(BaseListMixin, BaseCreateMixin):
+    queryset = SaleOrderProduct.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'sale_order_id': ['exact', 'in'],
+        'product__bom_product': ['isnull'],
+        'product_id': ['exact', 'isnull'],
+    }
+    serializer_list = SOProductWOListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="SO Product Work Order List",
+        operation_description="Get SO Product Work Order List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

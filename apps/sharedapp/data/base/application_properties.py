@@ -1612,48 +1612,103 @@ AppProp_Sales_Project_Baseline_data = {}
 
 # haind
 AppProp_SaleData_Advance_Payment_data = {
+    "2142ad51-81b7-48a0-a073-58f516c40c88": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Opportunity",
+        "code": "opportunity_id",
+        "type": 5,
+        "content_type": 'opportunity.Opportunity',
+    },
+    "98a42060-1018-476d-965a-1158089072f6": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Employee inherit",
+        "code": "employee_inherit_id",
+        "type": 5,
+        "content_type": 'hr.Employee',
+    },
     "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Title",
+        "title": "Title",
         "code": "title",
         "type": 1,
     },
+    "43206581-8152-4e02-b34a-011d3651434a": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Date created",
+        "code": "date_created",
+        "type": 1,
+    },
+    "1b379df0-49b6-40de-a11b-dfb7a8575da2": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Employee created",
+        "code": "employee_created_id",
+        "type": 5,
+        "content_type": 'hr.Employee',
+    },
+    "2192a1b9-679d-48d6-881a-f85553868b42": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Quotation",
+        "code": "quotation_id",
+        "type": 5,
+        "content_type": 'quotation.Quotation',
+    },
+    "c3613c55-43b7-4d0b-97c4-389e8716a470": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Sale order",
+        "code": "sale_order_id",
+        "type": 5,
+        "content_type": 'saleorder.SaleOrder',
+    },
     "ceba8e0a-1613-4903-bccd-d6895b236abf": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Advance payment type",
+        "title": "Advance payment type",
         "code": "advance_payment_type",
         "type": 6,
     },
     "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Supplier",
-        "code": "supplier",
+        "title": "Supplier",
+        "code": "supplier_id",
         'type': 5,
         'content_type': 'saledata.Account',
     },
     "3dca605f-1a45-454c-9909-973904fcd820": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Advance payment method",
+        "title": "Advance payment method",
         "code": "method",
         "type": 6,
     },
     "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Return date",
+        "title": "Return date",
         "code": "return_date",
         "type": 2,
+    },
+    "72848cc3-54b5-44d9-9deb-6c503cd64d04": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Money gave/received",
+        "code": "money_gave",
+        "type": 1,
     },
     # tab line detail
     "51840528-2a9f-448b-afcb-ad0f421fd523": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Line detail table",
+        "title": "Line detail Tab",
         "code": "ap_item_list",
         "type": 1,
     },
-    "72848cc3-54b5-44d9-9deb-6c503cd64d04": {
+    # tab plan
+    "ff3ba757-cd27-4b8c-8b4c-7405401b528c": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "*Money gave/received",
-        "code": "money_gave",
+        "title": "Plan Tab",
+        "code": "plan_tab",
+        "type": 1,
+    },
+    # tab file
+    "64580a12-f841-4e1b-82ac-73b8506f28ef": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "File Tab",
+        "code": "attachment",
         "type": 1,
     },
     **AdvancePayment_data__params
@@ -1699,18 +1754,52 @@ AppProp_SaleData_IA_data = {
 }
 
 AppProp_SaleData_Payment_data = {
+    "5bf7bb8f-f0de-42d3-a95a-4643d63746c0": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Opportunity",
+        "code": "opportunity_id",
+        "type": 5,
+        "content_type": 'opportunity.Opportunity',
+    },
+    "41511943-3112-4ef3-91ca-55123a9015cd": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Employee inherit",
+        "code": "employee_inherit_id",
+        "type": 5,
+        "content_type": 'hr.Employee',
+    },
     "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Title",
         "code": "title",
         "type": 1,
     },
-    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
+    "c9e120be-5a23-43db-ac36-9ddacbaa41ec": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Supplier",
-        "code": "supplier",
-        'type': 5,
-        'content_type': 'saledata.Account',
+        "title": "Date created",
+        "code": "date_created",
+        "type": 1,
+    },
+    "21399374-a08e-4ba9-a40f-170866fa64ee": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Employee created",
+        "code": "employee_created_id",
+        "type": 5,
+        "content_type": 'hr.Employee',
+    },
+    "6c892c95-8bd5-4f09-a9be-92963b72ac29": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Quotation",
+        "code": "quotation_id",
+        "type": 5,
+        "content_type": 'quotation.Quotation',
+    },
+    "c576f290-1ba7-48f6-95ee-decbd8a54079": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Sale order",
+        "code": "sale_order_id",
+        "type": 5,
+        "content_type": 'saleorder.SaleOrder',
     },
     "85556007-ef17-427d-ac7e-c65c4b10c210": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1721,9 +1810,16 @@ AppProp_SaleData_Payment_data = {
     "67099494-859c-4ad9-adad-92175230d08f": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Employee payment",
-        "code": "employee_payment",
+        "code": "employee_payment_id",
         'type': 5,
         'content_type': 'hr.Employee',
+    },
+    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Supplier",
+        "code": "supplier_id",
+        'type': 5,
+        'content_type': 'saledata.Account',
     },
     "3811bd07-bab6-452e-89a4-6352c2c667d3": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1736,6 +1832,20 @@ AppProp_SaleData_Payment_data = {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Tab detail",
         "code": "payment_expense_valid_list",
+        "type": 1,
+    },
+    # tab plan
+    "20183aa0-49b4-4918-9a8c-ea6790afa52d": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Plan Tab",
+        "code": "plan_tab",
+        "type": 1,
+    },
+    # tab file
+    "f292552c-7dd6-47fd-8ca0-457ce117dfe3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "File Tab",
+        "code": "attachment",
         "type": 1,
     },
     **Payment_data__params
@@ -1814,6 +1924,29 @@ AppProp_SaleData_BOM_data = {
     },
 }
 
+AppProp_SaleData_Contract_Approval_data = {
+    # 58385bcf-f06c-474e-a372-cadc8ea30ecc # contract.ContractApproval
+    '8c5568f7-3bde-4461-b6f0-73c53e645e5d': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+        'is_print': True,
+    },
+    '9820a32b-50b1-435a-bd41-bc548c2535a7': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Documents',
+        'code': 'document_data',
+        'type': 1,
+    },
+    '6dbb5d48-69d7-4b8e-a329-d7dd86ab1349': {
+        'application_id': '58385bcf-f06c-474e-a372-cadc8ea30ecc',
+        'title': 'Attachment',
+        'code': 'attachment',
+        'type': 1,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -1829,6 +1962,7 @@ ApplicationProperty_data = {
     **AppProp_Sales_Project_data,
     **AppProp_Sales_Project_Baseline_data,
     **AppProp_SaleData_Delivery_data,
+    **AppProp_SaleData_Contract_Approval_data,
     # haind
     **AppProp_SaleData_Advance_Payment_data,
     **AppProp_SaleData_AP_Invoice_data,

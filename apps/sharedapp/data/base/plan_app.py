@@ -106,6 +106,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
     },
+    "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",  # UOM
+    },
     "296a1410-8d72-46a8-a0a1-1821f196e66c": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
@@ -276,7 +280,7 @@ _PlanApplication_sale_data = {
     },
     "e696a636-0f36-4b20-970d-70035d6e1e37": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "e696a636-0f36-4b20-970d-70035d6e1e37",  # Report Inventory
+        "application_id": "e696a636-0f36-4b20-970d-70035d6e1e37",  # Report Purchasing
     },
     "c04b2295-307f-49ed-80ab-1ca7f2b32d00": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
@@ -304,7 +308,7 @@ _PlanApplication_sale_data = {
     },
     "57a32d5a-3580-43b7-bf31-953a1afc68f4": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Distribution plan
+        "application_id": "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Goods stock plan
     },
     "58385bcf-f06c-474e-a372-cadc8ea30ecc": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
@@ -317,6 +321,10 @@ _PlanApplication_sale_data = {
     "a4a99ba0-5596-4ff8-8bd9-68414b5af579": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "a4a99ba0-5596-4ff8-8bd9-68414b5af579",  # Production Order
+    },
+    "b698df99-3e8e-4183-ba5d-0eb55aeba1b2": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "b698df99-3e8e-4183-ba5d-0eb55aeba1b2",  # Work Order
     },
 }
 

@@ -53,13 +53,17 @@ FUNCTION_CHOICES = [
 ]
 
 
-def generate_company_logo_path(instance, filename):
-    def get_ext():
-        return filename.split(".")[-1].lower()
-
+def generate_company_logo_path(instance, filename):  # pylint: disable=W0613
     if instance.id:
         company_path = str(instance.id).replace('-', '')
-        return f"{company_path}/global/logo.{get_ext()}"
+        return f"{company_path}/global/logo.png"
+    raise ValueError('Attachment require company related')
+
+
+def generate_company_icon_path(instance, filename):  # pylint: disable=W0613
+    if instance.id:
+        company_path = str(instance.id).replace('-', '')
+        return f"{company_path}/global/logo.ico"
     raise ValueError('Attachment require company related')
 
 
@@ -114,9 +118,8 @@ class Company(CoreAbstractModel):
     sub_domain = models.CharField(max_length=35, unique=True)
 
     #
-    logo = models.ImageField(
-        storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True,
-    )
+    logo = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True)
+    icon = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_icon_path, null=True)
 
     def get_detail(self, excludes=None):
         return {
@@ -125,6 +128,7 @@ class Company(CoreAbstractModel):
             'code': str(self.code) if self.code else None,
             'sub_domain': self.sub_domain,
             'logo': self.logo.url if self.logo else None,
+            'icon': self.icon.url if self.icon else None,
         }
 
     class Meta:

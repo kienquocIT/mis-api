@@ -211,7 +211,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
             state, result = OrderDeliveryAttachment.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=self.instance.id
             )
             if state is True:
                 return result

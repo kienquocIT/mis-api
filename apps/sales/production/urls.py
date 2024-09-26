@@ -7,6 +7,7 @@ from apps.sales.production.views.bom import (
 )
 from apps.sales.production.views.production_report import ProductionReportList, ProductionReportDetail, \
     ProductionReportDDList, ProductionReportGRList
+from apps.sales.production.views.work_order import WorkOrderList, WorkOrderDetail, WorkOrderDDList
 
 urlpatterns = [
     path('product-list-for-BOM', ProductListForBOM.as_view(), name='ProductListForBOM'),
@@ -29,4 +30,9 @@ urlpatterns = [
     path('production-report/<str:pk>', ProductionReportDetail.as_view(), name='ProductionReportDetail'),
     path('production-report-dd/list', ProductionReportDDList.as_view(), name='ProductionReportDDList'),
     path('production-report-gr/list', ProductionReportGRList.as_view(), name='ProductionReportGRList'),
+
+    # Work order
+    path('work-order/list', WorkOrderList.as_view(), name='WorkOrderList'),
+    path('work-order/<str:pk>', WorkOrderDetail.as_view(), name='WorkOrderDetail'),
+    path('work-order-dd/list', WorkOrderDDList.as_view(), name='WorkOrderDDList'),
 ]

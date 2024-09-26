@@ -70,6 +70,7 @@ class Payment(DataAbstractModel):
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
     payment_value = models.FloatField(default=0)
+    payment_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
 
     class Meta:
@@ -240,6 +241,10 @@ class PaymentAttachmentFile(M2MFilesAbstractModel):
         on_delete=models.CASCADE,
         related_name='payment_attachments'
     )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'payment'
 
     class Meta:
         verbose_name = 'Payment attachment'
