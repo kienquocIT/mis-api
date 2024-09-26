@@ -944,7 +944,8 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
                 'taxes_price',
                 'total_price',
                 'products_mapped',
-                'purchase_quotation_request_type'
+                'purchase_quotation_request_type',
+                'attachment'
             ],
             check_sum_second=True,
         )
