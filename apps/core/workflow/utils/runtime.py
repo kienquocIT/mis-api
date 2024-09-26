@@ -382,8 +382,9 @@ class RuntimeHandler:
                     )
                 case 3:  # return
                     # update data for RuntimeAssignee
+                    rt_assignee.is_done = True
                     rt_assignee.remark = remark
-                    rt_assignee.save(update_fields=['remark'])
+                    rt_assignee.save(update_fields=['is_done', 'remark'])
                     # update doc to return
                     DocHandler.force_return_owner(runtime_obj=runtime_obj, remark=remark)
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(

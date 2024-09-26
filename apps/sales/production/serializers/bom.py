@@ -62,6 +62,8 @@ class LaborListForBOMSerializer(serializers.ModelSerializer):
 
 
 class BOMProductMaterialListSerializer(serializers.ModelSerializer):
+    bom_id = serializers.SerializerMethodField()
+    is_project_bom = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
 
     class Meta:
@@ -70,9 +72,24 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'has_bom',
+            'bom_id',
+            'is_project_bom',
             'sale_default_uom',
             'general_uom_group',
         )
+
+    @classmethod
+    def get_bom_id(cls, obj):
+        bom = obj.bom_product.first()
+        return str(bom.id) if bom else None
+
+    @classmethod
+    def get_is_project_bom(cls, obj):
+        bom = obj.bom_product.first()
+        if bom:
+            return bool(bom.opportunity)
+        return False
 
     @classmethod
     def get_sale_default_uom(cls, obj):
@@ -158,7 +175,6 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
-        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
@@ -166,6 +182,10 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
         BOMCommonFunction.validate_bom_summary_process_data(validate_data)
         BOMCommonFunction.validate_bom_material_component_data(validate_data)
         BOMCommonFunction.validate_bom_tool_data(validate_data)
+
+        if validate_data['bom_type'] == 4 and not validate_data.get('opportunity_id'):
+            raise serializers.ValidationError({'opportunity_id': "Opportunity is required"})
+
         print('*validate done')
         return validate_data
 
@@ -399,6 +419,7 @@ class BOMUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
@@ -446,8 +467,6 @@ class BOMCommonFunction:
                 validate_data['employee_inherit'] = opportunity_obj.sale_person
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
-        else:
-            validate_data['opportunity_id'] = None
         print('2. validate_opportunity_id --- ok')
         return True
 
@@ -498,7 +517,8 @@ class BOMCommonFunction:
                         raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
                 validate_data['bom_process_data'] = bom_process_data
             except Exception as err:
-                raise serializers.ValidationError({'bom_process_data': f"Process data is not valid. {err}"})
+                print(err)
+                raise serializers.ValidationError({'bom_process_data': "Process data is not valid."})
         print('6. validate_bom_process_data --- ok')
         return True
 
@@ -515,7 +535,8 @@ class BOMCommonFunction:
                     else:
                         raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
                 validate_data['bom_summary_process_data'] = bom_summary_process_data
-            except Product.DoesNotExist:
+            except Exception as err:
+                print(err)
                 raise serializers.ValidationError({'bom_process_data': "Summary process data is not valid"})
         print('7. validate_bom_summary_process_data --- ok')
         return True
@@ -595,7 +616,8 @@ class BOMCommonFunction:
             else:
                 cls.validate_bom_material_component_data_for_normal(bom_material_component_data)
             validate_data['bom_material_component_data'] = bom_material_component_data
-        except Product.DoesNotExist:
+        except Exception as err:
+            print(err)
             raise serializers.ValidationError({'bom_process_data': "Material/component data is not valid"})
         print('8. validate_bom_material_component_data --- ok')
         return True
@@ -612,7 +634,8 @@ class BOMCommonFunction:
                     else:
                         raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
                 validate_data['bom_tool_data'] = bom_tool_data
-            except Product.DoesNotExist:
+            except Exception as err:
+                print(err)
                 raise serializers.ValidationError({'bom_tool_data': "Tool data is not valid"})
         print('9. validate_bom_tool_data --- ok')
         return True
@@ -700,6 +723,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
             'bom_task',
             'bom_material',
             'bom_tool',
+            'sum_price',
         )
 
     @classmethod

@@ -1,31 +1,28 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Group
+from apps.core.hr.models import Group, Employee
 from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse
-from apps.sales.production.models import ProductionOrderTask, ProductionOrderTaskTool, ProductionOrderSaleOrder, BOM
+from apps.sales.opportunity.models import Opportunity
+from apps.sales.production.models import WorkOrderTask, WorkOrderTaskTool, BOM
 from apps.shared import SaleMsg
 
 
-class ProductionOrderSub:
+class WorkOrderSub:
 
     @classmethod
     def create_sub(cls, validated_data, instance):
-        instance.production_sale_order_production.all().delete()
-        ProductionOrderSaleOrder.objects.bulk_create([ProductionOrderSaleOrder(
-            production_order=instance, sale_order_id=sale_order_data.get('id', None)
-        ) for sale_order_data in instance.sale_order_data])
-        instance.po_task_production_order.all().delete()
-        tasks = ProductionOrderTask.objects.bulk_create([
-            ProductionOrderTask(
-                production_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+        instance.wo_task_work_order.all().delete()
+        tasks = WorkOrderTask.objects.bulk_create([
+            WorkOrderTask(
+                work_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **task_data
             ) for task_data in validated_data['task_data']
         ])
         for task in tasks:
             if task.is_task is True:
-                task.po_task_tool_task.all().delete()
-                ProductionOrderTaskTool.objects.bulk_create([ProductionOrderTaskTool(
-                    po_task=task, tool_id=tool_data.get('id', None)
+                task.wo_task_tool_task.all().delete()
+                WorkOrderTaskTool.objects.bulk_create([WorkOrderTaskTool(
+                    wo_task=task, tool_id=tool_data.get('id', None)
                 ) for tool_data in task.tool_data])
         return True
 
@@ -35,7 +32,7 @@ class ProductionOrderSub:
         return True
 
 
-class ProductionOrderValid:
+class WorkOrderValid:
 
     @classmethod
     def validate_bom_id(cls, value):
@@ -43,6 +40,20 @@ class ProductionOrderValid:
             return str(BOM.objects.get(id=value).id)
         except BOM.DoesNotExist:
             raise serializers.ValidationError({'bom': SaleMsg.BOM_NOT_EXIST})
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        try:
+            return str(Opportunity.objects.get(id=value).id)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            return str(Employee.objects.get(id=value).id)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee': SaleMsg.EMPLOYEE_INHERIT_NOT_EXIST})
 
     @classmethod
     def validate_product_id(cls, value):

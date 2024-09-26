@@ -67,7 +67,10 @@ class ExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_price_list(cls, obj):
         return [
-            {'id': price.id, 'price_value': price.price_value}
+            {
+                'id': price.id, 'price_value': price.price_value,
+                'uom': {'id': price.uom_id, 'title': price.uom.title, 'code': price.uom.code} if price.uom else {},
+            }
             for price in obj.expense.all()
         ]
 
