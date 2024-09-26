@@ -244,6 +244,12 @@ class ApplicationOfEmployeeSerializer(serializers.ModelSerializer):
     def get_title(cls, obj):
         return obj.application.title
 
+    title_i18n = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.application.title)
+
     code = serializers.SerializerMethodField()
 
     @classmethod
@@ -258,7 +264,7 @@ class ApplicationOfEmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanEmployeeApp
-        fields = ('id', 'title', 'code', 'permit_mapping')
+        fields = ('id', 'title', 'title_i18n', 'code', 'permit_mapping')
 
 
 # functions for create/ update employee
