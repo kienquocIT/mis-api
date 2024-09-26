@@ -272,6 +272,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
                     {
                         'id': obj_app.id,
                         'title': obj_app.title,
+                        'title_i18n': trans(obj_app.title),
                         'code': obj_app.code,
                         'model_code': obj_app.model_code,
                         'app_label': obj_app.app_label,
