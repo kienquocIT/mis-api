@@ -1,7 +1,4 @@
-from os import system
-
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,

@@ -431,14 +431,12 @@ class Opportunity(DataAbstractModel):
         stage_index = []
         win_rate = 0
         for idx, item in enumerate(list_stage):
-            if item.logical_operator == 0:
-                if all(element in list_stage_instance for element in item.condition_datas):
-                    stage_index.append(idx)
-                    win_rate = item.win_rate
-            else:
-                if any(element in list_stage_instance for element in item.condition_datas):
-                    stage_index.append(idx)
-                    win_rate = item.win_rate
+            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+                win_rate = item.win_rate
+            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+                win_rate = item.win_rate
         bulk_data = []
         for index in stage_index:
             stage = list_stage[index]
