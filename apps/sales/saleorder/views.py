@@ -283,6 +283,7 @@ class SOProductWOList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'sale_order_id': ['exact', 'in'],
         'product__bom_product': ['isnull'],
+        'product_id': ['exact', 'isnull'],
     }
     serializer_list = SOProductWOListSerializer
 
