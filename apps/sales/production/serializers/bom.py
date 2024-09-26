@@ -723,6 +723,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
             'bom_task',
             'bom_material',
             'bom_tool',
+            'sum_price',
         )
 
     @classmethod
