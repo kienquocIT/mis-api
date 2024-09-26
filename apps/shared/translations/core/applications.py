@@ -29,7 +29,7 @@ class ApplicationName:
     leave_leaverequest = _('Leave')
     leave_leaveavailable = _('Leave available')
     meetingschedule_meetingschedule = _('Meeting Schedule')
-    opportunity_meetingwithcustomer = _('Meetting With Customer')
+    opportunity_meetingwithcustomer = _('Meeting With Customer')
     opportunity_opportunity = _('Opportunity')
     saledata_paymentterm = _('Payment Term')
     cashoutflow_payment = _('Payments')
