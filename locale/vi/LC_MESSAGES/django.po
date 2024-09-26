@@ -266,6 +266,9 @@ msgstr "Yêu cầu sản xuất"
 msgid "Workflow"
 msgstr "Quy trình làm việc"
 
+# "c05a6cf4-efff-47e0-afcf-072017b8141a"
+msgid "AP Invoice"
+msgstr "Hóa đơn mua hàng"
 
 #: .\apps\shared\translations\account.py:5
 msgid "User does not exist."
