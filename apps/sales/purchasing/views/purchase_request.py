@@ -1,3 +1,5 @@
+from os import system
+
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
@@ -8,10 +10,7 @@ from apps.sales.purchasing.serializers import (
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class PurchaseRequestList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class PurchaseRequestList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseRequest.objects
     filterset_fields = {
         'is_all_ordered': ['exact'],
@@ -56,17 +55,14 @@ class PurchaseRequestList(
         label_code='purchasing', model_code='purchaserequest', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
-class PurchaseRequestDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin
-):
+class PurchaseRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = PurchaseRequest.objects
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestUpdateSerializer
-
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -98,14 +94,17 @@ class PurchaseRequestDetail(
         label_code='purchasing', model_code='purchaserequest', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 
 class PurchaseRequestListForPQR(BaseListMixin):
     queryset = PurchaseRequest.objects
-
     serializer_list = PurchaseRequestListForPQRSerializer
     list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(system_status=3).select_related()
 
     @swagger_auto_schema(
         operation_summary="Purchase Request List For Purchase Quotation Request",
@@ -156,10 +155,7 @@ class PurchaseRequestProductList(BaseListMixin):
 
 
 # PR list use for other apps
-class PurchaseRequestSaleList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class PurchaseRequestSaleList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseRequest.objects
     filterset_fields = {
         'is_all_ordered': ['exact'],
