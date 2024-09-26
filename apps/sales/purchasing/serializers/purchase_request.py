@@ -646,6 +646,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'tax',
             'quantity',
             'remain_for_purchase_order',
+            'unit_price',
         )
 
     @classmethod
