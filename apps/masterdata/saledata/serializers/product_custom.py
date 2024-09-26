@@ -53,7 +53,10 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
+                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code,
+                'is_goods': product_type.is_goods, 'is_finished_goods': product_type.is_finished_goods,
+                'is_material': product_type.is_material, 'is_asset_tool': product_type.is_asset_tool,
+                'is_service': product_type.is_service,
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': str(obj.general_product_category_id), 'title': obj.general_product_category.title,

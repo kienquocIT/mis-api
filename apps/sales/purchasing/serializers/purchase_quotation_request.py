@@ -1,7 +1,11 @@
 from rest_framework import serializers
+from apps.core.base.models import Application
 from apps.sales.purchasing.models import (
     PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest,
+    PurchaseQuotationRequestAttachmentFile,
 )
+from apps.shared import HRMsg
+from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
@@ -34,6 +38,7 @@ class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
 class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
     purchase_requests = serializers.SerializerMethodField()
     products_mapped = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -48,7 +53,8 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
             'taxes_price',
             'total_price',
             'products_mapped',
-            'purchase_quotation_request_type'
+            'purchase_quotation_request_type',
+            'attachment'
         )
 
     @classmethod
@@ -87,6 +93,13 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
             index += 1
         return product_mapped_list
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = PurchaseQuotationRequestAttachmentFile.objects.select_related('attachment').filter(
+            purchase_quotation_request=obj
+        )
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 def create_pr_map_pqr(pqr_obj, pr_list):
     bulk_info = []
@@ -114,6 +127,7 @@ def create_pqr_map_products(pqr_obj, product_list):
 
 
 class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -124,7 +138,8 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
             'pretax_price',
             'taxes_price',
             'total_price',
-            'purchase_quotation_request_type'
+            'purchase_quotation_request_type',
+            'attachment'
         )
 
     @classmethod
@@ -152,9 +167,25 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
         products_selected = self.initial_data.get('products_selected', [])
         if len(products_selected) <= 0:
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
+
+        context_user = self.context.get('user', None)
+        if 'attachment' in validate_data:
+            if context_user and hasattr(context_user, 'employee_current_id'):
+                state, result = PurchaseQuotationRequestAttachmentFile.valid_change(
+                    current_ids=validate_data.get('attachment', []),
+                    employee_id=context_user.employee_current_id,
+                    doc_id=None
+                )
+                if state is True:
+                    validate_data['attachment'] = result
+                    return validate_data
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
         return validate_data
 
     def create(self, validated_data):
+        attachment = validated_data.pop('attachment', [])
+
         if PurchaseQuotationRequest.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'PQR.CODE.0001'
         else:
@@ -168,10 +199,12 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
 
         create_pr_map_pqr(purchase_quotation_request, self.initial_data.get('purchase_request_list', []))
         create_pqr_map_products(purchase_quotation_request, self.initial_data.get('products_selected', []))
+        PurchaseQuotationRequestCommonFunction.handle_attach_file(purchase_quotation_request, attachment)
         return purchase_quotation_request
 
 
 class PurchaseQuotationRequestUpdateSerializer(serializers.ModelSerializer):
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -182,7 +215,8 @@ class PurchaseQuotationRequestUpdateSerializer(serializers.ModelSerializer):
             'pretax_price',
             'taxes_price',
             'total_price',
-            'purchase_quotation_request_type'
+            'purchase_quotation_request_type',
+            'attachment'
         )
 
     @classmethod
@@ -210,16 +244,50 @@ class PurchaseQuotationRequestUpdateSerializer(serializers.ModelSerializer):
         products_selected = self.initial_data.get('products_selected', [])
         if len(products_selected) <= 0:
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
+
+        context_user = self.context.get('user', None)
+        if 'attachment' in validate_data:
+            if context_user and hasattr(context_user, 'employee_current_id'):
+                state, result = PurchaseQuotationRequestAttachmentFile.valid_change(
+                    current_ids=validate_data.get('attachment', []),
+                    employee_id=context_user.employee_current_id,
+                    doc_id=self.instance.id
+                )
+                if state is True:
+                    validate_data['attachment'] = result
+                    return validate_data
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
         return validate_data
 
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
         create_pr_map_pqr(instance, self.initial_data.get('purchase_request_list', []))
         create_pqr_map_products(instance, self.initial_data.get('products_selected', []))
+
+        PurchaseQuotationRequestCommonFunction.handle_attach_file(instance, attachment)
         return instance
+
+
+class PurchaseQuotationRequestCommonFunction:
+    @classmethod
+    def handle_attach_file(cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            relate_app = Application.objects.filter(id="d78bd5f38a8d48a3ad62b50d576ce173").first()
+            if relate_app:
+                state = PurchaseQuotationRequestAttachmentFile.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+        return True
 
 
 class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):

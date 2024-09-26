@@ -610,7 +610,6 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
 class SOProductWOListSerializer(serializers.ModelSerializer):
     quantity_so = serializers.SerializerMethodField()
     quantity_wo_completed = serializers.SerializerMethodField()
-    quantity_wo_remain = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrderProduct
@@ -629,8 +628,4 @@ class SOProductWOListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_quantity_wo_completed(cls, obj):
-        return obj.product_quantity
-
-    @classmethod
-    def get_quantity_wo_remain(cls, obj):
-        return obj.product_quantity
+        return obj.product_quantity - obj.quantity_wo_remain

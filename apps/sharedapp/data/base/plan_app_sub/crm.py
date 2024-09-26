@@ -851,7 +851,7 @@ EMAIL_LOG_APP_CONFIG = {
 
 MEETING_LOG_APP_CONFIG = {
     "id": "2fe959e3-9628-4f47-96a1-a2ef03e867e3",
-    "title": "Meetting With Customer",
+    "title": "Meeting With Customer",
     "code": "meetingwithcustomer",
     "model_code": "meetingwithcustomer",
     "app_label": "opportunity",
@@ -2118,7 +2118,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
 
 BOM_APP_CONFIG = {
     "id": "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",
-    "title": "Bill of material",
+    "title": "Bill Of Material",
     "code": "bom",
     "model_code": "bom",
     "app_label": "production",

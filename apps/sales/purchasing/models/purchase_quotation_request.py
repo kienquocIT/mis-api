@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 PURCHASE_QUOTATION_REQUEST_TYPE = [
@@ -112,5 +113,24 @@ class PurchaseQuotationRequestProduct(SimpleAbstractModel):
         verbose_name = 'Purchase Quotation Request Product'
         verbose_name_plural = 'Purchase Quotation Requests Products'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseQuotationRequestAttachmentFile(M2MFilesAbstractModel):
+    purchase_quotation_request = models.ForeignKey(
+        PurchaseQuotationRequest,
+        on_delete=models.CASCADE,
+        related_name='purchase_quotation_request_attachments'
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'purchase_quotation_request'
+
+    class Meta:
+        verbose_name = 'Purchase Quotation Request attachment'
+        verbose_name_plural = 'Purchase Quotation Request attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

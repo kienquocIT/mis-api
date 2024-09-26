@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.production.utils.logical_finish_wo import WorkOrderHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, STATUS_PRODUCTION, \
     MasterDataAbstractModel, BastionFieldAbstractModel
 
@@ -113,6 +114,7 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
+                    WorkOrderHandler.wo_info_for_so(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 
