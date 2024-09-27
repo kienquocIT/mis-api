@@ -168,6 +168,39 @@ class BOMMaterialComponent(MasterDataAbstractModel):
         permissions = ()
 
 
+class BOMMaterialComponentOutsourcing(MasterDataAbstractModel):
+    bom = models.ForeignKey(
+        BOM,
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_bom'
+    )
+    order = models.IntegerField(default=1)
+    material = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_material'
+    )
+    material_data = models.JSONField(default=dict)
+    quantity = models.FloatField(default=0)
+    standard_price = models.FloatField(default=0)
+    subtotal_price = models.FloatField(default=0)
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='bom_material_component_outsourcing_uom'
+    )
+    uom_data = models.JSONField(default=dict)
+    disassemble = models.BooleanField(default=False)
+    note = models.TextField()
+
+    class Meta:
+        verbose_name = 'BOM Material Component Outsourcing'
+        verbose_name_plural = 'BOM Materials Components Outsourcing'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
 class BOMReplacementMaterialComponent(MasterDataAbstractModel):
     bom = models.ForeignKey(
         BOM,
@@ -192,7 +225,14 @@ class BOMReplacementMaterialComponent(MasterDataAbstractModel):
     replace_for = models.ForeignKey(
         BOMMaterialComponent,
         on_delete=models.CASCADE,
+        null=True,
         related_name='bom_replacement_material_replace_for'
+    )
+    out_sourcing_replace_for = models.ForeignKey(
+        BOMMaterialComponentOutsourcing,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='bom_replacement_material_out_sourcing_replace_for'
     )
 
     class Meta:
@@ -234,40 +274,6 @@ class BOMTool(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'BOM tool'
         verbose_name_plural = 'BOM tools'
-        ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-# For Outsourcing
-class BOMMaterialComponentOutsourcing(MasterDataAbstractModel):
-    bom = models.ForeignKey(
-        BOM,
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_bom'
-    )
-    order = models.IntegerField(default=1)
-    material = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_material'
-    )
-    material_data = models.JSONField(default=dict)
-    quantity = models.FloatField(default=0)
-    standard_price = models.FloatField(default=0)
-    subtotal_price = models.FloatField(default=0)
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_uom'
-    )
-    uom_data = models.JSONField(default=dict)
-    disassemble = models.BooleanField(default=False)
-    note = models.TextField()
-
-    class Meta:
-        verbose_name = 'BOM Material Component Outsourcing'
-        verbose_name_plural = 'BOM Materials Components Outsourcing'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
