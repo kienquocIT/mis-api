@@ -15,7 +15,8 @@ from apps.masterdata.saledata.serializers.fimport import (
     IndustryImportSerializer, IndustryImportReturnSerializer, PaymentTermImportSerializer,
     PaymentTermImportReturnSerializer, SaleDataAccountImportSerializer, SaleDataAccountImportReturnSerializer,
     ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer, ProductProductTypeImportSerializer,
-    ProductProductTypeImportReturnSerializer,
+    ProductProductTypeImportReturnSerializer, ProductProductCategoryImportSerializer,
+    ProductProductCategoryImportReturnSerializer,
 )
 
 
@@ -206,6 +207,25 @@ class ProductProductTypeImport(BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Import Product Type",
         request_body=ProductProductTypeImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductProductCategoryImport(BaseCreateMixin):
+    queryset = ProductType.objects
+    serializer_create = ProductProductCategoryImportSerializer
+    serializer_detail = ProductProductCategoryImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product Category",
+        request_body=ProductProductCategoryImportSerializer
     )
     @mask_view(
         login_require=True,

@@ -73,6 +73,16 @@ PRODUCT_TYPE_APP_CONFIG = {
     "allow_import": True,
 }
 
+PRODUCT_CATEGORY_APP_CONFIG = {
+    "id": "053c0804-162a-4357-a1c2-2161e6606cc2",
+    "title": "Product Category",
+    "code": "productcategory",
+    "permit_mapping": {},
+    "model_code": "productcategory",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 CONTACT_APP_CONFIG = {
     "id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
     "title": "Contact",
@@ -2272,6 +2282,7 @@ Application_crm_data = {
     '37eb1961-8103-46c5-ad2e-236f3a6585f5': ApplicationConfigFrame(**INDUSTRY_APP_CONFIG).data(),
     'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
     '90f07280-e2f4-4406-aa23-ba255a22ec2d': ApplicationConfigFrame(**PRODUCT_TYPE_APP_CONFIG).data(),
+    '053c0804-162a-4357-a1c2-2161e6606cc2': ApplicationConfigFrame(**PRODUCT_CATEGORY_APP_CONFIG).data(),
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType,
+    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory,
 )
 from apps.masterdata.saledata.models.accounts import ACCOUNT_TYPE_SELECTION
 from apps.masterdata.saledata.serializers import (
@@ -883,5 +883,21 @@ class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'description',)
 
 
-class ProductCategoryImportSerializer(serializers.ModelSerializer):
+class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
+
+    @classmethod
+    def validate_title(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
+
+    class Meta:
+        model = ProductCategory
+        fields = ('title', 'description',)
+
+
+class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = ('id', 'title', 'description',)

@@ -8,7 +8,7 @@ from apps.masterdata.saledata.views.fimport import (
     SalutationImport, ContactImport, CurrencyImport,
     AccountGroupImport,
     AccountTypeImport, IndustryImport, PaymentTermImport,
-    AccountImport, ProductUOMGroupImport, ProductProductTypeImport,
+    AccountImport, ProductUOMGroupImport, ProductProductTypeImport, ProductProductCategoryImport,
 )
 
 urlpatterns = [
@@ -29,5 +29,7 @@ urlpatterns = [
     path('saledata/contact', ContactImport.as_view(), name='ContactImport'),
     path('saledata/account', AccountImport.as_view(), name='AccountImport'),
     path('saledata/product/uomgroup', ProductUOMGroupImport.as_view(), name='ProductUOMGroupImport'),
-    path('saledata/product/product-type', ProductProductTypeImport.as_view(), name='ProductTypeImport'),
+    path('saledata/product/product-type', ProductProductTypeImport.as_view(), name='ProductProductTypeImport'),
+    path('saledata/product/product-category', ProductProductCategoryImport.as_view(),
+         name='ProductProductCategoryImport'),
 ]
