@@ -2,8 +2,9 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Account, UnitOfMeasureGroup,
+    PaymentTerm, Account, UnitOfMeasureGroup, ProductType,
 )
+from apps.masterdata.saledata.serializers import ProductTypeCreateSerializer
 from apps.shared import BaseCreateMixin, mask_view
 
 from apps.masterdata.saledata.serializers.fimport import (
@@ -13,7 +14,8 @@ from apps.masterdata.saledata.serializers.fimport import (
     AccountGroupImportReturnSerializer, AccountTypeImportSerializer, AccountTypeImportReturnSerializer,
     IndustryImportSerializer, IndustryImportReturnSerializer, PaymentTermImportSerializer,
     PaymentTermImportReturnSerializer, SaleDataAccountImportSerializer, SaleDataAccountImportReturnSerializer,
-    ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer,
+    ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer, ProductProductTypeImportSerializer,
+    ProductProductTypeImportReturnSerializer,
 )
 
 
@@ -185,6 +187,25 @@ class ProductUOMGroupImport(BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Import Product UOM Group",
         request_body=AccountGroupImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductProductTypeImport(BaseCreateMixin):
+    queryset = ProductType.objects
+    serializer_create = ProductProductTypeImportSerializer
+    serializer_detail = ProductProductTypeImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product Type",
+        request_body=ProductProductTypeImportSerializer
     )
     @mask_view(
         login_require=True,
