@@ -59,6 +59,7 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
+            'is_deal_close': obj.opportunity.is_deal_close,
         } if obj.opportunity else {}
 
     @classmethod
@@ -196,7 +197,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,

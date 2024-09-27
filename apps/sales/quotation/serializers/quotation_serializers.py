@@ -178,7 +178,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
 
 
 class QuotationCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
