@@ -4,14 +4,14 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory,
+    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory, UnitOfMeasure, TaxCategory,
 )
 from apps.masterdata.saledata.models.accounts import ACCOUNT_TYPE_SELECTION
 from apps.masterdata.saledata.serializers import (
     create_employee_map_account, add_account_types_information,
     add_shipping_address_information, add_billing_address_information,
 )
-from apps.shared import AccountsMsg, HrMsg, BaseMsg
+from apps.shared import AccountsMsg, HrMsg, BaseMsg, PriceMsg
 
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee
@@ -901,3 +901,31 @@ class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
         fields = ('id', 'title', 'description',)
+
+
+class ProductUOMImportSerializer(serializers.ModelSerializer):
+    pass
+
+
+class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = TaxCategory
+        fields = ('title', 'description',)
+
+    @classmethod
+    def validate_title(cls, value):
+        if TaxCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
+            raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
+        return value
+
+
+class PriceTaxCategoryImportReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaxCategory
+        fields = ('id', 'title', 'description', 'is_default')

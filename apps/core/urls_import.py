@@ -9,6 +9,7 @@ from apps.masterdata.saledata.views.fimport import (
     AccountGroupImport,
     AccountTypeImport, IndustryImport, PaymentTermImport,
     AccountImport, ProductUOMGroupImport, ProductProductTypeImport, ProductProductCategoryImport,
+    PriceTaxCategoryImport,
 )
 
 urlpatterns = [
@@ -32,4 +33,5 @@ urlpatterns = [
     path('saledata/product/product-type', ProductProductTypeImport.as_view(), name='ProductProductTypeImport'),
     path('saledata/product/product-category', ProductProductCategoryImport.as_view(),
          name='ProductProductCategoryImport'),
+    path('saledata/price/tax-category', PriceTaxCategoryImport.as_view(), name='PriceTaxCategoryImport'),
 ]

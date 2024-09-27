@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Account, UnitOfMeasureGroup, ProductType,
+    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, Price, TaxCategory,
 )
 from apps.masterdata.saledata.serializers import ProductTypeCreateSerializer
 from apps.shared import BaseCreateMixin, mask_view
@@ -16,7 +16,8 @@ from apps.masterdata.saledata.serializers.fimport import (
     PaymentTermImportReturnSerializer, SaleDataAccountImportSerializer, SaleDataAccountImportReturnSerializer,
     ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer, ProductProductTypeImportSerializer,
     ProductProductTypeImportReturnSerializer, ProductProductCategoryImportSerializer,
-    ProductProductCategoryImportReturnSerializer,
+    ProductProductCategoryImportReturnSerializer, PriceTaxCategoryImportSerializer,
+    PriceTaxCategoryImportReturnSerializer,
 )
 
 
@@ -226,6 +227,25 @@ class ProductProductCategoryImport(BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Import Product Category",
         request_body=ProductProductCategoryImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class PriceTaxCategoryImport(BaseCreateMixin):
+    queryset = TaxCategory.objects
+    serializer_create = PriceTaxCategoryImportSerializer
+    serializer_detail = PriceTaxCategoryImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import TaxCategory",
+        request_body=PriceTaxCategoryImportSerializer,
     )
     @mask_view(
         login_require=True,
