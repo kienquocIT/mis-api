@@ -136,7 +136,8 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'customer': {
                 'id': obj.opportunity.customer_id,
                 'title': obj.opportunity.customer.title
-            } if obj.opportunity.customer else {}
+            } if obj.opportunity.customer else {},
+            'is_deal_close': obj.opportunity.is_deal_close,
         } if obj.opportunity else {}
 
     @classmethod
