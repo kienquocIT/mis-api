@@ -21,6 +21,7 @@ class BOM(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_product'
     )
+    product_data = models.JSONField(default=dict)
     sum_price = models.FloatField(default=0)
     sum_time = models.FloatField(default=0)
 
@@ -30,6 +31,7 @@ class BOM(DataAbstractModel):
         null=True,
         related_name='bom_opportunity'
     )
+    opp_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Bill of material'
@@ -82,6 +84,7 @@ class BOMProcess(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_process_uom'
     )
+    uom_data = models.JSONField(default=dict)
     unit_price = models.FloatField(default=0)
     subtotal_price = models.FloatField(default=0)
     note = models.TextField()
@@ -106,12 +109,14 @@ class BOMSummaryProcess(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_summary_process_labor'
     )
+    labor_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_summary_process_uom'
     )
+    uom_data = models.JSONField(default=dict)
     unit_price = models.FloatField(default=0)
     subtotal_price = models.FloatField(default=0)
 
@@ -141,12 +146,16 @@ class BOMMaterialComponent(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_material_component_material'
     )
+    material_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
+    standard_price = models.FloatField(default=0)
+    subtotal_price = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_material_component_uom'
     )
+    uom_data = models.JSONField(default=dict)
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
     replacement_data = models.JSONField(default=list)
@@ -212,12 +221,14 @@ class BOMTool(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_tool_tool'
     )
+    tool_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_tool_uom'
     )
+    uom_data = models.JSONField(default=dict)
     note = models.TextField()
 
     class Meta:
@@ -241,12 +252,16 @@ class BOMMaterialComponentOutsourcing(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_material_component_outsourcing_material'
     )
+    material_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
+    standard_price = models.FloatField(default=0)
+    subtotal_price = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_material_component_outsourcing_uom'
     )
+    uom_data = models.JSONField(default=dict)
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
 
