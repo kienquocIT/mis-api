@@ -425,6 +425,7 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list', 'uom_using'),
             ),
+            'bom_product',
         )
 
     @swagger_auto_schema(
