@@ -398,7 +398,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Products use for sale/ purchase/ inventory
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
-    search_fields = ['title']
+    search_fields = ['title', 'code']
     filterset_fields = {
         'id': ['exact'],
         'general_product_types_mapped__is_goods': ['exact'],

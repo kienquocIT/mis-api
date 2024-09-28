@@ -286,6 +286,8 @@ class SOProductWOList(BaseListMixin, BaseCreateMixin):
         'sale_order_id': ['exact', 'in'],
         'product__bom_product': ['isnull'],
         'product_id': ['exact', 'isnull'],
+        'sale_order__opportunity_id': ['exact', 'isnull'],
+        'sale_order__system_status': ['exact', 'in'],
     }
     serializer_list = SOProductWOListSerializer
 
