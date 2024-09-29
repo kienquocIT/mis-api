@@ -41,7 +41,7 @@ class GoodsIssue(DataAbstractModel):
     @classmethod
     def prepare_data_for_logging(cls, instance):
         activities_data = []
-        for item in instance.goods_issue_product.all():
+        for item in instance.goods_issue_product.filter(issued_quantity__gt=0):
             if len(item.lot_data) > 0:
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
@@ -167,32 +167,27 @@ class GoodsIssue(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                self.prepare_data_for_logging(self)
-
-                if self.inventory_adjustment:
-                    try:
-                        with transaction.atomic():
+                try:
+                    with transaction.atomic():
+                        if self.inventory_adjustment:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)
                                 self.update_status_inventory_adjustment_item(
                                     item.inventory_adjustment_item, item.issued_quantity
                                 )
                             self.inventory_adjustment.update_ia_state()
-                    except Exception as err:
-                        print(err)
-                        raise err
-                elif self.production_order:
-                    try:
-                        with transaction.atomic():
+                        elif self.production_order:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)
                                 self.update_status_production_order_item(
                                     item.production_order_item, item.issued_quantity
                                 )
                             self.production_order.update_production_order_issue_state()
-                    except Exception as err:
-                        print(err)
-                        raise err
+                except Exception as err:
+                    print(err)
+                    raise err
+
+                self.prepare_data_for_logging(self)
 
         super().save(*args, **kwargs)
 

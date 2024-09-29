@@ -268,30 +268,59 @@ class GoodsIssueCommonFunction:
         return True
 
     @classmethod
-    def validate_detail_data_ia(cls, validate_data):
-        try:
-            detail_data_ia = validate_data.get('detail_data_ia', [])
-            for item in detail_data_ia:
-                product_obj = Product.objects.get(id=item.get('product_id'))
-                warehouse_obj = WareHouse.objects.get(id=item.get('warehouse_id'))
-                uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
-                prd_wh_obj = ProductWareHouse.objects.get(product=product_obj, warehouse=warehouse_obj)
-                ia_item = InventoryAdjustmentItem.objects.get(id=item.get('inventory_adjustment_item_id'))
+    def validate_sn_data(cls, item, product_obj):
+        serial_list = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
+        if serial_list.count() != len(item.get('sn_data', [])):
+            raise serializers.ValidationError(
+                {'sn_data': f"[{product_obj.title}] Some selected serials aren't currently in any warehouse."}
+            )
+        return True
 
-                if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
-                    raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
+    @classmethod
+    def validate_lot_data(cls, item, product_obj):
+        lot_id_list = []
+        lot_data = []
+        for lot in item.get('lot', []):
+            if lot.get('lot_id') not in lot_id_list:
+                lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
+                if lot_obj:
+                    lot_id_list.append(lot_obj.id)
+                    lot_data.append(
+                        {'lot_id': lot.get('lot_id'), 'lot_quantity': lot_obj, 'issued_quantity': lot.get('quantity')})
+                else:
+                    raise serializers.ValidationError({'error': "Lot object is not exist."})
+            else:
+                for data in lot_data:
+                    if data['lot_id'] == lot.get('lot_id'):
+                        data['issued_quantity'] += lot.get('quantity')
+                        break
+        for data in lot_data:
+            if data.get('lot_quantity', 0) < data.get('issued_quantity', 0):
+                raise serializers.ValidationError(
+                    {'error': f"[{product_obj.title}] Issued quantity can't > lot quantity."})
+        return True
+
+    @classmethod
+    def validate_detail_data_ia(cls, validate_data):
+        detail_data_ia = validate_data.get('detail_data_ia', [])
+        for item in detail_data_ia:
+            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+            warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+            uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+            prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+            ia_item_obj = InventoryAdjustmentItem.objects.filter(id=item.get('inventory_adjustment_item_id')).first()
+            if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and ia_item_obj:
                 if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
-                if ia_item.book_quantity - ia_item.count - ia_item.issued_quantity < float(item.get('issued_quantity')):
+                if (
+                        ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity
+                ) < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
 
-                check_serial = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
-                if check_serial.count() != len(item.get('sn_data', [])):
-                    raise serializers.ValidationError(
-                        {'sn_data': "Some selected serials aren't currently in any warehouse."}
-                    )
+                cls.validate_sn_data(item, product_obj)
+                cls.validate_lot_data(item, product_obj)
 
-                item['inventory_adjustment_item_id'] = str(ia_item.id)
+                item['inventory_adjustment_item_id'] = str(ia_item_obj.id)
                 item['product_id'] = str(product_obj.id)
                 item['product_data'] = {
                     'id': str(product_obj.id),
@@ -306,44 +335,37 @@ class GoodsIssueCommonFunction:
                     'code': warehouse_obj.code,
                     'title': warehouse_obj.title
                 }
-                item['uom_id'] = str(uom.id)
+                item['uom_id'] = str(uom_obj.id)
                 item['uom_data'] = {
-                    'id': str(uom.id),
-                    'code': uom.code,
-                    'title': uom.title
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title
                 }
-            validate_data['detail_data_ia'] = detail_data_ia
-            print('3. validate_detail_data_ia --- ok')
-            return True
-        except Exception as err:
-            print(err)
-            raise serializers.ValidationError({'detail_data_ia': "Detail IA data is not valid."})
+            else:
+                raise serializers.ValidationError({'error': "Some objects are not exist."})
+        validate_data['detail_data_ia'] = detail_data_ia
+        print('3. validate_detail_data_ia --- ok')
+        return True
 
     @classmethod
     def validate_detail_data_po(cls, validate_data):
-        try:
-            detail_data_po = validate_data.get('detail_data_po', [])
-            for item in detail_data_po:
-                product_obj = Product.objects.get(id=item.get('product_id'))
-                warehouse_obj = WareHouse.objects.get(id=item.get('warehouse_id'))
-                uom = UnitOfMeasure.objects.get(id=item.get('uom_id'))
-                prd_wh_obj = ProductWareHouse.objects.get(product=product_obj, warehouse=warehouse_obj)
-                po_item = ProductionOrderTask.objects.get(id=item.get('production_order_item_id'))
-
-                if prd_wh_obj.stock_amount < float(item.get('remain_quantity')):
-                    raise serializers.ValidationError({'remain_quantity': "Remain quantity can't > stock quantity."})
+        detail_data_po = validate_data.get('detail_data_po', [])
+        for item in detail_data_po:
+            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+            warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+            uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+            prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+            po_item_obj = ProductionOrderTask.objects.filter(id=item.get('production_order_item_id')).first()
+            if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and po_item_obj:
                 if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
-                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
-                if po_item.quantity - po_item.issued_quantity < float(item.get('issued_quantity')):
-                    raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
+                    raise serializers.ValidationError({'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."})
+                if po_item_obj.quantity - po_item_obj.issued_quantity < float(item.get('issued_quantity')):
+                    raise serializers.ValidationError({'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."})
 
-                check_serial = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
-                if check_serial.count() != len(item.get('sn_data', [])):
-                    raise serializers.ValidationError(
-                        {'sn_data': "Some selected serials aren't currently in any warehouse."}
-                    )
+                cls.validate_sn_data(item, product_obj)
+                cls.validate_lot_data(item, product_obj)
 
-                item['production_order_item_id'] = str(po_item.id)
+                item['production_order_item_id'] = str(po_item_obj.id)
                 item['product_id'] = str(product_obj.id)
                 item['product_data'] = {
                     'id': str(product_obj.id),
@@ -358,18 +380,17 @@ class GoodsIssueCommonFunction:
                     'code': warehouse_obj.code,
                     'title': warehouse_obj.title
                 }
-                item['uom_id'] = str(uom.id)
+                item['uom_id'] = str(uom_obj.id)
                 item['uom_data'] = {
-                    'id': str(uom.id),
-                    'code': uom.code,
-                    'title': uom.title
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title
                 }
-            validate_data['detail_data_po'] = detail_data_po
-            print('3. validate_detail_data_po --- ok')
-            return True
-        except Exception as err:
-            print(err)
-            raise serializers.ValidationError({'detail_data_po': "Detail PO data is not valid."})
+            else:
+                raise serializers.ValidationError({'error': "Some objects are not exist."})
+        validate_data['detail_data_po'] = detail_data_po
+        print('3. validate_detail_data_po --- ok')
+        return True
 
     @classmethod
     def create_issue_item(cls, instance, data):
