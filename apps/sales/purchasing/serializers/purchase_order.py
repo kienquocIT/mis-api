@@ -539,7 +539,7 @@ class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False

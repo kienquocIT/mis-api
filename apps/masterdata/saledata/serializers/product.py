@@ -129,7 +129,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             # Inventory
             'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
             # Purchase
-            'purchase_default_uom', 'purchase_tax', 'supplied_by'
+            'purchase_default_uom', 'purchase_tax', 'supplied_by', 'standard_price'
         )
 
     @classmethod
@@ -557,7 +557,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'tax': {
                 'id': obj.purchase_tax_id, 'title': obj.purchase_tax.title, 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
-            'supplied_by': obj.supplied_by
+            'supplied_by': obj.supplied_by,
+            'standard_price': obj.standard_price
         }
         return result
 
@@ -670,7 +671,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
-            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by', 'standard_price'
         )
 
     def validate_code(self, value):

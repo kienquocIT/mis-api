@@ -28,6 +28,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],
+        'opportunity__is_deal_close': ['exact'],
         'has_regis': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
@@ -262,6 +263,7 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     filterset_fields = {
         'employee_inherit': ['exact', 'in'],
         'system_status': ['exact', 'in'],
+        'opportunity__is_deal_close': ['exact'],
     }
     list_hidden_field = ['tenant_id', 'company_id']
 

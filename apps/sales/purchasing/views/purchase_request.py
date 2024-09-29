@@ -157,6 +157,7 @@ class PurchaseRequestSaleList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'is_all_ordered': ['exact'],
         'system_status': ['exact'],
+        'sale_order__opportunity__is_deal_close': ['exact'],
     }
     search_fields = [
         'title',

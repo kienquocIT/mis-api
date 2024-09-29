@@ -86,6 +86,7 @@ class WorkOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class WorkOrderCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
     bom_id = serializers.UUIDField(required=False, allow_null=True)
     opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
