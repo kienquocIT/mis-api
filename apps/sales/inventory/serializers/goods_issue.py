@@ -275,13 +275,12 @@ class GoodsIssueCommonFunction:
                 {'sn_data': f"[{product_obj.title}] Some selected serials aren't currently in any warehouse."}
             )
 
-        for sn in serial_list:
-            if sn.id in selected_sn:
+        for serial in serial_list:
+            if serial.id in selected_sn:
                 raise serializers.ValidationError(
                     {'duplicated_sn': f"[{product_obj.title}] Some serials are selected in different rows."}
                 )
-            else:
-                selected_sn.append(sn.id)
+            selected_sn.append(serial.id)
         return selected_sn
 
     @classmethod
