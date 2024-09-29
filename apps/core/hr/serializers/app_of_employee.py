@@ -14,7 +14,7 @@ class AllApplicationOfEmployeeSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_title(cls, obj):
-        return obj.app.title
+        return trans(obj.app.title)
 
     title_i18n = serializers.SerializerMethodField()
 

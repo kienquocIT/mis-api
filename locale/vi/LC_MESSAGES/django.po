@@ -274,6 +274,10 @@ msgstr "Quy trình làm việc"
 msgid "Bill of material"
 msgstr "Định mức nguyên vật liệu"
 
+# 2de9fb91-4fb9-48c8-b54e-c03bd12f952b
+msgid "Bill Of Material"
+msgstr "Định mức nguyên vật liệu"
+
 # ac21e8e4-fe32-41f4-9887-ee077677735c
 msgid "Budget Plan"
 msgstr "Kế hoạch ngân sách"
