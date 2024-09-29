@@ -184,7 +184,7 @@ class ProductUOMGroupImport(BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="Import Product UOM Group",
-        request_body=AccountGroupImportSerializer
+        request_body=ProductUOMGroupImportSerializer
     )
     @mask_view(
         login_require=True,

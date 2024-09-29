@@ -77,6 +77,7 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'is_project_bom',
             'sale_default_uom',
             'general_uom_group',
+            'standard_price'
         )
 
     @classmethod
@@ -231,36 +232,23 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_product(cls, obj):
-        return {
-            'id': str(obj.product_id),
-            'code': obj.product.code,
-            'title': obj.product.title
-        } if obj.product else {}
+        return obj.product_data
 
     @classmethod
     def get_opportunity(cls, obj):
-        return {
-            'id': str(obj.opportunity_id),
-            'code': obj.opportunity.code,
-            'title': obj.opportunity.title,
-            'sale_person': {
-                'id': str(obj.employee_inherit_id),
-                'code': obj.employee_inherit.code,
-                'full_name': obj.employee_inherit.get_full_name(2),
-            } if obj.employee_inherit else {}
-        } if obj.opportunity else {}
+        return obj.opp_data
 
     @classmethod
     def get_bom_process_data(cls, obj):
         bom_process_data = []
-        for process_item in obj.bom_process_bom.all():
+        for item in obj.bom_process_bom.all():
             bom_process_data.append({
-                'order': process_item.order,
-                'task_name': process_item.task_name,
+                'order': item.order,
+                'task_name': item.task_name,
                 'labor': {
-                    'id': str(process_item.labor_id),
-                    'code': process_item.labor.code,
-                    'title': process_item.labor.title,
+                    'id': str(item.labor_id),
+                    'code': item.labor.code,
+                    'title': item.labor.title,
                     'price_list': [{
                         'price': {
                             'id': str(item.price_id),
@@ -273,48 +261,32 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                             'code': item.uom.code,
                             'title': item.uom.title
                         } if item.uom else {}
-                    } for item in process_item.labor.expense.all()],
+                    } for item in item.labor.expense.all()],
                     'expense_item': {
-                        'id': str(process_item.labor.expense_item.id),
-                        'title': process_item.labor.expense_item.title,
-                        'code': process_item.labor.expense_item.code
+                        'id': str(item.labor.expense_item.id),
+                        'title': item.labor.expense_item.title,
+                        'code': item.labor.expense_item.code
                     }
-                } if process_item.labor else {},
-                'quantity': process_item.quantity,
-                'uom': {
-                    'id': str(process_item.uom_id),
-                    'code': process_item.uom.code,
-                    'title': process_item.uom.title,
-                    'ratio': process_item.uom.ratio,
-                    'group_id': str(process_item.uom.group_id)
-                } if process_item.uom else {},
-                'unit_price': process_item.unit_price,
-                'subtotal_price': process_item.subtotal_price,
-                'note': process_item.note,
+                } if item.labor else {},
+                'quantity': item.quantity,
+                'uom': item.uom_data,
+                'unit_price': item.unit_price,
+                'subtotal_price': item.subtotal_price,
+                'note': item.note,
             })
         return bom_process_data
 
     @classmethod
     def get_bom_summary_process_data(cls, obj):
         bom_summary_process_data = []
-        for summary_process_item in obj.bom_summary_process_bom.all():
+        for item in obj.bom_summary_process_bom.all():
             bom_summary_process_data.append({
-                'order': summary_process_item.order,
-                'labor': {
-                    'id': str(summary_process_item.labor_id),
-                    'code': summary_process_item.labor.code,
-                    'title': summary_process_item.labor.title,
-                } if summary_process_item.labor else {},
-                'quantity': summary_process_item.quantity,
-                'uom': {
-                    'id': str(summary_process_item.uom_id),
-                    'code': summary_process_item.uom.code,
-                    'title': summary_process_item.uom.title,
-                    'ratio': summary_process_item.uom.ratio,
-                    'group_id': str(summary_process_item.uom.group_id)
-                } if summary_process_item.uom else {},
-                'unit_price': summary_process_item.unit_price,
-                'subtotal_price': summary_process_item.subtotal_price,
+                'order': item.order,
+                'labor': item.labor_data,
+                'quantity': item.quantity,
+                'uom': item.uom_data,
+                'unit_price': item.unit_price,
+                'subtotal_price': item.subtotal_price,
             })
         return bom_summary_process_data
 
@@ -322,71 +294,45 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     def get_bom_material_component_data(cls, obj):
         bom_material_component_data = []
         if not obj.for_outsourcing:
-            for material_component_item in obj.bom_material_component_bom.all():
+            for item in obj.bom_material_component_bom.all():
                 bom_material_component_data.append({
-                    'order': material_component_item.order,
-                    'bom_process_order': material_component_item.bom_process_order,
-                    'material': {
-                        'id': str(material_component_item.material_id),
-                        'code': material_component_item.material.code,
-                        'title': material_component_item.material.title
-                    } if material_component_item.material else {},
-                    'quantity': material_component_item.quantity,
-                    'uom': {
-                        'id': str(material_component_item.uom_id),
-                        'code': material_component_item.uom.code,
-                        'title': material_component_item.uom.title,
-                        'ratio': material_component_item.uom.ratio,
-                        'group_id': str(material_component_item.uom.group_id)
-                    } if material_component_item.uom else {},
-                    'disassemble': material_component_item.disassemble,
-                    'note': material_component_item.note,
-                    'replacement_data': material_component_item.replacement_data
+                    'order': item.order,
+                    'bom_process_order': item.bom_process_order,
+                    'material': item.material_data,
+                    'quantity': item.quantity,
+                    'standard_price': item.standard_price,
+                    'subtotal_price': item.subtotal_price,
+                    'uom': item.uom_data,
+                    'disassemble': item.disassemble,
+                    'note': item.note,
+                    'replacement_data': item.replacement_data
                 })
         else:
-            for material_component_item in obj.bom_material_component_outsourcing_bom.all():
+            for item in obj.bom_material_component_outsourcing_bom.all():
                 bom_material_component_data.append({
-                    'order': material_component_item.order,
-                    'material': {
-                        'id': str(material_component_item.material_id),
-                        'code': material_component_item.material.code,
-                        'title': material_component_item.material.title
-                    } if material_component_item.material else {},
-                    'quantity': material_component_item.quantity,
-                    'uom': {
-                        'id': str(material_component_item.uom_id),
-                        'code': material_component_item.uom.code,
-                        'title': material_component_item.uom.title,
-                        'ratio': material_component_item.uom.ratio,
-                        'group_id': str(material_component_item.uom.group_id)
-                    } if material_component_item.uom else {},
-                    'disassemble': material_component_item.disassemble,
-                    'note': material_component_item.note,
-                    'replacement_data': material_component_item.replacement_data
+                    'order': item.order,
+                    'material': item.material_data,
+                    'quantity': item.quantity,
+                    'standard_price': item.standard_price,
+                    'subtotal_price': item.subtotal_price,
+                    'uom': item.uom_data,
+                    'disassemble': item.disassemble,
+                    'note': item.note,
+                    'replacement_data': item.replacement_data
                 })
         return bom_material_component_data
 
     @classmethod
     def get_bom_tool_data(cls, obj):
         bom_tool_data = []
-        for tool_item in obj.bom_tool_bom.all():
+        for item in obj.bom_tool_bom.all():
             bom_tool_data.append({
-                'order': tool_item.order,
-                'bom_process_order': tool_item.bom_process_order,
-                'tool': {
-                    'id': str(tool_item.tool_id),
-                    'code': tool_item.tool.code,
-                    'title': tool_item.tool.title
-                } if tool_item.tool else {},
-                'quantity': tool_item.quantity,
-                'uom': {
-                    'id': str(tool_item.uom_id),
-                    'code': tool_item.uom.code,
-                    'title': tool_item.uom.title,
-                    'ratio': tool_item.uom.ratio,
-                    'group_id': str(tool_item.uom.group_id)
-                } if tool_item.uom else {},
-                'note': tool_item.note
+                'order': item.order,
+                'bom_process_order': item.bom_process_order,
+                'tool': item.tool_data,
+                'quantity': item.quantity,
+                'uom': item.uom_data,
+                'note': item.note
             })
         return bom_tool_data
 
@@ -465,6 +411,16 @@ class BOMCommonFunction:
                 opportunity_obj = Opportunity.objects.get(id=validate_data.get('opportunity_id'))
                 validate_data['opportunity_id'] = str(opportunity_obj.id)
                 validate_data['employee_inherit'] = opportunity_obj.sale_person
+                validate_data['opp_data'] = {
+                    'id': str(opportunity_obj.id),
+                    'code': opportunity_obj.code,
+                    'title': opportunity_obj.title,
+                    'sale_person': {
+                        'id': str(opportunity_obj.employee_inherit_id),
+                        'code': opportunity_obj.employee_inherit.code,
+                        'full_name': opportunity_obj.employee_inherit.get_full_name(2),
+                    } if opportunity_obj.employee_inherit else {}
+                } if opportunity_obj else {}
             except Opportunity.DoesNotExist:
                 raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
         print('2. validate_opportunity_id --- ok')
@@ -476,6 +432,11 @@ class BOMCommonFunction:
             product_obj = Product.objects.get(id=validate_data.get('product_id'))
             validate_data['product_id'] = str(product_obj.id)
             validate_data['title'] = f"BOM - {product_obj.title}"
+            validate_data['product_data'] = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title
+            } if product_obj else {}
             print('3. validate_product --- ok')
             return True
         except Product.DoesNotExist:
@@ -510,8 +471,16 @@ class BOMCommonFunction:
                         float(item.get('quantity', 0)) > 0,
                         float(item.get('unit_price', 0)) > 0
                     ]):
+                        uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
                         item['labor_id'] = str(Expense.objects.get(id=item.get('labor_id')).id)
-                        item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title,
+                            'ratio': uom_obj.ratio,
+                            'group_id': str(uom_obj.group_id)
+                        } if uom_obj else {}
                         item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
                     else:
                         raise serializers.ValidationError({'bom_process_data': "Process data is missing field"})
@@ -529,8 +498,22 @@ class BOMCommonFunction:
             try:
                 for item in bom_summary_process_data:
                     if all([float(item.get('quantity', 0)) > 0, float(item.get('unit_price', 0)) > 0]):
-                        item['labor_id'] = str(Expense.objects.get(id=item.get('labor_id')).id)
-                        item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                        labor_obj = Expense.objects.get(id=item.get('labor_id'))
+                        uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                        item['labor_id'] = str(labor_obj.id)
+                        item['labor_data'] = {
+                            'id': str(labor_obj.id),
+                            'code': labor_obj.code,
+                            'title': labor_obj.title,
+                        } if labor_obj else {}
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title,
+                            'ratio': uom_obj.ratio,
+                            'group_id': str(uom_obj.group_id)
+                        } if uom_obj else {}
                         item['subtotal_price'] = float(item['quantity']) * float(item['unit_price'])
                     else:
                         raise serializers.ValidationError({'bom_process_data': "Summary process data is missing field"})
@@ -545,29 +528,43 @@ class BOMCommonFunction:
     def validate_bom_material_component_data_for_outsourcing(cls, bom_material_component_data):
         for item in bom_material_component_data:
             if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
-                item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                material_obj = Product.objects.get(id=item.get('material_id'))
+                uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                item['material_id'] = str(material_obj.id)
+                item['material_data'] = {
+                    'id': str(material_obj.id),
+                    'code': material_obj.code,
+                    'title': material_obj.title
+                } if material_obj else {}
+                item['uom_id'] = str(uom_obj.id)
+                item['uom_data'] = {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'ratio': uom_obj.ratio,
+                    'group_id': str(uom_obj.group_id)
+                } if uom_obj else {}
             else:
                 raise serializers.ValidationError({
                     'bom_material_component_data': "Material/component data is missing field"
                 })
             for replacement_data in item.get('replacement_data'):
                 if float(replacement_data.get('quantity', 0)) > 0:
-                    material = Product.objects.get(id=replacement_data.get('material_id'))
-                    uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
-                    replacement_data['material_id'] = str(material.id)
-                    replacement_data['uom_id'] = str(uom.id)
+                    material_obj = Product.objects.get(id=replacement_data.get('material_id'))
+                    uom_obj = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
+                    replacement_data['material_id'] = str(material_obj.id)
+                    replacement_data['uom_id'] = str(uom_obj.id)
                     replacement_data['material_data'] = {
-                        'id': str(material.id),
-                        'code': material.code,
-                        'title': material.title
-                    }
+                        'id': str(material_obj.id),
+                        'code': material_obj.code,
+                        'title': material_obj.title
+                    } if material_obj else {}
                     replacement_data['uom_data'] = {
-                        'id': str(uom.id),
-                        'code': uom.code,
-                        'title': uom.title,
-                        'group_id': str(uom.group_id),
-                    }
+                        'id': str(uom_obj.id),
+                        'code': uom_obj.code,
+                        'title': uom_obj.title,
+                        'group_id': str(uom_obj.group_id),
+                    } if uom_obj else {}
                 else:
                     raise serializers.ValidationError({
                         'replacement_data': "Replacement material/component data is missing field"
@@ -578,29 +575,43 @@ class BOMCommonFunction:
     def validate_bom_material_component_data_for_normal(cls, bom_material_component_data):
         for item in bom_material_component_data:
             if float(item.get('quantity', 0)) > 0:
-                item['material_id'] = str(Product.objects.get(id=item.get('material_id')).id)
-                item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                material_obj = Product.objects.get(id=item.get('material_id'))
+                uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                item['material_id'] = str(material_obj.id)
+                item['material_data'] = {
+                    'id': str(material_obj.id),
+                    'code': material_obj.code,
+                    'title': material_obj.title
+                } if material_obj else {}
+                item['uom_id'] = str(uom_obj.id)
+                item['uom_data'] = {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'ratio': uom_obj.ratio,
+                    'group_id': str(uom_obj.group_id)
+                } if uom_obj else {}
             else:
                 raise serializers.ValidationError({
                     'bom_material_component_data': "Material/component outsourcing data is missing field"
                 })
-            for replacement_data in item.get('replacement_data'):
-                if float(replacement_data.get('quantity', 0)) > 0:
-                    material = Product.objects.get(id=replacement_data.get('material_id'))
-                    uom = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
-                    replacement_data['material_id'] = str(material.id)
-                    replacement_data['uom_id'] = str(uom.id)
-                    replacement_data['material_data'] = {
-                        'id': str(material.id),
-                        'code': material.code,
-                        'title': material.title
-                    }
-                    replacement_data['uom_data'] = {
-                        'id': str(uom.id),
-                        'code': uom.code,
-                        'title': uom.title,
-                        'group_id': str(uom.group_id),
-                    }
+            for replacement_item in item.get('replacement_data'):
+                if float(replacement_item.get('quantity', 0)) > 0:
+                    material_obj = Product.objects.get(id=replacement_item.get('material_id'))
+                    uom_obj = UnitOfMeasure.objects.get(id=replacement_item.get('uom_id'))
+                    replacement_item['material_id'] = str(material_obj.id)
+                    replacement_item['uom_id'] = str(uom_obj.id)
+                    replacement_item['material_data'] = {
+                        'id': str(material_obj.id),
+                        'code': material_obj.code,
+                        'title': material_obj.title
+                    } if material_obj else {}
+                    replacement_item['uom_data'] = {
+                        'id': str(uom_obj.id),
+                        'code': uom_obj.code,
+                        'title': uom_obj.title,
+                        'group_id': str(uom_obj.group_id),
+                    } if uom_obj else {}
                 else:
                     raise serializers.ValidationError({
                         'replacement_data': "Replacement material/component outsourcing data is missing field"
@@ -629,8 +640,22 @@ class BOMCommonFunction:
             try:
                 for item in bom_tool_data:
                     if all([float(item.get('quantity', 0)) > 0, item.get('bom_process_order')]):
-                        item['tool_id'] = str(Product.objects.get(id=item.get('tool_id')).id)
-                        item['uom_id'] = str(UnitOfMeasure.objects.get(id=item.get('uom_id')).id)
+                        tool_obj = Product.objects.get(id=item.get('tool_id'))
+                        uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
+                        item['tool_id'] = str(tool_obj.id)
+                        item['tool_data'] = {
+                            'id': str(tool_obj.id),
+                            'code': tool_obj.code,
+                            'title': tool_obj.title
+                        } if tool_obj else {}
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title,
+                            'ratio': uom_obj.ratio,
+                            'group_id': str(uom_obj.group_id)
+                        } if uom_obj else {}
                     else:
                         raise serializers.ValidationError({'bom_tool_data': "Tool data is missing field"})
                 validate_data['bom_tool_data'] = bom_tool_data

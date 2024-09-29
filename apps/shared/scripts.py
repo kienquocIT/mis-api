@@ -2166,3 +2166,123 @@ def update_bom_title():
         bom.title = f"BOM - {bom.product.title}"
         bom.save(update_fields=['title'])
     print('Done :))')
+
+
+def update_BOM_json_data():
+    for bom in BOM.objects.all():
+        bom.product_data = {
+            'id': str(bom.product.id),
+            'code': bom.product.code,
+            'title': bom.product.title
+        } if bom.product else {}
+        bom.opp_data = {
+            'id': str(bom.opportunity.id),
+            'code': bom.opportunity.code,
+            'title': bom.opportunity.title,
+            'sale_person': {
+                'id': str(bom.opportunity.employee_inherit_id),
+                'code': bom.opportunity.employee_inherit.code,
+                'full_name': bom.opportunity.employee_inherit.get_full_name(2),
+            } if bom.opportunity.employee_inherit else {}
+        } if bom.opportunity else {}
+        bom.save(update_fields=['product_data', 'opp_data'])
+
+        for item in bom.bom_process_bom.all():
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['uom_data'])
+
+        for item in bom.bom_summary_process_bom.all():
+            item.labor_data = {
+                'id': str(item.labor.id),
+                'code': item.labor.code,
+                'title': item.labor.title,
+            } if item.labor else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['labor_data', 'uom_data'])
+
+        for item in bom.bom_material_component_bom.all():
+            item.material_data = {
+                'id': str(item.material.id),
+                'code': item.material.code,
+                'title': item.material.title
+            } if item.material else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['material_data', 'uom_data'])
+            for replacement_item in item.bom_replacement_material_replace_for.all():
+                replacement_item.material_data = {
+                    'id': str(replacement_item.material.id),
+                    'code': replacement_item.material.code,
+                    'title': replacement_item.material.title
+                } if replacement_item.material else {}
+                replacement_item.uom_data = {
+                    'id': str(replacement_item.uom.id),
+                    'code': replacement_item.uom.code,
+                    'title': replacement_item.uom.title,
+                    'group_id': str(replacement_item.uom.group_id),
+                } if replacement_item.uom else {}
+                replacement_item.save(update_fields=['material_data', 'uom_data'])
+
+        for item in bom.bom_material_component_outsourcing_bom.all():
+            item.material_data = {
+                'id': str(item.material.id),
+                'code': item.material.code,
+                'title': item.material.title
+            } if item.material else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['material_data', 'uom_data'])
+            for replacement_item in item.bom_replacement_material_out_sourcing_replace_for.all():
+                replacement_item.material_data = {
+                    'id': str(replacement_item.material.id),
+                    'code': replacement_item.material.code,
+                    'title': replacement_item.material.title
+                } if replacement_item.material else {}
+                replacement_item.uom_data = {
+                    'id': str(replacement_item.uom.id),
+                    'code': replacement_item.uom.code,
+                    'title': replacement_item.uom.title,
+                    'group_id': str(replacement_item.uom.group_id),
+                } if replacement_item.uom else {}
+                replacement_item.save(update_fields=['material_data', 'uom_data'])
+
+        for item in bom.bom_tool_bom.all():
+            item.tool_data = {
+                'id': str(item.tool.id),
+                'code': item.tool.code,
+                'title': item.tool.title
+            } if item.tool else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['tool_data', 'uom_data'])
+
+        print(f'Done {bom.title} :))')
+
+    return True
