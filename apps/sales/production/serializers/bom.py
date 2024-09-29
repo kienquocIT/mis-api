@@ -411,7 +411,7 @@ class BOMCommonFunction:
                 opportunity_obj = Opportunity.objects.get(id=validate_data.get('opportunity_id'))
                 validate_data['opportunity_id'] = str(opportunity_obj.id)
                 validate_data['employee_inherit'] = opportunity_obj.sale_person
-                validate_data['opportunity_data'] = {
+                validate_data['opp_data'] = {
                     'id': str(opportunity_obj.id),
                     'code': opportunity_obj.code,
                     'title': opportunity_obj.title,
