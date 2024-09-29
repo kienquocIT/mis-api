@@ -2284,3 +2284,5 @@ def update_BOM_json_data():
             item.save(update_fields=['tool_data', 'uom_data'])
 
         print(f'Done {bom.title} :))')
+
+    return True

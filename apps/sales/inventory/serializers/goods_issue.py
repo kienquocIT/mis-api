@@ -268,13 +268,20 @@ class GoodsIssueCommonFunction:
         return True
 
     @classmethod
-    def validate_sn_data(cls, item, product_obj):
+    def validate_sn_data(cls, item, product_obj, selected_sn):
         serial_list = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
         if serial_list.count() != len(item.get('sn_data', [])):
             raise serializers.ValidationError(
                 {'sn_data': f"[{product_obj.title}] Some selected serials aren't currently in any warehouse."}
             )
-        return True
+
+        for serial in serial_list:
+            if serial.id in selected_sn:
+                raise serializers.ValidationError(
+                    {'duplicated_sn': f"[{product_obj.title}] Some serials are selected in different rows."}
+                )
+            selected_sn.append(serial.id)
+        return selected_sn
 
     @classmethod
     def validate_lot_data(cls, item, product_obj):
@@ -303,6 +310,7 @@ class GoodsIssueCommonFunction:
     @classmethod
     def validate_detail_data_ia(cls, validate_data):
         detail_data_ia = validate_data.get('detail_data_ia', [])
+        selected_sn = []
         for item in detail_data_ia:
             product_obj = Product.objects.filter(id=item.get('product_id')).first()
             warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
@@ -317,7 +325,7 @@ class GoodsIssueCommonFunction:
                 ) < float(item.get('issued_quantity')):
                     raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
 
-                cls.validate_sn_data(item, product_obj)
+                selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                 cls.validate_lot_data(item, product_obj)
 
                 item['inventory_adjustment_item_id'] = str(ia_item_obj.id)
@@ -350,6 +358,7 @@ class GoodsIssueCommonFunction:
     @classmethod
     def validate_detail_data_po(cls, validate_data):
         detail_data_po = validate_data.get('detail_data_po', [])
+        selected_sn = []
         for item in detail_data_po:
             product_obj = Product.objects.filter(id=item.get('product_id')).first()
             warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
@@ -366,7 +375,7 @@ class GoodsIssueCommonFunction:
                         {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
                     )
 
-                cls.validate_sn_data(item, product_obj)
+                selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                 cls.validate_lot_data(item, product_obj)
 
                 item['production_order_item_id'] = str(po_item_obj.id)
