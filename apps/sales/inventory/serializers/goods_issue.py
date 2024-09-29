@@ -358,9 +358,13 @@ class GoodsIssueCommonFunction:
             po_item_obj = ProductionOrderTask.objects.filter(id=item.get('production_order_item_id')).first()
             if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and po_item_obj:
                 if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
-                    raise serializers.ValidationError({'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."})
+                    raise serializers.ValidationError(
+                        {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
+                    )
                 if po_item_obj.quantity - po_item_obj.issued_quantity < float(item.get('issued_quantity')):
-                    raise serializers.ValidationError({'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."})
+                    raise serializers.ValidationError(
+                        {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
+                    )
 
                 cls.validate_sn_data(item, product_obj)
                 cls.validate_lot_data(item, product_obj)
