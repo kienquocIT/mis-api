@@ -563,12 +563,12 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
         )
 
     @classmethod
-    def get_app(cls):
-        return _('Production Order')
+    def get_app(cls, obj):
+        return _('Production Order') if obj else ''
 
     @classmethod
-    def get_type(cls):
-        return 0
+    def get_type(cls, obj):
+        return 0 if obj else None
 
 
 class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
@@ -631,12 +631,12 @@ class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
         )
 
     @classmethod
-    def get_app(cls):
-        return _('Work Order')
+    def get_app(cls, obj):
+        return _('Work Order') if obj else ''
 
     @classmethod
-    def get_type(cls):
-        return 1
+    def get_type(cls, obj):
+        return 1 if obj else None
 
 
 class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
