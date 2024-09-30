@@ -333,14 +333,18 @@ class GoodsIssueCommonFunction:
                 warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
                 prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
-                ia_item_obj = InventoryAdjustmentItem.objects.filter(id=item.get('inventory_adjustment_item_id')).first()
+                ia_item_obj = InventoryAdjustmentItem.objects.filter(
+                    id=item.get('inventory_adjustment_item_id')
+                ).first()
                 if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and ia_item_obj:
                     if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
                         raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
                     if (
                             ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity
                     ) < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > remain quantity."})
+                        raise serializers.ValidationError(
+                            {'issued_quantity': "Issue quantity can't > remain quantity."}
+                        )
 
                     selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                     cls.validate_lot_data(item, product_obj)
@@ -559,11 +563,11 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
         )
 
     @classmethod
-    def get_app(cls, obj):
+    def get_app(cls):
         return _('Production Order')
 
     @classmethod
-    def get_type(cls, obj):
+    def get_type(cls):
         return 0
 
 
@@ -627,11 +631,11 @@ class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
         )
 
     @classmethod
-    def get_app(cls, obj):
+    def get_app(cls):
         return _('Work Order')
 
     @classmethod
-    def get_type(cls, obj):
+    def get_type(cls):
         return 1
 
 
