@@ -81,15 +81,16 @@ class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductCategory
-        fields = ('id', 'title', 'description')
+        fields = ('id', 'code', 'title', 'description')
 
 
 class ProductCategoryCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
     title = serializers.CharField(max_length=100)
 
     class Meta:
         model = ProductCategory
-        fields = ('title', 'description')
+        fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_title(cls, value):
@@ -97,25 +98,41 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
 
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if ProductCategory.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
 class ProductCategoryDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ('id', 'title', 'description')
+        fields = ('id', 'code', 'title', 'description')
 
 
 class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=100)
-
+    code = serializers.CharField(max_length=100)
     class Meta:
         model = ProductCategory
-        fields = ('title', 'description')
+        fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
+
+    def validate_code(self, value):
+        if ProductCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
+        return value
 
 
 # Unit Of Measure Group

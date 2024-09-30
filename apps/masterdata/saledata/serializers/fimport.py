@@ -893,6 +893,7 @@ class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):
 
 
 class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
     title = serializers.CharField(max_length=100)
 
     @classmethod
@@ -901,15 +902,22 @@ class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
 
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if ProductCategory.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
     class Meta:
         model = ProductCategory
-        fields = ('title', 'description',)
+        fields = ('code','title', 'description',)
 
 
 class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ('id', 'title', 'description',)
+        fields = ('id', 'code', 'title', 'description',)
 
 
 class ProductUOMImportSerializer(serializers.ModelSerializer):
