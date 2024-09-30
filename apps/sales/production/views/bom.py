@@ -16,6 +16,7 @@ class ProductListForBOM(BaseListMixin):
     filterset_fields = {
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_service': ['exact'],
+        'general_product_types_mapped__is_goods': ['exact'],
     }
     serializer_list = FinishProductForBOMSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -27,6 +28,13 @@ class ProductListForBOM(BaseListMixin):
             ).filter(
                 Q(general_product_types_mapped__is_finished_goods=True) |
                 Q(general_product_types_mapped__is_service=True)
+            )
+        if 'get_finished_goods_and_goods' in self.request.query_params:
+            return super().get_queryset().filter(
+                has_bom=False
+            ).filter(
+                Q(general_product_types_mapped__is_finished_goods=True) |
+                Q(general_product_types_mapped__is_goods=True)
             )
         return super().get_queryset().filter(has_bom=False)
 
@@ -120,10 +128,10 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        if 'for_opp' in self.request.query_params:
+        if 'for_opp_space' in self.request.query_params:
             return super().get_queryset().filter(bom_type=4).select_related('product', 'opportunity')
-        if 'for_production' in self.request.query_params:
-            return super().get_queryset().filter(bom_type__in=[0, 1, 2, 3]).select_related('product', 'opportunity')
+        if 'for_production_space' in self.request.query_params:
+            return super().get_queryset().filter(bom_type__in=[0, 1, 2, 3, 5]).select_related('product', 'opportunity')
         return super().get_queryset().select_related('product', 'opportunity')
 
     @swagger_auto_schema(

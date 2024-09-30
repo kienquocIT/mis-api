@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as trans
+
 from apps.core.base.models import Application, PlanApplication
 from apps.core.tenant.models import TenantPlan
 
@@ -270,6 +272,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
                     {
                         'id': obj_app.id,
                         'title': obj_app.title,
+                        'title_i18n': trans(obj_app.title),
                         'code': obj_app.code,
                         'model_code': obj_app.model_code,
                         'app_label': obj_app.app_label,
@@ -315,6 +318,12 @@ class ApplicationOfRoleSerializer(serializers.ModelSerializer):
     def get_title(cls, obj):
         return obj.application.title
 
+    title_i18n = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.application.title)
+
     code = serializers.SerializerMethodField()
 
     @classmethod
@@ -329,4 +338,4 @@ class ApplicationOfRoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanRoleApp
-        fields = ('id', 'title', 'code', 'permit_mapping')
+        fields = ('id', 'title', 'title_i18n', 'code', 'permit_mapping')

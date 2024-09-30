@@ -85,6 +85,7 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
     bom_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
     uom_id = serializers.UUIDField(required=False, allow_null=True)

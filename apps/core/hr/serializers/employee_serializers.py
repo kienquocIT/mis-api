@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.mail import get_connection
+from django.utils.translation import gettext_lazy as trans
 from rest_framework import serializers
 
 from apps.core.account.models import User
@@ -172,6 +173,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                     {
                         'id': obj_app.id,
                         'title': obj_app.title,
+                        'title_i18n': trans(obj_app.title),
                         'code': obj_app.code,
                         'model_code': obj_app.model_code,
                         'app_label': obj_app.app_label,
@@ -242,6 +244,12 @@ class ApplicationOfEmployeeSerializer(serializers.ModelSerializer):
     def get_title(cls, obj):
         return obj.application.title
 
+    title_i18n = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.application.title)
+
     code = serializers.SerializerMethodField()
 
     @classmethod
@@ -256,7 +264,7 @@ class ApplicationOfEmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlanEmployeeApp
-        fields = ('id', 'title', 'code', 'permit_mapping')
+        fields = ('id', 'title', 'title_i18n', 'code', 'permit_mapping')
 
 
 # functions for create/ update employee

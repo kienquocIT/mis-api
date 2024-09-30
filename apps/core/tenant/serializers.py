@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as trans
+
 from apps.core.tenant.models import TenantPlan
 
 
@@ -28,6 +30,7 @@ class TenantPlanAppAllowPermitSerializer(serializers.ModelSerializer):
                     {
                         'id': x.id,
                         'title': x.title,
+                        'title_i18n': trans(x.title),
                         'code': x.code,
                     } for x in obj.plan.applications.filter(allow_permit=True)
                 ],
