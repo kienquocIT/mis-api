@@ -119,8 +119,8 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_bom_check_data(cls, obj):
         return {
-            'is_bom': True if obj.bom_product.exists() else False,
-            'is_using': False,
+            'is_bom': obj.bom_product.exists(),
+            'is_so_using': bool(obj.filtered_sale_order_product),
         }
 
 

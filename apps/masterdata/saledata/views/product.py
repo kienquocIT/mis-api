@@ -2,6 +2,7 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
+from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
@@ -419,6 +420,7 @@ class ProductForSaleList(BaseListMixin):
             "sale_currency_using",
             "purchase_default_uom",
             "purchase_tax",
+            "inventory_uom",
         ).prefetch_related(
             'general_product_types_mapped',
             Prefetch(
@@ -426,6 +428,14 @@ class ProductForSaleList(BaseListMixin):
                 queryset=ProductPriceList.objects.select_related('price_list', 'uom_using'),
             ),
             'bom_product',
+            Prefetch(
+                'sale_order_product_product',
+                queryset=SaleOrderProduct.objects.filter(
+                    sale_order__system_status__in=[0, 1],
+                    sale_order__opportunity__isnull=False
+                ),
+                to_attr='filtered_sale_order_product'
+            ),
         )
 
     @swagger_auto_schema(
