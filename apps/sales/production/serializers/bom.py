@@ -431,6 +431,8 @@ class BOMCommonFunction:
     def validate_product_id(cls, validate_data):
         try:
             product_obj = Product.objects.get(id=validate_data.get('product_id'))
+            if product_obj.has_bom:
+                raise serializers.ValidationError({'product': "This product is mapped with BOM"})
             validate_data['product_id'] = str(product_obj.id)
             validate_data['title'] = f"BOM - {product_obj.title}"
             validate_data['product_data'] = {

@@ -54,8 +54,11 @@ class BOM(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                self.product.has_bom = True
-                self.product.save(update_fields=['has_bom'])
+                if self.product.has_bom:
+                    raise ValueError("This product is mapped with BOM")
+                else:
+                    self.product.has_bom = True
+                    self.product.save(update_fields=['has_bom'])
 
         # opportunity log
         AdvanceHandler.push_opportunity_log(instance=self)
