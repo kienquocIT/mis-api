@@ -401,7 +401,7 @@ class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'id': ['exact'],
+        'id': ['exact', 'in'],
         'general_product_types_mapped__is_goods': ['exact'],
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],
@@ -434,7 +434,15 @@ class ProductForSaleList(BaseListMixin):
                     sale_order__system_status__in=[0, 1],
                     sale_order__opportunity__isnull=False
                 ),
-                to_attr='filtered_sale_order_product'
+                to_attr='filtered_so_product_using'
+            ),
+            Prefetch(
+                'sale_order_product_product',
+                queryset=SaleOrderProduct.objects.filter(
+                    sale_order__system_status__in=[2, 3],
+                    sale_order__opportunity__isnull=False
+                ),
+                to_attr='filtered_so_product_finished'
             ),
         )
 

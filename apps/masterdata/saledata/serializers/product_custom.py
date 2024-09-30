@@ -14,6 +14,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     purchase_information = serializers.SerializerMethodField()
     inventory_information = serializers.SerializerMethodField()
     bom_check_data = serializers.SerializerMethodField()
+    bom_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -21,7 +22,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
-            'general_traceability_method', 'bom_check_data',
+            'general_traceability_method', 'bom_check_data', 'bom_data',
         )
 
     @classmethod
@@ -120,8 +121,23 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_bom_check_data(cls, obj):
         return {
             'is_bom': obj.bom_product.exists(),
-            'is_so_using': bool(obj.filtered_sale_order_product),
+            'is_so_finished': bool(obj.filtered_so_product_finished),
+            'is_so_using': bool(obj.filtered_so_product_using),
         }
+
+    @classmethod
+    def get_bom_data(cls, obj):
+        bom = obj.bom_product.first()
+        return {
+            'id': bom.id,
+            'title': bom.title,
+            'code': bom.code,
+            'opportunity': {
+                'id': bom.opportunity_id,
+                'title': bom.opportunity.title,
+                'code': bom.opportunity.code,
+            } if bom.opportunity else {}
+        } if bom else {}
 
 
 class ProductForSaleDetailSerializer(serializers.ModelSerializer):
