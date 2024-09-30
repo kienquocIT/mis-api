@@ -2,9 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, Price, TaxCategory, UnitOfMeasure,
+    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, TaxCategory, UnitOfMeasure,
 )
-from apps.masterdata.saledata.serializers import ProductTypeCreateSerializer
 from apps.shared import BaseCreateMixin, mask_view
 
 from apps.masterdata.saledata.serializers.fimport import (
@@ -274,4 +273,3 @@ class PriceTaxCategoryImport(BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
