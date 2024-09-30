@@ -221,16 +221,20 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
 class ReturnAdvanceCommonFunction:
     @classmethod
     def validate_advance_payment_id(cls, validate_data):
-        try:
-            ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
-            if ap_obj.opportunity_mapped:
-                if ap_obj.opportunity_mapped.is_deal_close:
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-            validate_data['advance_payment_id'] = str(ap_obj.id)
-            print('1. validate_advance_payment_id --- ok')
-            return validate_data
-        except AdvancePayment.DoesNotExist:
-            raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+        if 'advance_payment_id' in validate_data:
+            if validate_data.get('advance_payment_id'):
+                try:
+                    ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
+                    if ap_obj.opportunity_mapped:
+                        if ap_obj.opportunity_mapped.is_deal_close:
+                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    validate_data['advance_payment_id'] = str(ap_obj.id)
+                except AdvancePayment.DoesNotExist:
+                    raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+            else:
+                raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+        print('1. validate_advance_payment_id --- ok')
+        return validate_data
 
     @classmethod
     def validate_method(cls, validate_data):
