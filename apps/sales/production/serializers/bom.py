@@ -176,6 +176,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
