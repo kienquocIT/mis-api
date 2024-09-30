@@ -83,6 +83,16 @@ PRODUCT_CATEGORY_APP_CONFIG = {
     "allow_import": True,
 }
 
+UOM_APP_CONFIG = {
+    "id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",
+    "title": "Unit Of Measure",
+    "code": "unitofmeasure",
+    "permit_mapping": {},
+    "model_code": "unitofmeasure",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 TAX_CATEGORY_APP_CONFIG = {
     "id": "133e105e-cb3f-4845-8fba-bbb2516c5de2",
     "title": "Tax Category",
@@ -2293,6 +2303,7 @@ Application_crm_data = {
     'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
     '90f07280-e2f4-4406-aa23-ba255a22ec2d': ApplicationConfigFrame(**PRODUCT_TYPE_APP_CONFIG).data(),
     '053c0804-162a-4357-a1c2-2161e6606cc2': ApplicationConfigFrame(**PRODUCT_CATEGORY_APP_CONFIG).data(),
+    '7bc78f47-66f1-4104-a6fa-5ca07f3f2275': ApplicationConfigFrame(**UOM_APP_CONFIG).data(),
     '133e105e-cb3f-4845-8fba-bbb2516c5de2': ApplicationConfigFrame(**TAX_CATEGORY_APP_CONFIG).data(),
 
     # Nhóm 1 ^ 2

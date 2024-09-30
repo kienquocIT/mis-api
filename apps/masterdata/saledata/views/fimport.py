@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, Price, TaxCategory,
+    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, Price, TaxCategory, UnitOfMeasure,
 )
 from apps.masterdata.saledata.serializers import ProductTypeCreateSerializer
 from apps.shared import BaseCreateMixin, mask_view
@@ -17,7 +17,7 @@ from apps.masterdata.saledata.serializers.fimport import (
     ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer, ProductProductTypeImportSerializer,
     ProductProductTypeImportReturnSerializer, ProductProductCategoryImportSerializer,
     ProductProductCategoryImportReturnSerializer, PriceTaxCategoryImportSerializer,
-    PriceTaxCategoryImportReturnSerializer,
+    PriceTaxCategoryImportReturnSerializer, ProductUOMImportSerializer, ProductUOMImportReturnSerializer,
 )
 
 
@@ -237,6 +237,25 @@ class ProductProductCategoryImport(BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+class ProductUOMImport(BaseCreateMixin):
+    queryset = UnitOfMeasure.objects
+    serializer_create = ProductUOMImportSerializer
+    serializer_detail = ProductUOMImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product UOM",
+        request_body=ProductUOMImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
 class PriceTaxCategoryImport(BaseCreateMixin):
     queryset = TaxCategory.objects
     serializer_create = PriceTaxCategoryImportSerializer
@@ -255,3 +274,4 @@ class PriceTaxCategoryImport(BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+

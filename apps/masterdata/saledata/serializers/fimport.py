@@ -11,7 +11,7 @@ from apps.masterdata.saledata.serializers import (
     create_employee_map_account, add_account_types_information,
     add_shipping_address_information, add_billing_address_information,
 )
-from apps.shared import AccountsMsg, HrMsg, BaseMsg, PriceMsg
+from apps.shared import AccountsMsg, HrMsg, BaseMsg, PriceMsg, ProductMsg
 
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee
@@ -864,23 +864,32 @@ class ProductUOMGroupImportReturnSerializer(serializers.ModelSerializer):
 
 
 class ProductProductTypeImportSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
     title = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = ProductType
+        fields = ('code', 'title', 'description',)
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
+        raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
 
-    class Meta:
-        model = ProductType
-        fields = ('title', 'description',)
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if ProductType.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
 
 class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'description',)
+        fields = ('id', 'code', 'title', 'description',)
 
 
 class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
@@ -890,7 +899,7 @@ class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
+        raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
 
     class Meta:
         model = ProductCategory
@@ -904,7 +913,65 @@ class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
 
 
 class ProductUOMImportSerializer(serializers.ModelSerializer):
-    pass
+    title = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = UnitOfMeasure
+        fields = ('code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
+
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if UnitOfMeasure.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
+    @classmethod
+    def validate_title(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
+
+    @classmethod
+    def validate_group(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_NULL})
+
+    @classmethod
+    def validate_ratio(cls, attrs):
+        if attrs is not None and attrs > 0:
+            return attrs
+        raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
+
+    def validate(self, validate_data):
+        has_referenced_unit = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            group=validate_data['group'],
+            is_referenced_unit=True
+        ).exists()
+        if has_referenced_unit and validate_data.get('is_referenced_unit', None):
+            raise serializers.ValidationError({
+                'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE
+            })
+        return validate_data
+
+    def create(self, validated_data):
+        uom = UnitOfMeasure.objects.create(**validated_data)
+        # update uom_reference of group if this uom.is_referenced_unit is True
+        if uom:
+            if uom.is_referenced_unit is True and uom.group:
+                uom.group.uom_reference = uom
+                uom.group.save(update_fields=['uom_reference'])
+        return uom
+
+
+class ProductUOMImportReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnitOfMeasure
+        fields = ('id','code','title','is_referenced_unit')
 
 
 class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
