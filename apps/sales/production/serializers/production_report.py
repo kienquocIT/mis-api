@@ -60,6 +60,7 @@ class ProductionReportDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductionReportCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)

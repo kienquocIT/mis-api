@@ -176,6 +176,7 @@ class BOMCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         BOMCommonFunction.validate_bom_type(validate_data)
+        BOMCommonFunction.validate_opportunity_id(validate_data)
         BOMCommonFunction.validate_product_id(validate_data)
         BOMCommonFunction.validate_sum_price(validate_data)
         BOMCommonFunction.validate_sum_time(validate_data)
@@ -410,7 +411,7 @@ class BOMCommonFunction:
             try:
                 opportunity_obj = Opportunity.objects.get(id=validate_data.get('opportunity_id'))
                 validate_data['opportunity_id'] = str(opportunity_obj.id)
-                validate_data['employee_inherit'] = opportunity_obj.sale_person
+                validate_data['employee_inherit'] = opportunity_obj.employee_inherit
                 validate_data['opp_data'] = {
                     'id': str(opportunity_obj.id),
                     'code': opportunity_obj.code,
@@ -430,6 +431,8 @@ class BOMCommonFunction:
     def validate_product_id(cls, validate_data):
         try:
             product_obj = Product.objects.get(id=validate_data.get('product_id'))
+            if product_obj.has_bom:
+                raise serializers.ValidationError({'product': "This product is mapped with BOM"})
             validate_data['product_id'] = str(product_obj.id)
             validate_data['title'] = f"BOM - {product_obj.title}"
             validate_data['product_data'] = {

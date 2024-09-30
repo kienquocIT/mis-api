@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
-    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer
+    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer,
+    PurchaseRequestSaleListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -158,19 +159,20 @@ class PurchaseRequestSaleList(BaseListMixin, BaseCreateMixin):
         'is_all_ordered': ['exact'],
         'system_status': ['exact'],
         'sale_order__opportunity__is_deal_close': ['exact'],
+        'request_for': ['exact', 'in'],
     }
     search_fields = [
         'title',
         'sale_order__title',
         'supplier__name',
     ]
-    serializer_list = PurchaseRequestListSerializer
+    serializer_list = PurchaseRequestSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'supplier',
             'sale_order',
+            'sale_order__opportunity',
         ).order_by('purchase_status')
 
     @swagger_auto_schema(
