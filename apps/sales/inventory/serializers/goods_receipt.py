@@ -541,7 +541,7 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
 
 
 class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     purchase_order_id = serializers.UUIDField(required=False, allow_null=True)
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)

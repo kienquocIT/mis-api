@@ -64,6 +64,7 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
+    done_issue = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Work order'
@@ -147,6 +148,7 @@ class WorkOrderTask(MasterDataAbstractModel):
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     quantity_bom = models.FloatField(default=0)
     quantity = models.FloatField(default=0)
+    issued_quantity = models.FloatField(default=0)
     is_all_warehouse = models.BooleanField(
         default=False, help_text='flag to know can use this product of all warehouse'
     )

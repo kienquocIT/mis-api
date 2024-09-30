@@ -1,11 +1,12 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     UnitOfMeasure, WareHouse, Product,
     ProductWareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
-from apps.sales.production.models import ProductionOrder, ProductionOrderTask
+from apps.sales.production.models import ProductionOrder, ProductionOrderTask, WorkOrder
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 
 __all__ = [
@@ -476,6 +477,8 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
 
 
 class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
+    app = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductionOrder
@@ -483,7 +486,17 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'app',
+            'type'
         )
+
+    @classmethod
+    def get_app(cls, obj):
+        return _('Production Order')
+
+    @classmethod
+    def get_type(cls, obj):
+        return 0
 
 
 class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
@@ -501,6 +514,74 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     def get_task_data(cls, obj):
         task_data = []
         for item in obj.po_task_production_order.filter(is_task=False).order_by('product__code'):
+            if item.quantity - item.issued_quantity > 0:
+                task_data.append({
+                    'id': item.id,
+                    'order': item.order,
+                    'product_mapped': {
+                        'id': item.product_data.get('id'),
+                        'code': item.product_data.get('code'),
+                        'title': item.product_data.get('title'),
+                        'description': item.product_data.get('description'),
+                        'general_traceability_method': item.product.general_traceability_method
+                    } if item.product else {},
+                    'uom_mapped': {
+                        'id': item.uom_data.get('id'),
+                        'code': item.uom_data.get('code'),
+                        'title': item.uom_data.get('title'),
+                        'ratio': item.uom_data.get('ratio')
+                    } if item.uom else {},
+                    'warehouse_mapped': {
+                        'id': item.warehouse_data.get('id'),
+                        'code': item.warehouse_data.get('code'),
+                        'title': item.warehouse_data.get('title')
+                    } if item.warehouse else {},
+                    'is_all_warehouse': item.is_all_warehouse,
+                    'sum_quantity': item.quantity,
+                    'before_quantity': item.issued_quantity,
+                    'remain_quantity': item.quantity - item.issued_quantity,
+                })
+        return task_data
+
+
+class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
+    app = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'app',
+            'type'
+        )
+
+    @classmethod
+    def get_app(cls, obj):
+        return _('Work Order')
+
+    @classmethod
+    def get_type(cls, obj):
+        return 1
+
+
+class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
+    task_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkOrder
+        fields = (
+            'id',
+            'title',
+            'task_data'
+        )
+
+    @classmethod
+    def get_task_data(cls, obj):
+        task_data = []
+        for item in obj.wo_task_work_order.filter(is_task=False).order_by('product__code'):
             if item.quantity - item.issued_quantity > 0:
                 task_data.append({
                     'id': item.id,

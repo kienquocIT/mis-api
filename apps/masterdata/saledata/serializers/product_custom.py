@@ -13,13 +13,15 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     sale_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
     inventory_information = serializers.SerializerMethodField()
+    bom_check_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
-            'price_list', 'product_choice', 'supplied_by', 'inventory_information', 'general_traceability_method',
+            'price_list', 'product_choice', 'supplied_by', 'inventory_information',
+            'general_traceability_method', 'bom_check_data',
         )
 
     @classmethod
@@ -112,6 +114,13 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'rounding': obj.inventory_uom.rounding,
                 'is_referenced_unit': obj.inventory_uom.is_referenced_unit,
             } if obj.inventory_uom else {},
+        }
+
+    @classmethod
+    def get_bom_check_data(cls, obj):
+        return {
+            'is_bom': obj.bom_product.exists(),
+            'is_so_using': bool(obj.filtered_sale_order_product),
         }
 
 

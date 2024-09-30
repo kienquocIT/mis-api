@@ -756,3 +756,26 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+
+class PurchaseRequestSaleListSerializer(AbstractListSerializerModel):
+    sale_order = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequest
+        fields = (
+            'id',
+            'code',
+            'title',
+            'request_for',
+            'sale_order',
+        )
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'is_deal_close': obj.sale_order.opportunity.is_deal_close if obj.sale_order.opportunity else False,
+        } if obj.sale_order else {}

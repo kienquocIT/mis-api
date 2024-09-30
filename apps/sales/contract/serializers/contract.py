@@ -54,7 +54,7 @@ class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
 
 
 class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
