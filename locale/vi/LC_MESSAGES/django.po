@@ -132,7 +132,7 @@ msgstr "Nhóm"
 
 # 022375ce-c99c-4f11-8841-0a26c85f2fc2
 msgid "Internal labor item"
-msgstr "Internal labor item"
+msgstr "Chi phí nhân công"
 
 # c5de0a7d-bea3-4f39-922f-06a40a060aba
 msgid "Inventory Adjustment"
