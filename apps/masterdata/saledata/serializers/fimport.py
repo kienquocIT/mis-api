@@ -30,11 +30,7 @@ class SaleDataCurrencyImportSerializer(serializers.ModelSerializer):
     def validate_abbreviation(cls, attrs):
         if not Currency.objects.filter_current(fill__company=True, abbreviation=attrs).exists():
             return attrs
-        raise serializers.ValidationError(
-            {
-                'abbreviation': BaseMsg.CODE_IS_EXISTS,
-            }
-        )
+        raise serializers.ValidationError({ 'abbreviation': BaseMsg.CODE_IS_EXISTS,})
 
     currency = serializers.CharField(max_length=10, allow_null=True, allow_blank=True)
 
@@ -44,11 +40,7 @@ class SaleDataCurrencyImportSerializer(serializers.ModelSerializer):
             try:
                 return BaseCurrency.objects.get(code=attrs)
             except BaseCurrency.DoesNotExist:
-                raise serializers.ValidationError(
-                    {
-                        'currency': BaseMsg.CODE_NOT_EXIST,
-                    }
-                )
+                raise serializers.ValidationError({'currency': BaseMsg.CODE_NOT_EXIST,})
         return None
 
     rate = serializers.FloatField(allow_null=True)
@@ -72,6 +64,8 @@ class AccountGroupImportReturnSerializer(serializers.ModelSerializer):
 
 class AccountGroupImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
+    description = serializers.CharField(max_length=200, allow_blank=True)
 
     @classmethod
     def validate_code(cls, value):
@@ -81,15 +75,11 @@ class AccountGroupImportSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
-    title = serializers.CharField(max_length=100)
-
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
-
-    description = serializers.CharField(max_length=200, allow_blank=True)
 
     @classmethod
     def validate_description(cls, attrs):
@@ -110,6 +100,7 @@ class AccountTypeImportReturnSerializer(serializers.ModelSerializer):
 
 class AccountTypeImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
 
     @classmethod
     def validate_code(cls, value):
@@ -118,8 +109,6 @@ class AccountTypeImportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
-
-    title = serializers.CharField(max_length=100)
 
     @classmethod
     def validate_title(cls, value):
@@ -174,14 +163,7 @@ class PaymentTermImportSubTermSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Term
-        fields = (
-            'value',
-            'unit_type',
-            'day_type',
-            'no_of_days',
-            'after',
-            'order',
-        )
+        fields = ('value', 'unit_type', 'day_type', 'no_of_days', 'after', 'order',)
 
 
 TERM_HEP_TEXT = """
@@ -213,11 +195,7 @@ class PaymentTermImportSerializer(serializers.ModelSerializer):
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError(
-            {
-                'title': BaseMsg.REQUIRED,
-            }
-        )
+        raise serializers.ValidationError({'title': BaseMsg.REQUIRED,})
 
     code = serializers.CharField(max_length=100)
 
@@ -225,11 +203,7 @@ class PaymentTermImportSerializer(serializers.ModelSerializer):
     def validate_code(cls, attrs):
         if not PaymentTerm.objects.filter_current(fill__company=True, code=attrs).exists():
             return attrs
-        raise serializers.ValidationError(
-            {
-                'code': BaseMsg.CODE_IS_EXISTS,
-            }
-        )
+        raise serializers.ValidationError({'code': BaseMsg.CODE_IS_EXISTS,})
 
     term = serializers.CharField(help_text=TERM_HEP_TEXT)  # PaymentTermImportSubTermSerializer(many=True)
 
@@ -956,11 +930,7 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
             try:
                 return UnitOfMeasureGroup.objects.get_current(fill__company=True, code=value)
             except UnitOfMeasureGroup.DoesNotExist:
-                raise serializers.ValidationError(
-                    {
-                        'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST,
-                    }
-                )
+                raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
         raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_NULL})
 
     @classmethod
@@ -978,14 +948,10 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
         ).exists()
         if has_referenced_unit:
             if validate_data.get('is_referenced_unit', None):
-                raise serializers.ValidationError({
-                    'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE
-                })
+                raise serializers.ValidationError({'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE})
         if validate_data.get('is_referenced_unit') == 1:
             if validate_data['ratio'] != 1:
-                raise serializers.ValidationError({
-                    'detail': ProductMsg.VALUE_INVALID
-                })
+                raise serializers.ValidationError({'detail': ProductMsg.VALUE_INVALID})
         return validate_data
 
     def create(self, validated_data):
@@ -1013,11 +979,7 @@ class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_title(cls, value):
-        if TaxCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
+        if TaxCategory.objects.filter_current(fill__tenant=True, fill__company=True, title=value).exists():
             raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
