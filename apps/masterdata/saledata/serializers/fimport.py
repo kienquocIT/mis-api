@@ -852,15 +852,23 @@ class ProductUOMGroupImportSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if UnitOfMeasureGroup.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('title',)
+        fields = ('code','title',)
 
 
 class ProductUOMGroupImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
-        fields = ('id', 'title')
+        fields = ('id', 'code', 'title')
 
 
 class ProductProductTypeImportSerializer(serializers.ModelSerializer):
@@ -922,6 +930,7 @@ class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
 
 class ProductUOMImportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
+    group = serializers.CharField(max_length=100)
 
     class Meta:
         model = UnitOfMeasure
@@ -944,7 +953,14 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_group(cls, value):
         if value:
-            return value
+            try:
+                return UnitOfMeasureGroup.objects.get_current(fill__company=True, code=value)
+            except UnitOfMeasureGroup.DoesNotExist:
+                raise serializers.ValidationError(
+                    {
+                        'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST,
+                    }
+                )
         raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_NULL})
 
     @classmethod
@@ -960,10 +976,16 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
             group=validate_data['group'],
             is_referenced_unit=True
         ).exists()
-        if has_referenced_unit and validate_data.get('is_referenced_unit', None):
-            raise serializers.ValidationError({
-                'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE
-            })
+        if has_referenced_unit:
+            if validate_data.get('is_referenced_unit', None):
+                raise serializers.ValidationError({
+                    'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE
+                })
+        if validate_data.get('is_referenced_unit') == 1:
+            if validate_data['ratio'] != 1:
+                raise serializers.ValidationError({
+                    'detail': ProductMsg.VALUE_INVALID
+                })
         return validate_data
 
     def create(self, validated_data):
