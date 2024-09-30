@@ -975,7 +975,7 @@ class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaxCategory
-        fields = ('title', 'description',)
+        fields = ('code', 'title', 'description',)
 
     @classmethod
     def validate_title(cls, value):
@@ -983,8 +983,14 @@ class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
+    @classmethod
+    def validate_code(cls, value):
+        if TaxCategory.objects.filter_current(fill__tenant=True, fill__company=True,code=value).exists():
+            raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
+        return value
+
 
 class PriceTaxCategoryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxCategory
-        fields = ('id', 'title', 'description', 'is_default')
+        fields = ('id', 'code', 'title', 'description', 'is_default')
