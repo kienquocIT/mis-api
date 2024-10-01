@@ -64,7 +64,6 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
-    done_issue = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Work order'

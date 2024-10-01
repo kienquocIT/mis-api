@@ -145,12 +145,16 @@ class GoodsIssue(DataAbstractModel):
         raise ValueError('Issued quantity cannot > max issue quantity remaining.')
 
     @classmethod
-    def update_status_production_order_item(cls, po_item_obj, this_issue_quantity):
-        if po_item_obj.quantity - po_item_obj.issued_quantity - this_issue_quantity >= 0:
-            po_item_obj.issued_quantity += this_issue_quantity
-            po_item_obj.save(update_fields=['issued_quantity'])
-            return True
-        raise ValueError('Issued quantity cannot > max issue quantity remaining.')
+    def update_issued_quantity_production_order_item(cls, po_item_obj, this_issue_quantity):
+        po_item_obj.issued_quantity += this_issue_quantity
+        po_item_obj.save(update_fields=['issued_quantity'])
+        return True
+
+    @classmethod
+    def update_issued_quantity_work_order_item(cls, wo_item_obj, this_issue_quantity):
+        wo_item_obj.issued_quantity += this_issue_quantity
+        wo_item_obj.save(update_fields=['issued_quantity'])
+        return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -185,10 +189,15 @@ class GoodsIssue(DataAbstractModel):
                         elif self.production_order:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)
-                                self.update_status_production_order_item(
+                                self.update_issued_quantity_production_order_item(
                                     item.production_order_item, item.issued_quantity
                                 )
-                            self.production_order.update_production_order_issue_state()
+                        elif self.work_order:
+                            for item in self.goods_issue_product.all():
+                                self.update_product_warehouse_data(item)
+                                self.update_issued_quantity_work_order_item(
+                                    item.work_order_item, item.issued_quantity
+                                )
                 except Exception as err:
                     print(err)
                     raise err

@@ -48,6 +48,8 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     detail_data_ia = serializers.ListField()
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_wo = serializers.ListField()
 
     class Meta:
         model = GoodsIssue
@@ -58,7 +60,9 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
             'inventory_adjustment_id',
             'detail_data_ia',
             'production_order_id',
-            'detail_data_po'
+            'detail_data_po',
+            'work_order_id',
+            'detail_data_wo',
         )
 
     def validate(self, validate_data):
@@ -68,6 +72,7 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
         print('*validate done')
         return validate_data
 
@@ -75,9 +80,11 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
+        detail_data_wo = validated_data.pop('detail_data_wo', [])
         instance = GoodsIssue.objects.create(**validated_data)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
         return instance
 
 
@@ -86,6 +93,8 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     detail_data_ia = serializers.SerializerMethodField()
     production_order = serializers.SerializerMethodField()
     detail_data_po = serializers.SerializerMethodField()
+    work_order = serializers.SerializerMethodField()
+    detail_data_wo = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -99,6 +108,8 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'detail_data_ia',
             'production_order',
             'detail_data_po',
+            'work_order',
+            'detail_data_wo',
             'date_created'
         )
 
@@ -190,6 +201,50 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                     })
         return detail_data_po
 
+    @classmethod
+    def get_work_order(cls, obj):
+        return {
+            'id': obj.work_order_id,
+            'title': obj.work_order.title,
+            'code': obj.work_order.code,
+        } if obj.work_order else {}
+
+    @classmethod
+    def get_detail_data_wo(cls, obj):
+        detail_data_wo = []
+        if obj.work_order:
+            if obj.system_status == 3:
+                for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                    wo_item = item.work_order_item
+                    detail_data_wo.append({
+                        'id': wo_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': wo_item.quantity,
+                        'before_quantity': item.before_quantity,
+                        'remain_quantity': item.remain_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+            else:
+                for item in obj.goods_issue_product.all():
+                    wo_item = item.work_order_item
+                    detail_data_wo.append({
+                        'id': wo_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': wo_item.quantity,
+                        'before_quantity': wo_item.issued_quantity,
+                        'remain_quantity': wo_item.quantity - wo_item.issued_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+        return detail_data_wo
+
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     goods_issue_type = serializers.IntegerField()
@@ -197,6 +252,8 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     detail_data_ia = serializers.ListField()
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_wo = serializers.ListField()
 
     class Meta:
         model = GoodsIssue
@@ -207,7 +264,9 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
             'inventory_adjustment_id',
             'detail_data_ia',
             'production_order_id',
-            'detail_data_po'
+            'detail_data_po',
+            'work_order_id',
+            'detail_data_wo',
         )
 
     def validate(self, validate_data):
@@ -216,6 +275,8 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
         GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
+        GoodsIssueCommonFunction.validate_work_order_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
         print('*validate done')
         return validate_data
 
@@ -223,11 +284,13 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
+        detail_data_wo = validated_data.pop('detail_data_wo', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
         return instance
 
 
@@ -392,10 +455,6 @@ class GoodsIssueCommonFunction:
                         raise serializers.ValidationError(
                             {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
                         )
-                    if po_item_obj.quantity - po_item_obj.issued_quantity < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
-                        )
 
                     selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                     cls.validate_lot_data(item, product_obj)
@@ -442,10 +501,6 @@ class GoodsIssueCommonFunction:
                     if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
                         raise serializers.ValidationError(
                             {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
-                        )
-                    if wo_item_obj.quantity - wo_item_obj.issued_quantity < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
                         )
 
                     selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
