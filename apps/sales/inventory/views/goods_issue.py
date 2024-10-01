@@ -49,6 +49,7 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -89,6 +90,7 @@ class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 
@@ -148,7 +150,7 @@ class ProductionOrderListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(done_issue=False)
+        return super().get_queryset().filter()
 
     @swagger_auto_schema(
         operation_summary="Production Order List",
