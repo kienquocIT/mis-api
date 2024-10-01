@@ -76,6 +76,11 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -182,7 +187,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': po_item.quantity,
                         'before_quantity': item.before_quantity,
-                        'remain_quantity': item.remain_quantity,
+                        'remain_quantity': item.remain_quantity if item.remain_quantity >= 0 else 0,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -190,6 +195,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             else:
                 for item in obj.goods_issue_product.all():
                     po_item = item.production_order_item
+                    remain_quantity = po_item.quantity - po_item.issued_quantity
                     detail_data_po.append({
                         'id': po_item.id,
                         'product_mapped': item.product_data,
@@ -197,7 +203,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': po_item.quantity,
                         'before_quantity': po_item.issued_quantity,
-                        'remain_quantity': po_item.quantity - po_item.issued_quantity,
+                        'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -226,7 +232,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': wo_item.quantity,
                         'before_quantity': item.before_quantity,
-                        'remain_quantity': item.remain_quantity,
+                        'remain_quantity': item.remain_quantity if item.remain_quantity >= 0 else 0,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -234,6 +240,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             else:
                 for item in obj.goods_issue_product.all():
                     wo_item = item.work_order_item
+                    remain_quantity = wo_item.quantity - wo_item.issued_quantity
                     detail_data_wo.append({
                         'id': wo_item.id,
                         'product_mapped': item.product_data,
@@ -241,7 +248,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': wo_item.quantity,
                         'before_quantity': wo_item.issued_quantity,
-                        'remain_quantity': wo_item.quantity - wo_item.issued_quantity,
+                        'remain_quantity': remain_quantity if item.remain_quantity >= 0 else 0,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -280,6 +287,11 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -577,6 +589,7 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
         order = 1
         for item in obj.inventory_adjustment_item_mapped.filter(action_type=1).order_by('product_mapped__code'):
             if item.book_quantity - item.count - item.issued_quantity > 0:
+                remain_quantity = item.book_quantity - item.count - item.issued_quantity
                 ia_data.append({
                     'id': item.id,
                     'order': order,
@@ -600,7 +613,7 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
                     } if item.warehouse_mapped else {},
                     'sum_quantity': item.book_quantity - item.count,
                     'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.book_quantity - item.count - item.issued_quantity,
+                    'remain_quantity': remain_quantity,
                 })
                 order += 1
         return ia_data
@@ -644,33 +657,33 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     def get_task_data(cls, obj):
         task_data = []
         for item in obj.po_task_production_order.filter(is_task=False).order_by('product__code'):
-            if item.quantity - item.issued_quantity > 0:
-                task_data.append({
-                    'id': item.id,
-                    'order': item.order,
-                    'product_mapped': {
-                        'id': item.product_data.get('id'),
-                        'code': item.product_data.get('code'),
-                        'title': item.product_data.get('title'),
-                        'description': item.product_data.get('description'),
-                        'general_traceability_method': item.product.general_traceability_method
-                    } if item.product else {},
-                    'uom_mapped': {
-                        'id': item.uom_data.get('id'),
-                        'code': item.uom_data.get('code'),
-                        'title': item.uom_data.get('title'),
-                        'ratio': item.uom_data.get('ratio')
-                    } if item.uom else {},
-                    'warehouse_mapped': {
-                        'id': item.warehouse_data.get('id'),
-                        'code': item.warehouse_data.get('code'),
-                        'title': item.warehouse_data.get('title')
-                    } if item.warehouse else {},
-                    'is_all_warehouse': item.is_all_warehouse,
-                    'sum_quantity': item.quantity,
-                    'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.quantity - item.issued_quantity,
-                })
+            remain_quantity = item.quantity - item.issued_quantity
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'sum_quantity': item.quantity,
+                'before_quantity': item.issued_quantity,
+                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+            })
         return task_data
 
 
@@ -712,33 +725,33 @@ class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     def get_task_data(cls, obj):
         task_data = []
         for item in obj.wo_task_work_order.filter(is_task=False).order_by('product__code'):
-            if item.quantity - item.issued_quantity > 0:
-                task_data.append({
-                    'id': item.id,
-                    'order': item.order,
-                    'product_mapped': {
-                        'id': item.product_data.get('id'),
-                        'code': item.product_data.get('code'),
-                        'title': item.product_data.get('title'),
-                        'description': item.product_data.get('description'),
-                        'general_traceability_method': item.product.general_traceability_method
-                    } if item.product else {},
-                    'uom_mapped': {
-                        'id': item.uom_data.get('id'),
-                        'code': item.uom_data.get('code'),
-                        'title': item.uom_data.get('title'),
-                        'ratio': item.uom_data.get('ratio')
-                    } if item.uom else {},
-                    'warehouse_mapped': {
-                        'id': item.warehouse_data.get('id'),
-                        'code': item.warehouse_data.get('code'),
-                        'title': item.warehouse_data.get('title')
-                    } if item.warehouse else {},
-                    'is_all_warehouse': item.is_all_warehouse,
-                    'sum_quantity': item.quantity,
-                    'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.quantity - item.issued_quantity,
-                })
+            remain_quantity = item.quantity - item.issued_quantity
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'sum_quantity': item.quantity,
+                'before_quantity': item.issued_quantity,
+                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+            })
         return task_data
 
 
