@@ -1,5 +1,7 @@
 from django.db import models
 from django.db import transaction
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
@@ -260,5 +262,24 @@ class GoodsIssueProduct(SimpleAbstractModel):
         verbose_name = 'Goods Issue Product'
         verbose_name_plural = 'Goods Issue Products'
         ordering = ('product__code',)
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsIssueAttachmentFile(M2MFilesAbstractModel):
+    goods_issue = models.ForeignKey(
+        GoodsIssue,
+        on_delete=models.CASCADE,
+        related_name='goods_issue_attachments'
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'goods_issue'
+
+    class Meta:
+        verbose_name = 'Goods issue attachment'
+        verbose_name_plural = 'Goods issue attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

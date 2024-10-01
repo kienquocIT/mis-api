@@ -49,6 +49,7 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -89,6 +90,7 @@ class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 

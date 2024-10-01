@@ -1,13 +1,15 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     UnitOfMeasure, WareHouse, Product,
     ProductWareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
+from apps.sales.inventory.models.goods_issue import GoodsIssueAttachmentFile
 from apps.sales.production.models import ProductionOrder, ProductionOrderTask, WorkOrder, WorkOrderTask
-from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 
 __all__ = [
     'GoodsIssueListSerializer',
@@ -25,6 +27,8 @@ __all__ = [
     'WorkOrderDetailSerializerForGIS',
     'GoodsIssueProductPRListSerializer',
 ]
+
+from apps.shared.translations.base import AttachmentMsg
 
 
 class GoodsIssueListSerializer(AbstractListSerializerModel):
@@ -53,6 +57,7 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     detail_data_po = serializers.ListField()
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_wo = serializers.ListField()
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsIssue
@@ -66,6 +71,7 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
             'detail_data_po',
             'work_order_id',
             'detail_data_wo',
+            'attachment'
         )
 
     def validate(self, validate_data):
@@ -76,6 +82,11 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=None,
+            validate_data=validate_data
+        )
         if 'title' in validate_data:
             if validate_data.get('title'):
                 validate_data['title'] = validate_data.get('title')
@@ -89,10 +100,14 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
         detail_data_wo = validated_data.pop('detail_data_wo', [])
+        attachment = validated_data.pop('attachment', [])
+
         instance = GoodsIssue.objects.create(**validated_data)
+
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
 
@@ -103,6 +118,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     detail_data_po = serializers.SerializerMethodField()
     work_order = serializers.SerializerMethodField()
     detail_data_wo = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -118,7 +134,8 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'detail_data_po',
             'work_order',
             'detail_data_wo',
-            'date_created'
+            'date_created',
+            'attachment'
         )
 
     @classmethod
@@ -255,6 +272,11 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                     })
         return detail_data_wo
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = GoodsIssueAttachmentFile.objects.select_related('attachment').filter(goods_issue=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     goods_issue_type = serializers.IntegerField()
@@ -264,6 +286,7 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     detail_data_po = serializers.ListField()
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_wo = serializers.ListField()
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsIssue
@@ -277,6 +300,7 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
             'detail_data_po',
             'work_order_id',
             'detail_data_wo',
+            'attachment'
         )
 
     def validate(self, validate_data):
@@ -287,6 +311,11 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=self.instance.id,
+            validate_data=validate_data
+        )
         if 'title' in validate_data:
             if validate_data.get('title'):
                 validate_data['title'] = validate_data.get('title')
@@ -300,12 +329,16 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
         detail_data_wo = validated_data.pop('detail_data_wo', [])
+        attachment = validated_data.pop('attachment', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
 
@@ -549,6 +582,25 @@ class GoodsIssueCommonFunction:
         return True
 
     @classmethod
+    def validate_attachment(cls, context_user, doc_id, validate_data):
+        if 'attachment' in validate_data:
+            if validate_data.get('attachment'):
+                if context_user and hasattr(context_user, 'employee_current_id'):
+                    state, result = GoodsIssueAttachmentFile.valid_change(
+                        current_ids=validate_data.get('attachment', []),
+                        employee_id=context_user.employee_current_id,
+                        doc_id=doc_id
+                    )
+                    if state is True:
+                        validate_data['attachment'] = result
+                    else:
+                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+                else:
+                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        print('4. validate_attachment --- ok')
+        return validate_data
+
+    @classmethod
     def create_issue_item(cls, instance, data):
         if len(data) > 0:
             bulk_data = []
@@ -557,6 +609,19 @@ class GoodsIssueCommonFunction:
                 bulk_data.append(obj)
             GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
             GoodsIssueProduct.objects.bulk_create(bulk_data)
+        return True
+
+    @classmethod
+    def handle_attach_file(cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            relate_app = Application.objects.filter(id="f26d7ce4-e990-420a-8ec6-2dc307467f2c").first()
+            if relate_app:
+                state = GoodsIssueAttachmentFile.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
         return True
 
 
