@@ -1,7 +1,6 @@
 import json
 
 from rest_framework import serializers
-from tomlkit import integer
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
@@ -882,10 +881,8 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
             group=validate_data['group'], is_referenced_unit=True).exists()
         if has_referenced_unit:
             if validate_data.get('is_referenced_unit', None):
-                raise serializers.ValidationError({'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE})
-        if validate_data.get('is_referenced_unit') == 1:
-            if validate_data['ratio'] != 1:
-                raise serializers.ValidationError({'detail': ProductMsg.VALUE_INVALID})
+                raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE})
+
         return validate_data
 
     def create(self, validated_data):

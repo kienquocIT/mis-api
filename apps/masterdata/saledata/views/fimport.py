@@ -203,7 +203,7 @@ class ProductProductTypeImport(BaseCreateMixin):
     queryset = ProductType.objects
     serializer_create = ProductProductTypeImportSerializer
     serializer_detail = ProductProductTypeImportReturnSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Import Product Type",
@@ -222,7 +222,7 @@ class ProductProductCategoryImport(BaseCreateMixin):
     queryset = ProductType.objects
     serializer_create = ProductProductCategoryImportSerializer
     serializer_detail = ProductProductCategoryImportReturnSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Import Product Category",
@@ -241,7 +241,7 @@ class ProductUOMImport(BaseCreateMixin):
     queryset = UnitOfMeasure.objects
     serializer_create = ProductUOMImportSerializer
     serializer_detail = ProductUOMImportReturnSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Import Product UOM",
@@ -260,7 +260,7 @@ class PriceTaxCategoryImport(BaseCreateMixin):
     queryset = TaxCategory.objects
     serializer_create = PriceTaxCategoryImportSerializer
     serializer_detail = PriceTaxCategoryImportReturnSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Import TaxCategory",
@@ -279,7 +279,7 @@ class PriceTaxImport(BaseCreateMixin):
     queryset = Tax.objects
     serializer_create = PriceTaxImportSerializer
     serializer_detail = PriceTaxImportReturnSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Import Tax",
