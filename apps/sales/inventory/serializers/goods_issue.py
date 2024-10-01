@@ -565,3 +565,13 @@ class ProductWarehouseSerialListSerializerForGIS(serializers.ModelSerializer):
             'warranty_end',
             'is_delete'
         )
+
+
+class GoodsIssueProductPRListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GoodsIssueProduct
+        fields = (
+            'id',
+            'issued_quantity',
+        )
