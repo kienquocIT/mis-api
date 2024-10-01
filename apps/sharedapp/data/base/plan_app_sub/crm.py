@@ -93,6 +93,16 @@ UOM_APP_CONFIG = {
     "allow_import": True,
 }
 
+TAX_APP_CONFIG = {
+    "id": "720d14f9-e031-4ffe-acb9-3c7763c134fc",
+    "title": "Tax",
+    "code": "tax",
+    "permit_mapping": {},
+    "model_code": "tax",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 TAX_CATEGORY_APP_CONFIG = {
     "id": "133e105e-cb3f-4845-8fba-bbb2516c5de2",
     "title": "Tax Category",
@@ -2305,6 +2315,7 @@ Application_crm_data = {
     '053c0804-162a-4357-a1c2-2161e6606cc2': ApplicationConfigFrame(**PRODUCT_CATEGORY_APP_CONFIG).data(),
     '7bc78f47-66f1-4104-a6fa-5ca07f3f2275': ApplicationConfigFrame(**UOM_APP_CONFIG).data(),
     '133e105e-cb3f-4845-8fba-bbb2516c5de2': ApplicationConfigFrame(**TAX_CATEGORY_APP_CONFIG).data(),
+    '720d14f9-e031-4ffe-acb9-3c7763c134fc': ApplicationConfigFrame(**TAX_APP_CONFIG).data(),
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(

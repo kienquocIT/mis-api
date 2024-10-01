@@ -9,7 +9,7 @@ from apps.masterdata.saledata.views.fimport import (
     AccountGroupImport,
     AccountTypeImport, IndustryImport, PaymentTermImport,
     AccountImport, ProductUOMGroupImport, ProductProductTypeImport, ProductProductCategoryImport,
-    PriceTaxCategoryImport, ProductUOMImport,
+    PriceTaxCategoryImport, ProductUOMImport, PriceTaxImport,
 )
 
 urlpatterns = [
@@ -35,4 +35,5 @@ urlpatterns = [
          name='ProductProductCategoryImport'),
     path('saledata/product/uom', ProductUOMImport.as_view(), name='ProductUOMImport'),
     path('saledata/price/tax-category', PriceTaxCategoryImport.as_view(), name='PriceTaxCategoryImport'),
+    path('saledata/price/tax', PriceTaxImport.as_view(), name='PriceTaxImport'),
 ]

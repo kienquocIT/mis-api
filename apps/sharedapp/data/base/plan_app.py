@@ -122,6 +122,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",  # UOM
     },
+    "720d14f9-e031-4ffe-acb9-3c7763c134fc":{
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "720d14f9-e031-4ffe-acb9-3c7763c134fc",  # Tax
+    },
     "133e105e-cb3f-4845-8fba-bbb2516c5de2":{
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "133e105e-cb3f-4845-8fba-bbb2516c5de2",  # Tax category

@@ -1,10 +1,11 @@
 import json
 
 from rest_framework import serializers
+from tomlkit import integer
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory, UnitOfMeasure, TaxCategory,
+    PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory, UnitOfMeasure, TaxCategory, Tax,
 )
 from apps.masterdata.saledata.models.accounts import ACCOUNT_TYPE_SELECTION
 from apps.masterdata.saledata.serializers import (
@@ -16,12 +17,10 @@ from apps.shared import AccountsMsg, HrMsg, BaseMsg, PriceMsg, ProductMsg
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee
 
-
 class SaleDataCurrencyImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
         fields = ('id', 'abbreviation')
-
 
 class SaleDataCurrencyImportSerializer(serializers.ModelSerializer):
     abbreviation = serializers.CharField(max_length=100)
@@ -55,12 +54,10 @@ class SaleDataCurrencyImportSerializer(serializers.ModelSerializer):
         model = Currency
         fields = ('currency', 'abbreviation', 'rate')
 
-
 class AccountGroupImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
         fields = ('id', 'title', 'code')
-
 
 class AccountGroupImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -91,12 +88,10 @@ class AccountGroupImportSerializer(serializers.ModelSerializer):
         model = AccountGroup
         fields = ('code', 'title', 'description')
 
-
 class AccountTypeImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code')
-
 
 class AccountTypeImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -120,12 +115,10 @@ class AccountTypeImportSerializer(serializers.ModelSerializer):
         model = AccountType
         fields = ('code', 'title', 'description')
 
-
 class IndustryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
         fields = ('id', 'title', 'code')
-
 
 class IndustryImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -150,12 +143,10 @@ class IndustryImportSerializer(serializers.ModelSerializer):
         model = Industry
         fields = ('code', 'title', 'description')
 
-
 class PaymentTermImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentTerm
         fields = ('id', 'title')
-
 
 class PaymentTermImportSubTermSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
@@ -164,7 +155,6 @@ class PaymentTermImportSubTermSerializer(serializers.ModelSerializer):
     class Meta:
         model = Term
         fields = ('value', 'unit_type', 'day_type', 'no_of_days', 'after', 'order',)
-
 
 TERM_HEP_TEXT = """
 [Loại, Giá trị, Kiểu ngày, Số ngày, Kích hoạt khi]
@@ -188,7 +178,6 @@ TERM_HEP_TEXT = """
 trăm với mốc 30 - 30 - 40 cho sự kiện ký hợp đồng - giao hàng - xuất hoá đơn và ngày chậm nhất thanh toán là 1 ngày 
 làm việc sau sự kiện kích hoạt.
 """
-
 
 class PaymentTermImportSerializer(serializers.ModelSerializer):
     @classmethod
@@ -280,12 +269,10 @@ class PaymentTermImportSerializer(serializers.ModelSerializer):
             'term',
         )
 
-
 class SalutationImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
         fields = ('id', 'title')
-
 
 class SalutationImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -312,12 +299,10 @@ class SalutationImportSerializer(serializers.ModelSerializer):
         model = Salutation
         fields = ('code', 'title', 'description')
 
-
 class SaleDataContactImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ('id', 'title', 'code')
-
 
 class SaleDataContactImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -340,11 +325,7 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
             try:
                 return Employee.objects.get_current(fill__company=True, code=attrs)
             except Employee.DoesNotExist:
-                raise serializers.ValidationError(
-                    {
-                        'owner': HrMsg.EMPLOYEE_NOT_FOUND
-                    }
-                )
+                raise serializers.ValidationError({'owner': HrMsg.EMPLOYEE_NOT_FOUND})
         return None
 
     salutation = serializers.CharField(max_length=100, allow_null=True, allow_blank=True)
@@ -367,11 +348,7 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_email(cls, attrs):
         if attrs:
-            if Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    email=attrs,
-            ).exists():
+            if Contact.objects.filter_current(fill__tenant=True, fill__company=True, email=attrs,).exists():
                 raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
             return attrs
         return None
@@ -381,11 +358,7 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_mobile(cls, attrs):
         if attrs:
-            if Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    mobile=attrs,
-            ).exists():
+            if Contact.objects.filter_current(fill__tenant=True, fill__company=True, mobile=attrs,).exists():
                 raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return attrs
         return None
@@ -398,11 +371,7 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
             try:
                 return Contact.objects.get_current(fill__company=True, code=attrs)
             except Contact.DoesNotExist:
-                raise serializers.ValidationError(
-                    {
-                        'report_to': BaseMsg.CODE_NOT_EXIST
-                    }
-                )
+                raise serializers.ValidationError({'report_to': BaseMsg.CODE_NOT_EXIST})
         return None
 
     account_name = serializers.CharField(max_length=100, allow_null=True, allow_blank=True)
@@ -413,11 +382,7 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
             try:
                 return Account.objects.get_current(fill__company=True, code=attrs)
             except Account.DoesNotExist:
-                raise serializers.ValidationError(
-                    {
-                        'account_name': BaseMsg.CODE_NOT_EXIST,
-                    }
-                )
+                raise serializers.ValidationError({'account_name': BaseMsg.CODE_NOT_EXIST,})
         return None
 
     def create(self, validated_data):
@@ -429,18 +394,8 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contact
-        fields = (
-            "code",
-            "owner",
-            "job_title",
-            "biography",
-            "fullname",
-            "salutation",
-            "phone",
-            "mobile",
-            "email",
-            "report_to",
-            'account_name',
+        fields = ("code", "owner", "job_title", "biography", "fullname", "salutation", "phone", "mobile",
+                  "email", "report_to", 'account_name',
             # "address_information",
             # "additional_information",
             # 'work_detail_address',
@@ -455,12 +410,10 @@ class SaleDataContactImportSerializer(serializers.ModelSerializer):
             # 'home_ward',
         )
 
-
 class SaleDataAccountImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ('id', 'title', 'code')
-
 
 # ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
 class AddressDictSerializer(serializers.Serializer):  # noqa
@@ -469,7 +422,6 @@ class AddressDictSerializer(serializers.Serializer):  # noqa
     ward = serializers.CharField()
     address = serializers.CharField()
     is_default = serializers.BooleanField(default=False)
-
 
 class AddressListAbstractSerializer(serializers.Serializer):  # noqa
     data = AddressDictSerializer(many=True)
@@ -486,14 +438,11 @@ class AddressListAbstractSerializer(serializers.Serializer):  # noqa
 
         return validate_data
 
-
 class ShippingAddressListSerializer(AddressListAbstractSerializer):  # noqa
     KEY_RAISING = 'shipping_address_dict'
 
-
 class BillingAddressListSerializer(AddressListAbstractSerializer):  # noqa
     KEY_RAISING = 'billing_address_dict'
-
 
 class SaleDataAccountImportSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
@@ -541,11 +490,7 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
             codes = list(filter(None, [item.strip() for item in value.split(",")]))
             objs = AccountType.objects.filter_current(fill__company=True, code__in=codes)
             if len(codes) == objs.count():
-                return [{
-                    'id': str(item.id),
-                    'title': str(item.title),
-                    'code': str(item.code),
-                } for item in objs]
+                return [{'id': str(item.id), 'title': str(item.title), 'code': str(item.code),} for item in objs]
             raise serializers.ValidationError({'account_types_mapped': BaseMsg.CODE_NOT_EXIST})
         raise serializers.ValidationError({'account_types_mapped': BaseMsg.REQUIRED})
 
@@ -816,7 +761,6 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
             'contact_mapped',
         )
 
-
 class ProductUOMGroupImportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
 
@@ -838,12 +782,10 @@ class ProductUOMGroupImportSerializer(serializers.ModelSerializer):
         model = UnitOfMeasureGroup
         fields = ('code','title',)
 
-
 class ProductUOMGroupImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
         fields = ('id', 'code', 'title')
-
 
 class ProductProductTypeImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -867,12 +809,10 @@ class ProductProductTypeImportSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
-
 class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductType
         fields = ('id', 'code', 'title', 'description',)
-
 
 class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=100)
@@ -895,12 +835,10 @@ class ProductProductCategoryImportSerializer(serializers.ModelSerializer):
         model = ProductCategory
         fields = ('code','title', 'description',)
 
-
 class ProductProductCategoryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
         fields = ('id', 'code', 'title', 'description',)
-
 
 class ProductUOMImportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
@@ -940,12 +878,8 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def validate(self, validate_data):
-        has_referenced_unit = UnitOfMeasure.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            group=validate_data['group'],
-            is_referenced_unit=True
-        ).exists()
+        has_referenced_unit = UnitOfMeasure.objects.filter_current(fill__tenant=True, fill__company=True,
+            group=validate_data['group'], is_referenced_unit=True).exists()
         if has_referenced_unit:
             if validate_data.get('is_referenced_unit', None):
                 raise serializers.ValidationError({'detail': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE})
@@ -963,12 +897,10 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
                 uom.group.save(update_fields=['uom_reference'])
         return uom
 
-
 class ProductUOMImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitOfMeasure
         fields = ('id','code','title','is_referenced_unit')
-
 
 class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
@@ -989,8 +921,50 @@ class PriceTaxCategoryImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
         return value
 
-
 class PriceTaxCategoryImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxCategory
         fields = ('id', 'code', 'title', 'description', 'is_default')
+
+class PriceTaxImportSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+    code = serializers.CharField(max_length=150)
+    category = serializers.CharField(max_length=100)
+    rate = serializers.CharField()
+    tax_type = serializers.CharField()
+
+    @classmethod
+    def validate_code(cls, value):
+        if Tax.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+            raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
+        return value
+
+    @classmethod
+    def validate_category(cls, value):
+        if value:
+            try:
+                return TaxCategory.objects.get_current(fill__company=True, code=value)
+            except TaxCategory.DoesNotExist:
+                raise serializers.ValidationError({'Tax category': BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({'Tax category': BaseMsg.CODE_NOT_NULL})
+
+    @classmethod
+    def validate_rate(cls, attrs):
+        if attrs is not None and float(attrs) >= 0:
+            return attrs
+        raise serializers.ValidationError(PriceMsg.RATE_MUST_BE_EQUAL_OR_GREATER_THAN_ZERO)
+
+    @classmethod
+    def validate_tax_type(cls, attrs):
+        if int(attrs) in [0,1,2]:
+            return attrs
+        raise serializers.ValidationError(ProductMsg.VALUE_INVALID)
+
+    class Meta:
+        model = Tax
+        fields = ('code', 'title', 'rate', 'category', 'tax_type')
+
+class PriceTaxImportReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tax
+        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type')
