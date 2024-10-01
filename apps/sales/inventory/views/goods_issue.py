@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot, ProductWareHouse
-from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment
+from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment, GoodsIssueProduct
 from apps.sales.inventory.serializers import (
     GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer
 )
@@ -12,7 +12,8 @@ from apps.sales.inventory.serializers.goods_issue import (
     InventoryAdjustmentDetailSerializerForGIS,
     ProductWarehouseSerialListSerializerForGIS,
     ProductWarehouseLotListSerializerForGIS,
-    ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS
+    ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS,
+    GoodsIssueProductPRListSerializer
 )
 from apps.sales.production.models import ProductionOrder, WorkOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -291,6 +292,25 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial For GIS')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class GoodsIssueProductPRList(BaseListMixin, BaseCreateMixin):
+    queryset = GoodsIssueProduct.objects
+    search_fields = []
+    filterset_fields = {
+        'goods_issue__production_order_id': ['exact'],
+        'goods_issue__system_status': ['exact'],
+        'product_id': ['exact'],
+    }
+    serializer_list = GoodsIssueProductPRListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Goods Issue Product PR List",
+        operation_description="Get Goods Issue Product PR List",
+    )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

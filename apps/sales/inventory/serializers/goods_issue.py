@@ -20,7 +20,10 @@ __all__ = [
     'InventoryAdjustmentDetailSerializerForGIS',
     'ProductWarehouseSerialListSerializerForGIS',
     'ProductWarehouseLotListSerializerForGIS',
-    'ProductWareHouseListSerializerForGIS'
+    'ProductWareHouseListSerializerForGIS',
+    'WorkOrderListSerializerForGIS',
+    'WorkOrderDetailSerializerForGIS',
+    'GoodsIssueProductPRListSerializer',
 ]
 
 
@@ -772,4 +775,14 @@ class ProductWarehouseSerialListSerializerForGIS(serializers.ModelSerializer):
             'warranty_start',
             'warranty_end',
             'is_delete'
+        )
+
+
+class GoodsIssueProductPRListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GoodsIssueProduct
+        fields = (
+            'id',
+            'issued_quantity',
         )
