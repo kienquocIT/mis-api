@@ -25,6 +25,12 @@ class GoodsIssue(DataAbstractModel):
         related_name='goods_issue_po',
         null=True,
     )
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.CASCADE,
+        related_name='goods_issue_wo',
+        null=True,
+    )
     note = models.CharField(
         max_length=1000,
         blank=True,
@@ -208,6 +214,12 @@ class GoodsIssueProduct(SimpleAbstractModel):
         'production.ProductionOrderTask',
         on_delete=models.CASCADE,
         related_name='po_item_goods_issue',
+        null=True,
+    )
+    work_order_item = models.ForeignKey(
+        'production.WorkOrderTask',
+        on_delete=models.CASCADE,
+        related_name='wo_item_goods_issue',
         null=True,
     )
     product = models.ForeignKey(
