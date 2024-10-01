@@ -7,6 +7,8 @@ from apps.sales.production.utils import ProductionReportHandler
 
 # SUB
 class PRTaskCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ProductionReportTask
@@ -22,6 +24,14 @@ class PRTaskCreateSerializer(serializers.ModelSerializer):
             'quantity_actual',
             'order',
         )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionReportValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionReportValid.validate_uom_id(value=value)
 
 
 # PRODUCTION REPORT BEGIN
@@ -229,3 +239,13 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
     @classmethod
     def get_pr_products_data(cls, obj):
         return [] if obj else None
+
+
+class ProductionReportProductListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductionReportTask
+        fields = (
+            'id',
+            'quantity_actual',
+        )

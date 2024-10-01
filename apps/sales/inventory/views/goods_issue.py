@@ -13,7 +13,7 @@ from apps.sales.inventory.serializers.goods_issue import (
     ProductWarehouseSerialListSerializerForGIS,
     ProductWarehouseLotListSerializerForGIS,
     ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS,
-    GoodsIssueProductPRListSerializer
+    GoodsIssueProductListSerializer
 )
 from apps.sales.production.models import ProductionOrder, WorkOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -299,15 +299,16 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class GoodsIssueProductPRList(BaseListMixin, BaseCreateMixin):
+class GoodsIssueProductList(BaseListMixin, BaseCreateMixin):
     queryset = GoodsIssueProduct.objects
     search_fields = []
     filterset_fields = {
         'goods_issue__production_order_id': ['exact'],
+        'goods_issue__work_order_id': ['exact'],
         'goods_issue__system_status': ['exact'],
         'product_id': ['exact'],
     }
-    serializer_list = GoodsIssueProductPRListSerializer
+    serializer_list = GoodsIssueProductListSerializer
 
     @swagger_auto_schema(
         operation_summary="Goods Issue Product PR List",

@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.production.models import ProductionReport
+from apps.sales.production.models import ProductionReport, ProductionReportTask
 from apps.sales.production.serializers.production_report import ProductionReportListSerializer, \
     ProductionReportCreateSerializer, ProductionReportDetailSerializer, ProductionReportUpdateSerializer, \
-    ProductionReportGRSerializer
+    ProductionReportGRSerializer, ProductionReportProductListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -84,6 +84,7 @@ class ProductionReportDDList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'production_order_id': ['exact'],
+        'work_order_id': ['exact'],
         'product_id': ['exact'],
         'employee_inherit_id': ['exact'],
     }
@@ -118,6 +119,25 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Production Report GR List",
         operation_description="Get Production Report GR List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductionReportProductList(BaseListMixin, BaseCreateMixin):
+    queryset = ProductionReportTask.objects
+    search_fields = []
+    filterset_fields = {
+        'production_report__production_order_id': ['exact'],
+        'production_report__work_order_id': ['exact'],
+        'product_id': ['exact'],
+    }
+    serializer_list = ProductionReportProductListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Production Report Product List",
+        operation_description="Get Production Report Product List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

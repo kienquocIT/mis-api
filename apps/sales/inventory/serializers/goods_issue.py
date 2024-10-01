@@ -25,7 +25,7 @@ __all__ = [
     'ProductWareHouseListSerializerForGIS',
     'WorkOrderListSerializerForGIS',
     'WorkOrderDetailSerializerForGIS',
-    'GoodsIssueProductPRListSerializer',
+    'GoodsIssueProductListSerializer',
 ]
 
 from apps.shared.translations.base import AttachmentMsg
@@ -856,7 +856,7 @@ class ProductWarehouseSerialListSerializerForGIS(serializers.ModelSerializer):
         )
 
 
-class GoodsIssueProductPRListSerializer(serializers.ModelSerializer):
+class GoodsIssueProductListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GoodsIssueProduct
