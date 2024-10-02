@@ -135,6 +135,11 @@ class ProductionReportProductList(BaseListMixin, BaseCreateMixin):
     }
     serializer_list = ProductionReportProductListSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "production_report",
+        )
+
     @swagger_auto_schema(
         operation_summary="Production Report Product List",
         operation_description="Get Production Report Product List",

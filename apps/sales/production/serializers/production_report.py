@@ -242,10 +242,20 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
 
 
 class ProductionReportProductListSerializer(serializers.ModelSerializer):
+    production_report = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductionReportTask
         fields = (
             'id',
+            'production_report',
             'quantity_actual',
         )
+
+    @classmethod
+    def get_production_report(cls, obj):
+        return {
+            'id': obj.production_report_id,
+            'title': obj.production_report.title,
+            'code': obj.production_report.code
+        } if obj.production_report else {}
