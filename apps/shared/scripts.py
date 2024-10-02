@@ -2299,7 +2299,7 @@ def add_code_for_product_masterdata():
         count = 1
         for item in UnitOfMeasureGroup.objects.filter(company=company):
             if item.is_default:
-                item.code = f"Labor"
+                item.code = "UG001"
                 item.save(update_fields=['code'])
             else:
                 item.code = f"00{count}"
