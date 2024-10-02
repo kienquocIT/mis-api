@@ -2328,5 +2328,4 @@ def update_difference_quantity_goods_issue():
             if wo_item:
                 item.remain_quantity = wo_item.quantity - item.before_quantity
             item.save(update_fields=['remain_quantity'])
-        print(f"Done {gis.title}")
     print('Done :))')
