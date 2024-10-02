@@ -19,6 +19,7 @@ class PromotionTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'

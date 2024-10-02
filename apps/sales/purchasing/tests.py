@@ -20,6 +20,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -33,6 +34,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -46,6 +48,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -79,6 +82,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -93,7 +97,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -378,6 +382,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -391,6 +396,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -404,6 +410,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -437,6 +444,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -451,7 +459,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -756,6 +764,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -769,6 +778,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -782,6 +792,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -815,6 +826,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -829,7 +841,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -965,6 +977,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -978,6 +991,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -991,6 +1005,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -1024,6 +1039,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -1038,7 +1054,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response

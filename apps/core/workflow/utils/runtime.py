@@ -3,12 +3,13 @@ from datetime import timedelta
 from typing import Union
 from uuid import UUID
 
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
 
-from apps.core.log.tasks import (force_log_activity,)
+from apps.core.log.tasks import (force_log_activity, )
+from apps.core.workflow.utils.document_handle import DocHandler
 from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler, HookEventHandler, WFConfigSupport
-from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify,)
+from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify, )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
     Zone, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
@@ -16,159 +17,7 @@ from apps.core.workflow.models import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['DocHandler', 'RuntimeHandler', 'RuntimeStageHandler', 'RuntimeLogHandler']
-
-
-class DocHandler:
-    @property
-    def model(self) -> models.Model:
-        model_cls = DisperseModel(app_model=self.app_code).get_model()
-        if model_cls and hasattr(model_cls, 'objects'):
-            return model_cls
-        raise ValueError('App code is incorrect. Value: ' + self.app_code)
-
-    def __init__(self, doc_id, app_code):
-        self.doc_id = doc_id
-        self.app_code = app_code
-
-    def get_obj(self, default_filter: dict) -> Union[models.Model, None]:
-        try:
-            return self.model.objects.get(pk=self.doc_id, **default_filter)
-        except self.model.DoesNotExist:
-            return None
-
-    def filter_first_obj(self, default_filter: dict) -> Union[models.Model, None]:
-        first_obj = self.model.objects.filter(**default_filter).first()
-        return first_obj if first_obj else None
-
-    @classmethod
-    def force_added(cls, obj):
-        setattr(obj, 'system_status', 2)  # added
-        obj.save(update_fields=['system_status'])
-        return True
-
-    @classmethod
-    def force_added_with_runtime(cls, runtime_obj):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            setattr(obj, 'system_status', 2)  # added
-            obj.save(update_fields=['system_status'])
-            return True
-        return False
-
-    @classmethod
-    def force_finish(cls, obj):
-        setattr(obj, 'system_status', 3)  # finish
-        setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
-        update_fields = ['system_status', 'date_approved']
-        if hasattr(obj, 'is_change'):
-            if obj.is_change is False:
-                setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
-                update_fields.append('document_root_id')
-        try:
-            with transaction.atomic():
-                # cancel document root or previous document before finish new document
-                DocHandler.force_cancel_doc_previous(document_change=obj)
-                # save finish
-                obj.save(update_fields=update_fields)
-        except Exception as err:
-            print(err)
-            return False
-        return True
-
-    @classmethod
-    def force_return_owner(cls, runtime_obj, remark):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj, remark=remark)
-            return True
-        return False
-
-    @classmethod
-    def force_finish_with_runtime(cls, runtime_obj, approved_or_rejected='approved'):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            match approved_or_rejected:
-                case 'approved':
-                    DocHandler.force_finish(obj=obj)
-                case 'rejected':
-                    setattr(obj, 'system_status', 4)  # cancel with reject
-                    obj.save(update_fields=['system_status'])
-            HookEventHandler(runtime_obj=runtime_obj).push_notify_end_workflow(
-                doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
-            )
-            return True
-        return False
-
-    @classmethod
-    def force_update_current_stage(cls, runtime_obj, stage_obj):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            setattr(obj, 'current_stage', stage_obj)
-            setattr(obj, 'current_stage_title', stage_obj.title)
-            obj.save(update_fields=['current_stage', 'current_stage_title'])
-            return True
-        return False
-
-    @classmethod
-    def force_update_next_node_collab(cls, runtime_obj, next_node_collab_id):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            setattr(obj, 'next_node_collab_id', next_node_collab_id)
-            obj.save(update_fields=['next_node_collab_id'])
-            return True
-        return False
-
-    @classmethod
-    def get_next_node_collab_id(cls, runtime_obj):
-        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
-            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
-        )
-        if obj:
-            if hasattr(obj, 'next_node_collab_id'):
-                return obj.next_node_collab_id
-        return None
-
-    @classmethod
-    def force_cancel_doc_previous(cls, document_change):
-        doc_previous = DocHandler.get_doc_previous(document_change=document_change)
-        if doc_previous:
-            setattr(doc_previous, 'system_status', 4)
-            setattr(doc_previous, 'is_change', True)
-            doc_previous.save(update_fields=['system_status', 'is_change'])
-        return True
-
-    @classmethod
-    def get_doc_previous(cls, document_change):
-        document_target = None
-        if all(hasattr(document_change, attr) for attr in ('document_change_order', 'document_root_id')):
-            if document_change.document_change_order and document_change.document_root_id:
-                if document_change.document_change_order == 1:
-                    document_target = DocHandler(
-                        document_change.document_root_id, document_change._meta.label_lower
-                    ).get_obj(
-                        default_filter={'tenant_id': document_change.tenant_id,
-                                        'company_id': document_change.company_id}
-                    )
-                if document_change.document_change_order > 1:
-                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
-                        default_filter={
-                            'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
-                            'document_change_order': document_change.document_change_order - 1,
-                            'document_root_id': document_change.document_root_id,
-                        }
-                    )
-        return document_target
+__all__ = ['RuntimeHandler', 'RuntimeStageHandler', 'RuntimeLogHandler']
 
 
 class RuntimeHandler:
@@ -370,7 +219,7 @@ class RuntimeHandler:
                     # handle next stage
                     # close all other assignees waiting
                     for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
-                        id=rt_assignee.id
+                            id=rt_assignee.id
                     ):
                         other_assignee.is_done = True
                         other_assignee.action_perform.append(action_code)
@@ -612,6 +461,8 @@ class RuntimeStageHandler:
                     # push employee to stages.assignees
                     employee_ids_zones.update({emp_id: zone_and_properties.get('zone_edit', [])})
                     employee_ids_zones_hidden.update({emp_id: zone_and_properties.get('zone_hidden', [])})
+                    # send mail
+                    # DocHandler.send_mail(runtime_obj=self.runtime_obj, emp_id=emp_id)
                 # active hook push notify
                 HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
                     runtime_assignee_obj=objs_created,

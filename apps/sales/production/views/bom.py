@@ -209,6 +209,7 @@ class BOMOrderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'product_id': ['exact'],
         'opportunity_id': ['exact', 'isnull'],
+        'bom_type': ['exact', 'in'],
     }
     serializer_list = BOMOrderListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
