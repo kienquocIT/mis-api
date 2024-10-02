@@ -26,3 +26,4 @@ class PriceMsg:
     ITEM_EXIST = _('Item already exists')
     AUTO_UPDATE_CONFLICT_CAN_DELETE = _('When auto_update is False, can_delete must not be True')
     AUTO_UPDATE_CAN_DELETE_ARE_FALSE = _('If not map with another price list, auto_update and can_delete are False')
+    RATE_MUST_BE_EQUAL_OR_GREATER_THAN_ZERO = _('Rate must be equal or greater than 0')

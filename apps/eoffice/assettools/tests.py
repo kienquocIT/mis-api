@@ -19,6 +19,7 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.product_type = self.client.post(
             reverse('ProductTypeList'),
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -27,6 +28,7 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.prod_category = self.client.post(
             reverse('ProductCategoryList'),
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -35,6 +37,7 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.uom_group = self.client.post(
             reverse('UnitOfMeasureGroupList'),
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -54,6 +57,7 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.tax_category = self.client.post(
             reverse("TaxCategoryList"),
             {
+                'code': 'XXX',
                 "title": "Thuế doanh nghiệp kinh doanh tư nhân",
                 "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
             }, format='json'
