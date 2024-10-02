@@ -34,6 +34,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -47,6 +48,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -74,6 +76,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
 
     def create_new_tax_category(self):
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }

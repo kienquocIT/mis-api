@@ -161,6 +161,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },

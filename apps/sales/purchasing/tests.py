@@ -33,6 +33,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -46,6 +47,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -79,6 +81,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -391,6 +394,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -404,6 +408,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -437,6 +442,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -769,6 +775,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -782,6 +789,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -815,6 +823,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -978,6 +987,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -991,6 +1001,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -1024,6 +1035,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }

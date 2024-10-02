@@ -559,6 +559,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
     def test_create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
