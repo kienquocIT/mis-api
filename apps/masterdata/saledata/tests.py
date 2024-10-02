@@ -225,7 +225,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -622,11 +622,6 @@ class UoMTestCase(AdvanceTestCase):
         }
         url = reverse('UnitOfMeasureGroupList')
         response = self.client.post(url, data, format='json')
-        self.assertCountEqual(
-            ['id', 'title'],
-            list(response.data['result'].keys()),
-            check_sum_second=False,
-        )
         self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_201_CREATED,
@@ -636,9 +631,9 @@ class UoMTestCase(AdvanceTestCase):
             type_match={'result': dict, 'status': int},
         )
         self.assertCountEqual(
-            response.data['result'],
-            ['id', 'title', 'uom'],
-            check_sum_second=True,
+            ['id', 'code', 'title'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
         )
         return response
 
@@ -929,7 +924,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response

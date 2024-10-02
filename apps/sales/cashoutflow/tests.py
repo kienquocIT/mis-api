@@ -574,7 +574,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
