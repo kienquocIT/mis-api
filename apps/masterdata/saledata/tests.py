@@ -153,7 +153,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default']
+            ['id', 'code', 'title', 'description', 'is_default']
         )
         return response
 
@@ -1294,7 +1294,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail)
         self.assertEqual(response_detail.status_code, 200)
         self.assertCountEqual(
-            ['id', 'title', 'description'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             list(response_detail.data['result'].keys()),
             check_sum_second=False,
         )

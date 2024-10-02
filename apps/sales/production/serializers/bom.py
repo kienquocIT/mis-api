@@ -64,7 +64,7 @@ class LaborListForBOMSerializer(serializers.ModelSerializer):
 class BOMProductMaterialListSerializer(serializers.ModelSerializer):
     bom_id = serializers.SerializerMethodField()
     is_project_bom = serializers.SerializerMethodField()
-    sale_default_uom = serializers.SerializerMethodField()
+    inventory_uom = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -75,7 +75,7 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'has_bom',
             'bom_id',
             'is_project_bom',
-            'sale_default_uom',
+            'inventory_uom',
             'general_uom_group',
             'standard_price'
         )
@@ -93,12 +93,12 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
         return False
 
     @classmethod
-    def get_sale_default_uom(cls, obj):
+    def get_inventory_uom(cls, obj):
         return {
-            'id': str(obj.sale_default_uom_id),
-            'code': obj.sale_default_uom.code,
-            'title': obj.sale_default_uom.title
-        } if obj.sale_default_uom else {}
+            'id': str(obj.inventory_uom_id),
+            'code': obj.inventory_uom.code,
+            'title': obj.inventory_uom.title
+        } if obj.inventory_uom else {}
 
 
 class BOMProductToolListSerializer(serializers.ModelSerializer):
