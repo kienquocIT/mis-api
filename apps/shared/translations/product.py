@@ -41,3 +41,4 @@ class ProductMsg:
     PRICE_LIST_NOT_EXIST = _('Product price list is not exist.')
     PRODUCT_SIZE_NOT_NULL = _('Product size must not null when Inventory Tab is selected.')
     VALUE_INVALID = _("Invalid Value")
+    NOT_NULL = _("must not be null")
