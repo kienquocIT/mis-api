@@ -2286,3 +2286,33 @@ def update_BOM_json_data():
         print(f'Done {bom.title} :))')
 
     return True
+
+
+def add_code_for_product_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in ProductCategory.objects.filter(company=company):
+            item.code = f"00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+
+        count = 1
+        for item in UnitOfMeasureGroup.objects.filter(company=company):
+            if item.is_default:
+                item.code = f"Labor"
+                item.save(update_fields=['code'])
+            else:
+                item.code = f"00{count}"
+                item.save(update_fields=['code'])
+                count += 1
+    print('Done :))')
+
+
+def add_code_for_price_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in TaxCategory.objects.filter(company=company):
+            item.code = f"TC00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+    print('Done :))')

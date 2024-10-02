@@ -174,6 +174,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                "code": 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -207,6 +208,7 @@ class ProductTestCase(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            "code": 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -613,6 +615,7 @@ class UoMTestCase(AdvanceTestCase):
 
     def test_create_new_uom_group(self):
         data = {
+            "code": 'XXX',
             "title": "Unit"
         }
         url = reverse('UnitOfMeasureGroupList')
@@ -909,6 +912,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
     def test_create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            "code": 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -1206,6 +1210,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
 
     def test_create_new_product_category(self):
         data = {
+            "code": 'XXX',
             "title": "Phần cứng",
             "description": "Phần cứng máy tính"
         }
@@ -1270,7 +1275,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail)
         self.assertEqual(response_detail.status_code, 200)
         self.assertCountEqual(
-            ['id', 'title', 'description'],
+            ['id', 'code', 'title', 'description'],
             list(response_detail.data['result'].keys()),
             check_sum_second=False,
         )
@@ -2008,6 +2013,7 @@ class ExpenseTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                "code": 'XXX',
                 'title': 'nhân công',
             },
             format='json'
