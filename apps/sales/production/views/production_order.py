@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.production.models import ProductionOrder
 from apps.sales.production.serializers.production_order import ProductionOrderListSerializer, \
-    ProductionOrderCreateSerializer, ProductionOrderDetailSerializer, ProductionOrderUpdateSerializer
+    ProductionOrderCreateSerializer, ProductionOrderDetailSerializer, ProductionOrderUpdateSerializer, \
+    ProductionOrderManualDoneSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -94,3 +95,25 @@ class ProductionOrderDDList(BaseListMixin, BaseCreateMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ProductionOrderManualDone(BaseCreateMixin):
+    queryset = ProductionOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'employee_inherit_id': ['exact'],
+        'system_status': ['exact', 'in'],
+    }
+    serializer_list = ProductionOrderListSerializer
+    serializer_create = ProductionOrderManualDoneSerializer
+    serializer_detail = ProductionOrderListSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Manual Done Production Order",
+        operation_description="Manual Done Production Order",
+        request_body=ProductionOrderManualDoneSerializer,
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

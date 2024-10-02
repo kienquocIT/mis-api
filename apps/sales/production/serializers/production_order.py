@@ -205,3 +205,21 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
         instance.save()
         ProductionOrderSub.create_sub_models(validated_data=validated_data, instance=instance)
         return instance
+
+
+class ProductionOrderManualDoneSerializer(serializers.ModelSerializer):
+    production_order_id = serializers.UUIDField()
+
+    class Meta:
+        model = ProductionOrder
+        fields = (
+            'production_order_id',
+            'status_production',
+        )
+
+    def create(self, validated_data):
+        production_order = ProductionOrder.objects.filter(id=validated_data.get('production_order_id', None)).first()
+        if production_order:
+            production_order.status_production = validated_data.get('status_production', 1)
+            production_order.save(update_fields=['status_production'])
+        return production_order
