@@ -140,7 +140,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
     opportunity_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
     sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
-    employee_inherit_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
@@ -451,39 +451,46 @@ class PaymentCommonFunction:
     @classmethod
     def validate_opportunity_mapped_id(cls, validate_data):
         if 'opportunity_mapped_id' in validate_data:
-            try:
-                opportunity_mapped = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
-                if opportunity_mapped.is_close_lost or opportunity_mapped.is_deal_close:
-                    raise serializers.ValidationError({'opportunity_mapped_id': SaleMsg.OPPORTUNITY_CLOSED})
-                validate_data['opportunity_mapped_id'] = str(opportunity_mapped.id)
-            except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
+            if validate_data.get('opportunity_mapped_id'):
+                try:
+                    opportunity_mapped = Opportunity.objects.get(id=validate_data.get('opportunity_mapped_id'))
+                    if opportunity_mapped.is_close_lost or opportunity_mapped.is_deal_close:
+                        raise serializers.ValidationError({'opportunity_mapped_id': SaleMsg.OPPORTUNITY_CLOSED})
+                    validate_data['opportunity_mapped_id'] = str(opportunity_mapped.id)
+                except Opportunity.DoesNotExist:
+                    raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
+            else:
+                validate_data['opportunity_mapped_id'] = None
         print('1. validate_opportunity_mapped_id --- ok')
         return validate_data
 
     @classmethod
     def validate_quotation_mapped_id(cls, validate_data):
         if 'quotation_mapped_id' in validate_data:
-            try:
-                validate_data['quotation_mapped_id'] = str(Quotation.objects.get(
-                    id=validate_data.get('quotation_mapped_id')
-                ).id)
-            except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
+            if validate_data.get('quotation_mapped_id'):
+                try:
+                    validate_data['quotation_mapped_id'] = str(Quotation.objects.get(
+                        id=validate_data.get('quotation_mapped_id')
+                    ).id)
+                except Opportunity.DoesNotExist:
+                    raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
+            else:
+                validate_data['quotation_mapped_id'] = None
         print('2. validate_quotation_mapped_id --- ok')
         return validate_data
 
     @classmethod
     def validate_sale_order_mapped_id(cls, validate_data):
         if 'sale_order_mapped_id' in validate_data:
-            try:
-                validate_data['sale_order_mapped_id'] = str(SaleOrder.objects.get(
-                    id=validate_data.get('sale_order_mapped_id')
-                ).id)
-            except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'sale_order_mapped_id': 'Sale order is not exist.'})
-        else:
-            validate_data['sale_order_mapped_id'] = None
+            if validate_data.get('sale_order_mapped_id'):
+                try:
+                    validate_data['sale_order_mapped_id'] = str(SaleOrder.objects.get(
+                        id=validate_data.get('sale_order_mapped_id')
+                    ).id)
+                except Opportunity.DoesNotExist:
+                    raise serializers.ValidationError({'sale_order_mapped_id': 'Sale order is not exist.'})
+            else:
+                validate_data['sale_order_mapped_id'] = None
         print('3. validate_sale_order_mapped_id --- ok')
         return validate_data
 
@@ -498,36 +505,43 @@ class PaymentCommonFunction:
     @classmethod
     def validate_employee_inherit_id(cls, validate_data):
         if 'employee_inherit_id' in validate_data:
-            try:
-                validate_data['employee_inherit_id'] = str(Employee.objects.get(
-                    id=validate_data.get('employee_inherit_id')
-                ).id)
-            except Employee.DoesNotExist:
-                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+            if validate_data.get('employee_inherit_id'):
+                try:
+                    validate_data['employee_inherit_id'] = str(Employee.objects.get(
+                        id=validate_data.get('employee_inherit_id')
+                    ).id)
+                except Employee.DoesNotExist:
+                    raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
+            else:
+                raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not null'})
         print('5. validate_employee_inherit_id --- ok')
         return validate_data
 
     @classmethod
     def validate_supplier_id(cls, validate_data):
         if 'supplier_id' in validate_data:
-            try:
-                validate_data['supplier_id'] = str(Account.objects.get(id=validate_data.get('supplier_id')).id)
-            except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'supplier_id': 'Supplier is not exist.'})
+            if validate_data.get('supplier_id'):
+                try:
+                    validate_data['supplier_id'] = str(Account.objects.get(id=validate_data.get('supplier_id')).id)
+                except Opportunity.DoesNotExist:
+                    raise serializers.ValidationError({'supplier_id': 'Supplier is not exist.'})
+            else:
+                validate_data['supplier_id'] = None
         print('6. validate_supplier_id --- ok')
         return validate_data
 
     @classmethod
     def validate_employee_payment_id(cls, validate_data):
         if 'employee_payment_id' in validate_data:
-            try:
-                validate_data['employee_payment_id'] = str(Employee.objects.get(
-                    id=validate_data.get('employee_payment_id')
-                ).id)
-            except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'employee_payment_id': 'Employee payment is not exist.'})
-        else:
-            validate_data['employee_payment_id'] = None
+            if validate_data.get('employee_payment_id'):
+                try:
+                    validate_data['employee_payment_id'] = str(Employee.objects.get(
+                        id=validate_data.get('employee_payment_id')
+                    ).id)
+                except Opportunity.DoesNotExist:
+                    raise serializers.ValidationError({'employee_payment_id': 'Employee payment is not exist.'})
+            else:
+                validate_data['employee_payment_id'] = None
         print('7. validate_employee_payment_id --- ok')
         return validate_data
 
@@ -587,16 +601,19 @@ class PaymentCommonFunction:
     @classmethod
     def validate_attachment(cls, context_user, doc_id, validate_data):
         if 'attachment' in validate_data:
-            if context_user and hasattr(context_user, 'employee_current_id'):
-                state, result = PaymentAttachmentFile.valid_change(
-                    current_ids=validate_data.get('attachment', []),
-                    employee_id=context_user.employee_current_id,
-                    doc_id=doc_id
-                )
-                if state is True:
-                    validate_data['attachment'] = result
-                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+            if validate_data.get('attachment'):
+                if context_user and hasattr(context_user, 'employee_current_id'):
+                    state, result = PaymentAttachmentFile.valid_change(
+                        current_ids=validate_data.get('attachment', []),
+                        employee_id=context_user.employee_current_id,
+                        doc_id=doc_id
+                    )
+                    if state is True:
+                        validate_data['attachment'] = result
+                    else:
+                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+                else:
+                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
         print('11. validate_attachment --- ok')
         return validate_data
 

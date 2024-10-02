@@ -14,7 +14,8 @@ from apps.sales.inventory.views import (
     GReItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
-    ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS
+    ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
+    WorkOrderDetailForGIS
 )
 
 urlpatterns = [
@@ -67,6 +68,16 @@ urlpatterns += [
         'production-order-for-gis/<str:pk>',
         ProductionOrderDetailForGIS.as_view(),
         name='ProductionOrderDetailForGIS'
+    ),
+    path(
+        'work-order-for-gis/list',
+        WorkOrderListForGIS.as_view(),
+        name='WorkOrderListForGIS'
+    ),
+    path(
+        'work-order-for-gis/<str:pk>',
+        WorkOrderDetailForGIS.as_view(),
+        name='WorkOrderDetailForGIS'
     ),
     path(
         'prd-wh-list-for-gis/list',

@@ -54,6 +54,8 @@ class BOM(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
+                if self.product.has_bom:
+                    raise ValueError("This product is mapped with BOM")
                 self.product.has_bom = True
                 self.product.save(update_fields=['has_bom'])
 
