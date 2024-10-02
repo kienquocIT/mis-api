@@ -106,6 +106,7 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
+
 class ProductCategoryDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
