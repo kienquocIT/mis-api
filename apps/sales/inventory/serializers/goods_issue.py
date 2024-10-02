@@ -188,6 +188,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'id': obj.production_order_id,
             'title': obj.production_order.title,
             'code': obj.production_order.code,
+            'type': 0
         } if obj.production_order else {}
 
     @classmethod
@@ -233,6 +234,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'id': obj.work_order_id,
             'title': obj.work_order.title,
             'code': obj.work_order.code,
+            'type': 1
         } if obj.work_order else {}
 
     @classmethod
@@ -279,12 +281,8 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
 
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
-    goods_issue_type = serializers.IntegerField()
-    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
-    production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
-    work_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_wo = serializers.ListField()
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
@@ -293,23 +291,15 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'note',
-            'goods_issue_type',
-            'inventory_adjustment_id',
             'detail_data_ia',
-            'production_order_id',
             'detail_data_po',
-            'work_order_id',
             'detail_data_wo',
             'attachment'
         )
 
     def validate(self, validate_data):
-        GoodsIssueCommonFunction.validate_goods_issue_type(validate_data)
-        GoodsIssueCommonFunction.validate_inventory_adjustment_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
-        GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
-        GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
         GoodsIssueCommonFunction.validate_attachment(
             context_user=self.context.get('user', None),
