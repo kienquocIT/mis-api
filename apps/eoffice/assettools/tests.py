@@ -19,6 +19,7 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.product_type = self.client.post(
             reverse('ProductTypeList'),
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },

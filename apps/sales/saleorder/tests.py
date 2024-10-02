@@ -21,6 +21,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
