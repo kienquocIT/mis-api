@@ -110,6 +110,26 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "eb5c547f-3a68-4113-8aa3-a1f938c9d3a7",  # UOM group
     },
+    "90f07280-e2f4-4406-aa23-ba255a22ec2d": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "90f07280-e2f4-4406-aa23-ba255a22ec2d",  # Product type
+    },
+    "053c0804-162a-4357-a1c2-2161e6606cc2": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "053c0804-162a-4357-a1c2-2161e6606cc2",  # Product category
+    },
+    "7bc78f47-66f1-4104-a6fa-5ca07f3f2275":{
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",  # UOM
+    },
+    "720d14f9-e031-4ffe-acb9-3c7763c134fc":{
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "720d14f9-e031-4ffe-acb9-3c7763c134fc",  # Tax
+    },
+    "133e105e-cb3f-4845-8fba-bbb2516c5de2":{
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "133e105e-cb3f-4845-8fba-bbb2516c5de2",  # Tax category
+    },
     "296a1410-8d72-46a8-a0a1-1821f196e66c": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
