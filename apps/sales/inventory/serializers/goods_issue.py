@@ -204,7 +204,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': po_item.quantity,
                         'before_quantity': item.before_quantity,
-                        'remain_quantity': item.remain_quantity if item.remain_quantity >= 0 else 0,
+                        'remain_quantity': item.remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -220,7 +220,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': po_item.quantity,
                         'before_quantity': po_item.issued_quantity,
-                        'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+                        'remain_quantity': remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -249,7 +249,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': wo_item.quantity,
                         'before_quantity': item.before_quantity,
-                        'remain_quantity': item.remain_quantity if item.remain_quantity >= 0 else 0,
+                        'remain_quantity': item.remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -265,7 +265,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': wo_item.quantity,
                         'before_quantity': wo_item.issued_quantity,
-                        'remain_quantity': remain_quantity if item.remain_quantity >= 0 else 0,
+                        'remain_quantity': remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
