@@ -732,7 +732,7 @@ msgstr "Ứng dụng không tồn tại hoặc hết hạn"
 
 #
 msgid "Approved"
-msgstr "Đã Phê Duyệt"
+msgstr "Đã phê duyệt"
 
 #
 msgid "Please setup Leader of Picking/Delivery in config page before create request"
@@ -1249,3 +1249,11 @@ msgstr "Từ chối"
 #
 msgid "Star date or finish date not in range of project date"
 msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"
+
+#
+msgid "Create document'"
+msgstr "Tạo phiếu"
+
+#
+msgid "Document was returned'"
+msgstr "Phiếu bị trả về"

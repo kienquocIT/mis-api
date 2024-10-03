@@ -683,6 +683,7 @@ class RuntimeLogHandler:
 
     def log_create_doc(self, is_return=False):
         runtime_obj = self.stage_obj.runtime
+        msg = WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document
         if runtime_obj:
             # force log run WF
             call_task_background(
@@ -698,7 +699,7 @@ class RuntimeLogHandler:
                     'automated_logging': True,
                     'user_id': None,
                     'employee_id': None,
-                    'msg': WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
+                    'msg': WorkflowMsgNotify.translate_msg(msg=msg),
                     'data_change': {},
                     'change_partial': False,
                 },
@@ -706,14 +707,14 @@ class RuntimeLogHandler:
         return RuntimeLog.objects.create(
             actor=self.actor_obj, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=2,
-            action=0, msg=WorkflowMsgNotify.rerun_workflow if is_return else WorkflowMsgNotify.create_document,
+            action=0, msg=WorkflowMsgNotify.translate_msg(msg=msg),
             is_system=self.is_system,
         )
 
     def log_new_assignee(self, perform_created: bool = True, is_return: bool = False, remark=None):
-        msg = WorkflowMsgNotify.receive_document
+        msg = WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.receive_document)
         if is_return and remark:
-            msg = f'{WorkflowMsgNotify.document_returned} ({remark})'
+            msg = f'{WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.document_returned)} ({remark})'
         data = {
             "actor": self.actor_obj,
             "runtime": self.stage_obj.runtime,
@@ -745,15 +746,18 @@ class RuntimeLogHandler:
         return RuntimeLog.objects.create(
             actor=None, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=2,
-            action=0, msg='Approved',
+            action=0, msg=WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.approved),
             is_system=self.is_system,
         )
 
     def log_approval_task(self, action_number):
         action_choices = {
             1: WorkflowMsgNotify.approved,
-            2: f'{WorkflowMsgNotify.rejected} ({self.remark})',
+            2: WorkflowMsgNotify.rejected,
         }
+        msg = WorkflowMsgNotify.translate_msg(msg=action_choices[action_number])
+        if action_number == 2:
+            msg = f'{msg} ({self.remark})'
         # msg choice in: ['Approved']
         call_task_background(
             force_log_activity,
@@ -766,14 +770,14 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': action_choices[action_number],
+                'msg': msg,
                 'task_workflow_id': None,
             },
         )
         return RuntimeLog.objects.create(
             actor=self.actor_obj, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=2,
-            action=0, msg=action_choices[action_number],
+            action=0, msg=msg,
             is_system=self.is_system,
         )
 
@@ -789,14 +793,14 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
+                'msg': WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.return_creator),  # edit by PO's request
                 'task_workflow_id': None,
             },
         )
         return RuntimeLog.objects.create(
             actor=self.actor_obj, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=2,
-            action=0, msg=f'{WorkflowMsgNotify.return_creator} ({self.remark})',  # edit by PO's request
+            action=0, msg=WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.return_creator),  # edit by PO's request
             is_system=self.is_system,
         )
 
@@ -805,6 +809,8 @@ class RuntimeLogHandler:
             1: WorkflowMsgNotify.approved,
             2: WorkflowMsgNotify.rejected,
         }
+        msg_common = WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.end_workflow)
+        msg = f'{msg_common} ({WorkflowMsgNotify.translate_msg(msg=final_state_choices[final_state_num])})'
         runtime_obj = self.stage_obj.runtime
         if runtime_obj:
             call_task_background(
@@ -816,13 +822,13 @@ class RuntimeLogHandler:
                     'doc_id': runtime_obj.doc_id,
                     'doc_app': runtime_obj.app_code,
                     'automated_logging': True,
-                    'msg': f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
+                    'msg': msg,
                 },
             )
         return RuntimeLog.objects.create(
             actor=None, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=2,
-            action=0, msg=f'{WorkflowMsgNotify.end_workflow} ({final_state_choices[final_state_num].lower()})',
+            action=0, msg=msg,
             is_system=self.is_system,
         )
 
@@ -838,6 +844,6 @@ class RuntimeLogHandler:
         return RuntimeLog.objects.create(
             actor=self.actor_obj, runtime=self.stage_obj.runtime,
             stage=self.stage_obj, kind=1,  # in doc
-            action=0, msg=WorkflowMsgNotify.edit_by_zone,
+            action=0, msg=WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.edit_by_zone),
             is_system=self.is_system,
         )

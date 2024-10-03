@@ -13,6 +13,7 @@ class ProductionOrderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_inherit_id': ['exact'],
         'system_status': ['exact', 'in'],
+        'status_production': ['exact', 'in'],
     }
     serializer_list = ProductionOrderListSerializer
     serializer_create = ProductionOrderCreateSerializer
@@ -84,6 +85,7 @@ class ProductionOrderDDList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_inherit_id': ['exact'],
         'system_status': ['exact', 'in'],
+        'status_production': ['exact', 'in'],
     }
     serializer_list = ProductionOrderDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -99,11 +101,6 @@ class ProductionOrderDDList(BaseListMixin, BaseCreateMixin):
 
 class ProductionOrderManualDone(BaseCreateMixin):
     queryset = ProductionOrder.objects
-    search_fields = ['title', 'code']
-    filterset_fields = {
-        'employee_inherit_id': ['exact'],
-        'system_status': ['exact', 'in'],
-    }
     serializer_list = ProductionOrderListSerializer
     serializer_create = ProductionOrderManualDoneSerializer
     serializer_detail = ProductionOrderListSerializer
