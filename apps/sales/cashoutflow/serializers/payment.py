@@ -461,7 +461,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'opportunity_mapped_id': 'Opportunity is not exist.'})
             else:
                 validate_data['opportunity_mapped_id'] = None
-        print('1. validate_opportunity_mapped_id --- ok')
+            print('1. validate_opportunity_mapped_id --- ok')
         return validate_data
 
     @classmethod
@@ -476,7 +476,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'quotation_mapped_id': 'Quotation is not exist.'})
             else:
                 validate_data['quotation_mapped_id'] = None
-        print('2. validate_quotation_mapped_id --- ok')
+            print('2. validate_quotation_mapped_id --- ok')
         return validate_data
 
     @classmethod
@@ -491,7 +491,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'sale_order_mapped_id': 'Sale order is not exist.'})
             else:
                 validate_data['sale_order_mapped_id'] = None
-        print('3. validate_sale_order_mapped_id --- ok')
+            print('3. validate_sale_order_mapped_id --- ok')
         return validate_data
 
     @classmethod
@@ -499,7 +499,7 @@ class PaymentCommonFunction:
         if 'sale_code_type' in validate_data:
             if validate_data.get('sale_code_type') not in [0, 1, 2]:
                 raise serializers.ValidationError({'sale_code_type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
-        print('4. validate_sale_code_type --- ok')
+            print('4. validate_sale_code_type --- ok')
         return validate_data
 
     @classmethod
@@ -514,7 +514,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not exist'})
             else:
                 raise serializers.ValidationError({'employee_inherit_id': 'Employee inherit is not null'})
-        print('5. validate_employee_inherit_id --- ok')
+            print('5. validate_employee_inherit_id --- ok')
         return validate_data
 
     @classmethod
@@ -527,7 +527,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'supplier_id': 'Supplier is not exist.'})
             else:
                 validate_data['supplier_id'] = None
-        print('6. validate_supplier_id --- ok')
+            print('6. validate_supplier_id --- ok')
         return validate_data
 
     @classmethod
@@ -542,7 +542,7 @@ class PaymentCommonFunction:
                     raise serializers.ValidationError({'employee_payment_id': 'Employee payment is not exist.'})
             else:
                 validate_data['employee_payment_id'] = None
-        print('7. validate_employee_payment_id --- ok')
+            print('7. validate_employee_payment_id --- ok')
         return validate_data
 
     @classmethod
@@ -550,7 +550,7 @@ class PaymentCommonFunction:
         if 'method' in validate_data:
             if validate_data.get('method') not in [0, 1, 2]:
                 raise serializers.ValidationError({'method': 'Method is not valid.'})
-        print('8. validate_method --- ok')
+            print('8. validate_method --- ok')
         return validate_data
 
     @classmethod
@@ -595,7 +595,7 @@ class PaymentCommonFunction:
                 validate_data['title'] = validate_data.get('title')
             else:
                 raise serializers.ValidationError({'title': "Title is not null"})
-        print('10. validate_common --- ok')
+            print('10. validate_common --- ok')
         return validate_data
 
     @classmethod
@@ -614,7 +614,7 @@ class PaymentCommonFunction:
                         raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
                 else:
                     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-        print('11. validate_attachment --- ok')
+            print('11. validate_attachment --- ok')
         return validate_data
 
     @classmethod
