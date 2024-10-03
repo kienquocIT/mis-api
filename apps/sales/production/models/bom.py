@@ -139,7 +139,8 @@ class BOMMaterialComponent(MasterDataAbstractModel):
     bom_process = models.ForeignKey(
         BOMProcess,
         on_delete=models.CASCADE,
-        related_name='bom_material_component_bom_process'
+        related_name='bom_material_component_bom_process',
+        null=True
     )
     bom_process_order = models.IntegerField(default=1)
     order = models.IntegerField(default=1)

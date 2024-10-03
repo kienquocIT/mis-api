@@ -128,6 +128,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'San pham 1',
                 'description': '',
             },
@@ -152,7 +153,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default']
+            ['id', 'code', 'title', 'description', 'is_default']
         )
         return response
 
@@ -161,6 +162,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                'code': 'XXX',
                 'title': 'Hardware',
                 'description': '',
             },
@@ -174,6 +176,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                "code": 'XXX',
                 'title': 'Time',
             },
             format='json'
@@ -207,6 +210,7 @@ class ProductTestCase(AdvanceTestCase):
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            "code": 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -221,7 +225,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -613,15 +617,11 @@ class UoMTestCase(AdvanceTestCase):
 
     def test_create_new_uom_group(self):
         data = {
+            "code": 'XXX',
             "title": "Unit"
         }
         url = reverse('UnitOfMeasureGroupList')
         response = self.client.post(url, data, format='json')
-        self.assertCountEqual(
-            ['id', 'title'],
-            list(response.data['result'].keys()),
-            check_sum_second=False,
-        )
         self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_201_CREATED,
@@ -631,9 +631,9 @@ class UoMTestCase(AdvanceTestCase):
             type_match={'result': dict, 'status': int},
         )
         self.assertCountEqual(
-            response.data['result'],
-            ['id', 'title', 'uom'],
-            check_sum_second=True,
+            ['id', 'code', 'title'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
         )
         return response
 
@@ -909,6 +909,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
     def test_create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            "code": 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
@@ -923,7 +924,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -1206,6 +1207,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
 
     def test_create_new_product_category(self):
         data = {
+            "code": 'XXX',
             "title": "Phần cứng",
             "description": "Phần cứng máy tính"
         }
@@ -1270,7 +1272,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail)
         self.assertEqual(response_detail.status_code, 200)
         self.assertCountEqual(
-            ['id', 'title', 'description'],
+            ['id', 'code', 'title', 'description'],
             list(response_detail.data['result'].keys()),
             check_sum_second=False,
         )
@@ -1292,7 +1294,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail)
         self.assertEqual(response_detail.status_code, 200)
         self.assertCountEqual(
-            ['id', 'title', 'description'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             list(response_detail.data['result'].keys()),
             check_sum_second=False,
         )
@@ -2008,6 +2010,7 @@ class ExpenseTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
+                "code": 'XXX',
                 'title': 'nhân công',
             },
             format='json'
