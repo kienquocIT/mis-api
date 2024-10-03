@@ -155,7 +155,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
     @classmethod
     def create_new_log_list(cls, stock_obj, stock_data, period_obj, sub_period_order, config_inventory_management):
         """ Step 1: Hàm tạo các log mới """
-        print('1. create_new_log_list')
         bulk_info = []
         log_order_number = 0
         for item in stock_data:
@@ -178,6 +177,15 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             item['value'] = item['cost'] * item['quantity']
             if len(item.get('lot_data', {})) != 0:
                 item['lot_data']['lot_value'] = item['cost'] * item['quantity']  # update value vao Lot
+
+            print("- Create new log:")
+            print(f"\t+ trans: [{item['trans_title']}] [{item['trans_code']}] [{item['trans_id']}]")
+            print(f"\t+ product: [{item['product'].code if item.get('product') else ''}]")
+            print(f"\t+ quantity: [{item['quantity']}]")
+            print(f"\t+ physical warehouse: [{item['warehouse'].code if item.get('warehouse') else ''}]")
+            print(f"\t+ sale order: [{item.get('sale_order').code if item.get('sale_order') else ''}]")
+            print(f"\t+ kw_parameter: {kw_parameter}")
+
             new_log = cls(
                 tenant=stock_obj.tenant,
                 company=stock_obj.company,
@@ -214,7 +222,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
     @classmethod
     def update_current_cost(cls, log, period_obj, sub_period_order, config_inventory_management):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
-        print('2. update_current_cost')
         div = log.company.company_config.definition_inventory_valuation
         kw_parameter = {}
         if 1 in config_inventory_management:
@@ -359,7 +366,6 @@ class ReportStockLog(DataAbstractModel):  # rp_log
         Step 3: Hàm kiểm tra record cost của sp này trong kì nay đã có hay chưa ?
                 Chưa thì tạo mới - Có thì Update lại quantity-cost-value
         """
-        print('3. create_or_update_this_sub_period_cost')
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             sum_ending_balance_quantity = 0

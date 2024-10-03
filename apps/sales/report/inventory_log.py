@@ -11,7 +11,7 @@ class InventoryCostLog:
 
     @classmethod
     def weighted_average_log(cls, stock_obj, stock_obj_date, stock_data):
-        print('*** Weighted average log')
+        print('*** WEIGHTED AVERAGE LOG')
         try:
             tenant = stock_obj.tenant
             company = stock_obj.company
@@ -20,7 +20,7 @@ class InventoryCostLog:
                 cost_calculate_cfg = InventoryCostLogFunc.get_cost_calculate_config(company.company_config)
                 period_obj = Periods.objects.filter(
                     tenant=tenant,
-                    company=tenant,
+                    company=company,
                     fiscal_year=stock_obj_date.year
                 ).first()
                 if period_obj:
