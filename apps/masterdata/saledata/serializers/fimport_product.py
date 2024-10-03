@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
     UnitOfMeasureGroup, ProductType, ProductCategory,
-    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Tax
+    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Tax, Currency
 )
 from apps.masterdata.saledata.serializers import (
     PRODUCT_OPTION, CommonCreateUpdateProduct,
@@ -18,27 +18,28 @@ from apps.core.hr.models import Employee
 class ProductImportSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
-    description = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     part_number = serializers.CharField(max_length=150)
     # general
     general_product_category = serializers.CharField()
     general_product_types_mapped = serializers.CharField()
     general_uom_group = serializers.CharField()
-    length = serializers.CharField(required=False, allow_null=True)
-    height = serializers.CharField(required=False, allow_null=True)
-    width = serializers.CharField(required=False, allow_null=True)
-    volume = serializers.CharField(required=False, allow_null=True)
-    weight = serializers.CharField(required=False, allow_null=True)
+    length = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    height = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    width = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    volume = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    weight = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     product_choice = serializers.JSONField(default=list)
     # sale
     sale_default_uom = serializers.CharField(required=False, allow_null=True)
     sale_tax = serializers.CharField(required=False, allow_null=True)
 
-    # inventory_uom = serializers.CharField(required=False, allow_null=True)
-    # purchase_default_uom = serializers.CharField(required=False, allow_null=True)
-    # purchase_tax = serializers.CharField(required=False, allow_null=True)
-    #
+    inventory_uom = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    purchase_default_uom = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    purchase_tax = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    supplied_by = serializers.CharField(required=False,allow_null=True, default=0)
     # available_notify = serializers.BooleanField()
     # available_notify_quantity = serializers.CharField(required=False, allow_null=True)
 
@@ -54,10 +55,10 @@ class ProductImportSerializer(serializers.Serializer):
             'width', 'height', 'length', 'volume', 'weight',
             # Sale
             'sale_default_uom', 'sale_tax',
-            # # Inventory
-            # 'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
-            # # Purchase
-            # 'purchase_default_uom', 'purchase_tax', 'supplied_by', 'standard_price'
+            # Inventory
+            'inventory_uom',
+            # Purchase
+            'purchase_default_uom', 'purchase_tax', 'supplied_by',
         )
 
     @classmethod
@@ -143,50 +144,86 @@ class ProductImportSerializer(serializers.Serializer):
             return value
         return None
 
-    @classmethod
-    def validate_sale_default_uom(cls, value):
-        if 0 in cls.product_choice:
+    def validate_sale_default_uom(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        general_uom_group_code = self.initial_data.get('general_uom_group')
+        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        if 0 in product_choice:
             if value:
                 try:
-                    return UnitOfMeasure.objects.get_current(fill__company=True, code=value)
+                    uom_obj = UnitOfMeasure.objects.get_current(fill__company=True, code=value)
+                    if uom_obj.group_id != general_uom_group.id:
+                        raise serializers.ValidationError({'sale_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+                    return uom_obj
                 except UnitOfMeasure.DoesNotExist:
                     raise serializers.ValidationError({'sale_default_uom': BaseMsg.NOT_EXIST})
             raise serializers.ValidationError({'sale_default_uom': ProductMsg.NOT_NULL})
+        return None
 
-    @classmethod
-    def validate_sale_tax(cls, value):
-        if 0 in cls.product_choice:
+    def validate_sale_tax(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        if 0 in product_choice:
             if value:
                 try:
                     return Tax.objects.get_current(fill__company=True, code=value)
                 except Tax.DoesNotExist:
                     raise serializers.ValidationError({'sale_tax': BaseMsg.NOT_EXIST})
             raise serializers.ValidationError({'sale_tax': ProductMsg.NOT_NULL})
+        return None
 
-    # @classmethod
-    # def validate_available_notify_quantity(cls, value):
-    #     if value:
-    #         if float(value) <= 0:
-    #             raise serializers.ValidationError({'available_notify_quantity': ProductMsg.VALUE_INVALID})
-    #         return value
-    #     return None
-    #
-    # @classmethod
-    # def validate_sale_default_uom(cls, value):
-    #     if 0 in cls.product_choice:
-    #         if value:
-    #             try:
-    #                 return UnitOfMeasure.objects.get_current(fill__company=True, code=value)
-    #             except UnitOfMeasure.DoesNotExist:
-    #                 raise serializers.ValidationError({'sale_default_uom': ProductMsg.DOES_NOT_EXIST})
-    #         raise serializers.ValidationError({'sale_default_uom': ProductMsg.NOT_NULL})
-    #
+    def validate_inventory_uom(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        general_uom_group_code = self.initial_data.get('general_uom_group')
+        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        if 1 in product_choice:
+            if value:
+                try:
+                    uom_obj =  UnitOfMeasure.objects.get_current(fill__company=True, code=value)
+                    if uom_obj.group_id != general_uom_group.id:
+                        raise serializers.ValidationError({'inventory_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+                    return uom_obj
+                except UnitOfMeasure.DoesNotExist:
+                    raise serializers.ValidationError({'inventory_uom': BaseMsg.NOT_EXIST})
+            raise serializers.ValidationError({'inventory_uom': ProductMsg.NOT_NULL})
+        return None
 
-    #
-    # @classmethod
-    # def validate_sale_product_price_list(cls, value):
-    #     pass
+    def validate_purchase_default_uom(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        general_uom_group_code = self.initial_data.get('general_uom_group')
+        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        if 2 in product_choice:
+            if value:
+                try:
+                    uom_obj = UnitOfMeasure.objects.get_current(fill__company=True, code=value)
+                    if uom_obj.group_id != general_uom_group.id:
+                        raise serializers.ValidationError({'purchase_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+                    return uom_obj
+                except UnitOfMeasure.DoesNotExist:
+                    raise serializers.ValidationError({'purchase_default_uom':  BaseMsg.NOT_EXIST})
+            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.NOT_NULL})
+        return None
 
+    def validate_purchase_tax(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        if 2 in product_choice:
+            if value:
+                try:
+                    return Tax.objects.get_current(fill__company=True, code=value)
+                except Tax.DoesNotExist:
+                    raise serializers.ValidationError({'purchase_tax': BaseMsg.NOT_EXIST})
+            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.NOT_NULL})
+        return None
+
+    def validate_supplied_by(self, value):
+        product_choice = self.initial_data.get('product_choice', [])
+        if 2 in product_choice:
+            if value is not None:
+                if int(value) not in [0,1]:
+                    raise serializers.ValidationError({'supplied_by': ProductMsg.VALUE_INVALID})
+                return value
+            else:
+                raise serializers.ValidationError({'supplied_by': ProductMsg.NOT_NULL})
+        return 0
     def create(self, validated_data):
         #create volume object
         volume_obj = BaseItemUnit.objects.filter(title='volume')
@@ -214,17 +251,10 @@ class ProductImportSerializer(serializers.Serializer):
                 }
             })
 
-        sale_price_list = initial_data.get('sale_price_list', [])
-        for item in sale_price_list:
-            price_list_id = item.get('price_list_id', None)
-            price_list_value = float(item.get('price_list_value', 0))
-            if not Price.objects.filter(id=price_list_id).exists() or price_list_value < 0:
-                raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
-        return sale_price_list
-
-        validated_data.update(
-            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
-        )
+        sale_currency_using = Currency.objects.get_current(fill__company=True, is_primary=True)
+        validated_data.update({
+            'sale_currency_using': sale_currency_using,
+        })
 
         general_product_types_mapped_list = validated_data.pop('general_product_types_mapped',[])
         product = Product.objects.create(**validated_data)
@@ -255,6 +285,13 @@ class ProductImportSerializer(serializers.Serializer):
         ProductProductType.objects.filter(product=product).delete()
         ProductProductType.objects.bulk_create(bulk_info)
 
+        if 0 in validated_data['product_choice']:
+            CommonCreateUpdateProduct.create_price_list(
+                product,
+                self.initial_data.get('sale_price_list', []),
+                validated_data
+            )
+
         return product
 
 
@@ -269,10 +306,9 @@ class ProductImportReturnSerializer(serializers.Serializer):
             'general_traceability_method',
             'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            # 'sale_default_uom', 'sale_tax', 'sale_currency_using', 'online_price_list',
-            # 'available_notify', 'available_notify_quantity',
-            # # Inventory
-            # 'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
+            # 'sale_default_uom', 'sale_tax',
+            # Inventory
+            'inventory_uom',
             # # Purchase
-            # 'purchase_default_uom', 'purchase_tax', 'supplied_by', 'standard_price'
+            'purchase_default_uom', 'purchase_tax', 'supplied_by',
         )
