@@ -55,6 +55,7 @@ class WorkOrderListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'status_production',
         )
 
 

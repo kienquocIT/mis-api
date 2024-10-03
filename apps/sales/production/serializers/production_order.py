@@ -55,6 +55,7 @@ class ProductionOrderListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'status_production',
         )
 
 
