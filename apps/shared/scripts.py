@@ -2240,34 +2240,6 @@ def update_BOM_json_data():
                 } if replacement_item.uom else {}
                 replacement_item.save(update_fields=['material_data', 'uom_data'])
 
-        for item in bom.bom_material_component_outsourcing_bom.all():
-            item.material_data = {
-                'id': str(item.material.id),
-                'code': item.material.code,
-                'title': item.material.title
-            } if item.material else {}
-            item.uom_data = {
-                'id': str(item.uom.id),
-                'code': item.uom.code,
-                'title': item.uom.title,
-                'ratio': item.uom.ratio,
-                'group_id': str(item.uom.group_id)
-            } if item.uom else {}
-            item.save(update_fields=['material_data', 'uom_data'])
-            for replacement_item in item.bom_replacement_material_out_sourcing_replace_for.all():
-                replacement_item.material_data = {
-                    'id': str(replacement_item.material.id),
-                    'code': replacement_item.material.code,
-                    'title': replacement_item.material.title
-                } if replacement_item.material else {}
-                replacement_item.uom_data = {
-                    'id': str(replacement_item.uom.id),
-                    'code': replacement_item.uom.code,
-                    'title': replacement_item.uom.title,
-                    'group_id': str(replacement_item.uom.group_id),
-                } if replacement_item.uom else {}
-                replacement_item.save(update_fields=['material_data', 'uom_data'])
-
         for item in bom.bom_tool_bom.all():
             item.tool_data = {
                 'id': str(item.tool.id),

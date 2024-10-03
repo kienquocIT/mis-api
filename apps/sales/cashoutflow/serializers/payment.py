@@ -582,6 +582,10 @@ class PaymentCommonFunction:
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
                     }
+                else:
+                    item['expense_tax_id'] = None
+                    item['expense_tax_data'] = {}
+                    item['expense_tax_price'] = 0
             print('9. validate_payment_item_list --- ok')
             return validate_data
         except Exception as err:

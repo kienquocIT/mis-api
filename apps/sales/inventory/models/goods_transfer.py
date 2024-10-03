@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models import (
     SubPeriods
 )
 from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
-from apps.sales.report.models import ReportStockLog
+from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
@@ -45,7 +45,7 @@ class GoodsTransfer(DataAbstractModel):
         activities_data_in = []
         for item in instance.goods_transfer.all():
             if item.product.general_traceability_method == 0:
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 activities_data_out.append({
                     'sale_order': item.sale_order,
@@ -90,7 +90,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_value': item.unit_cost * lot_item['quantity'],
                             'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                         }
-                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, lot_item['quantity'])
+                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, lot_item['quantity'])
                         casted_cost = (
                                 item.unit_cost * lot_item['quantity'] / casted_quantity
                         ) if lot_item['quantity'] > 0 else 0
@@ -127,7 +127,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_data': lot_data
                         })
             if item.product.general_traceability_method == 2:
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 activities_data_out.append({
                     'sale_order': item.sale_order,
@@ -161,16 +161,8 @@ class GoodsTransfer(DataAbstractModel):
                     'value': casted_cost * casted_quantity,
                     'lot_data': {}
                 })
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_approved,
-            activities_data_out
-        )
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_approved,
-            activities_data_in
-        )
+        InventoryCostLog.log(instance, instance.date_approved, activities_data_out)
+        InventoryCostLog.log(instance, instance.date_approved, activities_data_in)
         return True
 
     @classmethod
