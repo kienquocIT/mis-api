@@ -24,7 +24,7 @@ def call_log_update_at_zone(task_id: Union[UUID, str], employee_id: Union[UUID, 
         stage=rt_assignee.stage,
         kind=1,  # in doc
         action=0,
-        msg=WorkflowMsgNotify.edit_by_zone,
+        msg=WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.edit_by_zone),
         is_system=is_system,
     )
     rt_assignee.action_perform.append('update')
