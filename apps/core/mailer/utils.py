@@ -212,17 +212,18 @@ class MailLogController:  # pylint: disable=R0902
         return self.obj
 
     def save(self, **kwargs):
-        self.obj.address_to = self.address_to
-        self.obj.address_cc = self.address_cc
-        self.obj.address_bcc = self.address_bcc
-        self.obj.save(**kwargs)
-        for obj in self.employee_to:
-            obj.save()
-        for obj in self.employee_cc:
-            obj.save()
-        for obj in self.employee_bcc:
-            obj.save()
-        # skip log_data until confirm key data will be saved log.
-        # if self.log_data:
-        #     self.log_data.save()
+        if self.obj:
+            self.obj.address_to = self.address_to
+            self.obj.address_cc = self.address_cc
+            self.obj.address_bcc = self.address_bcc
+            self.obj.save(**kwargs)
+            for obj in self.employee_to:
+                obj.save()
+            for obj in self.employee_cc:
+                obj.save()
+            for obj in self.employee_bcc:
+                obj.save()
+            # skip log_data until confirm key data will be saved log.
+            # if self.log_data:
+            #     self.log_data.save()
         return self.obj

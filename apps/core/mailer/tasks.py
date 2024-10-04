@@ -284,7 +284,8 @@ def send_mail_workflow(
                     system_code=4,  # WORKFLOW
                     doc_id=user_id, subject=subject,
                 )
-                if log_cls.create():
+                log_cls.create()
+                if log_cls.obj:
                     log_cls.update(
                         address_sender=cls.from_email,
                     )
