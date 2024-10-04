@@ -488,7 +488,7 @@ class PaymentTestCase(AdvanceTestCase):
         return response1
 
     def test_payment_create_missing_data(self):
-        # missing supplier_id
+        # missing field 'supplier_id'
         url = reverse("PaymentList")
         data2 = {
             'title': 'Thanh toan thang 5',
