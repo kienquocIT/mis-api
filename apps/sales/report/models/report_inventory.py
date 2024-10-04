@@ -613,10 +613,8 @@ class ReportInventorySubFunction:
         if latest_log:
             return {
                 'quantity': latest_log.current_quantity,
-                'cost': latest_log.current_cost if product.valuation_method == 2 else product.standard_price,
-                'value': latest_log.current_value if product.valuation_method == 2 else (
-                    product.standard_price * latest_log.current_quantity
-                )
+                'cost': latest_log.current_cost,
+                'value': latest_log.current_value
             } if div == 0 else {
                 'quantity': latest_log.periodic_current_quantity,
                 'cost': 0,
