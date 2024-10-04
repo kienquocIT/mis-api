@@ -74,9 +74,9 @@ class DocHandler:
         )
         if obj:
             HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj, remark=remark)
-            if hasattr(obj, 'employee_inherit_id'):
-                # send mail
-                DocHandler.send_mail(emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=1)
+            # send mail
+            # if hasattr(obj, 'employee_inherit_id'):
+            #     DocHandler.send_mail(emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=1)
             return True
         return False
 
@@ -95,12 +95,12 @@ class DocHandler:
             HookEventHandler(runtime_obj=runtime_obj).push_notify_end_workflow(
                 doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
             )
-            if hasattr(obj, 'employee_inherit_id'):
-                # send mail
-                workflow_type = 2 if approved_or_rejected == 'approved' else 3
-                DocHandler.send_mail(
-                    emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=workflow_type
-                )
+            # send mail
+            # if hasattr(obj, 'employee_inherit_id'):
+            #     workflow_type = 2 if approved_or_rejected == 'approved' else 3
+            #     DocHandler.send_mail(
+            #         emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=workflow_type
+            #     )
             return True
         return False
 

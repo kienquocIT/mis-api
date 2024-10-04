@@ -278,7 +278,6 @@ def send_mail_workflow(
         if cls.is_active is True and template_obj and user_obj and employee_obj:
             if template_obj.contents and user_obj.email and employee_obj.email:
                 subject = template_obj.subject if template_obj.subject else 'Workflow'
-
                 log_cls = MailLogController(
                     tenant_id=tenant_id, company_id=company_id,
                     system_code=4,  # WORKFLOW
@@ -292,7 +291,6 @@ def send_mail_workflow(
                     log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
                     log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
                     log_cls.update_log_data(host=cls.host, port=cls.port)
-
                     try:
                         state_send = cls.setup(
                             subject=subject,
@@ -309,7 +307,6 @@ def send_mail_workflow(
                     except Exception as err:
                         state_send = False
                         log_cls.update(errors_data=str(err))
-
                     if state_send is True:
                         log_cls.update(status_code=1, status_remark=state_send)  # sent
                         log_cls.save()
