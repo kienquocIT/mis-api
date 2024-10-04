@@ -424,6 +424,7 @@ class PaymentTestCase(AdvanceTestCase):
             'is_internal_payment': False,
             'supplier_id': self.create_new_account().data['result']['id'],
             'method': 1,  # bank
+            'employee_payment_id': None,
             'employee_inherit_id': self.get_employee().data['result'][0]['id'],
             'system_status': 0,
             'payment_item_list': [
@@ -496,6 +497,7 @@ class PaymentTestCase(AdvanceTestCase):
             'supplier_id': None,
             'method': 1,  # bank
             'employee_inherit_id': self.get_employee().data['result'][0]['id'],
+            'employee_payment_id': None,
             'system_status': 0,
             'payment_item_list': [
                 {
