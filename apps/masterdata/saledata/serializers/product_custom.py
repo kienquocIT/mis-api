@@ -22,7 +22,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
-            'general_traceability_method', 'bom_check_data', 'bom_data',
+            'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
         )
 
     @classmethod
@@ -121,6 +121,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_bom_check_data(cls, obj):
         return {
             'is_bom': bool(obj.filtered_bom),
+            'is_bom_opp': bool(obj.filtered_bom_opp),
             'is_so_finished': bool(obj.filtered_so_product_finished),
             'is_so_using': bool(obj.filtered_so_product_using),
         }

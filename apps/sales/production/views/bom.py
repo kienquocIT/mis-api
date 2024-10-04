@@ -210,6 +210,7 @@ class BOMOrderList(BaseListMixin, BaseCreateMixin):
         'product_id': ['exact'],
         'opportunity_id': ['exact', 'isnull'],
         'bom_type': ['exact', 'in'],
+        'system_status': ['exact', 'in'],
     }
     serializer_list = BOMOrderListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

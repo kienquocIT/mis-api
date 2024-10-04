@@ -1253,3 +1253,27 @@ msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của d
 #
 msgid "Document was returned"
 msgstr "Phiếu bị trả về"
+
+#
+msgid "Feature:"
+msgstr "Chức năng:"
+
+#
+msgid "You have a new task."
+msgstr "Bạn có một phiếu chức năng mới cần xử lý."
+
+#
+msgid "Your document was returned."
+msgstr "Phiếu chức năng của bạn bị trả về."
+
+#
+msgid "Your document was approved."
+msgstr "Phiếu chức năng của bạn được chấp thuận."
+
+#
+msgid "Your document was rejected."
+msgstr "Phiếu chức năng của bạn bị từ chối."
+
+#
+msgid "Go to detail:"
+msgstr "Đi đến chi tiết:"
