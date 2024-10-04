@@ -2,8 +2,9 @@ from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, Expense, UnitOfMeasure
 from apps.sales.opportunity.models import Opportunity
-from apps.sales.production.models import BOM, BOMProcess, BOMSummaryProcess, BOMMaterialComponent, BOMTool, \
-    BOMMaterialComponentOutsourcing, BOMReplacementMaterialComponent
+from apps.sales.production.models import (
+    BOM, BOMProcess, BOMSummaryProcess, BOMMaterialComponent, BOMTool, BOMReplacementMaterialComponent
+)
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 
 
@@ -295,7 +296,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     def get_bom_material_component_data(cls, obj):
         bom_material_component_data = []
         if not obj.for_outsourcing:
-            for item in obj.bom_material_component_bom.all():
+            for item in obj.bom_material_component_bom.filter(for_outsourcing=False):
                 bom_material_component_data.append({
                     'order': item.order,
                     'bom_process_order': item.bom_process_order,
@@ -309,7 +310,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                     'replacement_data': item.replacement_data
                 })
         else:
-            for item in obj.bom_material_component_outsourcing_bom.all():
+            for item in obj.bom_material_component_bom.filter(for_outsourcing=True):
                 bom_material_component_data.append({
                     'order': item.order,
                     'material': item.material_data,
@@ -423,7 +424,7 @@ class BOMCommonFunction:
                     } if opportunity_obj.employee_inherit else {}
                 } if opportunity_obj else {}
             except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
+                raise serializers.ValidationError({'opportunity_id': "Opportunity does not exist"})
         print('2. validate_opportunity_id --- ok')
         return True
 
@@ -443,7 +444,7 @@ class BOMCommonFunction:
             print('3. validate_product --- ok')
             return True
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': "Product is not exist"})
+            raise serializers.ValidationError({'product': "Product does not exist"})
 
     @classmethod
     def validate_sum_price(cls, validate_data):
@@ -528,109 +529,60 @@ class BOMCommonFunction:
         return True
 
     @classmethod
-    def validate_bom_material_component_data_for_outsourcing(cls, bom_material_component_data):
-        for item in bom_material_component_data:
-            if float(item.get('quantity', 0)) > 0:
-                material_obj = Product.objects.get(id=item.get('material_id'))
-                uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
-                item['material_id'] = str(material_obj.id)
-                item['material_data'] = {
+    def validate_bom_replacement_data(cls, material_item):
+        for replacement_item in material_item.get('replacement_data', []):
+            if float(replacement_item.get('quantity', 0)) > 0:
+                material_obj = Product.objects.get(id=replacement_item.get('material_id'))
+                uom_obj = UnitOfMeasure.objects.get(id=replacement_item.get('uom_id'))
+                replacement_item['material_id'] = str(material_obj.id)
+                replacement_item['uom_id'] = str(uom_obj.id)
+                replacement_item['material_data'] = {
                     'id': str(material_obj.id),
                     'code': material_obj.code,
                     'title': material_obj.title
                 } if material_obj else {}
-                item['uom_id'] = str(uom_obj.id)
-                item['uom_data'] = {
+                replacement_item['uom_data'] = {
                     'id': str(uom_obj.id),
                     'code': uom_obj.code,
                     'title': uom_obj.title,
-                    'ratio': uom_obj.ratio,
-                    'group_id': str(uom_obj.group_id)
+                    'group_id': str(uom_obj.group_id),
                 } if uom_obj else {}
             else:
-                raise serializers.ValidationError({
-                    'bom_material_component_data': "Material/component data is missing field"
-                })
-            for replacement_data in item.get('replacement_data', []):
-                if float(replacement_data.get('quantity', 0)) > 0:
-                    material_obj = Product.objects.get(id=replacement_data.get('material_id'))
-                    uom_obj = UnitOfMeasure.objects.get(id=replacement_data.get('uom_id'))
-                    replacement_data['material_id'] = str(material_obj.id)
-                    replacement_data['uom_id'] = str(uom_obj.id)
-                    replacement_data['material_data'] = {
-                        'id': str(material_obj.id),
-                        'code': material_obj.code,
-                        'title': material_obj.title
-                    } if material_obj else {}
-                    replacement_data['uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title,
-                        'group_id': str(uom_obj.group_id),
-                    } if uom_obj else {}
-                else:
-                    raise serializers.ValidationError({
-                        'replacement_data': "Replacement material/component data is missing field"
-                    })
-        return True
-
-    @classmethod
-    def validate_bom_material_component_data_for_normal(cls, validate_data, bom_material_component_data):
-        for item in bom_material_component_data:
-            if validate_data.get('bom_type') != 2 and not item.get('bom_process_order'):
-                raise serializers.ValidationError({'bom_process_order': "Process order is required for this BOM type"})
-            if float(item.get('quantity', 0)) > 0:
-                material_obj = Product.objects.get(id=item.get('material_id'))
-                uom_obj = UnitOfMeasure.objects.get(id=item.get('uom_id'))
-                item['material_id'] = str(material_obj.id)
-                item['material_data'] = {
-                    'id': str(material_obj.id),
-                    'code': material_obj.code,
-                    'title': material_obj.title
-                } if material_obj else {}
-                item['uom_id'] = str(uom_obj.id)
-                item['uom_data'] = {
-                    'id': str(uom_obj.id),
-                    'code': uom_obj.code,
-                    'title': uom_obj.title,
-                    'ratio': uom_obj.ratio,
-                    'group_id': str(uom_obj.group_id)
-                } if uom_obj else {}
-            else:
-                raise serializers.ValidationError({
-                    'bom_material_component_data': "Material/component outsourcing data is missing field"
-                })
-            for replacement_item in item.get('replacement_data', []):
-                if float(replacement_item.get('quantity', 0)) > 0:
-                    material_obj = Product.objects.get(id=replacement_item.get('material_id'))
-                    uom_obj = UnitOfMeasure.objects.get(id=replacement_item.get('uom_id'))
-                    replacement_item['material_id'] = str(material_obj.id)
-                    replacement_item['uom_id'] = str(uom_obj.id)
-                    replacement_item['material_data'] = {
-                        'id': str(material_obj.id),
-                        'code': material_obj.code,
-                        'title': material_obj.title
-                    } if material_obj else {}
-                    replacement_item['uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title,
-                        'group_id': str(uom_obj.group_id),
-                    } if uom_obj else {}
-                else:
-                    raise serializers.ValidationError({
-                        'replacement_data': "Replacement material/component outsourcing data is missing field"
-                    })
+                raise serializers.ValidationError({'quantity': "Replacement material quantity must be > 0"})
         return True
 
     @classmethod
     def validate_bom_material_component_data(cls, validate_data):
         bom_material_component_data = validate_data.get('bom_material_component_data')
         try:
-            if not validate_data.get('for_outsourcing'):
-                cls.validate_bom_material_component_data_for_outsourcing(bom_material_component_data)
-            else:
-                cls.validate_bom_material_component_data_for_normal(validate_data, bom_material_component_data)
+            for material_item in bom_material_component_data:
+                if all([
+                    not validate_data.get('for_outsourcing'),
+                    validate_data.get('bom_type') != 2,
+                    not material_item.get('bom_process_order')
+                ]):
+                    raise serializers.ValidationError({'bom_process_order': "Process order is required."})
+                if float(material_item.get('quantity', 0)) > 0:
+                    material_obj = Product.objects.get(id=material_item.get('material_id'))
+                    uom_obj = UnitOfMeasure.objects.get(id=material_item.get('uom_id'))
+                    material_item['material_id'] = str(material_obj.id)
+                    material_item['material_data'] = {
+                        'id': str(material_obj.id),
+                        'code': material_obj.code,
+                        'title': material_obj.title
+                    } if material_obj else {}
+                    material_item['uom_id'] = str(uom_obj.id)
+                    material_item['uom_data'] = {
+                        'id': str(uom_obj.id),
+                        'code': uom_obj.code,
+                        'title': uom_obj.title,
+                        'ratio': uom_obj.ratio,
+                        'group_id': str(uom_obj.group_id)
+                    } if uom_obj else {}
+                    cls.validate_bom_replacement_data(material_item)
+                else:
+                    raise serializers.ValidationError({'quantity': "Material quantity must be > 0"})
+
             validate_data['bom_material_component_data'] = bom_material_component_data
         except Exception as err:
             print(err)
@@ -704,9 +656,9 @@ class BOMCommonFunction:
         else:
             bulk_info = []
             for item in bom_material_component_data:
-                bulk_info.append(BOMMaterialComponentOutsourcing(bom=bom_obj, **item))
-            BOMMaterialComponentOutsourcing.objects.filter(bom=bom_obj).delete()
-            bom_material_component_records = BOMMaterialComponentOutsourcing.objects.bulk_create(bulk_info)
+                bulk_info.append(BOMMaterialComponent(bom=bom_obj, for_outsourcing=True, **item))
+            BOMMaterialComponent.objects.filter(bom=bom_obj).delete()
+            bom_material_component_records = BOMMaterialComponent.objects.bulk_create(bulk_info)
         print('12. create_bom_material_component_data --- ok')
         cls.create_bom_replacement_material_component_data(bom_obj, bom_material_component_records)
         return True

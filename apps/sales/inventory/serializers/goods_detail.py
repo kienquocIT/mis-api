@@ -94,7 +94,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 serial.save()
                 return serial
             raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
-        raise serializers.ValidationError({'Serial': f"Serial id {serial_id} is not existed"})
+        raise serializers.ValidationError({'Serial': f"Serial id {serial_id} does not exist"})
 
     @classmethod
     def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
@@ -242,7 +242,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 if self.initial_data.get('is_serial_update'):
                     self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
             else:
-                raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object is not exist"})
+                raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
 
 

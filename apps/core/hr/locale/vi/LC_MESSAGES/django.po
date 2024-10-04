@@ -30,5 +30,5 @@ msgid "The user was either linked to another employee or not found in the compan
 msgstr "Người dùng đã được liên kết với một nhân viên khác hoặc không được tìm thấy trong các thành viên công ty"
 
 #
-msgid "Employee is not exists"
+msgid "Employee does not exist"
 msgstr "Nhân viên không tồn tại"

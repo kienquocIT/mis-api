@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.models import ReportStockLog
+from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -119,17 +119,16 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code', 'title', 'description', 'product_choice', 'part_number',
             # General
-            'general_product_category',
-            'general_uom_group',
-            'general_traceability_method',
+            'general_product_category', 'general_uom_group', 'general_traceability_method',
             'width', 'height', 'length', 'volume', 'weight',
             # Sale
             'sale_default_uom', 'sale_tax', 'sale_currency_using', 'online_price_list',
             'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website', 'standard_price',
+            'valuation_method',
             # Purchase
-            'purchase_default_uom', 'purchase_tax', 'supplied_by', 'standard_price'
+            'purchase_default_uom', 'purchase_tax', 'supplied_by'
         )
 
     @classmethod
@@ -543,6 +542,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
+            'valuation_method': obj.valuation_method,
+            'standard_price': obj.standard_price
         }
         return result
 
@@ -557,8 +558,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'tax': {
                 'id': obj.purchase_tax_id, 'title': obj.purchase_tax.title, 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
-            'supplied_by': obj.supplied_by,
-            'standard_price': obj.standard_price
+            'supplied_by': obj.supplied_by
         }
         return result
 
@@ -572,7 +572,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    config_inventory_management = ReportStockLog.get_config_inventory_management(
+                    config_inventory_management = InventoryCostLogFunc.get_cost_calculate_config(
                         obj.company.company_config
                     )
 
@@ -670,8 +670,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
-            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by', 'standard_price'
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price', 'valuation_method',
+            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
     def validate_code(self, value):

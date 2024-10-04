@@ -3,7 +3,7 @@ from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
-from apps.sales.report.models import ReportStockLog
+from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -54,7 +54,9 @@ class GoodsIssue(DataAbstractModel):
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     if prd_wh_lot and lot_item.get('quantity', 0) > 0:
-                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, lot_item.get('quantity', 0))
+                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                            item.uom, lot_item.get('quantity', 0)
+                        )
                         activities_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
@@ -77,7 +79,7 @@ class GoodsIssue(DataAbstractModel):
                             }
                         })
             else:
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.issued_quantity)
+                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
                 activities_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
@@ -93,11 +95,7 @@ class GoodsIssue(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_approved,
-            activities_data
-        )
+        InventoryCostLog.log(instance, instance.date_approved, activities_data)
         return True
 
     @classmethod

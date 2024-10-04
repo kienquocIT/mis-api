@@ -487,6 +487,7 @@ PRODUCT_APP_CONFIG = {
     "app_label": "saledata",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_import": True,
 }
 
 EXPENSES_APP_CONFIG = {
@@ -2316,6 +2317,7 @@ Application_crm_data = {
     '7bc78f47-66f1-4104-a6fa-5ca07f3f2275': ApplicationConfigFrame(**UOM_APP_CONFIG).data(),
     '133e105e-cb3f-4845-8fba-bbb2516c5de2': ApplicationConfigFrame(**TAX_CATEGORY_APP_CONFIG).data(),
     '720d14f9-e031-4ffe-acb9-3c7763c134fc': ApplicationConfigFrame(**TAX_APP_CONFIG).data(),
+
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(

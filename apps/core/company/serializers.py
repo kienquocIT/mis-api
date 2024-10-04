@@ -132,7 +132,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             this_period.save(update_fields=['definition_inventory_valuation'])
         else:
             raise serializers.ValidationError(
-                {'Error': f"Can't find period of fiscal year {datetime.datetime.now().year}."}
+                {'Error': f"Can't find fiscal year {datetime.datetime.now().year}."}
             )
         if all([
             datetime.datetime.now().year == this_period.fiscal_year,
