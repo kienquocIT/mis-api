@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.production.models import WorkOrder
 from apps.sales.production.serializers.work_order import WorkOrderListSerializer, WorkOrderCreateSerializer, \
-    WorkOrderDetailSerializer, WorkOrderUpdateSerializer
+    WorkOrderDetailSerializer, WorkOrderUpdateSerializer, WorkOrderManualDoneSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -12,6 +12,7 @@ class WorkOrderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_inherit_id': ['exact'],
         'system_status': ['exact', 'in'],
+        'status_production': ['exact', 'in'],
     }
     serializer_list = WorkOrderListSerializer
     serializer_create = WorkOrderCreateSerializer
@@ -83,6 +84,7 @@ class WorkOrderDDList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_inherit_id': ['exact'],
         'system_status': ['exact', 'in'],
+        'status_production': ['exact', 'in'],
     }
     serializer_list = WorkOrderDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -94,3 +96,20 @@ class WorkOrderDDList(BaseListMixin, BaseCreateMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class WorkOrderManualDone(BaseCreateMixin):
+    queryset = WorkOrder.objects
+    serializer_list = WorkOrderListSerializer
+    serializer_create = WorkOrderManualDoneSerializer
+    serializer_detail = WorkOrderListSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Manual Done Work Order",
+        operation_description="Manual Done Work Order",
+        request_body=WorkOrderManualDoneSerializer,
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
