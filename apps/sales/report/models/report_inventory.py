@@ -171,7 +171,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             )
             item['cost'] = ReportInventorySubFunction.get_latest_log_value_dict(
                 stock_obj.company.company_config.definition_inventory_valuation,
-                item['product'].id, item['warehouse'].id, **kw_parameter
+                item['product'], item['warehouse'], **kw_parameter
             )['cost'] if item['stock_type'] == -1 else item['cost']
 
             item['value'] = item['cost'] * item['quantity']
@@ -233,7 +233,7 @@ class ReportStockLog(DataAbstractModel):  # rp_log
 
         # lấy value list của log gần nhất (nếu k, lấy số dư đầu kì)
         latest_value_dict = ReportInventorySubFunction.get_latest_log_value_dict(
-            div, log.product_id, log.physical_warehouse_id, **kw_parameter
+            div, log.product, log.physical_warehouse, **kw_parameter
         )
 
         if div == 0:
@@ -602,24 +602,27 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_value_dict(cls, div, product_id, physical_warehouse_id, **kwargs):
+    def get_latest_log_value_dict(cls, div, product, physical_warehouse, **kwargs):
+        # Nếu sp lấy cost theo standard cost, lấy standard cost chứ không lấy theo BQGQ.
         latest_log_record = LatestLog.objects.filter(
-            product_id=product_id, warehouse_id=physical_warehouse_id, **kwargs
+            product=product, warehouse=physical_warehouse, **kwargs
         ).first() if 'warehouse_id' not in kwargs else LatestLog.objects.filter(
-            product_id=product_id, **kwargs
+            product=product, **kwargs
         ).first()
         latest_log = latest_log_record.latest_log if latest_log_record else None
         if latest_log:
             return {
                 'quantity': latest_log.current_quantity,
-                'cost': latest_log.current_cost,
-                'value': latest_log.current_value
+                'cost': latest_log.current_cost if product.valuation_method == 2 else product.standard_price,
+                'value': latest_log.current_value if product.valuation_method == 2 else (
+                    product.standard_price * latest_log.current_quantity
+                )
             } if div == 0 else {
                 'quantity': latest_log.periodic_current_quantity,
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_balance_value_dict(product_id, 3, **kwargs)
+        return cls.get_opening_balance_value_dict(product.id, 3, **kwargs)
 
     @classmethod
     def calculate_new_value_dict_in_perpetual(cls, log, latest_value_dict):
