@@ -284,10 +284,9 @@ def send_mail_workflow(
                     system_code=4,  # WORKFLOW
                     doc_id=user_id, subject=subject,
                 )
-                log_cls.create()
-                if log_cls.obj:
+                if log_cls.create():
                     log_cls.update(
-                        address_sender=cls.from_email,
+                        address_sender=cls.from_email if cls.from_email else '',
                     )
                     log_cls.update_employee_to(employee_to=[], address_to_init=[employee_obj.email])
                     log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
