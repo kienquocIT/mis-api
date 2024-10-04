@@ -54,7 +54,9 @@ class GoodsIssue(DataAbstractModel):
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     if prd_wh_lot and lot_item.get('quantity', 0) > 0:
-                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, lot_item.get('quantity', 0))
+                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                            item.uom, lot_item.get('quantity', 0)
+                        )
                         activities_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,

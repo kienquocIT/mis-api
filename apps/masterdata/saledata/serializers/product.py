@@ -3,7 +3,6 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.inventory_log import InventoryCostLogFunc
-from apps.sales.report.models import ReportStockLog
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 

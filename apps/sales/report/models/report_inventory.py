@@ -1,18 +1,16 @@
-from django.db import models, transaction
+from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
-"""
-    - ReportStock: lưu sản phẩm theo từng tháng trong năm tài chính.
-    - ReportStockLog: lưu quá trình nhập xuất kho và giá cost của sản phẩm sau mỗi lần nhập
-    
-    - ReportInventoryCost: lưu giá cost đầu kì và cuối kì (hiện tại) của sản phẩm theo từng tháng trong năm tài chính
-    - ReportInventoryCostWH: lưu kho vật lí của sản phẩm. Nếu PP tính giá cost không theo kho thì bảng 'ReportInventoryCost' sẽ không lưu field warehouse (nên cần có bảng phụ này)
-    - LatestLog: lưu giao dịch gần nhất của sản phẩm đó vào kho
-"""
+# - ReportStock: lưu sản phẩm theo từng tháng trong năm tài chính.
+# - ReportStockLog: lưu quá trình nhập xuất kho và giá cost của sản phẩm sau mỗi lần nhập
+#
+# - ReportInventoryCost: lưu giá cost đầu kì và cuối kì (hiện tại) của sản phẩm theo từng tháng trong năm tài chính
+# - ReportInventoryCostWH: lưu kho vật lí của sản phẩm. Nếu PP tính giá cost không theo kho thì bảng
+#   'ReportInventoryCost' sẽ không lưu field warehouse (nên cần có bảng phụ này)
+# - LatestLog: lưu giao dịch gần nhất của sản phẩm đó vào kho
 
 
 class ReportStock(DataAbstractModel):  # rp_stock
