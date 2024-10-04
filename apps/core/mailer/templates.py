@@ -64,7 +64,7 @@ TEMPLATE_WORKFLOW_DEFAULT = _(
     "<h2><strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
     "<p><span class=\"params-data\" data-code=\"_workflow__wf_title\"></span></p>"
     "<p><span class=\"params-data\" data-code=\"_workflow__wf_common_text_0\"></span><span class=\"params-data\" data-code=\"_workflow__wf_application_title\"></span></p>"
-    "<p><span class=\"params-data\" data-code=\"_workflow__wf_common_text_1\"></span> <a href=\"http://127.0.0.1:8001/wf_application_url\">https://__company_sub_domain__.bflow.vn/</a></p>"
+    "<p><span class=\"params-data\" data-code=\"_workflow__wf_common_text_1\"></span> <a href=\"wf_common_text_2/wf_application_url\"><span class=\"params-data\" data-code=\"_workflow__wf_common_text_3\"></span></a></p>"
     "<hr/>"
     "<p>Best regards.</p>"
 )

@@ -285,38 +285,39 @@ def send_mail_workflow(
                         system_code=4,  # WORKFLOW
                         doc_id=user_id, subject=subject,
                     )
-                    log_cls.create()
-                    log_cls.update(
-                        address_sender=cls.from_email,
-                    )
-                    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_obj.email])
-                    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
-                    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
-                    log_cls.update_log_data(host=cls.host, port=cls.port)
-
-                    try:
-                        state_send = cls.setup(
-                            subject=subject,
-                            from_email=cls.kwargs['from_email'],
-                            mail_cc=cls.kwargs['cc_email'],
-                            bcc=cls.kwargs['bcc_email'],
-                            header={},
-                            reply_to=cls.kwargs['reply_email'],
-                        ).send(
-                            mail_to=[employee_obj.email],
-                            template=template_obj.contents,
-                            data=MailDataResolver.workflow(runtime_obj=runtime_obj, workflow_type=workflow_type),
+                    log_obj = log_cls.create()
+                    if log_obj:
+                        log_cls.update(
+                            address_sender=cls.from_email,
                         )
-                    except Exception as err:
-                        state_send = False
-                        log_cls.update(errors_data=str(err))
+                        log_cls.update_employee_to(employee_to=[], address_to_init=[employee_obj.email])
+                        log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+                        log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+                        log_cls.update_log_data(host=cls.host, port=cls.port)
 
-                    if state_send is True:
-                        log_cls.update(status_code=1, status_remark=state_send)  # sent
+                        try:
+                            state_send = cls.setup(
+                                subject=subject,
+                                from_email=cls.kwargs['from_email'],
+                                mail_cc=cls.kwargs['cc_email'],
+                                bcc=cls.kwargs['bcc_email'],
+                                header={},
+                                reply_to=cls.kwargs['reply_email'],
+                            ).send(
+                                mail_to=[employee_obj.email],
+                                template=template_obj.contents,
+                                data=MailDataResolver.workflow(runtime_obj=runtime_obj, workflow_type=workflow_type),
+                            )
+                        except Exception as err:
+                            state_send = False
+                            log_cls.update(errors_data=str(err))
+
+                        if state_send is True:
+                            log_cls.update(status_code=1, status_remark=state_send)  # sent
+                            log_cls.save()
+                            return 'Success'
+                        log_cls.update(status_code=2, status_remark=state_send)  # error
                         log_cls.save()
-                        return 'Success'
-                    log_cls.update(status_code=2, status_remark=state_send)  # error
-                    log_cls.save()
                     return 'SEND_FAILURE'
                 return 'USER_EMAIL_IS_NOT_CORRECT'
             return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE'

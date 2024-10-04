@@ -39,6 +39,8 @@ WORKFLOW_TYPE_MAP_TXT = {
 WORKFLOW_COMMON = {
     0: 'Feature:',
     1: 'Go to detail:',
+    2: 'http://127.0.0.1:8001',
+    3: 'Here',
 }
 
 
@@ -77,6 +79,8 @@ class MailDataResolver:
             doc_id = str(runtime_obj.doc_id)
         wf_common_text_0 = str(trans(WORKFLOW_COMMON.get(0, '')))
         wf_common_text_1 = str(trans(WORKFLOW_COMMON.get(1, '')))
+        wf_common_text_2 = str(trans(WORKFLOW_COMMON.get(2, '')))
+        wf_common_text_3 = str(trans(WORKFLOW_COMMON.get(3, '')))
         return {
             '_workflow': {
                 'wf_title': wf_title,
@@ -85,5 +89,7 @@ class MailDataResolver:
                 'wf_doc_id': doc_id,
                 'wf_common_text_0': wf_common_text_0,
                 'wf_common_text_1': wf_common_text_1,
+                'wf_common_text_2': wf_common_text_2,
+                'wf_common_text_3': wf_common_text_3,
             },
         }
