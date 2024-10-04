@@ -1277,3 +1277,7 @@ msgstr "Phiếu chức năng của bạn bị từ chối."
 #
 msgid "Go to detail:"
 msgstr "Đi đến chi tiết:"
+
+#
+msgid "Here"
+msgstr "Tại đây"

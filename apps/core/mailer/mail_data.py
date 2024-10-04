@@ -39,7 +39,7 @@ WORKFLOW_TYPE_MAP_TXT = {
 WORKFLOW_COMMON = {
     0: 'Feature:',
     1: 'Go to detail:',
-    2: 'http://127.0.0.1:8001',
+    2: 'sit.mtsolution.com.vn',
     3: 'Here',
 }
 
