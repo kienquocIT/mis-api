@@ -754,12 +754,12 @@ class ConfigDefaultData:
                     'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
+                    'code': 'SY', 'title': _('Sick leave for yourself-social insurance'), 'paid_by': 2,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
+                    'code': 'FF', 'title': _('Funeral in your family (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0
@@ -771,7 +771,7 @@ class ConfigDefaultData:
                     'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
+                    'code': 'MY', 'title': _('Your own marriage (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0

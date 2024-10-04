@@ -7,7 +7,7 @@ class HrMsg:
     LICENSE_OVER_TOTAL = _("Licenses used of {} plan is over total licenses.")
 
     PERMISSIONS_BY_CONFIGURED_DICT_TYPE = _('Permissions type is incorrect.')
-    PERMISSIONS_BY_CONFIGURED_CHILD_REQUIRED = _('Permissions item configurations is incorrect.')
+    PERMISSIONS_BY_CONFIGURED_CHILD_REQUIRED = _('Permissions item configuration is incorrect')
     PERMISSIONS_BY_CONFIGURED_OPTION_INCORRECT = _('Permissions item option is incorrect.')
     PERMISSIONS_BY_CONFIGURED_NOT_EXIST = _('Permissions does not exist.')
 
