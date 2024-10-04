@@ -478,21 +478,21 @@ class GReItemBorrowCreateSerializer(serializers.ModelSerializer):
         try:
             return GoodsRegistration.objects.get(id=value)
         except GoodsRegistration.DoesNotExist:
-            raise serializers.ValidationError({'goods_registration': 'Goods Registration obj is not exist.'})
+            raise serializers.ValidationError({'goods_registration': 'Goods Registration obj does not exist.'})
 
     @classmethod
     def validate_gre_item_source(cls, value):
         try:
             return GoodsRegistrationItem.objects.get(id=value)
         except GoodsRegistrationItem.DoesNotExist:
-            raise serializers.ValidationError({'gre_item': 'Goods Registration Item obj is not exist.'})
+            raise serializers.ValidationError({'gre_item': 'Goods Registration Item obj does not exist.'})
 
     @classmethod
     def validate_uom(cls, value):
         try:
             return UnitOfMeasure.objects.get(id=value)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': 'UOM obj is not exist.'})
+            raise serializers.ValidationError({'uom': 'UOM obj does not exist.'})
 
     def validate(self, validate_data):
         try:
@@ -722,21 +722,21 @@ class NoneGReItemBorrowCreateSerializer(serializers.ModelSerializer):
         try:
             return GoodsRegistration.objects.get(id=value)
         except GoodsRegistration.DoesNotExist:
-            raise serializers.ValidationError({'goods_registration': 'Goods Registration obj is not exist.'})
+            raise serializers.ValidationError({'goods_registration': 'Goods Registration obj does not exist.'})
 
     @classmethod
     def validate_gre_item_source(cls, value):
         try:
             return GoodsRegistrationItem.objects.get(id=value)
         except GoodsRegistrationItem.DoesNotExist:
-            raise serializers.ValidationError({'gre_item': 'Goods Registration Item obj is not exist.'})
+            raise serializers.ValidationError({'gre_item': 'Goods Registration Item obj does not exist.'})
 
     @classmethod
     def validate_uom(cls, value):
         try:
             return UnitOfMeasure.objects.get(id=value)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': 'UOM obj is not exist.'})
+            raise serializers.ValidationError({'uom': 'UOM obj does not exist.'})
 
     def validate(self, validate_data):
         sum_quantity = sum(list(NoneGReItemProductWarehouse.objects.filter(

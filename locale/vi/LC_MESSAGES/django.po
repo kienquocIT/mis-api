@@ -319,7 +319,7 @@ msgid "Password must contain both numbers and letters"
 msgstr "Mật khẩu phải bao gồm số và chữ."
 
 #: .\apps\shared\translations\account.py:9
-msgid "Company is not exist"
+msgid "Company does not exist"
 msgstr "Công ty không tồn tại."
 
 #: .\apps\shared\translations\accounts.py:5
@@ -479,7 +479,7 @@ msgid "Code is exists"
 msgstr "Mã đã tồn tại"
 
 #
-msgid "Code is not exist"
+msgid "Code does not exist"
 msgstr "Mã không tồn tại"
 
 #

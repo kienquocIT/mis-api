@@ -506,7 +506,7 @@ class PeriodInventoryFunction:
                             bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
                         )
                     else:
-                        raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+                        raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})
             ReportInventoryCost.objects.bulk_create(bulk_info_rp_prd_wh)
             ReportInventoryCostWH.objects.bulk_create(bulk_info_rp_prd_wh_wh)
             ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
@@ -552,4 +552,4 @@ class PeriodInventoryFunction:
                 product_warehouse__warehouse=wh_obj
             ).delete()
             return True
-        raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+        raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})

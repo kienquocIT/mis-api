@@ -424,7 +424,7 @@ class BOMCommonFunction:
                     } if opportunity_obj.employee_inherit else {}
                 } if opportunity_obj else {}
             except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity_id': "Opportunity is not exist"})
+                raise serializers.ValidationError({'opportunity_id': "Opportunity does not exist"})
         print('2. validate_opportunity_id --- ok')
         return True
 
@@ -444,7 +444,7 @@ class BOMCommonFunction:
             print('3. validate_product --- ok')
             return True
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': "Product is not exist"})
+            raise serializers.ValidationError({'product': "Product does not exist"})
 
     @classmethod
     def validate_sum_price(cls, validate_data):

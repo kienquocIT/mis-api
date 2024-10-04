@@ -186,36 +186,37 @@ class ReportStockLog(DataAbstractModel):  # rp_log
             print(f"\t+ sale order: [{item.get('sale_order').code if item.get('sale_order') else ''}]")
             print(f"\t+ kw_parameter: {kw_parameter}")
 
-            new_log = cls(
-                tenant=stock_obj.tenant,
-                company=stock_obj.company,
-                employee_created=stock_obj.employee_created
-                if stock_obj.employee_created else stock_obj.employee_inherit,
-                employee_inherit=stock_obj.employee_inherit
-                if stock_obj.employee_inherit else stock_obj.employee_created,
-                report_stock=rp_inventory,
-                product=item['product'],
-                physical_warehouse=item['warehouse'],
-                sale_order=item.get('sale_order'),
-                system_date=item['system_date'],
-                posting_date=item['posting_date'],
-                document_date=item['document_date'],
-                stock_type=item['stock_type'],
-                trans_id=item['trans_id'],
-                trans_code=item['trans_code'],
-                trans_title=item['trans_title'],
-                quantity=item['quantity'],
-                cost=item['cost'],
-                value=item['value'],
-                lot_data=item.get('lot_data', {}),
-                log_order=log_order_number,
-                **kw_parameter
-            )
-            bulk_info.append(new_log)
-            log_order_number += 1
+            if float(item['quantity']) > 0:
+                new_log = cls(
+                    tenant=stock_obj.tenant,
+                    company=stock_obj.company,
+                    employee_created=stock_obj.employee_created
+                    if stock_obj.employee_created else stock_obj.employee_inherit,
+                    employee_inherit=stock_obj.employee_inherit
+                    if stock_obj.employee_inherit else stock_obj.employee_created,
+                    report_stock=rp_inventory,
+                    product=item['product'],
+                    physical_warehouse=item['warehouse'],
+                    sale_order=item.get('sale_order'),
+                    system_date=item['system_date'],
+                    posting_date=item['posting_date'],
+                    document_date=item['document_date'],
+                    stock_type=item['stock_type'],
+                    trans_id=item['trans_id'],
+                    trans_code=item['trans_code'],
+                    trans_title=item['trans_title'],
+                    quantity=item['quantity'],
+                    cost=item['cost'],
+                    value=item['value'],
+                    lot_data=item.get('lot_data', {}),
+                    log_order=log_order_number,
+                    **kw_parameter
+                )
+                bulk_info.append(new_log)
+                log_order_number += 1
 
-            if 'sale_order_id' in kw_parameter:  # Project
-                GoodsRegistration.update_registration_inventory(item, stock_obj)
+                if 'sale_order_id' in kw_parameter:  # Project
+                    GoodsRegistration.update_registration_inventory(item, stock_obj)
 
         return cls.objects.bulk_create(bulk_info)
 

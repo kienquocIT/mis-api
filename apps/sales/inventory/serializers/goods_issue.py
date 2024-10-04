@@ -351,7 +351,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_inventory_adjustment_id  --- ok')
             except InventoryAdjustment.DoesNotExist:
-                raise serializers.ValidationError({'inventory_adjustment': 'Inventory adjustment is not exist'})
+                raise serializers.ValidationError({'inventory_adjustment': 'Inventory adjustment does not exist'})
         else:
             validate_data['inventory_adjustment_id'] = None
         return True
@@ -365,7 +365,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_production_order_id  --- ok')
             except ProductionOrder.DoesNotExist:
-                raise serializers.ValidationError({'production_order': 'Product order is not exist'})
+                raise serializers.ValidationError({'production_order': 'Product order does not exist'})
         else:
             validate_data['production_order_id'] = None
         return True
@@ -379,7 +379,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_work_order_id  --- ok')
             except WorkOrder.DoesNotExist:
-                raise serializers.ValidationError({'work_order': 'Work order is not exist'})
+                raise serializers.ValidationError({'work_order': 'Work order does not exist'})
         else:
             validate_data['work_order_id'] = None
         return True
@@ -412,7 +412,7 @@ class GoodsIssueCommonFunction:
                     lot_data.append(
                         {'lot_id': lot.get('lot_id'), 'lot_quantity': lot_obj, 'issued_quantity': lot.get('quantity')})
                 else:
-                    raise serializers.ValidationError({'error': "Lot object is not exist."})
+                    raise serializers.ValidationError({'error': "Lot object does not exist."})
             else:
                 for data in lot_data:
                     if data['lot_id'] == lot.get('lot_id'):

@@ -56,12 +56,12 @@ class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
         try:
             return Product.objects.get(id=value)
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': 'Product is not exist.'})
+            raise serializers.ValidationError({'product': 'Product does not exist.'})
 
     @classmethod
     def validate_no_of_month(cls, value):
         if not value or value < 0:
-            raise serializers.ValidationError({'product': 'Product is not exist.'})
+            raise serializers.ValidationError({'product': 'Product does not exist.'})
         return value
 
     @classmethod
@@ -236,12 +236,12 @@ class DistributionPlanUpdateSerializer(AbstractCreateSerializerModel):
         try:
             return Product.objects.get(id=value)
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': 'Product is not exist.'})
+            raise serializers.ValidationError({'product': 'Product does not exist.'})
 
     @classmethod
     def validate_no_of_month(cls, value):
         if not value or value < 0:
-            raise serializers.ValidationError({'product': 'Product is not exist.'})
+            raise serializers.ValidationError({'product': 'Product does not exist.'})
         return value
 
     @classmethod
