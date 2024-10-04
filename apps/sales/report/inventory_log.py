@@ -8,13 +8,13 @@ class InventoryCostLog:
     @classmethod
     def log(cls, stock_obj, stock_obj_date, stock_data):
         if stock_obj.company.company_config.default_inventory_value_method == 0:
-            return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
+            pass
         if stock_obj.company.company_config.default_inventory_value_method == 1:
-            return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
+            pass
         if stock_obj.company.company_config.default_inventory_value_method == 2:
             return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
         if stock_obj.company.company_config.default_inventory_value_method == 3:
-            return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
+            pass
         raise serializers.ValidationError({'inventory_value_method': 'Inventory value method does not exist.'})
 
 
