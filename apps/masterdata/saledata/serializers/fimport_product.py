@@ -1,5 +1,3 @@
-import json
-
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
@@ -7,13 +5,11 @@ from apps.masterdata.saledata.models import (
     Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Tax, Currency
 )
 from apps.masterdata.saledata.serializers import (
-    PRODUCT_OPTION, CommonCreateUpdateProduct,
+     CommonCreateUpdateProduct,
 )
 from apps.shared import ProductMsg, BaseMsg
 
-from apps.core.base.models import Currency as BaseCurrency, BaseItemUnit
-from apps.core.hr.models import Employee
-
+from apps.core.base.models import BaseItemUnit
 
 class ProductImportSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=150)
@@ -82,7 +78,7 @@ class ProductImportSerializer(serializers.Serializer):
             codes = list(filter(None, [item.strip() for item in value.split(",")]))
             objs = ProductType.objects.filter_current(fill__company=True, code__in=codes)
             if len(codes) == objs.count():
-                return [item for item in objs]
+                return list(objs)
             raise serializers.ValidationError({'general_product_types_mapped': BaseMsg.NOT_EXIST})
         raise serializers.ValidationError({'general_product_types_mapped': ProductMsg.NOT_NULL})
 
@@ -153,7 +149,8 @@ class ProductImportSerializer(serializers.Serializer):
                 try:
                     uom_obj = UnitOfMeasure.objects.get_current(fill__company=True, code=value)
                     if uom_obj.group_id != general_uom_group.id:
-                        raise serializers.ValidationError({'sale_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+                        raise serializers.ValidationError(
+                            {'sale_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
                     return uom_obj
                 except UnitOfMeasure.DoesNotExist:
                     raise serializers.ValidationError({'sale_default_uom': BaseMsg.NOT_EXIST})
@@ -196,7 +193,8 @@ class ProductImportSerializer(serializers.Serializer):
                 try:
                     uom_obj = UnitOfMeasure.objects.get_current(fill__company=True, code=value)
                     if uom_obj.group_id != general_uom_group.id:
-                        raise serializers.ValidationError({'purchase_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+                        raise serializers.ValidationError(
+                            {'purchase_default_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
                     return uom_obj
                 except UnitOfMeasure.DoesNotExist:
                     raise serializers.ValidationError({'purchase_default_uom':  BaseMsg.NOT_EXIST})
@@ -221,8 +219,7 @@ class ProductImportSerializer(serializers.Serializer):
                 if int(value) not in [0,1]:
                     raise serializers.ValidationError({'supplied_by': ProductMsg.VALUE_INVALID})
                 return value
-            else:
-                raise serializers.ValidationError({'supplied_by': ProductMsg.NOT_NULL})
+            raise serializers.ValidationError({'supplied_by': ProductMsg.NOT_NULL})
         return 0
     def create(self, validated_data):
         #create volume object
