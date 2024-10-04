@@ -169,380 +169,467 @@ class AdvancePaymentTestCase(AdvanceTestCase):
         return response
 
 
-# class PaymentTestCase(AdvanceTestCase):
-#     def setUp(self) -> None:
-#         self.maxDiff = None
-#         self.client = APIClient()
-#         self.authenticated()
-#
-#     def get_employee(self):
-#         url = reverse("EmployeeList")
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_new_account(self):
-#         # create industry
-#         url_create_industry = reverse('IndustryList')
-#         response_industry = self.client.post(
-#             url_create_industry,
-#             {
-#                 'code': 'I00',
-#                 'title': 'Banking0',
-#             },
-#             format='json'
-#         )
-#
-#         # create account type
-#         url_create_account_type = reverse('AccountTypeList')
-#         response_account_type = self.client.post(
-#             url_create_account_type,
-#             {
-#                 'code': 'AT00',
-#                 'title': 'Service0',
-#             },
-#             format='json'
-#         )
-#
-#         industry = response_industry.data['result']
-#         account_type = response_account_type.data['result']
-#
-#         data = {  # noqa
-#             'name': 'FPT Shop',
-#             'code': 'PM000',
-#             'website': 'fptshop.com.vn',
-#             'tax_code': '35465785',
-#             'annual_revenue': '1',
-#             'total_employees': '1',
-#             'phone': '0903608494',
-#             'email': 'cuong@gmail.com',
-#             'industry': industry['id'],
-#             'manager': [self.get_employee().data['result'][0]['id']],
-#             'account_type': [account_type['id']],
-#             'account_type_selection': 0
-#         }
-#         url = reverse('AccountList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'phone', 'shipping_address',
-#                 'billing_address', 'parent_account_mapped', 'account_group', 'tax_code', 'industry', 'total_employees',
-#                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
-#                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
-#                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-#                 'annual_revenue', 'price_list_mapped', 'activity',
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def create_config_payment_term(self):
-#         data = {
-#             'title': 'config payment term 01',
-#             'code': 'PaymentTerm01',
-#             'apply_for': 1,
-#             'remark': 'lorem ipsum dolor sit amet.',
-#             'term': [{"value": '100% sau khi ký HD', "unit_type": 1, "day_type": 1, "no_of_days": "1", "after": 1}],
-#         }
-#         url = reverse('ConfigPaymentTermList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 201)
-#         return response
-#
-#     def create_industry(self):
-#         response = IndustryTestCase.test_create_new(self)
-#         return response
-#
-#     def get_account_type(self):
-#         url = reverse("AccountTypeList")
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_sale_order(self):
-#         data_salutation = {  # noqa
-#             "code": "S01ORDER",
-#             "title": "MrORDER",
-#             "description": "A man"
-#         }
-#         url_salutation = reverse('SalutationList')
-#         response_salutation = self.client.post(url_salutation, data_salutation, format='json')
-#         url_contact = reverse("ContactList")
-#         salutation = response_salutation.data['result']['id']
-#         employee = self.get_employee().data['result'][0]['id']
-#         data_contact = {
-#             "owner": employee,
-#             "job_title": "Giám đốc nè",
-#             "biography": "không có",
-#             "fullname": "Trịnh Tuấn Nam",
-#             "salutation": salutation,
-#             "phone": "string",
-#             "mobile": "string",
-#             "email": "string",
-#             "report_to": None,
-#             "address_information": {},
-#             "additional_information": {},
-#             "account_name": None,
-#             "system_status": 0
-#         }
-#         response_contact = self.client.post(url_contact, data_contact, format='json')
-#         url_account_group = reverse("AccountGroupList")
-#         data_account_group = {  # noqa
-#             "code": "AG01ORDER",
-#             "title": "Nhóm khách hàng test đơn hàng",
-#             "description": ""
-#         }
-#         response_account_group = self.client.post(url_account_group, data_account_group, format='json')
-#         account_type = self.get_account_type().data['result'][0]['id']
-#         account_group = response_account_group.data['result']['id']
-#         contact = response_contact.data['result']['id']
-#         industry = self.create_industry().data['result']['id']
-#         data_account = {
-#             "name": "Công ty hạt giống, phân bón Trúc Phượng",
-#             "code": "AC01ORDER",
-#             "website": "trucphuong.com.vn",
-#             "account_type": [account_type],
-#             "owner": contact,
-#             "manager": {employee},
-#             "parent_account_mapped": None,
-#             "account_group": account_group,
-#             "tax_code": "string",
-#             "industry": industry,
-#             "annual_revenue": 1,
-#             "total_employees": 1,
-#             "phone": "string",
-#             "email": "string",
-#             "account_type_selection": 0,
-#             "system_status": 0
-#         }
-#         url = reverse("AccountList")
-#         response_account = self.client.post(url, data_account, format='json')
-#         opportunity = None
-#         customer = response_account.data['result']['id']
-#         employee = self.get_employee().data['result'][0]['id']
-#         payment_term = self.create_config_payment_term().data['result']['id']
-#         data = {
-#             "title": "Đơn hàng test",
-#             "opportunity": opportunity,
-#             "customer": customer,
-#             "contact": contact,
-#             "employee_inherit_id": employee,
-#             "payment_term": payment_term,
-#         }
-#         url = reverse("SaleOrderList")
-#         response = self.client.post(url, data, format='json')
-#
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id',
-#                 'title',
-#                 'code',
-#                 'opportunity',
-#                 'customer',
-#                 'contact',
-#                 'sale_person',
-#                 'payment_term_id',
-#                 'payment_term_data',
-#                 'quotation',
-#                 'system_status',
-#                 # sale order tabs
-#                 'sale_order_products_data',
-#                 'sale_order_logistic_data',
-#                 'customer_shipping_id',
-#                 'customer_billing_id',
-#                 'sale_order_costs_data',
-#                 'sale_order_expenses_data',
-#                 # total amount of products
-#                 'total_product_pretax_amount',
-#                 'total_product_discount_rate',
-#                 'total_product_discount',
-#                 'total_product_tax',
-#                 'total_product',
-#                 'total_product_revenue_before_tax',
-#                 # total amount of costs
-#                 'total_cost_pretax_amount',
-#                 'total_cost_tax',
-#                 'total_cost',
-#                 # total amount of expenses
-#                 'total_expense_pretax_amount',
-#                 'total_expense_tax',
-#                 'total_expense',
-#                 'date_created',
-#                 'delivery_call',
-#                 # indicator tab
-#                 'sale_order_indicators_data',
-#                 # payment stage tab
-#                 'sale_order_payment_stage',
-#                 # system
-#                 'workflow_runtime_id',
-#                 'is_active',
-#                 'employee_inherit',
-#                 'is_change',
-#                 'document_root_id',
-#                 'document_change_order',
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_payment_create(self):
-#         url = reverse("PaymentList")
-#         data1 = {
-#             'title': 'Thanh toan thang 5',
-#             'sale_code_type': 0,  # sale
-#             'sale_code_list': [
-#                 {
-#                     'sale_code_id': self.create_sale_order().data['result']['id'],
-#                     'sale_code_detail': 2
-#                 }
-#             ],
-#             'supplier': self.create_new_account().data['result']['id'],
-#             'method': 1,  # bank
-#             'beneficiary': self.get_employee().data['result'][0]['id'],
-#             'system_status': 1,
-#         }
-#         response1 = self.client.post(url, data1, format='json')
-#         self.assertResponseList(
-#             response1,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response1.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response1.data['result'],
-#             [
-#                 'id',
-#                 'title',
-#                 'code',
-#                 'method',
-#                 'date_created',
-#                 'sale_code_type',
-#                 'expense_items',
-#                 'opportunity_mapped',
-#                 'quotation_mapped',
-#                 'sale_order_mapped',
-#                 'supplier',
-#                 'creator_name',
-#                 'employee_inherit',
-#                 'workflow_runtime_id',
-#                 'system_status',
-#                 'employee_payment',
-#                 'is_internal_payment',
-#                 'attachment',
-#                 'is_change',
-#                 'document_root_id',
-#                 'document_change_order',
-#             ],
-#             check_sum_second=True,
-#         )
-#
-#         return response1
-#
-#     def test_payment_list(self):
-#         self.test_payment_create()
-#         url = reverse("PaymentList")
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key_from=response.data,
-#             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
-#         )
-#         self.assertEqual(
-#             len(response.data['result']), 1
-#         )
-#         self.assertCountEqual(
-#             response.data['result'][0],
-#             [
-#                 'id',
-#                 'code',
-#                 'title',
-#                 'sale_code_type',
-#                 'supplier',
-#                 'method',
-#                 'creator_name',
-#                 'employee_inherit',
-#                 'converted_value_list',
-#                 'return_value_list',
-#                 'payment_value',
-#                 'date_created',
-#                 'system_status',
-#                 'sale_order_mapped',
-#                 'quotation_mapped',
-#                 'opportunity_mapped',
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_payment_detail(self, data_id=None):
-#         data_created = None
-#         if not data_id:
-#             data_created = self.test_payment_create()
-#             data_id = data_created.data['result']['id']
-#         url = reverse("PaymentDetail", kwargs={'pk': data_id})
-#         response = self.client.get(url, format='json')
-#         self.assertEqual(response.status_code, 200)
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id',
-#                 'title',
-#                 'code',
-#                 'method',
-#                 'date_created',
-#                 'sale_code_type',
-#                 'expense_items',
-#                 'opportunity_mapped',
-#                 'quotation_mapped',
-#                 'sale_order_mapped',
-#                 'supplier',
-#                 'creator_name',
-#                 'employee_inherit',
-#                 'workflow_runtime_id',
-#                 'system_status',
-#                 'employee_payment',
-#                 'is_internal_payment',
-#                 'attachment',
-#                 'is_change',
-#                 'document_root_id',
-#                 'document_change_order',
-#             ],
-#             check_sum_second=True,
-#         )
-#         if not data_id:
-#             self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
-#         else:
-#             self.assertEqual(response.data['result']['id'], data_id)
-#         return response
+class PaymentTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_expense_list(self):
+        url = reverse('ExpenseItemList')
+        data = {
+            'code': 'E01',
+            'title': 'Chi phí số 1',
+            'description': '',
+            'is_active': True
+        }
+
+        response = self.client.post(url, data, format='json')
+        print(response)
+        return response
+
+
+    def create_new_account(self):
+        # create industry
+        url_create_industry = reverse('IndustryList')
+        response_industry = self.client.post(
+            url_create_industry,
+            {
+                'code': 'I00',
+                'title': 'Banking0',
+            },
+            format='json'
+        )
+
+        # create account type
+        url_create_account_type = reverse('AccountTypeList')
+        response_account_type = self.client.post(
+            url_create_account_type,
+            {
+                'code': 'AT00',
+                'title': 'Service0',
+            },
+            format='json'
+        )
+
+        industry = response_industry.data['result']
+        account_type = response_account_type.data['result']
+
+        data = {  # noqa
+            'name': 'FPT Shop',
+            'code': 'PM000',
+            'website': 'fptshop.com.vn',
+            'tax_code': '35465785',
+            'annual_revenue': '1',
+            'total_employees': '1',
+            'phone': '0903608494',
+            'email': 'cuong@gmail.com',
+            'industry': industry['id'],
+            'manager': [self.get_employee().data['result'][0]['id']],
+            'account_type': [account_type['id']],
+            'account_type_selection': 0
+        }
+        url = reverse('AccountList')
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'phone', 'shipping_address',
+                'billing_address', 'parent_account_mapped', 'account_group', 'tax_code', 'industry', 'total_employees',
+                'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
+                'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
+                'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
+                'annual_revenue', 'price_list_mapped', 'activity',
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def create_config_payment_term(self):
+        data = {
+            'title': 'config payment term 01',
+            'code': 'PaymentTerm01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            'term': [{"value": '100% sau khi ký HD', "unit_type": 1, "day_type": 1, "no_of_days": "1", "after": 1}],
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def create_industry(self):
+        response = IndustryTestCase.test_create_new(self)
+        return response
+
+    def get_account_type(self):
+        url = reverse("AccountTypeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_sale_order(self):
+        data_salutation = {  # noqa
+            "code": "S01ORDER",
+            "title": "MrORDER",
+            "description": "A man"
+        }
+        url_salutation = reverse('SalutationList')
+        response_salutation = self.client.post(url_salutation, data_salutation, format='json')
+        url_contact = reverse("ContactList")
+        salutation = response_salutation.data['result']['id']
+        employee = self.get_employee().data['result'][0]['id']
+        data_contact = {
+            "owner": employee,
+            "job_title": "Giám đốc nè",
+            "biography": "không có",
+            "fullname": "Trịnh Tuấn Nam",
+            "salutation": salutation,
+            "phone": "string",
+            "mobile": "string",
+            "email": "string",
+            "report_to": None,
+            "address_information": {},
+            "additional_information": {},
+            "account_name": None,
+            "system_status": 0
+        }
+        response_contact = self.client.post(url_contact, data_contact, format='json')
+        url_account_group = reverse("AccountGroupList")
+        data_account_group = {  # noqa
+            "code": "AG01ORDER",
+            "title": "Nhóm khách hàng test đơn hàng",
+            "description": ""
+        }
+        response_account_group = self.client.post(url_account_group, data_account_group, format='json')
+        account_type = self.get_account_type().data['result'][0]['id']
+        account_group = response_account_group.data['result']['id']
+        contact = response_contact.data['result']['id']
+        industry = self.create_industry().data['result']['id']
+        data_account = {
+            "name": "Công ty hạt giống, phân bón Trúc Phượng",
+            "code": "AC01ORDER",
+            "website": "trucphuong.com.vn",
+            "account_type": [account_type],
+            "owner": contact,
+            "manager": {employee},
+            "parent_account_mapped": None,
+            "account_group": account_group,
+            "tax_code": "string",
+            "industry": industry,
+            "annual_revenue": 1,
+            "total_employees": 1,
+            "phone": "string",
+            "email": "string",
+            "account_type_selection": 0,
+            "system_status": 0
+        }
+        url = reverse("AccountList")
+        response_account = self.client.post(url, data_account, format='json')
+        opportunity = None
+        customer = response_account.data['result']['id']
+        employee = self.get_employee().data['result'][0]['id']
+        payment_term = self.create_config_payment_term().data['result']['id']
+        data = {
+            "title": "Đơn hàng test",
+            "opportunity": opportunity,
+            "customer": customer,
+            "contact": contact,
+            "employee_inherit_id": employee,
+            "payment_term": payment_term,
+        }
+        url = reverse("SaleOrderList")
+        response = self.client.post(url, data, format='json')
+
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'opportunity',
+                'customer',
+                'contact',
+                'sale_person',
+                'payment_term_id',
+                'payment_term_data',
+                'quotation',
+                'system_status',
+                # sale order tabs
+                'sale_order_products_data',
+                'sale_order_logistic_data',
+                'customer_shipping_id',
+                'customer_billing_id',
+                'sale_order_costs_data',
+                'sale_order_expenses_data',
+                # total amount of products
+                'total_product_pretax_amount',
+                'total_product_discount_rate',
+                'total_product_discount',
+                'total_product_tax',
+                'total_product',
+                'total_product_revenue_before_tax',
+                # total amount of costs
+                'total_cost_pretax_amount',
+                'total_cost_tax',
+                'total_cost',
+                # total amount of expenses
+                'total_expense_pretax_amount',
+                'total_expense_tax',
+                'total_expense',
+                'date_created',
+                'delivery_call',
+                # indicator tab
+                'sale_order_indicators_data',
+                # payment stage tab
+                'sale_order_payment_stage',
+                # system
+                'workflow_runtime_id',
+                'is_active',
+                'employee_inherit',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+
+    def test_payment_create(self):
+        url = reverse("PaymentList")
+        data1 = {
+            'title': 'Thanh toan thang 5',
+            'sale_code_type': 2,  # sale
+            'is_internal_payment': False,
+            'supplier_id': self.create_new_account().data['result']['id'],
+            'method': 1,  # bank
+            'employee_payment_id': None,
+            'employee_inherit_id': self.get_employee().data['result'][0]['id'],
+            'system_status': 0,
+            'payment_item_list': [
+                {
+                    "expense_type_id": self.create_expense_list().data['result']['id'],
+                    "expense_description": "",
+                    "expense_uom_name": "a",
+                    "expense_quantity": "1",
+                    "expense_unit_price": 200,
+                    "expense_tax_id": None,
+                    "expense_tax_price": 0,
+                    "expense_subtotal_price": 200,
+                    "expense_after_tax_price": 200,
+                    "document_number": "a",
+                    "real_value": 200,
+                    "converted_value": 0,
+                    "sum_value": 200,
+                    "ap_cost_converted_list": []
+                }
+            ]
+        }
+        response1 = self.client.post(url, data1, format='json')
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response1.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'method',
+                'date_created',
+                'sale_code_type',
+                'expense_items',
+                'opportunity_mapped',
+                'quotation_mapped',
+                'sale_order_mapped',
+                'supplier',
+                'employee_inherit',
+                'workflow_runtime_id',
+                'system_status',
+                'employee_payment',
+                'is_internal_payment',
+                'attachment',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
+                'employee_created',
+                'sale_code',
+                'payment_value',
+            ],
+            check_sum_second=True,
+        )
+
+        return response1
+
+    def test_payment_create_missing_data(self):
+        # missing field 'supplier_id'
+        url = reverse("PaymentList")
+        data2 = {
+            'title': 'Thanh toan thang 5',
+            'sale_code_type': 2,  # sale
+            'is_internal_payment': False,
+            'supplier_id': None,
+            'method': 1,  # bank
+            'employee_inherit_id': self.get_employee().data['result'][0]['id'],
+            'employee_payment_id': None,
+            'system_status': 0,
+            'payment_item_list': [
+                {
+                    "expense_type_id": self.create_expense_list().data['result']['id'],
+                    "expense_description": "",
+                    "expense_uom_name": "a",
+                    "expense_quantity": "1",
+                    "expense_unit_price": 200,
+                    "expense_tax_id": None,
+                    "expense_tax_price": 0,
+                    "expense_subtotal_price": 200,
+                    "expense_after_tax_price": 200,
+                    "document_number": "a",
+                    "real_value": 200,
+                    "converted_value": 0,
+                    "sum_value": 200,
+                    "ap_cost_converted_list": []
+                }
+            ]
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response2.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['errors'],
+            [
+                'supplier_id',
+            ],
+            check_sum_second=True,
+        )
+
+        return None
+
+    def test_payment_list(self):
+        self.test_payment_create()
+        url = reverse("PaymentList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            [
+                'id',
+                'code',
+                'title',
+                'sale_code_type',
+                'supplier',
+                'method',
+                'employee_inherit',
+                'converted_value_list',
+                'return_value_list',
+                'payment_value',
+                'date_created',
+                'system_status',
+                'sale_order_mapped',
+                'quotation_mapped',
+                'opportunity_mapped',
+                'employee_created',
+                'sale_code',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_payment_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_payment_create()
+            data_id = data_created.data['result']['id']
+        url = reverse("PaymentDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'method',
+                'date_created',
+                'sale_code_type',
+                'expense_items',
+                'opportunity_mapped',
+                'quotation_mapped',
+                'sale_order_mapped',
+                'supplier',
+                'employee_inherit',
+                'workflow_runtime_id',
+                'system_status',
+                'employee_payment',
+                'is_internal_payment',
+                'attachment',
+                'is_change',
+                'document_root_id',
+                'document_change_order',
+                'employee_created',
+                'sale_code',
+                'payment_value',
+            ],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
 
 
 class ReturnAdvanceTestCase(AdvanceTestCase):
