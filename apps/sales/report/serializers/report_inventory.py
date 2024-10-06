@@ -400,23 +400,23 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
     @classmethod
-    def check_valid_update(cls, instance, prd_obj, wh_obj, sub_period_order_value):
+    def check_valid_update(cls, periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current):
         if ReportStockLog.objects.filter(
-                tenant=instance.tenant,
-                company=instance.company,
+                tenant=tenant_current,
+                company=company_current,
                 product=prd_obj,
-                warehouse=wh_obj
+                warehouse=wh_obj if not periods.company.company_config.cost_per_project else None
         ).exists():
             raise serializers.ValidationError(
                 {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
             )
 
         if ReportInventoryCost.objects.filter(
-                tenant=instance.tenant,
-                company=instance.company,
+                tenant=tenant_current,
+                company=company_current,
                 product=prd_obj,
-                warehouse=wh_obj,
-                period_mapped=instance,
+                warehouse=wh_obj if not periods.company.company_config.cost_per_project else None,
+                period_mapped=periods,
                 sub_period_order=sub_period_order_value
         ).exists():
             raise serializers.ValidationError(
@@ -426,9 +426,10 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_balance_data_sub(
-            cls, periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current, sub_period_obj
+            cls, periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current,
+            tenant_current, company_current, sub_period_obj
     ):
-        cls.check_valid_update(periods, prd_obj, wh_obj, sub_period_order_value)
+        cls.check_valid_update(periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current)
         balance_data['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
             prd_obj.inventory_uom,
             float(balance_data.get('quantity'))
@@ -507,27 +508,26 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         return rp_prd_wh
 
     @classmethod
-    def create_balance_data(cls, balance_data, periods, employee_current):
-        try:
-            with transaction.atomic():
-                sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
-                sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
-                prd_obj = Product.objects.filter(id=balance_data.get('product_id')).first()
-                wh_obj = WareHouse.objects.filter(id=balance_data.get('warehouse_id')).first()
-                if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
-                    raise serializers.ValidationError({'error': 'Some objects do not exist.'})
-                return cls.create_balance_data_sub(
-                    periods,
-                    prd_obj,
-                    wh_obj,
-                    sub_period_order_value,
-                    balance_data,
-                    employee_current,
-                    sub_period_obj
-                )
-        except Exception as err:
-            print(err)
-            return None
+    def create_balance_data(cls, balance_data, periods, employee_current, tenant_current, company_current):
+        with transaction.atomic():
+            sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
+            sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
+            prd_obj = Product.objects.filter(id=balance_data.get('product_id')).first()
+            wh_obj = WareHouse.objects.filter(id=balance_data.get('warehouse_id')).first()
+            if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
+                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+            return cls.create_balance_data_sub(
+                periods,
+                prd_obj,
+                wh_obj,
+                sub_period_order_value,
+                balance_data,
+                employee_current,
+                tenant_current,
+                company_current,
+                sub_period_obj
+            )
+
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
@@ -540,7 +540,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
 
-        instance = self.create_balance_data(balance_data, periods, employee_current)
+        instance = self.create_balance_data(balance_data, periods, employee_current, tenant_current, company_current)
         SubPeriods.objects.filter(period_mapped=periods).update(run_report_inventory=False)
         return instance
 
@@ -552,27 +552,25 @@ class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer)
         fields = ()
 
     @classmethod
-    def create_balance_data(cls, balance_data, periods, employee_current):
-        try:
-            with transaction.atomic():
-                sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
-                sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
-                prd_obj = Product.objects.filter(code=balance_data.get('product_code')).first()
-                wh_obj = WareHouse.objects.filter(code=balance_data.get('warehouse_code')).first()
-                if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
-                    raise serializers.ValidationError({'error': 'Some objects do not exist.'})
-                return BalanceInitializationCreateSerializer.create_balance_data_sub(
-                    periods,
-                    prd_obj,
-                    wh_obj,
-                    sub_period_order_value,
-                    balance_data,
-                    employee_current,
-                    sub_period_obj
-                )
-        except Exception as err:
-            print(err)
-            return None
+    def create_balance_data(cls, balance_data, periods, employee_current, tenant_current, company_current):
+        with transaction.atomic():
+            sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
+            sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
+            prd_obj = Product.objects.filter(code=balance_data.get('product_code')).first()
+            wh_obj = WareHouse.objects.filter(code=balance_data.get('warehouse_code')).first()
+            if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
+                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+            return BalanceInitializationCreateSerializer.create_balance_data_sub(
+                periods,
+                prd_obj,
+                wh_obj,
+                sub_period_order_value,
+                balance_data,
+                employee_current,
+                tenant_current,
+                company_current,
+                sub_period_obj
+            )
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
@@ -585,7 +583,7 @@ class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer)
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
 
-        instance = self.create_balance_data(balance_data, periods, employee_current)
+        instance = self.create_balance_data(balance_data, periods, employee_current, tenant_current, company_current)
         SubPeriods.objects.filter(period_mapped=periods).update(run_report_inventory=False)
         return instance
 
