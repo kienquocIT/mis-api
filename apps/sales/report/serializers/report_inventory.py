@@ -429,9 +429,12 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             cls, periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current, sub_period_obj
     ):
         cls.check_valid_update(periods, prd_obj, wh_obj, sub_period_order_value)
-
-        prd_obj.stock_amount += float(balance_data.get('quantity'))
-        prd_obj.available_amount += float(balance_data.get('quantity'))
+        balance_data['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
+            prd_obj.inventory_uom,
+            float(balance_data.get('quantity'))
+        )
+        prd_obj.stock_amount += float(balance_data['quantity'])
+        prd_obj.available_amount += float(balance_data['quantity'])
         prd_obj.save(update_fields=['stock_amount', 'available_amount'])
         if periods.company.company_config.definition_inventory_valuation == 0:
             rp_prd_wh = ReportInventoryCost.objects.create(
@@ -444,14 +447,14 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 period_mapped=periods,
                 sub_period_order=sub_period_order_value,
                 sub_period=sub_period_obj,
-                opening_balance_quantity=float(balance_data.get('quantity')),
+                opening_balance_quantity=float(balance_data['quantity']),
                 opening_balance_value=float(balance_data.get('value')),
-                opening_balance_cost=float(balance_data.get('value')) / float(balance_data.get('quantity')),
-                ending_balance_quantity=float(balance_data.get('quantity')),
+                opening_balance_cost=float(balance_data.get('value')) / float(balance_data['quantity']),
+                ending_balance_quantity=float(balance_data['quantity']),
                 ending_balance_value=float(balance_data.get('value')),
-                ending_balance_cost=float(balance_data.get('value')) / float(balance_data.get('quantity')),
+                ending_balance_cost=float(balance_data.get('value')) / float(balance_data['quantity']),
                 for_balance=True,
-                sum_input_quantity=float(balance_data.get('quantity')),
+                sum_input_quantity=float(balance_data['quantity']),
                 sum_input_value=float(balance_data.get('value')),
                 sum_output_quantity=0,
                 sum_output_value=0
@@ -460,8 +463,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 ReportInventoryCostWH.objects.create(
                     report_inventory_cost=rp_prd_wh,
                     warehouse=wh_obj,
-                    opening_quantity=float(balance_data.get('quantity')),
-                    ending_quantity=float(balance_data.get('quantity'))
+                    opening_quantity=float(balance_data['quantity']),
+                    ending_quantity=float(balance_data['quantity'])
                 )
         else:
             rp_prd_wh = ReportInventoryCost.objects.create(
@@ -474,14 +477,14 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 period_mapped=periods,
                 sub_period_order=sub_period_order_value,
                 sub_period=sub_period_obj,
-                opening_balance_quantity=float(balance_data.get('quantity')),
+                opening_balance_quantity=float(balance_data['quantity']),
                 opening_balance_value=float(balance_data.get('value')),
-                opening_balance_cost=float(balance_data.get('value')) / float(balance_data.get('quantity')),
-                periodic_ending_balance_quantity=float(balance_data.get('quantity')),
+                opening_balance_cost=float(balance_data.get('value')) / float(balance_data['quantity']),
+                periodic_ending_balance_quantity=float(balance_data['quantity']),
                 periodic_ending_balance_value=0,
                 periodic_ending_balance_cost=0,
                 for_balance=True,
-                sum_input_quantity=float(balance_data.get('quantity')),
+                sum_input_quantity=float(balance_data['quantity']),
                 sum_input_value=float(balance_data.get('value')),
                 sum_output_quantity=0,
                 sum_output_value=0,
@@ -491,8 +494,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 ReportInventoryCostWH.objects.create(
                     report_inventory_cost=rp_prd_wh,
                     warehouse=wh_obj,
-                    opening_quantity=float(balance_data.get('quantity')),
-                    ending_quantity=float(balance_data.get('quantity'))
+                    opening_quantity=float(balance_data['quantity']),
+                    ending_quantity=float(balance_data['quantity'])
                 )
 
         if len(balance_data.get('data_sn', [])) > 0:
@@ -505,41 +508,25 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_balance_data(cls, balance_data, periods, employee_current):
-        """
-        Lấy thời gian sử dụng phần mềm
-        Lặp từng row trong balance table:
-            Nếu có product_id + warehouse_id:
-                Lấy product_obj, warehouse_obj (check valid - else: raise lỗi)
-                Kiểm tra thử có hđ nhập-xuất nào chưa ?
-                Nếu có: raise lỗi
-                Else:
-                    Lấy record ReportInventoryCost (theo period và sub)
-                    Nếu có: raise lỗi
-                    Else:
-                        Cập nhập 'stock_amount' và 'available_amount' cho Product (cộng lên)
-                        Tạo ReportInventoryCost mới (lưu opening_balance_quantity-value-cost)
-                        Tạo ReportInventory mới (lưu prd-wh theo period và sub)
-                        Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
-            Else: raise lỗi
-        """
         try:
             with transaction.atomic():
                 sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
                 sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
-                if all([sub_period_obj, sub_period_order_value, balance_data, periods, employee_current]):
-                    prd_obj = Product.objects.filter(id=balance_data.get('product_id')).first()
-                    wh_obj = WareHouse.objects.filter(id=balance_data.get('warehouse_id')).first()
-                    balance_data['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
-                        prd_obj.inventory_uom, float(balance_data.get('quantity'))
-                    )
-                    if prd_obj and wh_obj:
-                        return cls.create_balance_data_sub(
-                            periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current, sub_period_obj,
-                        )
-                    raise serializers.ValidationError({"Not exist": 'Product or/and Warehouse does not exist.'})
-                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                prd_obj = Product.objects.filter(id=balance_data.get('product_id')).first()
+                wh_obj = WareHouse.objects.filter(id=balance_data.get('warehouse_id')).first()
+                if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
+                    raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                return cls.create_balance_data_sub(
+                    periods,
+                    prd_obj,
+                    wh_obj,
+                    sub_period_order_value,
+                    balance_data,
+                    employee_current,
+                    sub_period_obj
+                )
         except Exception as err:
-            print(err)
+            return err
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
@@ -565,41 +552,25 @@ class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer)
 
     @classmethod
     def create_balance_data(cls, balance_data, periods, employee_current):
-        """
-        Lấy thời gian sử dụng phần mềm
-        Lặp từng row trong balance table:
-            Nếu có product_id + warehouse_id:
-                Lấy product_obj, warehouse_obj (check valid - else: raise lỗi)
-                Kiểm tra thử có hđ nhập-xuất nào chưa ?
-                Nếu có: raise lỗi
-                Else:
-                    Lấy record ReportInventoryCost (theo period và sub)
-                    Nếu có: raise lỗi
-                    Else:
-                        Cập nhập 'stock_amount' và 'available_amount' cho Product (cộng lên)
-                        Tạo ReportInventoryCost mới (lưu opening_balance_quantity-value-cost)
-                        Tạo ReportInventory mới (lưu prd-wh theo period và sub)
-                        Tạo các item Serial|Lot để quản lí kho (nếu quản lí bằng Serial|Lot)
-            Else: raise lỗi
-        """
         try:
             with transaction.atomic():
                 sub_period_order_value = periods.company.software_start_using_time.month - periods.space_month
                 sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order_value).first()
-                if all([sub_period_obj, sub_period_order_value, balance_data, periods, employee_current]):
-                    prd_obj = Product.objects.filter(code=balance_data.get('product_code')).first()
-                    wh_obj = WareHouse.objects.filter(code=balance_data.get('warehouse_code')).first()
-                    balance_data['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
-                        prd_obj.inventory_uom, float(balance_data.get('quantity'))
-                    )
-                    if prd_obj and wh_obj:
-                        return BalanceInitializationCreateSerializer.create_balance_data_sub(
-                            periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current, sub_period_obj,
-                        )
-                    raise serializers.ValidationError({"Not exist": 'Product or/and Warehouse does not exist.'})
-                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                prd_obj = Product.objects.filter(code=balance_data.get('product_code')).first()
+                wh_obj = WareHouse.objects.filter(code=balance_data.get('warehouse_code')).first()
+                if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
+                    raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                return BalanceInitializationCreateSerializer.create_balance_data_sub(
+                    periods,
+                    prd_obj,
+                    wh_obj,
+                    sub_period_order_value,
+                    balance_data,
+                    employee_current,
+                    sub_period_obj
+                )
         except Exception as err:
-            print(err)
+            return err
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')

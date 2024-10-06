@@ -1,6 +1,4 @@
 from django.urls import path
-
-from .serializers import BalanceInitializationCreateSerializer
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
     ReportStockDetailList, BalanceInitializationList, ReportStockList, ReportGeneralList,
@@ -19,7 +17,11 @@ urlpatterns = [
 
     # Report inventory
     path('balance-init/list', BalanceInitializationList.as_view(), name='BalanceInitializationList'),
-    path('balance-init-import-db/list', BalanceInitializationListImportDB.as_view(), name='BalanceInitializationListImportDB'),
+    path(
+        'balance-init-import-db/list',
+        BalanceInitializationListImportDB.as_view(),
+        name='BalanceInitializationListImportDB'
+    ),
     path('inventory/list', ReportStockList.as_view(), name='ReportStockList'),
     path('inventory-detail/list', ReportStockDetailList.as_view(), name='ReportStockDetailList'),
     path('product-warehouse-view/list', ProductWarehouseViewList.as_view(), name='ProductWarehouseViewList'),
