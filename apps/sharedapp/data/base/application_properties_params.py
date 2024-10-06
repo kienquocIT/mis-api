@@ -950,8 +950,16 @@ Payment_data__params = {
     },
     'b49bd6f4-65be-4aba-a1d4-22e576dcae69': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - document_number',
+        'title': '(print) Line detail table - document number',
         'code': 'expense_items___document_number',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    'cfb94882-e4a0-4824-ab57-c99c73f25214': {
+        'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
+        'title': '(print) Line detail table - payment detail',
+        'code': 'expense_items___detail_payment',
         'remark': '',
         'type': 1,
         'is_print': True,

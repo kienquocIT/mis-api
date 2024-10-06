@@ -15,7 +15,8 @@ from apps.sales.report.models import (
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
-    ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
+    ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer, BalanceInitializationCreateSerializer,
+    BalanceInitializationDetailSerializer, BalanceInitializationCreateSerializerImportDB
 )
 from apps.sales.report.serializers.report_budget import (
     BudgetReportCompanyListSerializer,
@@ -298,6 +299,8 @@ class ReportStockDetailList(BaseListMixin):
 class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
     queryset = ReportInventoryCost.objects
     serializer_list = BalanceInitializationListSerializer
+    serializer_create = BalanceInitializationCreateSerializer
+    serializer_detail = BalanceInitializationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -312,10 +315,48 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
         operation_description="Balance Initialization list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Balance Initialization",
+        operation_description="Create new Balance Initialization",
+        request_body=BalanceInitializationCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context['company_current'] = self.request.user.company_current
+        self.ser_context['tenant_current'] = self.request.user.tenant_current
+        return self.create(request, *args, **kwargs)
+
+
+class BalanceInitializationListImportDB(BaseListMixin, BaseCreateMixin):
+    queryset = ReportInventoryCost.objects
+    serializer_create = BalanceInitializationCreateSerializerImportDB
+    serializer_detail = BalanceInitializationDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Balance Initialization Import BD",
+        operation_description="Create new Balance Initialization Import BD",
+        request_body=BalanceInitializationCreateSerializerImportDB,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context['company_current'] = self.request.user.company_current
+        self.ser_context['tenant_current'] = self.request.user.tenant_current
+        return self.create(request, *args, **kwargs)
 
 
 class ReportStockList(BaseListMixin):

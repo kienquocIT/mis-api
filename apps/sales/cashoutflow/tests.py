@@ -193,7 +193,6 @@ class PaymentTestCase(AdvanceTestCase):
         print(response)
         return response
 
-
     def create_new_account(self):
         # create industry
         url_create_industry = reverse('IndustryList')
@@ -415,7 +414,6 @@ class PaymentTestCase(AdvanceTestCase):
         )
         return response
 
-
     def test_payment_create(self):
         url = reverse("PaymentList")
         data1 = {
@@ -481,6 +479,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_created',
                 'sale_code',
                 'payment_value',
+                'payment_value_by_words'
             ],
             check_sum_second=True,
         )
@@ -622,6 +621,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_created',
                 'sale_code',
                 'payment_value',
+                'payment_value_by_words'
             ],
             check_sum_second=True,
         )
