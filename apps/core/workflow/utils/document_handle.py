@@ -3,7 +3,7 @@ from typing import Union
 from django.db import models, transaction
 from django.utils import timezone
 
-from apps.core.mailer.tasks import send_mail_welcome
+from apps.core.mailer.tasks import send_mail_workflow
 from apps.core.workflow.utils.runtime_sub import HookEventHandler
 from apps.shared import (DisperseModel, call_task_background,)
 
@@ -74,6 +74,9 @@ class DocHandler:
         )
         if obj:
             HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj, remark=remark)
+            # send mail
+            # if hasattr(obj, 'employee_inherit_id'):
+            #     DocHandler.send_mail(emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=1)
             return True
         return False
 
@@ -92,6 +95,12 @@ class DocHandler:
             HookEventHandler(runtime_obj=runtime_obj).push_notify_end_workflow(
                 doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
             )
+            # send mail
+            # if hasattr(obj, 'employee_inherit_id'):
+            #     workflow_type = 2 if approved_or_rejected == 'approved' else 3
+            #     DocHandler.send_mail(
+            #         emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=workflow_type
+            #     )
             return True
         return False
 
@@ -160,22 +169,27 @@ class DocHandler:
         return document_target
 
     @classmethod
-    def send_mail(cls, runtime_obj, emp_id):
+    def send_mail(cls, emp_id, runtime_obj, workflow_type):
         emp_obj = DocHandler(emp_id, 'hr.Employee').get_obj(
             default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if emp_obj:
-            if all(hasattr(emp_obj, attr) for attr in ('user_id', 'tenant_id', 'company_id')):
+            if hasattr(emp_obj, 'user_id'):
                 mail_config_cls = DisperseModel(app_model='mailer.MailConfig').get_model()
                 if mail_config_cls and hasattr(mail_config_cls, 'get_config'):
-                    config_obj = mail_config_cls.get_config(tenant_id=emp_obj.tenant_id, company_id=emp_obj.company_id)
+                    config_obj = mail_config_cls.get_config(
+                        tenant_id=runtime_obj.tenant_id, company_id=runtime_obj.company_id
+                    )
                     if config_obj and config_obj.is_active:
                         call_task_background(
-                            my_task=send_mail_welcome,
+                            my_task=send_mail_workflow,
                             **{
-                                'tenant_id': emp_obj.tenant_id,
-                                'company_id': emp_obj.company_id,
+                                'tenant_id': runtime_obj.tenant_id,
+                                'company_id': runtime_obj.company_id,
                                 'user_id': emp_obj.user_id,
+                                'employee_obj': emp_obj,
+                                'runtime_obj': runtime_obj,
+                                'workflow_type': workflow_type,
                             }
                         )
         return True
