@@ -8,8 +8,10 @@ from apps.masterdata.saledata.views.fimport import (
     SalutationImport, ContactImport, CurrencyImport,
     AccountGroupImport,
     AccountTypeImport, IndustryImport, PaymentTermImport,
-    AccountImport, ProductUOMGroupImport,
+    AccountImport, ProductUOMGroupImport, ProductProductTypeImport, ProductProductCategoryImport,
+    PriceTaxCategoryImport, ProductUOMImport, PriceTaxImport,
 )
+from apps.masterdata.saledata.views.fimport_product import ProductImport
 
 urlpatterns = [
     # core
@@ -29,4 +31,11 @@ urlpatterns = [
     path('saledata/contact', ContactImport.as_view(), name='ContactImport'),
     path('saledata/account', AccountImport.as_view(), name='AccountImport'),
     path('saledata/product/uomgroup', ProductUOMGroupImport.as_view(), name='ProductUOMGroupImport'),
+    path('saledata/product/product-type', ProductProductTypeImport.as_view(), name='ProductProductTypeImport'),
+    path('saledata/product/product-category', ProductProductCategoryImport.as_view(),
+         name='ProductProductCategoryImport'),
+    path('saledata/product/uom', ProductUOMImport.as_view(), name='ProductUOMImport'),
+    path('saledata/product', ProductImport.as_view(), name='ProductImport'),
+    path('saledata/price/tax-category', PriceTaxCategoryImport.as_view(), name='PriceTaxCategoryImport'),
+    path('saledata/price/tax', PriceTaxImport.as_view(), name='PriceTaxImport'),
 ]

@@ -24,7 +24,6 @@ SUPPLIED_BY = [
     (1, _('Making')),
 ]
 
-
 ATTRIBUTE_CONFIG = [
     (0, _('Dropdown List')),
     (1, _('Radio Select')),
@@ -33,6 +32,13 @@ ATTRIBUTE_CONFIG = [
     (4, _('Select (Fill bu photo)'))
 ]
 
+VALUATION_METHOD = [
+    (0, _('FIFO')),
+    (1, _('Cumulative weighted average')),
+    (2, _('Weighted average')),
+    (3, _('Specific identification method')),
+    (4, _('Standard cost')),
+]
 
 # Create your models here.
 class ProductType(MasterDataAbstractModel):  # noqa
@@ -202,6 +208,8 @@ class Product(DataAbstractModel):
     )
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
+    valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=2)
+    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Purchase
     purchase_default_uom = models.ForeignKey(
@@ -219,7 +227,6 @@ class Product(DataAbstractModel):
         default=None
     )
     supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
-    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Stock information
     stock_amount = models.FloatField(

@@ -7,7 +7,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
-from apps.sales.report.models import ReportStockLog
+from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -372,9 +372,7 @@ class OrderDeliverySub(DataAbstractModel):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(
-                    uom_obj, lot.get('quantity_delivery')
-                )
+                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, lot.get('quantity_delivery'))
                 stock_data.append({
                     'sale_order': sale_order_obj,
                     'product': product_obj,
@@ -401,7 +399,7 @@ class OrderDeliverySub(DataAbstractModel):
 
     @classmethod
     def for_sn(cls, instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj):
-        casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, len(sn_data))
+        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
         stock_data.append({
             'sale_order': instance.order_delivery.sale_order,
             'product': product_obj,
@@ -435,7 +433,7 @@ class OrderDeliverySub(DataAbstractModel):
                     sn_data = pw_data.serial_data
                     if warehouse_obj and uom_obj and quantity > 0:
                         if product_obj.general_traceability_method == 0:  # None
-                            casted_quantity = ReportStockLog.cast_quantity_to_unit(uom_obj, quantity)
+                            casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, quantity)
                             stock_data.append({
                                 'sale_order': sale_order_obj,
                                 'product': product_obj,
@@ -458,11 +456,7 @@ class OrderDeliverySub(DataAbstractModel):
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
                             cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_done,
-            stock_data
-        )
+        InventoryCostLog.log(instance, instance.date_done, stock_data)
         return True
 
     def save(self, *args, **kwargs):

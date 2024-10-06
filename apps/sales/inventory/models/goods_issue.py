@@ -1,7 +1,9 @@
 from django.db import models
 from django.db import transaction
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
-from apps.sales.report.models import ReportStockLog
+from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -52,7 +54,9 @@ class GoodsIssue(DataAbstractModel):
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     if prd_wh_lot and lot_item.get('quantity', 0) > 0:
-                        casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, lot_item.get('quantity', 0))
+                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                            item.uom, lot_item.get('quantity', 0)
+                        )
                         activities_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
@@ -75,7 +79,7 @@ class GoodsIssue(DataAbstractModel):
                             }
                         })
             else:
-                casted_quantity = ReportStockLog.cast_quantity_to_unit(item.uom, item.issued_quantity)
+                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
                 activities_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
@@ -91,11 +95,7 @@ class GoodsIssue(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportStockLog.logging_inventory_activities(
-            instance,
-            instance.date_approved,
-            activities_data
-        )
+        InventoryCostLog.log(instance, instance.date_approved, activities_data)
         return True
 
     @classmethod
@@ -145,12 +145,16 @@ class GoodsIssue(DataAbstractModel):
         raise ValueError('Issued quantity cannot > max issue quantity remaining.')
 
     @classmethod
-    def update_status_production_order_item(cls, po_item_obj, this_issue_quantity):
-        if po_item_obj.quantity - po_item_obj.issued_quantity - this_issue_quantity >= 0:
-            po_item_obj.issued_quantity += this_issue_quantity
-            po_item_obj.save(update_fields=['issued_quantity'])
-            return True
-        raise ValueError('Issued quantity cannot > max issue quantity remaining.')
+    def update_issued_quantity_production_order_item(cls, po_item_obj, this_issue_quantity):
+        po_item_obj.issued_quantity += this_issue_quantity
+        po_item_obj.save(update_fields=['issued_quantity'])
+        return True
+
+    @classmethod
+    def update_issued_quantity_work_order_item(cls, wo_item_obj, this_issue_quantity):
+        wo_item_obj.issued_quantity += this_issue_quantity
+        wo_item_obj.save(update_fields=['issued_quantity'])
+        return True
 
     def save(self, *args, **kwargs):
         SubPeriods.check_open(
@@ -185,10 +189,15 @@ class GoodsIssue(DataAbstractModel):
                         elif self.production_order:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)
-                                self.update_status_production_order_item(
+                                self.update_issued_quantity_production_order_item(
                                     item.production_order_item, item.issued_quantity
                                 )
-                            self.production_order.update_production_order_issue_state()
+                        elif self.work_order:
+                            for item in self.goods_issue_product.all():
+                                self.update_product_warehouse_data(item)
+                                self.update_issued_quantity_work_order_item(
+                                    item.work_order_item, item.issued_quantity
+                                )
                 except Exception as err:
                     print(err)
                     raise err
@@ -251,5 +260,24 @@ class GoodsIssueProduct(SimpleAbstractModel):
         verbose_name = 'Goods Issue Product'
         verbose_name_plural = 'Goods Issue Products'
         ordering = ('product__code',)
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodsIssueAttachmentFile(M2MFilesAbstractModel):
+    goods_issue = models.ForeignKey(
+        GoodsIssue,
+        on_delete=models.CASCADE,
+        related_name='goods_issue_attachments'
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'goods_issue'
+
+    class Meta:
+        verbose_name = 'Goods issue attachment'
+        verbose_name_plural = 'Goods issue attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

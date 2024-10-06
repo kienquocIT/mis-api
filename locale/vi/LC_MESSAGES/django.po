@@ -307,7 +307,7 @@ msgid "User does not exist."
 msgstr "Người dùng không tồn tại."
 
 #: .\apps\shared\translations\account.py:6
-msgid "Phone number can not contain characters"
+msgid "Phone number cannot contain characters"
 msgstr "Số điện thoại không chính xác."
 
 #: .\apps\shared\translations\account.py:7 .\apps\shared\translations\hr.py:15
@@ -319,7 +319,7 @@ msgid "Password must contain both numbers and letters"
 msgstr "Mật khẩu phải bao gồm số và chữ."
 
 #: .\apps\shared\translations\account.py:9
-msgid "Company is not exist"
+msgid "Company does not exist"
 msgstr "Công ty không tồn tại."
 
 #: .\apps\shared\translations\accounts.py:5
@@ -371,7 +371,7 @@ msgid "The OTP session was expired"
 msgstr "Phiên xác thực OTP đã hết hạn"
 
 #
-msgid "OTP isn't match"
+msgid "OTP doesn't match"
 msgstr "OTP không chính xác"
 
 #
@@ -455,7 +455,7 @@ msgid "Permissions type is incorrect."
 msgstr "Kiểu quyền không chính xác."
 
 #: .\apps\shared\translations\core\hr.py:10
-msgid "Permissions item configurations is incorrect."
+msgid "Permissions item configuration is incorrect."
 msgstr "Cấu hình quyền không chính xác."
 
 #: .\apps\shared\translations\core\hr.py:11
@@ -479,7 +479,7 @@ msgid "Code is exists"
 msgstr "Mã đã tồn tại"
 
 #
-msgid "Code is not exist"
+msgid "Code does not exist"
 msgstr "Mã không tồn tại"
 
 #
@@ -657,7 +657,7 @@ msgid "In workflow"
 msgstr "In workflow"
 
 #
-msgid "Username is exist, please choose another user name"
+msgid "Username already exists, please choose another one"
 msgstr "Tên đăng nhập đã tồn tại, vui lòng chọn tên đăng nhập khác"
 
 #
@@ -732,7 +732,7 @@ msgstr "Ứng dụng không tồn tại hoặc hết hạn"
 
 #
 msgid "Approved"
-msgstr "Đã Phê Duyệt"
+msgstr "Đã phê duyệt"
 
 #
 msgid "Please setup Leader of Picking/Delivery in config page before create request"
@@ -751,11 +751,11 @@ msgid "Sick yours child-social insurance"
 msgstr "Con cái bị bệnh"
 
 #
-msgid "Sick yourself-social insurance"
+msgid "Sick leave for yourself-social insurance"
 msgstr "Bản thân bị bệnh"
 
 #
-msgid "Funeral your family (max 3 days)"
+msgid "Funeral in your family (max 3 days)"
 msgstr "Nghỉ ma chay trong gia đình (nhiều nhất 3 ngày)"
 
 #
@@ -763,7 +763,7 @@ msgid "Marriage your child (max 1 days)"
 msgstr "Nghỉ đám cưới của con cái (nhiều nhất 1 ngày)"
 
 #
-msgid "Marriage yourself (max 3 days)"
+msgid "Your own marriage (max 3 days)"
 msgstr "Nghỉ đám cưới của tôi (nhiều nhất 3 ngày)"
 
 #
@@ -879,11 +879,11 @@ msgid "By employee"
 msgstr "Bởi người dùng"
 
 #
-msgid "Quantity number is wrong format"
+msgid "Quantity is in the wrong format"
 msgstr "Số lượng sai định dạng"
 
 #
-msgid "Day off large than leave available"
+msgid "Day off is larger than available leave"
 msgstr "Ngày nghỉ lớn hơn ngày phép đang có"
 
 #
@@ -1249,3 +1249,35 @@ msgstr "Từ chối"
 #
 msgid "Star date or finish date not in range of project date"
 msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"
+
+#
+msgid "Document was returned"
+msgstr "Phiếu bị trả về"
+
+#
+msgid "Feature:"
+msgstr "Chức năng:"
+
+#
+msgid "You have a new task."
+msgstr "Bạn có một phiếu chức năng mới cần xử lý."
+
+#
+msgid "Your document was returned."
+msgstr "Phiếu chức năng của bạn bị trả về."
+
+#
+msgid "Your document was approved."
+msgstr "Phiếu chức năng của bạn được chấp thuận."
+
+#
+msgid "Your document was rejected."
+msgstr "Phiếu chức năng của bạn bị từ chối."
+
+#
+msgid "Go to detail:"
+msgstr "Đi đến chi tiết:"
+
+#
+msgid "Here"
+msgstr "Tại đây"

@@ -63,6 +63,56 @@ UOM_GROUP_APP_CONFIG = {
     "allow_import": True,
 }
 
+PRODUCT_TYPE_APP_CONFIG = {
+    "id": "90f07280-e2f4-4406-aa23-ba255a22ec2d",
+    "title": "Product Type",
+    "code": "producttype",
+    "permit_mapping": {},
+    "model_code": "producttype",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+PRODUCT_CATEGORY_APP_CONFIG = {
+    "id": "053c0804-162a-4357-a1c2-2161e6606cc2",
+    "title": "Product Category",
+    "code": "productcategory",
+    "permit_mapping": {},
+    "model_code": "productcategory",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+UOM_APP_CONFIG = {
+    "id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",
+    "title": "Unit Of Measure",
+    "code": "unitofmeasure",
+    "permit_mapping": {},
+    "model_code": "unitofmeasure",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+TAX_APP_CONFIG = {
+    "id": "720d14f9-e031-4ffe-acb9-3c7763c134fc",
+    "title": "Tax",
+    "code": "tax",
+    "permit_mapping": {},
+    "model_code": "tax",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+TAX_CATEGORY_APP_CONFIG = {
+    "id": "133e105e-cb3f-4845-8fba-bbb2516c5de2",
+    "title": "Tax Category",
+    "code": "taxcategory",
+    "permit_mapping": {},
+    "model_code": "taxcategory",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
 CONTACT_APP_CONFIG = {
     "id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
     "title": "Contact",
@@ -437,6 +487,7 @@ PRODUCT_APP_CONFIG = {
     "app_label": "saledata",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_import": True,
 }
 
 EXPENSES_APP_CONFIG = {
@@ -2261,6 +2312,12 @@ Application_crm_data = {
     'b22a58d3-cc9e-4913-a06d-beee11afba60': ApplicationConfigFrame(**ACCOUNT_TYPE_APP_CONFIG).data(),
     '37eb1961-8103-46c5-ad2e-236f3a6585f5': ApplicationConfigFrame(**INDUSTRY_APP_CONFIG).data(),
     'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
+    '90f07280-e2f4-4406-aa23-ba255a22ec2d': ApplicationConfigFrame(**PRODUCT_TYPE_APP_CONFIG).data(),
+    '053c0804-162a-4357-a1c2-2161e6606cc2': ApplicationConfigFrame(**PRODUCT_CATEGORY_APP_CONFIG).data(),
+    '7bc78f47-66f1-4104-a6fa-5ca07f3f2275': ApplicationConfigFrame(**UOM_APP_CONFIG).data(),
+    '133e105e-cb3f-4845-8fba-bbb2516c5de2': ApplicationConfigFrame(**TAX_CATEGORY_APP_CONFIG).data(),
+    '720d14f9-e031-4ffe-acb9-3c7763c134fc': ApplicationConfigFrame(**TAX_APP_CONFIG).data(),
+
 
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(

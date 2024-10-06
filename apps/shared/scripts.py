@@ -2240,34 +2240,6 @@ def update_BOM_json_data():
                 } if replacement_item.uom else {}
                 replacement_item.save(update_fields=['material_data', 'uom_data'])
 
-        for item in bom.bom_material_component_outsourcing_bom.all():
-            item.material_data = {
-                'id': str(item.material.id),
-                'code': item.material.code,
-                'title': item.material.title
-            } if item.material else {}
-            item.uom_data = {
-                'id': str(item.uom.id),
-                'code': item.uom.code,
-                'title': item.uom.title,
-                'ratio': item.uom.ratio,
-                'group_id': str(item.uom.group_id)
-            } if item.uom else {}
-            item.save(update_fields=['material_data', 'uom_data'])
-            for replacement_item in item.bom_replacement_material_out_sourcing_replace_for.all():
-                replacement_item.material_data = {
-                    'id': str(replacement_item.material.id),
-                    'code': replacement_item.material.code,
-                    'title': replacement_item.material.title
-                } if replacement_item.material else {}
-                replacement_item.uom_data = {
-                    'id': str(replacement_item.uom.id),
-                    'code': replacement_item.uom.code,
-                    'title': replacement_item.uom.title,
-                    'group_id': str(replacement_item.uom.group_id),
-                } if replacement_item.uom else {}
-                replacement_item.save(update_fields=['material_data', 'uom_data'])
-
         for item in bom.bom_tool_bom.all():
             item.tool_data = {
                 'id': str(item.tool.id),
@@ -2286,3 +2258,46 @@ def update_BOM_json_data():
         print(f'Done {bom.title} :))')
 
     return True
+
+
+def add_code_for_product_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in ProductCategory.objects.filter(company=company):
+            item.code = f"00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+
+        count = 1
+        for item in UnitOfMeasureGroup.objects.filter(company=company):
+            if item.is_default:
+                item.code = "UG001"
+                item.save(update_fields=['code'])
+            else:
+                item.code = f"00{count}"
+                item.save(update_fields=['code'])
+                count += 1
+    print('Done :))')
+
+
+def add_code_for_price_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in TaxCategory.objects.filter(company=company):
+            item.code = f"TC00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+    print('Done :))')
+
+
+def update_difference_quantity_goods_issue():
+    for gis in GoodsIssue.objects.all():
+        for item in gis.goods_issue_product.all():
+            po_item = item.production_order_item
+            wo_item = item.work_order_item
+            if po_item:
+                item.remain_quantity = po_item.quantity - item.before_quantity
+            if wo_item:
+                item.remain_quantity = wo_item.quantity - item.before_quantity
+            item.save(update_fields=['remain_quantity'])
+    print('Done :))')

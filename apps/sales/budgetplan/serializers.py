@@ -67,7 +67,7 @@ class BudgetPlanCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'Period': SaleMsg.PERIOD_HAS_PLAN})
             return period_mapped
         except Periods.DoesNotExist:
-            raise serializers.ValidationError({'period': 'Periods obj is not exist.'})
+            raise serializers.ValidationError({'period': 'Periods obj does not exist.'})
 
     def validate(self, validate_data):
         return validate_data
@@ -357,7 +357,7 @@ class BudgetPlanGroupConfigCreateSerializer(serializers.ModelSerializer):
         try:
             return Employee.objects.get(id=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': 'Employee obj is not exist.'})
+            raise serializers.ValidationError({'employee': 'Employee obj does not exist.'})
 
     def validate(self, validated_data):
         if validated_data['employee_allowed'].bp_config_employee_allowed.first():

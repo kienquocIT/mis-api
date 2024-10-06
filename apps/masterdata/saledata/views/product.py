@@ -2,6 +2,7 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
+from apps.sales.production.models import BOM
 from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
@@ -427,7 +428,22 @@ class ProductForSaleList(BaseListMixin):
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list', 'uom_using'),
             ),
-            'bom_product',
+            Prefetch(
+                'bom_product',
+                queryset=BOM.objects.filter(
+                    opportunity__isnull=True,
+                    system_status=3,
+                ),
+                to_attr='filtered_bom'
+            ),
+            Prefetch(
+                'bom_product',
+                queryset=BOM.objects.filter(
+                    opportunity__isnull=False,
+                    system_status=3,
+                ),
+                to_attr='filtered_bom_opp'
+            ),
             Prefetch(
                 'sale_order_product_product',
                 queryset=SaleOrderProduct.objects.filter(

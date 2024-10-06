@@ -64,7 +64,6 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
-    done_issue = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Work order'
@@ -105,7 +104,9 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
     def push_code(cls, instance, kwargs):
         if not instance.code:
             instance.code = cls.generate_code(company_id=instance.company_id)
+            instance.status_production = 1
             kwargs['update_fields'].append('code')
+            kwargs['update_fields'].append('status_production')
         return True
 
     def save(self, *args, **kwargs):

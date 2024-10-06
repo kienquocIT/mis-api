@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot, ProductWareHouse
-from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment
+from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment, GoodsIssueProduct
 from apps.sales.inventory.serializers import (
     GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer
 )
@@ -12,7 +12,8 @@ from apps.sales.inventory.serializers.goods_issue import (
     InventoryAdjustmentDetailSerializerForGIS,
     ProductWarehouseSerialListSerializerForGIS,
     ProductWarehouseLotListSerializerForGIS,
-    ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS
+    ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS,
+    GoodsIssueProductListSerializer
 )
 from apps.sales.production.models import ProductionOrder, WorkOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -48,6 +49,7 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -88,6 +90,7 @@ class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='inventory', model_code='goodsissue', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 
@@ -147,7 +150,7 @@ class ProductionOrderListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(done_issue=False)
+        return super().get_queryset().filter()
 
     @swagger_auto_schema(
         operation_summary="Production Order List",
@@ -291,6 +294,26 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
         return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial For GIS')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class GoodsIssueProductList(BaseListMixin, BaseCreateMixin):
+    queryset = GoodsIssueProduct.objects
+    search_fields = []
+    filterset_fields = {
+        'goods_issue__production_order_id': ['exact'],
+        'goods_issue__work_order_id': ['exact'],
+        'goods_issue__system_status': ['exact'],
+        'product_id': ['exact'],
+    }
+    serializer_list = GoodsIssueProductListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Goods Issue Product PR List",
+        operation_description="Get Goods Issue Product PR List",
+    )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -1,13 +1,15 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     UnitOfMeasure, WareHouse, Product,
     ProductWareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
+from apps.sales.inventory.models.goods_issue import GoodsIssueAttachmentFile
 from apps.sales.production.models import ProductionOrder, ProductionOrderTask, WorkOrder, WorkOrderTask
-from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 
 __all__ = [
     'GoodsIssueListSerializer',
@@ -20,8 +22,13 @@ __all__ = [
     'InventoryAdjustmentDetailSerializerForGIS',
     'ProductWarehouseSerialListSerializerForGIS',
     'ProductWarehouseLotListSerializerForGIS',
-    'ProductWareHouseListSerializerForGIS'
+    'ProductWareHouseListSerializerForGIS',
+    'WorkOrderListSerializerForGIS',
+    'WorkOrderDetailSerializerForGIS',
+    'GoodsIssueProductListSerializer',
 ]
+
+from apps.shared.translations.base import AttachmentMsg
 
 
 class GoodsIssueListSerializer(AbstractListSerializerModel):
@@ -48,6 +55,9 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     detail_data_ia = serializers.ListField()
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_wo = serializers.ListField()
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsIssue
@@ -58,7 +68,10 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
             'inventory_adjustment_id',
             'detail_data_ia',
             'production_order_id',
-            'detail_data_po'
+            'detail_data_po',
+            'work_order_id',
+            'detail_data_wo',
+            'attachment'
         )
 
     def validate(self, validate_data):
@@ -68,6 +81,17 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=None,
+            validate_data=validate_data
+        )
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -75,9 +99,15 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
+        detail_data_wo = validated_data.pop('detail_data_wo', [])
+        attachment = validated_data.pop('attachment', [])
+
         instance = GoodsIssue.objects.create(**validated_data)
+
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
 
@@ -86,6 +116,9 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     detail_data_ia = serializers.SerializerMethodField()
     production_order = serializers.SerializerMethodField()
     detail_data_po = serializers.SerializerMethodField()
+    work_order = serializers.SerializerMethodField()
+    detail_data_wo = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -99,7 +132,10 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'detail_data_ia',
             'production_order',
             'detail_data_po',
-            'date_created'
+            'work_order',
+            'detail_data_wo',
+            'date_created',
+            'attachment'
         )
 
     @classmethod
@@ -152,6 +188,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'id': obj.production_order_id,
             'title': obj.production_order.title,
             'code': obj.production_order.code,
+            'type': 0
         } if obj.production_order else {}
 
     @classmethod
@@ -176,6 +213,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             else:
                 for item in obj.goods_issue_product.all():
                     po_item = item.production_order_item
+                    remain_quantity = po_item.quantity - po_item.issued_quantity
                     detail_data_po.append({
                         'id': po_item.id,
                         'product_mapped': item.product_data,
@@ -183,39 +221,96 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': po_item.quantity,
                         'before_quantity': po_item.issued_quantity,
-                        'remain_quantity': po_item.quantity - po_item.issued_quantity,
+                        'remain_quantity': remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
                     })
         return detail_data_po
 
+    @classmethod
+    def get_work_order(cls, obj):
+        return {
+            'id': obj.work_order_id,
+            'title': obj.work_order.title,
+            'code': obj.work_order.code,
+            'type': 1
+        } if obj.work_order else {}
+
+    @classmethod
+    def get_detail_data_wo(cls, obj):
+        detail_data_wo = []
+        if obj.work_order:
+            if obj.system_status == 3:
+                for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                    wo_item = item.work_order_item
+                    detail_data_wo.append({
+                        'id': wo_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': wo_item.quantity,
+                        'before_quantity': item.before_quantity,
+                        'remain_quantity': item.remain_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+            else:
+                for item in obj.goods_issue_product.all():
+                    wo_item = item.work_order_item
+                    remain_quantity = wo_item.quantity - wo_item.issued_quantity
+                    detail_data_wo.append({
+                        'id': wo_item.id,
+                        'product_mapped': item.product_data,
+                        'uom_mapped': item.uom_data,
+                        'warehouse_mapped': item.warehouse_data,
+                        'sum_quantity': wo_item.quantity,
+                        'before_quantity': wo_item.issued_quantity,
+                        'remain_quantity': remain_quantity,
+                        'issued_quantity': item.issued_quantity,
+                        'lot_data': item.lot_data,
+                        'sn_data': item.sn_data
+                    })
+        return detail_data_wo
+
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = GoodsIssueAttachmentFile.objects.select_related('attachment').filter(goods_issue=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
-    goods_issue_type = serializers.IntegerField()
-    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
-    production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
+    detail_data_wo = serializers.ListField()
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = GoodsIssue
         fields = (
             'title',
             'note',
-            'goods_issue_type',
-            'inventory_adjustment_id',
             'detail_data_ia',
-            'production_order_id',
-            'detail_data_po'
+            'detail_data_po',
+            'detail_data_wo',
+            'attachment'
         )
 
     def validate(self, validate_data):
-        GoodsIssueCommonFunction.validate_goods_issue_type(validate_data)
-        GoodsIssueCommonFunction.validate_inventory_adjustment_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
-        GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_attachment(
+            context_user=self.context.get('user', None),
+            doc_id=self.instance.id,
+            validate_data=validate_data
+        )
+        if 'title' in validate_data:
+            if validate_data.get('title'):
+                validate_data['title'] = validate_data.get('title')
+            else:
+                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -223,11 +318,17 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
+        detail_data_wo = validated_data.pop('detail_data_wo', [])
+        attachment = validated_data.pop('attachment', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
 
@@ -250,7 +351,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_inventory_adjustment_id  --- ok')
             except InventoryAdjustment.DoesNotExist:
-                raise serializers.ValidationError({'inventory_adjustment': 'Inventory adjustment is not exist'})
+                raise serializers.ValidationError({'inventory_adjustment': 'Inventory adjustment does not exist'})
         else:
             validate_data['inventory_adjustment_id'] = None
         return True
@@ -264,7 +365,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_production_order_id  --- ok')
             except ProductionOrder.DoesNotExist:
-                raise serializers.ValidationError({'production_order': 'Product order is not exist'})
+                raise serializers.ValidationError({'production_order': 'Product order does not exist'})
         else:
             validate_data['production_order_id'] = None
         return True
@@ -278,7 +379,7 @@ class GoodsIssueCommonFunction:
                 ).id)
                 print('2. validate_work_order_id  --- ok')
             except WorkOrder.DoesNotExist:
-                raise serializers.ValidationError({'work_order': 'Work order is not exist'})
+                raise serializers.ValidationError({'work_order': 'Work order does not exist'})
         else:
             validate_data['work_order_id'] = None
         return True
@@ -311,7 +412,7 @@ class GoodsIssueCommonFunction:
                     lot_data.append(
                         {'lot_id': lot.get('lot_id'), 'lot_quantity': lot_obj, 'issued_quantity': lot.get('quantity')})
                 else:
-                    raise serializers.ValidationError({'error': "Lot object is not exist."})
+                    raise serializers.ValidationError({'error': "Lot object does not exist."})
             else:
                 for data in lot_data:
                     if data['lot_id'] == lot.get('lot_id'):
@@ -392,10 +493,6 @@ class GoodsIssueCommonFunction:
                         raise serializers.ValidationError(
                             {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
                         )
-                    if po_item_obj.quantity - po_item_obj.issued_quantity < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
-                        )
 
                     selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                     cls.validate_lot_data(item, product_obj)
@@ -443,10 +540,6 @@ class GoodsIssueCommonFunction:
                         raise serializers.ValidationError(
                             {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
                         )
-                    if wo_item_obj.quantity - wo_item_obj.issued_quantity < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > remain quantity."}
-                        )
 
                     selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
                     cls.validate_lot_data(item, product_obj)
@@ -479,6 +572,25 @@ class GoodsIssueCommonFunction:
         return True
 
     @classmethod
+    def validate_attachment(cls, context_user, doc_id, validate_data):
+        if 'attachment' in validate_data:
+            if validate_data.get('attachment'):
+                if context_user and hasattr(context_user, 'employee_current_id'):
+                    state, result = GoodsIssueAttachmentFile.valid_change(
+                        current_ids=validate_data.get('attachment', []),
+                        employee_id=context_user.employee_current_id,
+                        doc_id=doc_id
+                    )
+                    if state is True:
+                        validate_data['attachment'] = result
+                    else:
+                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+                else:
+                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        print('4. validate_attachment --- ok')
+        return validate_data
+
+    @classmethod
     def create_issue_item(cls, instance, data):
         if len(data) > 0:
             bulk_data = []
@@ -487,6 +599,19 @@ class GoodsIssueCommonFunction:
                 bulk_data.append(obj)
             GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
             GoodsIssueProduct.objects.bulk_create(bulk_data)
+        return True
+
+    @classmethod
+    def handle_attach_file(cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            relate_app = Application.objects.filter(id="f26d7ce4-e990-420a-8ec6-2dc307467f2c").first()
+            if relate_app:
+                state = GoodsIssueAttachmentFile.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
         return True
 
 
@@ -519,6 +644,7 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
         order = 1
         for item in obj.inventory_adjustment_item_mapped.filter(action_type=1).order_by('product_mapped__code'):
             if item.book_quantity - item.count - item.issued_quantity > 0:
+                remain_quantity = item.book_quantity - item.count - item.issued_quantity
                 ia_data.append({
                     'id': item.id,
                     'order': order,
@@ -542,7 +668,7 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
                     } if item.warehouse_mapped else {},
                     'sum_quantity': item.book_quantity - item.count,
                     'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.book_quantity - item.count - item.issued_quantity,
+                    'remain_quantity': remain_quantity,
                 })
                 order += 1
         return ia_data
@@ -586,33 +712,33 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     def get_task_data(cls, obj):
         task_data = []
         for item in obj.po_task_production_order.filter(is_task=False).order_by('product__code'):
-            if item.quantity - item.issued_quantity > 0:
-                task_data.append({
-                    'id': item.id,
-                    'order': item.order,
-                    'product_mapped': {
-                        'id': item.product_data.get('id'),
-                        'code': item.product_data.get('code'),
-                        'title': item.product_data.get('title'),
-                        'description': item.product_data.get('description'),
-                        'general_traceability_method': item.product.general_traceability_method
-                    } if item.product else {},
-                    'uom_mapped': {
-                        'id': item.uom_data.get('id'),
-                        'code': item.uom_data.get('code'),
-                        'title': item.uom_data.get('title'),
-                        'ratio': item.uom_data.get('ratio')
-                    } if item.uom else {},
-                    'warehouse_mapped': {
-                        'id': item.warehouse_data.get('id'),
-                        'code': item.warehouse_data.get('code'),
-                        'title': item.warehouse_data.get('title')
-                    } if item.warehouse else {},
-                    'is_all_warehouse': item.is_all_warehouse,
-                    'sum_quantity': item.quantity,
-                    'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.quantity - item.issued_quantity,
-                })
+            remain_quantity = item.quantity - item.issued_quantity
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'sum_quantity': item.quantity,
+                'before_quantity': item.issued_quantity,
+                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+            })
         return task_data
 
 
@@ -654,33 +780,33 @@ class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
     def get_task_data(cls, obj):
         task_data = []
         for item in obj.wo_task_work_order.filter(is_task=False).order_by('product__code'):
-            if item.quantity - item.issued_quantity > 0:
-                task_data.append({
-                    'id': item.id,
-                    'order': item.order,
-                    'product_mapped': {
-                        'id': item.product_data.get('id'),
-                        'code': item.product_data.get('code'),
-                        'title': item.product_data.get('title'),
-                        'description': item.product_data.get('description'),
-                        'general_traceability_method': item.product.general_traceability_method
-                    } if item.product else {},
-                    'uom_mapped': {
-                        'id': item.uom_data.get('id'),
-                        'code': item.uom_data.get('code'),
-                        'title': item.uom_data.get('title'),
-                        'ratio': item.uom_data.get('ratio')
-                    } if item.uom else {},
-                    'warehouse_mapped': {
-                        'id': item.warehouse_data.get('id'),
-                        'code': item.warehouse_data.get('code'),
-                        'title': item.warehouse_data.get('title')
-                    } if item.warehouse else {},
-                    'is_all_warehouse': item.is_all_warehouse,
-                    'sum_quantity': item.quantity,
-                    'before_quantity': item.issued_quantity,
-                    'remain_quantity': item.quantity - item.issued_quantity,
-                })
+            remain_quantity = item.quantity - item.issued_quantity
+            task_data.append({
+                'id': item.id,
+                'order': item.order,
+                'product_mapped': {
+                    'id': item.product_data.get('id'),
+                    'code': item.product_data.get('code'),
+                    'title': item.product_data.get('title'),
+                    'description': item.product_data.get('description'),
+                    'general_traceability_method': item.product.general_traceability_method
+                } if item.product else {},
+                'uom_mapped': {
+                    'id': item.uom_data.get('id'),
+                    'code': item.uom_data.get('code'),
+                    'title': item.uom_data.get('title'),
+                    'ratio': item.uom_data.get('ratio')
+                } if item.uom else {},
+                'warehouse_mapped': {
+                    'id': item.warehouse_data.get('id'),
+                    'code': item.warehouse_data.get('code'),
+                    'title': item.warehouse_data.get('title')
+                } if item.warehouse else {},
+                'is_all_warehouse': item.is_all_warehouse,
+                'sum_quantity': item.quantity,
+                'before_quantity': item.issued_quantity,
+                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+            })
         return task_data
 
 
@@ -717,4 +843,14 @@ class ProductWarehouseSerialListSerializerForGIS(serializers.ModelSerializer):
             'warranty_start',
             'warranty_end',
             'is_delete'
+        )
+
+
+class GoodsIssueProductListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GoodsIssueProduct
+        fields = (
+            'id',
+            'issued_quantity',
         )

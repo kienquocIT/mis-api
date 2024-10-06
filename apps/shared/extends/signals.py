@@ -66,11 +66,11 @@ class SaleDefaultData:
         {'code': 'asset_tool', 'title': 'Tài sản - Công cụ dụng cụ', 'is_default': 1, 'is_asset_tool': 1},
     ]
     TaxCategory_data = [
-        {'title': 'Thuế GTGT', 'is_default': 1},
-        {'title': 'Thuế xuất khẩu', 'is_default': 1},
-        {'title': 'Thuế nhập khẩu', 'is_default': 1},
-        {'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
-        {'title': 'Thuế nhà thầu', 'is_default': 1},
+        {'code': 'TC001', 'title': 'Thuế GTGT', 'is_default': 1},
+        {'code': 'TC002', 'title': 'Thuế xuất khẩu', 'is_default': 1},
+        {'code': 'TC003', 'title': 'Thuế nhập khẩu', 'is_default': 1},
+        {'code': 'TC004', 'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
+        {'code': 'TC005', 'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
     Currency_data = [
         {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
@@ -88,7 +88,7 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
-        {'title': 'Labor', 'is_default': 1},
+        {'code': 'UG001', 'title': 'Labor', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -754,12 +754,12 @@ class ConfigDefaultData:
                     'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
+                    'code': 'SY', 'title': _('Sick leave for yourself-social insurance'), 'paid_by': 2,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
+                    'code': 'FF', 'title': _('Funeral in your family (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0
@@ -771,7 +771,7 @@ class ConfigDefaultData:
                     'no_of_paid': 0, 'prev_year': 0
                 },
                 {
-                    'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
+                    'code': 'MY', 'title': _('Your own marriage (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0

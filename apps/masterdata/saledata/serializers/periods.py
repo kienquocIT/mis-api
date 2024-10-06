@@ -5,6 +5,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
+from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.sales.report.models import (
     ReportInventoryCost, ReportStockLog, ReportInventoryCostWH
 )
@@ -283,7 +284,7 @@ class PeriodInventoryFunction:
                         company_id=instance.company_id,
                         product_warehouse=bulk_info_prd_wh[-1],
                         lot_number=lot.get('lot_number'),
-                        quantity_import=ReportStockLog.cast_quantity_to_unit(
+                        quantity_import=InventoryCostLogFunc.cast_quantity_to_unit(
                             prd_obj.inventory_uom, float(lot.get('quantity_import'))
                         )
                     )
@@ -494,7 +495,7 @@ class PeriodInventoryFunction:
                 if item.get('product_id') and item.get('warehouse_id'):
                     prd_obj = Product.objects.filter(id=item.get('product_id')).first()
                     wh_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                    item['quantity'] = ReportStockLog.cast_quantity_to_unit(
+                    item['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
                         prd_obj.inventory_uom, float(item.get('quantity'))
                     )
                     if prd_obj and wh_obj:
@@ -505,7 +506,7 @@ class PeriodInventoryFunction:
                             bulk_info_rp_prd_wh, bulk_info_rp_prd_wh_wh, bulk_info_prd_wh, bulk_info_sn, bulk_info_lot
                         )
                     else:
-                        raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+                        raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})
             ReportInventoryCost.objects.bulk_create(bulk_info_rp_prd_wh)
             ReportInventoryCostWH.objects.bulk_create(bulk_info_rp_prd_wh_wh)
             ProductWareHouse.objects.bulk_create(bulk_info_prd_wh)
@@ -551,4 +552,4 @@ class PeriodInventoryFunction:
                 product_warehouse__warehouse=wh_obj
             ).delete()
             return True
-        raise serializers.ValidationError({"Not exist": 'Product | Warehouse is not exist.'})
+        raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})

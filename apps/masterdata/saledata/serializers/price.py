@@ -12,15 +12,16 @@ class TaxCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = TaxCategory
-        fields = ('id', 'title', 'description', 'is_default')
+        fields = ('id', 'code', 'title', 'description', 'is_default')
 
 
 class TaxCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
+    code = serializers.CharField(max_length=100)
 
     class Meta:
         model = TaxCategory
-        fields = ('title', 'description')
+        fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_title(cls, value):
@@ -32,20 +33,31 @@ class TaxCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
+    @classmethod
+    def validate_code(cls, value):
+        if TaxCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
+            raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
+        return value
+
 
 class TaxCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = TaxCategory
-        fields = ('id', 'title', 'description', 'is_default')
+        fields = ('id', 'code', 'title', 'description', 'is_default')
 
 
 class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
+    code = serializers.CharField(max_length=100)
 
     class Meta:
         model = TaxCategory
-        fields = ('title', 'description')
+        fields = ('code', 'title', 'description')
 
     def validate_title(self, value):
         if value != self.instance.title and TaxCategory.objects.filter_current(
@@ -54,6 +66,15 @@ class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
                 title=value
         ).exists():
             raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
+        return value
+
+    def validate_code(self, value):
+        if TaxCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(PriceMsg.CODE_EXIST)
         return value
 
 
