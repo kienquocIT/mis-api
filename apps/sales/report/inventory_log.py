@@ -73,7 +73,7 @@ class InventoryCostLog:
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {stock_obj_date.year} does not exist.'})
         except Exception as err:
             print(err)
-        return False
+            return False
 
 
 class InventoryCostLogFunc:

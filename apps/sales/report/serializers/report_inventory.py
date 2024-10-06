@@ -526,7 +526,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                     sub_period_obj
                 )
         except Exception as err:
-            return err
+            print(err)
+            return None
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
@@ -570,7 +571,8 @@ class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer)
                     sub_period_obj
                 )
         except Exception as err:
-            return err
+            print(err)
+            return None
 
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
