@@ -5,7 +5,6 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, Product, WareHouse, ProductWareHouseSerial, ProductWareHouseLot
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
-from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.sales.report.models import (
     ReportInventoryCost, ReportStockLog, ReportInventoryCostWH
 )
@@ -165,6 +164,7 @@ class PeriodInventoryFunction:
     def clear_balance_data(cls, instance, product_id, warehouse_id):
         prd_obj = Product.objects.filter(id=product_id).first()
         wh_obj = WareHouse.objects.filter(id=warehouse_id).first()
+        company_config = instance.company.company_config
         if prd_obj and wh_obj:
             prd_obj.stock_amount = 0
             prd_obj.available_amount = 0
@@ -174,11 +174,11 @@ class PeriodInventoryFunction:
                 tenant=instance.tenant,
                 company=instance.company,
                 product=prd_obj,
-                warehouse=wh_obj if not instance.company.company_config.cost_per_project else None
+                warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()
             ReportInventoryCostWH.objects.filter(
                 report_inventory_cost__product=prd_obj,
-                report_inventory_cost__warehouse=wh_obj if not instance.company.company_config.cost_per_project else None
+                report_inventory_cost__warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()
             ProductWareHouse.objects.filter(
                 tenant=instance.tenant,

@@ -248,7 +248,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         order = 1
         for item in obj.payment.all():
             detail_payment = f"- Giá trị thanh toán: {item.real_value} {item.currency.abbreviation}.\n"
-            detail_payment += f"- Chuyển đổi từ Tạm ứng:\n" if len(item.ap_cost_converted_list) > 0 else ''
+            detail_payment += "- Chuyển đổi từ Tạm ứng:\n" if len(item.ap_cost_converted_list) > 0 else ''
             for data in item.ap_cost_converted_list:
                 detail_payment += (
                     f"+ {data.get('ap_title')} - {data.get('value_converted')} {item.currency.abbreviation}.\n"
