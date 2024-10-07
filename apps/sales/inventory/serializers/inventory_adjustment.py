@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentWarehouse, InventoryAdjustmentEmployeeInCharge,
     InventoryAdjustmentItem
@@ -110,7 +111,7 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_state(cls, obj):
-        return int(obj.state)
+        return [_('Created'), _('Working'), _('Done')][obj.state]
 
 
 class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
@@ -197,7 +198,7 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_state(cls, obj):
-        return int(obj.state)
+        return [_('Created'), _('Working'), _('Done')][obj.state]
 
 
 class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
@@ -233,7 +234,7 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         update_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
-        instance.update_ia_state()
+        # instance.update_ia_state()
         return instance
 
 

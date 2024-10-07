@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
@@ -19,7 +19,7 @@ class InventoryAdjustment(DataAbstractModel):
         blank=True,
         related_name='employees_in_charge_mapped_ia'
     )
-    state = models.BooleanField(default=False)
+    state = models.SmallIntegerField(choices=[(0, _('Created')), (1, _('Working')), (2, _('Done'))], default=0)
 
     def update_ia_state(self):
         all_item_select = self.inventory_adjustment_item_mapped.filter(select_for_action=True)
