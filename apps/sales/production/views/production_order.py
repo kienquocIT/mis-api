@@ -26,7 +26,7 @@ class ProductionOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Production Order List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='productionorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -38,7 +38,7 @@ class ProductionOrderList(BaseListMixin, BaseCreateMixin):
         request_body=ProductionOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='productionorder', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -60,7 +60,7 @@ class ProductionOrderDetail(
         operation_description="Get Production Order Detail By ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='productionorder', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -72,7 +72,7 @@ class ProductionOrderDetail(
         request_body=ProductionOrderUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='productionorder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):

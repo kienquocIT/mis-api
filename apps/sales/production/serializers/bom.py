@@ -689,7 +689,7 @@ class BOMCommonFunction:
         return True
 
 
-# BOM use for production order
+# BOM use for production order/ work order
 class BOMOrderListSerializer(AbstractDetailSerializerModel):
     bom_task = serializers.SerializerMethodField()
     bom_material = serializers.SerializerMethodField()
@@ -747,6 +747,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
                     'ratio': bom_material.uom.ratio,
                     'group_id': str(bom_material.uom.group_id)
                 } if bom_material.uom else {},
+                'is_disassembly': bom_material.disassemble,
             } for bom_material in obj.bom_material_component_bom.all()
         ]
 
