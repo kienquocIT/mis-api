@@ -203,6 +203,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
 
 
 class PaymentDetailSerializer(AbstractDetailSerializerModel):
+    date_created = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
@@ -233,14 +234,26 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'attachment',
             'sale_code',
-            'payment_value'
+            'payment_value',
+            'payment_value_by_words'
         )
+
+    @classmethod
+    def get_date_created(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
     def get_expense_items(cls, obj):
         all_expense_items_mapped = []
         order = 1
         for item in obj.payment.all():
+            detail_payment = f"- Giá trị thanh toán: {item.real_value} {item.currency.abbreviation}.\n"
+            detail_payment += "- Chuyển đổi từ Tạm ứng:\n" if len(item.ap_cost_converted_list) > 0 else ''
+            for data in item.ap_cost_converted_list:
+                detail_payment += (
+                    f"+ {data.get('ap_title')} - {data.get('value_converted')} {item.currency.abbreviation}.\n"
+                )
+            detail_payment += f"(Tổng: {item.sum_value} {item.currency.abbreviation})"
             all_expense_items_mapped.append(
                 {
                     'id': item.id,
@@ -258,7 +271,8 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                     'real_value': item.real_value,
                     'converted_value': item.converted_value,
                     'sum_value': item.sum_value,
-                    'ap_cost_converted_list': item.ap_cost_converted_list
+                    'ap_cost_converted_list': item.ap_cost_converted_list,
+                    'detail_payment': detail_payment
                 }
             )
             order += 1
@@ -681,7 +695,7 @@ class PaymentCommonFunction:
             if len(bulk_info) > 0:
                 PaymentCost.objects.filter(payment=payment_obj).delete()
                 PaymentCost.objects.bulk_create(bulk_info)
-                payment_obj.advance_value = payment_value
+                payment_obj.payment_value = payment_value
                 payment_value_by_words = PaymentCommonFunction.read_money_vnd(payment_value).capitalize()
                 if payment_value_by_words[-1] == ',':
                     payment_value_by_words = payment_value_by_words[:-1] + ' đồng'

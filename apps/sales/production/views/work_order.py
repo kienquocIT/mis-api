@@ -25,8 +25,9 @@ class WorkOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Work Order List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='workorder', perm_code='view',
+        opp_enabled=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -37,8 +38,9 @@ class WorkOrderList(BaseListMixin, BaseCreateMixin):
         request_body=WorkOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='workorder', perm_code='create',
+        opp_enabled=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -59,8 +61,9 @@ class WorkOrderDetail(
         operation_description="Get Work Order Detail By ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='workorder', perm_code='view',
+        opp_enabled=True,
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -71,8 +74,9 @@ class WorkOrderDetail(
         request_body=WorkOrderUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='production', model_code='workorder', perm_code='edit',
+        opp_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
