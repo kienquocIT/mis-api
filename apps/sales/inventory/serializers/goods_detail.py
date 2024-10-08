@@ -100,10 +100,23 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
         del item['serial_id']
         if item.get('vendor_serial_number') and item.get('serial_number'):
+            goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
+            receipted_sn_quantity = goods_receipt_obj.pw_serial_goods_receipt.filter(
+                product_warehouse=prd_wh.warehouse
+            ).count() if goods_receipt_obj else 0
+            gr_prd = goods_receipt_obj.goods_receipt_product_goods_receipt.filter(
+                product=prd_wh.product,
+                warehouse=prd_wh.warehouse
+            ).first()
+            gr_wh_gr_prd = gr_prd.goods_receipt_warehouse_gr_product.filter(
+                warehouse=prd_wh.warehouse
+            ).first() if gr_prd else None
+            receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
+
             if not ProductWareHouseSerial.objects.filter(
                     product_warehouse__product=prd_wh.product,
                     serial_number=item.get('serial_number')
-            ).exists():
+            ).exists() and receipted_sn_quantity < receipt_max_quantity:
                 bulk_info_new_serial.append(
                     ProductWareHouseSerial(
                         **item,
@@ -117,7 +130,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Serial': "Can not create new serial."})
 
     @classmethod
-    def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
+    def sub_create(cls, serial_data, prd_wh, goods_receipt_id):
         bulk_info_new_serial = []
         for item in serial_data:
             if item.get('serial_id'):
@@ -196,7 +209,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
         if prd_wh:
             if self.initial_data.get('is_serial_update'):
-                self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
         else:
             product_obj = Product.objects.filter(id=product_id).first()
             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
