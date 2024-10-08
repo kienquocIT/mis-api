@@ -254,7 +254,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     }
                 )
                 if self.initial_data.get('is_serial_update'):
-                    self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                    self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
             else:
                 raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
