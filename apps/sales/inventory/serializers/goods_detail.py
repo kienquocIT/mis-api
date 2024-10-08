@@ -250,3 +250,171 @@ class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouse
         fields = ('id',)
+
+
+class GoodsDetailDataCreateImportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = ()
+
+    @classmethod
+    def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
+        del item['serial_id']
+        if item.get('vendor_serial_number') and item.get('serial_number'):
+            if not ProductWareHouseSerial.objects.filter(
+                    product_warehouse__product=prd_wh.product,
+                    serial_number=item.get('serial_number')
+            ).exists():
+                bulk_info_new_serial.append(
+                    ProductWareHouseSerial(
+                        **item,
+                        product_warehouse=prd_wh,
+                        goods_receipt_id=goods_receipt_id,
+                        company_id=prd_wh.company_id,
+                        tenant_id=prd_wh.tenant_id
+                    )
+                )
+                return bulk_info_new_serial
+        raise serializers.ValidationError({'Serial': "Serial No. already exists."})
+
+    @classmethod
+    def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
+        bulk_info_new_serial = []
+        for item in serial_data:
+            bulk_info_new_serial = cls.create_serial(
+                item,
+                prd_wh,
+                goods_receipt_id,
+                bulk_info_new_serial
+            )
+        created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
+        gr_wh = GoodsReceiptWarehouse.objects.filter(
+            goods_receipt_id=goods_receipt_id,
+            warehouse=prd_wh.warehouse,
+            goods_receipt_product__product=prd_wh.product
+        ).first()
+        if gr_wh:
+            pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
+                gr_wh.goods_receipt_request_product, 'purchase_request_product'
+            ) else None
+            so_item = pr_prd.sale_order_product if pr_prd and hasattr(
+                pr_prd, 'sale_order_product'
+            ) else None
+            gre_item_prd_wh = GReItemProductWarehouse.objects.filter(
+                gre_item__so_item=so_item,
+                warehouse=prd_wh.warehouse
+            ).first() if so_item else None
+            if gre_item_prd_wh:
+                # hàng đăng kí
+                bulk_info_regis = []
+                for serial in created_sn:
+                    bulk_info_regis.append(
+                        GReItemProductWarehouseSerial(
+                            gre_item_prd_wh=gre_item_prd_wh,
+                            sn_registered=serial,
+                            goods_registration=gre_item_prd_wh.goods_registration
+                        )
+                    )
+                GReItemProductWarehouseSerial.objects.bulk_create(bulk_info_regis)
+            else:
+                # kiểm tra hàng vào kho chung
+                none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
+                    product=prd_wh.product,
+                    warehouse=prd_wh.warehouse
+                ).first()
+                if none_gre_item_prd_wh:
+                    # hàng đăng kí
+                    bulk_info_none_regis = []
+                    for serial in created_sn:
+                        bulk_info_none_regis.append(
+                            NoneGReItemProductWarehouseSerial(
+                                none_gre_item_prd_wh=none_gre_item_prd_wh,
+                                sn_mapped=serial
+                            )
+                        )
+                    NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
+
+        if len(bulk_info_new_serial) > 0:
+            prd_wh.receipt_amount += len(bulk_info_new_serial)
+            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+            prd_wh.product.stock_amount += len(bulk_info_new_serial)
+            prd_wh.product.save(update_fields=['stock_amount'])
+        return True
+
+
+    def create(self, validated_data):
+        product_id = self.initial_data['data'].pop('product_id')
+        warehouse_id = self.initial_data['data'].pop('warehouse_id')
+        goods_receipt_id = self.initial_data['data'].pop('goods_receipt_id')
+
+        self.initial_data['serial_data'] = [{
+            'serial_number': self.initial_data['data'].get('serial_number'),
+            'vendor_serial_number': self.initial_data['data'].get('vendor_serial_number'),
+            'expire_date': self.initial_data['data'].get('expire_date') if self.initial_data['data'].get(
+                'expire_date') else None,
+            'manufacture_date': self.initial_data['data'].get('manufacture_date') if self.initial_data['data'].get(
+                'manufacture_date') else None,
+            'warranty_start': self.initial_data['data'].get('warranty_start') if self.initial_data['data'].get(
+                'warranty_start') else None,
+            'warranty_end': self.initial_data['data'].get('warranty_end') if self.initial_data['data'].get(
+                'warranty_end') else None,
+            'serial_id': None
+        }]
+
+        prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
+
+        if prd_wh:
+            if self.initial_data['data'].get('is_serial_update'):
+                self.for_serial(
+                    self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
+                )
+        else:
+            product_obj = Product.objects.filter(id=product_id).first()
+            warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+            goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
+            product_gr_obj = product_obj.goods_receipt_product_product.first()
+            if product_obj and warehouse_obj and goods_receipt_obj and product_gr_obj:
+                uom_obj = product_gr_obj.uom
+                tax_obj = product_gr_obj.tax
+                prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=goods_receipt_obj.tenant_id,
+                    company_id=goods_receipt_obj.company_id,
+                    product=product_obj,
+                    uom=uom_obj,
+                    warehouse=warehouse_obj,
+                    tax=tax_obj,
+                    unit_price=product_gr_obj.product_unit_price,
+                    stock_amount=0,
+                    receipt_amount=0,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': product_obj.id,
+                        'code': product_obj.code,
+                        'title': product_obj.title
+                    },
+                    warehouse_data={
+                        'id': warehouse_obj.id,
+                        'code': warehouse_obj.code,
+                        'title': warehouse_obj.title
+                    },
+                    uom_data={
+                        'id': uom_obj.id,
+                        'code': uom_obj.code,
+                        'title': uom_obj.title
+                    },
+                    tax_data={
+                        'id': tax_obj.id,
+                        'code': tax_obj.code,
+                        'title': tax_obj.title,
+                        'rate': tax_obj.rate
+                    }
+                )
+                if self.initial_data.get('is_serial_update'):
+                    self.for_serial(
+                        self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
+                    )
+            else:
+                raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
+        return prd_wh
