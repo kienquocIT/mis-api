@@ -102,21 +102,22 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         if item.get('vendor_serial_number') and item.get('serial_number'):
             goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
             receipted_sn_quantity = goods_receipt_obj.pw_serial_goods_receipt.filter(
-                product_warehouse=prd_wh.warehouse
+                product_warehouse=prd_wh
             ).count() if goods_receipt_obj else 0
             gr_prd = goods_receipt_obj.goods_receipt_product_goods_receipt.filter(
-                product=prd_wh.product,
-                warehouse=prd_wh.warehouse
+                product=prd_wh.product
             ).first()
             gr_wh_gr_prd = gr_prd.goods_receipt_warehouse_gr_product.filter(
                 warehouse=prd_wh.warehouse
             ).first() if gr_prd else None
             receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
+            print(receipt_max_quantity, receipted_sn_quantity, item.get('serial_number'))
 
             if not ProductWareHouseSerial.objects.filter(
                     product_warehouse__product=prd_wh.product,
                     serial_number=item.get('serial_number')
             ).exists() and receipted_sn_quantity < receipt_max_quantity:
+                print(f"created {item.get('serial_number')}")
                 bulk_info_new_serial.append(
                     ProductWareHouseSerial(
                         **item,
@@ -270,92 +271,6 @@ class GoodsDetailDataCreateImportSerializer(serializers.ModelSerializer):
         model = ProductWareHouse
         fields = ()
 
-    @classmethod
-    def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
-        del item['serial_id']
-        if item.get('vendor_serial_number') and item.get('serial_number'):
-            if not ProductWareHouseSerial.objects.filter(
-                    product_warehouse__product=prd_wh.product,
-                    serial_number=item.get('serial_number')
-            ).exists():
-                bulk_info_new_serial.append(
-                    ProductWareHouseSerial(
-                        **item,
-                        product_warehouse=prd_wh,
-                        goods_receipt_id=goods_receipt_id,
-                        company_id=prd_wh.company_id,
-                        tenant_id=prd_wh.tenant_id
-                    )
-                )
-                return bulk_info_new_serial
-        raise serializers.ValidationError({'Serial': "Serial No. already exists."})
-
-    @classmethod
-    def for_serial(cls, serial_data, prd_wh, goods_receipt_id):
-        bulk_info_new_serial = []
-        for item in serial_data:
-            bulk_info_new_serial = cls.create_serial(
-                item,
-                prd_wh,
-                goods_receipt_id,
-                bulk_info_new_serial
-            )
-        created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
-        gr_wh = GoodsReceiptWarehouse.objects.filter(
-            goods_receipt_id=goods_receipt_id,
-            warehouse=prd_wh.warehouse,
-            goods_receipt_product__product=prd_wh.product
-        ).first()
-        if gr_wh:
-            pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
-                gr_wh.goods_receipt_request_product, 'purchase_request_product'
-            ) else None
-            so_item = pr_prd.sale_order_product if pr_prd and hasattr(
-                pr_prd, 'sale_order_product'
-            ) else None
-            gre_item_prd_wh = GReItemProductWarehouse.objects.filter(
-                gre_item__so_item=so_item,
-                warehouse=prd_wh.warehouse
-            ).first() if so_item else None
-            if gre_item_prd_wh:
-                # hàng đăng kí
-                bulk_info_regis = []
-                for serial in created_sn:
-                    bulk_info_regis.append(
-                        GReItemProductWarehouseSerial(
-                            gre_item_prd_wh=gre_item_prd_wh,
-                            sn_registered=serial,
-                            goods_registration=gre_item_prd_wh.goods_registration
-                        )
-                    )
-                GReItemProductWarehouseSerial.objects.bulk_create(bulk_info_regis)
-            else:
-                # kiểm tra hàng vào kho chung
-                none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
-                    product=prd_wh.product,
-                    warehouse=prd_wh.warehouse
-                ).first()
-                if none_gre_item_prd_wh:
-                    # hàng đăng kí
-                    bulk_info_none_regis = []
-                    for serial in created_sn:
-                        bulk_info_none_regis.append(
-                            NoneGReItemProductWarehouseSerial(
-                                none_gre_item_prd_wh=none_gre_item_prd_wh,
-                                sn_mapped=serial
-                            )
-                        )
-                    NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
-
-        if len(bulk_info_new_serial) > 0:
-            prd_wh.receipt_amount += len(bulk_info_new_serial)
-            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-            prd_wh.product.stock_amount += len(bulk_info_new_serial)
-            prd_wh.product.save(update_fields=['stock_amount'])
-        return True
-
-
     def create(self, validated_data):
         product_id = self.initial_data['data'].pop('product_id')
         warehouse_id = self.initial_data['data'].pop('warehouse_id')
@@ -379,7 +294,7 @@ class GoodsDetailDataCreateImportSerializer(serializers.ModelSerializer):
 
         if prd_wh:
             if self.initial_data['data'].get('is_serial_update'):
-                self.for_serial(
+                GoodsDetailDataCreateSerializer.sub_create(
                     self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
                 )
         else:
@@ -425,7 +340,7 @@ class GoodsDetailDataCreateImportSerializer(serializers.ModelSerializer):
                     }
                 )
                 if self.initial_data.get('is_serial_update'):
-                    self.for_serial(
+                    GoodsDetailDataCreateSerializer.sub_create(
                         self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
                     )
             else:
