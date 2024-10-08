@@ -101,7 +101,7 @@ class InventoryAdjustmentListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(state=False)
+        return super().get_queryset().filter(state=2)
 
     @swagger_auto_schema(
         operation_summary="Inventory Adjustment List For GIS",

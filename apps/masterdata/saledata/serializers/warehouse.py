@@ -453,6 +453,12 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
         )
 
     @classmethod
+    def cast_unit_to_inv_quantity(cls, inventory_uom, base_quantity):
+        if inventory_uom:
+            return (base_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+        return 0
+
+    @classmethod
     def get_product_list(cls, obj):
         results = []
         products = ProductWareHouse.objects.filter(warehouse=obj)
@@ -465,8 +471,12 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
                         'code': item.product.code,
                         'title': item.product.title
                     },
-                    'available_amount': item.stock_amount,
-                    'inventory_uom': item.uom_data,
+                    'available_amount': cls.cast_unit_to_inv_quantity(item.product.inventory_uom, item.stock_amount),
+                    'inventory_uom': {
+                        'id': item.product.inventory_uom_id,
+                        'code': item.product.inventory_uom.code,
+                        'title': item.product.inventory_uom.title,
+                    } if item.product.inventory_uom else {},
                 }
             )
         return results
