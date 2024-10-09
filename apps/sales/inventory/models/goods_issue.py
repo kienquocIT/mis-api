@@ -185,7 +185,7 @@ class GoodsIssue(DataAbstractModel):
                                 self.update_status_inventory_adjustment_item(
                                     item.inventory_adjustment_item, item.issued_quantity
                                 )
-                            self.inventory_adjustment.update_ia_state()
+                            # self.inventory_adjustment.update_ia_state()
                         elif self.production_order:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)
