@@ -102,21 +102,22 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         if item.get('vendor_serial_number') and item.get('serial_number'):
             goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
             receipted_sn_quantity = goods_receipt_obj.pw_serial_goods_receipt.filter(
-                product_warehouse=prd_wh.warehouse
+                product_warehouse=prd_wh
             ).count() if goods_receipt_obj else 0
             gr_prd = goods_receipt_obj.goods_receipt_product_goods_receipt.filter(
-                product=prd_wh.product,
-                warehouse=prd_wh.warehouse
+                product=prd_wh.product
             ).first()
             gr_wh_gr_prd = gr_prd.goods_receipt_warehouse_gr_product.filter(
                 warehouse=prd_wh.warehouse
             ).first() if gr_prd else None
             receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
+            print(receipt_max_quantity, receipted_sn_quantity, item.get('serial_number'))
 
             if not ProductWareHouseSerial.objects.filter(
                     product_warehouse__product=prd_wh.product,
                     serial_number=item.get('serial_number')
             ).exists() and receipted_sn_quantity < receipt_max_quantity:
+                print(f"created {item.get('serial_number')}")
                 bulk_info_new_serial.append(
                     ProductWareHouseSerial(
                         **item,
@@ -253,7 +254,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     }
                 )
                 if self.initial_data.get('is_serial_update'):
-                    self.for_serial(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                    self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
             else:
                 raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
@@ -263,3 +264,85 @@ class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouse
         fields = ('id',)
+
+
+class GoodsDetailDataCreateImportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = ()
+
+    def create(self, validated_data):
+        product_id = self.initial_data['data'].pop('product_id')
+        warehouse_id = self.initial_data['data'].pop('warehouse_id')
+        goods_receipt_id = self.initial_data['data'].pop('goods_receipt_id')
+
+        self.initial_data['serial_data'] = [{
+            'serial_number': self.initial_data['data'].get('serial_number'),
+            'vendor_serial_number': self.initial_data['data'].get('vendor_serial_number'),
+            'expire_date': self.initial_data['data'].get('expire_date') if self.initial_data['data'].get(
+                'expire_date') else None,
+            'manufacture_date': self.initial_data['data'].get('manufacture_date') if self.initial_data['data'].get(
+                'manufacture_date') else None,
+            'warranty_start': self.initial_data['data'].get('warranty_start') if self.initial_data['data'].get(
+                'warranty_start') else None,
+            'warranty_end': self.initial_data['data'].get('warranty_end') if self.initial_data['data'].get(
+                'warranty_end') else None,
+            'serial_id': None
+        }]
+
+        prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
+
+        if prd_wh:
+            if self.initial_data['data'].get('is_serial_update'):
+                GoodsDetailDataCreateSerializer.sub_create(
+                    self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
+                )
+        else:
+            product_obj = Product.objects.filter(id=product_id).first()
+            warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+            goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
+            product_gr_obj = product_obj.goods_receipt_product_product.first()
+            if product_obj and warehouse_obj and goods_receipt_obj and product_gr_obj:
+                uom_obj = product_gr_obj.uom
+                tax_obj = product_gr_obj.tax
+                prd_wh = ProductWareHouse.objects.create(
+                    tenant_id=goods_receipt_obj.tenant_id,
+                    company_id=goods_receipt_obj.company_id,
+                    product=product_obj,
+                    uom=uom_obj,
+                    warehouse=warehouse_obj,
+                    tax=tax_obj,
+                    unit_price=product_gr_obj.product_unit_price,
+                    stock_amount=0,
+                    receipt_amount=0,
+                    sold_amount=0,
+                    picked_ready=0,
+                    product_data={
+                        'id': product_obj.id,
+                        'code': product_obj.code,
+                        'title': product_obj.title
+                    },
+                    warehouse_data={
+                        'id': warehouse_obj.id,
+                        'code': warehouse_obj.code,
+                        'title': warehouse_obj.title
+                    },
+                    uom_data={
+                        'id': uom_obj.id,
+                        'code': uom_obj.code,
+                        'title': uom_obj.title
+                    },
+                    tax_data={
+                        'id': tax_obj.id,
+                        'code': tax_obj.code,
+                        'title': tax_obj.title,
+                        'rate': tax_obj.rate
+                    }
+                )
+                if self.initial_data.get('is_serial_update'):
+                    GoodsDetailDataCreateSerializer.sub_create(
+                        self.initial_data.get('serial_data'), prd_wh, goods_receipt_id
+                    )
+            else:
+                raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
+        return prd_wh
