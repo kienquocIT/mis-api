@@ -79,8 +79,6 @@ class InventoryAdjustmentDetail(BaseRetrieveMixin, BaseUpdateMixin):
                         warehouse_mapped=item.warehouse_mapped
                     ))
                 IAItemBeingAdjusted.objects.bulk_create(bulk_info)
-
-
         if 'done_ia' in self.request.query_params:
             ia_obj = InventoryAdjustment.objects.filter(id=kwargs.get('pk'), state=1).first()
             if ia_obj:
