@@ -89,6 +89,8 @@ class ReportProductList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            "sale_order",
+            "sale_order__customer",
             "product",
             "product__general_product_category",
             "product__sale_default_uom",
