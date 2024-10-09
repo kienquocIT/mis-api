@@ -234,7 +234,7 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         if self.instance.state == 1:
             raise serializers.ValidationError('This Inventory Adjustment is being worked.')
         if self.instance.state == 2:
-            raise serializers.ValidationError('This Inventory Adjustment is done already.')
+            raise serializers.ValidationError('This Inventory Adjustment has done already.')
         return validate_data
 
     def update(self, instance, validated_data):
