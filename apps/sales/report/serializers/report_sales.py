@@ -72,12 +72,14 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
 
 # REPORT PRODUCT
 class ReportProductListSerializer(serializers.ModelSerializer):
+    sale_order = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportProduct
         fields = (
             'id',
+            'sale_order',
             'product',
             'quantity',
             'date_approved',
@@ -85,6 +87,19 @@ class ReportProductListSerializer(serializers.ModelSerializer):
             'gross_profit',
             'net_income',
         )
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'customer': {
+                'id': obj.sale_order.customer_id,
+                'title': obj.sale_order.customer.name,
+                'code': obj.sale_order.customer.code,
+            } if obj.sale_order.customer else {}
+        } if obj.sale_order else {}
 
     @classmethod
     def get_product(cls, obj):
