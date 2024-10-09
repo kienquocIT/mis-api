@@ -70,9 +70,17 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         default=None,
     )
-    product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    product_mapped = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='ia_item_product_mapped'
+    )
     product_mapped_data = models.JSONField(default=dict)
-    warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    warehouse_mapped = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='ia_item_warehouse_mapped'
+    )
     warehouse_mapped_data = models.JSONField(default=dict)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     uom_mapped_data = models.JSONField(default=dict)
@@ -102,3 +110,21 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         ordering = ('product_mapped__code',)
         default_permissions = ()
         permissions = ()
+
+
+class IAItemBeingAdjusted(SimpleAbstractModel):
+    ia_mapped = models.ForeignKey(
+        InventoryAdjustment,
+        on_delete=models.CASCADE,
+        related_name='ia_mapped_being_adjusted'
+    )
+    product_mapped = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='product_mapped_being_adjusted'
+    )
+    warehouse_mapped = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='warehouse_mapped_being_adjusted'
+    )

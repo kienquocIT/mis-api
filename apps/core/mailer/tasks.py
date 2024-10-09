@@ -271,7 +271,7 @@ def send_mail_workflow(
         runtime_obj,
         workflow_type,
 ):
-    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=4)
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=6)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
         cls = SendMailController(mail_config=config_obj, timeout=3)
@@ -280,7 +280,7 @@ def send_mail_workflow(
                 subject = template_obj.subject if template_obj.subject else 'Workflow'
                 log_cls = MailLogController(
                     tenant_id=tenant_id, company_id=company_id,
-                    system_code=4,  # WORKFLOW
+                    system_code=6,  # WORKFLOW
                     doc_id=user_id, subject=subject,
                 )
                 if log_cls.create():

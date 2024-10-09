@@ -6,80 +6,6 @@ from apps.sales.inventory.models import (
 )
 
 
-def create_inventory_adjustment_warehouses(obj, data):
-    bulk_info = []
-    for wh_id in data:
-        bulk_info.append(
-            InventoryAdjustmentWarehouse(
-                warehouse_mapped_id=wh_id,
-                inventory_adjustment_mapped=obj,
-            )
-        )
-    InventoryAdjustmentWarehouse.objects.filter(inventory_adjustment_mapped=obj).delete()
-    InventoryAdjustmentWarehouse.objects.bulk_create(bulk_info)
-    return True
-
-
-def create_inventory_adjustment_employees_in_charge(obj, data):
-    bulk_info = []
-    for em_id in data:
-        bulk_info.append(InventoryAdjustmentEmployeeInCharge(employee_mapped_id=em_id, inventory_adjustment_mapped=obj))
-    InventoryAdjustmentEmployeeInCharge.objects.filter(inventory_adjustment_mapped=obj).delete()
-    InventoryAdjustmentEmployeeInCharge.objects.bulk_create(bulk_info)
-    return True
-
-
-def create_inventory_adjustment_items(obj, data):
-    bulk_info = []
-    for item in data:
-        difference_quantity = int(item.get('count', 0)) - item.get('book_quantity', 0)
-        bulk_info.append(
-            InventoryAdjustmentItem(
-                **item,
-                inventory_adjustment_mapped=obj,
-                tenant=obj.tenant,
-                company=obj.company,
-                gr_remain_quantity=difference_quantity if difference_quantity > 0 else 0
-            )
-        )
-    InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
-    InventoryAdjustmentItem.objects.bulk_create(bulk_info)
-    for item in obj.inventory_adjustment_item_mapped.all():
-        item.product_mapped_data = {
-            'id': str(item.product_mapped.id),
-            'code': item.product_mapped.code,
-            'title': item.product_mapped.title,
-            'description': item.product_mapped.description,
-            'general_traceability_method': item.product_mapped.general_traceability_method
-        } if item.product_mapped else {}
-        item.uom_mapped_data = {
-            'id': str(item.uom_mapped.id),
-            'code': item.uom_mapped.code,
-            'title': item.uom_mapped.title,
-            'ratio': item.uom_mapped.ratio
-        } if item.uom_mapped else {}
-        item.warehouse_mapped_data = {
-            'id': str(item.warehouse_mapped.id),
-            'code': item.warehouse_mapped.code,
-            'title': item.warehouse_mapped.title
-        } if item.warehouse_mapped else {}
-        item.save(update_fields=['product_mapped_data', 'uom_mapped_data', 'warehouse_mapped_data'])
-    return True
-
-
-def update_inventory_adjustment_items(obj, data):
-    for item in data:
-        item_obj = obj.inventory_adjustment_item_mapped.filter(id=item['id']).first()
-        if item_obj:
-            item_obj.count = item['count']
-            item_obj.action_type = item['action_type']
-            item_obj.select_for_action = item['select_for_action']
-            item_obj.save(update_fields=['count', 'action_type', 'select_for_action'])
-        else:
-            raise serializers.ValidationError('Inventory Adjustment Item not exist')
-    return True
-
-
 class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
     warehouses = serializers.SerializerMethodField()
     state_detail = serializers.SerializerMethodField()
@@ -219,9 +145,9 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
             new_code = 'IA.000' + str(new_code)
 
         obj = InventoryAdjustment.objects.create(**validated_data, code=new_code)
-        create_inventory_adjustment_warehouses(obj, self.initial_data.get('ia_warehouses_data', []))
-        create_inventory_adjustment_employees_in_charge(obj, self.initial_data.get('ia_employees_in_charge', []))
-        create_inventory_adjustment_items(obj, self.initial_data.get('ia_items_data', []))
+        IACommonFunc.create_ia_warehouses(obj, self.initial_data.get('ia_warehouses_data', []))
+        IACommonFunc.create_ia_employees_in_charge(obj, self.initial_data.get('ia_employees_in_charge', []))
+        IACommonFunc.create_ia_items(obj, self.initial_data.get('ia_items_data', []))
         return obj
 
 
@@ -241,8 +167,8 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
-        update_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
+        IACommonFunc.create_ia_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
+        IACommonFunc.update_ia_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
 
 
@@ -301,6 +227,83 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_unit_cost(cls, obj):
         return obj.product_mapped.get_unit_cost_by_warehouse(obj.warehouse_mapped_id)
+
+
+class IACommonFunc:
+    @classmethod
+    def create_ia_warehouses(cls, obj, data):
+        bulk_info = []
+        for wh_id in data:
+            bulk_info.append(
+                InventoryAdjustmentWarehouse(
+                    warehouse_mapped_id=wh_id,
+                    inventory_adjustment_mapped=obj,
+                )
+            )
+        InventoryAdjustmentWarehouse.objects.filter(inventory_adjustment_mapped=obj).delete()
+        InventoryAdjustmentWarehouse.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_ia_employees_in_charge(cls, obj, data):
+        bulk_info = []
+        for em_id in data:
+            bulk_info.append(
+                InventoryAdjustmentEmployeeInCharge(employee_mapped_id=em_id, inventory_adjustment_mapped=obj))
+        InventoryAdjustmentEmployeeInCharge.objects.filter(inventory_adjustment_mapped=obj).delete()
+        InventoryAdjustmentEmployeeInCharge.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_ia_items(cls, obj, data):
+        bulk_info = []
+        for item in data:
+            difference_quantity = int(item.get('count', 0)) - item.get('book_quantity', 0)
+            bulk_info.append(
+                InventoryAdjustmentItem(
+                    **item,
+                    inventory_adjustment_mapped=obj,
+                    tenant=obj.tenant,
+                    company=obj.company,
+                    gr_remain_quantity=difference_quantity if difference_quantity > 0 else 0
+                )
+            )
+        InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
+        InventoryAdjustmentItem.objects.bulk_create(bulk_info)
+        for item in obj.inventory_adjustment_item_mapped.all():
+            item.product_mapped_data = {
+                'id': str(item.product_mapped.id),
+                'code': item.product_mapped.code,
+                'title': item.product_mapped.title,
+                'description': item.product_mapped.description,
+                'general_traceability_method': item.product_mapped.general_traceability_method
+            } if item.product_mapped else {}
+            item.uom_mapped_data = {
+                'id': str(item.uom_mapped.id),
+                'code': item.uom_mapped.code,
+                'title': item.uom_mapped.title,
+                'ratio': item.uom_mapped.ratio
+            } if item.uom_mapped else {}
+            item.warehouse_mapped_data = {
+                'id': str(item.warehouse_mapped.id),
+                'code': item.warehouse_mapped.code,
+                'title': item.warehouse_mapped.title
+            } if item.warehouse_mapped else {}
+            item.save(update_fields=['product_mapped_data', 'uom_mapped_data', 'warehouse_mapped_data'])
+        return True
+
+    @classmethod
+    def update_ia_items(cls, obj, data):
+        for item in data:
+            item_obj = obj.inventory_adjustment_item_mapped.filter(id=item['id']).first()
+            if item_obj:
+                item_obj.count = item['count']
+                item_obj.action_type = item['action_type']
+                item_obj.select_for_action = item['select_for_action']
+                item_obj.save(update_fields=['count', 'action_type', 'select_for_action'])
+            else:
+                raise serializers.ValidationError('Inventory Adjustment Item not exist')
+        return True
 
 
 # Inventory adjustment list use for other apps

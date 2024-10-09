@@ -200,7 +200,7 @@ class MailTemplateSystem(MasterDataAbstractModel):
                     obj.subject = SUBJECT_OTP_VALIDATE_DEFAULT
                     obj.contents = TEMPLATE_OTP_VALIDATE_DEFAULT.replace('__company_title__', company_obj.title)
                 # mail workflow
-                elif system_code in [4, '4']:
+                elif system_code in [6, '6']:
                     obj.subject = SUBJECT_WORKFLOW_DEFAULT
                     obj.contents = TEMPLATE_WORKFLOW_DEFAULT.replace(
                         '__company_title__', company_obj.title
