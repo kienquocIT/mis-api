@@ -116,9 +116,12 @@ urlpatterns += [
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
-    path('update-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
-    path('update-detail-data-import-db/list', GoodsDetailDataListImportDB.as_view(),
-         name='GoodsDetailDataListImportDB'),
+    path('create-update-goods-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
+    path(
+        'create-goods-detail-data-import-db/list',
+        GoodsDetailDataListImportDB.as_view(),
+        name='GoodsDetailDataListImportDB'
+    ),
 ]
 
 # goods registration
