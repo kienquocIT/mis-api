@@ -84,7 +84,6 @@ class InventoryAdjustmentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             if ia_obj:
                 ia_obj.state = 2
                 ia_obj.save(update_fields=['state'])
-                ia_obj.inventory_adjustment_item_mapped.all().update(being_adjusted=False)
                 IAItemBeingAdjusted.objects.filter(ia_mapped=ia_obj).delete()
         return self.retrieve(request, *args, **kwargs)
 
