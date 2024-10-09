@@ -91,6 +91,7 @@ class ReportProductList(BaseListMixin):
         return super().get_queryset().select_related(
             "product",
             "product__general_product_category",
+            "product__sale_default_uom",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(

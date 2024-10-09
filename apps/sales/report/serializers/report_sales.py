@@ -79,6 +79,7 @@ class ReportProductListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
+            'quantity',
             'date_approved',
             'revenue',
             'gross_profit',
@@ -87,30 +88,22 @@ class ReportProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        if obj.product:
-            stock = 0
-            if obj.product.inventory_uom:
-                for product_wh in obj.product.product_warehouse_product.all():
-                    stock += product_wh.stock_amount
-                stock = stock / obj.product.inventory_uom.ratio if obj.product.inventory_uom.ratio > 0 else 0
-            return {
-                'id': obj.product_id,
-                'title': obj.product.title,
-                'code': obj.product.code,
-                'general_product_category': {
-                    'id': obj.product.general_product_category_id,
-                    'title': obj.product.general_product_category.title,
-                    'code': obj.product.general_product_category.code,
-                    'description': obj.product.general_product_category.description,
-                } if obj.product.general_product_category else {},
-                'uom': {
-                    'id': obj.product.sale_default_uom_id,
-                    'title': obj.product.sale_default_uom.title,
-                    'code': obj.product.sale_default_uom.code,
-                } if obj.product.sale_default_uom else {},
-                'stock': stock,
-            }
-        return {}
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_product_category': {
+                'id': obj.product.general_product_category_id,
+                'title': obj.product.general_product_category.title,
+                'code': obj.product.general_product_category.code,
+                'description': obj.product.general_product_category.description,
+            } if obj.product.general_product_category else {},
+            'uom': {
+                'id': obj.product.sale_default_uom_id,
+                'title': obj.product.sale_default_uom.title,
+                'code': obj.product.sale_default_uom.code,
+            } if obj.product.sale_default_uom else {},
+        } if obj.product else {}
 
 
 # REPORT CUSTOMER

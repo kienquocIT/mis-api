@@ -70,6 +70,8 @@ class SOFinishHandler:
                 company_id=instance.company_id,
                 sale_order_id=instance.id,
                 product_id=so_product.product_id,
+                product_data=so_product.product_data,
+                quantity=so_product.product_quantity,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
                 group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
