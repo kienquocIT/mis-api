@@ -19,7 +19,7 @@ class InventoryAdjustment(DataAbstractModel):
         blank=True,
         related_name='employees_in_charge_mapped_ia'
     )
-    state = models.SmallIntegerField(choices=[(0, _('Created')), (1, _('Working')), (2, _('Done'))], default=0)
+    state = models.SmallIntegerField(choices=[(0, _('IA Created')), (1, _('IA Working')), (2, _('IA Done'))], default=0)
 
     def update_ia_state(self):
         all_item_select = self.inventory_adjustment_item_mapped.filter(select_for_action=True)

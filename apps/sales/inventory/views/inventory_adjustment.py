@@ -66,6 +66,10 @@ class InventoryAdjustmentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        if 'start_ia' in self.request.query_params:
+            InventoryAdjustment.objects.filter(id=kwargs.get('pk'), state=0).update(state=1)
+        if 'done_ia' in self.request.query_params:
+            InventoryAdjustment.objects.filter(id=kwargs.get('pk'), state=1).update(state=2)
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
