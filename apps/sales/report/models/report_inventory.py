@@ -48,11 +48,11 @@ class ReportStock(DataAbstractModel):  # rp_stock
     )
 
     @classmethod
-    def get_report_stock(cls, stock_obj, period_obj, sub_period_order, product_obj, **kwargs):
+    def get_report_stock(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
         (
             tenant_obj, company_obj, emp_created_obj, emp_inherit_obj
         ) = (
-            stock_obj.tenant, stock_obj.company, stock_obj.employee_created, stock_obj.employee_inherit
+            doc_obj.tenant, doc_obj.company, doc_obj.employee_created, doc_obj.employee_inherit
         )
         if 'warehouse_id' in kwargs:
             del kwargs['warehouse_id']
@@ -151,11 +151,11 @@ class ReportStockLog(DataAbstractModel):  # rp_log
     lot_data = models.JSONField(default=list)
 
     @classmethod
-    def create_new_log_list(cls, stock_obj, stock_data, period_obj, sub_period_order, config_inventory_management):
+    def create_new_logs(cls, doc_obj, doc_data, period_obj, sub_period_order, config_inventory_management):
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
         log_order_number = 0
-        for item in stock_data:
+        for item in doc_data:
             kw_parameter = {}
             if 1 in config_inventory_management:
                 kw_parameter['warehouse_id'] = item['warehouse'].id
@@ -165,10 +165,10 @@ class ReportStockLog(DataAbstractModel):  # rp_log
                 kw_parameter['sale_order_id'] = item['sale_order'].id if item.get('sale_order') else None
 
             rp_inventory = ReportStock.get_report_stock(
-                stock_obj, period_obj, sub_period_order, item['product'], **kw_parameter
+                doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
             )
             item['cost'] = ReportInventorySubFunction.get_latest_log_value_dict(
-                stock_obj.company.company_config.definition_inventory_valuation,
+                doc_obj.company.company_config.definition_inventory_valuation,
                 item['product'], item['warehouse'], **kw_parameter
             )['cost'] if item['stock_type'] == -1 else item['cost']
 
@@ -186,12 +186,12 @@ class ReportStockLog(DataAbstractModel):  # rp_log
 
             if float(item['quantity']) > 0:
                 new_log = cls(
-                    tenant=stock_obj.tenant,
-                    company=stock_obj.company,
-                    employee_created=stock_obj.employee_created
-                    if stock_obj.employee_created else stock_obj.employee_inherit,
-                    employee_inherit=stock_obj.employee_inherit
-                    if stock_obj.employee_inherit else stock_obj.employee_created,
+                    tenant=doc_obj.tenant,
+                    company=doc_obj.company,
+                    employee_created=doc_obj.employee_created
+                    if doc_obj.employee_created else doc_obj.employee_inherit,
+                    employee_inherit=doc_obj.employee_inherit
+                    if doc_obj.employee_inherit else doc_obj.employee_created,
                     report_stock=rp_inventory,
                     product=item['product'],
                     physical_warehouse=item['warehouse'],
@@ -214,12 +214,12 @@ class ReportStockLog(DataAbstractModel):  # rp_log
                 log_order_number += 1
 
                 if 'sale_order_id' in kw_parameter:  # Project
-                    GoodsRegistration.update_registration_inventory(item, stock_obj)
+                    GoodsRegistration.update_registration_inventory(item, doc_obj)
 
         return cls.objects.bulk_create(bulk_info)
 
     @classmethod
-    def update_current_cost(cls, log, period_obj, sub_period_order, config_inventory_management):
+    def update_log_cost(cls, log, period_obj, sub_period_order, config_inventory_management):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
         div = log.company.company_config.definition_inventory_valuation
         kw_parameter = {}

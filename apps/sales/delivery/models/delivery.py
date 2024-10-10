@@ -368,12 +368,12 @@ class OrderDeliverySub(DataAbstractModel):
         return True
 
     @classmethod
-    def for_lot(cls, instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
+    def for_lot(cls, instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
                 casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, lot.get('quantity_delivery'))
-                stock_data.append({
+                doc_data.append({
                     'sale_order': sale_order_obj,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
@@ -395,12 +395,12 @@ class OrderDeliverySub(DataAbstractModel):
                         'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
                     }
                 })
-        return stock_data
+        return doc_data
 
     @classmethod
-    def for_sn(cls, instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj):
+    def for_sn(cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj):
         casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
-        stock_data.append({
+        doc_data.append({
             'sale_order': instance.order_delivery.sale_order,
             'product': product_obj,
             'warehouse': warehouse_obj,
@@ -416,11 +416,11 @@ class OrderDeliverySub(DataAbstractModel):
             'value': 0,  # theo gia cost
             'lot_data': {}
         })
-        return stock_data
+        return doc_data
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
-        stock_data = []
+        doc_data = []
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product:
                 product_obj = deli_product.product
@@ -434,7 +434,7 @@ class OrderDeliverySub(DataAbstractModel):
                     if warehouse_obj and uom_obj and quantity > 0:
                         if product_obj.general_traceability_method == 0:  # None
                             casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(uom_obj, quantity)
-                            stock_data.append({
+                            doc_data.append({
                                 'sale_order': sale_order_obj,
                                 'product': product_obj,
                                 'warehouse': warehouse_obj,
@@ -452,11 +452,11 @@ class OrderDeliverySub(DataAbstractModel):
                             })
                         if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
                             cls.for_lot(
-                                instance, lot_data, stock_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
+                                instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                            cls.for_sn(instance, sn_data, stock_data, product_obj, warehouse_obj, uom_obj)
-        InventoryCostLog.log(instance, instance.date_done, stock_data)
+                            cls.for_sn(instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj)
+        InventoryCostLog.log(instance, instance.date_done, doc_data)
         return True
 
     def save(self, *args, **kwargs):

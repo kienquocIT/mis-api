@@ -35,9 +35,7 @@ ATTRIBUTE_CONFIG = [
 VALUATION_METHOD = [
     (0, _('FIFO')),
     (1, _('Cumulative weighted average')),
-    (2, _('Weighted average')),
-    (3, _('Specific identification method')),
-    (4, _('Standard cost')),
+    (2, _('Specific identification method'))
 ]
 
 # Create your models here.

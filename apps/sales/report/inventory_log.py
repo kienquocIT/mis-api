@@ -6,57 +6,32 @@ from apps.sales.report.models import ReportStockLog, ReportInventoryCost, Report
 
 class InventoryCostLog:
     @classmethod
-    def log(cls, stock_obj, stock_obj_date, stock_data):
+    def log(cls, doc_obj, doc_date, doc_data):
         try:
-            tenant = stock_obj.tenant
-            company = stock_obj.company
+            tenant = doc_obj.tenant
+            company = doc_obj.company
             with transaction.atomic():
-                # lấy pp tính giá cost
-                cost_calculate_cfg = InventoryCostLogFunc.get_cost_calculate_config(company.company_config)
-                period_obj = Periods.objects.filter(
-                    tenant=tenant,
-                    company=company,
-                    fiscal_year=stock_obj_date.year
-                ).first()
+                # lấy pp tính giá cost (WA, FIFO,
+                cost_cfg = InventoryCostLogFunc.get_cost_calculate_config(company.company_config)
+                period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
-                    sub_period_order = stock_obj_date.month - period_obj.space_month
+                    sub_period_order = doc_date.month - period_obj.space_month
 
                     # cho kiểm kê định kì
-                    if int(sub_period_order) == 1:
-                        last_period_obj = Periods.objects.filter(
-                            tenant=tenant,
-                            company=company,
-                            fiscal_year=period_obj.fiscal_year - 1
-                        ).first()
-                        last_sub_cost = ReportInventoryCost.objects.filter(
-                            period_mapped=last_period_obj,
-                            sub_period_order=12,
-                            periodic_closed=False
-                        ).exists()
-                        if last_sub_cost:
-                            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                                last_period_obj, 12, tenant, company
-                            )
-                    else:
-                        last_sub_cost = ReportInventoryCost.objects.filter(
-                            period_mapped=period_obj,
-                            sub_period_order=int(sub_period_order) - 1,
-                            periodic_closed=False
-                        ).exists()
-                        if last_sub_cost:
-                            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                                period_obj, int(sub_period_order) - 1, tenant, company
-                            )
+                    if company.company_config.definition_inventory_valuation == 1:
+                        InventoryCostLogFunc.auto_calculate_last_sub_ending_balance_for_periodic(
+                            tenant, company, period_obj, sub_period_order
+                        )
 
                     # tạo các log
-                    new_log_list = ReportStockLog.create_new_log_list(
-                        stock_obj, stock_data, period_obj, sub_period_order, cost_calculate_cfg
+                    new_logs = ReportStockLog.create_new_logs(
+                        doc_obj, doc_data, period_obj, sub_period_order, cost_cfg
                     )
                     # cập nhập giá cost hiện tại
-                    for log in new_log_list:
-                        ReportStockLog.update_current_cost(log, period_obj, sub_period_order, cost_calculate_cfg)
+                    for log in new_logs:
+                        ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
                     return True
-                raise serializers.ValidationError({'period_obj': f'Fiscal year {stock_obj_date.year} does not exist.'})
+                raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
             print(err)
             return False
@@ -80,3 +55,19 @@ class InventoryCostLogFunc:
         if cost_per_project:
             config_inventory_management.append(3)
         return config_inventory_management
+
+    @classmethod
+    def auto_calculate_last_sub_ending_balance_for_periodic(cls, tenant, company, period_obj, sub_period_order):
+        if int(sub_period_order) == 1:
+            fiscal_year = period_obj.fiscal_year - 1
+            period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=fiscal_year).first()
+            sub_period_order = 12
+
+        if ReportInventoryCost.objects.filter(
+                period_mapped=period_obj,
+                sub_period_order=sub_period_order,
+                periodic_closed=False
+        ).exists():
+            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
+                period_obj, sub_period_order, tenant, company
+            )

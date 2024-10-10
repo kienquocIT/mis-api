@@ -167,7 +167,7 @@ class GoodsReceipt(DataAbstractModel):
         return all_lots
 
     @classmethod
-    def for_goods_receipt_has_no_purchase_request(cls, instance, stock_data, all_lots):
+    def for_goods_receipt_has_no_purchase_request(cls, instance, doc_data, all_lots):
         goods_receipt_warehouses = instance.goods_receipt_warehouse_goods_receipt.all()
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             if gr_item.product.general_traceability_method != 1:  # None + Sn
@@ -178,7 +178,7 @@ class GoodsReceipt(DataAbstractModel):
                     casted_cost = (
                         gr_item.product_unit_price * gr_prd_wh.quantity_import / casted_quantity
                     ) if casted_quantity > 0 else 0
-                    stock_data.append({
+                    doc_data.append({
                         'product': gr_item.product,
                         'warehouse': gr_prd_wh.warehouse,
                         'system_date': instance.date_approved,
@@ -200,7 +200,7 @@ class GoodsReceipt(DataAbstractModel):
                         casted_cost = (
                             gr_item.product_unit_price * lot.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
-                        stock_data.append({
+                        doc_data.append({
                             'product': gr_item.product,
                             'warehouse': gr_prd_wh.warehouse,
                             'system_date': instance.date_approved,
@@ -221,10 +221,10 @@ class GoodsReceipt(DataAbstractModel):
                                 'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                             }
                         })
-        return stock_data
+        return doc_data
 
     @classmethod
-    def for_goods_receipt_has_purchase_request(cls, instance, stock_data, all_lots):
+    def for_goods_receipt_has_purchase_request(cls, instance, doc_data, all_lots):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             for pr_item in gr_item.goods_receipt_request_product_gr_product.all():
                 purchase_request = None
@@ -238,7 +238,7 @@ class GoodsReceipt(DataAbstractModel):
                         casted_cost = (
                             gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
-                        stock_data.append({
+                        doc_data.append({
                             'sale_order': purchase_request.sale_order if purchase_request else None,
                             'product': gr_item.product,
                             'warehouse': prd_wh.warehouse,
@@ -262,7 +262,7 @@ class GoodsReceipt(DataAbstractModel):
                             casted_cost = (
                                 gr_item.product_unit_price * lot.quantity_import / casted_quantity
                             ) if casted_quantity > 0 else 0
-                            stock_data.append({
+                            doc_data.append({
                                 'sale_order': purchase_request.sale_order if purchase_request else None,
                                 'product': gr_item.product,
                                 'warehouse': prd_wh.warehouse,
@@ -285,20 +285,20 @@ class GoodsReceipt(DataAbstractModel):
                                     'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                                 }
                             })
-        return stock_data
+        return doc_data
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
         all_lots = cls.get_all_lots(instance)
-        stock_data = []
+        doc_data = []
         if instance.goods_receipt_pr_goods_receipt.count() == 0:
-            stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
+            doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
         else:
-            stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
+            doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
         InventoryCostLog.log(
             instance,
             instance.date_approved,
-            stock_data
+            doc_data
         )
         return True
 

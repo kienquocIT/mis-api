@@ -27,8 +27,8 @@ class GoodsReturn(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def check_exists(cls, stock_data, data):
-        for item in stock_data:
+    def check_exists(cls, doc_data, data):
+        for item in doc_data:
             if all([
                 data['product'] == item['product'], data['warehouse'] == item['warehouse'],
                 data['system_date'] == item['system_date'], data['posting_date'] == item['posting_date'],
@@ -38,13 +38,13 @@ class GoodsReturn(DataAbstractModel):
             ]):
                 item['quantity'] += data['quantity']
                 item['value'] += item['quantity'] * item['cost']
-                return stock_data, True
-        return stock_data, False
+                return doc_data, True
+        return doc_data, False
 
     @classmethod
     def for_perpetual_inventory(cls, instance):
         product_detail_list = instance.goods_return_product_detail.all()
-        stock_data = []
+        doc_data = []
         for item in product_detail_list.filter(type=0):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -70,9 +70,9 @@ class GoodsReturn(DataAbstractModel):
                     'value': casted_quantity * casted_cost,
                     'lot_data': {}
                 }
-                stock_data, is_append = cls.check_exists(stock_data, data)
+                doc_data, is_append = cls.check_exists(doc_data, data)
                 if not is_append:
-                    stock_data.append(data)
+                    doc_data.append(data)
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
@@ -106,9 +106,9 @@ class GoodsReturn(DataAbstractModel):
                         'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
                     }
                 }
-                stock_data, is_append = cls.check_exists(stock_data, data)
+                doc_data, is_append = cls.check_exists(doc_data, data)
                 if not is_append:
-                    stock_data.append(data)
+                    doc_data.append(data)
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=2):
@@ -136,23 +136,23 @@ class GoodsReturn(DataAbstractModel):
                     'value': casted_quantity * casted_cost,
                     'lot_data': {}
                 }
-                stock_data, is_append = cls.check_exists(stock_data, data)
+                doc_data, is_append = cls.check_exists(doc_data, data)
                 if not is_append:
-                    stock_data.append(data)
+                    doc_data.append(data)
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
-        return stock_data
+        return doc_data
 
     @classmethod
     def for_periodic_inventory(cls, instance):
         product_detail_list = instance.goods_return_product_detail.all()
-        stock_data = []
+        doc_data = []
         for item in product_detail_list.filter(type=0):
             casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
             casted_cost = (
                     item.cost_for_periodic * item.default_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
-            stock_data.append({
+            doc_data.append({
                 'sale_order': instance.delivery.order_delivery.sale_order,
                 'product': item.product,
                 'warehouse': item.return_to_warehouse,
@@ -173,7 +173,7 @@ class GoodsReturn(DataAbstractModel):
             casted_cost = (
                     item.cost_for_periodic * item.lot_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
-            stock_data.append({
+            doc_data.append({
                 'sale_order': instance.delivery.order_delivery.sale_order,
                 'product': item.product,
                 'warehouse': item.return_to_warehouse,
@@ -200,7 +200,7 @@ class GoodsReturn(DataAbstractModel):
             casted_cost = (
                     item.cost_for_periodic * float(item.is_return) / casted_quantity
             ) if casted_quantity > 0 else 0
-            stock_data.append({
+            doc_data.append({
                 'sale_order': instance.delivery.order_delivery.sale_order,
                 'product': item.product,
                 'warehouse': item.return_to_warehouse,
@@ -216,16 +216,16 @@ class GoodsReturn(DataAbstractModel):
                 'value': casted_quantity * casted_cost,
                 'lot_data': {}
             })
-        return stock_data
+        return doc_data
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
         if instance.company.company_config.definition_inventory_valuation == 0:
-            stock_data = cls.for_perpetual_inventory(instance)
+            doc_data = cls.for_perpetual_inventory(instance)
         else:
-            stock_data = cls.for_periodic_inventory(instance)
+            doc_data = cls.for_periodic_inventory(instance)
 
-        InventoryCostLog.log(instance, instance.date_created, stock_data)
+        InventoryCostLog.log(instance, instance.date_created, doc_data)
         return True
 
     def save(self, *args, **kwargs):
