@@ -108,6 +108,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
+    valuation_method = serializers.IntegerField(default=1)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -264,6 +265,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'inventory_level_max': ProductMsg.NEGATIVE_VALUE})
             return value
         return None
+
+    @classmethod
+    def validate_valuation_method(cls, attrs):
+        if attrs in [0, 1, 2]:
+            return attrs
+        raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
 
     @classmethod
     def validate_purchase_default_uom(cls, value):
@@ -656,6 +663,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
+    valuation_method = serializers.IntegerField(default=1)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -808,6 +816,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'inventory_level_max': ProductMsg.NEGATIVE_VALUE})
             return value
         return None
+
+    @classmethod
+    def validate_valuation_method(cls, attrs):
+        if attrs in [0, 1, 2]:
+            return attrs
+        raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
 
     @classmethod
     def validate_purchase_default_uom(cls, value):

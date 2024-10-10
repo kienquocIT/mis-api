@@ -206,7 +206,7 @@ class Product(DataAbstractModel):
     )
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
-    valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=2)
+    valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
     standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Purchase

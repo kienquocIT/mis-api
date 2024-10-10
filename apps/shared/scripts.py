@@ -2301,3 +2301,14 @@ def update_difference_quantity_goods_issue():
                 item.remain_quantity = wo_item.quantity - item.before_quantity
             item.save(update_fields=['remain_quantity'])
     print('Done :))')
+
+
+def update_valuation_method():
+    for company in Company.objects.all():
+        print(company.code)
+        company.company_config.default_inventory_value_method = 1
+        company.company_config.save(update_fields=['default_inventory_value_method'])
+    for product in Product.objects.all():
+        product.valuation_method = 1
+        product.save(update_fields=['valuation_method'])
+    print('Done :))')

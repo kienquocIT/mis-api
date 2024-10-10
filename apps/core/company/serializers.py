@@ -66,7 +66,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     currency = serializers.CharField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
-    default_inventory_value_method = serializers.IntegerField(default=2)
+    default_inventory_value_method = serializers.IntegerField(default=1)
 
     @classmethod
     def validate_currency(cls, attrs):
@@ -97,7 +97,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_default_inventory_value_method(cls, attrs):
-        if attrs in [0, 1, 2, 3]:
+        if attrs in [0, 1, 2]:
             return attrs
         raise serializers.ValidationError({'default_inventory_value_method': CompanyMsg.DIV_METHOD_NOT_VALID})
 
