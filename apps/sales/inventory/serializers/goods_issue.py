@@ -447,7 +447,9 @@ class GoodsIssueCommonFunction:
                     ).first()
                     if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and ia_item_obj:
                         if prd_wh_obj.stock_amount < float(item.get('issued_quantity', 0)):
-                            raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
+                            raise serializers.ValidationError(
+                                {'issued_quantity': "Issue quantity can't > stock quantity."}
+                            )
                         if (
                                 ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity
                         ) < float(item.get('issued_quantity', 0)):
