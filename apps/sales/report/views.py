@@ -293,7 +293,7 @@ class ReportStockDetailList(BaseListMixin):
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_calculate_config(
+        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_config(
             company_config
         )
         return self.list(request, *args, **kwargs)
@@ -565,7 +565,7 @@ class ReportStockList(BaseListMixin):
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')]
             }
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_calculate_config(
+        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_config(
             company_config
         )
         return self.list(request, *args, **kwargs)

@@ -579,7 +579,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    config_inventory_management = InventoryCostLogFunc.get_cost_calculate_config(
+                    config_inventory_management = InventoryCostLogFunc.get_cost_config(
                         obj.company.company_config
                     )
 

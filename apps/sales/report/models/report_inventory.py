@@ -720,6 +720,7 @@ class ReportInventorySubFunction:
 
     @classmethod
     def calculate_ending_balance_for_periodic(cls, period_obj, sub_period_order, tenant, company):
+        """ Cập nhập giá cost cuối kì cho tháng trước """
         for this_rp_inventory_cost in ReportInventoryCost.objects.filter(
             tenant=tenant, company=company, period_mapped=period_obj, sub_period_order=sub_period_order
         ):

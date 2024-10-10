@@ -11,23 +11,19 @@ class InventoryCostLog:
             tenant = doc_obj.tenant
             company = doc_obj.company
             with transaction.atomic():
-                # lấy pp tính giá cost (WA, FIFO,
-                cost_cfg = InventoryCostLogFunc.get_cost_calculate_config(company.company_config)
+                # lấy pp tính giá cost (0_FIFO, 1_CWA, 2_SIM)
+                cost_cfg = InventoryCostLogFunc.get_cost_config(company.company_config)
                 period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
                     sub_period_order = doc_date.month - period_obj.space_month
 
                     # cho kiểm kê định kì
                     if company.company_config.definition_inventory_valuation == 1:
-                        InventoryCostLogFunc.auto_calculate_last_sub_ending_balance_for_periodic(
-                            tenant, company, period_obj, sub_period_order
-                        )
+                        InventoryCostLogFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
 
                     # tạo các log
-                    new_logs = ReportStockLog.create_new_logs(
-                        doc_obj, doc_data, period_obj, sub_period_order, cost_cfg
-                    )
-                    # cập nhập giá cost hiện tại
+                    new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
+                    # cập nhập giá cost cho từng log
                     for log in new_logs:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
                     return True
@@ -43,7 +39,7 @@ class InventoryCostLogFunc:
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def get_cost_calculate_config(cls, company_config):
+    def get_cost_config(cls, company_config):
         cost_per_warehouse = company_config.cost_per_warehouse
         cost_per_lot = company_config.cost_per_lot
         cost_per_project = company_config.cost_per_project
@@ -57,7 +53,8 @@ class InventoryCostLogFunc:
         return config_inventory_management
 
     @classmethod
-    def auto_calculate_last_sub_ending_balance_for_periodic(cls, tenant, company, period_obj, sub_period_order):
+    def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
+        """ Tự động cập nhập giá cost cuối kì cho tháng trước """
         if int(sub_period_order) == 1:
             fiscal_year = period_obj.fiscal_year - 1
             period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=fiscal_year).first()
@@ -71,3 +68,4 @@ class InventoryCostLogFunc:
             ReportInventorySubFunction.calculate_ending_balance_for_periodic(
                 period_obj, sub_period_order, tenant, company
             )
+        return True

@@ -305,9 +305,9 @@ class GoodsReceipt(DataAbstractModel):
                 doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
         if instance.goods_receipt_type == 2:  # GR by Production
             if instance.production_order:
-                stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
+                doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
             if instance.work_order:
-                stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
+                doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
         InventoryCostLog.log(
             instance,
             instance.date_approved,
