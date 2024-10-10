@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
@@ -19,7 +19,7 @@ class InventoryAdjustment(DataAbstractModel):
         blank=True,
         related_name='employees_in_charge_mapped_ia'
     )
-    state = models.BooleanField(default=False)
+    state = models.SmallIntegerField(choices=[(0, _('IA Created')), (1, _('IA Working')), (2, _('IA Done'))], default=0)
 
     def update_ia_state(self):
         all_item_select = self.inventory_adjustment_item_mapped.filter(select_for_action=True)
@@ -70,9 +70,17 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         default=None,
     )
-    product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    product_mapped = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='ia_item_product_mapped'
+    )
     product_mapped_data = models.JSONField(default=dict)
-    warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    warehouse_mapped = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='ia_item_warehouse_mapped'
+    )
     warehouse_mapped_data = models.JSONField(default=dict)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     uom_mapped_data = models.JSONField(default=dict)
@@ -102,3 +110,21 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
         ordering = ('product_mapped__code',)
         default_permissions = ()
         permissions = ()
+
+
+class IAItemBeingAdjusted(SimpleAbstractModel):
+    ia_mapped = models.ForeignKey(
+        InventoryAdjustment,
+        on_delete=models.CASCADE,
+        related_name='ia_mapped_being_adjusted'
+    )
+    product_mapped = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='product_mapped_being_adjusted'
+    )
+    warehouse_mapped = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='warehouse_mapped_being_adjusted'
+    )

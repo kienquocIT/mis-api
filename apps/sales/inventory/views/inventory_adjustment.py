@@ -1,7 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
-    InventoryAdjustment, InventoryAdjustmentItem
+    InventoryAdjustment, InventoryAdjustmentItem, IAItemBeingAdjusted
 )
 from apps.sales.inventory.serializers.inventory_adjustment import (
     InventoryAdjustmentListSerializer, InventoryAdjustmentDetailSerializer,
@@ -66,6 +66,25 @@ class InventoryAdjustmentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        if 'start_ia' in self.request.query_params:
+            ia_obj = InventoryAdjustment.objects.filter(id=kwargs.get('pk'), state=0).first()
+            if ia_obj:
+                ia_obj.state = 1
+                ia_obj.save(update_fields=['state'])
+                bulk_info = []
+                for item in ia_obj.inventory_adjustment_item_mapped.all():
+                    bulk_info.append(IAItemBeingAdjusted(
+                        ia_mapped=ia_obj,
+                        product_mapped=item.product_mapped,
+                        warehouse_mapped=item.warehouse_mapped
+                    ))
+                IAItemBeingAdjusted.objects.bulk_create(bulk_info)
+        if 'done_ia' in self.request.query_params:
+            ia_obj = InventoryAdjustment.objects.filter(id=kwargs.get('pk'), state=1).first()
+            if ia_obj:
+                ia_obj.state = 2
+                ia_obj.save(update_fields=['state'])
+                IAItemBeingAdjusted.objects.filter(ia_mapped=ia_obj).delete()
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(

@@ -1281,3 +1281,15 @@ msgstr "Đi đến chi tiết:"
 #
 msgid "Here"
 msgstr "Tại đây"
+
+#
+msgid "IA Created"
+msgstr "Đã tạo kiểm kê"
+
+#
+msgid "IA Working"
+msgstr "Đang kiểm kê"
+
+#
+msgid "IA Done"
+msgstr "Kiểm kê hoàn tất"
