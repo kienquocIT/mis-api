@@ -187,7 +187,8 @@ class GoodsReceipt(DataAbstractModel):
                         'stock_type': 1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
-                        'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type else 'Goods receipt',
+                        'trans_title': 'Goods receipt (IA)'
+                        if instance.goods_receipt_type == 1 else 'Goods receipt',
                         'quantity': casted_quantity,
                         'cost': casted_cost,
                         'value': casted_cost * casted_quantity,
@@ -209,7 +210,8 @@ class GoodsReceipt(DataAbstractModel):
                             'stock_type': 1,
                             'trans_id': str(instance.id),
                             'trans_code': instance.code,
-                            'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type else 'Goods receipt',
+                            'trans_title': 'Goods receipt (IA)'
+                            if instance.goods_receipt_type == 1 else 'Goods receipt',
                             'quantity': casted_quantity,
                             'cost': casted_cost,
                             'value': casted_cost * casted_quantity,
@@ -254,7 +256,7 @@ class GoodsReceipt(DataAbstractModel):
                             'stock_type': 1,
                             'trans_id': str(instance.id),
                             'trans_code': instance.code,
-                            'trans_title': 'Goods receipt (IA)' if instance.goods_receipt_type else 'Goods receipt',
+                            'trans_title': 'Goods receipt',
                             'quantity': casted_quantity,
                             'cost': casted_cost,
                             'value': casted_cost * casted_quantity,
@@ -278,8 +280,7 @@ class GoodsReceipt(DataAbstractModel):
                                 'stock_type': 1,
                                 'trans_id': str(instance.id),
                                 'trans_code': instance.code,
-                                'trans_title': 'Goods receipt (IA)'
-                                if instance.goods_receipt_type else 'Goods receipt',
+                                'trans_title': 'Goods receipt',
                                 'quantity': casted_quantity,
                                 'cost': casted_cost,
                                 'value': casted_cost * casted_quantity,
@@ -297,10 +298,16 @@ class GoodsReceipt(DataAbstractModel):
     def prepare_data_for_logging(cls, instance):
         all_lots = cls.get_all_lots(instance)
         stock_data = []
-        if instance.goods_receipt_pr_goods_receipt.count() == 0:
-            stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
-        else:
-            stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
+        if instance.goods_receipt_type in [0, 1]:  # GR by PO/IA
+            if instance.goods_receipt_pr_goods_receipt.count() == 0:
+                stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
+            else:
+                stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
+        if instance.goods_receipt_type == 2:  # GR by Production
+            if instance.production_order:
+                stock_data = cls.for_goods_receipt_has_no_purchase_request(instance, stock_data, all_lots)
+            if instance.work_order:
+                stock_data = cls.for_goods_receipt_has_purchase_request(instance, stock_data, all_lots)
         InventoryCostLog.log(
             instance,
             instance.date_approved,
