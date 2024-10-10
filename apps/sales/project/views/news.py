@@ -1,7 +1,7 @@
 from typing import Union
 
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import exceptions
+import rest_framework.exceptions
 
 from django.conf import settings
 from django.db.models import Q
@@ -120,7 +120,7 @@ class ProjectNewsCommentList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, news_id, **kwargs):
         if news_id and TypeCheck.check_uuid(news_id):
             return self.create(request, *args, news_id, **kwargs)
-        raise exceptions.NotFound
+        raise rest_framework.exceptions.NotFound
 
 
 class ProjectNewsCommentDetail(BaseUpdateMixin, BaseDestroyMixin):
@@ -133,7 +133,7 @@ class ProjectNewsCommentDetail(BaseUpdateMixin, BaseDestroyMixin):
         obj = super().get_object()
         if obj and self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit):
             return obj
-        raise exceptions.NotFound
+        raise rest_framework.exceptions.NotFound
 
     @swagger_auto_schema(
         operation_summary='Project News Comment Update', request_body=ProjectNewsCommentUpdateSerializer
@@ -142,14 +142,14 @@ class ProjectNewsCommentDetail(BaseUpdateMixin, BaseDestroyMixin):
     def put(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             return self.update(request, *args, pk, **kwargs)
-        raise exceptions.NotFound
+        raise rest_framework.exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Project News Comment Delete')
     @mask_view(login_require=True, employee_require=True)
     def delete(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             return self.destroy(request, *args, pk, **kwargs)
-        raise exceptions.NotFound
+        raise rest_framework.exceptions.NotFound
 
 
 class ProjectNewsCommentDetailFlows(BaseRetrieveMixin):
@@ -161,7 +161,7 @@ class ProjectNewsCommentDetailFlows(BaseRetrieveMixin):
         obj = super().get_object()
         if obj and self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit):
             return obj
-        raise exceptions.NotFound
+        raise rest_framework.exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Get comment flows include by id')
     @mask_view(login_require=True, employee_require=True)
