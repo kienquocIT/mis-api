@@ -2,6 +2,8 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
+from apps.sales.production.models import BOM
+from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
@@ -398,13 +400,15 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Products use for sale/ purchase/ inventory
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
-    search_fields = ['title']
+    search_fields = ['title', 'code']
     filterset_fields = {
-        'id': ['exact'],
+        'id': ['exact', 'in'],
         'general_product_types_mapped__is_goods': ['exact'],
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],
         'general_product_types_mapped__is_asset_tool': ['exact'],
+        'bom_product__opportunity_id': ['exact', 'isnull'],
+        'bom_product': ['isnull'],
     }
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -418,11 +422,44 @@ class ProductForSaleList(BaseListMixin):
             "sale_currency_using",
             "purchase_default_uom",
             "purchase_tax",
+            "inventory_uom",
         ).prefetch_related(
             'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list', 'uom_using'),
+            ),
+            Prefetch(
+                'bom_product',
+                queryset=BOM.objects.filter(
+                    opportunity__isnull=True,
+                    system_status=3,
+                ),
+                to_attr='filtered_bom'
+            ),
+            Prefetch(
+                'bom_product',
+                queryset=BOM.objects.filter(
+                    opportunity__isnull=False,
+                    system_status=3,
+                ),
+                to_attr='filtered_bom_opp'
+            ),
+            Prefetch(
+                'sale_order_product_product',
+                queryset=SaleOrderProduct.objects.filter(
+                    sale_order__system_status__in=[0, 1],
+                    sale_order__opportunity__isnull=False
+                ),
+                to_attr='filtered_so_product_using'
+            ),
+            Prefetch(
+                'sale_order_product_product',
+                queryset=SaleOrderProduct.objects.filter(
+                    sale_order__system_status__in=[2, 3],
+                    sale_order__opportunity__isnull=False
+                ),
+                to_attr='filtered_so_product_finished'
             ),
         )
 

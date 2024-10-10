@@ -32,6 +32,7 @@ class BusinessTripTestCase(AdvanceTestCase):
 
         url_tax_category = reverse("TaxCategoryList")
         data = {
+            'code': 'XXX',
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }

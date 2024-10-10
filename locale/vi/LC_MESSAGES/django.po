@@ -44,11 +44,11 @@ msgstr "Tạm ứng"
 
 # c05a6cf4-efff-47e0-afcf-072017b8141a
 msgid "AP Invoice"
-msgstr "AP Invoice"
+msgstr "Hóa đơn mua hàng"
 
 # 1d7291dd-1e59-4917-83a3-1cc07cfc4638
 msgid "AR Invoice"
-msgstr "AR Invoice"
+msgstr "Hóa đơn bán hàng"
 
 # 41abd4e9-da89-450b-a44a-da1d6f8a5cd2
 msgid "Asset, Tools Delivery"
@@ -132,7 +132,7 @@ msgstr "Nhóm"
 
 # 022375ce-c99c-4f11-8841-0a26c85f2fc2
 msgid "Internal labor item"
-msgstr "Internal labor item"
+msgstr "Chi phí nhân công nội bộ"
 
 # c5de0a7d-bea3-4f39-922f-06a40a060aba
 msgid "Inventory Adjustment"
@@ -144,15 +144,15 @@ msgstr "Nghỉ phép"
 
 # 7738935a-0442-4fd4-a7ff-d06a22aaeccf
 msgid "Leave available"
-msgstr "Leave available"
+msgstr "Số dư phép"
 
 # 6078deaa-96b3-4743-97e3-5457454fa7aa
 msgid "Meeting Schedule"
 msgstr "Lịch họp"
 
 # 2fe959e3-9628-4f47-96a1-a2ef03e867e3
-msgid "Meetting With Customer"
-msgstr "Meetting With Customer"
+msgid "Meeting With Customer"
+msgstr "Cuộc họp với khách hàng"
 
 # 296a1410-8d72-46a8-a0a1-1821f196e66c
 msgid "Opportunity"
@@ -172,7 +172,7 @@ msgstr "Lấy hàng"
 
 # 10a5e913-fa51-4127-a632-a8347a55c4bb
 msgid "Prices"
-msgstr "Prices"
+msgstr "Bảng giá"
 
 # a8badb2e-54ff-4654-b3fd-0d2d3c777538
 msgid "Product"
@@ -184,7 +184,7 @@ msgstr "Lệnh sản xuất"
 
 # f57b9e92-cb01-42e3-b7fe-6166ecd18e9c
 msgid "Promotions"
-msgstr "Promotions"
+msgstr "Khuyến mãi"
 
 # 81a111ef-9c32-4cbd-8601-a3cce884badb
 msgid "Purchase Order"
@@ -232,7 +232,11 @@ msgstr "Hoàn ứng"
 
 # e4ae0a2c-2130-4a65-b644-1b79db3d033b
 msgid "Revenue Plan"
-msgstr "Revenue Plan"
+msgstr "Kế hoạch doanh thu"
+
+# a943adf4-e00d-4cae-bb3e-78cca3efb09a
+msgid "Goods Detail"
+msgstr "Chi tiết hàng"
 
 # 4cdaabcc-09ae-4c13-bb4e-c606eb335b11
 msgid "Role"
@@ -266,13 +270,44 @@ msgstr "Yêu cầu sản xuất"
 msgid "Workflow"
 msgstr "Quy trình làm việc"
 
+# 2de9fb91-4fb9-48c8-b54e-c03bd12f952b
+msgid "Bill of material"
+msgstr "Định mức nguyên vật liệu"
+
+# 2de9fb91-4fb9-48c8-b54e-c03bd12f952b
+msgid "Bill Of Material"
+msgstr "Định mức nguyên vật liệu"
+
+# ac21e8e4-fe32-41f4-9887-ee077677735c
+msgid "Budget Plan"
+msgstr "Kế hoạch ngân sách"
+
+# 20ad27de-ea68-48a9-82bf-8833d7ab6da7
+msgid "Goods Registration"
+msgstr "Đăng ký hàng"
+
+# c22a9e96-e56e-4636-9083-8ee1c66cb1b2
+msgid "Report Inventory"
+msgstr "Báo cáo tồn kho"
+
+# b9fa8d62-4387-4fa5-9be3-d76d77614687
+msgid "Report Budget"
+msgstr "Báo cáo ngân sách"
+
+# e696a636-0f36-4b20-970d-70035d6e1e37
+msgid "Report Purchasing"
+msgstr "Báo cáo mua hàng"
+
+# 57a32d5a-3580-43b7-bf31-953a1afc68f4
+msgid "Goods Stock Plan"
+msgstr "Kế hoạch nhập hàng"
 
 #: .\apps\shared\translations\account.py:5
 msgid "User does not exist."
 msgstr "Người dùng không tồn tại."
 
 #: .\apps\shared\translations\account.py:6
-msgid "Phone number can not contain characters"
+msgid "Phone number cannot contain characters"
 msgstr "Số điện thoại không chính xác."
 
 #: .\apps\shared\translations\account.py:7 .\apps\shared\translations\hr.py:15
@@ -284,7 +319,7 @@ msgid "Password must contain both numbers and letters"
 msgstr "Mật khẩu phải bao gồm số và chữ."
 
 #: .\apps\shared\translations\account.py:9
-msgid "Company is not exist"
+msgid "Company does not exist"
 msgstr "Công ty không tồn tại."
 
 #: .\apps\shared\translations\accounts.py:5
@@ -336,7 +371,7 @@ msgid "The OTP session was expired"
 msgstr "Phiên xác thực OTP đã hết hạn"
 
 #
-msgid "OTP isn't match"
+msgid "OTP doesn't match"
 msgstr "OTP không chính xác"
 
 #
@@ -420,7 +455,7 @@ msgid "Permissions type is incorrect."
 msgstr "Kiểu quyền không chính xác."
 
 #: .\apps\shared\translations\core\hr.py:10
-msgid "Permissions item configurations is incorrect."
+msgid "Permissions item configuration is incorrect."
 msgstr "Cấu hình quyền không chính xác."
 
 #: .\apps\shared\translations\core\hr.py:11
@@ -444,7 +479,7 @@ msgid "Code is exists"
 msgstr "Mã đã tồn tại"
 
 #
-msgid "Code is not exist"
+msgid "Code does not exist"
 msgstr "Mã không tồn tại"
 
 #
@@ -622,7 +657,7 @@ msgid "In workflow"
 msgstr "In workflow"
 
 #
-msgid "Username is exist, please choose another user name"
+msgid "Username already exists, please choose another one"
 msgstr "Tên đăng nhập đã tồn tại, vui lòng chọn tên đăng nhập khác"
 
 #
@@ -697,7 +732,7 @@ msgstr "Ứng dụng không tồn tại hoặc hết hạn"
 
 #
 msgid "Approved"
-msgstr "Đã Phê Duyệt"
+msgstr "Đã phê duyệt"
 
 #
 msgid "Please setup Leader of Picking/Delivery in config page before create request"
@@ -716,11 +751,11 @@ msgid "Sick yours child-social insurance"
 msgstr "Con cái bị bệnh"
 
 #
-msgid "Sick yourself-social insurance"
+msgid "Sick leave for yourself-social insurance"
 msgstr "Bản thân bị bệnh"
 
 #
-msgid "Funeral your family (max 3 days)"
+msgid "Funeral in your family (max 3 days)"
 msgstr "Nghỉ ma chay trong gia đình (nhiều nhất 3 ngày)"
 
 #
@@ -728,7 +763,7 @@ msgid "Marriage your child (max 1 days)"
 msgstr "Nghỉ đám cưới của con cái (nhiều nhất 1 ngày)"
 
 #
-msgid "Marriage yourself (max 3 days)"
+msgid "Your own marriage (max 3 days)"
 msgstr "Nghỉ đám cưới của tôi (nhiều nhất 3 ngày)"
 
 #
@@ -844,11 +879,11 @@ msgid "By employee"
 msgstr "Bởi người dùng"
 
 #
-msgid "Quantity number is wrong format"
+msgid "Quantity is in the wrong format"
 msgstr "Số lượng sai định dạng"
 
 #
-msgid "Day off large than leave available"
+msgid "Day off is larger than available leave"
 msgstr "Ngày nghỉ lớn hơn ngày phép đang có"
 
 #
@@ -1214,6 +1249,50 @@ msgstr "Từ chối"
 #
 msgid "Star date or finish date not in range of project date"
 msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"
+
+#
+msgid "Document was returned"
+msgstr "Phiếu bị trả về"
+
+#
+msgid "Feature:"
+msgstr "Chức năng:"
+
+#
+msgid "You have a new task."
+msgstr "Bạn có một phiếu chức năng mới cần xử lý."
+
+#
+msgid "Your document was returned."
+msgstr "Phiếu chức năng của bạn bị trả về."
+
+#
+msgid "Your document was approved."
+msgstr "Phiếu chức năng của bạn được chấp thuận."
+
+#
+msgid "Your document was rejected."
+msgstr "Phiếu chức năng của bạn bị từ chối."
+
+#
+msgid "Go to detail:"
+msgstr "Đi đến chi tiết:"
+
+#
+msgid "Here"
+msgstr "Tại đây"
+
+#
+msgid "IA Created"
+msgstr "Đã tạo kiểm kê"
+
+#
+msgid "IA Working"
+msgstr "Đang kiểm kê"
+
+#
+msgid "IA Done"
+msgstr "Kiểm kê hoàn tất"
 
 #
 msgid "Created a Work"

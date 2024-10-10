@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Currency, AccountGroup, AccountType, Industry,
-    PaymentTerm, Account, UnitOfMeasureGroup,
+    PaymentTerm, Account, UnitOfMeasureGroup, ProductType, TaxCategory, UnitOfMeasure, Tax,
 )
 from apps.shared import BaseCreateMixin, mask_view
 
@@ -13,7 +13,11 @@ from apps.masterdata.saledata.serializers.fimport import (
     AccountGroupImportReturnSerializer, AccountTypeImportSerializer, AccountTypeImportReturnSerializer,
     IndustryImportSerializer, IndustryImportReturnSerializer, PaymentTermImportSerializer,
     PaymentTermImportReturnSerializer, SaleDataAccountImportSerializer, SaleDataAccountImportReturnSerializer,
-    ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer,
+    ProductUOMGroupImportSerializer, ProductUOMGroupImportReturnSerializer, ProductProductTypeImportSerializer,
+    ProductProductTypeImportReturnSerializer, ProductProductCategoryImportSerializer,
+    ProductProductCategoryImportReturnSerializer, PriceTaxCategoryImportSerializer,
+    PriceTaxCategoryImportReturnSerializer, ProductUOMImportSerializer, ProductUOMImportReturnSerializer,
+    PriceTaxImportSerializer, PriceTaxImportReturnSerializer,
 )
 
 
@@ -184,7 +188,102 @@ class ProductUOMGroupImport(BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="Import Product UOM Group",
-        request_body=AccountGroupImportSerializer
+        request_body=ProductUOMGroupImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductProductTypeImport(BaseCreateMixin):
+    queryset = ProductType.objects
+    serializer_create = ProductProductTypeImportSerializer
+    serializer_detail = ProductProductTypeImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product Type",
+        request_body=ProductProductTypeImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductProductCategoryImport(BaseCreateMixin):
+    queryset = ProductType.objects
+    serializer_create = ProductProductCategoryImportSerializer
+    serializer_detail = ProductProductCategoryImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product Category",
+        request_body=ProductProductCategoryImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class ProductUOMImport(BaseCreateMixin):
+    queryset = UnitOfMeasure.objects
+    serializer_create = ProductUOMImportSerializer
+    serializer_detail = ProductUOMImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Product UOM",
+        request_body=ProductUOMImportSerializer
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class PriceTaxCategoryImport(BaseCreateMixin):
+    queryset = TaxCategory.objects
+    serializer_create = PriceTaxCategoryImportSerializer
+    serializer_detail = PriceTaxCategoryImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import TaxCategory",
+        request_body=PriceTaxCategoryImportSerializer,
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+class PriceTaxImport(BaseCreateMixin):
+    queryset = Tax.objects
+    serializer_create = PriceTaxImportSerializer
+    serializer_detail = PriceTaxImportReturnSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(
+        operation_summary="Import Tax",
+        request_body=PriceTaxImportSerializer,
     )
     @mask_view(
         login_require=True,

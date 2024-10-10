@@ -7,6 +7,8 @@ from apps.sales.production.utils import ProductionReportHandler
 
 # SUB
 class PRTaskCreateSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ProductionReportTask
@@ -22,6 +24,14 @@ class PRTaskCreateSerializer(serializers.ModelSerializer):
             'quantity_actual',
             'order',
         )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return ProductionReportValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return ProductionReportValid.validate_uom_id(value=value)
 
 
 # PRODUCTION REPORT BEGIN
@@ -60,6 +70,7 @@ class ProductionReportDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductionReportCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
@@ -228,3 +239,23 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
     @classmethod
     def get_pr_products_data(cls, obj):
         return [] if obj else None
+
+
+class ProductionReportProductListSerializer(serializers.ModelSerializer):
+    production_report = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductionReportTask
+        fields = (
+            'id',
+            'production_report',
+            'quantity_actual',
+        )
+
+    @classmethod
+    def get_production_report(cls, obj):
+        return {
+            'id': obj.production_report_id,
+            'title': obj.production_report.title,
+            'code': obj.production_report.code
+        } if obj.production_report else {}

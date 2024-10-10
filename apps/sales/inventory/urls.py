@@ -14,7 +14,8 @@ from apps.sales.inventory.views import (
     GReItemSubList, GoodsRegistrationItemAvailableQuantity, GoodsRegisBorrowList, NoneGReItemBorrowList,
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
-    ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS
+    ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
+    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailDataListImportDB,
 )
 
 urlpatterns = [
@@ -46,6 +47,7 @@ urlpatterns += [
 urlpatterns += [
     path('goods-issue/list', GoodsIssueList.as_view(), name='GoodsIssueList'),
     path('goods-issue/<str:pk>', GoodsIssueDetail.as_view(), name='GoodsIssueDetail'),
+    path('goods-issue-product/list', GoodsIssueProductList.as_view(), name='GoodsIssueProductList'),
     # Inventory Adjustment for GIS
     path(
         'inventory-adjustment-for-gis/list',
@@ -67,6 +69,16 @@ urlpatterns += [
         'production-order-for-gis/<str:pk>',
         ProductionOrderDetailForGIS.as_view(),
         name='ProductionOrderDetailForGIS'
+    ),
+    path(
+        'work-order-for-gis/list',
+        WorkOrderListForGIS.as_view(),
+        name='WorkOrderListForGIS'
+    ),
+    path(
+        'work-order-for-gis/<str:pk>',
+        WorkOrderDetailForGIS.as_view(),
+        name='WorkOrderDetailForGIS'
     ),
     path(
         'prd-wh-list-for-gis/list',
@@ -104,7 +116,12 @@ urlpatterns += [
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
-    path('update-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
+    path('create-update-goods-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
+    path(
+        'create-goods-detail-data-import-db/list',
+        GoodsDetailDataListImportDB.as_view(),
+        name='GoodsDetailDataListImportDB'
+    ),
 ]
 
 # goods registration

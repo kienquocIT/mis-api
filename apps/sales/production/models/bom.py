@@ -21,6 +21,7 @@ class BOM(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_product'
     )
+    product_data = models.JSONField(default=dict)
     sum_price = models.FloatField(default=0)
     sum_time = models.FloatField(default=0)
 
@@ -30,6 +31,7 @@ class BOM(DataAbstractModel):
         null=True,
         related_name='bom_opportunity'
     )
+    opp_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Bill of material'
@@ -52,6 +54,8 @@ class BOM(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
+                if self.product.has_bom:
+                    raise ValueError("This product is mapped with BOM")
                 self.product.has_bom = True
                 self.product.save(update_fields=['has_bom'])
 
@@ -82,6 +86,7 @@ class BOMProcess(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_process_uom'
     )
+    uom_data = models.JSONField(default=dict)
     unit_price = models.FloatField(default=0)
     subtotal_price = models.FloatField(default=0)
     note = models.TextField()
@@ -106,12 +111,14 @@ class BOMSummaryProcess(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_summary_process_labor'
     )
+    labor_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_summary_process_uom'
     )
+    uom_data = models.JSONField(default=dict)
     unit_price = models.FloatField(default=0)
     subtotal_price = models.FloatField(default=0)
 
@@ -132,7 +139,8 @@ class BOMMaterialComponent(MasterDataAbstractModel):
     bom_process = models.ForeignKey(
         BOMProcess,
         on_delete=models.CASCADE,
-        related_name='bom_material_component_bom_process'
+        related_name='bom_material_component_bom_process',
+        null=True
     )
     bom_process_order = models.IntegerField(default=1)
     order = models.IntegerField(default=1)
@@ -141,15 +149,20 @@ class BOMMaterialComponent(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_material_component_material'
     )
+    material_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
+    standard_price = models.FloatField(default=0)
+    subtotal_price = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_material_component_uom'
     )
+    uom_data = models.JSONField(default=dict)
     disassemble = models.BooleanField(default=False)
     note = models.TextField()
     replacement_data = models.JSONField(default=list)
+    for_outsourcing = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'BOM material component'
@@ -183,6 +196,7 @@ class BOMReplacementMaterialComponent(MasterDataAbstractModel):
     replace_for = models.ForeignKey(
         BOMMaterialComponent,
         on_delete=models.CASCADE,
+        null=True,
         related_name='bom_replacement_material_replace_for'
     )
 
@@ -212,47 +226,19 @@ class BOMTool(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='bom_tool_tool'
     )
+    tool_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='bom_tool_uom'
     )
+    uom_data = models.JSONField(default=dict)
     note = models.TextField()
 
     class Meta:
         verbose_name = 'BOM tool'
         verbose_name_plural = 'BOM tools'
-        ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-# For Outsourcing
-class BOMMaterialComponentOutsourcing(MasterDataAbstractModel):
-    bom = models.ForeignKey(
-        BOM,
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_bom'
-    )
-    order = models.IntegerField(default=1)
-    material = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_material'
-    )
-    quantity = models.FloatField(default=0)
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='bom_material_component_outsourcing_uom'
-    )
-    disassemble = models.BooleanField(default=False)
-    note = models.TextField()
-
-    class Meta:
-        verbose_name = 'BOM Material Component Outsourcing'
-        verbose_name_plural = 'BOM Materials Components Outsourcing'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

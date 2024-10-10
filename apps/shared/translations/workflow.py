@@ -17,3 +17,8 @@ class WorkflowMsg:
     )
     WORKFLOW_APPLY_REQUIRED_WF = _("The workflow currently is required when mode is apply")
     WF_VALIDATE_CHANGE_CANCEL = _("Document was referenced by other documents")
+    APPLICATION_REQUIRED = _("Workflow application is required")
+    NODE_IS_ARRAY = _("Node must be array")
+    NODE_REQUIRED = _("Node is required")
+    ASSOCIATE_IS_ARRAY = _("Association must be array")
+    ASSOCIATE_REQUIRED = _("Association is required")

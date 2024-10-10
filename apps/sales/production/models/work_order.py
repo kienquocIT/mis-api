@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.production.utils.logical_finish_wo import WorkOrderHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, STATUS_PRODUCTION, \
     MasterDataAbstractModel, BastionFieldAbstractModel
 
@@ -103,7 +104,9 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
     def push_code(cls, instance, kwargs):
         if not instance.code:
             instance.code = cls.generate_code(company_id=instance.company_id)
+            instance.status_production = 1
             kwargs['update_fields'].append('code')
+            kwargs['update_fields'].append('status_production')
         return True
 
     def save(self, *args, **kwargs):
@@ -113,6 +116,7 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
+                    WorkOrderHandler.wo_info_for_so(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 
@@ -145,6 +149,7 @@ class WorkOrderTask(MasterDataAbstractModel):
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     quantity_bom = models.FloatField(default=0)
     quantity = models.FloatField(default=0)
+    issued_quantity = models.FloatField(default=0)
     is_all_warehouse = models.BooleanField(
         default=False, help_text='flag to know can use this product of all warehouse'
     )

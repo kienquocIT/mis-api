@@ -59,6 +59,7 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
+            'is_deal_close': obj.opportunity.is_deal_close,
         } if obj.opportunity else {}
 
     @classmethod
@@ -135,7 +136,8 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'customer': {
                 'id': obj.opportunity.customer_id,
                 'title': obj.opportunity.customer.title
-            } if obj.opportunity.customer else {}
+            } if obj.opportunity.customer else {},
+            'is_deal_close': obj.opportunity.is_deal_close,
         } if obj.opportunity else {}
 
     @classmethod
@@ -196,7 +198,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
@@ -610,7 +612,6 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
 class SOProductWOListSerializer(serializers.ModelSerializer):
     quantity_so = serializers.SerializerMethodField()
     quantity_wo_completed = serializers.SerializerMethodField()
-    quantity_wo_remain = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrderProduct
@@ -629,8 +630,4 @@ class SOProductWOListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_quantity_wo_completed(cls, obj):
-        return obj.product_quantity
-
-    @classmethod
-    def get_quantity_wo_remain(cls, obj):
-        return obj.product_quantity
+        return obj.product_quantity - obj.quantity_wo_remain

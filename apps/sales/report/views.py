@@ -7,6 +7,7 @@ from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGro
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
+from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportStock, ReportInventoryCost, ReportStockLog,
@@ -14,7 +15,8 @@ from apps.sales.report.models import (
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
-    ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer
+    ReportInventoryCostListSerializer, ProductWarehouseViewListSerializer, BalanceInitializationCreateSerializer,
+    BalanceInitializationDetailSerializer, BalanceInitializationCreateSerializerImportDB
 )
 from apps.sales.report.serializers.report_budget import (
     BudgetReportCompanyListSerializer,
@@ -87,8 +89,11 @@ class ReportProductList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            "sale_order",
+            "sale_order__customer",
             "product",
             "product__general_product_category",
+            "product__sale_default_uom",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
@@ -288,7 +293,7 @@ class ReportStockDetailList(BaseListMixin):
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['config_inventory_management'] = ReportStockLog.get_config_inventory_management(
+        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_calculate_config(
             company_config
         )
         return self.list(request, *args, **kwargs)
@@ -297,6 +302,8 @@ class ReportStockDetailList(BaseListMixin):
 class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
     queryset = ReportInventoryCost.objects
     serializer_list = BalanceInitializationListSerializer
+    serializer_create = BalanceInitializationCreateSerializer
+    serializer_detail = BalanceInitializationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -304,17 +311,55 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
             'product__inventory_uom',
             'warehouse',
             'period_mapped'
-        ).prefetch_related().filter(for_balance=True).order_by('warehouse')
+        ).prefetch_related().filter(for_balance=True).order_by('warehouse__code', 'product__code')
 
     @swagger_auto_schema(
         operation_summary="Balance Initialization list",
         operation_description="Balance Initialization list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Balance Initialization",
+        operation_description="Create new Balance Initialization",
+        request_body=BalanceInitializationCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context['company_current'] = self.request.user.company_current
+        self.ser_context['tenant_current'] = self.request.user.tenant_current
+        return self.create(request, *args, **kwargs)
+
+
+class BalanceInitializationListImportDB(BaseListMixin, BaseCreateMixin):
+    queryset = ReportInventoryCost.objects
+    serializer_create = BalanceInitializationCreateSerializerImportDB
+    serializer_detail = BalanceInitializationDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Balance Initialization Import BD",
+        operation_description="Create new Balance Initialization Import BD",
+        request_body=BalanceInitializationCreateSerializerImportDB,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context['company_current'] = self.request.user.company_current
+        self.ser_context['tenant_current'] = self.request.user.tenant_current
+        return self.create(request, *args, **kwargs)
 
 
 class ReportStockList(BaseListMixin):
@@ -520,7 +565,7 @@ class ReportStockList(BaseListMixin):
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')]
             }
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['config_inventory_management'] = ReportStockLog.get_config_inventory_management(
+        self.ser_context['config_inventory_management'] = InventoryCostLogFunc.get_cost_calculate_config(
             company_config
         )
         return self.list(request, *args, **kwargs)

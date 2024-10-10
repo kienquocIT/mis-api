@@ -13,13 +13,16 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     sale_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
     inventory_information = serializers.SerializerMethodField()
+    bom_check_data = serializers.SerializerMethodField()
+    bom_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
             'id', 'code', 'title', 'description',
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
-            'price_list', 'product_choice', 'supplied_by', 'inventory_information', 'general_traceability_method',
+            'price_list', 'product_choice', 'supplied_by', 'inventory_information',
+            'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
         )
 
     @classmethod
@@ -53,7 +56,10 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
+                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code,
+                'is_goods': product_type.is_goods, 'is_finished_goods': product_type.is_finished_goods,
+                'is_material': product_type.is_material, 'is_asset_tool': product_type.is_asset_tool,
+                'is_service': product_type.is_service,
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': str(obj.general_product_category_id), 'title': obj.general_product_category.title,
@@ -110,6 +116,30 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'is_referenced_unit': obj.inventory_uom.is_referenced_unit,
             } if obj.inventory_uom else {},
         }
+
+    @classmethod
+    def get_bom_check_data(cls, obj):
+        return {
+            'is_bom': bool(obj.filtered_bom),
+            'is_bom_opp': bool(obj.filtered_bom_opp),
+            'is_so_finished': bool(obj.filtered_so_product_finished),
+            'is_so_using': bool(obj.filtered_so_product_using),
+        }
+
+    @classmethod
+    def get_bom_data(cls, obj):
+        for bom in obj.filtered_bom_opp:
+            return {
+                'id': bom.id,
+                'title': bom.title,
+                'code': bom.code,
+                'opportunity': {
+                    'id': bom.opportunity_id,
+                    'title': bom.opportunity.title,
+                    'code': bom.opportunity.code,
+                } if bom.opportunity else {}
+            }
+        return {}
 
 
 class ProductForSaleDetailSerializer(serializers.ModelSerializer):

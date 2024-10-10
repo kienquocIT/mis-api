@@ -62,7 +62,6 @@ class ProductionOrder(DataAbstractModel):
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
-    done_issue = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Production order'
@@ -70,16 +69,6 @@ class ProductionOrder(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    def update_production_order_issue_state(self):
-        flag = True
-        for item in self.po_task_production_order.filter(is_task=False):
-            if item.quantity != item.issued_quantity:
-                flag = False
-                break
-        self.done_issue = flag
-        self.save(update_fields=['done_issue'])
-        return True
 
     @classmethod
     def find_max_number(cls, codes):
@@ -113,7 +102,9 @@ class ProductionOrder(DataAbstractModel):
     def push_code(cls, instance, kwargs):
         if not instance.code:
             instance.code = cls.generate_code(company_id=instance.company_id)
+            instance.status_production = 1
             kwargs['update_fields'].append('code')
+            kwargs['update_fields'].append('status_production')
         return True
 
     def save(self, *args, **kwargs):

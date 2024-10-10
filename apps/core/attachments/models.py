@@ -414,6 +414,9 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                         remove_objs.append(obj)
                     else:
                         keep_objs.append(obj)
+                for old_obj in old_objs:
+                    if str(old_obj.attachment.id) in remove_ids:
+                        remove_objs.append(old_obj.attachment)
 
                 result['errors'] = new_errs
                 result['new'] = new_objs
@@ -465,7 +468,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                         for m2m_obj in cls.objects.filter(**{doc_field_name: doc_id}, attachment__in=remove_objs):
                             if m2m_obj.attachment:
                                 m2m_obj.attachment.unlink()
-                            m2m_obj.remove()
+                            m2m_obj.delete()
 
                     return True
             except Exception as err:

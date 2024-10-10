@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from django.utils.translation import gettext_lazy as trans
 from apps.core.hr.models import DistributionApplication
 
 
@@ -14,7 +14,13 @@ class AllApplicationOfEmployeeSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_title(cls, obj):
-        return obj.app.title
+        return trans(obj.app.title)
+
+    title_i18n = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.app.title)
 
     code = serializers.SerializerMethodField()
 
@@ -36,7 +42,7 @@ class AllApplicationOfEmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DistributionApplication
-        fields = ('id', 'title', 'code', 'permit_mapping', 'spacing_allow',)
+        fields = ('id', 'title', 'title_i18n', 'code', 'permit_mapping', 'spacing_allow',)
 
 
 class AppParsedDetailSerializer(serializers.Serializer):  # noqa

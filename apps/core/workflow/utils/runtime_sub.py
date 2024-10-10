@@ -82,6 +82,7 @@ class HookEventHandler:
 
     def push_base_notify(self, runtime_assignee_obj: list[RuntimeAssignee]):
         try:
+            msg = WorkflowMsgNotify.return_creator if self.is_return else WorkflowMsgNotify.new_task
             args_arr = []
             for obj in runtime_assignee_obj:
                 if obj.is_done is False:
@@ -90,7 +91,7 @@ class HookEventHandler:
                             'tenant_id': self.runtime_obj.tenant_id,
                             'company_id': self.runtime_obj.company_id,
                             'title': self.runtime_obj.doc_title,
-                            'msg': WorkflowMsgNotify.return_creator if self.is_return else WorkflowMsgNotify.new_task,
+                            'msg': WorkflowMsgNotify.translate_msg(msg=msg),
                             'notify_type': 11 if self.is_return else 10,
                             'date_created': timezone.now(),
                             'doc_id': self.runtime_obj.doc_id,
@@ -114,12 +115,14 @@ class HookEventHandler:
 
     def push_notify_return_owner(self, doc_obj, remark=None):
         try:
+            msg = WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.document_returned)
+            if remark:
+                msg = f'{msg} ({remark})'
             args_arr = [{
                 'tenant_id': self.runtime_obj.tenant_id,
                 'company_id': self.runtime_obj.company_id,
                 'title': self.runtime_obj.doc_title,
-                'msg': f'{WorkflowMsgNotify.document_returned} ({remark})'
-                if remark else WorkflowMsgNotify.document_returned,
+                'msg': msg,
                 'notify_type': 12,
                 'date_created': timezone.now(),
                 'doc_id': self.runtime_obj.doc_id,
@@ -143,11 +146,13 @@ class HookEventHandler:
     def push_notify_end_workflow(self, doc_obj, end_type=0):
         try:
             type_msg = WorkflowMsgNotify.approved if end_type == 0 else WorkflowMsgNotify.rejected
+            msg_common = WorkflowMsgNotify.translate_msg(msg=WorkflowMsgNotify.end_workflow)
+            msg = f'{msg_common} ({WorkflowMsgNotify.translate_msg(msg=type_msg)})'
             args_arr = [{
                 'tenant_id': self.runtime_obj.tenant_id,
                 'company_id': self.runtime_obj.company_id,
                 'title': self.runtime_obj.doc_title,
-                'msg': f'{WorkflowMsgNotify.end_workflow} ({type_msg})',
+                'msg': msg,
                 'notify_type': 12,
                 'date_created': timezone.now(),
                 'doc_id': self.runtime_obj.doc_id,

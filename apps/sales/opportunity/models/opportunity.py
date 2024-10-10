@@ -413,10 +413,10 @@ class Opportunity(DataAbstractModel):
         for item in stages:
             if item.is_closed_lost:
                 stage_lost = item
-            elif item.is_deal_closed:
-                stage_close = item
             elif item.is_delivery:
                 stage_delivery = item
+            elif item.is_deal_closed:
+                stage_close = item
             else:
                 list_stage.append(item)
         if stage_lost:
@@ -428,23 +428,19 @@ class Opportunity(DataAbstractModel):
         # list stage instance
         list_stage_instance = cls.parse_stage(list_stage=list_stage, obj=obj)
         # check stage
-        index = 0
+        stage_index = []
         win_rate = 0
         for idx, item in enumerate(list_stage):
-            if item.logical_operator == 0:
-                if all(element in list_stage_instance for element in item.condition_datas):
-                    index = idx
-                    win_rate = item.win_rate
-            else:
-                if any(element in list_stage_instance for element in item.condition_datas):
-                    index = idx
-                    win_rate = item.win_rate
-        bulk_data = [
-            OpportunityStage(
-                opportunity=obj,
-                stage_id=item.id,
-                is_current=False
-            ) for item in list_stage[:index + 1]]
+            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+                win_rate = item.win_rate
+            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+                win_rate = item.win_rate
+        bulk_data = []
+        for index in stage_index:
+            stage = list_stage[index]
+            bulk_data.append(OpportunityStage(opportunity=obj, stage_id=stage.id, is_current=False))
         bulk_data[-1].is_current = True
         obj.opportunity_stage_opportunity.all().delete()
         OpportunityStage.objects.bulk_create(bulk_data)

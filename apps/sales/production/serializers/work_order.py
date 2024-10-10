@@ -55,6 +55,7 @@ class WorkOrderListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'status_production',
         )
 
 
@@ -86,6 +87,7 @@ class WorkOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 class WorkOrderCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
     bom_id = serializers.UUIDField(required=False, allow_null=True)
     opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
@@ -235,3 +237,21 @@ class WorkOrderUpdateSerializer(AbstractCreateSerializerModel):
         instance.save()
         WorkOrderSub.create_sub_models(validated_data=validated_data, instance=instance)
         return instance
+
+
+class WorkOrderManualDoneSerializer(serializers.ModelSerializer):
+    work_order_id = serializers.UUIDField()
+
+    class Meta:
+        model = WorkOrder
+        fields = (
+            'work_order_id',
+            'status_production',
+        )
+
+    def create(self, validated_data):
+        work_order = WorkOrder.objects.filter(id=validated_data.get('work_order_id', None)).first()
+        if work_order:
+            work_order.status_production = validated_data.get('status_production', 1)
+            work_order.save(update_fields=['status_production'])
+        return work_order

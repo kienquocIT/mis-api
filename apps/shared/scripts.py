@@ -2166,3 +2166,138 @@ def update_bom_title():
         bom.title = f"BOM - {bom.product.title}"
         bom.save(update_fields=['title'])
     print('Done :))')
+
+
+def update_BOM_json_data():
+    for bom in BOM.objects.all():
+        bom.product_data = {
+            'id': str(bom.product.id),
+            'code': bom.product.code,
+            'title': bom.product.title
+        } if bom.product else {}
+        bom.opp_data = {
+            'id': str(bom.opportunity.id),
+            'code': bom.opportunity.code,
+            'title': bom.opportunity.title,
+            'sale_person': {
+                'id': str(bom.opportunity.employee_inherit_id),
+                'code': bom.opportunity.employee_inherit.code,
+                'full_name': bom.opportunity.employee_inherit.get_full_name(2),
+            } if bom.opportunity.employee_inherit else {}
+        } if bom.opportunity else {}
+        bom.save(update_fields=['product_data', 'opp_data'])
+
+        for item in bom.bom_process_bom.all():
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['uom_data'])
+
+        for item in bom.bom_summary_process_bom.all():
+            item.labor_data = {
+                'id': str(item.labor.id),
+                'code': item.labor.code,
+                'title': item.labor.title,
+            } if item.labor else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['labor_data', 'uom_data'])
+
+        for item in bom.bom_material_component_bom.all():
+            item.material_data = {
+                'id': str(item.material.id),
+                'code': item.material.code,
+                'title': item.material.title
+            } if item.material else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['material_data', 'uom_data'])
+            for replacement_item in item.bom_replacement_material_replace_for.all():
+                replacement_item.material_data = {
+                    'id': str(replacement_item.material.id),
+                    'code': replacement_item.material.code,
+                    'title': replacement_item.material.title
+                } if replacement_item.material else {}
+                replacement_item.uom_data = {
+                    'id': str(replacement_item.uom.id),
+                    'code': replacement_item.uom.code,
+                    'title': replacement_item.uom.title,
+                    'group_id': str(replacement_item.uom.group_id),
+                } if replacement_item.uom else {}
+                replacement_item.save(update_fields=['material_data', 'uom_data'])
+
+        for item in bom.bom_tool_bom.all():
+            item.tool_data = {
+                'id': str(item.tool.id),
+                'code': item.tool.code,
+                'title': item.tool.title
+            } if item.tool else {}
+            item.uom_data = {
+                'id': str(item.uom.id),
+                'code': item.uom.code,
+                'title': item.uom.title,
+                'ratio': item.uom.ratio,
+                'group_id': str(item.uom.group_id)
+            } if item.uom else {}
+            item.save(update_fields=['tool_data', 'uom_data'])
+
+        print(f'Done {bom.title} :))')
+
+    return True
+
+
+def add_code_for_product_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in ProductCategory.objects.filter(company=company):
+            item.code = f"00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+
+        count = 1
+        for item in UnitOfMeasureGroup.objects.filter(company=company):
+            if item.is_default:
+                item.code = "UG001"
+                item.save(update_fields=['code'])
+            else:
+                item.code = f"00{count}"
+                item.save(update_fields=['code'])
+                count += 1
+    print('Done :))')
+
+
+def add_code_for_price_masterdata():
+    for company in Company.objects.all():
+        count = 1
+        for item in TaxCategory.objects.filter(company=company):
+            item.code = f"TC00{count}"
+            item.save(update_fields=['code'])
+            count += 1
+    print('Done :))')
+
+
+def update_difference_quantity_goods_issue():
+    for gis in GoodsIssue.objects.all():
+        for item in gis.goods_issue_product.all():
+            po_item = item.production_order_item
+            wo_item = item.work_order_item
+            if po_item:
+                item.remain_quantity = po_item.quantity - item.before_quantity
+            if wo_item:
+                item.remain_quantity = wo_item.quantity - item.before_quantity
+            item.save(update_fields=['remain_quantity'])
+    print('Done :))')

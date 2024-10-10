@@ -2,8 +2,10 @@ import datetime
 
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Periods
-from apps.masterdata.saledata.serializers import PeriodsListSerializer, PeriodsCreateSerializer, \
+from apps.masterdata.saledata.serializers import (
+    PeriodsListSerializer, PeriodsCreateSerializer,
     PeriodsDetailSerializer, PeriodsUpdateSerializer
+)
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 

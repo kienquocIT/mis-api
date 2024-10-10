@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as trans
 
 from rest_framework import serializers
 
@@ -21,7 +21,7 @@ from apps.shared import WorkflowMsg
 # workflow of app
 class WorkflowOfAppListSerializer(serializers.ModelSerializer):
     workflow_currently = serializers.SerializerMethodField()
-    title = serializers.SerializerMethodField()
+    title_i18n = serializers.SerializerMethodField()
 
     @classmethod
     def get_workflow_currently(cls, obj):
@@ -31,12 +31,12 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
         } if obj.workflow_currently else {}
 
     @classmethod
-    def get_title(cls, obj):
-        return _(obj.title)
+    def get_title_i18n(cls, obj):
+        return trans(obj.title)
 
     class Meta:
         model = WorkflowConfigOfApp
-        fields = ('id', 'title', 'code', 'application_id', 'mode', 'error_total', 'workflow_currently')
+        fields = ('id', 'title', 'title_i18n', 'code', 'application_id', 'mode', 'error_total', 'workflow_currently')
 
 
 class WorkflowOfAppUpdateSerializer(serializers.ModelSerializer):
@@ -727,10 +727,7 @@ class CommonCreateUpdate:
 class WorkflowCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     application = serializers.UUIDField()
-    node = NodeCreateSerializer(
-        many=True,
-        required=False
-    )
+    node = NodeCreateSerializer(many=True)
     zone = ZoneCreateSerializer(
         many=True,
         required=False
@@ -739,10 +736,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         child=serializers.JSONField(required=False),
         required=False
     )
-    association = AssociationCreateSerializer(
-        many=True,
-        required=False
-    )
+    association = AssociationCreateSerializer(many=True)
 
     class Meta:
         model = Workflow
@@ -762,7 +756,23 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         try:
             return Application.objects.get(id=value)
         except Application.DoesNotExist:
-            raise serializers.ValidationError({'application': "Application does not exist."})
+            raise serializers.ValidationError({'application': WorkflowMsg.APPLICATION_REQUIRED})
+
+    @classmethod
+    def validate_node(cls, value):
+        if isinstance(value, list):
+            if len(value) > 0:
+                return value
+            raise serializers.ValidationError({'node': WorkflowMsg.NODE_REQUIRED})
+        raise serializers.ValidationError({'node': WorkflowMsg.NODE_IS_ARRAY})
+
+    @classmethod
+    def validate_association(cls, value):
+        if isinstance(value, list):
+            if len(value) > 0:
+                return value
+            raise serializers.ValidationError({'association': WorkflowMsg.ASSOCIATE_REQUIRED})
+        raise serializers.ValidationError({'association': WorkflowMsg.ASSOCIATE_IS_ARRAY})
 
     def create(self, validated_data):
         """
@@ -815,10 +825,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
 
 class WorkflowUpdateSerializer(serializers.ModelSerializer):
     application = serializers.UUIDField(required=False)
-    node = NodeCreateSerializer(
-        many=True,
-        required=False
-    )
+    node = NodeCreateSerializer(many=True)
     zone = ZoneCreateSerializer(
         many=True,
         required=False
@@ -827,10 +834,7 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
         child=serializers.JSONField(required=False),
         required=False
     )
-    association = AssociationCreateSerializer(
-        many=True,
-        required=False
-    )
+    association = AssociationCreateSerializer(many=True)
 
     class Meta:
         model = Workflow
@@ -850,7 +854,23 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
         try:
             return Application.objects.get(id=value)
         except Application.DoesNotExist:
-            raise serializers.ValidationError({'application': "Application does not exist."})
+            raise serializers.ValidationError({'application': WorkflowMsg.APPLICATION_REQUIRED})
+
+    @classmethod
+    def validate_node(cls, value):
+        if isinstance(value, list):
+            if len(value) > 0:
+                return value
+            raise serializers.ValidationError({'node': WorkflowMsg.NODE_REQUIRED})
+        raise serializers.ValidationError({'node': WorkflowMsg.NODE_IS_ARRAY})
+
+    @classmethod
+    def validate_association(cls, value):
+        if isinstance(value, list):
+            if len(value) > 0:
+                return value
+            raise serializers.ValidationError({'association': WorkflowMsg.ASSOCIATE_REQUIRED})
+        raise serializers.ValidationError({'association': WorkflowMsg.ASSOCIATE_IS_ARRAY})
 
     def update(self, instance, validated_data):
         """
