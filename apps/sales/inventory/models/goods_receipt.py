@@ -227,19 +227,25 @@ class GoodsReceipt(DataAbstractModel):
     def for_goods_receipt_has_purchase_request(cls, instance, stock_data, all_lots):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             for pr_item in gr_item.goods_receipt_request_product_gr_product.all():
-                purchase_request = None
-                if pr_item.purchase_request_product:
-                    purchase_request = pr_item.purchase_request_product.purchase_request
+                sale_order = None
+                if instance.goods_receipt_type == 0:
+                    if pr_item.purchase_request_product:
+                        if pr_item.purchase_request_product.purchase_request:
+                            sale_order = pr_item.purchase_request_product.purchase_request.sale_order
+                if instance.goods_receipt_type == 2:
+                    if pr_item.production_report:
+                        if pr_item.production_report.work_order:
+                            sale_order = pr_item.production_report.work_order.sale_order
                 for prd_wh in pr_item.goods_receipt_warehouse_request_product.all():
                     if gr_item.product.general_traceability_method != 1:
                         casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
                             gr_item.uom, prd_wh.quantity_import
                         )
                         casted_cost = (
-                            gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
+                                gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
                         stock_data.append({
-                            'sale_order': purchase_request.sale_order if purchase_request else None,
+                            'sale_order': sale_order,
                             'product': gr_item.product,
                             'warehouse': prd_wh.warehouse,
                             'system_date': instance.date_approved,
@@ -260,10 +266,10 @@ class GoodsReceipt(DataAbstractModel):
                                 gr_item.uom, lot.quantity_import
                             )
                             casted_cost = (
-                                gr_item.product_unit_price * lot.quantity_import / casted_quantity
+                                    gr_item.product_unit_price * lot.quantity_import / casted_quantity
                             ) if casted_quantity > 0 else 0
                             stock_data.append({
-                                'sale_order': purchase_request.sale_order if purchase_request else None,
+                                'sale_order': sale_order,
                                 'product': gr_item.product,
                                 'warehouse': prd_wh.warehouse,
                                 'system_date': instance.date_approved,
