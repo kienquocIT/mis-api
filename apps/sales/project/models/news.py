@@ -14,6 +14,11 @@ class ProjectNews(MasterDataAbstractModel):
         help_text='',
         related_name='%(app_label)s_%(class)s_employee_inherit',
     )
+    count_comment = models.IntegerField(
+        verbose_name="Count comment",
+        default=0,
+        null=True
+    )
 
     def __str__(self):
         return f'{self.msg} - {self.document_title} - {self.project_id}'
@@ -36,6 +41,7 @@ class ProjectNewsComment(MasterDataAbstractModel):
         related_name='%(app_label)s_%(class)s_employee_inherit',
     )
     reply_from = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
+    message_reply_count = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.msg} - {self.employee_inherit_id}'
@@ -43,7 +49,7 @@ class ProjectNewsComment(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Project News Comment'
         verbose_name_plural = 'Project News Comment'
-        ordering = ('-date_created',)
+        ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
 

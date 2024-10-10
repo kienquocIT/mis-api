@@ -1214,3 +1214,27 @@ msgstr "Từ chối"
 #
 msgid "Star date or finish date not in range of project date"
 msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"
+
+#
+msgid "Created a Work"
+msgstr "Đã tạo công việc"
+
+#
+msgid "Updated a Work"
+msgstr "Đã cập nhập công việc"
+
+#
+msgid "Deleted a Work"
+msgstr "Đã xoá công việc"
+
+#
+msgid "Created a Task"
+msgstr "Đã tạo giao việc"
+
+#
+msgid "Updated a Task"
+msgstr "Đã cập nhập giao việc"
+
+#
+msgid "Deleted a Task"
+msgstr "Đã xoá giao việc"

@@ -2,9 +2,11 @@ __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializer
 
 from rest_framework import serializers
 
-from apps.shared import HRMsg, BaseMsg, ProjectMsg, DisperseModel
+from apps.shared import HRMsg, BaseMsg, ProjectMsg, DisperseModel, call_task_background
+
 from ..extend_func import reorder_work, calc_rate_project, group_calc_weight, work_calc_weight_h_group
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups, WorkMapBOM
+from ..tasks import create_project_news
 
 
 def validated_date_work(attrs, w_rate=None):
@@ -24,7 +26,7 @@ def validated_date_work(attrs, w_rate=None):
 
         # nếu loại "FS" và work dc phụ thuộc chưa finish, và work rate > 0
         if work_type == 1 and (w_rate and w_rate > 0) and work_parent.w_rate != 100:
-            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_UPDATE_WORK_ERROR})
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_UPDATE_WORK_ERROR2})
     if 'group' in attrs:
         group_obj = attrs['group']
         if group_obj:
@@ -148,6 +150,21 @@ class WorkCreateSerializers(serializers.ModelSerializer):
 
         if bom_service:
             WorkMapBOM.objects.create(bom=bom_service, work=work)
+
+        # create news feed
+        call_task_background(
+            my_task=create_project_news,
+            **{
+                'project_id': str(project.id),
+                'employee_inherit_id': str(work.employee_inherit.id),
+                'employee_created_id': str(work.employee_created.id),
+                'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+                'document_id': str(work.id),
+                'document_title': str(work.title),
+                'title': ProjectMsg.CREATED_A,
+                'msg': '',
+            }
+        )
         return work
 
     class Meta:
@@ -311,4 +328,19 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
                 old_g_obj.delete()
         # re SUM all rate group, work in project
         calc_rate_project(prj_obj)
+
+        # create news feed
+        call_task_background(
+            my_task=create_project_news,
+            **{
+                'project_id': str(prj_obj.id),
+                'employee_inherit_id': str(instance.employee_inherit.id),
+                'employee_created_id': str(instance.employee_created.id),
+                'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+                'document_id': str(instance.id),
+                'document_title': str(instance.title),
+                'title': ProjectMsg.UPDATED_A,
+                'msg': '',
+            }
+        )
         return instance

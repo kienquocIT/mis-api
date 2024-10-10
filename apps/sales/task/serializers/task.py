@@ -7,10 +7,11 @@ from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task, calc_rate_project
 from apps.sales.project.models import ProjectMapTasks
+from apps.sales.project.tasks import create_project_news
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
-from apps.shared import HRMsg, ProjectMsg
+from apps.shared import HRMsg, ProjectMsg, call_task_background
 from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.sales import SaleTask, SaleMsg
 
@@ -266,6 +267,20 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             map_task_with_project(task, project_work)
             calc_update_task(task)
             calc_rate_project(task.project)
+            # create news feed
+            call_task_background(
+                my_task=create_project_news,
+                **{
+                    'project_id': str(task.project.id),
+                    'employee_inherit_id': str(task.employee_inherit.id),
+                    'employee_created_id': str(task.employee_created.id),
+                    'application_id': str('e66cfb5a-b3ce-4694-a4da-47618f53de4c'),
+                    'document_id': str(task.id),
+                    'document_title': str(task.title),
+                    'title': SaleTask.CREATED_A,
+                    'msg': '',
+                }
+            )
         return task
 
 
@@ -551,6 +566,20 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             map_task_with_project(instance, project_work)
             calc_update_task(instance)
             calc_rate_project(instance.project)
+            # create news feed
+            call_task_background(
+                my_task=create_project_news,
+                **{
+                    'project_id': str(instance.project.id),
+                    'employee_inherit_id': str(instance.employee_inherit.id),
+                    'employee_created_id': str(instance.employee_created.id),
+                    'application_id': str('e66cfb5a-b3ce-4694-a4da-47618f53de4c'),
+                    'document_id': str(instance.id),
+                    'document_title': str(instance.title),
+                    'title': SaleTask.UPDATED_A,
+                    'msg': '',
+                }
+            )
         return instance
 
 
