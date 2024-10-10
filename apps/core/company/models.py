@@ -21,7 +21,7 @@ DEFINITION_INVENTORY_VALUATION_CHOICES = [
 
 DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
     (0, _('FIFO')),
-    (1, _('Cumulative weighted average')),
+    (1, _('Weighted average')),
     (2, _('Specific identification method')),
 ]
 

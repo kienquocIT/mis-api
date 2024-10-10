@@ -5,6 +5,7 @@ from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductP
 from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
+from ..models import ProductWareHouse
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
@@ -840,6 +841,18 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             except Tax.DoesNotExist:
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
+
+    def validate(self, validate_data):
+        old_valuation_method = self.instance.valuation_method
+        new_valuation_method = validate_data.get('valuation_method')
+        if all([
+            ProductWareHouse.objects.filter(product=self.instance).exists(),
+            new_valuation_method != old_valuation_method
+        ]):
+            raise serializers.ValidationError(
+                {'valuation_method': "Cannot change the valuation method for products that have transactions."}
+            )
+        return validate_data
 
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:

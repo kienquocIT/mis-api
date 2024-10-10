@@ -34,7 +34,7 @@ ATTRIBUTE_CONFIG = [
 
 VALUATION_METHOD = [
     (0, _('FIFO')),
-    (1, _('Cumulative weighted average')),
+    (1, _('Weighted average')),
     (2, _('Specific identification method'))
 ]
 
@@ -224,7 +224,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
-    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=1)
 
     # Stock information
     stock_amount = models.FloatField(
