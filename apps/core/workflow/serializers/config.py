@@ -994,6 +994,37 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                 break
         return collab_out_form
 
+    # @classmethod
+    # def get_association(cls, initial_node):
+    #     association = []
+    #     for associate in initial_node.transition_node_input.select_related('node_out'):
+    #         if associate.node_out:
+    #             collab_out_form = []
+    #             if associate.node_out.option_collaborator == 1:  # out form
+    #                 collab = CollaborationOutForm.objects.get(node=associate.node_out)
+    #                 for employee in collab.employees.select_related('group').all():
+    #                     collab_out_form.append({
+    #                         'id': employee.id,
+    #                         'first_name': employee.first_name,
+    #                         'last_name': employee.last_name,
+    #                         'email': employee.email,
+    #                         'full_name': employee.get_full_name(2),
+    #                         'code': employee.code,
+    #                         'group': {'id': employee.group_id, 'title': employee.group.title, 'code': employee.group.code}
+    #                         if employee.group else {},
+    #                         'is_active': employee.is_active,
+    #                     })
+    #             association.append({
+    #                 'id': associate.id,
+    #                 'note_out': {
+    #                     'id': associate.node_out_id,
+    #                     'option_collaborator': associate.node_out.option_collaborator,
+    #                     'collab_out_form': collab_out_form,
+    #                     'condition': associate.condition,
+    #                 }
+    #             })
+    #     return association
+
     class Meta:
         model = WorkflowConfigOfApp
         fields = ('id', 'title', 'code', 'application_id', 'mode', 'error_total', 'workflow_currently')
