@@ -26,7 +26,7 @@ from apps.sales.cashoutflow.models import (
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
-    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
+    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods,
 )
 from . import MediaForceAPI
 
@@ -61,7 +61,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, LatestLog, ReportStock
+    ReportInventoryCost, ReportStockLogByWarehouse, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1544,14 +1544,14 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = LatestLog.objects.filter(
+            latest_log_obj = ReportStockLogByWarehouse.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                LatestLog.objects.create(
+                ReportStockLogByWarehouse.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
@@ -1563,7 +1563,7 @@ def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lo
         ReportStockLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
         ReportInventoryCost.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
         ReportStock.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
-        LatestLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
+        ReportStockLogByWarehouse.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
 
     if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
         print('created balance')
@@ -2312,3 +2312,88 @@ def update_valuation_method():
         product.valuation_method = 1
         product.save(update_fields=['valuation_method'])
     print('Done :))')
+
+
+class InventoryReportRun:
+    @classmethod
+    def weighted_average(cls, company_id, fiscal_year, start_month):
+        SubPeriods.objects.filter(period_mapped__fiscal_year=fiscal_year, period_mapped__company_id=company_id).update(run_report_inventory=False)
+        ReportStock.objects.filter(company_id=company_id).delete()
+        ReportStockLog.objects.filter(company_id=company_id).delete()
+        ReportInventoryCost.objects.filter(company_id=company_id).delete()
+
+        all_delivery = OrderDeliverySub.objects.filter(
+            company_id=company_id, state=2, date_done__year=fiscal_year, date_done__month__gte=start_month
+        ).order_by('date_done')
+
+        all_goods_issue = GoodsIssue.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_receipt = GoodsReceipt.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_return = GoodsReturn.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_transfer = GoodsTransfer.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_doc = []
+        for delivery in all_delivery:
+            all_doc.append({
+                'id': str(delivery.id), 'code': str(delivery.code),
+                'date_approved': str(delivery.date_done), 'type': 'delivery'
+            })
+        for goods_issue in all_goods_issue:
+            all_doc.append({
+                'id': str(goods_issue.id), 'code': str(goods_issue.code),
+                'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+            })
+        for goods_receipt in all_goods_receipt:
+            all_doc.append({
+                'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
+                'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+            })
+        for goods_return in all_goods_return:
+            all_doc.append({
+                'id': str(goods_return.id), 'code': str(goods_return.code),
+                'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+            })
+        for goods_transfer in all_goods_transfer:
+            all_doc.append({
+                'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
+                'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+            })
+
+        all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+        for doc in all_doc_sorted:
+            print(f"--- Run id: {doc['id']}")
+            print(f"\tSystem date: {doc['date_approved'].split(' ')[0]}")
+            print(f"\tSystem code: ** {doc['code']} **")
+            print(f"\tType: {doc['type']}")
+
+            if doc['type'] == 'delivery':
+                instance = OrderDeliverySub.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+            if doc['type'] == 'goods_issue':
+                instance = GoodsIssue.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+            if doc['type'] == 'goods_receipt':
+                instance = GoodsReceipt.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+            if doc['type'] == 'goods_return':
+                instance = GoodsReturn.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+            if doc['type'] == 'goods_transfer':
+                instance = GoodsTransfer.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+        print('Complete!')

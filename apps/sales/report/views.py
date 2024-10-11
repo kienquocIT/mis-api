@@ -11,7 +11,7 @@ from apps.sales.report.inventory_log import InventoryCostLogFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportStock, ReportInventoryCost, ReportStockLog,
-    ReportInventorySubFunction, ReportInventoryCostWH
+    ReportInventorySubFunction, ReportInventoryCostByWarehouse
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, BalanceInitializationListSerializer,
@@ -395,7 +395,7 @@ class ReportStockList(BaseListMixin):
         bulk_info.append(rp_prd_wh)
         for report_inventory_cost in last_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
-                ReportInventoryCostWH(
+                ReportInventoryCostByWarehouse(
                     report_inventory_cost=rp_prd_wh,
                     warehouse=report_inventory_cost.warehouse,
                     opening_quantity=report_inventory_cost.ending_quantity,
@@ -433,7 +433,7 @@ class ReportStockList(BaseListMixin):
         bulk_info.append(rp_prd_wh)
         for report_inventory_cost in last_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
-                ReportInventoryCostWH(
+                ReportInventoryCostByWarehouse(
                     report_inventory_cost=rp_prd_wh,
                     warehouse=report_inventory_cost.warehouse,
                     opening_quantity=report_inventory_cost.ending_quantity,
@@ -485,7 +485,7 @@ class ReportStockList(BaseListMixin):
                         )
 
             ReportInventoryCost.objects.bulk_create(bulk_info)
-            ReportInventoryCostWH.objects.bulk_create(bulk_info_wh)
+            ReportInventoryCostByWarehouse.objects.bulk_create(bulk_info_wh)
             last_period = SubPeriods.objects.filter(
                 period_mapped=last_period_mapped, order=last_sub_period_order
             ).first()
