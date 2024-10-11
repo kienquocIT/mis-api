@@ -652,7 +652,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
@@ -680,15 +679,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price', 'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
-
-    def validate_code(self, value):
-        if value:
-            if Product.objects.filter_current(
-                    fill__tenant=True, fill__company=True, code=value
-            ).exclude(code=self.instance.code).exists():
-                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
-            return value
-        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_general_product_category(cls, value):
@@ -841,6 +831,14 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
+        if validate_data.get('code'):
+            if Product.objects.filter_current(
+                    fill__tenant=True, fill__company=True, code=validate_data.get('code')
+            ).exclude(code=self.instance.code).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+        else:
+            raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
         old_valuation_method = self.instance.valuation_method
         new_valuation_method = validate_data.get('valuation_method')
         if all([
