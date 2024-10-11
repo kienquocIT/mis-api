@@ -341,7 +341,6 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 sum_in_value = obj.sum_input_value
                 sum_out_value = obj.sum_output_value
 
-            print(obj.product.code, wh_sub.opening_quantity)
             result.append({
                 'opening_balance_quantity': cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, wh_sub.opening_quantity

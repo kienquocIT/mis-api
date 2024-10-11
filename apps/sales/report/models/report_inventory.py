@@ -363,7 +363,6 @@ class ReportStockLog(DataAbstractModel):
                 'cost': latest_cost_dict['cost'],
                 'value': sum_ending_quantity * latest_cost_dict['cost']
             }
-            print('### ', log.product.code)
             this_sub_period_cost = ReportInventoryCost.objects.filter(
                 tenant_id=log.tenant_id,
                 company_id=log.company_id,
@@ -373,21 +372,12 @@ class ReportStockLog(DataAbstractModel):
                 sub_period=sub_period_obj,
                 **kwargs
             ).first()
-            print(log.tenant_id,
-                log.company_id,
-                log.product.id,
-                period_obj.id,
-                sub_period_order,
-                sub_period_obj.id,
-                kwargs)
-            print(this_sub_period_cost.id if this_sub_period_cost else None)
 
             this_sub_period_cost = cls.for_perpetual(
                 this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
             ) if div == 0 else cls.for_periodic(
                 this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
             )
-            print(this_sub_period_cost.id)
 
             if 'sale_order_id' in kwargs:  # Project
                 this_sub_period_cost_wh = this_sub_period_cost.report_inventory_cost_wh.filter(
@@ -555,7 +545,6 @@ class ReportInventoryCostByWarehouse(SimpleAbstractModel):
 
     @classmethod
     def get_project_last_ending_quantity(cls, report_inventory_cost, warehouse):
-        print('find', report_inventory_cost.id, warehouse.id)
         previous = cls.objects.filter(
             report_inventory_cost__product=report_inventory_cost.product,
             warehouse=warehouse
@@ -563,7 +552,6 @@ class ReportInventoryCostByWarehouse(SimpleAbstractModel):
             '-report_inventory_cost__period_mapped__fiscal_year',
             '-report_inventory_cost__sub_period_order'
         ).first()
-        print(previous.ending_quantity if previous else "*")
         return previous.ending_quantity if previous else 0
 
     class Meta:
