@@ -218,8 +218,6 @@ class GoodsReceipt(DataAbstractModel):
                             'lot_data': {
                                 'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
                                 'lot_number': lot.lot_number,
-                                'lot_quantity': casted_quantity,
-                                'lot_value': casted_quantity * gr_item.product_unit_price,
                                 'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                             }
                         })
@@ -287,8 +285,6 @@ class GoodsReceipt(DataAbstractModel):
                                 'lot_data': {
                                     'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
                                     'lot_number': lot.lot_number,
-                                    'lot_quantity': casted_quantity,
-                                    'lot_value': casted_quantity * gr_item.product_unit_price,
                                     'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
                                 }
                             })
@@ -308,11 +304,7 @@ class GoodsReceipt(DataAbstractModel):
                 doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
             if instance.work_order:
                 doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
-        InventoryCostLog.log(
-            instance,
-            instance.date_approved,
-            doc_data
-        )
+        InventoryCostLog.log(instance, instance.date_approved, doc_data)
         return True
 
     def save(self, *args, **kwargs):

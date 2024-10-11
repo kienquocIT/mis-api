@@ -101,8 +101,6 @@ class GoodsReturn(DataAbstractModel):
                     'lot_data': {
                         'lot_id': str(item.lot_no_id),
                         'lot_number': item.lot_no.lot_number,
-                        'lot_quantity': casted_quantity,
-                        'lot_value': casted_quantity * casted_cost,
                         'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
                     }
                 }
@@ -190,8 +188,6 @@ class GoodsReturn(DataAbstractModel):
                 'lot_data': {
                     'lot_id': str(item.lot_no_id),
                     'lot_number': item.lot_no.lot_number,
-                    'lot_quantity': casted_quantity,
-                    'lot_value': casted_quantity * casted_cost,
                     'lot_expire_date': str(item.lot_no.expire_date) if item.lot_no.expire_date else None
                 }
             })

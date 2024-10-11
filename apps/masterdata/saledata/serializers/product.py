@@ -109,7 +109,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    valuation_method = serializers.IntegerField(default=1)
+    valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -580,9 +580,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    config_inventory_management = InventoryCostLogFunc.get_cost_config(
-                        obj.company.company_config
-                    )
+                    cost_cfg = InventoryCostLogFunc.get_cost_config(obj.company.company_config)
 
                     result.append({
                         'id': item.id,
@@ -592,7 +590,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'stock_amount': casted_stock_amount,
                         'cost': obj.get_unit_cost_by_warehouse(
                             warehouse_id=item.warehouse_id, get_type=2
-                        ) / casted_stock_amount if config_inventory_management == [1] else None
+                        ) / casted_stock_amount if cost_cfg == [1] else None
                     })
         return result
 
@@ -664,7 +662,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    valuation_method = serializers.IntegerField(default=1)
+    valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)

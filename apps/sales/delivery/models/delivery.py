@@ -390,8 +390,6 @@ class OrderDeliverySub(DataAbstractModel):
                     'lot_data': {
                         'lot_id': str(lot_obj.id),
                         'lot_number': lot_obj.lot_number,
-                        'lot_quantity': casted_quantity,
-                        'lot_value': 0,  # theo gia cost
                         'lot_expire_date': str(lot_obj.expire_date) if lot_obj.expire_date else None
                     }
                 })

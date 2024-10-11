@@ -219,7 +219,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    config_inventory_management = serializers.SerializerMethodField()
+    cost_cfg = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -244,7 +244,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'sub_domain',
             'logo',
             'icon',
-            'config_inventory_management'
+            'cost_cfg'
         )
 
     @classmethod
@@ -264,7 +264,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         return company_function_number
 
     @classmethod
-    def get_config_inventory_management(cls, obj):
+    def get_cost_cfg(cls, obj):
         return {
             'cost_per_warehouse': obj.company_config.cost_per_warehouse,
             'cost_per_lot': obj.company_config.cost_per_lot,

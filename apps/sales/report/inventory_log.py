@@ -40,17 +40,12 @@ class InventoryCostLogFunc:
 
     @classmethod
     def get_cost_config(cls, company_config):
-        cost_per_warehouse = company_config.cost_per_warehouse
-        cost_per_lot = company_config.cost_per_lot
-        cost_per_project = company_config.cost_per_project
-        config_inventory_management = []
-        if cost_per_warehouse:
-            config_inventory_management.append(1)
-        if cost_per_lot:
-            config_inventory_management.append(2)
-        if cost_per_project:
-            config_inventory_management.append(3)
-        return config_inventory_management
+        cost_config = [
+            1 if company_config.cost_per_warehouse else None,
+            2 if company_config.cost_per_lot else None,
+            3 if company_config.cost_per_project else None
+        ]
+        return [i for i in cost_config if i is not None]
 
     @classmethod
     def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
@@ -65,7 +60,7 @@ class InventoryCostLogFunc:
                 sub_period_order=sub_period_order,
                 periodic_closed=False
         ).exists():
-            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
+            ReportInventorySubFunction.calculate_cost_dict_for_periodic(
                 period_obj, sub_period_order, tenant, company
             )
         return True

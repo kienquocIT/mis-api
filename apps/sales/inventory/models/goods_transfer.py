@@ -86,8 +86,6 @@ class GoodsTransfer(DataAbstractModel):
                         lot_data = {
                             'lot_id': str(prd_wh_lot.id),
                             'lot_number': prd_wh_lot.lot_number,
-                            'lot_quantity': lot_item['quantity'],
-                            'lot_value': item.unit_cost * lot_item['quantity'],
                             'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                         }
                         casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, lot_item['quantity'])
