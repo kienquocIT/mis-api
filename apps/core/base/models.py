@@ -348,6 +348,14 @@ class ApplicationProperty(CoreAbstractModel):
         max_length=500, null=True, blank=True,
         help_text='Example of sale indicator property that guide user how to config'
     )
+    is_wf_zone = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config WF zone"
+    )
+    is_wf_condition = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config WF condition"
+    )
 
 
     class Meta:

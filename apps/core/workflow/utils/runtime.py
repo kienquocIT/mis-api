@@ -482,8 +482,9 @@ class RuntimeStageHandler:
         return True, []
 
     def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
-        config_cls = WFConfigSupport(workflow=workflow)
-        association_passed = config_cls.get_next(stage_obj_currently.node, self.runtime_obj.doc_params)
+        # config_cls = WFConfigSupport(workflow=workflow)
+        # association_passed = config_cls.get_next(stage_obj_currently.node, self.runtime_obj.doc_params)
+        association_passed = DocHandler.get_next_association(runtime_obj=self.runtime_obj)
         if association_passed and isinstance(association_passed, Association):
             is_next_stage, next_stage = self.create_stage(
                 node_passed=association_passed.node_out,

@@ -242,6 +242,8 @@ AppProp_SaleData_Quotation_data = {
         'code': 'title',
         'type': 1,
         'is_print': True,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     'd59eea03-2eb8-4d1a-ac9d-dc3993545b67': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -256,6 +258,8 @@ AppProp_SaleData_Quotation_data = {
         'code': 'customer',
         'type': 5,
         'content_type': 'saledata.Account',
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '76f10bb2-016a-47a9-83b0-4796a96c9d07': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -270,6 +274,8 @@ AppProp_SaleData_Quotation_data = {
         'code': 'employee_inherit_id',
         'type': 5,
         'content_type': 'hr.Employee',
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '8f3fabc0-ffbe-409a-9894-2d2c36993cc8': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -293,7 +299,7 @@ AppProp_SaleData_Quotation_data = {
     # tabs
     'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Tab detail',
+        'title': 'Tab product',
         'code': 'quotation_products_data',
         'remark': 'Tab line detail of quotation',
         'code_related': [
@@ -301,6 +307,8 @@ AppProp_SaleData_Quotation_data = {
             'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
         ],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     'fda17a32-9f16-4e7c-b7db-53f007f6467b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -308,6 +316,8 @@ AppProp_SaleData_Quotation_data = {
         'code': 'quotation_logistic_data',
         'remark': 'Tab logistic of quotation',
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     'cf82dbac-a903-425c-aa41-b45e7ccec41b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -316,6 +326,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Tab cost of quotation',
         'code_related': ['quotation_indicators_data'],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     '10946df3-1e9d-4538-9173-7f75861ab7ed': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -324,6 +336,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Tab expense of quotation',
         'code_related': ['quotation_indicators_data'],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     'd846692b-9d65-4dcb-a667-4318cae17a18': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -331,6 +345,8 @@ AppProp_SaleData_Quotation_data = {
         'code': 'quotation_indicators_data',
         'remark': 'Tab indicator of quotation',
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     # Totals of products
     '06c2414c-ac31-4f16-b0ac-edd0b8d54ded': {
@@ -340,6 +356,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total product pretax amount of quotation',
         'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     'efd2c678-dadf-4f77-be5f-9cea9598c017': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -372,6 +390,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total product of quotation',
         'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     'b398bec4-a122-44b9-92fe-642d869e9238': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -389,6 +409,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total cost pretax amount of quotation',
         'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '619f3301-48e2-476b-8a85-b5998ccd3e4a': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -405,6 +427,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total cost of quotation',
         'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     # Totals of expenses
     '5a6e8904-c39c-4e45-aed9-7b989299f593': {
@@ -414,6 +438,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total expense pretax amount of quotation',
         'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '7fcbe504-de29-4600-a748-05639db2841c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -430,6 +456,8 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total expense of quotation',
         'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     # Total fields
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
