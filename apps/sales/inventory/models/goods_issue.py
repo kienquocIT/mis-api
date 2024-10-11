@@ -48,7 +48,7 @@ class GoodsIssue(DataAbstractModel):
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
-        activities_data = []
+        doc_data = []
         for item in instance.goods_issue_product.filter(issued_quantity__gt=0):
             if len(item.lot_data) > 0:
                 for lot_item in item.lot_data:
@@ -57,7 +57,7 @@ class GoodsIssue(DataAbstractModel):
                         casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
                             item.uom, lot_item.get('quantity', 0)
                         )
-                        activities_data.append({
+                        doc_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
                             'system_date': instance.date_approved,
@@ -78,7 +78,7 @@ class GoodsIssue(DataAbstractModel):
                         })
             else:
                 casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
-                activities_data.append({
+                doc_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
                     'system_date': instance.date_approved,
@@ -93,7 +93,7 @@ class GoodsIssue(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        InventoryCostLog.log(instance, instance.date_approved, activities_data)
+        InventoryCostLog.log(instance, instance.date_approved, doc_data)
         return True
 
     @classmethod
