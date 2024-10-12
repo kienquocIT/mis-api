@@ -235,8 +235,6 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
             properties_id = []
             for detail in zone_and_properties:
                 properties_id += detail['properties']
-
-            # property_objs = ApplicationProperty.objects.filter(id__in=properties_id)
             property_objs = ApplicationProperty.objects.filter(
                 Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
             )
@@ -244,37 +242,77 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                 return ApplicationPropertySubDetailSerializer(property_objs, many=True).data
         return []
 
-    @staticmethod
-    def get_collab_out_form(node_current):
+    # @staticmethod
+    # def get_collab_out_form(node_current):
+    #     collab_out_form = []
+    #     if node_current:
+    #         # filter associations + select related node_out
+    #         associates = node_current.transition_node_input.filter(
+    #             node_out__option_collaborator=1,
+    #             node_out__in=node_current.transition_node_input.values('node_out')
+    #         ).select_related('node_out')
+    #         # filter collab out form prefetch related employees__group
+    #         collab_data = CollaborationOutForm.objects.filter(node__in=associates.values('node_out')).prefetch_related(
+    #             'employees__group'
+    #         )
+    #         for collab in collab_data:
+    #             for employee in collab.employees.all():
+    #                 group_info = {
+    #                     'id': employee.group_id,
+    #                     'title': employee.group.title,
+    #                     'code': employee.group.code
+    #                 } if employee.group else {}
+    #                 collab_out_form.append({
+    #                     'id': employee.id,
+    #                     'first_name': employee.first_name,
+    #                     'last_name': employee.last_name,
+    #                     'email': employee.email,
+    #                     'full_name': employee.get_full_name(2),
+    #                     'code': employee.code,
+    #                     'group': group_info,
+    #                     'is_active': employee.is_active,
+    #                 })
+    #     return collab_out_form
+
+    @classmethod
+    def get_collab_out_form(cls, collab):
         collab_out_form = []
-        if node_current:
-            # filter associations + select related node_out
-            associates = node_current.transition_node_input.filter(
-                node_out__option_collaborator=1,
-                node_out__in=node_current.transition_node_input.values('node_out')
-            ).select_related('node_out')
-            # filter collab out form prefetch related employees__group
-            collab_data = CollaborationOutForm.objects.filter(node__in=associates.values('node_out')).prefetch_related(
-                'employees__group'
-            )
-            for collab in collab_data:
-                for employee in collab.employees.all():
-                    group_info = {
-                        'id': employee.group_id,
-                        'title': employee.group.title,
-                        'code': employee.group.code
-                    } if employee.group else {}
-                    collab_out_form.append({
-                        'id': employee.id,
-                        'first_name': employee.first_name,
-                        'last_name': employee.last_name,
-                        'email': employee.email,
-                        'full_name': employee.get_full_name(2),
-                        'code': employee.code,
-                        'group': group_info,
-                        'is_active': employee.is_active,
-                    })
+        for employee in collab.employees.select_related('group').all():
+            collab_out_form.append({
+                'id': employee.id,
+                'first_name': employee.first_name,
+                'last_name': employee.last_name,
+                'email': employee.email,
+                'full_name': employee.get_full_name(2),
+                'code': employee.code,
+                'group': {
+                    'id': employee.group_id,
+                    'title': employee.group.title,
+                    'code': employee.group.code
+                } if employee.group else {},
+                'is_active': employee.is_active,
+            })
         return collab_out_form
+
+    @classmethod
+    def get_association(cls, node_current):
+        association = []
+        for associate in node_current.transition_node_input.select_related('node_out'):
+            if associate.node_out:
+                collab_out_form = []
+                if associate.node_out.option_collaborator == 1:  # out form
+                    collab = CollaborationOutForm.objects.get(node=associate.node_out)
+                    collab_out_form = cls.get_collab_out_form(collab=collab)
+                association.append({
+                    'id': associate.id,
+                    'node_out': {
+                        'id': associate.node_out_id,
+                        'option_collaborator': associate.node_out.option_collaborator,
+                        'collab_out_form': collab_out_form,
+                    },
+                    'condition': associate.condition,
+                })
+        return association
 
     def get_action_myself(self, obj):
         employee_current_id = self.context.get('employee_current_id', None)
@@ -292,7 +330,7 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                         'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
                         'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
                         'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
-                        'collab_out_form': self.get_collab_out_form(obj.stage_currents.node),
+                        'association': self.get_association(node_current=obj.stage_currents.node),
                     }
         return {}
 
@@ -332,6 +370,7 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     action = serializers.IntegerField(
         help_text='Action code submit'
     )
+    next_association_id = serializers.UUIDField(required=False, allow_null=True)
     next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
 
     def validate_action(self, attrs):
@@ -347,17 +386,17 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
         remark = validated_data.get('remark', '')
-        next_node_collab_id = None
-        if 'next_node_collab_id' in validated_data:
-            next_node_collab_id = validated_data['next_node_collab_id']
-            del validated_data['next_node_collab_id']
+        next_association_id = validated_data.pop('next_association_id', None)
+        next_node_collab_id = validated_data.pop('next_node_collab_id', None)
         call_task_background(
             call_approval_task,
             **{
                 'runtime_assignee_id': str(instance.id),
                 'employee_id': str(instance.employee_id),
                 'action_code': action_code,
-                'remark': remark, 'next_node_collab_id': next_node_collab_id,
+                'remark': remark,
+                'next_association_id': next_association_id,
+                'next_node_collab_id': next_node_collab_id,
             },
         )
         return instance

@@ -153,6 +153,7 @@ class RuntimeHandler:
             employee_assignee_obj: models.Model,
             action_code: int,
             remark: str,
+            next_association_id: Union[UUID, str],
             next_node_collab_id: Union[UUID, str],
     ) -> bool:
         if rt_assignee.is_done is False:
@@ -179,8 +180,12 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-                    # update next_node_collab to document before run next stage
-                    DocHandler.force_update_next_node_collab(runtime_obj, next_node_collab_id)
+                    # update next_association_id + next_node_collab_id to document before run next stage
+                    DocHandler.force_update_next_node_collab(
+                        runtime_obj=runtime_obj,
+                        next_association_id=next_association_id,
+                        next_node_collab_id=next_node_collab_id,
+                    )
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next

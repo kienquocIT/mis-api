@@ -72,6 +72,7 @@ class SaleOrderIndicator(MasterDataAbstractModel):
         related_name="sale_order_indicator_quotation_indicator",
         null=True
     )
+    quotation_indicator_data = models.JSONField(default=dict, help_text='data json of quotation indicator')
     quotation_indicator_value = models.FloatField(
         default=0,
         help_text="value of specific indicator for quotation mapped with sale order"

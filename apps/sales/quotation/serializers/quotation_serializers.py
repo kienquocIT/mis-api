@@ -397,6 +397,10 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
     @classmethod

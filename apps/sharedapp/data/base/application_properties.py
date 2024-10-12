@@ -653,6 +653,34 @@ AppProp_SaleData_Quotation_data = {
         'is_sale_indicator': True,
         'example': 'prop(Expense subtotal after tax)',
     },
+    # indicator
+    '54c2b111-0f31-41f8-a8aa-d095aad4c90a': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Revenue',
+        'code': 'indicator_revenue',
+        'remark': 'Indicator revenue of quotation',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    '1b61ecbc-99cf-43ac-bd1a-2cd15f91934b': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Gross profit',
+        'code': 'indicator_gross_profit',
+        'remark': 'Indicator gross profit of quotation',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    'cb9cc655-2c94-42ea-835a-4580379c5fc2': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Net income',
+        'code': 'indicator_net_income',
+        'remark': 'Indicator net income of quotation',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     #
     **Quotation_data__params,
 }
@@ -979,6 +1007,8 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Title',
         'code': 'title',
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '031519a6-3c40-4eb2-845a-32f869a2e903': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -993,6 +1023,8 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'customer',
         'type': 5,
         'content_type': 'saledata.Account',
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '77357c24-b809-42bf-a190-f216d3df7206': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1007,6 +1039,8 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'employee_inherit_id',
         'type': 5,
         'content_type': 'hr.Employee',
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '60464a8f-5261-4446-940f-69746784dc6a': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1026,6 +1060,8 @@ AppProp_SaleData_SaleOrder_data = {
             'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
         ],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     'd13549a8-a1c1-450e-818a-613cde814d6a': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1033,6 +1069,8 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'sale_order_logistic_data',
         'remark': 'Tab logistic of sale order',
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     '0cb516c2-2b59-4a11-98cf-4b78fd4a464d': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1041,6 +1079,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Tab cost of sale order',
         'code_related': ['sale_order_indicators_data'],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     '4ac8ebc5-adfd-4078-9834-51de58c064d1': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1049,6 +1089,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Tab expense of sale order',
         'code_related': ['sale_order_indicators_data'],
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     'c12b9e32-1043-492c-ac33-78e838c43aac': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1056,6 +1098,8 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'sale_order_indicators_data',
         'remark': 'Tab indicator of sale order',
         'type': 1,
+        'is_wf_zone': True,
+        'is_wf_condition': False,
     },
     # Totals of products
     '9ebf66f9-2a2b-4343-98bd-4b2b6b4e1425': {
@@ -1065,6 +1109,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total product pretax amount of sale order',
         'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     'c2197be7-35a2-4efc-afb3-56feaf969957': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1097,6 +1143,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total product of sale order',
         'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '3a3ce0bc-8c67-4558-9812-8a6dbf45cf88': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1114,6 +1162,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total cost pretax amount of sale order',
         'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     'f56243a9-4821-40fa-83b9-ff48a7c807f7': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1130,6 +1180,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total cost of sale order',
         'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     # Totals of expenses
     '23a82e99-aa8e-47c3-b8b1-3ac3038d9b04': {
@@ -1139,6 +1191,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total expense pretax amount of sale order',
         'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     '4365f9bd-5c84-46d7-a995-c54e0878ca59': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1155,6 +1209,8 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total expense of sale order',
         'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
         'type': 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     # total fields
     '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
@@ -1318,6 +1374,34 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Subtotal after tax expense on sale order expense line',
         'type': 6,
         'is_sale_indicator': True,
+    },
+    # indicator
+    '34fa41c9-3cce-4178-bf13-e1499fe5afd3': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Revenue',
+        'code': 'indicator_revenue',
+        'remark': 'Indicator revenue of sale order',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    '33bcecce-b94a-45f8-b5b6-d4f27e36ee34': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Gross profit',
+        'code': 'indicator_gross_profit',
+        'remark': 'Indicator gross profit of sale order',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    'f316faea-3199-4448-a214-18c56cfde2d7': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Net income',
+        'code': 'indicator_net_income',
+        'remark': 'Indicator net income of sale order',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
     #
     **SaleOrder_data__params,

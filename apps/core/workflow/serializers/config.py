@@ -380,7 +380,6 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
             initial_node = obj.workflow_currently.node_workflow.get(is_system=True, code_node_system='initial')
             initial_zones = cls.get_initial_zones(initial_node)
             initial_zones_hidden = cls.get_initial_zones_hidden(initial_node)
-            collab_out_form = cls.get_collab_out_form(initial_node)
             association = cls.get_association(initial_node)
             return {
                 'id': obj.workflow_currently_id,
@@ -388,7 +387,6 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                 'initial_zones': initial_zones,
                 'initial_zones_hidden': initial_zones_hidden,
                 'is_edit_all_zone': initial_node.is_edit_all_zone,
-                'collab_out_form': collab_out_form,
                 'association': association,
             }
         except Exception as err:
@@ -418,24 +416,23 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
         return initial_zones_hidden
 
     @classmethod
-    def get_collab_out_form(cls, initial_node):
+    def get_collab_out_form(cls, collab):
         collab_out_form = []
-        for associate in initial_node.transition_node_input.select_related('node_out'):
-            if associate.node_out.option_collaborator == 1:  # out form
-                collab = CollaborationOutForm.objects.get(node=associate.node_out)
-                for employee in collab.employees.select_related('group').all():
-                    collab_out_form.append({
-                        'id': employee.id,
-                        'first_name': employee.first_name,
-                        'last_name': employee.last_name,
-                        'email': employee.email,
-                        'full_name': employee.get_full_name(2),
-                        'code': employee.code,
-                        'group': {'id': employee.group_id, 'title': employee.group.title, 'code': employee.group.code}
-                        if employee.group else {},
-                        'is_active': employee.is_active,
-                    })
-                break
+        for employee in collab.employees.select_related('group').all():
+            collab_out_form.append({
+                'id': employee.id,
+                'first_name': employee.first_name,
+                'last_name': employee.last_name,
+                'email': employee.email,
+                'full_name': employee.get_full_name(2),
+                'code': employee.code,
+                'group': {
+                    'id': employee.group_id,
+                    'title': employee.group.title,
+                    'code': employee.group.code
+                } if employee.group else {},
+                'is_active': employee.is_active,
+            })
         return collab_out_form
 
     @classmethod
@@ -446,21 +443,7 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                 collab_out_form = []
                 if associate.node_out.option_collaborator == 1:  # out form
                     collab = CollaborationOutForm.objects.get(node=associate.node_out)
-                    for employee in collab.employees.select_related('group').all():
-                        collab_out_form.append({
-                            'id': employee.id,
-                            'first_name': employee.first_name,
-                            'last_name': employee.last_name,
-                            'email': employee.email,
-                            'full_name': employee.get_full_name(2),
-                            'code': employee.code,
-                            'group': {
-                                'id': employee.group_id,
-                                'title': employee.group.title,
-                                'code': employee.group.code
-                            } if employee.group else {},
-                            'is_active': employee.is_active,
-                        })
+                    collab_out_form = cls.get_collab_out_form(collab=collab)
                 association.append({
                     'id': associate.id,
                     'node_out': {
