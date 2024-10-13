@@ -234,7 +234,7 @@ class ReportInventoryCostList(BaseListMixin):
             if 'sale_order' in self.request.query_params:
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
-            ReportInvCommonFunc.create_this_sub_inventory_cost_record(
+            ReportInvCommonFunc.sum_up_last_sub_period(
                 self.request.user.tenant_current,
                 self.request.user.company_current,
                 self.request.user.employee_current,

@@ -35,9 +35,7 @@ class InventoryCostLog:
                             print(f"Report inventory {order + period_obj.space_month}/{period_obj.fiscal_year} is run.")
 
                     # kiểm tra và chạy tổng kết tháng trước đó, sau đó đẩy số dư qua đầu kì tháng này
-                    ReportInvCommonFunc.create_this_sub_inventory_cost_record(
-                        tenant, company, employee, period_obj, sub_period_order
-                    )
+                    ReportInvCommonFunc.sum_up_last_sub_period(tenant, company, employee, period_obj, sub_period_order)
 
                     # tạo các log
                     new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
@@ -154,7 +152,7 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def create_this_sub_inventory_cost_record(cls, tenant, company, employee_current, this_period, this_sub_order):
+    def sum_up_last_sub_period(cls, tenant, company, employee_current, this_period, this_sub_order):
         if tenant and company and employee_current and this_period and this_sub_order:
             this_sub = SubPeriods.objects.filter(period_mapped=this_period, order=this_sub_order).first()
             if not this_sub.run_report_inventory:
