@@ -234,13 +234,14 @@ class ReportInventoryCostList(BaseListMixin):
             if 'sale_order' in self.request.query_params:
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
-            ReportInvCommonFunc.sum_up_last_sub_period(
-                self.request.user.tenant_current,
-                self.request.user.company_current,
-                self.request.user.employee_current,
-                period_mapped,
-                sub_period_order
-            )
+            for order in range(1, int(sub_period_order)):
+                ReportInvCommonFunc.sum_up_last_sub_period(
+                    self.request.user.tenant_current,
+                    self.request.user.company_current,
+                    self.request.user.employee_current,
+                    period_mapped,
+                    order
+                )
 
             if self.request.query_params['product_id_list'] != '':
                 prd_id_list = self.request.query_params['product_id_list'].split(',')

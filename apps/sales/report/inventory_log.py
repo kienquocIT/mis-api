@@ -25,19 +25,9 @@ class InventoryCostLog:
                     if company.company_config.definition_inventory_valuation == 1:
                         ReportInvCommonFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
 
-                    # nếu đây GD đầu tiên, update các tháng trước đó (từ ngày bắt đầu sd phần mềm) -> "đã chạy báo cáo"
-                    if not ReportStockLog.objects.filter(
-                            tenant=tenant,
-                            company=company,
-                            report_stock__period_mapped=period_obj
-                    ).exists():
-                        first_sub_period_order = company.software_start_using_time.month - period_obj.space_month
-                        for order in range(first_sub_period_order, sub_period_order):
-                            period_obj.sub_periods_period_mapped.filter(order=order).update(run_report_inventory=True)
-                            print(f"Report inventory {order + period_obj.space_month}/{period_obj.fiscal_year} is run.")
-
-                    # kiểm tra và chạy tổng kết tháng trước đó, sau đó đẩy số dư qua đầu kì tháng này
-                    ReportInvCommonFunc.sum_up_last_sub_period(tenant, company, employee, period_obj, sub_period_order)
+                    # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
+                    for order in range(1, sub_period_order + 1):
+                        ReportInvCommonFunc.sum_up_last_sub_period(tenant, company, employee, period_obj, order)
 
                     # tạo các log
                     new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
@@ -194,10 +184,11 @@ class ReportInvCommonFunc:
                 last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
                 if any([
                     last_sub.run_report_inventory,
-                    int(this_sub_order) == company.software_start_using_time.month - this_period.space_month
+                    int(this_sub_order) <= company.software_start_using_time.month - this_period.space_month
                 ]):
                     this_sub.run_report_inventory = True
                     this_sub.save(update_fields=['run_report_inventory'])
-                    print(f"Report inventory {this_sub.start_date.month}/{this_period.fiscal_year} is run.")
+                    print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
+                          f"Pushed to next sub period.")
             return True
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})
