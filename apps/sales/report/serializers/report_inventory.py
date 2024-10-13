@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
     ProductWareHouseSerial, ProductWareHouseLot
 )
-from apps.sales.report.inventory_log import InventoryCostLogFunc
+from apps.sales.report.inventory_log import ReportInventoryCommonFunc
 from apps.sales.report.models import (
     ReportStock, ReportInventoryCost, ReportInventorySubFunction,
     ReportInventoryCostByWarehouse, ReportStockLog
@@ -625,7 +625,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         company_id=periods.company_id,
                         product_warehouse=prd_wh_obj,
                         lot_number=lot.get('lot_number'),
-                        quantity_import=InventoryCostLogFunc.cast_quantity_to_unit(
+                        quantity_import=ReportInventoryCommonFunc.cast_quantity_to_unit(
                             prd_obj.inventory_uom, float(lot.get('quantity_import'))
                         )
                     )
@@ -677,7 +677,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
     @classmethod
-    def check_valid_update(cls, periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current):
+    def check_valid_create(cls, periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current):
         if ReportStockLog.objects.filter(
                 tenant=tenant_current,
                 company=company_current,
@@ -706,8 +706,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             cls, periods, prd_obj, wh_obj, sub_period_order_value, balance_data, employee_current,
             tenant_current, company_current, sub_period_obj
     ):
-        cls.check_valid_update(periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current)
-        balance_data['quantity'] = InventoryCostLogFunc.cast_quantity_to_unit(
+        cls.check_valid_create(periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current)
+        balance_data['quantity'] = ReportInventoryCommonFunc.cast_quantity_to_unit(
             prd_obj.inventory_uom,
             float(balance_data.get('quantity'))
         )
@@ -792,7 +792,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             prd_obj = Product.objects.filter(id=balance_data.get('product_id')).first()
             wh_obj = WareHouse.objects.filter(id=balance_data.get('warehouse_id')).first()
             if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
-                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                raise serializers.ValidationError({'error': 'Some objects are not exist.'})
             return cls.create_balance_data_sub(
                 periods,
                 prd_obj,
@@ -822,7 +822,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer):
+class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateSerializer):
 
     class Meta:
         model = ReportInventoryCost
@@ -836,7 +836,7 @@ class BalanceInitializationCreateSerializerImportDB(serializers.ModelSerializer)
             prd_obj = Product.objects.filter(code=balance_data.get('product_code')).first()
             wh_obj = WareHouse.objects.filter(code=balance_data.get('warehouse_code')).first()
             if not all([sub_period_order_value, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
-                raise serializers.ValidationError({'error': 'Some objects do not exist.'})
+                raise serializers.ValidationError({'error': 'Some objects are not exist.'})
             return BalanceInitializationCreateSerializer.create_balance_data_sub(
                 periods,
                 prd_obj,
@@ -871,7 +871,7 @@ class BalanceInitializationDetailSerializer(serializers.ModelSerializer):
         fields = ('id',)
 
 
-class ProductWarehouseViewListSerializer(serializers.ModelSerializer):
+class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     detail = serializers.SerializerMethodField()
     stock_amount = serializers.SerializerMethodField()

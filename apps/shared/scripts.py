@@ -2317,7 +2317,10 @@ def update_valuation_method():
 class InventoryReportRun:
     @classmethod
     def weighted_average(cls, company_id, fiscal_year, start_month):
-        SubPeriods.objects.filter(period_mapped__fiscal_year=fiscal_year, period_mapped__company_id=company_id).update(run_report_inventory=False)
+        SubPeriods.objects.filter(
+            period_mapped__fiscal_year=fiscal_year,
+            period_mapped__company_id=company_id
+        ).update(run_report_inventory=False)
         ReportStock.objects.filter(company_id=company_id).delete()
         ReportStockLog.objects.filter(company_id=company_id).delete()
         ReportInventoryCost.objects.filter(company_id=company_id).delete()
@@ -2346,36 +2349,31 @@ class InventoryReportRun:
         for delivery in all_delivery:
             all_doc.append({
                 'id': str(delivery.id), 'code': str(delivery.code),
-                'date_approved': str(delivery.date_done), 'type': 'delivery'
+                'date_approved': delivery.date_done, 'type': 'delivery'
             })
         for goods_issue in all_goods_issue:
             all_doc.append({
                 'id': str(goods_issue.id), 'code': str(goods_issue.code),
-                'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+                'date_approved': goods_issue.date_approved, 'type': 'goods_issue'
             })
         for goods_receipt in all_goods_receipt:
             all_doc.append({
                 'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
-                'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+                'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
             })
         for goods_return in all_goods_return:
             all_doc.append({
                 'id': str(goods_return.id), 'code': str(goods_return.code),
-                'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+                'date_approved': goods_return.date_approved, 'type': 'goods_return'
             })
         for goods_transfer in all_goods_transfer:
             all_doc.append({
                 'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
-                'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+                'date_approved': goods_transfer.date_approved, 'type': 'goods_transfer'
             })
 
-        all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+        all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
         for doc in all_doc_sorted:
-            print(f"--- Run id: {doc['id']}")
-            print(f"\tSystem date: {doc['date_approved'].split(' ')[0]}")
-            print(f"\tSystem code: ** {doc['code']} **")
-            print(f"\tType: {doc['type']}")
-
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
@@ -2395,5 +2393,8 @@ class InventoryReportRun:
             if doc['type'] == 'goods_transfer':
                 instance = GoodsTransfer.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
+
+            print(f"--- Completed run id: {doc['id']}")
+            print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
 
         print('Complete!')

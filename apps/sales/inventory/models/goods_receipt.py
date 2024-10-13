@@ -3,7 +3,7 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
-from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
+from apps.sales.report.inventory_log import InventoryCostLog, ReportInventoryCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
 
 
@@ -172,7 +172,7 @@ class GoodsReceipt(DataAbstractModel):
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             if gr_item.product.general_traceability_method != 1:  # None + Sn
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
-                    casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                    casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(
                         gr_item.uom, gr_prd_wh.quantity_import
                     )
                     casted_cost = (
@@ -197,7 +197,7 @@ class GoodsReceipt(DataAbstractModel):
             else:  # lot
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                     for lot in gr_prd_wh.goods_receipt_lot_gr_warehouse.all():
-                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
+                        casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
                         casted_cost = (
                             gr_item.product_unit_price * lot.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
@@ -238,7 +238,7 @@ class GoodsReceipt(DataAbstractModel):
                             sale_order = pr_item.production_report.work_order.sale_order
                 for prd_wh in pr_item.goods_receipt_warehouse_request_product.all():
                     if gr_item.product.general_traceability_method != 1:
-                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                        casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(
                             gr_item.uom, prd_wh.quantity_import
                         )
                         casted_cost = (
@@ -262,7 +262,7 @@ class GoodsReceipt(DataAbstractModel):
                         })
                     else:
                         for lot in prd_wh.goods_receipt_lot_gr_warehouse.all():
-                            casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                            casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(
                                 gr_item.uom, lot.quantity_import
                             )
                             casted_cost = (
