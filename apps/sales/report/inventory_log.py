@@ -85,7 +85,7 @@ class ReportInvCommonFunc:
         return True
 
     @classmethod
-    def inventory_cost_by_perpetual(
+    def by_perpetual(
             cls, tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
     ):
         rp_prd_wh = ReportInventoryCost(
@@ -120,7 +120,7 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def inventory_cost_by_periodic(
+    def by_periodic(
             cls, tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
     ):
         rp_prd_wh = ReportInventoryCost(
@@ -181,10 +181,12 @@ class ReportInvCommonFunc:
                             lot_mapped_id=last_sub_item.lot_mapped_id,
                             sale_order_id=last_sub_item.sale_order_id,
                     ).exists():
-                        bulk_info, bulk_info_wh = cls.inventory_cost_by_perpetual(
-                            tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
-                        ) if company.company_config.definition_inventory_valuation == 0 else cls.inventory_cost_by_periodic(
-                            tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
+                        bulk_info, bulk_info_wh = cls.by_perpetual(
+                            tenant, company, employee_current,
+                            last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
+                        ) if company.company_config.definition_inventory_valuation == 0 else cls.by_periodic(
+                            tenant, company, employee_current,
+                            last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
                         )
 
                 ReportInventoryCost.objects.bulk_create(bulk_info)
