@@ -28,8 +28,7 @@ class InventoryCostLog:
                     # nếu đây GD đầu tiên, update các tháng trước đó (từ ngày bắt đầu sd phần mềm) -> "đã chạy báo cáo"
                     if not ReportStockLog.objects.filter(tenant=tenant, company=company).exists():
                         for order in range(
-                                company.software_start_using_time.month - period_obj.space_month,
-                                sub_period_order
+                                company.software_start_using_time.month - period_obj.space_month, sub_period_order
                         ):
                             period_obj.sub_periods_period_mapped.filter(order=order).update(run_report_inventory=True)
                             print(f"Report inventory {order + period_obj.space_month}/{period_obj.fiscal_year} is run.")
