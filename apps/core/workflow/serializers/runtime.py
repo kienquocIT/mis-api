@@ -403,7 +403,7 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RuntimeAssignee
-        fields = ('action', 'remark', 'next_node_collab_id')
+        fields = ('action', 'remark', 'next_association_id', 'next_node_collab_id')
 
 
 class RuntimeAfterFinishUpdateSerializer(serializers.ModelSerializer):

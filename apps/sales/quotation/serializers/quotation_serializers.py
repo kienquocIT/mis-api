@@ -106,6 +106,10 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
             # system
             'workflow_runtime_id',
             'is_active',

@@ -252,6 +252,7 @@ class RuntimeHandler:
                         employee_assignee_obj=employee_assignee_obj,
                         action_code=1,
                         remark=remark,  # use for action return
+                        next_association_id=next_association_id,  # next association after check condition
                         next_node_collab_id=next_node_collab_id,  # use for action approve if next node is OUT FORM node
                     )
                 case 5:  # To do
@@ -505,7 +506,22 @@ class RuntimeStageHandler:
                 if next_stage.code == 'approved':
                     # call added doc obj
                     DocHandler.force_added_with_runtime(self.runtime_obj)
+                    # set next_association_id to doc (node completed)
+                    if next_stage.node:
+                        for associate in next_stage.node.transition_node_input.all():
+                            DocHandler.force_update_next_node_collab(
+                                runtime_obj=self.runtime_obj,
+                                next_association_id=associate.id,
+                                next_node_collab_id=None,
+                            )
+                            break
             if is_next_stage:
+                if next_stage.code == 'completed':
+                    DocHandler.force_update_next_node_collab(
+                        runtime_obj=self.runtime_obj,
+                        next_association_id=None,
+                        next_node_collab_id=None,
+                    )
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
             return next_stage
