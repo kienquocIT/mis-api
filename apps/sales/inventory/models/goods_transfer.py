@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models import (
     SubPeriods
 )
 from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
@@ -45,7 +45,7 @@ class GoodsTransfer(DataAbstractModel):
         doc_data_in = []
         for item in instance.goods_transfer.all():
             if item.product.general_traceability_method == 0:
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 doc_data_out.append({
                     'sale_order': item.sale_order,
@@ -88,7 +88,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_number': prd_wh_lot.lot_number,
                             'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                         }
-                        casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, lot_item['quantity'])
+                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, lot_item['quantity'])
                         casted_cost = (
                                 item.unit_cost * lot_item['quantity'] / casted_quantity
                         ) if lot_item['quantity'] > 0 else 0
@@ -125,7 +125,7 @@ class GoodsTransfer(DataAbstractModel):
                             'lot_data': lot_data
                         })
             if item.product.general_traceability_method == 2:
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.quantity)
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.quantity)
                 casted_cost = (item.unit_cost * item.quantity / casted_quantity) if casted_quantity > 0 else 0
                 doc_data_out.append({
                     'sale_order': item.sale_order,

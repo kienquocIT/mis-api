@@ -16,14 +16,14 @@ class InventoryCostLog:
             employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_CWA, 2_SIM)
-                cost_cfg = ReportInventoryCommonFunc.get_cost_config(company.company_config)
+                cost_cfg = ReportInvCommonFunc.get_cost_config(company.company_config)
                 period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
                     sub_period_order = doc_date.month - period_obj.space_month
 
                     # cho kiểm kê định kì
                     if company.company_config.definition_inventory_valuation == 1:
-                        ReportInventoryCommonFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
+                        ReportInvCommonFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
 
                     # nếu đây GD đầu tiên, update các tháng trước đó (từ ngày bắt đầu sd phần mềm) -> "đã chạy báo cáo"
                     if not ReportStockLog.objects.filter(tenant=tenant, company=company).exists():
@@ -35,7 +35,7 @@ class InventoryCostLog:
                             print(f"Report inventory {order + period_obj.space_month}/{period_obj.fiscal_year} is run.")
 
                     # kiểm tra và chạy tổng kết tháng trước đó, sau đó đẩy số dư qua đầu kì tháng này
-                    ReportInventoryCommonFunc.create_this_sub_inventory_cost_record(
+                    ReportInvCommonFunc.create_this_sub_inventory_cost_record(
                         tenant, company, employee, period_obj, sub_period_order
                     )
 
@@ -52,7 +52,7 @@ class InventoryCostLog:
             return False
 
 
-class ReportInventoryCommonFunc:
+class ReportInvCommonFunc:
     @classmethod
     def cast_quantity_to_unit(cls, log_uom, log_quantity):
         return log_quantity * log_uom.ratio

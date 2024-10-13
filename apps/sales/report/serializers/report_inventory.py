@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
     ProductWareHouseSerial, ProductWareHouseLot
 )
-from apps.sales.report.inventory_log import ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportStock, ReportInventoryCost, ReportInventorySubFunction,
     ReportInventoryCostByWarehouse, ReportStockLog
@@ -625,7 +625,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         company_id=periods.company_id,
                         product_warehouse=prd_wh_obj,
                         lot_number=lot.get('lot_number'),
-                        quantity_import=ReportInventoryCommonFunc.cast_quantity_to_unit(
+                        quantity_import=ReportInvCommonFunc.cast_quantity_to_unit(
                             prd_obj.inventory_uom, float(lot.get('quantity_import'))
                         )
                     )
@@ -707,7 +707,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             tenant_current, company_current, sub_period_obj
     ):
         cls.check_valid_create(periods, prd_obj, wh_obj, sub_period_order_value, tenant_current, company_current)
-        balance_data['quantity'] = ReportInventoryCommonFunc.cast_quantity_to_unit(
+        balance_data['quantity'] = ReportInvCommonFunc.cast_quantity_to_unit(
             prd_obj.inventory_uom,
             float(balance_data.get('quantity'))
         )

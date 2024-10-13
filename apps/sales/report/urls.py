@@ -24,7 +24,11 @@ urlpatterns = [
     ),
     path('inventory-cost-report/list', ReportInventoryCostList.as_view(), name='ReportInventoryCostList'),
     path('inventory-stock-report/list', ReportStockList.as_view(), name='ReportStockList'),
-    path('inventory-cost-warehouse-detail', ReportInventoryCostWarehouseDetail.as_view(), name='ReportInventoryCostWarehouseDetail'),
+    path(
+        'inventory-cost-warehouse-detail',
+        ReportInventoryCostWarehouseDetail.as_view(),
+        name='ReportInventoryCostWarehouseDetail'
+    ),
 
     # Report purchasing
     path('po-report/list', PurchaseOrderListReport.as_view(), name='PurchaseOrderListReport'),

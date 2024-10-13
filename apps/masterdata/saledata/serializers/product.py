@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.inventory_log import ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 from ..models import ProductWareHouse
@@ -580,7 +580,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    cost_cfg = ReportInventoryCommonFunc.get_cost_config(obj.company.company_config)
+                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company.company_config)
 
                     result.append({
                         'id': item.id,

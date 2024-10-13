@@ -7,7 +7,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -372,7 +372,7 @@ class OrderDeliverySub(DataAbstractModel):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(uom_obj, lot.get('quantity_delivery'))
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, lot.get('quantity_delivery'))
                 doc_data.append({
                     'sale_order': sale_order_obj,
                     'product': product_obj,
@@ -397,7 +397,7 @@ class OrderDeliverySub(DataAbstractModel):
 
     @classmethod
     def for_sn(cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj):
-        casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
+        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
         doc_data.append({
             'sale_order': instance.order_delivery.sale_order,
             'product': product_obj,
@@ -431,7 +431,7 @@ class OrderDeliverySub(DataAbstractModel):
                     sn_data = pw_data.serial_data
                     if warehouse_obj and uom_obj and quantity > 0:
                         if product_obj.general_traceability_method == 0:  # None
-                            casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(uom_obj, quantity)
+                            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, quantity)
                             doc_data.append({
                                 'sale_order': sale_order_obj,
                                 'product': product_obj,

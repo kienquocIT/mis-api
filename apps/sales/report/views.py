@@ -7,7 +7,7 @@ from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGro
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.purchasing.models import PurchaseOrder
-from apps.sales.report.inventory_log import ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
     ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction
@@ -234,7 +234,7 @@ class ReportInventoryCostList(BaseListMixin):
             if 'sale_order' in self.request.query_params:
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
-            ReportInventoryCommonFunc.create_this_sub_inventory_cost_record(
+            ReportInvCommonFunc.create_this_sub_inventory_cost_record(
                 self.request.user.tenant_current,
                 self.request.user.company_current,
                 self.request.user.employee_current,
@@ -295,7 +295,7 @@ class ReportInventoryCostList(BaseListMixin):
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')]
             }
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['cost_cfg'] = ReportInventoryCommonFunc.get_cost_config(company_config)
+        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(company_config)
         return self.list(request, *args, **kwargs)
 
 
@@ -370,7 +370,7 @@ class ReportStockList(BaseListMixin):
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['cost_cfg'] = ReportInventoryCommonFunc.get_cost_config(company_config)
+        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(company_config)
         return self.list(request, *args, **kwargs)
 
 

@@ -6,7 +6,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInventoryCommonFunc
+from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel
 
@@ -50,7 +50,7 @@ class GoodsReturn(DataAbstractModel):
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
                     delivery_item.current_cost * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -80,7 +80,7 @@ class GoodsReturn(DataAbstractModel):
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
                     delivery_item.current_cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -114,7 +114,7 @@ class GoodsReturn(DataAbstractModel):
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
             if delivery_item:
-                casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
                     delivery_item.current_cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
@@ -146,7 +146,7 @@ class GoodsReturn(DataAbstractModel):
         product_detail_list = instance.goods_return_product_detail.all()
         doc_data = []
         for item in product_detail_list.filter(type=0):
-            casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
+            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
             casted_cost = (
                     item.cost_for_periodic * item.default_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
@@ -167,7 +167,7 @@ class GoodsReturn(DataAbstractModel):
                 'lot_data': {}
             })
         for item in product_detail_list.filter(type=1):
-            casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
+            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
             casted_cost = (
                     item.cost_for_periodic * item.lot_return_number / casted_quantity
             ) if casted_quantity > 0 else 0
@@ -192,7 +192,7 @@ class GoodsReturn(DataAbstractModel):
                 }
             })
         for item in product_detail_list.filter(type=2):
-            casted_quantity = ReportInventoryCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
+            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
             casted_cost = (
                     item.cost_for_periodic * float(item.is_return) / casted_quantity
             ) if casted_quantity > 0 else 0
