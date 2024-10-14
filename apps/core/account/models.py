@@ -250,7 +250,14 @@ class User(AuthUser):  # pylint: disable=R0902
                 company=company_user_employee_obj.company, is_system=True
             ).first()
             self.save(update_fields=['company_current', 'employee_current', 'space_current'])
+            return True
         return False
+
+    @classmethod
+    def generate_key_cache(cls, **kwargs):
+        if 'id' in kwargs:
+            return f'account_user_{str(kwargs["id"])}'
+        return None
 
 
 class VerifyContact(models.Model):

@@ -1,17 +1,12 @@
 from typing import Union
 
-import pymemcache
-
-from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import EmptyResultSet
 from django.db import models
 from crum import get_current_user
 
 __all__ = ['NormalManager']
 
 from .caching import Caching
-from .push_notify import TeleBotPushNotify
 
 
 DEFAULT__FILL__MAP_KEY = {
@@ -27,14 +22,13 @@ class EntryQuerySet(models.query.QuerySet):
     The class is custom QuerySet that support new method call
     """
 
-    @property
-    def table_name(self):
-        """
-        Get table name of Queryset call.
-        Returns:
-            String
-        """
-        return str(self.model._meta.db_table)  # pylint: disable=protected-access / W0212
+    def table_key_cache(self, **kwargs) -> str or None:
+        print('table_key_cache:', kwargs)
+        if kwargs:
+            generate_key_cache = getattr(self.model, 'generate_key_cache', None)
+            if callable(generate_key_cache):
+                return generate_key_cache(**kwargs)
+        return None
 
     @staticmethod
     def parsed_fill__map_key(fill__map_key) -> dict:
@@ -134,51 +128,6 @@ class EntryQuerySet(models.query.QuerySet):
         return self.filter(*args, **kwargs_converted)
 
     def cache(self, timeout: Union[None, int] = None):
-        """
-        Call cache() from QuerySet for get cache value else get data then force save cache.
-        timout:
-            None: use default
-            0: forever
-            > 0: expires seconds
-        Returns:
-            QuerySet()
-
-        Notes:
-            *** DON'T SHOULD use it for QUERYSET have SELECT_RELATED or PREFETCH_RELATED ***
-        """
-        try:
-            sql_split = str(self.query).rsplit('FROM', maxsplit=1)[-1]
-            key = Caching.key_cache_table(self.table_name, sql_split)
-            data = Caching().get(key)
-            if data:
-                if settings.DEBUG and settings.CACHE_ENABLED:
-                    print('Data from CACHE: key=', key, ', length=', len(data))
-                return data
-
-            data = self
-
-            if timeout is None:
-                timeout = settings.CACHE_EXPIRES_DEFAULT
-            elif timeout == 0:
-                timeout = None
-            else:
-                timeout = timeout * 60
-
-            Caching().set(key, data, timeout=timeout)
-            return data
-        except EmptyResultSet:
-            ...
-        except pymemcache.exceptions.MemcacheServerError as err:
-            msg = TeleBotPushNotify.generate_msg(
-                idx='MEMCACHED_ERROR',
-                status='FAILURE',
-                group_name='INFO',
-                **{
-                    'class_model': str(self.table_name),
-                    'err': str(err),
-                }
-            )
-            TeleBotPushNotify().send_msg(msg=msg)
         return self
 
     def get_current(
@@ -216,17 +165,14 @@ class EntryQuerySet(models.query.QuerySet):
         force_cache = kwargs.pop('force_cache', False)
         cache_timeout = kwargs.pop('cache_timeout', None)
         if force_cache and not args and kwargs:
-            key = Caching.key_cache_table(
-                self.table_name, "".join([f"{k}{v}" for k, v in kwargs.items()]),
-                hash_key=False,
-                replace_pk_to_id=True,
-            )
-            data = Caching().get(key)
-            if data and isinstance(data, models.Model):
+            key = self.table_key_cache(**kwargs)
+            if key:
+                data = Caching().get(key)
+                if data and isinstance(data, models.Model):
+                    return data
+                data = super().get(*args, **kwargs)
+                Caching().set(key, data, cache_timeout)
                 return data
-            data = super().get(*args, **kwargs)
-            Caching().set(key, data, cache_timeout)
-            return data
         return super().get(*args, **kwargs)
 
 
