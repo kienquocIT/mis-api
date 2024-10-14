@@ -17,8 +17,9 @@ from apps.core.auths.serializers import (
     MyLanguageUpdateSerializer, ChangePasswordSerializer, ForgotPasswordGetOTPSerializer,
     ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
+from apps.core.company.models import CompanyUserEmployee
 from apps.shared import (
-    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck,
+    mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck, Caching,
 )
 from misapi.mongo_client import mongo_log_auth
 
@@ -161,6 +162,7 @@ class AuthLogout(APIView):
         try:
             refresh_token_str = request.headers.get(settings.SIMPLE_JWT['AUTH_HEADER_NAME_REFRESH_TOKEN'])
             refresh_token = RefreshToken(refresh_token_str)
+            Caching().delete(key=User.generate_key_cache(id=request.user.id))
         except Exception as errs:  # pylint: disable=W0612
             return ResponseController.bad_request_400({
                 'refresh_token': AuthMsg.LOGOUT_REQUIRE_REFRESH_TOKEN
@@ -202,6 +204,16 @@ class MyProfile(APIView):
 
 
 class SwitchCompanyView(APIView):
+    @swagger_auto_schema(operation_summary='Get list Company for Switch')
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        result = []
+        for obj in CompanyUserEmployee.objects.select_related('company').filter(user=request.user):
+            detail = obj.company.get_detail()
+            detail['is_current'] = request.user.company_current_id == obj.company_id
+            result.append(detail)
+        return ResponseController.success_200(data=result, key_data='result')
+
     @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
     @mask_view(login_require=True)
     def put(self, request, *args, **kwargs):
@@ -209,11 +221,15 @@ class SwitchCompanyView(APIView):
         if user_obj and hasattr(user_obj, 'switch_company'):
             ser = SwitchCompanySerializer(data=request.data, context={'user_obj': request.user})
             ser.is_valid(raise_exception=True)
-            user_obj.switch_company(ser.validated_data['company_user_employee'])
-            return ResponseController.success_200(
-                {'detail': f'{HttpMsg.SUCCESSFULLY}. {HttpMsg.GOTO_LOGIN}'},
-                key_data='result'
-            )
+            if user_obj.switch_company(ser.validated_data['company_user_employee']):
+                Caching().delete(key=user_obj.generate_key_cache(id=user_obj.id))
+                return ResponseController.success_200(
+                    {
+                        'detail': f'{HttpMsg.SUCCESSFULLY}',
+                        'user_data': user_obj.get_detail(),
+                    },
+                    key_data='result'
+                )
         return ResponseController.unauthorized_401()
 
 

@@ -111,7 +111,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
         if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
             raise serializers.ValidationError({
-                'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
+                'error': "Can't update Definition inventory valuation because there are transactions in this Period."
             })
 
         old_cost_setting = [
@@ -132,14 +132,14 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             this_period.save(update_fields=['definition_inventory_valuation'])
         else:
             raise serializers.ValidationError(
-                {'Error': f"Can't find fiscal year {datetime.datetime.now().year}."}
+                {'error': f"Can't find fiscal year {datetime.datetime.now().year}."}
             )
         if all([
             datetime.datetime.now().year == this_period.fiscal_year,
             new_cost_setting != old_cost_setting,
             has_trans
         ]):
-            raise serializers.ValidationError({'Error': "Can't change cost setting in same period year."})
+            raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
         return validate_data
 
     def update(self, instance, validated_data):

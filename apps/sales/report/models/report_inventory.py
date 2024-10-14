@@ -139,9 +139,9 @@ class ReportStockLog(DataAbstractModel):
     cost = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
     value = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
 
-    current_quantity = models.FloatField(default=0, help_text='is quantity current in perpetual')
-    current_cost = models.FloatField(default=0, help_text='is cost current in perpetual')
-    current_value = models.FloatField(default=0, help_text='is value current in perpetual')
+    perpetual_current_quantity = models.FloatField(default=0, help_text='is quantity current in perpetual')
+    perpetual_current_cost = models.FloatField(default=0, help_text='is cost current in perpetual')
+    perpetual_current_value = models.FloatField(default=0, help_text='is value current in perpetual')
 
     periodic_current_quantity = models.FloatField(default=0, help_text='is quantity current in periodic')
     periodic_current_cost = models.FloatField(default=0, help_text='is cost current in periodic')
@@ -228,10 +228,10 @@ class ReportStockLog(DataAbstractModel):
         if div == 0:
             new_cost_dict = ReportInventorySubFunction.weighted_average_in_perpetual(log, latest_cost_dict)
             # cập nhập giá trị tồn kho hiện tại mới cho log
-            log.current_quantity, log.current_cost, log.current_value = (
+            log.perpetual_current_quantity, log.perpetual_current_cost, log.perpetual_current_value = (
                 new_cost_dict['quantity'], new_cost_dict['cost'], new_cost_dict['value']
             ) if new_cost_dict['quantity'] > 0 else (0, 0, 0)
-            log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
+            log.save(update_fields=['perpetual_current_quantity', 'perpetual_current_cost', 'perpetual_current_value'])
         if div == 1:
             new_cost_dict = ReportInventorySubFunction.weighted_average_in_periodic(log, latest_cost_dict)
             # cập nhập giá trị tồn kho hiện tại mới cho log
@@ -262,15 +262,15 @@ class ReportStockLog(DataAbstractModel):
                 opening_balance_cost=new_cost_dict['cost'],
                 opening_balance_value=new_cost_dict['value'],
                 ending_balance_quantity=ending_balance_quantity,
-                ending_balance_cost=log.current_cost,
-                ending_balance_value=ending_balance_quantity * log.current_cost,
+                ending_balance_cost=log.perpetual_current_cost,
+                ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
                 **kwargs
             )
         else:  # nếu có thì update giá cost, gán sub_latest_log
             this_sub_period_cost.ending_balance_quantity = ending_balance_quantity
-            this_sub_period_cost.ending_balance_cost = log.current_cost
-            this_sub_period_cost.ending_balance_value = ending_balance_quantity * log.current_cost
+            this_sub_period_cost.ending_balance_cost = log.perpetual_current_cost
+            this_sub_period_cost.ending_balance_value = ending_balance_quantity * log.perpetual_current_cost
             this_sub_period_cost.sub_latest_log = log
 
         if log.stock_type == 1:
@@ -310,15 +310,15 @@ class ReportStockLog(DataAbstractModel):
                 opening_balance_cost=new_cost_dict['cost'],
                 opening_balance_value=new_cost_dict['value'],
                 periodic_ending_balance_quantity=ending_balance_quantity,
-                periodic_ending_balance_cost=log.current_cost,
-                periodic_ending_balance_value=ending_balance_quantity * log.current_cost,
+                periodic_ending_balance_cost=log.perpetual_current_cost,
+                periodic_ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
                 **kwargs
             )
         else:  # có thì update giá cost, gán sub
             this_sub_period_cost.periodic_ending_balance_quantity = ending_balance_quantity
-            this_sub_period_cost.periodic_ending_balance_cost = log.current_cost
-            this_sub_period_cost.periodic_ending_balance_value = ending_balance_quantity * log.current_cost
+            this_sub_period_cost.periodic_ending_balance_cost = log.perpetual_current_cost
+            this_sub_period_cost.periodic_ending_balance_value = ending_balance_quantity * log.perpetual_current_cost
             this_sub_period_cost.sub_latest_log = log
             # nếu kì đã đóng mà có giao dịch, mở lại, cost-value hiện tại trở về 0 (chưa chốt)
             if this_sub_period_cost.periodic_closed:
@@ -357,7 +357,7 @@ class ReportStockLog(DataAbstractModel):
         if sub_period_obj:
             sum_ending_quantity = 0
             for record in ReportStockLogByWarehouse.objects.filter(product_id=log.product_id, **kwargs):
-                sum_ending_quantity += record.latest_log.current_quantity
+                sum_ending_quantity += record.latest_log.perpetual_current_quantity
             new_cost_dict = {
                 'quantity': sum_ending_quantity,
                 'cost': latest_cost_dict['cost'],
@@ -588,9 +588,9 @@ class ReportInventorySubFunction:
         latest_log = latest_log_record.latest_log if latest_log_record else None
         if latest_log:
             return {
-                'quantity': latest_log.current_quantity,
-                'cost': latest_log.current_cost,
-                'value': latest_log.current_value
+                'quantity': latest_log.perpetual_current_quantity,
+                'cost': latest_log.perpetual_current_cost,
+                'value': latest_log.perpetual_current_value
             } if div == 0 else {
                 'quantity': latest_log.periodic_current_quantity,
                 'cost': 0,

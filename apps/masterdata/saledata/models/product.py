@@ -298,9 +298,9 @@ class Product(DataAbstractModel):
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
                     value_list = [
-                        latest_trans.latest_log.current_quantity,
-                        latest_trans.latest_log.current_cost,
-                        latest_trans.latest_log.current_value
+                        latest_trans.latest_log.perpetual_current_quantity,
+                        latest_trans.latest_log.perpetual_current_cost,
+                        latest_trans.latest_log.perpetual_current_value
                     ]
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(
@@ -351,9 +351,9 @@ class Product(DataAbstractModel):
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
                     value_list = [
-                        latest_trans.latest_log.current_quantity,
-                        latest_trans.latest_log.current_cost,
-                        latest_trans.latest_log.current_value
+                        latest_trans.latest_log.perpetual_current_quantity,
+                        latest_trans.latest_log.perpetual_current_cost,
+                        latest_trans.latest_log.perpetual_current_value
                     ]
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(
@@ -398,12 +398,12 @@ class Product(DataAbstractModel):
                 latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
                     if company_config.definition_inventory_valuation == 0 and \
-                            latest_trans.latest_log.current_quantity > 0:
+                            latest_trans.latest_log.perpetual_current_quantity > 0:
                         unit_cost_list.append({
                             'warehouse': {'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title},
-                            'quantity': latest_trans.latest_log.current_quantity,
-                            'unit_cost': latest_trans.latest_log.current_cost,
-                            'value': latest_trans.latest_log.current_value,
+                            'quantity': latest_trans.latest_log.perpetual_current_quantity,
+                            'unit_cost': latest_trans.latest_log.perpetual_current_cost,
+                            'value': latest_trans.latest_log.perpetual_current_value,
                         })
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(

@@ -13,7 +13,7 @@ from apps.sales.report.models import (
 
 
 def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-    return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+    return (log_quantity / inventory_uom.ratio) if inventory_uom else 0
 
 
 class ReportStockListSerializer(serializers.ModelSerializer):
@@ -85,10 +85,10 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             casted_value = log.value
             casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
             casted_current_quantity = [
-                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.current_quantity),
+                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.perpetual_current_quantity),
                 cast_unit_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
             ][div]
-            casted_current_value = [log.current_value, log.periodic_current_value][div]
+            casted_current_value = [log.perpetual_current_value, log.periodic_current_value][div]
             casted_current_cost = (casted_current_value / casted_current_quantity) if casted_current_quantity else 0
 
             data_stock_activity.append({

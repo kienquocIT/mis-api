@@ -24,7 +24,7 @@ class VerifyPermit:
         try:
             if not application_id:
                 raise self.model_application.DoesNotExist
-            self.app_obj = self.model_application.objects.get(pk=application_id)
+            self.app_obj = self.model_application.objects.get(pk=application_id).cache()
             self.model_cls = apps.get_model(app_label=self.app_obj.app_label, model_name=self.app_obj.model_code)
         except self.model_application.DoesNotExist:
             raise ValueError('[VerifyPermit] Application is not found.')

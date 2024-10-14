@@ -95,9 +95,6 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
 
 
 class GoodsTransferListSerializer(AbstractListSerializerModel):
-    system_status = serializers.SerializerMethodField()
-    raw_system_status = serializers.SerializerMethodField()
-
     class Meta:
         model = GoodsTransfer
         fields = (
@@ -105,17 +102,8 @@ class GoodsTransferListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'date_transfer',
-            'system_status',
-            'raw_system_status'
+            'system_status'
         )
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_raw_system_status(cls, obj):
-        return obj.system_status
 
 
 class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):

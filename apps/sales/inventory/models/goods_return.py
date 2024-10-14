@@ -52,7 +52,7 @@ class GoodsReturn(DataAbstractModel):
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
-                    delivery_item.current_cost * item.default_return_number / casted_quantity
+                    delivery_item.perpetual_current_cost * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -84,7 +84,7 @@ class GoodsReturn(DataAbstractModel):
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
-                    delivery_item.current_cost * item.lot_return_number / casted_quantity
+                    delivery_item.perpetual_current_cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -118,7 +118,7 @@ class GoodsReturn(DataAbstractModel):
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
-                    delivery_item.current_cost * float(item.is_return) / casted_quantity
+                    delivery_item.perpetual_current_cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,

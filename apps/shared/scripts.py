@@ -1498,9 +1498,9 @@ def run_inventory_report():
         latest_trans = get_latest_log(log, period_mapped, sub_period_order)
         if latest_trans:
             latest_value_list = {
-                'quantity': latest_trans.current_quantity,
-                'cost': latest_trans.current_cost,
-                'value': latest_trans.current_value
+                'quantity': latest_trans.perpetual_current_quantity,
+                'cost': latest_trans.perpetual_current_cost,
+                'value': latest_trans.perpetual_current_value
             }
         else:
             latest_value_list = {
@@ -1532,14 +1532,14 @@ def run_inventory_report():
                     opening_balance_quantity=latest_value_list['quantity'],
                     opening_balance_cost=latest_value_list['cost'],
                     opening_balance_value=latest_value_list['value'],
-                    ending_balance_quantity=log.current_quantity,
-                    ending_balance_cost=log.current_cost,
-                    ending_balance_value=log.current_value,
+                    ending_balance_quantity=log.perpetual_current_quantity,
+                    ending_balance_cost=log.perpetual_current_cost,
+                    ending_balance_value=log.perpetual_current_value,
                 )
             else:
-                inventory_cost_data_item.ending_balance_quantity = log.current_quantity
-                inventory_cost_data_item.ending_balance_cost = log.current_cost
-                inventory_cost_data_item.ending_balance_value = log.current_value
+                inventory_cost_data_item.ending_balance_quantity = log.perpetual_current_quantity
+                inventory_cost_data_item.ending_balance_cost = log.perpetual_current_cost
+                inventory_cost_data_item.ending_balance_value = log.perpetual_current_value
                 inventory_cost_data_item.save(update_fields=[
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
