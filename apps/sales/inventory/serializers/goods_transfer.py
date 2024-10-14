@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account, ProductWareHouseLot, \
     ProductWareHouseSerial, Product
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
-    WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel,
+    WarehouseMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel,
     AbstractCreateSerializerModel, AbstractListSerializerModel
 )
 from apps.shared.translations.goods_transfer import GTMsg
@@ -95,9 +94,6 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
 
 
 class GoodsTransferListSerializer(AbstractListSerializerModel):
-    system_status = serializers.SerializerMethodField()
-    raw_system_status = serializers.SerializerMethodField()
-
     class Meta:
         model = GoodsTransfer
         fields = (
@@ -105,17 +101,8 @@ class GoodsTransferListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'date_transfer',
-            'system_status',
-            'raw_system_status'
+            'system_status'
         )
-
-    @classmethod
-    def get_system_status(cls, obj):
-        return _(str(dict(SYSTEM_STATUS).get(obj.system_status)))
-
-    @classmethod
-    def get_raw_system_status(cls, obj):
-        return obj.system_status
 
 
 class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):

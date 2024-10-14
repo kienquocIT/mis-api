@@ -342,7 +342,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         bank_code = bank_df.bank_code if bank_df else instance.customer_bank_code
         bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
         if not (bank_code and bank_number):
-            raise serializers.ValidationError({'Error': "Can not find bank information."})
+            raise serializers.ValidationError({'error': "Can not find bank information."})
 
         money_text = read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
@@ -421,7 +421,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         number_vat = list(set(number_vat))
 
         if len(number_vat) > 0 and instance.invoice_example == 2:
-            raise serializers.ValidationError({'Error': "Product rows in sales invoice can not have VAT (API)."})
+            raise serializers.ValidationError({'error': "Product rows in sales invoice can not have VAT (API)."})
 
         value_xml = cls.process_value_xml(instance, amount)
         # [cus_address, bank_code, bank_number, money_text, buyer_name]
@@ -490,7 +490,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         )
         if response.status_code != 200:
             raise serializers.ValidationError(
-                {'Error': f"Create/Update Invoice Failed. {json.loads(response.text).get('Message', '')}"}
+                {'error': f"Create/Update Invoice Failed. {json.loads(response.text).get('Message', '')}"}
             )
 
         instance.is_created_einvoice = True
@@ -598,7 +598,7 @@ class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
         valid_len_many_vat = len(validate_data.get('many_vat_sign')) not in valid_lengths
         valid_len_sale_invoice_sign = len(validate_data.get('sale_invoice_sign')) not in valid_lengths
         if valid_len_one_vat or valid_len_many_vat or valid_len_sale_invoice_sign:
-            raise serializers.ValidationError({'Error': 'Sign must have only 2 letters.'})
+            raise serializers.ValidationError({'error': 'Sign must have only 2 letters.'})
 
         this_year = str(datetime.now().year)[2:]
         if len(validate_data.get('one_vat_sign')) == 2:

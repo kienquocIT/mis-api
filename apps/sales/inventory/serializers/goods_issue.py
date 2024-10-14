@@ -410,8 +410,11 @@ class GoodsIssueCommonFunction:
                 lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
                 if lot_obj:
                     lot_id_list.append(lot_obj.id)
-                    lot_data.append(
-                        {'lot_id': lot.get('lot_id'), 'lot_quantity': lot_obj, 'issued_quantity': lot.get('quantity')})
+                    lot_data.append({
+                        'lot_id': lot.get('lot_id'),
+                        'lot_quantity': lot_obj.quantity_import,
+                        'issued_quantity': lot.get('quantity')
+                    })
                 else:
                     raise serializers.ValidationError({'error': "Lot object does not exist."})
             else:
