@@ -7,20 +7,6 @@ from apps.sales.report.models import ReportStockLog, ReportInventoryCost, Report
 class InventoryCostLog:
     @classmethod
     def log(cls, stock_obj, stock_obj_date, stock_data):
-        if stock_obj.company.company_config.default_inventory_value_method == 0:
-            pass
-        if stock_obj.company.company_config.default_inventory_value_method == 1:
-            pass
-        if stock_obj.company.company_config.default_inventory_value_method == 2:
-            return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
-        if stock_obj.company.company_config.default_inventory_value_method == 3:
-            pass
-        raise serializers.ValidationError({'inventory_value_method': 'Inventory value method does not exist.'})
-
-
-    @classmethod
-    def weighted_average_log(cls, stock_obj, stock_obj_date, stock_data):
-        print('*** WEIGHTED AVERAGE LOG')
         try:
             tenant = stock_obj.tenant
             company = stock_obj.company
