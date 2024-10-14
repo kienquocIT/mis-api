@@ -72,18 +72,34 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
 
 # REPORT PRODUCT
 class ReportProductListSerializer(serializers.ModelSerializer):
+    sale_order = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportProduct
         fields = (
             'id',
+            'sale_order',
             'product',
+            'quantity',
             'date_approved',
             'revenue',
             'gross_profit',
             'net_income',
         )
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'customer': {
+                'id': obj.sale_order.customer_id,
+                'title': obj.sale_order.customer.name,
+                'code': obj.sale_order.customer.code,
+            } if obj.sale_order.customer else {}
+        } if obj.sale_order else {}
 
     @classmethod
     def get_product(cls, obj):
@@ -96,7 +112,12 @@ class ReportProductListSerializer(serializers.ModelSerializer):
                 'title': obj.product.general_product_category.title,
                 'code': obj.product.general_product_category.code,
                 'description': obj.product.general_product_category.description,
-            } if obj.product.general_product_category else {}
+            } if obj.product.general_product_category else {},
+            'uom': {
+                'id': obj.product.sale_default_uom_id,
+                'title': obj.product.sale_default_uom.title,
+                'code': obj.product.sale_default_uom.code,
+            } if obj.product.sale_default_uom else {},
         } if obj.product else {}
 
 

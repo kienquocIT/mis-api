@@ -89,8 +89,11 @@ class ReportProductList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            "sale_order",
+            "sale_order__customer",
             "product",
             "product__general_product_category",
+            "product__sale_default_uom",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(

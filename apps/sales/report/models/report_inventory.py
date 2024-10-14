@@ -236,14 +236,14 @@ class ReportStockLog(DataAbstractModel):  # rp_log
         )
 
         if div == 0:
-            new_value_dict = ReportInventorySubFunction.calculate_new_value_dict_in_perpetual(log, latest_value_dict)
+            new_value_dict = ReportInventorySubFunction.weighted_average_in_perpetual(log, latest_value_dict)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             log.current_quantity, log.current_cost, log.current_value = (
                 new_value_dict['quantity'], new_value_dict['cost'], new_value_dict['value']
             ) if new_value_dict['quantity'] > 0 else (0, 0, 0)
             log.save(update_fields=['current_quantity', 'current_cost', 'current_value'])
         if div == 1:
-            new_value_dict = ReportInventorySubFunction.calculate_new_value_dict_in_periodic(log, latest_value_dict)
+            new_value_dict = ReportInventorySubFunction.weighted_average_in_periodic(log, latest_value_dict)
             # cập nhập giá trị tồn kho hiện tại mới cho log
             # chỗ này k cần check SL = 0 -> cost = 0 vì mọi TH cost đều = 0
             log.periodic_current_quantity, log.periodic_current_cost, log.periodic_current_value = (
@@ -622,7 +622,7 @@ class ReportInventorySubFunction:
         return cls.get_opening_balance_value_dict(product.id, 3, **kwargs)
 
     @classmethod
-    def calculate_new_value_dict_in_perpetual(cls, log, latest_value_dict):
+    def weighted_average_in_perpetual(cls, log, latest_value_dict):
         """ Hàm tính toán cho Phương pháp Kê khai thường xuyên """
         if log.stock_type == 1:
             new_quantity = latest_value_dict['quantity'] + log.quantity
@@ -636,7 +636,7 @@ class ReportInventorySubFunction:
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
-    def calculate_new_value_dict_in_periodic(cls, log, latest_value_dict):
+    def weighted_average_in_periodic(cls, log, latest_value_dict):
         """ Hàm tính toán cho Phương pháp Kiểm kê định kì """
         # Lúc này sum nhập đã được cập nhập
         return {

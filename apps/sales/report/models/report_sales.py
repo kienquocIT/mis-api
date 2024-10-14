@@ -98,6 +98,8 @@ class ReportProduct(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='report_product_product',
     )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    quantity = models.FloatField(default=0, help_text='quantity sale')
     group_inherit = models.ForeignKey(
         'hr.Group',
         null=True,
@@ -115,6 +117,8 @@ class ReportProduct(DataAbstractModel):
             company_id,
             sale_order_id,
             product_id,
+            product_data,
+            quantity,
             employee_created_id,
             employee_inherit_id,
             group_inherit_id,
@@ -128,6 +132,8 @@ class ReportProduct(DataAbstractModel):
             company_id=company_id,
             sale_order_id=sale_order_id,
             product_id=product_id,
+            product_data=product_data,
+            quantity=quantity,
             employee_created_id=employee_created_id,
             employee_inherit_id=employee_inherit_id,
             group_inherit_id=group_inherit_id,
@@ -159,6 +165,7 @@ class ReportCustomer(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='report_customer_customer',
     )
+    customer_data = models.JSONField(default=dict, help_text='data json of customer')
     group_inherit = models.ForeignKey(
         'hr.Group',
         null=True,
