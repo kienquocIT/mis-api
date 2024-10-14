@@ -1293,3 +1293,7 @@ msgstr "Đang kiểm kê"
 #
 msgid "IA Done"
 msgstr "Kiểm kê hoàn tất"
+
+#
+msgid "must not be null"
+msgstr "không được để trống"
