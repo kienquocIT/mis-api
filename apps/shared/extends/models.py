@@ -1,3 +1,5 @@
+import hashlib
+import json
 from copy import deepcopy
 from uuid import uuid4
 
@@ -88,7 +90,10 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
 
     @classmethod
     def generate_key_cache(cls, **kwargs):
-        return f'{cls._meta.db_table}_{str(sorted(kwargs))}'
+        dict_str = json.dumps(kwargs, sort_keys=True)
+        md5_str = hashlib.md5(dict_str.encode()).hexdigest()
+        key = f'{cls._meta.db_table}_{md5_str}'
+        return key
 
     def get_old_value(self, field_name_list: list):
         """
