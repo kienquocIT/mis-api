@@ -76,9 +76,11 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
+            print(item.product.code, str(instance.delivery_id))
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
+            print(delivery_item)
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (

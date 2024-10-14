@@ -234,8 +234,8 @@ class ReportInventoryCostList(BaseListMixin):
             if 'sale_order' in self.request.query_params:
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
-            for order in range(1, int(sub_period_order)):
-                ReportInvCommonFunc.sum_up_last_sub_period(
+            for order in range(1, int(sub_period_order) + 1):
+                ReportInvCommonFunc.sum_up_sub_period(
                     self.request.user.tenant_current,
                     self.request.user.company_current,
                     self.request.user.employee_current,
@@ -256,11 +256,9 @@ class ReportInventoryCostList(BaseListMixin):
                     product_id__in=prd_id_list,
                     **filter_fields
                 )
-                if self.request.user.company_current.company_config.cost_per_project:
-                    return return_query.order_by(
-                        "warehouse__code", 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
-                    )
-                return return_query.order_by('warehouse__code', '-product__code', 'lot_mapped__lot_number')
+                return return_query.order_by(
+                    "warehouse__code", 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
+                )
 
             return_query = super().get_queryset().select_related(
                 "product__inventory_uom", "warehouse", "period_mapped"
@@ -272,11 +270,9 @@ class ReportInventoryCostList(BaseListMixin):
                 sub_period_order=sub_period_order,
                 **filter_fields
             )
-            if self.request.user.company_current.company_config.cost_per_project:
-                return return_query.order_by(
-                    'warehouse__code', 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
-                )
-            return return_query.order_by('warehouse__code', '-product__code', 'lot_mapped__lot_number')
+            return return_query.order_by(
+                'warehouse__code', 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
+            )
         except KeyError:
             return super().get_queryset().none()
 
@@ -335,7 +331,7 @@ class ReportStockList(BaseListMixin):
                 'product__report_inventory_cost_product__period_mapped',
             ).filter(
                 period_mapped=period_mapped, sub_period_order=sub_period_order
-            ).order_by('product__code', 'lot_mapped__lot_number')
+            ).order_by('product__code', 'sale_order__code', 'lot_mapped__lot_number')
         except KeyError:
             return super().get_queryset().none()
 
