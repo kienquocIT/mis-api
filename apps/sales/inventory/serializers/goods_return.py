@@ -1,11 +1,10 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import WareHouse
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.inventory.models import GoodsReturn, GoodsReturnAttachmentFile, GoodsReturnProductDetail
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel
+from apps.shared import SaleMsg, AbstractDetailSerializerModel
 
 
 class GoodsReturnListSerializer(serializers.ModelSerializer):

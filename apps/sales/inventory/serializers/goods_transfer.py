@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductWareHouse, WareHouse, UnitOfMeasure, Account, ProductWareHouseLot, \
     ProductWareHouseSerial, Product
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
-    WarehouseMsg, ProductMsg, SaleMsg, SYSTEM_STATUS, AbstractDetailSerializerModel,
+    WarehouseMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel,
     AbstractCreateSerializerModel, AbstractListSerializerModel
 )
 from apps.shared.translations.goods_transfer import GTMsg
