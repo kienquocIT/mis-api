@@ -1,5 +1,3 @@
-from typing import Union
-
 from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from crum import get_current_user
@@ -26,8 +24,8 @@ class EntryQuerySet(models.query.QuerySet):
         print('table_key_cache:', kwargs)
         if kwargs:
             generate_key_cache = getattr(self.model, 'generate_key_cache', None)
-            if callable(generate_key_cache):
-                return generate_key_cache(**kwargs)
+            if callable(generate_key_cache) is True:
+                return generate_key_cache(**kwargs)  # pylint: disable=E1102
         return None
 
     @staticmethod
@@ -127,7 +125,7 @@ class EntryQuerySet(models.query.QuerySet):
         )
         return self.filter(*args, **kwargs_converted)
 
-    def cache(self, timeout: Union[None, int] = None):
+    def cache(self, **kwargs):
         return self
 
     def get_current(

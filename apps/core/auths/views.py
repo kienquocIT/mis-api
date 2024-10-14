@@ -17,6 +17,7 @@ from apps.core.auths.serializers import (
     MyLanguageUpdateSerializer, ChangePasswordSerializer, ForgotPasswordGetOTPSerializer,
     ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
+from apps.core.company.models import CompanyUserEmployee
 from apps.shared import (
     mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck, Caching,
 )
@@ -203,6 +204,16 @@ class MyProfile(APIView):
 
 
 class SwitchCompanyView(APIView):
+    @swagger_auto_schema(operation_summary='Get list Company for Switch')
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        result = []
+        for obj in CompanyUserEmployee.objects.select_related('company').filter(user=request.user):
+            detail = obj.company.get_detail()
+            detail['is_current'] = request.user.company_current_id == obj.company_id
+            result.append(detail)
+        return ResponseController.success_200(data=result, key_data='result')
+
     @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
     @mask_view(login_require=True)
     def put(self, request, *args, **kwargs):
@@ -214,7 +225,7 @@ class SwitchCompanyView(APIView):
                 Caching().delete(key=user_obj.generate_key_cache(id=user_obj.id))
                 return ResponseController.success_200(
                     {
-                        'detail': f'{HttpMsg.SUCCESSFULLY}. {HttpMsg.GOTO_LOGIN}',
+                        'detail': f'{HttpMsg.SUCCESSFULLY}',
                         'user_data': user_obj.get_detail(),
                     },
                     key_data='result'
