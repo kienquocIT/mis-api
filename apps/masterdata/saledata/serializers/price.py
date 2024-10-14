@@ -914,23 +914,27 @@ class CreateItemInPriceListImportSerializer(serializers.ModelSerializer):
             return obj
         return None
 
+    @classmethod
+    def validate_product_data(cls, product_data):
+        if not product_data['code']:
+            raise serializers.ValidationError({'code': ProductMsg.NOT_NULL})
+
+        if not product_data['uom']:
+            raise serializers.ValidationError({'uom': ProductMsg.NOT_NULL})
+        try:
+            Product.objects.get_current(code=product_data['code'], fill__company=True)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'code': ProductMsg.DOES_NOT_EXIST})
+
+        try:
+            UnitOfMeasure.objects.get_current(code=product_data['uom'], fill__company=True)
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+
     def create(self, validated_data):
         instance = Price.objects.get_current(id=validated_data['product']['price_id'], fill__company=True)
 
-        if not validated_data['product']['code']:
-            raise serializers.ValidationError({'code': ProductMsg.NOT_NULL})
-
-        if not validated_data['product']['uom']:
-            raise serializers.ValidationError({'uom': ProductMsg.NOT_NULL})
-
-        try:
-            Product.objects.get_current(code=validated_data['product']['code'], fill__company=True)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'code': ProductMsg.DOES_NOT_EXIST})
-        try:
-            UnitOfMeasure.objects.get_current(code=validated_data['product']['uom'], fill__company=True)
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        self.validate_product_data(validated_data['product'])
 
         if check_expired_price_list(instance):  # not expired
             price_list_information = PriceListCommon.get_child_price_list(instance)
