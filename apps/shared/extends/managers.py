@@ -21,7 +21,6 @@ class EntryQuerySet(models.query.QuerySet):
     """
 
     def table_key_cache(self, **kwargs) -> str or None:
-        print('table_key_cache:', kwargs)
         if kwargs:
             generate_key_cache = getattr(self.model, 'generate_key_cache', None)
             if callable(generate_key_cache) is True:
@@ -161,10 +160,10 @@ class EntryQuerySet(models.query.QuerySet):
 
     def get(self, *args, **kwargs):
         force_cache = kwargs.pop('force_cache', False)
-        cache_timeout = kwargs.pop('cache_timeout', None)
         if force_cache and not args and kwargs:
             key = self.table_key_cache(**kwargs)
             if key:
+                cache_timeout = kwargs.pop('cache_timeout', 60 * 60)
                 data = Caching().get(key)
                 if data and isinstance(data, models.Model):
                     return data

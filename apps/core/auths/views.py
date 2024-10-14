@@ -211,7 +211,9 @@ class SwitchCompanyView(APIView):
         for obj in CompanyUserEmployee.objects.select_related('company').filter(user=request.user):
             detail = obj.company.get_detail()
             detail['is_current'] = request.user.company_current_id == obj.company_id
+            detail['date_created'] = obj.company.date_created
             result.append(detail)
+        result = sorted(result, key=lambda d: d['date_created'])
         return ResponseController.success_200(data=result, key_data='result')
 
     @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
