@@ -448,6 +448,8 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                     'id': associate.id,
                     'node_out': {
                         'id': associate.node_out_id,
+                        'title': associate.node_out.title,
+                        'code': associate.node_out.code,
                         'option_collaborator': associate.node_out.option_collaborator,
                         'collab_out_form': collab_out_form,
                     },
