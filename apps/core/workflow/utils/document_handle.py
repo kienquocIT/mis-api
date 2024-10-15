@@ -75,8 +75,8 @@ class DocHandler:
         if obj:
             HookEventHandler(runtime_obj=runtime_obj).push_notify_return_owner(doc_obj=obj, remark=remark)
             # send mail
-            # if hasattr(obj, 'employee_inherit_id'):
-            #     DocHandler.send_mail(emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=1)
+            if hasattr(obj, 'employee_inherit_id'):
+                DocHandler.send_mail(emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=1)
             return True
         return False
 
@@ -96,11 +96,11 @@ class DocHandler:
                 doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
             )
             # send mail
-            # if hasattr(obj, 'employee_inherit_id'):
-            #     workflow_type = 2 if approved_or_rejected == 'approved' else 3
-            #     DocHandler.send_mail(
-            #         emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=workflow_type
-            #     )
+            if hasattr(obj, 'employee_inherit_id'):
+                workflow_type = 2 if approved_or_rejected == 'approved' else 3
+                DocHandler.send_mail(
+                    emp_id=obj.employee_inherit_id, runtime_obj=runtime_obj, workflow_type=workflow_type
+                )
             return True
         return False
 
@@ -184,11 +184,11 @@ class DocHandler:
                         call_task_background(
                             my_task=send_mail_workflow,
                             **{
-                                'tenant_id': runtime_obj.tenant_id,
-                                'company_id': runtime_obj.company_id,
-                                'user_id': emp_obj.user_id,
-                                'employee_obj': emp_obj,
-                                'runtime_obj': runtime_obj,
+                                'tenant_id': str(runtime_obj.tenant_id),
+                                'company_id': str(runtime_obj.company_id),
+                                'user_id': str(emp_obj.user_id),
+                                'employee_id': str(emp_id),
+                                'runtime_id': str(runtime_obj.id),
                                 'workflow_type': workflow_type,
                             }
                         )
