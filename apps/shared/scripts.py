@@ -1558,7 +1558,7 @@ def run_inventory_report():
     return True
 
 
-def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
+def report_rerun(company_id, start_month):
     SubPeriods.objects.filter(
         period_mapped__fiscal_year=2024,
         period_mapped__company_id=company_id
@@ -1566,111 +1566,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
     ReportStock.objects.filter(company_id=company_id).delete()
     ReportStockLog.objects.filter(company_id=company_id).delete()
     ReportInventoryCost.objects.filter(company_id=company_id).delete()
-
-    if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
-        print('created balance')
-        company = Company.objects.get(id=company_id)
-
-        # đầu kỳ OKSS
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='9e41fb1a-7576-4ee8-85ee-962217b7fc4f',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(10),
-            opening_balance_value=float(200000000),
-            opening_balance_cost=float(20000000),
-            ending_balance_quantity=float(10),
-            ending_balance_value=float(200000000),
-            ending_balance_cost=float(20000000),
-            for_balance=True
-        )
-
-        # đầu kỳ SW
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(24000000),
-            opening_balance_cost=float(8000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(24000000),
-            ending_balance_cost=float(8000000),
-            for_balance=True
-        )
-
-        # đầu kỳ Vision
-        if has_lot:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                lot_mapped_id='12de4425e1e341a0bd286e44d78ec260',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-        else:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-
-        # đầu kỳ HP
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(2),
-            opening_balance_value=float(276000000),
-            opening_balance_cost=float(138000000),
-            ending_balance_quantity=float(2),
-            ending_balance_value=float(276000000),
-            ending_balance_cost=float(138000000),
-            for_balance=True
-        )
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -1721,7 +1616,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
 
     all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
     for doc in all_doc_sorted:
-        print(doc['code'])
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
@@ -1740,6 +1634,10 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
 
         print(f"--- Completed run id: {doc['id']}")
         print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+    ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+    ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+    ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
     print('Complete!')
 

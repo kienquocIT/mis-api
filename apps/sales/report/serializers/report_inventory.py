@@ -232,7 +232,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_in(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
                 'in_quantity': casted_in_quantity,
                 'in_value': lot.get('lot_value'),
@@ -263,7 +263,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_out(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity'))
+            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
                 'in_quantity': '',
                 'in_value': '',
