@@ -23,7 +23,7 @@ from apps.sales.project.models import ProjectNews, ProjectNewsComment, ProjectMa
 
 
 class ProjectNewsList(BaseListMixin):
-    queryset = ProjectNews.objects.select_related('employee_inherit', 'application')
+    queryset = ProjectNews.objects.select_related('employee_inherit', 'application', 'project')
     serializer_list = ProjectNewsListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     filterset_fields = {
@@ -85,7 +85,8 @@ class ProjectNewsList(BaseListMixin):
     @swagger_auto_schema(operation_summary='Project news list')
     @mask_view(
         login_require=True, employee_require=True,
-        label_code='project', model_code='project', perm_code='view')
+        label_code='project', model_code='project', perm_code='view'
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -96,7 +97,7 @@ class ProjectNewsCommentList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     serializer_create = ProjectNewsCommentCreateSerializer
     serializer_detail = ProjectNewsCommentDetailSerializer
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_inherit_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_inherit_id', 'employee_created_id']
     # filterset_fields = {
     #     'news_id': ['exact', 'in'],
     #     'employee_inherit_id': ['exact', 'in'],
@@ -105,6 +106,9 @@ class ProjectNewsCommentList(BaseListMixin, BaseCreateMixin):
     # }
     filterset_class = ProjectNewsCommentListFilter
     search_fields = ['msg']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
 
     @swagger_auto_schema(operation_summary='Project News Comments')
     @mask_view(login_require=True, employee_require=True)
@@ -155,11 +159,14 @@ class ProjectNewsCommentDetail(BaseUpdateMixin, BaseDestroyMixin):
 class ProjectNewsCommentDetailFlows(BaseRetrieveMixin):
     queryset = ProjectNewsComment.objects.select_related('employee_inherit')
     serializer_detail = ProjectNewsCommentDetailFlowSerializer
-    retrieve_hidden_field = ['tenant_id', 'company_id', 'employee_inherit_id']
+    retrieve_hidden_field = ['tenant_id', 'company_id',
+                             # 'employee_inherit_id',
+                             'mentions_id']
 
     def get_object(self):
         obj = super().get_object()
-        if obj and self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit):
+        if obj and (self.request.user.employee_current_id in (obj.employee_inherit_id, obj.news.employee_inherit_id)
+                    or str(self.request.user.employee_current_id) in obj.mentions):
             return obj
         raise rest_framework.exceptions.NotFound
 

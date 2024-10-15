@@ -4,7 +4,6 @@ from django.dispatch import receiver
 
 from apps.core.log.tasks import force_new_notify_many
 from apps.core.mailer.handle_html import HTMLController
-from apps.sales.project.models import ProjectNewsComment
 from apps.shared import MasterDataAbstractModel, call_task_background, CommentMSg, DisperseModel
 
 
@@ -139,32 +138,3 @@ def destroy_comment(sender, instance, **kwargs):  # pylint: disable=W0613
     if instance.parent_n:
         instance.parent_n.children_count -= 1
         instance.parent_n.save(update_fields=['children_count'])
-
-
-@receiver(post_save, sender=ProjectNewsComment)
-def save_comment_prj(sender, instance, created, **kwargs):  # pylint: disable=W0613
-    if created:
-        # resolve mentions data
-        if instance.mentions:
-            task_kwargs = []
-            for employee_id in instance.mentions:
-                if str(employee_id) != str(instance.employee_created_id):
-                    task_kwargs.append({
-                        'tenant_id': instance.tenant_id,
-                        'company_id': instance.company_id,
-                        'title': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
-                        'msg': instance.msg,
-                        'notify_type': 20,
-                        'date_created': instance.date_created,
-                        'doc_id': instance.doc_id,
-                        'doc_app': 'project.project',
-                        'employee_id': employee_id,
-                        'employee_sender_id': instance.employee_created_id,
-                    })
-            if len(task_kwargs) > 0:
-                call_task_background(
-                    my_task=force_new_notify_many,
-                    **{
-                        'data_list': task_kwargs
-                    }
-                )

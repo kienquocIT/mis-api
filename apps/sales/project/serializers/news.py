@@ -215,15 +215,31 @@ class ProjectNewsCommentUpdateSerializer(serializers.ModelSerializer):
 
 
 class ProjectNewsCommentDetailFlowSerializer(serializers.ModelSerializer):
+    news = serializers.SerializerMethodField()
     sequence = serializers.SerializerMethodField()
 
     @classmethod
+    def get_news(cls, obj):
+        if obj.news:
+            news_obj = ProjectNewsListSerializer(data=[obj.news], many=True)
+            news_obj.is_valid()
+            return news_obj.data
+        raise serializers.ValidationError(
+            {
+                'news': ProjectMsg.NEWS_NOT_FOUND
+            }
+        )
+
+    @classmethod
     def get_sequence(cls, obj):
-        objs = [obj]
-        if obj.reply_from:
-            objs = [obj.reply_from] + objs
-        return ProjectNewsCommentListSerializer(data=objs, many=True).data
+        obj_new = obj.news
+        if obj_new:
+            objs = ProjectNewsComment.objects.filter(news=obj_new)
+            temp = ProjectNewsCommentListSerializer(data=objs, many=True)
+            temp.is_valid()
+            return temp.data
+        return []
 
     class Meta:
         model = ProjectNewsComment
-        fields = ('id', 'sequence')
+        fields = ('id', 'news', 'sequence')

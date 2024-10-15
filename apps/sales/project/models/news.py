@@ -1,6 +1,9 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-from apps.shared import MasterDataAbstractModel
+from apps.core.log.tasks import force_new_notify_many
+from apps.shared import MasterDataAbstractModel, CommentMSg, call_task_background
 
 
 class ProjectNews(MasterDataAbstractModel):
@@ -75,3 +78,32 @@ class ProjectNewsCommentMentions(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+@receiver(post_save, sender=ProjectNewsComment)
+def save_comment_prj(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    if created:
+        # resolve mentions data
+        if instance.mentions:
+            task_kwargs = []
+            for employee_id in instance.mentions:
+                if str(employee_id) != str(instance.employee_created_id):
+                    task_kwargs.append({
+                        'tenant_id': instance.tenant_id,
+                        'company_id': instance.company_id,
+                        'title': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
+                        'msg': instance.msg,
+                        'notify_type': 20,
+                        'date_created': instance.date_created,
+                        'doc_id': str(instance.id),
+                        'doc_app': 'project.activities',
+                        'employee_id': employee_id,
+                        'employee_sender_id': instance.employee_created_id,
+                    })
+            if len(task_kwargs) > 0:
+                call_task_background(
+                    my_task=force_new_notify_many,
+                    **{
+                        'data_list': task_kwargs
+                    }
+                )
