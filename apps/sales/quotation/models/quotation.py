@@ -163,6 +163,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         null=True,
         help_text="sale data Accounts have type customer"
     )
+    customer_data = models.JSONField(default=dict, help_text='data json of customer')
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
