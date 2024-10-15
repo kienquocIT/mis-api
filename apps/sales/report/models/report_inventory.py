@@ -135,9 +135,9 @@ class ReportStockLog(DataAbstractModel):
     trans_title = models.CharField(blank=True, max_length=100, null=True)
     log_order = models.IntegerField(default=0)
 
-    quantity = models.FloatField(default=0, help_text='is input quantity in perpetual')
-    cost = models.FloatField(default=0, help_text='is input cost in perpetual')
-    value = models.FloatField(default=0, help_text='is input value in perpetual')
+    quantity = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    cost = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
+    value = models.FloatField(default=0, help_text='is sum input quantity in perpetual')
 
     perpetual_current_quantity = models.FloatField(default=0, help_text='is quantity current in perpetual')
     perpetual_current_cost = models.FloatField(default=0, help_text='is cost current in perpetual')
