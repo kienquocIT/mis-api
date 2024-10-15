@@ -47,7 +47,7 @@ class ReportStock(DataAbstractModel):
     )
 
     @classmethod
-    def get(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
+    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
         (
             tenant_obj, company_obj, emp_created_obj, emp_inherit_obj
         ) = (
@@ -163,7 +163,9 @@ class ReportStockLog(DataAbstractModel):
             if 3 in cost_cfg:
                 kw_parameter['sale_order_id'] = item['sale_order'].id if item.get('sale_order') else None
 
-            rp_stock = ReportStock.get(doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter)
+            rp_stock = ReportStock.get_or_create_report_stock(
+                doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
+            )
             item['cost'] = ReportInventorySubFunction.get_latest_log_cost_dict(
                 doc_obj.company.company_config.definition_inventory_valuation,
                 item['product'], item['warehouse'], **kw_parameter
@@ -227,14 +229,12 @@ class ReportStockLog(DataAbstractModel):
 
         if div == 0:
             new_cost_dict = ReportInventorySubFunction.weighted_average_in_perpetual(log, latest_cost_dict)
-            # cập nhập giá trị tồn kho hiện tại mới cho log
             log.perpetual_current_quantity, log.perpetual_current_cost, log.perpetual_current_value = (
                 new_cost_dict['quantity'], new_cost_dict['cost'], new_cost_dict['value']
             ) if new_cost_dict['quantity'] > 0 else (0, 0, 0)
             log.save(update_fields=['perpetual_current_quantity', 'perpetual_current_cost', 'perpetual_current_value'])
-        if div == 1:
+        else:
             new_cost_dict = ReportInventorySubFunction.weighted_average_in_periodic(log, latest_cost_dict)
-            # cập nhập giá trị tồn kho hiện tại mới cho log
             # chỗ này k cần check SL = 0 -> cost = 0 vì mọi TH cost đều = 0
             log.periodic_current_quantity, log.periodic_current_cost, log.periodic_current_value = (
                 new_cost_dict['quantity'], 0, 0
@@ -546,7 +546,7 @@ class ReportInventoryCostByWarehouse(SimpleAbstractModel):
     @classmethod
     def get_project_last_ending_quantity(cls, report_inventory_cost, warehouse):
         previous = cls.objects.filter(
-            report_inventory_cost__product=report_inventory_cost.product,
+            report_inventory_cost=report_inventory_cost,
             warehouse=warehouse
         ).order_by(
             '-report_inventory_cost__period_mapped__fiscal_year',

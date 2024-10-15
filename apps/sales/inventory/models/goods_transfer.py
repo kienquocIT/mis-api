@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models import (
     SubPeriods
 )
 from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
@@ -159,8 +159,8 @@ class GoodsTransfer(DataAbstractModel):
                     'value': casted_cost * casted_quantity,
                     'lot_data': {}
                 })
-        InventoryCostLog.log(instance, instance.date_approved, doc_data_out)
-        InventoryCostLog.log(instance, instance.date_approved, doc_data_in)
+        ReportInvLog.log(instance, instance.date_approved, doc_data_out)
+        ReportInvLog.log(instance, instance.date_approved, doc_data_in)
         return True
 
     @classmethod
