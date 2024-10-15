@@ -202,7 +202,7 @@ def create_project_news(
         application_obj = Application.objects.get(pk=application_id)
     except (Project.DoesNotExist, Application.DoesNotExist) as err:
         raise err
-    return ProjectNews.objects.create(
+    prj_new = ProjectNews.objects.create(
         tenant_id=project_obj.tenant_id,
         company_id=project_obj.company_id,
         project=project_obj,
@@ -214,3 +214,4 @@ def create_project_news(
         title=title,
         msg=msg,
     )
+    return str(prj_new)
