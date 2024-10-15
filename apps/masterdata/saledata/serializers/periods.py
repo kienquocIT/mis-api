@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import (
-    ReportInventoryCost, ReportStockLog, ReportInventoryCostWH
+    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse
 )
 
 
@@ -176,7 +176,7 @@ class PeriodInventoryFunction:
                 product=prd_obj,
                 warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()
-            ReportInventoryCostWH.objects.filter(
+            ReportInventoryCostByWarehouse.objects.filter(
                 report_inventory_cost__product=prd_obj,
                 report_inventory_cost__warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()

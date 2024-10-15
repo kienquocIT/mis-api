@@ -66,7 +66,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     currency = serializers.CharField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
-    default_inventory_value_method = serializers.IntegerField(default=2)
+    default_inventory_value_method = serializers.IntegerField(default=1)
 
     @classmethod
     def validate_currency(cls, attrs):
@@ -97,7 +97,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_default_inventory_value_method(cls, attrs):
-        if attrs in [0, 1, 2, 3]:
+        if attrs in [0, 1, 2]:
             return attrs
         raise serializers.ValidationError({'default_inventory_value_method': CompanyMsg.DIV_METHOD_NOT_VALID})
 
@@ -111,7 +111,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
         if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
             raise serializers.ValidationError({
-                'Error': "Can't update Definition inventory valuation because there are transactions in this Period."
+                'error': "Can't update Definition inventory valuation because there are transactions in this Period."
             })
 
         old_cost_setting = [
@@ -132,14 +132,14 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             this_period.save(update_fields=['definition_inventory_valuation'])
         else:
             raise serializers.ValidationError(
-                {'Error': f"Can't find fiscal year {datetime.datetime.now().year}."}
+                {'error': f"Can't find fiscal year {datetime.datetime.now().year}."}
             )
         if all([
             datetime.datetime.now().year == this_period.fiscal_year,
             new_cost_setting != old_cost_setting,
             has_trans
         ]):
-            raise serializers.ValidationError({'Error': "Can't change cost setting in same period year."})
+            raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
         return validate_data
 
     def update(self, instance, validated_data):
@@ -219,7 +219,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    config_inventory_management = serializers.SerializerMethodField()
+    cost_cfg = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -244,7 +244,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'sub_domain',
             'logo',
             'icon',
-            'config_inventory_management'
+            'cost_cfg'
         )
 
     @classmethod
@@ -264,7 +264,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         return company_function_number
 
     @classmethod
-    def get_config_inventory_management(cls, obj):
+    def get_cost_cfg(cls, obj):
         return {
             'cost_per_warehouse': obj.company_config.cost_per_warehouse,
             'cost_per_lot': obj.company_config.cost_per_lot,

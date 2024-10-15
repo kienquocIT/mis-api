@@ -462,7 +462,7 @@ class RuntimeStageHandler:
                     employee_ids_zones.update({emp_id: zone_and_properties.get('zone_edit', [])})
                     employee_ids_zones_hidden.update({emp_id: zone_and_properties.get('zone_hidden', [])})
                     # send mail
-                    # DocHandler.send_mail(emp_id=emp_id, runtime_obj=self.runtime_obj, workflow_type=0)
+                    DocHandler.send_mail(emp_id=emp_id, runtime_obj=self.runtime_obj, workflow_type=0)
                 # active hook push notify
                 HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
                     runtime_assignee_obj=objs_created,
