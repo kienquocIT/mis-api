@@ -213,5 +213,6 @@ def create_project_news(
         document_title=document_title,
         title=title,
         msg=msg,
+        count_comment=0
     )
     return str(prj_new)
