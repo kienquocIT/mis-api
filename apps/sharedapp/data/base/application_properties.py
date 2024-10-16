@@ -366,7 +366,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     'efd2c678-dadf-4f77-be5f-9cea9598c017': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -400,7 +400,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     'b398bec4-a122-44b9-92fe-642d869e9238': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -419,7 +419,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     '619f3301-48e2-476b-8a85-b5998ccd3e4a': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -437,7 +437,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     # Totals of expenses
     '5a6e8904-c39c-4e45-aed9-7b989299f593': {
@@ -448,7 +448,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     '7fcbe504-de29-4600-a748-05639db2841c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -466,7 +466,7 @@ AppProp_SaleData_Quotation_data = {
         'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     # Total fields
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
@@ -1128,7 +1128,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     'c2197be7-35a2-4efc-afb3-56feaf969957': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1162,7 +1162,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     '3a3ce0bc-8c67-4558-9812-8a6dbf45cf88': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1181,7 +1181,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     'f56243a9-4821-40fa-83b9-ff48a7c807f7': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1199,7 +1199,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     # Totals of expenses
     '23a82e99-aa8e-47c3-b8b1-3ac3038d9b04': {
@@ -1210,7 +1210,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     '4365f9bd-5c84-46d7-a995-c54e0878ca59': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1228,7 +1228,7 @@ AppProp_SaleData_SaleOrder_data = {
         'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
         'type': 6,
         'is_wf_zone': True,
-        'is_wf_condition': True,
+        'is_wf_condition': False,
     },
     # total fields
     '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
