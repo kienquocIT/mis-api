@@ -8,7 +8,7 @@ from apps.sales.inventory.models import (
     NoneGReItemProductWarehouse,
     NoneGReItemProductWarehouseSerial
 )
-from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
+from apps.sales.purchasing.models import PurchaseRequestProduct
 
 
 class GoodsDetailListSerializer(serializers.ModelSerializer):
@@ -21,29 +21,34 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def append_serial_data(cls, serial, pr_data):
+        serial_data = []
+        if not serial.purchase_request_id is None:
+            if str(serial.purchase_request_id) == pr_data["id"]:
+                serial_data.append({
+                    'id': serial.id,
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number,
+                    'expire_date': serial.expire_date,
+                    'manufacture_date': serial.manufacture_date,
+                    'warranty_start': serial.warranty_start,
+                    'warranty_end': serial.warranty_end,
+                    'is_delete': serial.is_delete
+                })
+        return serial_data
+    @classmethod
     def get_product_data(cls, obj):
         product_data = []
         for item in obj.goods_receipt_product_goods_receipt.all():
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
                     pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data
-                    serial_data = []
+                    serial_data=[]
                     for serial in obj.pw_serial_goods_receipt.filter(
                         product_warehouse__product_id=item.product_id,
                         product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id,
                     ).order_by('vendor_serial_number', 'serial_number'):
-                        if not serial.purchase_request_id is None:
-                            if str(serial.purchase_request_id) == pr_data["id"]:
-                                serial_data.append({
-                                    'id': serial.id,
-                                    'vendor_serial_number': serial.vendor_serial_number,
-                                    'serial_number': serial.serial_number,
-                                    'expire_date': serial.expire_date,
-                                    'manufacture_date': serial.manufacture_date,
-                                    'warranty_start': serial.warranty_start,
-                                    'warranty_end': serial.warranty_end,
-                                    'is_delete': serial.is_delete
-                                })
+                        serial_data = cls.append_serial_data(serial, pr_data)
                     product_data.append({
                         'goods_receipt': {
                             'id': obj.id,
@@ -167,6 +172,18 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             goods_receipt_product__product=prd_wh.product
         ).first()
         if gr_wh:
+            cls.handle_goods_receipt_wh(gr_wh=gr_wh, created_sn=created_sn, prd_wh=prd_wh)
+
+        if len(bulk_info_new_serial) > 0:
+            prd_wh.receipt_amount += len(bulk_info_new_serial)
+            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
+            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
+            prd_wh.product.stock_amount += len(bulk_info_new_serial)
+            prd_wh.product.save(update_fields=['stock_amount'])
+        return True
+
+    @classmethod
+    def handle_goods_receipt_wh(cls, gr_wh, created_sn, prd_wh):
             pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
                 gr_wh.goods_receipt_request_product, 'purchase_request_product'
             ) else None
@@ -206,14 +223,6 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                             )
                         )
                     NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
-
-        if len(bulk_info_new_serial) > 0:
-            prd_wh.receipt_amount += len(bulk_info_new_serial)
-            prd_wh.stock_amount = prd_wh.receipt_amount - prd_wh.sold_amount
-            prd_wh.save(update_fields=['receipt_amount', 'stock_amount'])
-            prd_wh.product.stock_amount += len(bulk_info_new_serial)
-            prd_wh.product.save(update_fields=['stock_amount'])
-        return True
 
     def create(self, validated_data):
         product_id = self.initial_data.get('product_id')
