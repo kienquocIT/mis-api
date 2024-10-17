@@ -75,14 +75,12 @@ class ReportInvCommonFunc:
         return True
 
     @classmethod
-    def by_perpetual(
-            cls, tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
-    ):
-        rp_prd_wh = ReportInventoryCost(
+    def by_perpetual(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
+        rp_inv_cost = ReportInventoryCost(
             tenant=tenant,
             company=company,
-            employee_created=employee_current,
-            employee_inherit=employee_current,
+            employee_created=emp_current,
+            employee_inherit=emp_current,
             product_id=last_sub_item.product_id,
             lot_mapped_id=last_sub_item.lot_mapped_id,
             warehouse_id=last_sub_item.warehouse_id,
@@ -97,11 +95,11 @@ class ReportInvCommonFunc:
             ending_balance_cost=last_sub_item.ending_balance_cost,
             ending_balance_value=last_sub_item.ending_balance_value
         )
-        bulk_info.append(rp_prd_wh)
+        bulk_info.append(rp_inv_cost)
         for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
                 ReportInventoryCostByWarehouse(
-                    report_inventory_cost=rp_prd_wh,
+                    report_inventory_cost=rp_inv_cost,
                     warehouse=report_inventory_cost.warehouse,
                     opening_quantity=report_inventory_cost.ending_quantity,
                     ending_quantity=report_inventory_cost.ending_quantity
@@ -110,14 +108,12 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def by_periodic(
-            cls, tenant, company, employee_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
-    ):
-        rp_prd_wh = ReportInventoryCost(
+    def by_periodic(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
+        rp_inv_cost = ReportInventoryCost(
             tenant=tenant,
             company=company,
-            employee_created=employee_current,
-            employee_inherit=employee_current,
+            employee_created=emp_current,
+            employee_inherit=emp_current,
             product_id=last_sub_item.product_id,
             lot_mapped_id=last_sub_item.lot_mapped_id,
             warehouse_id=last_sub_item.warehouse_id,
@@ -131,11 +127,11 @@ class ReportInvCommonFunc:
             periodic_ending_balance_cost=last_sub_item.periodic_ending_balance_cost,
             periodic_ending_balance_value=last_sub_item.periodic_ending_balance_value
         )
-        bulk_info.append(rp_prd_wh)
+        bulk_info.append(rp_inv_cost)
         for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
                 ReportInventoryCostByWarehouse(
-                    report_inventory_cost=rp_prd_wh,
+                    report_inventory_cost=rp_inv_cost,
                     warehouse=report_inventory_cost.warehouse,
                     opening_quantity=report_inventory_cost.ending_quantity,
                     ending_quantity=report_inventory_cost.ending_quantity
@@ -144,8 +140,8 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def sum_up_sub_period(cls, tenant, company, employee_current, this_period, this_sub_order):
-        if tenant and company and employee_current and this_period and this_sub_order:
+    def sum_up_sub_period(cls, tenant, company, emp_current, this_period, this_sub_order):
+        if tenant and company and emp_current and this_period and this_sub_order:
             this_sub = SubPeriods.objects.filter(period_mapped=this_period, order=this_sub_order).first()
             last_period = Periods.objects.filter(
                 tenant=tenant,
@@ -174,10 +170,10 @@ class ReportInvCommonFunc:
                                 sale_order_id=last_sub_item.sale_order_id,
                         ).exists():
                             bulk_info, bulk_info_wh = cls.by_perpetual(
-                                tenant, company, employee_current,
+                                tenant, company, emp_current,
                                 last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
                             ) if company.company_config.definition_inventory_valuation == 0 else cls.by_periodic(
-                                tenant, company, employee_current,
+                                tenant, company, emp_current,
                                 last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
                             )
 

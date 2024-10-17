@@ -293,7 +293,7 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
@@ -346,7 +346,7 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(sale_order_id=sale_order_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(sale_order_id=sale_order_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
@@ -395,7 +395,7 @@ class Product(DataAbstractModel):
             sub_period_order = timezone.now().month - this_period.space_month
             company_config = getattr(self.company, 'company_config')
             for warehouse in warehouse_list:
-                latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
+                latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
                     if company_config.definition_inventory_valuation == 0 and \
                             latest_trans.latest_log.perpetual_current_quantity > 0:
