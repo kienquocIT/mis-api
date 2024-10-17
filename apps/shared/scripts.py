@@ -26,7 +26,7 @@ from apps.sales.cashoutflow.models import (
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
-    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
+    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods,
 )
 from . import MediaForceAPI
 
@@ -62,7 +62,7 @@ from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, LatestLog, ReportStock
+    ReportInventoryCost, ReportStockLogByWarehouse, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1501,9 +1501,9 @@ def run_inventory_report():
         latest_trans = get_latest_log(log, period_mapped, sub_period_order)
         if latest_trans:
             latest_value_list = {
-                'quantity': latest_trans.current_quantity,
-                'cost': latest_trans.current_cost,
-                'value': latest_trans.current_value
+                'quantity': latest_trans.perpetual_current_quantity,
+                'cost': latest_trans.perpetual_current_cost,
+                'value': latest_trans.perpetual_current_value
             }
         else:
             latest_value_list = {
@@ -1535,143 +1535,40 @@ def run_inventory_report():
                     opening_balance_quantity=latest_value_list['quantity'],
                     opening_balance_cost=latest_value_list['cost'],
                     opening_balance_value=latest_value_list['value'],
-                    ending_balance_quantity=log.current_quantity,
-                    ending_balance_cost=log.current_cost,
-                    ending_balance_value=log.current_value,
+                    ending_balance_quantity=log.perpetual_current_quantity,
+                    ending_balance_cost=log.perpetual_current_cost,
+                    ending_balance_value=log.perpetual_current_value,
                 )
             else:
-                inventory_cost_data_item.ending_balance_quantity = log.current_quantity
-                inventory_cost_data_item.ending_balance_cost = log.current_cost
-                inventory_cost_data_item.ending_balance_value = log.current_value
+                inventory_cost_data_item.ending_balance_quantity = log.perpetual_current_quantity
+                inventory_cost_data_item.ending_balance_cost = log.perpetual_current_cost
+                inventory_cost_data_item.ending_balance_value = log.perpetual_current_value
                 inventory_cost_data_item.save(update_fields=[
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = LatestLog.objects.filter(
+            latest_log_obj = ReportStockLogByWarehouse.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                LatestLog.objects.create(
+                ReportStockLogByWarehouse.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
     return True
 
 
-def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lot=False):
-    if clear:
-        ReportStockLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
-        ReportInventoryCost.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
-        ReportStock.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
-        LatestLog.objects.filter(company_id='80785ce8-f138-48b8-b7fa-5fb1971fe204').delete()
-
-    if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
-        print('created balance')
-        company = Company.objects.get(id=company_id)
-
-        # đầu kỳ OKSS
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='9e41fb1a-7576-4ee8-85ee-962217b7fc4f',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(10),
-            opening_balance_value=float(200000000),
-            opening_balance_cost=float(20000000),
-            ending_balance_quantity=float(10),
-            ending_balance_value=float(200000000),
-            ending_balance_cost=float(20000000),
-            for_balance=True
-        )
-
-        # đầu kỳ SW
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(24000000),
-            opening_balance_cost=float(8000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(24000000),
-            ending_balance_cost=float(8000000),
-            for_balance=True
-        )
-
-        # đầu kỳ Vision
-        if has_lot:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                lot_mapped_id='12de4425e1e341a0bd286e44d78ec260',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-        else:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-
-        # đầu kỳ HP
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(2),
-            opening_balance_value=float(276000000),
-            opening_balance_cost=float(138000000),
-            ending_balance_quantity=float(2),
-            ending_balance_value=float(276000000),
-            ending_balance_cost=float(138000000),
-            for_balance=True
-        )
+def report_rerun(company_id, start_month):
+    SubPeriods.objects.filter(
+        period_mapped__fiscal_year=2024,
+        period_mapped__company_id=company_id
+    ).update(run_report_inventory=False)
+    ReportStock.objects.filter(company_id=company_id).delete()
+    ReportStockLog.objects.filter(company_id=company_id).delete()
+    ReportInventoryCost.objects.filter(company_id=company_id).delete()
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -1687,7 +1584,7 @@ def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lo
 
     all_goods_return = GoodsReturn.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
-    ).order_by('date_approved')
+    ).exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028']).order_by('date_approved')
 
     all_goods_transfer = GoodsTransfer.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
@@ -1697,55 +1594,53 @@ def report_rerun(company_id, start_month, clear=True, run_fix_data=False, has_lo
     for delivery in all_delivery:
         all_doc.append({
             'id': str(delivery.id), 'code': str(delivery.code),
-            'date_approved': str(delivery.date_done), 'type': 'delivery'
+            'date_approved': delivery.date_done, 'type': 'delivery'
         })
     for goods_issue in all_goods_issue:
         all_doc.append({
             'id': str(goods_issue.id), 'code': str(goods_issue.code),
-            'date_approved': str(goods_issue.date_approved), 'type': 'goods_issue'
+            'date_approved': goods_issue.date_approved, 'type': 'goods_issue'
         })
     for goods_receipt in all_goods_receipt:
         all_doc.append({
             'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
-            'date_approved': str(goods_receipt.date_approved), 'type': 'goods_receipt'
+            'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
         })
     for goods_return in all_goods_return:
         all_doc.append({
             'id': str(goods_return.id), 'code': str(goods_return.code),
-            'date_approved': str(goods_return.date_approved), 'type': 'goods_return'
+            'date_approved': goods_return.date_approved, 'type': 'goods_return'
         })
     for goods_transfer in all_goods_transfer:
         all_doc.append({
             'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
-            'date_approved': str(goods_transfer.date_approved), 'type': 'goods_transfer'
+            'date_approved': goods_transfer.date_approved, 'type': 'goods_transfer'
         })
 
-    all_doc_sorted = sorted(all_doc, key=lambda x: datetime.fromisoformat(x['date_approved']))
+    all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
     for doc in all_doc_sorted:
-        print(f"--- Run id: {doc['id']}")
-        print(f"\tSystem date: {doc['date_approved'].split(' ')[0]}")
-        print(f"\tSystem code: ** {doc['code']} **")
-        print(f"\tType: {doc['type']}")
-
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
-
         if doc['type'] == 'goods_issue':
             instance = GoodsIssue.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
-
         if doc['type'] == 'goods_receipt':
             instance = GoodsReceipt.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
-
         if doc['type'] == 'goods_return':
             instance = GoodsReturn.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
-
         if doc['type'] == 'goods_transfer':
             instance = GoodsTransfer.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
+
+        print(f"--- Completed run id: {doc['id']}")
+        print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+    ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+    ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+    ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
     print('Complete!')
 
@@ -2304,3 +2199,96 @@ def update_difference_quantity_goods_issue():
                 item.remain_quantity = wo_item.quantity - item.before_quantity
             item.save(update_fields=['remain_quantity'])
     print('Done :))')
+
+
+def update_valuation_method():
+    for company in Company.objects.all():
+        print(company.code)
+        company.company_config.default_inventory_value_method = 1
+        company.company_config.save(update_fields=['default_inventory_value_method'])
+    for product in Product.objects.all():
+        product.valuation_method = 1
+        product.save(update_fields=['valuation_method'])
+    print('Done :))')
+
+
+class InventoryReportRun:
+    @classmethod
+    def weighted_average(cls, company_id, fiscal_year, start_month):
+        SubPeriods.objects.filter(
+            period_mapped__fiscal_year=fiscal_year,
+            period_mapped__company_id=company_id
+        ).update(run_report_inventory=False)
+        ReportStock.objects.filter(company_id=company_id).delete()
+        ReportStockLog.objects.filter(company_id=company_id).delete()
+        ReportInventoryCost.objects.filter(company_id=company_id).delete()
+
+        all_delivery = OrderDeliverySub.objects.filter(
+            company_id=company_id, state=2, date_done__year=fiscal_year, date_done__month__gte=start_month
+        ).order_by('date_done')
+
+        all_goods_issue = GoodsIssue.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_receipt = GoodsReceipt.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_return = GoodsReturn.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_goods_transfer = GoodsTransfer.objects.filter(
+            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+        ).order_by('date_approved')
+
+        all_doc = []
+        for delivery in all_delivery:
+            all_doc.append({
+                'id': str(delivery.id), 'code': str(delivery.code),
+                'date_approved': delivery.date_done, 'type': 'delivery'
+            })
+        for goods_issue in all_goods_issue:
+            all_doc.append({
+                'id': str(goods_issue.id), 'code': str(goods_issue.code),
+                'date_approved': goods_issue.date_approved, 'type': 'goods_issue'
+            })
+        for goods_receipt in all_goods_receipt:
+            all_doc.append({
+                'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
+                'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
+            })
+        for goods_return in all_goods_return:
+            all_doc.append({
+                'id': str(goods_return.id), 'code': str(goods_return.code),
+                'date_approved': goods_return.date_approved, 'type': 'goods_return'
+            })
+        for goods_transfer in all_goods_transfer:
+            all_doc.append({
+                'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
+                'date_approved': goods_transfer.date_approved, 'type': 'goods_transfer'
+            })
+
+        all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
+        for doc in all_doc_sorted:
+            if doc['type'] == 'delivery':
+                instance = OrderDeliverySub.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+            if doc['type'] == 'goods_issue':
+                instance = GoodsIssue.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+            if doc['type'] == 'goods_receipt':
+                instance = GoodsReceipt.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+            if doc['type'] == 'goods_return':
+                instance = GoodsReturn.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+            if doc['type'] == 'goods_transfer':
+                instance = GoodsTransfer.objects.get(id=doc['id'])
+                instance.prepare_data_for_logging(instance)
+
+            print(f"--- Completed run id: {doc['id']}")
+            print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+        print('Complete!')

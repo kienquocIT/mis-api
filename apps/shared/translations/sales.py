@@ -58,6 +58,9 @@ class SaleTask:
     NOT_CHANGE_ESTIMATE = _('You do not permission to change estimate')
     NOT_CONFIG = _('Missing default info please contact with admin')
     DATE_TIME_IS_REQUIRED = _('Date start/end is required.')
+    CREATED_A = _('Created a Task')
+    UPDATED_A = _('Updated a Task')
+    DELETED_A = _('Deleted a Task')
 
 
 class PurchaseRequestMsg:

@@ -30,6 +30,17 @@ class ProjectNewsListSerializer(serializers.ModelSerializer):
             return obj.employee_inherit.get_detail_minimal()
         return {}
 
+    project = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_project(cls, obj):
+        if obj.employee_inherit:
+            return {
+                'id': str(obj.project.id),
+                'title': obj.project.title
+            }
+        return {}
+
     class Meta:
         model = ProjectNews
         fields = (
@@ -37,11 +48,13 @@ class ProjectNewsListSerializer(serializers.ModelSerializer):
             'document_id', 'document_title', 'application_id',
             'date_created',
             'employee_inherit',
+            'project', 'count_comment'
         )
 
 
 class ProjectNewsCommentListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
+    mentions = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -49,13 +62,25 @@ class ProjectNewsCommentListSerializer(serializers.ModelSerializer):
             return obj.employee_inherit.get_detail_minimal()
         return {}
 
+    @classmethod
+    def get_mentions(cls, obj):
+        mentions = []
+        emp_objs = Employee.objects.filter_current(id__in=obj.mentions)
+        if emp_objs.count() == len(obj.mentions):
+            mentions = [{
+                'id': str(item.id),
+                'code': item.code,
+                'full_name': item.get_full_name(),
+            }for item in emp_objs]
+        return mentions
+
     class Meta:
         model = ProjectNewsComment
         fields = (
             'id', 'msg', 'mentions',
             'date_created',
             'employee_inherit',
-            'reply_from_id',
+            'reply_from_id', 'message_reply_count'
         )
 
 
@@ -102,6 +127,8 @@ class ProjectNewsCommentCreateSerializer(serializers.ModelSerializer):
         mentions = validated_data.pop('mentions', [])
         mention_ids = []
         bulk_objs = []
+        news_obj = validated_data.get('news', None)
+        reply_from = validated_data.get('reply_from', None)
         for obj in mentions:
             mention_ids.append(str(obj.id))
             bulk_objs.append(
@@ -110,9 +137,15 @@ class ProjectNewsCommentCreateSerializer(serializers.ModelSerializer):
                     employee=obj,
                 )
             )
+
+        news_obj.count_comment += 1
+        news_obj.save(update_fields=['count_comment'])
         instance = ProjectNewsComment.objects.create(**validated_data, mentions=mention_ids, id=generate_id)
         if bulk_objs:
             ProjectNewsCommentMentions.objects.bulk_create(bulk_objs)
+        if reply_from:
+            reply_from.message_reply_count += 1
+            reply_from.save(update_fields=['message_reply_count'])
         return instance
 
     class Meta:
@@ -121,9 +154,17 @@ class ProjectNewsCommentCreateSerializer(serializers.ModelSerializer):
 
 
 class ProjectNewsCommentDetailSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit and hasattr(obj.employee_inherit, 'get_detail_minimal'):
+            return obj.employee_inherit.get_detail_minimal()
+        return {}
+
     class Meta:
         model = ProjectNewsComment
-        fields = ('id', 'msg')
+        fields = ('id', 'msg', 'employee_inherit', 'reply_from')
 
 
 class ProjectNewsCommentUpdateSerializer(serializers.ModelSerializer):
@@ -174,15 +215,31 @@ class ProjectNewsCommentUpdateSerializer(serializers.ModelSerializer):
 
 
 class ProjectNewsCommentDetailFlowSerializer(serializers.ModelSerializer):
+    news = serializers.SerializerMethodField()
     sequence = serializers.SerializerMethodField()
 
     @classmethod
+    def get_news(cls, obj):
+        if obj.news:
+            news_obj = ProjectNewsListSerializer(data=[obj.news], many=True)
+            news_obj.is_valid()
+            return news_obj.data
+        raise serializers.ValidationError(
+            {
+                'news': ProjectMsg.NEWS_NOT_FOUND
+            }
+        )
+
+    @classmethod
     def get_sequence(cls, obj):
-        objs = [obj]
-        if obj.reply_from:
-            objs = [obj.reply_from] + objs
-        return ProjectNewsCommentListSerializer(data=objs, many=True).data
+        obj_new = obj.news
+        if obj_new:
+            objs = ProjectNewsComment.objects.filter(news=obj_new)
+            temp = ProjectNewsCommentListSerializer(data=objs, many=True)
+            temp.is_valid()
+            return temp.data
+        return []
 
     class Meta:
         model = ProjectNewsComment
-        fields = ('id', 'sequence')
+        fields = ('id', 'news', 'sequence')

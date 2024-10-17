@@ -1,4 +1,4 @@
-__all__ = ['ProjectGroupListFilter']
+__all__ = ['ProjectGroupListFilter', 'ProjectNewsCommentListFilter']
 
 import django_filters
 from django.db import models
