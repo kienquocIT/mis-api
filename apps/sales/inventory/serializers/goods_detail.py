@@ -21,21 +21,26 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def append_serial_data(cls, serial, pr_data):
+    def create_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
         serial_data = []
-        if not serial.purchase_request_id is None:
-            if str(serial.purchase_request_id) == pr_data["id"]:
-                serial_data.append({
-                    'id': serial.id,
-                    'vendor_serial_number': serial.vendor_serial_number,
-                    'serial_number': serial.serial_number,
-                    'expire_date': serial.expire_date,
-                    'manufacture_date': serial.manufacture_date,
-                    'warranty_start': serial.warranty_start,
-                    'warranty_end': serial.warranty_end,
-                    'is_delete': serial.is_delete
-                })
+        for serial in good_receipt.pw_serial_goods_receipt.filter(
+                product_warehouse__product_id=good_receipt_product.product_id,
+                product_warehouse__warehouse_id=gr_warehouse.warehouse_id,
+        ).order_by('vendor_serial_number', 'serial_number'):
+            if not serial.purchase_request_id is None:
+                if str(serial.purchase_request_id) == pr_data["id"]:
+                    serial_data.append({
+                        'id': serial.id,
+                        'vendor_serial_number': serial.vendor_serial_number,
+                        'serial_number': serial.serial_number,
+                        'expire_date': serial.expire_date,
+                        'manufacture_date': serial.manufacture_date,
+                        'warranty_start': serial.warranty_start,
+                        'warranty_end': serial.warranty_end,
+                        'is_delete': serial.is_delete
+                    })
         return serial_data
+
     @classmethod
     def get_product_data(cls, obj):
         product_data = []
@@ -43,12 +48,11 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
                     pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data
-                    serial_data=[]
-                    for serial in obj.pw_serial_goods_receipt.filter(
-                        product_warehouse__product_id=item.product_id,
-                        product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id,
-                    ).order_by('vendor_serial_number', 'serial_number'):
-                        serial_data = cls.append_serial_data(serial, pr_data)
+                    serial_data = cls.create_serial_data(
+                        good_receipt=obj,
+                        good_receipt_product=item,
+                        gr_warehouse=gr_wh_gr_prd,
+                        pr_data=pr_data)
                     product_data.append({
                         'goods_receipt': {
                             'id': obj.id,
