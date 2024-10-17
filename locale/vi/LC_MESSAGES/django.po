@@ -1293,3 +1293,31 @@ msgstr "Đang kiểm kê"
 #
 msgid "IA Done"
 msgstr "Kiểm kê hoàn tất"
+
+#
+msgid "Title"
+msgstr "Tiêu đề"
+
+#
+msgid "Code"
+msgstr "Mã"
+
+#
+msgid "Customer"
+msgstr "Khách hàng"
+
+#
+msgid "Supplier"
+msgstr "Nhà cung cấp"
+
+#
+msgid "Salesperson"
+msgstr "NV kinh doanh"
+
+#
+msgid "Industry"
+msgstr "Lĩnh vực"
+
+#
+msgid "Payment term"
+msgstr "Điều khoản thanh toán"
