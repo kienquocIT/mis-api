@@ -40,8 +40,9 @@ class TeleBotPushNotify:
 
     def send_msg(self, msg):
         if self.token and self.chat_id:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self._send_msg(msg=msg))
+            # loop = asyncio.get_event_loop()
+            # loop.run_until_complete(self._send_msg(msg=msg))
+            asyncio.run(self._send_msg(msg=msg))
 
     async def _send_msg(self, msg, **kwargs):
         try:
@@ -49,6 +50,24 @@ class TeleBotPushNotify:
             await bot.send_message(
                 chat_id=self.chat_id, text=msg,
                 # parse_mode='Markdown'
+            )
+        except Exception as err:
+            print(err)
+
+    def send_photo(self, f_path, caption=''):
+        if self.token and self.chat_id:
+            # loop = asyncio.get_event_loop()
+            # loop.run_until_complete(self._send_photo(f_binary=f_binary, caption=caption))
+            with open(f_path, "rb") as f_cursor:
+                asyncio.run(self._send_photo(f_binary=f_cursor, caption=caption))
+
+    async def _send_photo(self, f_binary, caption, **kwargs):
+        try:
+            bot = telegram.Bot(token=self.token)
+            await bot.send_photo(
+                chat_id=self.chat_id,
+                caption=caption,
+                photo=f_binary,
             )
         except Exception as err:
             print(err)
