@@ -61,7 +61,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, ReportStockLogByWarehouse, ReportStock
+    ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1544,14 +1544,14 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = ReportStockLogByWarehouse.objects.filter(
+            latest_log_obj = ReportInventoryCostLatestLog.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                ReportStockLogByWarehouse.objects.create(
+                ReportInventoryCostLatestLog.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
