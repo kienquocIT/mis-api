@@ -7,7 +7,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -454,7 +454,7 @@ class OrderDeliverySub(DataAbstractModel):
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
                             cls.for_sn(instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj)
-        InventoryCostLog.log(instance, instance.date_done, doc_data)
+        ReportInvLog.log(instance, instance.date_done, doc_data)
         return True
 
     def save(self, *args, **kwargs):

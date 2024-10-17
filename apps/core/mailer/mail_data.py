@@ -1,4 +1,7 @@
+from django.conf import settings
 from django.utils.translation import gettext_lazy as trans
+
+from apps.shared import DisperseModel
 
 
 __all__ = ['MailDataResolver']
@@ -39,7 +42,6 @@ WORKFLOW_TYPE_MAP_TXT = {
 WORKFLOW_COMMON = {
     0: 'Feature:',
     1: 'Go to detail:',
-    2: 'sit.mtsolution.com.vn',
     3: 'Here',
 }
 
@@ -67,29 +69,50 @@ class MailDataResolver:
         return {}
 
     @classmethod
-    def workflow(cls, runtime_obj, workflow_type):
-        wf_application_title = ''
-        wf_application_url = ''
-        doc_id = ''
-        wf_title = str(trans(WORKFLOW_TYPE_MAP_TXT.get(workflow_type, '')))
-        if runtime_obj.app_code:
-            wf_application_title = str(trans(APP_MAP_DATA.get(runtime_obj.app_code, {}).get('title', '')))
-            wf_application_url = APP_MAP_DATA.get(runtime_obj.app_code, {}).get('url', '')
-        if runtime_obj.doc_id:
-            doc_id = str(runtime_obj.doc_id)
-        wf_common_text_0 = str(trans(WORKFLOW_COMMON.get(0, '')))
-        wf_common_text_1 = str(trans(WORKFLOW_COMMON.get(1, '')))
-        wf_common_text_2 = str(trans(WORKFLOW_COMMON.get(2, '')))
-        wf_common_text_3 = str(trans(WORKFLOW_COMMON.get(3, '')))
-        return {
-            '_workflow': {
-                'wf_title': wf_title,
-                'wf_application_title': wf_application_title,
-                'wf_application_url': f'{wf_application_url}{doc_id}',
-                'wf_doc_id': doc_id,
-                'wf_common_text_0': wf_common_text_0,
-                'wf_common_text_1': wf_common_text_1,
-                'wf_common_text_2': wf_common_text_2,
-                'wf_common_text_3': wf_common_text_3,
-            },
-        }
+    def workflow(cls, runtime_id, workflow_type, tenant_id, company_id):
+        if runtime_id and settings.UI_DOMAIN_SUFFIX:
+            model_runtime = DisperseModel(app_model="workflow.Runtime").get_model()
+            model_tenant = DisperseModel(app_model='tenant.Tenant').get_model()
+            if model_runtime and hasattr(
+                    model_runtime, 'objects'
+            ) and model_tenant and hasattr(
+                model_tenant, 'objects'
+            ):
+                runtime_obj = model_runtime.objects.filter(
+                    tenant_id=tenant_id, company_id=company_id, id=runtime_id
+                ).first()
+                tenant_obj = model_tenant.objects.filter(pk=tenant_id).first()
+                return MailDataResolver.workflow_sub(
+                    runtime_obj=runtime_obj, tenant_obj=tenant_obj, workflow_type=workflow_type
+                )
+        return {}
+
+    @classmethod
+    def workflow_sub(cls, runtime_obj, tenant_obj, workflow_type):
+        if runtime_obj and tenant_obj:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+            wf_application_title = ''
+            wf_application_url = ''
+            doc_id = ''
+            wf_title = str(trans(WORKFLOW_TYPE_MAP_TXT.get(workflow_type, '')))
+            if runtime_obj.app_code:
+                wf_application_title = str(trans(APP_MAP_DATA.get(runtime_obj.app_code, {}).get('title', '')))
+                wf_application_url = APP_MAP_DATA.get(runtime_obj.app_code, {}).get('url', '')
+            if runtime_obj.doc_id:
+                doc_id = str(runtime_obj.doc_id)
+            wf_common_text_0 = str(trans(WORKFLOW_COMMON.get(0, '')))
+            wf_common_text_1 = str(trans(WORKFLOW_COMMON.get(1, '')))
+            wf_common_text_3 = str(trans(WORKFLOW_COMMON.get(3, '')))
+            return {
+                '_workflow': {
+                    'wf_title': wf_title,
+                    'wf_application_title': wf_application_title,
+                    'wf_application_url': f'{wf_application_url}{doc_id}',
+                    'wf_doc_id': doc_id,
+                    'wf_common_text_0': wf_common_text_0,
+                    'wf_common_text_1': wf_common_text_1,
+                    'wf_common_text_2': full_domain,
+                    'wf_common_text_3': wf_common_text_3,
+                },
+            }
+        return {}

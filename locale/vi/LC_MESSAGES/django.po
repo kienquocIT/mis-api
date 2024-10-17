@@ -1295,5 +1295,29 @@ msgid "IA Done"
 msgstr "Kiểm kê hoàn tất"
 
 #
+msgid "Created a Work"
+msgstr "Đã tạo công việc"
+
+#
+msgid "Updated a Work"
+msgstr "Đã cập nhập công việc"
+
+#
+msgid "Deleted a Work"
+msgstr "Đã xoá công việc"
+
+#
+msgid "Created a Task"
+msgstr "Đã tạo giao việc"
+
+#
+msgid "Updated a Task"
+msgstr "Đã cập nhập giao việc"
+
+#
+msgid "Deleted a Task"
+msgstr "Đã xoá giao việc"
+
+#
 msgid "must not be null"
 msgstr "không được để trống"

@@ -7,7 +7,7 @@ from apps.sales.report.models import (
 )
 
 
-class InventoryCostLog:
+class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data):
         try:

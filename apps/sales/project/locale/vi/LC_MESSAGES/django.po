@@ -24,3 +24,7 @@ msgstr "Không tìm thấy người được đề cập"
 #
 msgid "Comment replies are not supported"
 msgstr "Trả lời bình luận không hỗ trợ"
+
+#
+msgid "Activities not found"
+msgstr "Hoạt đông không tồn tại"

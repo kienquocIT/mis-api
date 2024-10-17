@@ -3,7 +3,7 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
 
 
@@ -304,7 +304,7 @@ class GoodsReceipt(DataAbstractModel):
                 doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
             if instance.work_order:
                 doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
-        InventoryCostLog.log(instance, instance.date_approved, doc_data)
+        ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True
 
     def save(self, *args, **kwargs):

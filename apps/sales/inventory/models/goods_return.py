@@ -6,7 +6,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel
 
@@ -223,7 +223,7 @@ class GoodsReturn(DataAbstractModel):
         else:
             doc_data = cls.for_periodic_inventory(instance)
 
-        InventoryCostLog.log(instance, instance.date_created, doc_data)
+        ReportInvLog.log(instance, instance.date_created, doc_data)
         return True
 
     def save(self, *args, **kwargs):

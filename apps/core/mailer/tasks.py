@@ -31,6 +31,53 @@ def get_config_template_user(tenant_id, company_id, user_id, system_code):
     return 'MAIL_CONFIG_NOT_METHOD_GET'
 
 
+def get_employee_obj(employee_id, tenant_id, company_id):
+    if employee_id:
+        model_emp = DisperseModel(app_model="hr.Employee").get_model()
+        if model_emp and hasattr(model_emp, 'objects'):
+            return model_emp.objects.filter(
+                tenant_id=tenant_id, company_id=company_id, id=employee_id
+            ).first()
+    return None
+
+
+def mail_workflow_sub(cls, log_cls, **kwargs):
+    employee_obj = kwargs.get('employee_obj', None)
+    subject = kwargs.get('subject', 'workflow')
+    template_obj = kwargs.get('template_obj', None)
+    tenant_id = kwargs.get('tenant_id', None)
+    company_id = kwargs.get('company_id', None)
+    runtime_id = kwargs.get('runtime_id', None)
+    workflow_type = kwargs.get('workflow_type', 0)
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_obj.email])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            mail_to=[employee_obj.email],
+            template=template_obj.contents,
+            data=MailDataResolver.workflow(
+                runtime_id=runtime_id, workflow_type=workflow_type,
+                tenant_id=tenant_id, company_id=company_id,
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send
+
+
 @shared_task
 def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: UUID or str):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=1)
@@ -267,14 +314,15 @@ def send_mail_workflow(
         tenant_id: UUID or str,
         company_id: UUID or str,
         user_id: UUID or str,
-        employee_obj,
-        runtime_obj,
+        employee_id,
+        runtime_id,
         workflow_type,
 ):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=6)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
         cls = SendMailController(mail_config=config_obj, timeout=3)
+        employee_obj = get_employee_obj(employee_id=employee_id, tenant_id=tenant_id, company_id=company_id)
         if cls.is_active is True and template_obj and user_obj and employee_obj:
             if template_obj.contents and user_obj.email and employee_obj.email:
                 subject = template_obj.subject if template_obj.subject else 'Workflow'
@@ -284,29 +332,18 @@ def send_mail_workflow(
                     doc_id=user_id, subject=subject,
                 )
                 if log_cls.create():
-                    log_cls.update(
-                        address_sender=cls.from_email if cls.from_email else '',
+                    state_send = mail_workflow_sub(
+                        cls=cls, log_cls=log_cls,
+                        **{
+                            'employee_obj': employee_obj,
+                            'subject': subject,
+                            'template_obj': template_obj,
+                            'tenant_id': tenant_id,
+                            'company_id': company_id,
+                            'runtime_id': runtime_id,
+                            'workflow_type': workflow_type,
+                        }
                     )
-                    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_obj.email])
-                    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
-                    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
-                    log_cls.update_log_data(host=cls.host, port=cls.port)
-                    try:
-                        state_send = cls.setup(
-                            subject=subject,
-                            from_email=cls.kwargs['from_email'],
-                            mail_cc=cls.kwargs['cc_email'],
-                            bcc=cls.kwargs['bcc_email'],
-                            header={},
-                            reply_to=cls.kwargs['reply_email'],
-                        ).send(
-                            mail_to=[employee_obj.email],
-                            template=template_obj.contents,
-                            data=MailDataResolver.workflow(runtime_obj=runtime_obj, workflow_type=workflow_type),
-                        )
-                    except Exception as err:
-                        state_send = False
-                        log_cls.update(errors_data=str(err))
                     if state_send is True:
                         log_cls.update(status_code=1, status_remark=state_send)  # sent
                         log_cls.save()

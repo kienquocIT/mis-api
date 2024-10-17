@@ -190,6 +190,7 @@ def create_baseline_data(baseline_id: UUID or str, project_id: UUID or str):
 def create_project_news(
         project_id: UUID or str,
         employee_inherit_id: UUID or str,
+        employee_created_id: UUID or str,
         application_id: UUID or str,
         document_id: UUID or str,
         document_title: str,
@@ -201,14 +202,17 @@ def create_project_news(
         application_obj = Application.objects.get(pk=application_id)
     except (Project.DoesNotExist, Application.DoesNotExist) as err:
         raise err
-    return ProjectNews.objects.create(
+    prj_new = ProjectNews.objects.create(
         tenant_id=project_obj.tenant_id,
         company_id=project_obj.company_id,
         project=project_obj,
         employee_inherit_id=employee_inherit_id,
+        employee_created_id=employee_created_id,
         application=application_obj,
         document_id=document_id,
         document_title=document_title,
         title=title,
         msg=msg,
+        count_comment=0
     )
+    return str(prj_new)
