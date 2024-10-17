@@ -8,6 +8,7 @@ from apps.sales.inventory.models import (
     NoneGReItemProductWarehouse,
     NoneGReItemProductWarehouseSerial
 )
+from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 
 
 class GoodsDetailListSerializer(serializers.ModelSerializer):
@@ -25,28 +26,31 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         for item in obj.goods_receipt_product_goods_receipt.all():
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
+                    pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data
                     serial_data = []
                     for serial in obj.pw_serial_goods_receipt.filter(
                         product_warehouse__product_id=item.product_id,
-                        product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id
+                        product_warehouse__warehouse_id=gr_wh_gr_prd.warehouse_id,
                     ).order_by('vendor_serial_number', 'serial_number'):
-                        serial_data.append({
-                            'id': serial.id,
-                            'vendor_serial_number': serial.vendor_serial_number,
-                            'serial_number': serial.serial_number,
-                            'expire_date': serial.expire_date,
-                            'manufacture_date': serial.manufacture_date,
-                            'warranty_start': serial.warranty_start,
-                            'warranty_end': serial.warranty_end,
-                            'is_delete': serial.is_delete
-                        })
-
+                        if not serial.purchase_request_id is None:
+                            if str(serial.purchase_request_id) == pr_data["id"]:
+                                serial_data.append({
+                                    'id': serial.id,
+                                    'vendor_serial_number': serial.vendor_serial_number,
+                                    'serial_number': serial.serial_number,
+                                    'expire_date': serial.expire_date,
+                                    'manufacture_date': serial.manufacture_date,
+                                    'warranty_start': serial.warranty_start,
+                                    'warranty_end': serial.warranty_end,
+                                    'is_delete': serial.is_delete
+                                })
                     product_data.append({
                         'goods_receipt': {
                             'id': obj.id,
                             'code': obj.code,
                             'title': obj.title,
-                            'date_approved': obj.date_approved
+                            'date_approved': obj.date_approved,
+                            'purchase_request': pr_data
                         } if obj else {},
                         'person_in_charge': {
                             'id': obj.employee_inherit_id,
@@ -78,10 +82,11 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         fields = ()
 
     @classmethod
-    def update_serial(cls, item, all_serial, serial_id, goods_receipt_id):
+    def update_serial(cls, item, all_serial, serial_id, goods_receipt_id, purchase_request_id):
         serial = all_serial.filter(id=serial_id, is_delete=False).first()
         if serial:
             if not ProductWareHouseSerial.objects.filter(
+                purchase_request_id=purchase_request_id,
                 serial_number=item.get('serial_number')
             ).exclude(id=serial_id).exists():
                 serial.vendor_serial_number = item.get('vendor_serial_number')
@@ -91,30 +96,36 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                 serial.warranty_start = item.get('warranty_start')
                 serial.warranty_end = item.get('warranty_end')
                 serial.goods_receipt_id = goods_receipt_id
+                serial.purchase_request_id = purchase_request_id
                 serial.save()
                 return serial
             raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
         raise serializers.ValidationError({'Serial': f"Serial id {serial_id} does not exist"})
 
     @classmethod
-    def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial):
+    def create_serial(cls, item, prd_wh, goods_receipt_id, bulk_info_new_serial, purchase_request_id):
         del item['serial_id']
         if item.get('vendor_serial_number') and item.get('serial_number'):
             goods_receipt_obj = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
             receipted_sn_quantity = goods_receipt_obj.pw_serial_goods_receipt.filter(
+                purchase_request_id=purchase_request_id,
                 product_warehouse=prd_wh
             ).count() if goods_receipt_obj else 0
             gr_prd = goods_receipt_obj.goods_receipt_product_goods_receipt.filter(
                 product=prd_wh.product
             ).first()
+            pr_prod = PurchaseRequestProduct.objects.get_current(fill__company=True, fill__tenant=True,
+                                                                 purchase_request_id=purchase_request_id)
             gr_wh_gr_prd = gr_prd.goods_receipt_warehouse_gr_product.filter(
+                goods_receipt_request_product__purchase_request_product= pr_prod,
                 warehouse=prd_wh.warehouse
             ).first() if gr_prd else None
             receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
 
             if not ProductWareHouseSerial.objects.filter(
                     product_warehouse__product=prd_wh.product,
-                    serial_number=item.get('serial_number')
+                    serial_number=item.get('serial_number'),
+                    purchase_request_id=purchase_request_id
             ).exists() and receipted_sn_quantity < receipt_max_quantity:
                 bulk_info_new_serial.append(
                     ProductWareHouseSerial(
@@ -122,14 +133,15 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                         product_warehouse=prd_wh,
                         goods_receipt_id=goods_receipt_id,
                         company_id=prd_wh.company_id,
-                        tenant_id=prd_wh.tenant_id
+                        tenant_id=prd_wh.tenant_id,
+                        purchase_request_id = purchase_request_id
                     )
                 )
                 return bulk_info_new_serial
         raise serializers.ValidationError({'Serial': "Can not create new serial."})
 
     @classmethod
-    def sub_create(cls, serial_data, prd_wh, goods_receipt_id):
+    def sub_create(cls, serial_data, prd_wh, goods_receipt_id, purchase_request_id):
         bulk_info_new_serial = []
         for item in serial_data:
             if item.get('serial_id'):
@@ -137,14 +149,16 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     item,
                     prd_wh.product_warehouse_serial_product_warehouse.all(),
                     item.get('serial_id'),
-                    goods_receipt_id
+                    goods_receipt_id,
+                    purchase_request_id
                 )
             else:
                 bulk_info_new_serial = cls.create_serial(
                     item,
                     prd_wh,
                     goods_receipt_id,
-                    bulk_info_new_serial
+                    bulk_info_new_serial,
+                    purchase_request_id
                 )
         created_sn = ProductWareHouseSerial.objects.bulk_create(bulk_info_new_serial)
         gr_wh = GoodsReceiptWarehouse.objects.filter(
@@ -205,10 +219,11 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         product_id = self.initial_data.get('product_id')
         warehouse_id = self.initial_data.get('warehouse_id')
         goods_receipt_id = self.initial_data.get('goods_receipt_id')
+        purchase_request_id=self.initial_data.get('purchase_request_id')
         prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
         if prd_wh:
             if self.initial_data.get('is_serial_update'):
-                self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id, purchase_request_id)
         else:
             product_obj = Product.objects.filter(id=product_id).first()
             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
@@ -252,7 +267,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                     } if tax_obj else {}
                 )
                 if self.initial_data.get('is_serial_update'):
-                    self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id)
+                    self.sub_create(self.initial_data.get('serial_data'), prd_wh, goods_receipt_id, purchase_request_id)
             else:
                 raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
@@ -273,6 +288,7 @@ class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
         product_id = self.initial_data['data'].get('product_id')
         warehouse_id = self.initial_data['data'].get('warehouse_id')
         goods_receipt_id = self.initial_data['data'].get('goods_receipt_id')
+        purchase_request_id = self.initial_data.get('purchase_request_id')
         self.initial_data['serial_data'] = [{
             'serial_number': self.initial_data['data'].get('serial_number'),
             'vendor_serial_number': self.initial_data['data'].get('vendor_serial_number'),
@@ -285,7 +301,7 @@ class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
         prd_wh = ProductWareHouse.objects.filter(product_id=product_id, warehouse_id=warehouse_id).first()
         if prd_wh:
             if self.initial_data['data'].get('is_serial_update'):
-                self.sub_create(self.initial_data['serial_data'], prd_wh, goods_receipt_id)
+                self.sub_create(self.initial_data['serial_data'], prd_wh, goods_receipt_id, purchase_request_id)
         else:
             product_obj = Product.objects.filter(id=product_id).first()
             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
@@ -329,7 +345,7 @@ class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
                     } if tax_obj else {}
                 )
                 if self.initial_data['data'].get('is_serial_update'):
-                    self.sub_create(self.initial_data['serial_data'], prd_wh, goods_receipt_id)
+                    self.sub_create(self.initial_data['serial_data'], prd_wh, goods_receipt_id, purchase_request_id)
             else:
                 raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
