@@ -818,7 +818,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         return rp_inv_cost
 
     @classmethod
-    def create_balance_data(cls, balance_data, periods, employee_current, tenant_current, company_current):
+    def create_balance_data(cls, balance_data, periods, employee_current):
         with transaction.atomic():
             sub_period_order = periods.company.software_start_using_time.month - periods.space_month
             sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order).first()
@@ -845,7 +845,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
 
-        instance = self.create_balance_data(balance_data, periods, employee_current, tenant_current, company_current)
+        instance = self.create_balance_data(balance_data, periods, employee_current)
         SubPeriods.objects.filter(period_mapped=periods).update(run_report_inventory=False)
 
         period_mapped = Periods.objects.filter(
@@ -864,7 +864,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         fields = ()
 
     @classmethod
-    def create_balance_data(cls, balance_data, periods, employee_current, tenant_current, company_current):
+    def create_balance_data_import_db(cls, balance_data, periods, employee_current, tenant_current, company_current):
         with transaction.atomic():
             sub_period_order = periods.company.software_start_using_time.month - periods.space_month
             sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order).first()
@@ -895,7 +895,9 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
 
-        instance = self.create_balance_data(balance_data, periods, employee_current, tenant_current, company_current)
+        instance = self.create_balance_data_import_db(
+            balance_data, periods, employee_current, tenant_current, company_current
+        )
         SubPeriods.objects.filter(period_mapped=periods).update(run_report_inventory=False)
         return instance
 
