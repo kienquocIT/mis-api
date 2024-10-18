@@ -15,7 +15,7 @@ class ReportInvLog:
             company = doc_obj.company
             employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
-                # lấy pp tính giá cost (0_FIFO, 1_CWA, 2_SIM)
+                # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company.company_config)
                 period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:

@@ -143,7 +143,7 @@ class ReportStockLog(DataAbstractModel):
 
     lot_data = models.JSONField(default=list)
 
-    fifo_pushed_quantity = models.IntegerField(default=0) # để biết được đã lấy bao nhiêu rồi
+    fifo_pushed_quantity = models.IntegerField(default=0) # để biết được đã bị lấy bao nhiêu rồi
     fifo_cost_detail = models.JSONField(default=list)
 
     @classmethod
@@ -163,10 +163,23 @@ class ReportStockLog(DataAbstractModel):
             rp_stock = ReportStock.get_or_create_report_stock(
                 doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
             )
-            item['cost'] = ReportInventorySubFunction.get_latest_log_cost(
-                doc_obj.company.company_config.definition_inventory_valuation,
-                item['product'], item['warehouse'], item['quantity'], **kw_parameter
-            )[0]['cost'] if item['stock_type'] == -1 else item['cost']
+
+            latest_cost = {}
+            if item['product'].valuation_method == 0:
+                if item['stock_type'] == -1:
+                    latest_cost = ReportInventorySubFunction.get_export_cost_for_fifo(
+                        doc_obj.company.company_config.definition_inventory_valuation,
+                        item['product'], item['warehouse'], item['quantity'], **kw_parameter
+                    )
+                    item['cost'] = latest_cost['cost']
+            if item['product'].valuation_method == 1:
+                if item['stock_type'] == -1:
+                    latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
+                        doc_obj.company.company_config.definition_inventory_valuation,
+                        item['product'], item['warehouse'], **kw_parameter
+                    )
+                    item['cost'] = latest_cost['cost']
+
             item['value'] = item['cost'] * item['quantity']
 
             if len(item.get('lot_data', {})) != 0:   # update Lot
@@ -198,6 +211,7 @@ class ReportStockLog(DataAbstractModel):
                     value=item['value'],
                     lot_data=item.get('lot_data', {}),
                     log_order=log_order_number,
+                    fifo_cost_detail=latest_cost.get('fifo_cost_detail', []),
                     **kw_parameter
                 )
                 bulk_info.append(new_log)
@@ -210,9 +224,12 @@ class ReportStockLog(DataAbstractModel):
 
     @classmethod
     def update_log_cost_dict(cls, div, log, latest_cost):
+        """ cập nhập giá cost hiện tại cho log """
         if div == 0:
             if log.product.valuation_method == 0:
+                print(latest_cost)
                 new_cost_dict = ReportInventoryValuationMethod.fifo_in_perpetual(log, latest_cost)
+                print(new_cost_dict)
                 log.perpetual_current_quantity = new_cost_dict['quantity'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_cost = new_cost_dict['cost'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_value = new_cost_dict['value'] if new_cost_dict['quantity'] > 0 else 0
@@ -260,15 +277,12 @@ class ReportStockLog(DataAbstractModel):
 
         div = log.company.company_config.definition_inventory_valuation
 
-        # lấy cost list của log gần nhất
-        latest_cost = ReportInventorySubFunction.get_latest_log_cost(
-            div, log.product, log.physical_warehouse, log.quantity, **kw_parameter
-        )[0]
+        latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
+            div, log.product, log.physical_warehouse, **kw_parameter
+        )
 
-        # cập nhập giá cost hiện tại cho log
         updated_log = cls.update_log_cost_dict(div, log, latest_cost)
 
-        # thêm/cập nhập giá cost hiện tại trong tháng
         cls.create_or_update_this_sub_period_cost(
             updated_log, period_obj, sub_period_order, latest_cost, div, **kw_parameter
         )
@@ -432,12 +446,17 @@ class ReportStockLog(DataAbstractModel):
                 kwargs['warehouse_id'] = log.physical_warehouse_id
             latest_log_obj = log.product.rp_inv_cost_product.filter(**kwargs).first()
             if latest_log_obj:
-                latest_log_obj.latest_log = log
-                latest_log_obj.save(update_fields=['latest_log'])
+                    latest_log_obj.latest_log = log
+                    latest_log_obj.save(update_fields=['latest_log'])
             else:
                 if log.product.valuation_method == 0:
-                    pass
-                ReportInventoryCostLatestLog.objects.create(product=log.product, latest_log=log, **kwargs)
+                    ReportInventoryCostLatestLog.objects.create(
+                        product=log.product, latest_log=log, fifo_flag_log=log, **kwargs
+                    )
+                if log.product.valuation_method == 1:
+                    ReportInventoryCostLatestLog.objects.create(
+                        product=log.product, latest_log=log, **kwargs
+                    )
             return True
         raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
 
@@ -619,40 +638,72 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_cost(cls, div, product, physical_warehouse, quantity, **kwargs):
-        if product.valuation_method == 0:
-            record = ReportInventoryCostLatestLog.objects.filter(
-                product=product, warehouse=physical_warehouse, **kwargs
-            ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
-                product=product, **kwargs
-            ).first()
-            fifo_flag_log = record.fifo_flag_log if record else None
-            if fifo_flag_log:
-                remain_quantity = quantity
-                for stock_log in ReportStockLog.objects.filter(
-                        product=product, stock_type=1, system_date__gte=fifo_flag_log.system_date, **kwargs
-                ):
-                    pass
-            return [cls.get_opening_cost_dict(product.id, 3, **kwargs)]
-        if product.valuation_method == 1:
-            record = ReportInventoryCostLatestLog.objects.filter(
-                product=product, warehouse=physical_warehouse, **kwargs
-            ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
-                product=product, **kwargs
-            ).first()
-            latest_log = record.latest_log if record else None
-            if latest_log:
-                return [{
-                    'quantity': latest_log.perpetual_current_quantity,
-                    'cost': latest_log.perpetual_current_cost,
-                    'value': latest_log.perpetual_current_value
-                }] if div == 0 else [{
-                    'quantity': latest_log.periodic_current_quantity,
-                    'cost': 0,
-                    'value': 0
-                }]
-            return [cls.get_opening_cost_dict(product.id, 3, **kwargs)]
-        return [{'quantity': 0, 'cost': 0, 'value': 0}]
+    def get_latest_log_cost_dict(cls, div, product, physical_warehouse, **kwargs):
+        """ lấy cost dict của log gần nhất """
+        record = ReportInventoryCostLatestLog.objects.filter(
+            product=product, warehouse=physical_warehouse, **kwargs
+        ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
+            product=product, **kwargs
+        ).first()
+        latest_log = record.latest_log if record else None
+        if latest_log:
+            return {
+                'quantity': latest_log.perpetual_current_quantity,
+                'cost': latest_log.perpetual_current_cost,
+                'value': latest_log.perpetual_current_value
+            } if div == 0 else {
+                'quantity': latest_log.periodic_current_quantity,
+                'cost': 0,
+                'value': 0
+            }
+        return cls.get_opening_cost_dict(product.id, 3, **kwargs)
+
+    @classmethod
+    def get_export_cost_for_fifo(cls, div, product, physical_warehouse, quantity, **kwargs):
+        record = ReportInventoryCostLatestLog.objects.filter(
+            product=product, warehouse=physical_warehouse, **kwargs
+        ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
+            product=product, **kwargs
+        ).first()
+        fifo_flag_log = record.fifo_flag_log if record else None
+        latest_log = record.latest_log if record else None
+        if fifo_flag_log and latest_log:
+            pushed_quantity = quantity
+            fifo_cost_detail = []
+            for stock_log in ReportStockLog.objects.filter(
+                    product=product, stock_type=1, system_date__gte=fifo_flag_log.system_date, **kwargs
+            ).order_by('system_date'):
+                if stock_log.quantity - stock_log.fifo_pushed_quantity < pushed_quantity:
+                    fifo_cost_detail.append({
+                        'log_trans_id': str(stock_log.id),
+                        'log_trans_code': stock_log.trans_code,
+                        'log_fifo_pushed_quantity': stock_log.quantity - stock_log.fifo_pushed_quantity,
+                        'log_value': stock_log.value
+                    })
+                    pushed_quantity -= stock_log.quantity - stock_log.fifo_pushed_quantity
+                    stock_log.fifo_pushed_quantity += stock_log.quantity - stock_log.fifo_pushed_quantity
+                    stock_log.save(update_fields=['fifo_pushed_quantity'])
+                else:
+                    fifo_cost_detail.append({
+                        'log_trans_id': str(stock_log.id),
+                        'log_trans_code': stock_log.trans_code,
+                        'log_fifo_pushed_quantity': pushed_quantity,
+                        'log_value': stock_log.cost * pushed_quantity
+                    })
+                    stock_log.fifo_pushed_quantity += pushed_quantity
+                    stock_log.save(update_fields=['fifo_pushed_quantity'])
+                    record = ReportInventoryCostLatestLog.objects.filter(product=product, **kwargs).first()
+                    if record:
+                        record.fifo_flag_log = stock_log
+                        record.save(update_fields=['fifo_flag_log'])
+                    break
+
+            export_fifo_cost = sum([item['log_value'] for item in fifo_cost_detail]) / quantity
+            return {'cost': export_fifo_cost, 'fifo_cost_detail': fifo_cost_detail} if div == 0 else 0
+        return {
+            'cost': cls.get_opening_cost_dict(product.id, 3, **kwargs)['cost'],
+            'fifo_cost_detail': []
+        }
 
     @classmethod
     def get_opening_cost_dict(cls, product_id, data_type=1, **kwargs):
@@ -792,8 +843,8 @@ class ReportInventoryValuationMethod:
             new_value = sum_value
         else:
             new_quantity = latest_cost['quantity'] - log.quantity
-            new_cost = latest_cost['cost']
-            new_value = new_cost * new_quantity
+            new_value = latest_cost['value'] - log.value
+            new_cost = new_value / new_quantity
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
