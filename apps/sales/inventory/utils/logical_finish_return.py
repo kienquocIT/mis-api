@@ -96,7 +96,7 @@ class ReturnFinishHandler:
     def setup_return_value(cls, return_product, instance):
         if return_product.delivery_item:
             product_obj = return_product.delivery_item.product
-            if product_obj and instance.return_to_warehouse:
+            if product_obj and return_product.return_to_warehouse:
                 stock_log = product_obj.report_stock_log_product.filter(trans_id=str(instance.delivery_id)).first()
                 if stock_log:
                     return product_obj.id, stock_log.cost * return_product.default_return_number
