@@ -188,45 +188,45 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def handle_goods_receipt_wh(cls, gr_wh, created_sn, prd_wh):
-            pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
-                gr_wh.goods_receipt_request_product, 'purchase_request_product'
-            ) else None
-            so_item = pr_prd.sale_order_product if pr_prd and hasattr(
-                pr_prd, 'sale_order_product'
-            ) else None
-            gre_item_prd_wh = GReItemProductWarehouse.objects.filter(
-                gre_item__so_item=so_item,
+        pr_prd = gr_wh.goods_receipt_request_product.purchase_request_product if hasattr(
+            gr_wh.goods_receipt_request_product, 'purchase_request_product'
+        ) else None
+        so_item = pr_prd.sale_order_product if pr_prd and hasattr(
+            pr_prd, 'sale_order_product'
+        ) else None
+        gre_item_prd_wh = GReItemProductWarehouse.objects.filter(
+            gre_item__so_item=so_item,
+            warehouse=prd_wh.warehouse
+        ).first() if so_item else None
+        if gre_item_prd_wh:
+            # hàng đăng kí
+            bulk_info_regis = []
+            for serial in created_sn:
+                bulk_info_regis.append(
+                    GReItemProductWarehouseSerial(
+                        gre_item_prd_wh=gre_item_prd_wh,
+                        sn_registered=serial,
+                        goods_registration=gre_item_prd_wh.goods_registration
+                    )
+                )
+            GReItemProductWarehouseSerial.objects.bulk_create(bulk_info_regis)
+        else:
+            # kiểm tra hàng vào kho chung
+            none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
+                product=prd_wh.product,
                 warehouse=prd_wh.warehouse
-            ).first() if so_item else None
-            if gre_item_prd_wh:
+            ).first()
+            if none_gre_item_prd_wh:
                 # hàng đăng kí
-                bulk_info_regis = []
+                bulk_info_none_regis = []
                 for serial in created_sn:
-                    bulk_info_regis.append(
-                        GReItemProductWarehouseSerial(
-                            gre_item_prd_wh=gre_item_prd_wh,
-                            sn_registered=serial,
-                            goods_registration=gre_item_prd_wh.goods_registration
+                    bulk_info_none_regis.append(
+                        NoneGReItemProductWarehouseSerial(
+                            none_gre_item_prd_wh=none_gre_item_prd_wh,
+                            sn_mapped=serial
                         )
                     )
-                GReItemProductWarehouseSerial.objects.bulk_create(bulk_info_regis)
-            else:
-                # kiểm tra hàng vào kho chung
-                none_gre_item_prd_wh = NoneGReItemProductWarehouse.objects.filter(
-                    product=prd_wh.product,
-                    warehouse=prd_wh.warehouse
-                ).first()
-                if none_gre_item_prd_wh:
-                    # hàng đăng kí
-                    bulk_info_none_regis = []
-                    for serial in created_sn:
-                        bulk_info_none_regis.append(
-                            NoneGReItemProductWarehouseSerial(
-                                none_gre_item_prd_wh=none_gre_item_prd_wh,
-                                sn_mapped=serial
-                            )
-                        )
-                    NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
+                NoneGReItemProductWarehouseSerial.objects.bulk_create(bulk_info_none_regis)
 
     def create(self, validated_data):
         product_id = self.initial_data.get('product_id')
