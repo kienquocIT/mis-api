@@ -606,7 +606,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Type expense on quotation expense line',
         'type': 5,
         'is_sale_indicator': True,
-        'app_code_md': 'saledata.expenseitem',
+        'content_type': 'saledata.expenseitem',
         'example': 'prop(Expense type)=="Deployment expense"',
     },
     'af3d550c-8b22-481f-998b-35499f0df141': {
@@ -616,7 +616,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Internal labor item on quotation expense line',
         'type': 5,
         'is_sale_indicator': True,
-        'app_code_md': 'saledata.expense',
+        'content_type': 'saledata.expense',
         'example': 'prop(Internal labor item)=="Deployment manday"',
     },
     '2f468197-0132-44eb-9966-80deb69aa77a': {
