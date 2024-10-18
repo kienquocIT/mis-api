@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as trans
 
 from rest_framework import serializers
@@ -71,6 +72,10 @@ class WorkflowOfAppUpdateSerializer(serializers.ModelSerializer):
 
         if mode == 1 and not wf_current:
             raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_APPLY_REQUIRED_WF})
+
+        if mode == 1 and wf_current:
+            wf_current.date_applied = timezone.now()
+            wf_current.save(update_fields=['date_applied'])
 
         return attrs
 

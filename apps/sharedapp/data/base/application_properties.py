@@ -307,6 +307,15 @@ AppProp_SaleData_Quotation_data = {
         'code': 'print_document',
         'type': 4,
     },
+    '47e31f9e-69a3-4b69-ada3-ce777c420864': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': str(trans('Product')),
+        'code': 'quotation_products_data__product_data__id',
+        'type': 5,
+        'content_type': 'saledata.Product',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     # tabs
     'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
