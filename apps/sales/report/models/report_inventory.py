@@ -446,8 +446,8 @@ class ReportStockLog(DataAbstractModel):
                 kwargs['warehouse_id'] = log.physical_warehouse_id
             latest_log_obj = log.product.rp_inv_cost_product.filter(**kwargs).first()
             if latest_log_obj:
-                    latest_log_obj.latest_log = log
-                    latest_log_obj.save(update_fields=['latest_log'])
+                latest_log_obj.latest_log = log
+                latest_log_obj.save(update_fields=['latest_log'])
             else:
                 if log.product.valuation_method == 0:
                     ReportInventoryCostLatestLog.objects.create(
@@ -698,7 +698,7 @@ class ReportInventorySubFunction:
                         record.save(update_fields=['fifo_flag_log'])
                     break
 
-            export_fifo_cost = sum([item['log_value'] for item in fifo_cost_detail]) / quantity
+            export_fifo_cost = sum(item['log_value'] for item in fifo_cost_detail) / quantity
             return {'cost': export_fifo_cost, 'fifo_cost_detail': fifo_cost_detail} if div == 0 else 0
         return {
             'cost': cls.get_opening_cost_dict(product.id, 3, **kwargs)['cost'],

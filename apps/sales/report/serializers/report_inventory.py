@@ -53,25 +53,18 @@ class ReportStockListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_lot_mapped(cls, obj):
-        return {
-            'id': obj.lot_mapped_id,
-            'lot_number': obj.lot_mapped.lot_number
-        } if obj.lot_mapped else {}
+        return {'id': obj.lot_mapped_id, 'lot_number': obj.lot_mapped.lot_number} if obj.lot_mapped else {}
 
     @classmethod
     def get_sale_order(cls, obj):
         return {
-            'id': obj.sale_order_id,
-            'code': obj.sale_order.code,
-            'title': obj.sale_order.title
+            'id': obj.sale_order_id, 'code': obj.sale_order.code, 'title': obj.sale_order.title
         } if obj.sale_order else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
         return {
-            'id': obj.period_mapped_id,
-            'title': obj.period_mapped.title,
-            'code': obj.period_mapped.code,
+            'id': obj.period_mapped_id, 'title': obj.period_mapped.title, 'code': obj.period_mapped.code,
         } if obj.period_mapped else {}
 
     @classmethod
@@ -107,9 +100,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                 'log_order': log.log_order
             })
         # sắp xếp lại
-        data_stock_activity = sorted(
-            data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
-        )
+        data_stock_activity = sorted(data_stock_activity, key=lambda key: (key['system_date'], key['log_order']))
         return data_stock_activity
 
     def get_stock_activities(self, obj):
@@ -205,9 +196,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_warehouse(cls, obj):
         return {
-            'id': obj.warehouse_id,
-            'title': obj.warehouse.title,
-            'code': obj.warehouse.code,
+            'id': obj.warehouse_id, 'title': obj.warehouse.title, 'code': obj.warehouse.code,
         } if obj.warehouse else {}
 
     @classmethod
@@ -223,9 +212,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_period_mapped(cls, obj):
         return {
-            'id': obj.period_mapped_id,
-            'title': obj.period_mapped.title,
-            'code': obj.period_mapped.code,
+            'id': obj.period_mapped_id, 'title': obj.period_mapped.title, 'code': obj.period_mapped.code,
         } if obj.period_mapped else {}
 
     @classmethod
@@ -318,16 +305,18 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         sum_out_value += log.value
 
                     # lấy detail cho từng TH
-                    if log.trans_title in ['Goods receipt', 'Goods receipt (IA)', 'Goods return',
-                                           'Goods transfer (in)', 'Balance init input']:
-                        data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity,
-                                                                                  obj.product)
+                    if log.trans_title in [
+                        'Goods receipt', 'Goods receipt (IA)', 'Goods return',
+                        'Goods transfer (in)', 'Balance init input'
+                    ]:
+                        data_stock_activity = cls.get_data_stock_activity_for_in(
+                            log, data_stock_activity, obj.product
+                        )
                     elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
-                        data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity,
-                                                                                   obj.product)
-            data_stock_activity = sorted(
-                data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
-            )
+                        data_stock_activity = cls.get_data_stock_activity_for_out(
+                            log, data_stock_activity, obj.product
+                        )
+            data_stock_activity = sorted( data_stock_activity, key=lambda key: (key['system_date'], key['log_order']))
 
             # lấy inventory_cost_data của kì hiện tại
             this_sub_value = ReportInventorySubFunction.get_this_sub_period_cost_dict(obj)
@@ -389,14 +378,12 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
                 # lấy detail cho từng TH
                 if log.trans_title in [
-                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)'
+                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)', 'Balance init input'
                 ]:
                     data_stock_activity = cls.get_data_stock_activity_for_in(
                         log, data_stock_activity, obj.product
                     )
-                elif log.trans_title in [
-                    'Delivery', 'Goods issue', 'Goods transfer (out)'
-                ]:
+                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
                     data_stock_activity = cls.get_data_stock_activity_for_out(
                         log, data_stock_activity, obj.product
                     )
@@ -419,8 +406,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
         result = {
             'opening_balance_quantity': cast_unit_to_inv_quantity(
-                obj.product.inventory_uom,
-                this_sub_value['opening_balance_quantity']
+                obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
             ),
             'opening_balance_value': this_sub_value['opening_balance_value'],
             'sum_in_quantity': sum_in_quantity,
@@ -428,8 +414,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             'sum_out_quantity': sum_out_quantity,
             'sum_out_value': sum_out_value,
             'ending_balance_quantity': cast_unit_to_inv_quantity(
-                obj.product.inventory_uom,
-                this_sub_value['ending_balance_quantity']
+                obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
             ),
             'ending_balance_value': this_sub_value['ending_balance_value'],
             'data_stock_activity': data_stock_activity,
@@ -486,11 +471,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_warehouse(cls, obj):
         if obj.warehouse:
-            return {
-                'id': obj.warehouse_id,
-                'title': obj.warehouse.title,
-                'code': obj.warehouse.code,
-            }
+            return {'id': obj.warehouse_id, 'title': obj.warehouse.title, 'code': obj.warehouse.code}
         warehouse_sub = obj.report_inventory_cost_wh.first()
         return {
             'id': warehouse_sub.warehouse.id,
@@ -548,16 +529,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                     picked_ready=0,
                     used_amount=0,
                     # backup data
-                    product_data={
-                        "id": str(prd_obj.id),
-                        "code": prd_obj.code,
-                        "title": prd_obj.title
-                    },
-                    warehouse_data={
-                        "id": str(wh_obj.id),
-                        "code": wh_obj.code,
-                        "title": wh_obj.title
-                    },
+                    product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                    warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
                     uom_data={
                         "id": str(prd_obj.general_uom_group.uom_reference_id),
                         "code": prd_obj.general_uom_group.uom_reference.code,
@@ -656,16 +629,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 picked_ready=0,
                 used_amount=0,
                 # backup data
-                product_data={
-                    "id": str(prd_obj.id),
-                    "code": prd_obj.code,
-                    "title": prd_obj.title
-                },
-                warehouse_data={
-                    "id": str(wh_obj.id),
-                    "code": wh_obj.code,
-                    "title": wh_obj.title
-                },
+                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
+                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
                 uom_data={
                     "id": str(prd_obj.general_uom_group.uom_reference_id),
                     "code": prd_obj.general_uom_group.uom_reference.code,
@@ -703,8 +668,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
     ):
         cls.check_valid_create(periods, prd_obj, wh_obj, sub_period_order)
         balance_data['quantity'] = ReportInvCommonFunc.cast_quantity_to_unit(
-            prd_obj.inventory_uom,
-            float(balance_data.get('quantity', 0))
+            prd_obj.inventory_uom, float(balance_data.get('quantity', 0))
         )
         prd_obj.stock_amount += float(balance_data['quantity'])
         prd_obj.available_amount += float(balance_data['quantity'])
@@ -872,14 +836,11 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 sub_period_obj
             )
 
-
     def create(self, validated_data):
         tenant_current = self.context.get('tenant_current')
         company_current = self.context.get('company_current')
         periods = Periods.objects.filter(
-            tenant=tenant_current,
-            company=company_current,
-            fiscal_year=datetime.now().year
+            tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
         ).first()
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
@@ -888,12 +849,10 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         SubPeriods.objects.filter(period_mapped=periods).update(run_report_inventory=False)
 
         period_mapped = Periods.objects.filter(
-            tenant=instance.tenant,
-            company=instance.company
+            tenant=instance.tenant, company=instance.company
         ).order_by('fiscal_year').first()
         SubPeriods.objects.filter(
-            period_mapped=period_mapped,
-            period_mapped__company_id=instance.company
+            period_mapped=period_mapped, period_mapped__company_id=instance.company
         ).update(run_report_inventory=False)
         return instance
 
@@ -910,14 +869,10 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
             sub_period_order = periods.company.software_start_using_time.month - periods.space_month
             sub_period_obj = periods.sub_periods_period_mapped.filter(order=sub_period_order).first()
             prd_obj = Product.objects.filter(
-                tenant=tenant_current,
-                company=company_current,
-                code=balance_data.get('product_code')
+                tenant=tenant_current, company=company_current, code=balance_data.get('product_code')
             ).first()
             wh_obj = WareHouse.objects.filter(
-                tenant=tenant_current,
-                company=company_current,
-                code=balance_data.get('warehouse_code')
+                tenant=tenant_current, company=company_current, code=balance_data.get('warehouse_code')
             ).first()
             if not all([sub_period_order, sub_period_obj, prd_obj, wh_obj, periods, employee_current]):
                 raise serializers.ValidationError({'error': 'Some objects are not exist.'})
@@ -935,9 +890,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         tenant_current = self.context.get('tenant_current')
         company_current = self.context.get('company_current')
         periods = Periods.objects.filter(
-            tenant=tenant_current,
-            company=company_current,
-            fiscal_year=datetime.now().year
+            tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
         ).first()
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
@@ -1008,7 +961,4 @@ class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
                 'serial_number': item.serial_number,
                 'goods_receipt_date': item.goods_receipt.date_received if item.goods_receipt else None
             })
-        return {
-            'lot_data': lot_data,
-            'sn_data': sn_data
-        }
+        return {'lot_data': lot_data, 'sn_data': sn_data}
