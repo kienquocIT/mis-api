@@ -837,10 +837,10 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             )
 
     def create(self, validated_data):
-        tenant_current = self.context.get('tenant_current')
-        company_current = self.context.get('company_current')
         periods = Periods.objects.filter(
-            tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
+            tenant=self.context.get('tenant_current'),
+            company=self.context.get('company_current'),
+            fiscal_year=datetime.now().year
         ).first()
         balance_data = self.initial_data.get('balance_data')
         employee_current = self.context.get('employee_current')
