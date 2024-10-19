@@ -227,9 +227,7 @@ class ReportStockLog(DataAbstractModel):
         """ cập nhập giá cost hiện tại cho log """
         if div == 0:
             if log.product.valuation_method == 0:
-                print(latest_cost)
                 new_cost_dict = ReportInventoryValuationMethod.fifo_in_perpetual(log, latest_cost)
-                print(new_cost_dict)
                 log.perpetual_current_quantity = new_cost_dict['quantity'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_cost = new_cost_dict['cost'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_value = new_cost_dict['value'] if new_cost_dict['quantity'] > 0 else 0
@@ -678,7 +676,7 @@ class ReportInventorySubFunction:
                         'log_trans_id': str(stock_log.id),
                         'log_trans_code': stock_log.trans_code,
                         'log_fifo_pushed_quantity': stock_log.quantity - stock_log.fifo_pushed_quantity,
-                        'log_value': stock_log.value
+                        'log_value': stock_log.cost * (stock_log.quantity - stock_log.fifo_pushed_quantity)
                     })
                     pushed_quantity -= stock_log.quantity - stock_log.fifo_pushed_quantity
                     stock_log.fifo_pushed_quantity += stock_log.quantity - stock_log.fifo_pushed_quantity

@@ -1581,7 +1581,7 @@ def report_rerun(company_id, start_month):
 
     all_goods_return = GoodsReturn.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
-    ).exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028']).order_by('date_approved')
+    ).order_by('date_approved')
 
     all_goods_transfer = GoodsTransfer.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
@@ -2235,6 +2235,8 @@ class InventoryReportRun:
         all_goods_return = GoodsReturn.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
         ).order_by('date_approved')
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            all_goods_return = all_goods_return.exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028'])
 
         all_goods_transfer = GoodsTransfer.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
@@ -2287,5 +2289,10 @@ class InventoryReportRun:
 
             print(f"--- Completed run id: {doc['id']}")
             print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+            ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+            ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
         print('Complete!')
