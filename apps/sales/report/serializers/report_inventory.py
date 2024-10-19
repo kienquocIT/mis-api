@@ -48,7 +48,8 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                 "id": obj.product.inventory_uom_id,
                 "code": obj.product.inventory_uom.code,
                 "title": obj.product.inventory_uom.title
-            } if obj.product.inventory_uom else {}
+            } if obj.product.inventory_uom else {},
+            'valuation_method': obj.product.valuation_method
         } if obj.product else {}
 
     @classmethod
