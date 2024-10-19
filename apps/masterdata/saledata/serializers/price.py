@@ -1,10 +1,13 @@
 from datetime import datetime
+
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import Product, UnitOfMeasure
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.product import ExpensePrice
-from apps.shared import PriceMsg
+from apps.shared import PriceMsg, ProductMsg
 
 
 # Tax Category
@@ -800,20 +803,12 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
             if price_list_information and product:
                 for item in price_list_information:
                     if instance.price_list_type == 0:
-                        obj = self.add_product_for_price_list(
-                            price=item[0],
-                            product=product,
-                            instance=instance,
-                        )
+                        obj = self.add_product_for_price_list(price=item[0], product=product, instance=instance)
                         if not obj:
                             raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
                         objs.append(obj)
                     else:
-                        obj = self.add_expense_for_price_list(
-                            price=item[0],
-                            expense=product,
-                            instance=instance,
-                        )
+                        obj = self.add_expense_for_price_list(price=item[0], expense=product, instance=instance)
                         if not obj:
                             raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
                         objs.append(obj)
@@ -827,21 +822,13 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def add_product_for_price_list(cls, price, product, instance):
-        if not ProductPriceList.objects.filter(
-                price_list=price,
-                product_id=product['id'],
-                uom_using_id=product['uom']
-        ).exists():
+        if not ProductPriceList.objects.filter(price_list=price, product_id=product['id'],
+                                               uom_using_id=product['uom']).exists():
             obj = (
-                ProductPriceList(
-                    price_list=price,
-                    product_id=product['id'],
-                    price=0,
-                    currency_using_id=instance.currency[0],
-                    uom_using_id=product['uom'],
-                    uom_group_using_id=product['uom_group'],
-                    get_price_from_source=price.auto_update
-                )
+                ProductPriceList(price_list=price, product_id=product['id'], price=0,
+                                 currency_using_id=instance.currency[0], uom_using_id=product['uom'],
+                                 uom_group_using_id=product['uom_group'],
+                                 get_price_from_source=price.auto_update)
             )
             return obj
         return None
@@ -865,6 +852,125 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
             )
             return obj
         return None
+
+
+class ItemForCreateInPriceListImportSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    uom = serializers.CharField()
+    price = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    price_id = serializers.CharField()
+
+    @classmethod
+    def validate_price(cls, value):
+        if value in [None, '', 'NaN']:
+            return '0'
+        return value
+
+
+class CreateItemInPriceListImportSerializer(serializers.ModelSerializer):
+    product = ItemForCreateInPriceListImportSerializer(required=True)
+
+    class Meta:
+        model = Price
+        fields = (
+            'product',
+        )
+
+    @classmethod
+    def add_product_for_price_list(cls, price, factor, product, uom, price_number, instance):
+        factor = round(factor, 2)
+        if not ProductPriceList.objects.filter(price_list=price,product_id=product.id,
+                                               uom_using_id=uom.id).exists():
+            obj = (
+                ProductPriceList(
+                    price_list=price,
+                    product_id=product.id,
+                    price=round(float(price_number)*factor, 2),
+                    currency_using_id=instance.currency[0],
+                    uom_using_id=uom.id,
+                    uom_group_using_id=uom.group_id,
+                    get_price_from_source=price.auto_update
+                )
+            )
+            return obj
+        return None
+
+    @classmethod
+    def add_expense_for_price_list(cls, price, factor, expense, uom, price_number, instance):
+        factor = round(factor,2)
+        if not ExpensePrice.objects.filter(price=price, expense_id=expense.id, uom_id=uom.id).exists():
+            obj = (
+                ExpensePrice(
+                    price=price,
+                    expense_id=expense.id,
+                    price_value=round(float(price_number)*factor,2),
+                    currency_id=instance.currency[0],
+                    uom_id=uom.id,
+                    is_auto_update=price.auto_update,
+                )
+            )
+            return obj
+        return None
+
+    @classmethod
+    def validate_product_data(cls, product_data):
+        if not product_data['code']:
+            raise serializers.ValidationError({'code': ProductMsg.NOT_NULL})
+
+        if not product_data['uom']:
+            raise serializers.ValidationError({'uom': ProductMsg.NOT_NULL})
+
+        try:
+            Product.objects.get_current(code=product_data['code'], fill__company=True)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'code': ProductMsg.DOES_NOT_EXIST})
+
+        try:
+            UnitOfMeasure.objects.get_current(code=product_data['uom'], fill__company=True)
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+
+        product_uom_id = Product.objects.get_current(code=product_data['code'],
+                                                     fill__company=True).general_uom_group_id
+        uom_group_id = UnitOfMeasure.objects.get_current(code=product_data['uom'], fill__company=True).group_id
+        if not product_uom_id == uom_group_id:
+            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+
+    def create(self, validated_data):
+        instance = Price.objects.get_current(id=validated_data['product']['price_id'], fill__company=True)
+
+        self.validate_product_data(validated_data['product'])
+
+        if check_expired_price_list(instance):  # not expired
+            price_list_information = PriceListCommon.get_child_price_list(instance)
+
+            product = Product.objects.get_current(code=validated_data['product']['code'], fill__company=True)
+            uom = UnitOfMeasure.objects.get_current(code=validated_data['product']['uom'], fill__company=True)
+
+            objs = []
+            if price_list_information and product:
+                for item in price_list_information:
+                    if instance.price_list_type == 0:
+                        obj = self.add_product_for_price_list(price=item[0], factor=item[1], product=product, uom=uom,
+                                                              price_number=validated_data['product']['price'],
+                                                              instance=instance)
+                        if not obj:
+                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                        objs.append(obj)
+                    else:
+                        obj = self.add_expense_for_price_list(price=item[0], factor=item[1], expense=product, uom=uom,
+                                                              price_number=validated_data['product']['price'],
+                                                              instance=instance)
+                        if not obj:
+                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                        objs.append(obj)
+            if len(objs) > 0:
+                if instance.price_list_type == 0:
+                    ProductPriceList.objects.bulk_create(objs)
+                else:
+                    ExpensePrice.objects.bulk_create(objs)
+            return instance
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
 
 class PriceListCommon:

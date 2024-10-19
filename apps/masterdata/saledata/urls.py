@@ -24,7 +24,7 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList
+    RevenuePlanConfigList, ItemAddFromPriceListImport
 )
 from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
     ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, \
@@ -78,6 +78,8 @@ urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('product-quick-create', ProductQuickCreateList.as_view(), name='ProductQuickCreateList'),
     path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
+    path('create-product-from-price-list-import', ItemAddFromPriceListImport.as_view(),
+         name='ItemAddFromPriceListImport'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
     path('products-sale/list', ProductForSaleList.as_view(), name='ProductForSaleList'),
     path('products-sale/<str:pk>', ProductForSaleDetail.as_view(), name='ProductForSaleDetail'),
