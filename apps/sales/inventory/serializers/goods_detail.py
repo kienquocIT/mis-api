@@ -28,7 +28,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 product_warehouse__warehouse_id=gr_warehouse.warehouse_id,
         ).order_by('vendor_serial_number', 'serial_number'):
             if not serial.purchase_request_id is None:
-                if str(serial.purchase_request_id) == pr_data["id"]:
+                if str(serial.purchase_request_id) == pr_data.get('id'):
                     serial_data.append({
                         'id': serial.id,
                         'vendor_serial_number': serial.vendor_serial_number,
@@ -47,12 +47,13 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         for item in obj.goods_receipt_product_goods_receipt.all():
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
-                    pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data
+                    pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data if gr_wh_gr_prd.goods_receipt_request_product else {}
                     serial_data = cls.create_serial_data(
                         good_receipt=obj,
                         good_receipt_product=item,
                         gr_warehouse=gr_wh_gr_prd,
-                        pr_data=pr_data)
+                        pr_data=pr_data
+                    )
                     product_data.append({
                         'goods_receipt': {
                             'id': obj.id,
