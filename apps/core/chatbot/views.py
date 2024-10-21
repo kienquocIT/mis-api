@@ -7,7 +7,6 @@ import tiktoken
 
 from apps.shared import mask_view, ResponseController
 
-
 # from apps.core.chatbot.serializers import ChatbotHistorySerializer
 # from apps.core.chatbot.models import ChatbotHistory
 
@@ -40,9 +39,11 @@ class ChatbotView(APIView):
 
             user_input_token_len = self.num_tokens_from_string(string=user_input)
             if user_input_token_len > 100:
-                raise serializers.ValidationError({
-                    'detail': 'This question is too long',
-                })
+                raise serializers.ValidationError(
+                    {
+                        'detail': 'This question is too long',
+                    }
+                )
 
             # obj = ChatbotHistory.objects.create(
             #     tenant_id=request.user.tenant_current_id,
@@ -74,24 +75,24 @@ class ChatbotView(APIView):
                     },
                     {
                         "role": "system",
-                        "content": "Tầm nhìn của Bflow là Thay đổi văn hóa quản trị của doanh nghiệp Việt: minh "
-                                   "bạch, dựa vào dữ liệu để ra quyết định, thông qua việc cung cấp hệ thống "
-                                   "quản trị doanh nghiệp hợp nhất và toàn diện.",
+                        "content": "Tầm nhìn của Bflow là Thay đổi văn hóa quản trị của doanh nghiệp Việt: "
+                                   "minh bạch, dựa vào dữ liệu để ra quyết định, thông qua việc cung cấp "
+                                   "hệ thống quản trị doanh nghiệp hợp nhất và toàn diện.",
                     },
                     {
                         "role": "system",
-                        "content": "Sứ mệnh của Bflow là Mang lại giải pháp quản trị doanh nghiệp hợp nhất và "
-                                   "toàn diện, hướng tới cải tiến quy trình, tối ưu chi phí và tăng tốc độ "
-                                   "chuyển đổi số cho mọi doanh nghiệp.",
+                        "content": "Sứ mệnh của Bflow là Mang lại giải pháp quản trị doanh nghiệp hợp nhất "
+                                   "và toàn diện, hướng tới cải tiến quy trình, tối ưu chi phí và tăng "
+                                   "tốc độ chuyển đổi số cho mọi doanh nghiệp.",
                     },
                     {
                         "role": "system",
-                        "content": "Trụ sở của Bflow tại 20 Đường số 22 KDC Him Lam, Bình Hưng, Bình Chánh, Thành phố Hồ "
-                                   "Chí Minh 70000, Việt Nam.",
+                        "content": "Trụ sở của Bflow tại 20 Đường số 22 KDC Him Lam, Bình Hưng, Bình Chánh, "
+                                   "Thành phố Hồ Chí Minh 70000, Việt Nam.",
                     },
                     {
                         "role": "system",
-                        "content": "Thông tin liên hệ của Bflow là email support@bflow.vn và số điện thoại 0903 608 494",
+                        "content": "Thông tin liên hệ của Bflow là email support@bflow.vn và số điện thoại 0903608494.",
                     },
                 ],
                 model="gpt-4o-mini",
@@ -102,6 +103,8 @@ class ChatbotView(APIView):
             return ResponseController.success_200(
                 data=chat_completion.dict(),
             )
-        raise serializers.ValidationError({
-            'detail': 'The chatbot is not ready',
-        })
+        raise serializers.ValidationError(
+            {
+                'detail': 'The chatbot is not ready',
+            }
+        )
