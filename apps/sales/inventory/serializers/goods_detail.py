@@ -47,7 +47,8 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         for item in obj.goods_receipt_product_goods_receipt.all():
             if item.product.general_traceability_method == 2:
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
-                    pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data if gr_wh_gr_prd.goods_receipt_request_product else {}
+                    pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data if (
+                        gr_wh_gr_prd.goods_receipt_request_product) else {}
                     serial_data = cls.create_serial_data(
                         good_receipt=obj,
                         good_receipt_product=item,
