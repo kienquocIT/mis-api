@@ -82,6 +82,7 @@ INSTALLED_APPS = \
         'apps.core.mailer',  # mail templates & rules
         'apps.core.diagram',  # diagram for apps
         'apps.core.forms',  # form
+        'apps.core.chatbot',  # chatbot AI
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
