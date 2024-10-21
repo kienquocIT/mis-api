@@ -316,6 +316,15 @@ AppProp_SaleData_Quotation_data = {
         'is_wf_zone': False,
         'is_wf_condition': True,
     },
+    '42cc882b-15af-4034-b8a1-0d8d6038d537': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': str(trans('Product type')),
+        'code': 'quotation_products_data__product_data__general_information__product_type__id',
+        'type': 5,
+        'content_type': 'saledata.ProductType',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     # tabs
     'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -1077,6 +1086,15 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'payment_term',
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
+    },
+    'de2717ad-b461-4b7a-a29c-63baf1e0f632': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': str(trans('Product')),
+        'code': 'sale_order_products_data__product_data__id',
+        'type': 5,
+        'content_type': 'saledata.Product',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
     # tabs
     '50857b72-4bc2-4d26-a365-9ee1e894b6d2': {
