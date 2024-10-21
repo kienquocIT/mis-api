@@ -21,7 +21,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def create_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
+    def created_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
         serial_data = []
         for serial in good_receipt.pw_serial_goods_receipt.filter(
                 product_warehouse__product_id=good_receipt_product.product_id,
@@ -49,7 +49,7 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
                     pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data if (
                         gr_wh_gr_prd.goods_receipt_request_product) else {}
-                    serial_data = cls.create_serial_data(
+                    serial_data = cls.created_serial_data(
                         good_receipt=obj,
                         good_receipt_product=item,
                         gr_warehouse=gr_wh_gr_prd,

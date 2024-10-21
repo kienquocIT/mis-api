@@ -183,6 +183,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.product_id,
             'title': obj.product.title,
+            'valuation_method': obj.product.valuation_method,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'sale_order_code': obj.sale_order.code if obj.sale_order else '',
             'code': obj.product.code,
