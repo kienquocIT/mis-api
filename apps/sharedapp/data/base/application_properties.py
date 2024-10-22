@@ -1096,6 +1096,15 @@ AppProp_SaleData_SaleOrder_data = {
         'is_wf_zone': False,
         'is_wf_condition': True,
     },
+    'ded465fa-2ed9-48a8-9e70-ba72e8a011d2': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': str(trans('Product type')),
+        'code': 'sale_order_products_data__product_data__general_information__product_type__id',
+        'type': 5,
+        'content_type': 'saledata.ProductType',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     # tabs
     '50857b72-4bc2-4d26-a365-9ee1e894b6d2': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',

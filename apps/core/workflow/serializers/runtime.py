@@ -242,38 +242,6 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                 return ApplicationPropertySubDetailSerializer(property_objs, many=True).data
         return []
 
-    # @staticmethod
-    # def get_collab_out_form(node_current):
-    #     collab_out_form = []
-    #     if node_current:
-    #         # filter associations + select related node_out
-    #         associates = node_current.transition_node_input.filter(
-    #             node_out__option_collaborator=1,
-    #             node_out__in=node_current.transition_node_input.values('node_out')
-    #         ).select_related('node_out')
-    #         # filter collab out form prefetch related employees__group
-    #         collab_data = CollaborationOutForm.objects.filter(node__in=associates.values('node_out')).prefetch_related(
-    #             'employees__group'
-    #         )
-    #         for collab in collab_data:
-    #             for employee in collab.employees.all():
-    #                 group_info = {
-    #                     'id': employee.group_id,
-    #                     'title': employee.group.title,
-    #                     'code': employee.group.code
-    #                 } if employee.group else {}
-    #                 collab_out_form.append({
-    #                     'id': employee.id,
-    #                     'first_name': employee.first_name,
-    #                     'last_name': employee.last_name,
-    #                     'email': employee.email,
-    #                     'full_name': employee.get_full_name(2),
-    #                     'code': employee.code,
-    #                     'group': group_info,
-    #                     'is_active': employee.is_active,
-    #                 })
-    #     return collab_out_form
-
     @classmethod
     def get_collab_out_form(cls, collab):
         collab_out_form = []
