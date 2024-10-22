@@ -1,4 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.masterdata.saledata.serializers import CreateItemInPriceListImportSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 from apps.masterdata.saledata.models import (
@@ -354,3 +356,24 @@ class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class ItemAddFromPriceListImport(BaseCreateMixin):
+    queryset = Price.objects
+    serializer_list = PriceListSerializer
+    serializer_detail = PriceDetailSerializer
+    serializer_create = CreateItemInPriceListImportSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Product from Price List by excel import",
+        operation_description="Create new Product from Price List by excel import",
+        request_body=CreateItemInPriceListImportSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args,  **kwargs)

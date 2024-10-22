@@ -661,7 +661,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    valuation_method = serializers.IntegerField(default=1, allow_null=True)
+    # valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -676,7 +676,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price', 'valuation_method',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
+            # 'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
@@ -806,11 +807,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             return value
         return None
 
-    @classmethod
-    def validate_valuation_method(cls, attrs):
-        if attrs in [0, 1, 2]:
-            return attrs
-        raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
+    # @classmethod
+    # def validate_valuation_method(cls, attrs):
+    #     if attrs in [0, 1, 2]:
+    #         return attrs
+    #     raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
 
     @classmethod
     def validate_purchase_default_uom(cls, value):

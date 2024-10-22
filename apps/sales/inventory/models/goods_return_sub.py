@@ -53,6 +53,7 @@ class GoodsReturnSubSerializerForNonPicking:
             + Else: giữ nguyên 'delivered_quantity_before', 'remaining_quantity' và 'ready_quantity' = 0
         B3: Done
         """
+        print('update')
         for obj in ready_sub.delivery_product_delivery_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
@@ -71,7 +72,7 @@ class GoodsReturnSubSerializerForNonPicking:
                     'delivery_quantity', 'delivered_quantity_before',
                     'remaining_quantity', 'ready_quantity'
                 ],
-                for_goods_return=True
+                **{'for_goods_return': True}
             )
         return True
 
@@ -356,7 +357,7 @@ class GoodsReturnSubSerializerForNonPicking:
             for item in returned_delivery.delivery_product_delivery_sub.all():
                 if str(item.id) == str(delivery_item_id):
                     item.returned_quantity_default += default_return_number
-                    item.save(update_fields=['returned_quantity_default'])
+                    item.save(update_fields=['returned_quantity_default'], **{'for_goods_return': True})
         return True
 
     @classmethod
