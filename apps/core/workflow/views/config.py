@@ -131,9 +131,9 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
         instance = self.get_object()
 
         # check in-progress workflows. If exists, don't allow change.
-        count = Runtime.check_document_in_progress(workflow_id=instance.id, state_or_count='count')
-        if count > 0:
-            raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
+        # count = Runtime.check_document_in_progress(workflow_id=instance.id, state_or_count='count')
+        # if count > 0:
+        #     raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
 
         serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
