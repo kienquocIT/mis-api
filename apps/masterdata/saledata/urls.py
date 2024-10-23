@@ -18,17 +18,19 @@ from apps.masterdata.saledata.views.product import (
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
+    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, AddItemToPriceList,
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, ItemAddFromPriceListImport
+    RevenuePlanConfigList, AddItemToPriceListImportDB
 )
-from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
-    ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, \
-    ProductWareHouseListForGoodsTransfer
+from apps.masterdata.saledata.views.warehouse import (
+    ProductWareHouseLotList, ProductWareHouseSerialList,
+    ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
+    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail,
+)
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -77,9 +79,9 @@ urlpatterns += [
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('product-quick-create', ProductQuickCreateList.as_view(), name='ProductQuickCreateList'),
-    path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
-    path('create-product-from-price-list-import', ItemAddFromPriceListImport.as_view(),
-         name='ItemAddFromPriceListImport'),
+    path('create-product-from-price-list/<str:pk>', AddItemToPriceList.as_view(), name='AddItemToPriceList'),
+    path('create-product-from-price-list-import', AddItemToPriceListImportDB.as_view(),
+         name='AddItemToPriceListImportDB'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
     path('products-sale/list', ProductForSaleList.as_view(), name='ProductForSaleList'),
     path('products-sale/<str:pk>', ProductForSaleDetail.as_view(), name='ProductForSaleDetail'),

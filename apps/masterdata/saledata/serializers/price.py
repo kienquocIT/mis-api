@@ -2,11 +2,11 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import Product, UnitOfMeasure
+from apps.masterdata.saledata.models import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
 )
-from apps.masterdata.saledata.models.product import ExpensePrice
+from apps.masterdata.saledata.models.product import ExpensePrice, Expense
 from apps.shared import PriceMsg, ProductMsg
 
 
@@ -229,6 +229,7 @@ class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
         return None
 
 
+# Price list
 class PriceListSerializer(serializers.ModelSerializer):  # noqa
     price_list_type = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -262,8 +263,7 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if (obj.valid_time_start.date() <= datetime.now().date()) and (
-                obj.valid_time_end.date() >= datetime.now().date()):
+        if obj.valid_time_start.date() <= datetime.now().date() and obj.valid_time_end.date() >= datetime.now().date():
             return 'Valid'
         if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
@@ -276,6 +276,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
     valid_time_start = serializers.DateTimeField(required=True)
     valid_time_end = serializers.DateTimeField(required=True)
+    price_list_mapped = serializers.UUIDField(required=False)
 
     class Meta:
         model = Price
@@ -293,11 +294,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        if Price.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            title=value
-        ).exists():
+        if Price.objects.filter_current(fill__tenant=True, fill__company=True, title=value).exists():
             raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
         return value
 
@@ -307,86 +304,73 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             if value > 0:
                 return value
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
-        return None
+        return 1
 
     def validate(self, validate_data):
         if 'price_list_mapped' in validate_data:
-            price_source = validate_data['price_list_mapped']
-            price_type = validate_data['price_list_type']
-
-            if price_source.price_list_type != price_type:
-                raise serializers.ValidationError({
-                    'detail': PriceMsg.DIFFERENT_PRICE_LIST_TYPE,
-                })
-            if validate_data.get('auto_update') is False and validate_data.get('can_delete') is True:
-                raise serializers.ValidationError({
-                    'detail': PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE,
-                })
+            price_list_mapped_obj = Price.objects.filter(id=validate_data['price_list_mapped']).first()
+            if price_list_mapped_obj:
+                validate_data['price_list_mapped'] = price_list_mapped_obj
+                if price_list_mapped_obj.price_list_type != validate_data['price_list_type']:
+                    raise serializers.ValidationError({'detail': PriceMsg.DIFFERENT_PRICE_LIST_TYPE})
+                if validate_data.get('auto_update') is False and validate_data.get('can_delete') is True:
+                    raise serializers.ValidationError({'detail': PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE})
+            else:
+                raise serializers.ValidationError({'price_list_mapped_obj': PriceMsg.PRICE_LIST_NOT_EXIST})
         else:
-            if validate_data.get('auto_update') is True and validate_data.get('can_delete') is True:
-                raise serializers.ValidationError({
-                    'detail': PriceMsg.AUTO_UPDATE_CAN_DELETE_ARE_FALSE,
-                })
+            if validate_data.get('auto_update') and validate_data.get('can_delete'):
+                raise serializers.ValidationError({'detail': PriceMsg.AUTO_UPDATE_CAN_DELETE_ARE_FALSE})
+
+        currency_data = Currency.objects.filter(id__in=validate_data.get('currency', []))
+        if currency_data.count() != len(validate_data.get('currency', [])):
+            raise serializers.ValidationError({'detail': PriceMsg.CURRENCY_NOT_EXIST})
+        validate_data['currency'] = [str(item) for item in currency_data.values_list('id', flat=True)]
         return validate_data
 
     @classmethod
-    def common_create_currency(cls, data, instance):
+    def common_create_currency(cls, currency_data, price_list_obj):
         bulk_data = []
-        for currency in data:
-            bulk_data.append(
-                PriceListCurrency(
-                    currency_id=currency,
-                    price=instance,
-                )
-            )
+        for item in currency_data:
+            bulk_data.append(PriceListCurrency(currency_id=item, price=price_list_obj))
         PriceListCurrency.objects.bulk_create(bulk_data)
         return True
 
     @classmethod
-    def create_item_for_child_price_sale(cls, price):
-        items_source = ProductPriceList.objects.filter(price_list=price.price_list_mapped)
-        objs = [
-            ProductPriceList(
-                price_list=price,
-                product=p.product,
-                price=float(p.price) * float(price.factor),
-                currency_using=p.currency_using,
-                uom_using=p.uom_using,
-                uom_group_using=p.uom_group_using,
-                get_price_from_source=True
-            ) for p in items_source
-        ]
-        ProductPriceList.objects.bulk_create(objs)
-        return True
-
-    @classmethod
-    def create_item_for_child_price_expense(cls, price):
-        items_source = ExpensePrice.objects.filter(price=price.price_list_mapped)
-        objs = [
-            ExpensePrice(
-                price=price,
-                expense=item.expense,
-                price_value=float(item.price_value) * float(price.factor),
-                currency=item.currency,
-                uom=item.uom,
-                is_auto_update=True,
-            ) for item in items_source
-        ]
-        ExpensePrice.objects.bulk_create(objs)
-
+    def create_items(cls, price_list_obj):
+        if price_list_obj.price_list_type == 0:
+            bulk_info = []
+            for item in ProductPriceList.objects.filter(price_list=price_list_obj.price_list_mapped):
+                bulk_info.append(ProductPriceList(
+                    price_list=price_list_obj,
+                    product=item.product,
+                    price=float(item.price) * float(price_list_obj.factor),
+                    currency_using=item.currency_using,
+                    uom_using=item.uom_using,
+                    uom_group_using=item.uom_group_using,
+                    get_price_from_source=True
+                ))
+            ProductPriceList.objects.bulk_create(bulk_info)
+        else:
+            bulk_info = []
+            for item in ExpensePrice.objects.filter(price=price_list_obj.price_list_mapped):
+                bulk_info.append(ExpensePrice(
+                    price=price_list_obj,
+                    expense=item.expense,
+                    price_value=float(item.price_value) * float(price_list_obj.factor),
+                    currency=item.currency,
+                    uom=item.uom,
+                    is_auto_update=True,
+                ))
+            ExpensePrice.objects.bulk_create(bulk_info)
         return True
 
     def create(self, validated_data):
-        price_list = Price.objects.create(**validated_data)
-        if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
-            if price_list.price_list_type == 0:
-                self.create_item_for_child_price_sale(price_list)
-            else:
-                self.create_item_for_child_price_expense(price_list)
-
+        price_list_obj = Price.objects.create(**validated_data)
+        if 'auto_update' in validated_data and 'price_list_mapped' in validated_data:
+            self.create_items(price_list_obj)
         if 'currency' in validated_data:
-            self.common_create_currency(validated_data['currency'], price_list)
-        return price_list
+            self.common_create_currency(validated_data['currency'], price_list_obj)
+        return price_list_obj
 
 
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
@@ -417,64 +401,64 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     def get_products_mapped(cls, obj):
         all_products = []
         if obj.price_list_type == 0:
-            products = ProductPriceList.objects.filter(
-                price_list_id=obj.id,
-                is_delete=False
-            ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
-            for product in products:
-                product_information = {
-                    'id': product.product_id,
-                    'code': product.product.code,
-                    'title': product.product.title,
-                    'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
-                    'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
-                    'price': product.price,
-                    'is_auto_update': product.get_price_from_source,
-                    'currency_using': {
-                        'id': product.currency_using.id,
-                        'abbreviation': product.currency_using.abbreviation
-                    }
-                }
-                all_products.append(product_information)
-        elif obj.price_list_type == 2:
-            expenses = ExpensePrice.objects.filter(  # noqa
-                price_id=obj.id,
-            ).select_related('expense', 'currency', 'uom')
-            for expense in expenses:
-                uom_data = {}
-                if expense.uom:
-                    uom_data = {'id': expense.uom.id, 'title': expense.uom.title}
-                expense_information = {
-                    'id': expense.expense.id,
-                    'code': expense.expense.code,
-                    'title': expense.expense.title,
+            for item in ProductPriceList.objects.filter(price_list=obj).select_related(
+                'product', 'currency_using', 'uom_using', 'uom_group_using'
+            ):
+                all_products.append({
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title,
                     'uom_group': {
-                        'id': expense.expense.uom_group.id,
-                        'title': expense.expense.uom_group.title
-                    },
-                    'uom': uom_data,
-                    'price': expense.price_value,
-                    'is_auto_update': expense.is_auto_update,
+                        'id': item.uom_group_using_id,
+                        'code': item.uom_group_using.code,
+                        'title': item.uom_group_using.title
+                    } if item.uom_group_using else {},
+                    'uom': {
+                        'id': item.uom_using_id,
+                        'code': item.uom_using.code,
+                        'title': item.uom_using.title
+                    } if item.uom_using else {},
+                    'price': item.price,
+                    'is_auto_update': item.get_price_from_source,
                     'currency_using': {
-                        'id': expense.currency.id, 'abbreviation': expense.currency.abbreviation
-                    }
-                }
-                all_products.append(expense_information)
+                        'id': item.currency_using_id,
+                        'abbreviation': item.currency_using.abbreviation
+                    } if item.currency_using else {},
+                })
+        elif obj.price_list_type == 2:
+            for item in ExpensePrice.objects.filter(price=obj).select_related(
+                'expense', 'currency', 'uom__uom_group'
+            ):
+                all_products.append({
+                    'id': item.expense_id,
+                    'code': item.expense.code,
+                    'title': item.expense.title,
+                    'uom_group': {
+                        'id': item.uom.uom_group_id,
+                        'code': item.uom.uom_group.code,
+                        'title': item.uom.uom_group.title
+                    } if item.uom.uom_group else {},
+                    'uom': {
+                        'id': item.uom_id,
+                        'code': item.uom.code,
+                        'title': item.uom.title
+                    } if item.uom else {},
+                    'price': item.price_value,
+                    'is_auto_update': item.is_auto_update,
+                    'currency_using': {
+                        'id': item.currency_id,
+                        'abbreviation': item.currency.abbreviation
+                    } if item.currency_using else {},
+                } if item.expense else {})
         return all_products
 
     @classmethod
     def get_price_list_mapped(cls, obj):
-        if obj.price_list_mapped:
-            return {
-                'id': obj.price_list_mapped_id,
-                'title': obj.price_list_mapped.title
-            }
-        return {}
+        return {'id': obj.price_list_mapped_id, 'title': obj.price_list_mapped.title} if obj.price_list_mapped else {}
 
     @classmethod
     def get_status(cls, obj):
-        if (obj.valid_time_start.date() <= datetime.now().date()) and (
-                obj.valid_time_end.date() >= datetime.now().date()):
+        if obj.valid_time_start.date() <= datetime.now().date() and obj.valid_time_end.date() >= datetime.now().date():
             return 'Valid'
         if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
@@ -484,24 +468,14 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_currency(cls, obj):
-        if obj.currency_current:
-            currencies = obj.currency_current.all()
-            return [{
-                'id': currency.id,
-                'title': currency.title,
-                'abbreviation': currency.abbreviation,
-            } for currency in currencies]
-        return []
-
-
-def check_expired_price_list(price_list):
-    if not price_list.valid_time_end.date() < datetime.now().date():
-        return True
-    return False
+        return [{
+            'id': currency.id,
+            'title': currency.title,
+            'abbreviation': currency.abbreviation,
+        } for currency in obj.currency_current.all()] if obj.currency_current else []
 
 
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
-
     factor = serializers.FloatField(required=False)
     currency = serializers.ListField(child=serializers.UUIDField(), required=False)
 
@@ -520,128 +494,113 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
             if attrs > 0:
                 return attrs
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
-        return None
+        return 1
 
     @classmethod
     def validate_currency(cls, value):
-        list_result = []
-        for currency_id in value:
-            try:
-                currency = Currency.objects.get_current(id=currency_id)
-                list_result.append(str(currency.id))
-            except Currency.DoesNotExist:
-                raise serializers.ValidationError({'currency': PriceMsg.CURRENCY_NOT_EXIST})
-        return list_result
+        currency_list = Currency.objects.filter(id__in=value)
+        if currency_list.count() != len(value):
+            raise serializers.ValidationError({'currency': PriceMsg.CURRENCY_NOT_EXIST})
+        return [str(item) for item in currency_list.values_list('id', flat=True)]
+
+    def validate(self, validate_data):
+        if self.instance.is_expired(self.instance):
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        return validate_data
 
     @classmethod
-    def update_price_instance(cls, instance, factor):
-        if instance.price_list_type == 0:
-            list_item = ProductPriceList.objects.filter(price_list=instance)
-            for item in list_item:
-                item.price = item.price / instance.factor * factor
-                item.save(update_fields=['price'])
+    def update_price_list_item(cls, price_list_obj):
+        if price_list_obj.price_list_type == 0:
+            root_price_list_item = ProductPriceList.objects.filter(
+                price_list=price_list_obj.price_list_mapped
+            ).select_related('product', 'uom_using', 'currency_using')
+            for item in ProductPriceList.objects.filter(price_list=price_list_obj, get_price_from_source=True):
+                root_item = root_price_list_item.filter(
+                    product=item.product, uom_using=item.uom_using, currency_using=item.currency_using
+                ).first()
+                if root_item:
+                    item.price = root_item.price * price_list_obj.factor
+                    item.save(update_fields=['price'])
+                else:
+                    item.price = 0
+                    item.save(update_fields=['price'])
+            cls.update_child_price_list_for_sale(price_list_obj)
         else:
-            list_item = ExpensePrice.objects.filter(price=instance)
-            for item in list_item:
-                item.price_value = item.price_value / instance.factor * factor
-                item.save(update_fields=['price_value'])
-
-        return list_item
+            root_price_list_item = ExpensePrice.objects.filter(
+                price=price_list_obj.price_list_mapped
+            ).select_related('expense', 'uom', 'currency')
+            for item in ExpensePrice.objects.filter(price=price_list_obj, is_auto_update=True):
+                root_item = root_price_list_item.filter(
+                    expense=item.expense, uom=item.uom, currency=item.currency
+                ).first()
+                if root_item:
+                    item.price_value = root_item.price_value * price_list_obj.factor
+                    item.save(update_fields=['price_value'])
+                else:
+                    item.price_value = 0
+                    item.save(update_fields=['price_value'])
+            cls.update_child_price_list_for_expense(price_list_obj)
+        return True
 
     @classmethod
-    def update_child_auto_update_for_sale(cls, instance, list_price, list_item):
-
-        if not list_item:
-            list_item = ProductPriceList.objects.filter(price_list=instance)
-
+    def update_child_price_list_for_sale(cls, price_list_obj):
         bulk_data = []
-        for price in list_price:
-            if price[0] != instance and price[0].auto_update:
-                ProductPriceList.objects.filter(price_list=price[0]).delete()
-                for item in list_item:
-                    bulk_data.append(
-                        ProductPriceList(
-                            price_list=price[0],
-                            product=item.product,
-                            uom_using=item.uom_using,
-                            uom_group_using=item.uom_group_using,
-                            currency_using=item.currency_using,
-                            get_price_from_source=price[0].auto_update,
-                            price=item.price * price[0].factor
-                        )
-                    )
+        for child_obj, child_factor in Price.get_children(price_list_obj):
+            if child_obj != price_list_obj and child_obj.auto_update:
+                ProductPriceList.objects.filter(price_list=child_obj).delete()
+                for item in ProductPriceList.objects.filter(price_list=price_list_obj):
+                    bulk_data.append(ProductPriceList(
+                        price_list=child_obj,
+                        product=item.product,
+                        uom_using=item.uom_using,
+                        uom_group_using=item.uom_group_using,
+                        currency_using=item.currency_using,
+                        get_price_from_source=child_obj.auto_update,
+                        price=item.price * child_factor
+                    ))
         ProductPriceList.objects.bulk_create(bulk_data)
         return True
 
     @classmethod
-    def update_child_auto_update_for_expense(cls, instance, list_price, list_item):
-
-        if not list_item:
-            list_item = ExpensePrice.objects.filter(price=instance)
-
+    def update_child_price_list_for_expense(cls, price_list_obj):
         bulk_data = []
-        for price in list_price:
-            if price[0] != instance and price[0].auto_update:
-                ExpensePrice.objects.filter(price=price[0]).delete()
-                for item in list_item:
-                    bulk_data.append(
-                        ExpensePrice(
-                            price=price[0],
-                            expense=item.expense,
-                            uom=item.uom,
-                            currency=item.currency,
-                            is_auto_update=price[0].auto_update,
-                            price_value=item.price_value * price[0].factor
-                        )
-                    )
+        for child_obj, child_factor in Price.get_children(price_list_obj):
+            if child_obj != price_list_obj and child_obj.auto_update:
+                ExpensePrice.objects.filter(price=child_obj).delete()
+                for item in ExpensePrice.objects.filter(price=price_list_obj):
+                    bulk_data.append(ExpensePrice(
+                        price=child_obj,
+                        expense=item.expense,
+                        uom=item.uom,
+                        currency=item.currency,
+                        is_auto_update=child_obj.auto_update,
+                        price_value=item.price_value * child_factor
+                    ))
         ExpensePrice.objects.bulk_create(bulk_data)
         return True
 
     @classmethod
-    def update_with_factor(cls, instance, validated_data):
-        list_item = None
-
-        if instance.auto_update:
-            list_item = cls.update_price_instance(instance, validated_data['factor'])
-
-        list_price = PriceListCommon.get_child_price_list(instance)
-
-        if instance.price_list_type == 0:
-            list_item = ProductPriceList.objects.filter(price_list=instance) if not list_item else None
-            cls.update_child_auto_update_for_sale(instance, list_price, list_item)
-        else:
-            list_item = ExpensePrice.objects.filter(price=instance) if not list_item else None
-            cls.update_child_auto_update_for_expense(instance, list_price, list_item)
-        return list_price
-
-    @classmethod
-    def update_with_currency(cls, instance, list_price, validated_data):
-
-        if not list_price:
-            list_price = PriceListCommon.get_child_price_list(instance)
-
-        for price in list_price:
-            PriceListCurrency.objects.filter(price=price[0]).delete()
-            PriceCreateSerializer.common_create_currency(validated_data['currency'], price[0])
+    def update_currency(cls, price_list_obj):
+        children = Price.get_children(price_list_obj)
+        for child_obj, _ in children:
+            PriceListCurrency.objects.filter(price=child_obj).delete()
+            PriceCreateSerializer.common_create_currency(price_list_obj.currency, child_obj)
         return True
 
     def update(self, instance, validated_data):
-        if check_expired_price_list(instance):
-            list_price = None
-            # update with factor
-            if 'factor' in validated_data:
-                list_price = self.update_with_factor(instance, validated_data)
-
-            # update with currency
-            if 'currency' in validated_data:
-                self.update_with_currency(instance, list_price, validated_data)
-
-            for key, value in validated_data.items():
-                setattr(instance, key, value)
-            instance.save()
-
-            return instance
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        old_factor = instance.factor
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        if 'factor' in validated_data:
+            if instance.auto_update:
+                self.update_price_list_item(instance)
+            else:
+                instance.factor = old_factor
+                instance.save(update_fields=['factor'])
+        if 'currency' in validated_data:
+            self.update_currency(instance)
+        return instance
 
 
 class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
@@ -659,16 +618,8 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
         return True
 
 
-class ItemForUpdatePriceSerializer(serializers.Serializer):  # noqa
-    product_id = serializers.UUIDField(required=True)
-    uom_id = serializers.UUIDField(required=True)
-    currency = serializers.UUIDField(required=True)
-    uom_group_id = serializers.UUIDField(required=False)
-    price = serializers.FloatField(required=True)
-
-
 class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
-    list_item = serializers.ListField(child=ItemForUpdatePriceSerializer())
+    list_item = serializers.ListField()
 
     class Meta:
         model = Price
@@ -676,314 +627,314 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
             'list_item',
         )
 
-    def update(self, instance, validated_data):
-        if check_expired_price_list(instance):  # not expired
-            if instance.price_list_type == 0:
-                self.update_price_value_product(instance, validated_data)
+    def validate(self, validate_data):
+        if self.instance.is_expired(self.instance):
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        list_item_data = []
+        for item in validate_data.get('list_item', []):
+            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+            uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+            currency_obj = Currency.objects.filter(id=item.get('currency')).first()
+            uom_group_obj = UnitOfMeasureGroup.objects.filter(id=item.get('uom_group_id')).first()
+            if not product_obj:
+                raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            if not uom_obj:
+                raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            if not currency_obj:
+                raise serializers.ValidationError({'currency_obj': ProductMsg.CURRENCY_DOES_NOT_EXIST})
+            if not uom_group_obj:
+                raise serializers.ValidationError({'uom_group_obj': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
+            if not isinstance(float(item.get('price')), (int, float)):
+                price = 0
             else:
-                self.update_price_value_expense(instance, validated_data)
-            return instance
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+                price = float(item.get('price'))
+            list_item_data.append({
+                'product_obj': product_obj,
+                'uom_obj': uom_obj,
+                'currency_obj': currency_obj,
+                'uom_group_obj': uom_group_obj,
+                'price': price
+            })
+        validate_data['list_item_data'] = list_item_data
+        return validate_data
+
+    def update(self, instance, validated_data):
+        if instance.price_list_type == 0:
+            self.update_price_value_product(instance, validated_data['list_item_data'])
+        else:
+            self.update_price_value_expense(instance, validated_data['list_item_data'])
+        return instance
 
     @classmethod
-    def update_price_value_product(cls, instance, validated_data):
-        list_price = PriceListCommon.get_child_price_list(instance)
-        list_item = validated_data['list_item']
-
+    def update_price_value_product(cls, instance, list_item_data):
+        children = Price.get_children(instance)
         ProductPriceList.objects.filter(
-            price_list__in=[item[0] for item in list_price],
-            product_id__in=[str(item['product_id']) for item in list_item],
-            uom_using_id__in=[str(item['uom_id']) for item in list_item],
-            currency_using_id__in=[str(item['currency']) for item in list_item],
-            uom_group_using_id__in=[str(item['uom_group_id']) for item in list_item]
+            price_list__in=[child_obj for child_obj, child_factor in children],
+            product__in=[item['product_obj'] for item in list_item_data],
+            uom_using__in=[item['uom_obj'] for item in list_item_data],
+            currency_using__in=[item['currency_obj'] for item in list_item_data],
+            uom_group_using__in=[item['uom_group_obj'] for item in list_item_data]
         ).delete()
-
         bulk_data = []
-        for price in list_price:
-            for item in list_item:
-                bulk_data.append(
-                    ProductPriceList(
-                        price_list=price[0],
-                        product_id=str(item['product_id']),
-                        uom_using_id=str(item['uom_id']),
-                        currency_using_id=str(item['currency']),
-                        uom_group_using_id=str(item['uom_group_id']),
-                        get_price_from_source=price[0].auto_update,
-                        price=item['price'] * price[1],
-                    )
-                )
-
+        for price_list_obj, price_list_factor in children:
+            for item in list_item_data:
+                bulk_data.append(ProductPriceList(
+                    price_list=price_list_obj,
+                    product=item['product_obj'],
+                    uom_using=item['uom_obj'],
+                    currency_using=item['currency_obj'],
+                    uom_group_using=item['uom_group_obj'],
+                    get_price_from_source=price_list_obj.auto_update,
+                    price=item['price'] * price_list_factor,
+                ))
         ProductPriceList.objects.bulk_create(bulk_data)
         return True
 
     @classmethod
-    def update_price_value_expense(cls, instance, validated_data):
-        list_price = PriceListCommon.get_child_price_list(instance)
-        list_item = validated_data['list_item']
-
+    def update_price_value_expense(cls, instance, list_item_data):
+        children = Price.get_children(instance)
         ExpensePrice.objects.filter(
-            price__in=[item[0] for item in list_price],
-            expense_id__in=[str(item['product_id']) for item in list_item],
-            uom_id__in=[str(item['uom_id']) for item in list_item],
-            currency_id__in=[str(item['currency']) for item in list_item],
+            price__in=[child_obj for child_obj, child_factor in children],
+            expense__in=[item['product_obj'] for item in list_item_data],
+            uom__in=[item['uom_obj'] for item in list_item_data],
+            currency__in=[item['currency_obj'] for item in list_item_data],
         ).delete()
 
         bulk_data = []
-        for price in list_price:
-            for item in list_item:
-                bulk_data.append(
-                    ExpensePrice(
-                        price=price[0],
-                        expense_id=str(item['product_id']),
-                        uom_id=str(item['uom_id']),
-                        currency_id=str(item['currency']),
-                        is_auto_update=price[0].auto_update,
-                        price_value=item['price'] * price[1],
-                    )
-                )
+        for child_obj, child_factor in children:
+            for item in list_item_data:
+                bulk_data.append(ExpensePrice(
+                    price=child_obj,
+                    expense=item['product_obj'],
+                    uom=item['uom_obj'],
+                    currency=item['currency_obj'],
+                    is_auto_update=child_obj.auto_update,
+                    price_value=item['price'] * child_factor,
+                ))
         ExpensePrice.objects.bulk_create(bulk_data)
         return True
 
 
-class ItemForDeleteSerializer(serializers.Serializer):  # noqa
-    id = serializers.UUIDField()
-    uom_id = serializers.UUIDField()
-
-
 class PriceListDeleteItemSerializer(serializers.ModelSerializer):  # noqa
-    item = ItemForDeleteSerializer(required=True)
+    item = serializers.DictField(required=True)
 
     class Meta:
         model = Price
-        fields = (
-            'item',
-        )
+        fields = ('item',)
+
+    def validate(self, validate_data):
+        if self.instance.is_expired(self.instance):
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        if not self.instance.can_delete:
+            raise serializers.ValidationError(PriceMsg.CANT_DELETE_ITEM)
+
+        item_data = validate_data.get('item', {})
+        if self.instance.price_list_type == 0:
+            item_obj = Product.objects.filter(id=item_data.get('id')).first()
+        else:
+            item_obj = Expense.objects.filter(id=item_data.get('id')).first()
+
+        if not item_obj:
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_ITEM_NOT_EXIST)
+        validate_data['item_obj'] = item_obj
+
+        uom_obj = UnitOfMeasure.objects.filter(id=item_data.get('uom_id')).first()
+        if uom_obj:
+            validate_data['uom_obj'] = uom_obj
+        else:
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
+        return validate_data
 
     def update(self, instance, validated_data):
-        if check_expired_price_list(instance):  # not expired
-            list_price = PriceListCommon.get_child_price_list(instance)
-            item = validated_data['item']
-            if list_price:
-                if instance.price_list_type == 0:
-                    ProductPriceList.objects.filter(
-                        product_id=str(item['id']),
-                        price_list__in=[price[0] for price in list_price],
-                        uom_using_id=str(item['uom_id']),
-                    ).delete()
-                else:
-                    ExpensePrice.objects.filter(
-                        expense_id=str(item['id']),
-                        price_list__in=[price[0] for price in list_price],
-                        uom_id=str(item['uom_id']),
-                    ).delete()
-            return True
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
-
-
-class ItemForCreateInPriceListSerializer(serializers.Serializer):  # noqa
-    id = serializers.UUIDField()
-    uom = serializers.UUIDField()
-    uom_group = serializers.UUIDField()
+        children = [child_obj for child_obj, _ in Price.get_children(instance)]
+        item_obj = validated_data['item_obj']
+        uom_obj = validated_data['uom_obj']
+        if instance.price_list_type == 0:
+            ProductPriceList.objects.filter(product=item_obj, price_list__in=children, uom_using=uom_obj).delete()
+        else:
+            ExpensePrice.objects.filter(expense=item_obj, price_list__in=children, uom=uom_obj).delete()
+        return instance
 
 
 class CreateItemInPriceListSerializer(serializers.ModelSerializer):
-    product = ItemForCreateInPriceListSerializer(required=True)
+    product = serializers.DictField(required=True)
 
     class Meta:
         model = Price
-        fields = (
-            'product',
-        )
+        fields = ('product',)
+
+    def validate(self, validate_data):
+        if self.instance.is_expired(self.instance):
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+
+        product_data = validate_data.get('product', {})
+
+        if self.instance.price_list_type == 0:
+            item_obj = Product.objects.filter(id=product_data.get('id')).first()
+        else:
+            item_obj = Expense.objects.filter(id=product_data.get('id')).first()
+
+        if not item_obj:
+            raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+        validate_data['item_obj'] = item_obj
+
+        uom_obj = UnitOfMeasure.objects.filter(id=product_data.get('uom')).first()
+        if not uom_obj:
+            raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        validate_data['uom_obj'] = uom_obj
+
+        return validate_data
 
     def update(self, instance, validated_data):
-        if check_expired_price_list(instance):  # not expired
-            price_list_information = PriceListCommon.get_child_price_list(instance)
-            product = self.validated_data['product']
-            objs = []
-            if price_list_information and product:
-                for item in price_list_information:
-                    if instance.price_list_type == 0:
-                        obj = self.add_product_for_price_list(price=item[0], product=product, instance=instance)
-                        if not obj:
-                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
-                        objs.append(obj)
-                    else:
-                        obj = self.add_expense_for_price_list(price=item[0], expense=product, instance=instance)
-                        if not obj:
-                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
-                        objs.append(obj)
-            if len(objs) > 0:
-                if instance.price_list_type == 0:
-                    ProductPriceList.objects.bulk_create(objs)
-                else:
-                    ExpensePrice.objects.bulk_create(objs)
-            return instance
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        children = Price.get_children(instance)
+        bulk_info = []
+        for child_obj, child_factor in children:
+            if instance.price_list_type == 0:
+                obj = self.add_product_to_price_list(child_obj, instance, validated_data)
+                if not obj:
+                    raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                bulk_info.append(obj)
+            else:
+                obj = self.add_expense_to_price_list(child_obj, instance, validated_data)
+                if not obj:
+                    raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                bulk_info.append(obj)
+
+        if instance.price_list_type == 0:
+            ProductPriceList.objects.bulk_create(bulk_info)
+        else:
+            ExpensePrice.objects.bulk_create(bulk_info)
+        return instance
 
     @classmethod
-    def add_product_for_price_list(cls, price, product, instance):
-        if not ProductPriceList.objects.filter(price_list=price, product_id=product['id'],
-                                               uom_using_id=product['uom']).exists():
-            obj = (
-                ProductPriceList(price_list=price, product_id=product['id'], price=0,
-                                 currency_using_id=instance.currency[0], uom_using_id=product['uom'],
-                                 uom_group_using_id=product['uom_group'],
-                                 get_price_from_source=price.auto_update)
-            )
-            return obj
-        return None
+    def add_product_to_price_list(cls, child_obj, price_list_obj, validated_data):
+        item_obj = validated_data['item_obj']
+        uom_obj = validated_data['uom_obj']
+        if ProductPriceList.objects.filter(price_list=child_obj, product=item_obj, uom_using=uom_obj).exists():
+            return None
+        obj = ProductPriceList(
+            price_list=child_obj,
+            product=item_obj,
+            price=0,
+            currency_using_id=price_list_obj.currency[0],
+            uom_using=uom_obj,
+            uom_group_using=uom_obj.group,
+            get_price_from_source=child_obj.auto_update
+        )
+        return obj
 
     @classmethod
-    def add_expense_for_price_list(cls, price, expense, instance):
-        if not ExpensePrice.objects.filter(  # noqa
-                price=price,
-                expense_id=expense['id'],
-                uom_id=expense['uom']
-        ).exists():
-            obj = (
-                ExpensePrice(
-                    price=price,
-                    expense_id=expense['id'],
-                    price_value=0,
-                    currency_id=instance.currency[0],
-                    uom_id=expense['uom'],
-                    is_auto_update=price.auto_update,
-                )
-            )
-            return obj
-        return None
+    def add_expense_to_price_list(cls, child_obj, price_list_obj, validated_data):
+        item_obj = validated_data['item_obj']
+        uom_obj = validated_data['uom_obj']
+        if ExpensePrice.objects.filter(price=child_obj, expense=item_obj, uom=uom_obj).exists():
+            return None
+        obj = ExpensePrice(
+            price=child_obj,
+            expense=item_obj,
+            price_value=0,
+            currency_id=price_list_obj.currency[0],
+            uom=uom_obj,
+            is_auto_update=child_obj.auto_update,
+        )
+        return obj
 
 
-class ItemForCreateInPriceListImportSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    uom = serializers.CharField()
-    price = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    price_id = serializers.CharField()
-
-    @classmethod
-    def validate_price(cls, value):
-        if value in [None, '', 'NaN']:
-            return '0'
-        return value
-
-
-class CreateItemInPriceListImportSerializer(serializers.ModelSerializer):
-    product = ItemForCreateInPriceListImportSerializer(required=True)
+class CreateItemInPriceListSerializerImportDB(serializers.ModelSerializer):
+    product = serializers.DictField(required=True)
 
     class Meta:
         model = Price
-        fields = (
-            'product',
+        fields = ('product',)
+
+    @classmethod
+    def add_product_to_price_list(cls, child_obj, factor, product_obj, uom_obj, price_number, price_list_obj):
+        if ProductPriceList.objects.filter(price_list=price_list_obj, product=product_obj, uom_using=uom_obj).exists():
+            return None
+        obj = ProductPriceList(
+            price_list=child_obj,
+            product=product_obj,
+            price=round(float(price_number) * round(factor, 2), 2),
+            currency_using_id=price_list_obj.currency[0],
+            uom_using=uom_obj,
+            uom_group_using=uom_obj.group,
+            get_price_from_source=child_obj.auto_update
         )
+        return obj
 
     @classmethod
-    def add_product_for_price_list(cls, price, factor, product, uom, price_number, instance):
-        factor = round(factor, 2)
-        if not ProductPriceList.objects.filter(price_list=price,product_id=product.id,
-                                               uom_using_id=uom.id).exists():
-            obj = (
-                ProductPriceList(
-                    price_list=price,
-                    product_id=product.id,
-                    price=round(float(price_number)*factor, 2),
-                    currency_using_id=instance.currency[0],
-                    uom_using_id=uom.id,
-                    uom_group_using_id=uom.group_id,
-                    get_price_from_source=price.auto_update
-                )
-            )
-            return obj
-        return None
+    def add_expense_to_price_list(cls, child_obj, factor, expense_obj, uom_obj, price_number, price_list_obj):
+        if ExpensePrice.objects.filter(price=child_obj, expense=expense_obj, uom=uom_obj).exists():
+            return None
+        obj = ExpensePrice(
+            price=child_obj,
+            expense=expense_obj,
+            price_value=round(float(price_number) * round(factor, 2), 2),
+            currency_id=price_list_obj.currency[0],
+            uom=uom_obj,
+            is_auto_update=child_obj.auto_update,
+        )
+        return obj
 
-    @classmethod
-    def add_expense_for_price_list(cls, price, factor, expense, uom, price_number, instance):
-        factor = round(factor,2)
-        if not ExpensePrice.objects.filter(price=price, expense_id=expense.id, uom_id=uom.id).exists():
-            obj = (
-                ExpensePrice(
-                    price=price,
-                    expense_id=expense.id,
-                    price_value=round(float(price_number)*factor,2),
-                    currency_id=instance.currency[0],
-                    uom_id=uom.id,
-                    is_auto_update=price.auto_update,
-                )
-            )
-            return obj
-        return None
+    def validate(self, validate_data):
+        company_current = self.context.get('company_current', None)
+        tenant_current = self.context.get('tenant_current', None)
+        product_data = validate_data.get('product', [])
 
-    @classmethod
-    def validate_product_data(cls, product_data):
-        if not product_data['code']:
-            raise serializers.ValidationError({'code': ProductMsg.NOT_NULL})
+        price_list_obj = Price.objects.filter(id=product_data['price_id']).first()
+        if not price_list_obj:
+            raise serializers.ValidationError({'price_list_obj': PriceMsg.PRICE_LIST_NOT_EXIST})
+        if not price_list_obj.is_expired(price_list_obj):
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        validate_data['price_list_obj'] = price_list_obj
 
-        if not product_data['uom']:
-            raise serializers.ValidationError({'uom': ProductMsg.NOT_NULL})
+        if not isinstance(float(product_data.get('price')), (int, float)):
+            validate_data['price'] = 0
+        else:
+            validate_data['price'] = float(product_data.get('price'))
 
-        try:
-            Product.objects.get_current(code=product_data['code'], fill__company=True)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'code': ProductMsg.DOES_NOT_EXIST})
+        prd_obj = Product.objects.filter(
+            code=product_data.get('code'), tenant=tenant_current, company=company_current
+        ).first()
+        if not prd_obj:
+            raise serializers.ValidationError({'prd_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+        validate_data['product_obj'] = prd_obj
 
-        try:
-            UnitOfMeasure.objects.get_current(code=product_data['uom'], fill__company=True)
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        uom_obj = UnitOfMeasure.objects.filter(
+            code=product_data.get('uom'), tenant=tenant_current, company=company_current
+        ).first()
+        if not uom_obj:
+            raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        validate_data['uom_obj'] = uom_obj
 
-        product_uom_id = Product.objects.get_current(code=product_data['code'],
-                                                     fill__company=True).general_uom_group_id
-        uom_group_id = UnitOfMeasure.objects.get_current(code=product_data['uom'], fill__company=True).group_id
-        if not product_uom_id == uom_group_id:
-            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+        if prd_obj.general_uom_group_id != uom_obj.group_id:
+            raise serializers.ValidationError({'uom_group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+
+        return validate_data
 
     def create(self, validated_data):
-        instance = Price.objects.get_current(id=validated_data['product']['price_id'], fill__company=True)
+        price_list_obj = validated_data['price_list_obj']
+        price = validated_data['price']
+        product_obj = validated_data['product_obj']
+        uom_obj = validated_data['uom_obj']
+        child_price_list = Price.get_children(price_list_obj)
 
-        self.validate_product_data(validated_data['product'])
-
-        if check_expired_price_list(instance):  # not expired
-            price_list_information = PriceListCommon.get_child_price_list(instance)
-
-            product = Product.objects.get_current(code=validated_data['product']['code'], fill__company=True)
-            uom = UnitOfMeasure.objects.get_current(code=validated_data['product']['uom'], fill__company=True)
-
-            objs = []
-            if price_list_information and product:
-                for item in price_list_information:
-                    if instance.price_list_type == 0:
-                        obj = self.add_product_for_price_list(price=item[0], factor=item[1], product=product, uom=uom,
-                                                              price_number=validated_data['product']['price'],
-                                                              instance=instance)
-                        if not obj:
-                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
-                        objs.append(obj)
-                    else:
-                        obj = self.add_expense_for_price_list(price=item[0], factor=item[1], expense=product, uom=uom,
-                                                              price_number=validated_data['product']['price'],
-                                                              instance=instance)
-                        if not obj:
-                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
-                        objs.append(obj)
-            if len(objs) > 0:
-                if instance.price_list_type == 0:
-                    ProductPriceList.objects.bulk_create(objs)
+        bulk_info = []
+        if child_price_list and product_obj:
+            for child_obj, child_factor in child_price_list:
+                if price_list_obj.price_list_type == 0:
+                    obj = self.add_product_to_price_list(child_obj, child_factor, product_obj, uom_obj, price, price_list_obj)
+                    if not obj:
+                        raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                    bulk_info.append(obj)
                 else:
-                    ExpensePrice.objects.bulk_create(objs)
-            return instance
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
-
-
-class PriceListCommon:
-    @staticmethod
-    def get_child_price_list(price, parent_factor=1):
-        if price.valid_time_end.date() is not None and price.valid_time_end.date() < datetime.now().date():
-            return []
-
-        factor = price.factor * parent_factor
-        descendants_with_factor = [(price, factor)]
-
-        for child in Price.objects.filter(price_list_mapped=price.id, valid_time_end__gt=datetime.now()):
-            child_descendants = PriceListCommon.get_child_price_list(child, parent_factor=factor)
-            descendants_with_factor.extend(child_descendants)
-
-        return descendants_with_factor
+                    obj = self.add_expense_to_price_list(child_obj, child_factor, product_obj, uom_obj, price, price_list_obj)
+                    if not obj:
+                        raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                    bulk_info.append(obj)
+        if len(bulk_info) > 0:
+            if price_list_obj.price_list_type == 0:
+                ProductPriceList.objects.bulk_create(bulk_info)
+            else:
+                ExpensePrice.objects.bulk_create(bulk_info)
+        return price_list_obj

@@ -124,12 +124,6 @@ class CommonCreateUpdateProduct:
         return True
 
     @classmethod
-    def check_expired_price_list(cls, price_list):
-        if not price_list.valid_time_end.date() < datetime.now().date():
-            return True
-        return False
-
-    @classmethod
     def create_product_variant_attribute(cls, product_obj, product_variant_attribute_list):
         bulk_info = []
         for item in product_variant_attribute_list:
