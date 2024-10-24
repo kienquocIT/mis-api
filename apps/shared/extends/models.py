@@ -316,6 +316,11 @@ class DataAbstractModel(SimpleAbstractModel):
         blank=True,
         help_text='Title of WF current stage of document'
     )
+    next_association = models.ForeignKey(
+        'workflow.Association', null=True, on_delete=models.SET_NULL,
+        help_text='next association after check condition',
+        related_name='%(app_label)s_%(class)s_next_association',
+    )
     next_node_collab = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='employee that selected for next node defined as type out form',

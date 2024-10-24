@@ -117,15 +117,26 @@ class DocHandler:
         return False
 
     @classmethod
-    def force_update_next_node_collab(cls, runtime_obj, next_node_collab_id):
+    def force_update_next_node_collab(cls, runtime_obj, next_association_id, next_node_collab_id):
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
+            setattr(obj, 'next_association_id', next_association_id)
             setattr(obj, 'next_node_collab_id', next_node_collab_id)
-            obj.save(update_fields=['next_node_collab_id'])
+            obj.save(update_fields=['next_association_id', 'next_node_collab_id'])
             return True
         return False
+
+    @classmethod
+    def get_next_association(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
+        )
+        if obj:
+            if hasattr(obj, 'next_association'):
+                return obj.next_association
+        return None
 
     @classmethod
     def get_next_node_collab_id(cls, runtime_obj):

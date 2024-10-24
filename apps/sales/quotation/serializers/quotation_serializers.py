@@ -106,6 +106,10 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -216,6 +220,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'opportunity_id',
             'customer',
+            'customer_data',
             'contact',
             'employee_inherit_id',
             'payment_term',
@@ -246,6 +251,10 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
     @classmethod
@@ -363,6 +372,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'opportunity_id',
             'customer',
+            'customer_data',
             'contact',
             'employee_inherit_id',
             'payment_term',
@@ -393,6 +403,10 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
     @classmethod

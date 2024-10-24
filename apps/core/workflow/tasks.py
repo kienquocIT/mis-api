@@ -87,7 +87,7 @@ def call_next_stage(runtime_id: Union[UUID, str], stage_currently_id: Union[UUID
 @shared_task
 def call_approval_task(
         runtime_assignee_id: RuntimeAssignee, employee_id: models.Model, action_code: int,
-        remark: str, next_node_collab_id: Union[UUID, str],
+        remark: str, next_association_id: Union[UUID, str], next_node_collab_id: Union[UUID, str],
 ):
     runtime_assignee_obj = RuntimeAssignee.objects.get(pk=runtime_assignee_id)
     employee_obj = DisperseModel(app_model='hr.employee').get_model().objects.get(pk=employee_id)
@@ -96,6 +96,7 @@ def call_approval_task(
         employee_assignee_obj=employee_obj,
         action_code=action_code,
         remark=remark,  # use for action return
+        next_association_id=next_association_id,  # next association after check condition
         next_node_collab_id=next_node_collab_id,  # use for action approve if next node is OUT FORM node
     )
 

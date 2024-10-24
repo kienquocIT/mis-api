@@ -52,8 +52,10 @@ class ReportRevenueList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             "sale_order",
-            "sale_order__customer",
-            "sale_order__employee_inherit",
+            "quotation",
+            "opportunity",
+            "customer",
+            "employee_inherit",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(

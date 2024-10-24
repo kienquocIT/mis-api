@@ -60,6 +60,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
+from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
@@ -1229,6 +1230,8 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
+        # for quotation in Quotation.objects.filter(system_status=3):
+        #     QuotationFinishHandler.push_to_report_revenue(instance=quotation)
         for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)

@@ -96,6 +96,7 @@ class QuotationIndicator(MasterDataAbstractModel):
         verbose_name="indicator",
         related_name="quotation_indicator_indicator",
     )
+    indicator_data = models.JSONField(default=dict, help_text='data json of indicator')
     indicator_value = models.FloatField(
         default=0,
         help_text="value of specific indicator for quotation"

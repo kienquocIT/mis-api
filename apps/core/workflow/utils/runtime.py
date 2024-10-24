@@ -153,6 +153,7 @@ class RuntimeHandler:
             employee_assignee_obj: models.Model,
             action_code: int,
             remark: str,
+            next_association_id: Union[UUID, str],
             next_node_collab_id: Union[UUID, str],
     ) -> bool:
         if rt_assignee.is_done is False:
@@ -179,8 +180,12 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-                    # update next_node_collab to document before run next stage
-                    DocHandler.force_update_next_node_collab(runtime_obj, next_node_collab_id)
+                    # update next_association_id + next_node_collab_id to document before run next stage
+                    DocHandler.force_update_next_node_collab(
+                        runtime_obj=runtime_obj,
+                        next_association_id=next_association_id,
+                        next_node_collab_id=next_node_collab_id,
+                    )
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next
@@ -247,6 +252,7 @@ class RuntimeHandler:
                         employee_assignee_obj=employee_assignee_obj,
                         action_code=1,
                         remark=remark,  # use for action return
+                        next_association_id=next_association_id,  # next association after check condition
                         next_node_collab_id=next_node_collab_id,  # use for action approve if next node is OUT FORM node
                     )
                 case 5:  # To do
@@ -482,8 +488,9 @@ class RuntimeStageHandler:
         return True, []
 
     def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
-        config_cls = WFConfigSupport(workflow=workflow)
-        association_passed = config_cls.get_next(stage_obj_currently.node, self.runtime_obj.doc_params)
+        # config_cls = WFConfigSupport(workflow=workflow)
+        # association_passed = config_cls.get_next(stage_obj_currently.node, self.runtime_obj.doc_params)
+        association_passed = DocHandler.get_next_association(runtime_obj=self.runtime_obj)
         if association_passed and isinstance(association_passed, Association):
             is_next_stage, next_stage = self.create_stage(
                 node_passed=association_passed.node_out,
@@ -499,7 +506,22 @@ class RuntimeStageHandler:
                 if next_stage.code == 'approved':
                     # call added doc obj
                     DocHandler.force_added_with_runtime(self.runtime_obj)
+                    # set next_association_id to doc (node completed)
+                    if next_stage.node:
+                        for associate in next_stage.node.transition_node_input.all():
+                            DocHandler.force_update_next_node_collab(
+                                runtime_obj=self.runtime_obj,
+                                next_association_id=associate.id,
+                                next_node_collab_id=None,
+                            )
+                            break
             if is_next_stage:
+                if next_stage.code == 'completed':
+                    DocHandler.force_update_next_node_collab(
+                        runtime_obj=self.runtime_obj,
+                        next_association_id=None,
+                        next_node_collab_id=None,
+                    )
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
             return next_stage
