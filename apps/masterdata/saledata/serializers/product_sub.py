@@ -1,4 +1,3 @@
-from datetime import datetime
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models import (

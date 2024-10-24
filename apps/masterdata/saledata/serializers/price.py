@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
+    Currency, Price, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.product import ExpensePrice, Expense
 from apps.shared import PriceMsg, ProductMsg
@@ -581,7 +581,7 @@ class PriceListCreateItemSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         children = Price.get_children(instance)
         bulk_info = []
-        for child_obj, child_factor in children:
+        for child_obj, _ in children:
             if instance.price_list_type == 0:
                 obj = self.add_product_to_price_list(child_obj, instance, validated_data)
                 if not obj:

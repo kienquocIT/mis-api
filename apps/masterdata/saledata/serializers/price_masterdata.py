@@ -1,11 +1,8 @@
-from datetime import datetime
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
+    TaxCategory, Tax, Currency
 )
-from apps.masterdata.saledata.models.product import ExpensePrice, Expense
-from apps.shared import PriceMsg, ProductMsg
+from apps.shared import PriceMsg
 
 
 # Tax Category

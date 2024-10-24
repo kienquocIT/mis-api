@@ -710,7 +710,6 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def create_balance_data(cls, validated_data):
         with transaction.atomic():
-            employee_current = validated_data['employee_current']
             prd_obj = validated_data['product']
             wh_obj = validated_data['warehouse']
             period_obj = validated_data['period_obj']
@@ -732,16 +731,16 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 period_mapped=period_obj,
                 sub_period_order=sub_period_obj.order,
                 sub_period=sub_period_obj,
-                employee_created=employee_current,
-                employee_inherit=employee_current,
+                employee_created=validated_data['employee_current'],
+                employee_inherit=validated_data['employee_current'],
             )
 
             if period_obj.company.company_config.definition_inventory_valuation == 0:
                 log = ReportStockLog.objects.create(
                     tenant=period_obj.tenant,
                     company=period_obj.company,
-                    employee_created=employee_current,
-                    employee_inherit=employee_current,
+                    employee_created=validated_data['employee_current'],
+                    employee_inherit=validated_data['employee_current'],
                     report_stock=rp_stock,
                     product=prd_obj,
                     physical_warehouse=wh_obj,
@@ -776,8 +775,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 rp_inv_cost = ReportInventoryCost.objects.create(
                     tenant=period_obj.tenant,
                     company=period_obj.company,
-                    employee_created=employee_current,
-                    employee_inherit=employee_current,
+                    employee_created=validated_data['employee_current'],
+                    employee_inherit=validated_data['employee_current'],
                     product=prd_obj,
                     warehouse=wh_obj if not period_obj.company.company_config.cost_per_project else None,
                     period_mapped=period_obj,
@@ -807,8 +806,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 log = ReportStockLog.objects.create(
                     tenant=period_obj.tenant,
                     company=period_obj.company,
-                    employee_created=employee_current,
-                    employee_inherit=employee_current,
+                    employee_created=validated_data['employee_current'],
+                    employee_inherit=validated_data['employee_current'],
                     report_stock=rp_stock,
                     product=prd_obj,
                     physical_warehouse=wh_obj,
@@ -831,8 +830,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 rp_inv_cost = ReportInventoryCost.objects.create(
                     tenant=period_obj.tenant,
                     company=period_obj.company,
-                    employee_created=employee_current,
-                    employee_inherit=employee_current,
+                    employee_created=validated_data['employee_current'],
+                    employee_inherit=validated_data['employee_current'],
                     product=prd_obj,
                     warehouse=wh_obj if not period_obj.company.company_config.cost_per_project else None,
                     period_mapped=period_obj,
