@@ -23,7 +23,7 @@ APP_MAP_DATA = {
     'inventory.goodsreturn': {'title': 'Goods Return', 'url': 'inventory/goods-return/detail/'},
     'inventory.goodstransfer': {'title': 'Goods Transfer', 'url': 'inventory/goods-transfer/detail/'},
     'delivery.orderdeliverysub': {'title': 'Delivery', 'url': 'delivery/detail/'},
-    # 'project.projectbaseline': {'title': 'Project', 'url': 'cashoutflow/payment/detail/'},
+    'project.project': {'title': 'Project', 'url': 'project/detail/'},
     'leave.leaverequest': {'title': 'Leave', 'url': 'leave/requests/detail/'},
     'meetingschedule.meetingschedule': {'title': 'Meeting Schedule', 'url': 'meeting/meeting-schedule/detail/'},
     'businesstrip.businessrequest': {'title': 'Business trip', 'url': 'business-trip/request/detail/'},
@@ -116,3 +116,16 @@ class MailDataResolver:
                 },
             }
         return {}
+
+    @classmethod
+    def project_new(cls, tenant_obj, prj_owner, prj_member, prj_obj):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        prj_app_url = APP_MAP_DATA.get('project.project', {}).get('url', '')
+        return {
+            '_project': {
+                'prj_title': prj_obj.title,
+                'prj_member': prj_member.get_full_name(),
+                'prj_owner': prj_owner.get_full_name(),
+                'prj_url': f'{full_domain}/{prj_app_url}{prj_obj.id}'
+            },
+        }

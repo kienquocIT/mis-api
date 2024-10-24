@@ -68,3 +68,14 @@ TEMPLATE_WORKFLOW_DEFAULT = _(
     "<hr/>"
     "<p>Best regards.</p>"
 )
+
+SUBJECT_PROJECT_NEW_DEFAULT = _('New Project Created')
+# [__company_title__]
+TEMPLATE_PROJECT_NEW_DEFAULT = _(
+    "<h2><strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p>Hi <b><span class=\"params-data\" data-code=\"_project__prj_member\"></span></b></p>"
+    "<p><b><span class=\"params-data\" data-code=\"_project__prj_owner\"></span></b> create a project <b><span class=\"params-data\" data-code=\"_project__prj_title\"></span></b>. He/She added you in a member in Project, you might want to take a look.</p>"
+    "<p><a href=\"_project__prj_url\" style=\"text-decoration:none;color:#1565c0;\">View here</a></p>"
+    "<hr/>"
+    "<p>Best regards.</p>"
+)

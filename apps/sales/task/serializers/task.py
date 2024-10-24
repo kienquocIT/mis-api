@@ -237,11 +237,10 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 return attrs
             raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
 
-        if 'percent_completed' in attrs:
-            pc_value = attrs['percent_completed']
-            if pc_value == 100 and (
-                    'log_time' not in attrs or ['start_date', 'end_date', 'time_spent'] not in attrs['log_time']):
-                raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
+        if attrs.get('percent_completed', 0) == 100 and not {'start_date', 'end_date', 'time_spent'}.issubset(
+                attrs.get('log_time', {})
+        ):
+            raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
         return attrs
 
     def create(self, validated_data):

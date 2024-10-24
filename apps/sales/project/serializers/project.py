@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 
 from rest_framework import serializers
+from django.utils import timezone
 
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
@@ -65,8 +66,6 @@ class ProjectListSerializers(serializers.ModelSerializer):
         if lst_prj:
             crt = datetime.now()
             for item in lst_prj:
-                if item.system_status <= 1:
-                    continue
                 project_data = item.project_data
                 if not isinstance(project_data, dict):
                     project_data = json.loads(project_data)
@@ -86,7 +85,8 @@ class ProjectListSerializers(serializers.ModelSerializer):
                         'all': len(item.work_task_data),
                         'completed': len([x for x in item.work_task_data if x['percent'] == 100])
                     },
-                    'version': item.baseline_version
+                    'version': item.baseline_version,
+                    'system_status': item.system_status
                 })
                 baseline['count'] += 1
                 if item.date_created.year == crt.year and item.date_created.month == crt.month:
@@ -117,6 +117,7 @@ class ProjectListSerializers(serializers.ModelSerializer):
             'system_status',
             'baseline',
             'date_created',
+            'date_close'
         )
 
 
@@ -281,6 +282,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'code',
             'start_date',
             'finish_date',
+            'date_close',
             'completion_rate',
             'project_pm',
             'employee_inherit',
@@ -394,10 +396,16 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         system_status = validated_data.pop('system_status', None)
         if system_status == 2:
             validated_data['project_status'] = instance.prev_status
+            instance.date_close = None
         if system_status == 3:
             validated_data['prev_status'] = instance.project_status
+            if instance.finish_date < timezone.now():
+                instance.date_close = timezone.now()
+
         else:
             validated_data['project_status'] = system_status
+            if instance.finish_date < timezone.now():
+                instance.date_close = timezone.now()
         # - delete all expense(user delete)
         # - create and update
         # - update work info
