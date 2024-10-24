@@ -253,6 +253,13 @@ class HTMLController(ManualNH3, ManualBleach):  # pylint: disable=R0902
                 result.string = data_code
             else:
                 result.string = ''
+        # add link click open
+        href_str = self.soup.select("a[href]")
+        for html in href_str:
+            key_code = html.attrs['href']
+            if key_code:
+                data_code = DictHandler().get(key=key_code, data=data)
+                html.attrs['href'] = data_code
 
         if '_workflow' in data:
             for key in data['_workflow']:

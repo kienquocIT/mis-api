@@ -133,14 +133,13 @@ class MemberOfProjectAddSerializer(serializers.Serializer):  # noqa
         tenant_id = validated_data.get('tenant_id')
         company_id = validated_data.get('company_id')
         members = validated_data.pop('members')
-        objs = [
-            ProjectMapMember(
+        obj = object
+        for member_obj in members:
+            obj = ProjectMapMember.objects.create(
                 project_id=project_id,
                 member=member_obj,
                 tenant_id=tenant_id,
                 company_id=company_id,
                 permission_by_configured=pj_get_alias_permit_from_app(employee_obj=member_obj)
             )
-            for member_obj in members
-        ]
-        return ProjectMapMember.objects.bulk_create(objs)[0]
+        return obj
