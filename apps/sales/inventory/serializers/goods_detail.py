@@ -125,10 +125,11 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             gr_prd = goods_receipt_obj.goods_receipt_product_goods_receipt.filter(
                 product=prd_wh.product
             ).first()
-            pr_prod = PurchaseRequestProduct.objects.get_current(fill__company=True, fill__tenant=True,
-                                                                 purchase_request_id=purchase_request_id)
+            pr_prod = PurchaseRequestProduct.objects.filter(
+                product=prd_wh.product, purchase_request_id=purchase_request_id
+            ).first()
             gr_wh_gr_prd = gr_prd.goods_receipt_warehouse_gr_product.filter(
-                goods_receipt_request_product__purchase_request_product= pr_prod,
+                goods_receipt_request_product__purchase_request_product=pr_prod,
                 warehouse=prd_wh.warehouse
             ).first() if gr_prd else None
             receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
@@ -145,7 +146,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
                         goods_receipt_id=goods_receipt_id,
                         company_id=prd_wh.company_id,
                         tenant_id=prd_wh.tenant_id,
-                        purchase_request_id = purchase_request_id
+                        purchase_request_id=purchase_request_id
                     )
                 )
                 return bulk_info_new_serial
@@ -303,7 +304,7 @@ class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
         product_id = self.initial_data['data'].get('product_id')
         warehouse_id = self.initial_data['data'].get('warehouse_id')
         goods_receipt_id = self.initial_data['data'].get('goods_receipt_id')
-        purchase_request_id = self.initial_data.get('purchase_request_id')
+        purchase_request_id = self.initial_data['data'].get('purchase_request_id')
         self.initial_data['serial_data'] = [{
             'serial_number': self.initial_data['data'].get('serial_number'),
             'vendor_serial_number': self.initial_data['data'].get('vendor_serial_number'),

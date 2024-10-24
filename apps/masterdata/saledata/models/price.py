@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -125,6 +126,23 @@ class Price(DataAbstractModel):
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def is_expired(cls, price_list_obj):
+        """ return True if expired """
+        return price_list_obj.valid_time_end.date() < datetime.now().date()
+
+    @classmethod
+    def get_children(cls, price_list_obj, factor=1.0):
+        if price_list_obj.valid_time_end.date() and price_list_obj.valid_time_end.date() < datetime.now().date():
+            return []
+
+        children_with_factor = [(price_list_obj, factor)]
+
+        for child in cls.objects.filter(price_list_mapped=price_list_obj, valid_time_end__gt=datetime.now()):
+            children_with_factor.extend(cls.get_children(child, factor * child.factor))
+
+        return children_with_factor
 
 
 class PriceListCurrency(SimpleAbstractModel):
