@@ -382,18 +382,21 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
     @classmethod
     def get_workflow_currently(cls, obj):
         try:
-            initial_node = obj.workflow_currently.node_workflow.get(is_system=True, code_node_system='initial')
-            initial_zones = cls.get_initial_zones(initial_node)
-            initial_zones_hidden = cls.get_initial_zones_hidden(initial_node)
-            association = cls.get_association(initial_node)
-            return {
-                'id': obj.workflow_currently_id,
-                'title': obj.workflow_currently.title,
-                'initial_zones': initial_zones,
-                'initial_zones_hidden': initial_zones_hidden,
-                'is_edit_all_zone': initial_node.is_edit_all_zone,
-                'association': association,
-            }
+            initial_node = obj.workflow_currently.node_workflow.get(
+                is_system=True, code_node_system='initial'
+            ) if obj.workflow_currently else None
+            if initial_node:
+                initial_zones = cls.get_initial_zones(initial_node)
+                initial_zones_hidden = cls.get_initial_zones_hidden(initial_node)
+                association = cls.get_association(initial_node)
+                return {
+                    'id': obj.workflow_currently_id,
+                    'title': obj.workflow_currently.title,
+                    'initial_zones': initial_zones,
+                    'initial_zones_hidden': initial_zones_hidden,
+                    'is_edit_all_zone': initial_node.is_edit_all_zone,
+                    'association': association,
+                }
         except Exception as err:
             print(err)
         return {}
