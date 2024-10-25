@@ -144,6 +144,8 @@ class ApplicationPropertyList(BaseListMixin):
         'parent_n': ['exact', 'isnull'],
         'is_print': ['exact'],
         'is_mail': ['exact'],
+        'is_wf_zone': ['exact'],
+        'is_wf_condition': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 

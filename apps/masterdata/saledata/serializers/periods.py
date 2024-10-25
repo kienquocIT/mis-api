@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import (
-    ReportInventoryCost, ReportStockLog, ReportInventoryCostWH
+    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, ReportStock
 )
 
 
@@ -152,7 +152,6 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                         self.initial_data.get('product_id'),
                         self.initial_data.get('warehouse_id')
                     )
-                    SubPeriods.objects.filter(period_mapped=instance).update(run_report_inventory=False)
                 return instance
             except Exception as err:
                 return err
@@ -170,13 +169,23 @@ class PeriodInventoryFunction:
             prd_obj.available_amount = 0
             prd_obj.save(update_fields=['stock_amount', 'available_amount'])
 
+            ReportStock.objects.filter(
+                tenant=instance.tenant,
+                company=instance.company,
+                product=prd_obj
+            ).delete()
+            ReportStockLog.objects.filter(
+                tenant=instance.tenant,
+                company=instance.company,
+                product=prd_obj
+            ).delete()
             ReportInventoryCost.objects.filter(
                 tenant=instance.tenant,
                 company=instance.company,
                 product=prd_obj,
                 warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()
-            ReportInventoryCostWH.objects.filter(
+            ReportInventoryCostByWarehouse.objects.filter(
                 report_inventory_cost__product=prd_obj,
                 report_inventory_cost__warehouse=wh_obj if not company_config.cost_per_project else None
             ).delete()

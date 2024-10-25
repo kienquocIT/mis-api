@@ -128,17 +128,18 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_bom_data(cls, obj):
-        bom = obj.bom_product.first()
-        return {
-            'id': bom.id,
-            'title': bom.title,
-            'code': bom.code,
-            'opportunity': {
-                'id': bom.opportunity_id,
-                'title': bom.opportunity.title,
-                'code': bom.opportunity.code,
-            } if bom.opportunity else {}
-        } if bom else {}
+        for bom in obj.filtered_bom_opp:
+            return {
+                'id': bom.id,
+                'title': bom.title,
+                'code': bom.code,
+                'opportunity': {
+                    'id': bom.opportunity_id,
+                    'title': bom.opportunity.title,
+                    'code': bom.opportunity.code,
+                } if bom.opportunity else {}
+            }
+        return {}
 
 
 class ProductForSaleDetailSerializer(serializers.ModelSerializer):

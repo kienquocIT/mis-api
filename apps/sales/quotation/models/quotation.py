@@ -163,6 +163,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         null=True,
         help_text="sale data Accounts have type customer"
     )
+    customer_data = models.JSONField(default=dict, help_text='data json of customer')
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
@@ -314,6 +315,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
                     QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
+                    # QuotationFinishHandler.push_to_report_revenue(instance=self)  # reports
         if self.system_status in [4]:  # cancel
             # opportunity
             QuotationFinishHandler.update_opportunity(instance=self)

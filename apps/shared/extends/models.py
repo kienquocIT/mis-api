@@ -1,3 +1,5 @@
+import hashlib
+import json
 from copy import deepcopy
 from uuid import uuid4
 
@@ -44,7 +46,7 @@ class CoreSignalRegisterMetaClass(models.base.ModelBase, type):
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
-        cls.register_signals()  # pylint: disable=E1120
+        # cls.register_signals()  # pylint: disable=E1120
 
 
 class SignalRegisterMetaClass(models.base.ModelBase, type):
@@ -70,7 +72,7 @@ class SignalRegisterMetaClass(models.base.ModelBase, type):
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
-        cls.register_signals()  # pylint: disable=E1120
+        # cls.register_signals()  # pylint: disable=E1120
 
 
 class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
@@ -85,6 +87,13 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def generate_key_cache(cls, **kwargs):
+        dict_str = json.dumps(kwargs, sort_keys=True)
+        md5_str = hashlib.md5(dict_str.encode()).hexdigest()
+        key = f'{cls._meta.db_table}_{md5_str}'
+        return key
 
     def get_old_value(self, field_name_list: list):
         """
@@ -306,6 +315,11 @@ class DataAbstractModel(SimpleAbstractModel):
         max_length=100,
         blank=True,
         help_text='Title of WF current stage of document'
+    )
+    next_association = models.ForeignKey(
+        'workflow.Association', null=True, on_delete=models.SET_NULL,
+        help_text='next association after check condition',
+        related_name='%(app_label)s_%(class)s_next_association',
     )
     next_node_collab = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,

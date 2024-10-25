@@ -18,7 +18,6 @@ from apps.shared.translations.base import AttachmentMsg
 class PaymentListSerializer(AbstractListSerializerModel):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
-    payment_value = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
@@ -56,12 +55,6 @@ class PaymentListSerializer(AbstractListSerializerModel):
     def get_return_value_list(cls, obj):
         obj.return_value_list = {}
         return obj.return_value_list
-
-    @classmethod
-    def get_payment_value(cls, obj):
-        all_items = obj.payment.all()
-        sum_payment_value = sum(item.expense_after_tax_price for item in all_items)
-        return sum_payment_value
 
     @classmethod
     def get_sale_order_mapped(cls, obj):

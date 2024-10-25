@@ -168,6 +168,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             else:
                 for item in obj.goods_issue_product.all():
                     ia_item = item.inventory_adjustment_item
+                    remain_quantity = ia_item.book_quantity - ia_item.count - ia_item.issued_quantity
                     detail_data_ia.append({
                         'id': ia_item.id,
                         'product_mapped': item.product_data,
@@ -175,7 +176,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'warehouse_mapped': item.warehouse_data,
                         'sum_quantity': ia_item.book_quantity - ia_item.count,
                         'before_quantity': ia_item.issued_quantity,
-                        'remain_quantity': ia_item.book_quantity - ia_item.count - ia_item.issued_quantity,
+                        'remain_quantity': remain_quantity,
                         'issued_quantity': item.issued_quantity,
                         'lot_data': item.lot_data,
                         'sn_data': item.sn_data
@@ -409,8 +410,11 @@ class GoodsIssueCommonFunction:
                 lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('lot_id')).first()
                 if lot_obj:
                     lot_id_list.append(lot_obj.id)
-                    lot_data.append(
-                        {'lot_id': lot.get('lot_id'), 'lot_quantity': lot_obj, 'issued_quantity': lot.get('quantity')})
+                    lot_data.append({
+                        'lot_id': lot.get('lot_id'),
+                        'lot_quantity': lot_obj.quantity_import,
+                        'issued_quantity': lot.get('quantity')
+                    })
                 else:
                     raise serializers.ValidationError({'error': "Lot object does not exist."})
             else:
@@ -430,49 +434,58 @@ class GoodsIssueCommonFunction:
         if len(detail_data_ia) > 0:
             selected_sn = []
             for item in detail_data_ia:
-                product_obj = Product.objects.filter(id=item.get('product_id')).first()
-                warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
-                prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
-                ia_item_obj = InventoryAdjustmentItem.objects.filter(
-                    id=item.get('inventory_adjustment_item_id')
-                ).first()
-                if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and ia_item_obj:
-                    if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError({'issued_quantity': "Issue quantity can't > stock quantity."})
-                    if (
-                            ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity
-                    ) < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': "Issue quantity can't > remain quantity."}
-                        )
+                if all([
+                    float(item.get('issued_quantity', 0)) > 0,
+                    item.get('product_id'),
+                    item.get('warehouse_id'),
+                    item.get('uom_id'),
+                    item.get('inventory_adjustment_item_id')
+                ]):
+                    product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                    warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+                    uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+                    prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+                    ia_item_obj = InventoryAdjustmentItem.objects.filter(
+                        id=item.get('inventory_adjustment_item_id')
+                    ).first()
+                    if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and ia_item_obj:
+                        if prd_wh_obj.stock_amount < float(item.get('issued_quantity', 0)):
+                            raise serializers.ValidationError(
+                                {'issued_quantity': "Issue quantity can't > stock quantity."}
+                            )
+                        if (
+                                ia_item_obj.book_quantity - ia_item_obj.count - ia_item_obj.issued_quantity
+                        ) < float(item.get('issued_quantity', 0)):
+                            raise serializers.ValidationError(
+                                {'issued_quantity': "Issue quantity can't > remain quantity."}
+                            )
 
-                    selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
-                    cls.validate_lot_data(item, product_obj)
+                        selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
+                        cls.validate_lot_data(item, product_obj)
 
-                    item['inventory_adjustment_item_id'] = str(ia_item_obj.id)
-                    item['product_id'] = str(product_obj.id)
-                    item['product_data'] = {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'description': product_obj.description,
-                        'general_traceability_method': product_obj.general_traceability_method
-                    }
-                    item['warehouse_id'] = str(warehouse_obj.id)
-                    item['warehouse_data'] = {
-                        'id': str(warehouse_obj.id),
-                        'code': warehouse_obj.code,
-                        'title': warehouse_obj.title
-                    }
-                    item['uom_id'] = str(uom_obj.id)
-                    item['uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title
-                    }
-                else:
-                    raise serializers.ValidationError({'error': "Some objects are not exist."})
+                        item['inventory_adjustment_item_id'] = str(ia_item_obj.id)
+                        item['product_id'] = str(product_obj.id)
+                        item['product_data'] = {
+                            'id': str(product_obj.id),
+                            'code': product_obj.code,
+                            'title': product_obj.title,
+                            'description': product_obj.description,
+                            'general_traceability_method': product_obj.general_traceability_method
+                        }
+                        item['warehouse_id'] = str(warehouse_obj.id)
+                        item['warehouse_data'] = {
+                            'id': str(warehouse_obj.id),
+                            'code': warehouse_obj.code,
+                            'title': warehouse_obj.title
+                        }
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title
+                        }
+                    else:
+                        raise serializers.ValidationError({'error': "Some objects are not exist."})
             print('3. validate_detail_data_ia --- ok')
         validate_data['detail_data_ia'] = detail_data_ia
         return True
@@ -483,43 +496,50 @@ class GoodsIssueCommonFunction:
         if len(detail_data_po) > 0:
             selected_sn = []
             for item in detail_data_po:
-                product_obj = Product.objects.filter(id=item.get('product_id')).first()
-                warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
-                prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
-                po_item_obj = ProductionOrderTask.objects.filter(id=item.get('production_order_item_id')).first()
-                if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and po_item_obj:
-                    if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
-                        )
+                if all([
+                    float(item.get('issued_quantity', 0)) > 0,
+                    item.get('product_id'),
+                    item.get('warehouse_id'),
+                    item.get('uom_id'),
+                    item.get('production_order_item_id')
+                ]):
+                    product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                    warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+                    uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+                    prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+                    po_item_obj = ProductionOrderTask.objects.filter(id=item.get('production_order_item_id')).first()
+                    if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and po_item_obj:
+                        if prd_wh_obj.stock_amount < float(item.get('issued_quantity', 0)):
+                            raise serializers.ValidationError(
+                                {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
+                            )
 
-                    selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
-                    cls.validate_lot_data(item, product_obj)
+                        selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
+                        cls.validate_lot_data(item, product_obj)
 
-                    item['production_order_item_id'] = str(po_item_obj.id)
-                    item['product_id'] = str(product_obj.id)
-                    item['product_data'] = {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'description': product_obj.description,
-                        'general_traceability_method': product_obj.general_traceability_method
-                    }
-                    item['warehouse_id'] = str(warehouse_obj.id)
-                    item['warehouse_data'] = {
-                        'id': str(warehouse_obj.id),
-                        'code': warehouse_obj.code,
-                        'title': warehouse_obj.title
-                    }
-                    item['uom_id'] = str(uom_obj.id)
-                    item['uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title
-                    }
-                else:
-                    raise serializers.ValidationError({'error': "Some objects are not exist."})
+                        item['production_order_item_id'] = str(po_item_obj.id)
+                        item['product_id'] = str(product_obj.id)
+                        item['product_data'] = {
+                            'id': str(product_obj.id),
+                            'code': product_obj.code,
+                            'title': product_obj.title,
+                            'description': product_obj.description,
+                            'general_traceability_method': product_obj.general_traceability_method
+                        }
+                        item['warehouse_id'] = str(warehouse_obj.id)
+                        item['warehouse_data'] = {
+                            'id': str(warehouse_obj.id),
+                            'code': warehouse_obj.code,
+                            'title': warehouse_obj.title
+                        }
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title
+                        }
+                    else:
+                        raise serializers.ValidationError({'error': "Some objects are not exist."})
             print('3. validate_detail_data_po --- ok')
         validate_data['detail_data_po'] = detail_data_po
         return True
@@ -530,43 +550,50 @@ class GoodsIssueCommonFunction:
         if len(detail_data_wo) > 0:
             selected_sn = []
             for item in detail_data_wo:
-                product_obj = Product.objects.filter(id=item.get('product_id')).first()
-                warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
-                prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
-                wo_item_obj = WorkOrderTask.objects.filter(id=item.get('work_order_item_id')).first()
-                if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and wo_item_obj:
-                    if prd_wh_obj.stock_amount < float(item.get('issued_quantity')):
-                        raise serializers.ValidationError(
-                            {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
-                        )
+                if all([
+                    float(item.get('issued_quantity', 0)) > 0,
+                    item.get('product_id'),
+                    item.get('warehouse_id'),
+                    item.get('uom_id'),
+                    item.get('work_order_item_id')
+                ]):
+                    product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                    warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+                    uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+                    prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+                    wo_item_obj = WorkOrderTask.objects.filter(id=item.get('work_order_item_id')).first()
+                    if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj and wo_item_obj:
+                        if prd_wh_obj.stock_amount < float(item.get('issued_quantity', 0)):
+                            raise serializers.ValidationError(
+                                {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
+                            )
 
-                    selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
-                    cls.validate_lot_data(item, product_obj)
+                        selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
+                        cls.validate_lot_data(item, product_obj)
 
-                    item['work_order_item_id'] = str(wo_item_obj.id)
-                    item['product_id'] = str(product_obj.id)
-                    item['product_data'] = {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'description': product_obj.description,
-                        'general_traceability_method': product_obj.general_traceability_method
-                    }
-                    item['warehouse_id'] = str(warehouse_obj.id)
-                    item['warehouse_data'] = {
-                        'id': str(warehouse_obj.id),
-                        'code': warehouse_obj.code,
-                        'title': warehouse_obj.title
-                    }
-                    item['uom_id'] = str(uom_obj.id)
-                    item['uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title
-                    }
-                else:
-                    raise serializers.ValidationError({'error': "Some objects are not exist."})
+                        item['work_order_item_id'] = str(wo_item_obj.id)
+                        item['product_id'] = str(product_obj.id)
+                        item['product_data'] = {
+                            'id': str(product_obj.id),
+                            'code': product_obj.code,
+                            'title': product_obj.title,
+                            'description': product_obj.description,
+                            'general_traceability_method': product_obj.general_traceability_method
+                        }
+                        item['warehouse_id'] = str(warehouse_obj.id)
+                        item['warehouse_data'] = {
+                            'id': str(warehouse_obj.id),
+                            'code': warehouse_obj.code,
+                            'title': warehouse_obj.title
+                        }
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title
+                        }
+                    else:
+                        raise serializers.ValidationError({'error': "Some objects are not exist."})
             print('3. validate_detail_data_wo --- ok')
         validate_data['detail_data_wo'] = detail_data_wo
         return True
@@ -595,8 +622,8 @@ class GoodsIssueCommonFunction:
         if len(data) > 0:
             bulk_data = []
             for item in data:
-                obj = GoodsIssueProduct(goods_issue=instance, **item)
-                bulk_data.append(obj)
+                if float(item.get('issued_quantity', 0)) > 0:
+                    bulk_data.append(GoodsIssueProduct(goods_issue=instance, **item))
             GoodsIssueProduct.objects.filter(goods_issue=instance).delete()
             GoodsIssueProduct.objects.bulk_create(bulk_data)
         return True
@@ -737,7 +764,7 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
                 'is_all_warehouse': item.is_all_warehouse,
                 'sum_quantity': item.quantity,
                 'before_quantity': item.issued_quantity,
-                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+                'remain_quantity': remain_quantity,
             })
         return task_data
 
@@ -805,7 +832,7 @@ class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
                 'is_all_warehouse': item.is_all_warehouse,
                 'sum_quantity': item.quantity,
                 'before_quantity': item.issued_quantity,
-                'remain_quantity': remain_quantity if remain_quantity >= 0 else 0,
+                'remain_quantity': remain_quantity,
             })
         return task_data
 

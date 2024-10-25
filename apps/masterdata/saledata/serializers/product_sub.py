@@ -1,4 +1,3 @@
-from datetime import datetime
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models import (
@@ -122,12 +121,6 @@ class CommonCreateUpdateProduct:
         ProductProductType.objects.filter(product=product_obj).delete()
         ProductProductType.objects.bulk_create(bulk_info)
         return True
-
-    @classmethod
-    def check_expired_price_list(cls, price_list):
-        if not price_list.valid_time_end.date() < datetime.now().date():
-            return True
-        return False
 
     @classmethod
     def create_product_variant_attribute(cls, product_obj, product_variant_attribute_list):

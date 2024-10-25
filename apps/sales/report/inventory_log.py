@@ -1,96 +1,192 @@
 from django.db import transaction
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods
-from apps.sales.report.models import ReportStockLog, ReportInventoryCost, ReportInventorySubFunction
+from apps.masterdata.saledata.models import Periods, SubPeriods
+from apps.sales.report.models import (
+    ReportStockLog, ReportInventoryCost,
+    ReportInventorySubFunction, ReportInventoryCostByWarehouse
+)
 
 
-class InventoryCostLog:
+class ReportInvLog:
     @classmethod
-    def log(cls, stock_obj, stock_obj_date, stock_data):
-        if stock_obj.company.company_config.default_inventory_value_method == 0:
-            pass
-        if stock_obj.company.company_config.default_inventory_value_method == 1:
-            pass
-        if stock_obj.company.company_config.default_inventory_value_method == 2:
-            return cls.weighted_average_log(stock_obj, stock_obj_date, stock_data)
-        if stock_obj.company.company_config.default_inventory_value_method == 3:
-            pass
-        raise serializers.ValidationError({'inventory_value_method': 'Inventory value method does not exist.'})
-
-
-    @classmethod
-    def weighted_average_log(cls, stock_obj, stock_obj_date, stock_data):
-        print('*** WEIGHTED AVERAGE LOG')
+    def log(cls, doc_obj, doc_date, doc_data):
         try:
-            tenant = stock_obj.tenant
-            company = stock_obj.company
+            tenant = doc_obj.tenant
+            company = doc_obj.company
+            employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
-                # lấy pp tính giá cost
-                cost_calculate_cfg = InventoryCostLogFunc.get_cost_calculate_config(company.company_config)
-                period_obj = Periods.objects.filter(
-                    tenant=tenant,
-                    company=company,
-                    fiscal_year=stock_obj_date.year
-                ).first()
+                # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
+                cost_cfg = ReportInvCommonFunc.get_cost_config(company.company_config)
+                period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
-                    sub_period_order = stock_obj_date.month - period_obj.space_month
+                    sub_period_order = doc_date.month - period_obj.space_month
 
                     # cho kiểm kê định kì
-                    if int(sub_period_order) == 1:
-                        last_period_obj = Periods.objects.filter(
-                            tenant=tenant,
-                            company=company,
-                            fiscal_year=period_obj.fiscal_year - 1
-                        ).first()
-                        last_sub_cost = ReportInventoryCost.objects.filter(
-                            period_mapped=last_period_obj,
-                            sub_period_order=12,
-                            periodic_closed=False
-                        ).exists()
-                        if last_sub_cost:
-                            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                                last_period_obj, 12, tenant, company
-                            )
-                    else:
-                        last_sub_cost = ReportInventoryCost.objects.filter(
-                            period_mapped=period_obj,
-                            sub_period_order=int(sub_period_order) - 1,
-                            periodic_closed=False
-                        ).exists()
-                        if last_sub_cost:
-                            ReportInventorySubFunction.calculate_ending_balance_for_periodic(
-                                period_obj, int(sub_period_order) - 1, tenant, company
-                            )
+                    if company.company_config.definition_inventory_valuation == 1:
+                        ReportInvCommonFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
+
+                    # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
+                    for order in range(1, sub_period_order + 1):
+                        ReportInvCommonFunc.sum_up_sub_period(tenant, company, employee, period_obj, order)
 
                     # tạo các log
-                    new_log_list = ReportStockLog.create_new_log_list(
-                        stock_obj, stock_data, period_obj, sub_period_order, cost_calculate_cfg
-                    )
-                    # cập nhập giá cost hiện tại
-                    for log in new_log_list:
-                        ReportStockLog.update_current_cost(log, period_obj, sub_period_order, cost_calculate_cfg)
+                    new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
+
+                    # cập nhập giá cost cho từng log
+                    for log in new_logs:
+                        ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
                     return True
-                raise serializers.ValidationError({'period_obj': f'Fiscal year {stock_obj_date.year} does not exist.'})
+                raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
             print(err)
             return False
 
 
-class InventoryCostLogFunc:
+class ReportInvCommonFunc:
     @classmethod
     def cast_quantity_to_unit(cls, log_uom, log_quantity):
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def get_cost_calculate_config(cls, company_config):
-        cost_per_warehouse = company_config.cost_per_warehouse
-        cost_per_lot = company_config.cost_per_lot
-        cost_per_project = company_config.cost_per_project
-        config_inventory_management = []
-        if cost_per_warehouse:
-            config_inventory_management.append(1)
-        if cost_per_lot:
-            config_inventory_management.append(2)
-        if cost_per_project:
-            config_inventory_management.append(3)
-        return config_inventory_management
+    def get_cost_config(cls, company_config):
+        cost_config = [
+            1 if company_config.cost_per_warehouse else None,
+            2 if company_config.cost_per_lot else None,
+            3 if company_config.cost_per_project else None
+        ]
+        return [i for i in cost_config if i is not None]
+
+    @classmethod
+    def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
+        """ Tự động cập nhập giá cost cuối kì cho tháng trước """
+        if int(sub_period_order) == 1:
+            fiscal_year = period_obj.fiscal_year - 1
+            period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=fiscal_year).first()
+            sub_period_order = 12
+
+        if ReportInventoryCost.objects.filter(
+                period_mapped=period_obj,
+                sub_period_order=sub_period_order,
+                periodic_closed=False
+        ).exists():
+            ReportInventorySubFunction.calculate_cost_dict_for_periodic(
+                period_obj, sub_period_order, tenant, company
+            )
+        return True
+
+    @classmethod
+    def by_perpetual(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
+        rp_inv_cost = ReportInventoryCost(
+            tenant=tenant,
+            company=company,
+            employee_created=emp_current,
+            employee_inherit=emp_current,
+            product_id=last_sub_item.product_id,
+            lot_mapped_id=last_sub_item.lot_mapped_id,
+            warehouse_id=last_sub_item.warehouse_id,
+            sale_order_id=last_sub_item.sale_order_id,
+            period_mapped=this_period,
+            sub_period_order=this_sub.order,
+            sub_period=this_sub,
+            opening_balance_quantity=last_sub_item.ending_balance_quantity,
+            opening_balance_cost=last_sub_item.ending_balance_cost,
+            opening_balance_value=last_sub_item.ending_balance_value,
+            ending_balance_quantity=last_sub_item.ending_balance_quantity,
+            ending_balance_cost=last_sub_item.ending_balance_cost,
+            ending_balance_value=last_sub_item.ending_balance_value
+        )
+        bulk_info.append(rp_inv_cost)
+        for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
+            bulk_info_wh.append(
+                ReportInventoryCostByWarehouse(
+                    report_inventory_cost=rp_inv_cost,
+                    warehouse=report_inventory_cost.warehouse,
+                    opening_quantity=report_inventory_cost.ending_quantity,
+                    ending_quantity=report_inventory_cost.ending_quantity
+                )
+            )
+        return bulk_info, bulk_info_wh
+
+    @classmethod
+    def by_periodic(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
+        rp_inv_cost = ReportInventoryCost(
+            tenant=tenant,
+            company=company,
+            employee_created=emp_current,
+            employee_inherit=emp_current,
+            product_id=last_sub_item.product_id,
+            lot_mapped_id=last_sub_item.lot_mapped_id,
+            warehouse_id=last_sub_item.warehouse_id,
+            period_mapped=this_period,
+            sub_period_order=this_sub.order,
+            sub_period=this_sub,
+            opening_balance_quantity=last_sub_item.periodic_ending_balance_quantity,
+            opening_balance_cost=last_sub_item.periodic_ending_balance_cost,
+            opening_balance_value=last_sub_item.periodic_ending_balance_value,
+            periodic_ending_balance_quantity=last_sub_item.periodic_ending_balance_quantity,
+            periodic_ending_balance_cost=last_sub_item.periodic_ending_balance_cost,
+            periodic_ending_balance_value=last_sub_item.periodic_ending_balance_value
+        )
+        bulk_info.append(rp_inv_cost)
+        for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
+            bulk_info_wh.append(
+                ReportInventoryCostByWarehouse(
+                    report_inventory_cost=rp_inv_cost,
+                    warehouse=report_inventory_cost.warehouse,
+                    opening_quantity=report_inventory_cost.ending_quantity,
+                    ending_quantity=report_inventory_cost.ending_quantity
+                )
+            )
+        return bulk_info, bulk_info_wh
+
+    @classmethod
+    def sum_up_sub_period(cls, tenant, company, emp_current, this_period, this_sub_order):
+        if tenant and company and emp_current and this_period and this_sub_order:
+            this_sub = SubPeriods.objects.filter(period_mapped=this_period, order=this_sub_order).first()
+            last_period = Periods.objects.filter(
+                tenant=tenant,
+                company=company,
+                fiscal_year=this_period.fiscal_year - 1
+            ).first() if int(this_sub_order) == 1 else this_period
+            last_sub_order = 12 if int(this_sub_order) == 1 else int(this_sub_order) - 1
+            if last_period and last_sub_order:
+                if not this_sub.run_report_inventory:
+                    bulk_info = []
+                    bulk_info_wh = []
+                    for last_sub_item in ReportInventoryCost.objects.filter(
+                            tenant=tenant,
+                            company=company,
+                            period_mapped=last_period,
+                            sub_period_order=last_sub_order
+                    ):
+                        if not ReportInventoryCost.objects.filter(
+                                tenant=tenant,
+                                company=company,
+                                period_mapped=this_period,
+                                sub_period_order=this_sub_order,
+                                product_id=last_sub_item.product_id,
+                                warehouse_id=last_sub_item.warehouse_id,
+                                lot_mapped_id=last_sub_item.lot_mapped_id,
+                                sale_order_id=last_sub_item.sale_order_id,
+                        ).exists():
+                            bulk_info, bulk_info_wh = cls.by_perpetual(
+                                tenant, company, emp_current,
+                                last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
+                            ) if company.company_config.definition_inventory_valuation == 0 else cls.by_periodic(
+                                tenant, company, emp_current,
+                                last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
+                            )
+
+                    ReportInventoryCost.objects.bulk_create(bulk_info)
+                    ReportInventoryCostByWarehouse.objects.bulk_create(bulk_info_wh)
+                    last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
+                    if any([
+                        last_sub.run_report_inventory,
+                        int(this_sub_order) <= company.software_start_using_time.month - this_period.space_month
+                    ]):
+                        this_sub.run_report_inventory = True
+                        this_sub.save(update_fields=['run_report_inventory'])
+                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
+                              f"Pushed to next sub period.")
+            return True
+        raise serializers.ValidationError({'error': 'Some objects are not exist.'})

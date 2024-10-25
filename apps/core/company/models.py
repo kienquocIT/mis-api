@@ -21,9 +21,8 @@ DEFINITION_INVENTORY_VALUATION_CHOICES = [
 
 DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
     (0, _('FIFO')),
-    (1, _('Cumulative weighted average')),
-    (2, _('Weighted average')),
-    (3, _('Specific identification method')),
+    (1, _('Weighted average')),
+    (2, _('Specific identification method')),
 ]
 
 NUMBERING_BY_CHOICES = [
@@ -200,7 +199,7 @@ class CompanyConfig(SimpleAbstractModel):
         )
     )
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
-    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
+    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=1)
     cost_per_warehouse = models.BooleanField(default=True)
     cost_per_lot = models.BooleanField(default=False)
     cost_per_project = models.BooleanField(default=False)

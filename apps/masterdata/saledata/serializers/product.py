@@ -2,9 +2,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.inventory_log import InventoryCostLogFunc
+from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
+from ..models import ProductWareHouse
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
@@ -108,6 +109,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
+    valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -233,7 +235,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
@@ -264,6 +266,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'inventory_level_max': ProductMsg.NEGATIVE_VALUE})
             return value
         return None
+
+    @classmethod
+    def validate_valuation_method(cls, attrs):
+        if attrs in [0, 1, 2]:
+            return attrs
+        raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
 
     @classmethod
     def validate_purchase_default_uom(cls, value):
@@ -572,9 +580,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    config_inventory_management = InventoryCostLogFunc.get_cost_calculate_config(
-                        obj.company.company_config
-                    )
+                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company.company_config)
 
                     result.append({
                         'id': item.id,
@@ -584,7 +590,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'stock_amount': casted_stock_amount,
                         'cost': obj.get_unit_cost_by_warehouse(
                             warehouse_id=item.warehouse_id, get_type=2
-                        ) / casted_stock_amount if config_inventory_management == [1] else None
+                        ) / casted_stock_amount if cost_cfg == [1] else None
                     })
         return result
 
@@ -646,7 +652,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
@@ -656,6 +661,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
+    # valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -670,18 +676,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price', 'valuation_method',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
+            # 'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
-
-    def validate_code(self, value):
-        if value:
-            if Product.objects.filter_current(
-                    fill__tenant=True, fill__company=True, code=value
-            ).exclude(code=self.instance.code).exists():
-                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
-            return value
-        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_general_product_category(cls, value):
@@ -759,7 +757,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
@@ -809,6 +807,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             return value
         return None
 
+    # @classmethod
+    # def validate_valuation_method(cls, attrs):
+    #     if attrs in [0, 1, 2]:
+    #         return attrs
+    #     raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
+
     @classmethod
     def validate_purchase_default_uom(cls, value):
         if value:
@@ -826,6 +830,26 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             except Tax.DoesNotExist:
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
+
+    def validate(self, validate_data):
+        if validate_data.get('code'):
+            if Product.objects.filter_current(
+                    fill__tenant=True, fill__company=True, code=validate_data.get('code')
+            ).exclude(code=self.instance.code).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+        else:
+            raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
+        old_valuation_method = self.instance.valuation_method
+        new_valuation_method = validate_data.get('valuation_method')
+        if all([
+            ProductWareHouse.objects.filter(product=self.instance).exists(),
+            new_valuation_method != old_valuation_method
+        ]):
+            raise serializers.ValidationError(
+                {'valuation_method': "Cannot change the valuation method for products that have transactions."}
+            )
+        return validate_data
 
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:

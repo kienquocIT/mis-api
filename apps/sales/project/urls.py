@@ -5,6 +5,7 @@ from .views import (
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD,
     ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate,
     ProjectConfigDetail, ProjectExpenseHomeList, ProjectNewsList, ProjectNewsCommentList, ProjectNewsCommentDetail,
+    ProjectNewsCommentDetailFlows
 )
 
 
@@ -38,6 +39,6 @@ urlpatterns = [
     # news
     path('news', ProjectNewsList.as_view(), name='ProjectNewsList'),
     path('news/comment/<str:pk>', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
-    path('news/comment/<str:pk>/flows', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
+    path('news/comment/<str:pk>/flows', ProjectNewsCommentDetailFlows.as_view(), name='ProjectNewsCommentDetailFlows'),
     path('new/<str:news_id>/comments', ProjectNewsCommentList.as_view(), name='ProjectNewsCommentList'),
 ]

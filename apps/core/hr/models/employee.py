@@ -256,6 +256,7 @@ class Employee(TenantAbstractModel):
             'last_name': self.last_name,
             'full_name': self.get_full_name(),
             'avatar_img': self.avatar_img.url if self.avatar_img else None,
+            'code': self.code,
         }
 
     def get_detail(self, *args):

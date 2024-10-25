@@ -3,7 +3,7 @@ from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
-from apps.sales.report.inventory_log import InventoryCostLog, InventoryCostLogFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -48,16 +48,16 @@ class GoodsIssue(DataAbstractModel):
 
     @classmethod
     def prepare_data_for_logging(cls, instance):
-        activities_data = []
+        doc_data = []
         for item in instance.goods_issue_product.filter(issued_quantity__gt=0):
             if len(item.lot_data) > 0:
                 for lot_item in item.lot_data:
                     prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
                     if prd_wh_lot and lot_item.get('quantity', 0) > 0:
-                        casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(
+                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
                             item.uom, lot_item.get('quantity', 0)
                         )
-                        activities_data.append({
+                        doc_data.append({
                             'product': item.product,
                             'warehouse': item.warehouse,
                             'system_date': instance.date_approved,
@@ -73,14 +73,12 @@ class GoodsIssue(DataAbstractModel):
                             'lot_data': {
                                 'lot_id': str(prd_wh_lot.id),
                                 'lot_number': prd_wh_lot.lot_number,
-                                'lot_quantity': lot_item.get('quantity', 0),
-                                'lot_value': 0,  # theo gia cost,
                                 'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                             }
                         })
             else:
-                casted_quantity = InventoryCostLogFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
-                activities_data.append({
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
+                doc_data.append({
                     'product': item.product,
                     'warehouse': item.warehouse,
                     'system_date': instance.date_approved,
@@ -95,7 +93,7 @@ class GoodsIssue(DataAbstractModel):
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        InventoryCostLog.log(instance, instance.date_approved, activities_data)
+        ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True
 
     @classmethod
@@ -185,7 +183,7 @@ class GoodsIssue(DataAbstractModel):
                                 self.update_status_inventory_adjustment_item(
                                     item.inventory_adjustment_item, item.issued_quantity
                                 )
-                            self.inventory_adjustment.update_ia_state()
+                            # self.inventory_adjustment.update_ia_state()
                         elif self.production_order:
                             for item in self.goods_issue_product.all():
                                 self.update_product_warehouse_data(item)

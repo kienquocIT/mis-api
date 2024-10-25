@@ -1,8 +1,8 @@
 from django.urls import path
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
-    ReportStockDetailList, BalanceInitializationList, ReportStockList, ReportGeneralList,
-    PurchaseOrderListReport, ProductWarehouseViewList, BudgetReportCompanyList, PaymentListForBudgetReport,
+    ReportStockList, BalanceInitializationList, ReportInventoryCostList, ReportGeneralList,
+    PurchaseOrderListReport, ReportInventoryCostWarehouseDetail, BudgetReportCompanyList, PaymentListForBudgetReport,
     BudgetReportGroupList, BalanceInitializationListImportDB
 )
 
@@ -22,10 +22,13 @@ urlpatterns = [
         BalanceInitializationListImportDB.as_view(),
         name='BalanceInitializationListImportDB'
     ),
-    path('inventory/list', ReportStockList.as_view(), name='ReportStockList'),
-    path('inventory-detail/list', ReportStockDetailList.as_view(), name='ReportStockDetailList'),
-    path('product-warehouse-view/list', ProductWarehouseViewList.as_view(), name='ProductWarehouseViewList'),
-
+    path('inventory-cost-report/list', ReportInventoryCostList.as_view(), name='ReportInventoryCostList'),
+    path('inventory-stock-report/list', ReportStockList.as_view(), name='ReportStockList'),
+    path(
+        'inventory-cost-warehouse-detail',
+        ReportInventoryCostWarehouseDetail.as_view(),
+        name='ReportInventoryCostWarehouseDetail'
+    ),
 
     # Report purchasing
     path('po-report/list', PurchaseOrderListReport.as_view(), name='PurchaseOrderListReport'),

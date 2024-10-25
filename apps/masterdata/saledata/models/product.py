@@ -34,10 +34,8 @@ ATTRIBUTE_CONFIG = [
 
 VALUATION_METHOD = [
     (0, _('FIFO')),
-    (1, _('Cumulative weighted average')),
-    (2, _('Weighted average')),
-    (3, _('Specific identification method')),
-    (4, _('Standard cost')),
+    (1, _('Weighted average')),
+    (2, _('Specific identification method'))
 ]
 
 # Create your models here.
@@ -208,7 +206,7 @@ class Product(DataAbstractModel):
     )
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
-    valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=2)
+    valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
     standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Purchase
@@ -226,7 +224,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
-    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=1)
 
     # Stock information
     stock_amount = models.FloatField(
@@ -295,14 +293,14 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
                     value_list = [
-                        latest_trans.latest_log.current_quantity,
-                        latest_trans.latest_log.current_cost,
-                        latest_trans.latest_log.current_value
+                        latest_trans.latest_log.perpetual_current_quantity,
+                        latest_trans.latest_log.perpetual_current_cost,
+                        latest_trans.latest_log.perpetual_current_value
                     ]
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(
@@ -348,14 +346,14 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(sale_order_id=sale_order_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(sale_order_id=sale_order_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
                     value_list = [
-                        latest_trans.latest_log.current_quantity,
-                        latest_trans.latest_log.current_cost,
-                        latest_trans.latest_log.current_value
+                        latest_trans.latest_log.perpetual_current_quantity,
+                        latest_trans.latest_log.perpetual_current_cost,
+                        latest_trans.latest_log.perpetual_current_value
                     ]
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(
@@ -397,15 +395,15 @@ class Product(DataAbstractModel):
             sub_period_order = timezone.now().month - this_period.space_month
             company_config = getattr(self.company, 'company_config')
             for warehouse in warehouse_list:
-                latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
+                latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
                     if company_config.definition_inventory_valuation == 0 and \
-                            latest_trans.latest_log.current_quantity > 0:
+                            latest_trans.latest_log.perpetual_current_quantity > 0:
                         unit_cost_list.append({
                             'warehouse': {'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title},
-                            'quantity': latest_trans.latest_log.current_quantity,
-                            'unit_cost': latest_trans.latest_log.current_cost,
-                            'value': latest_trans.latest_log.current_value,
+                            'quantity': latest_trans.latest_log.perpetual_current_quantity,
+                            'unit_cost': latest_trans.latest_log.perpetual_current_cost,
+                            'value': latest_trans.latest_log.perpetual_current_value,
                         })
                 else:
                     opening_value_list_obj = self.report_inventory_cost_product.filter(
