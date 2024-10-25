@@ -60,8 +60,9 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
+from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, ReportStockLogByWarehouse, ReportStock
+    ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1229,6 +1230,8 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
+        # for quotation in Quotation.objects.filter(system_status=3):
+        #     QuotationFinishHandler.push_to_report_revenue(instance=quotation)
         for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
@@ -1544,14 +1547,14 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = ReportStockLogByWarehouse.objects.filter(
+            latest_log_obj = ReportInventoryCostLatestLog.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                ReportStockLogByWarehouse.objects.create(
+                ReportInventoryCostLatestLog.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
@@ -1581,7 +1584,7 @@ def report_rerun(company_id, start_month):
 
     all_goods_return = GoodsReturn.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
-    ).exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028']).order_by('date_approved')
+    ).order_by('date_approved')
 
     all_goods_transfer = GoodsTransfer.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
@@ -2235,6 +2238,8 @@ class InventoryReportRun:
         all_goods_return = GoodsReturn.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
         ).order_by('date_approved')
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            all_goods_return = all_goods_return.exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028'])
 
         all_goods_transfer = GoodsTransfer.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
@@ -2287,5 +2292,10 @@ class InventoryReportRun:
 
             print(f"--- Completed run id: {doc['id']}")
             print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+            ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+            ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
         print('Complete!')

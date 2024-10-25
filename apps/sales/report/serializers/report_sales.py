@@ -34,17 +34,25 @@ class ReportCommonGet:
 # REPORT REVENUE
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportRevenue
         fields = (
             'id',
             'sale_order',
+            'quotation',
+            'opportunity',
+            'customer',
             'date_approved',
             'revenue',
             'gross_profit',
             'net_income',
-            'group_inherit_id'
+            'employee_inherit',
+            'group_inherit_id',
         )
 
     @classmethod
@@ -58,16 +66,40 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
                 'title': obj.sale_order.customer.name,
                 'code': obj.sale_order.customer.code,
             } if obj.sale_order.customer else {},
-            'employee_inherit': {
-                'id': obj.sale_order.employee_inherit_id,
-                'first_name': obj.sale_order.employee_inherit.first_name,
-                'last_name': obj.sale_order.employee_inherit.last_name,
-                'email': obj.sale_order.employee_inherit.email,
-                'full_name': obj.sale_order.employee_inherit.get_full_name(2),
-                'code': obj.sale_order.employee_inherit.code,
-                'is_active': obj.sale_order.employee_inherit.is_active,
-            } if obj.sale_order.employee_inherit else {},
         } if obj.sale_order else {}
+
+    @classmethod
+    def get_quotation(cls, obj):
+        return {
+            'id': obj.quotation_id,
+            'title': obj.quotation.title,
+            'code': obj.quotation.code,
+            'customer': {
+                'id': obj.quotation.customer_id,
+                'title': obj.quotation.customer.name,
+                'code': obj.quotation.customer.code,
+            } if obj.quotation.customer else {},
+        } if obj.quotation else {}
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_customer(cls, obj):
+        return {
+            'id': obj.customer_id,
+            'title': obj.customer.name,
+            'code': obj.customer.code,
+        } if obj.customer else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit)
 
 
 # REPORT PRODUCT

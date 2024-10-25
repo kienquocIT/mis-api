@@ -35,18 +35,21 @@ class SOFinishHandler:
     # REPORT
     @classmethod
     def push_to_report_revenue(cls, instance):
-        ReportRevenue.push_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
-            date_approved=instance.date_approved,
-            revenue=instance.indicator_revenue,
-            gross_profit=instance.indicator_gross_profit,
-            net_income=instance.indicator_net_income,
-        )
+        ReportRevenue.push_from_so(**{
+            'tenant_id': instance.tenant_id,
+            'company_id': instance.company_id,
+            'sale_order_id': instance.id,
+            'quotation_id': None,
+            'opportunity_id': instance.opportunity_id,
+            'customer_id': instance.customer_id,
+            'employee_created_id': instance.employee_created_id,
+            'employee_inherit_id': instance.employee_inherit_id,
+            'group_inherit_id': instance.employee_inherit.group_id if instance.employee_inherit else None,
+            'date_approved': instance.date_approved,
+            'revenue': instance.indicator_revenue,
+            'gross_profit': instance.indicator_gross_profit,
+            'net_income': instance.indicator_net_income,
+        })
         return True
 
     @classmethod

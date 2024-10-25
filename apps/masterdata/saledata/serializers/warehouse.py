@@ -19,7 +19,8 @@ __all__ = [
     'ProductWarehouseAssetToolsListSerializer',
     'WarehouseEmployeeConfigListSerializer',
     'WarehouseEmployeeConfigCreateSerializer',
-    'WarehouseEmployeeConfigDetailSerializer'
+    'WarehouseEmployeeConfigDetailSerializer',
+    'ProductWareHouseListSerializerForGoodsTransfer'
 ]
 
 from apps.masterdata.saledata.models.inventory import WarehouseShelf

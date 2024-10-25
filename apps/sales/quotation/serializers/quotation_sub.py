@@ -574,6 +574,7 @@ class QuotationIndicatorSerializer(serializers.ModelSerializer):
         model = QuotationIndicator
         fields = (
             'indicator',
+            'indicator_data',
             'indicator_value',
             'indicator_rate',
             'order',
