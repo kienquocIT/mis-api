@@ -1,4 +1,6 @@
 from django.urls import path
+
+from apps.masterdata.saledata.serializers import DocumentTypeListSerializer
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
@@ -24,7 +26,7 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, ItemAddFromPriceListImport
+    RevenuePlanConfigList, ItemAddFromPriceListImport, DocumentTypeList
 )
 from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
     ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, \
@@ -177,4 +179,8 @@ urlpatterns += [
 urlpatterns += [
     path('expense-items', ExpenseItemList.as_view(), name='ExpenseItemList'),
     path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
+]
+
+urlpatterns += [
+    path('document-type', DocumentTypeList.as_view(), name='DocumentTypeList'),
 ]
