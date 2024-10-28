@@ -21,7 +21,7 @@ class CommonCreateUpdateProduct:
                 currency_using=product.sale_currency_using,
                 uom_using=product.sale_default_uom,
                 uom_group_using=product.general_uom_group,
-                get_price_from_source=True if str(child_obj.id) != str(price_list_obj.id) else False,
+                get_price_from_source=str(child_obj.id) != str(price_list_obj.id),
             )
             bulk_info.append(price_list_product_obj)
             price_list_product_data.append({
