@@ -77,7 +77,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if 'product_category' not in get_old_list:
                 if 'product_category' not in create_new_list:
                     raise serializers.ValidationError({'product_category': _("This category may be already exist.")})
-                product_category = None
+                # product_category = None
         return product_category
 
     @staticmethod
@@ -95,7 +95,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if 'uom' not in get_old_list:
                 if 'uom' not in create_new_list:
                     raise serializers.ValidationError({'uom': _("This uom may be already exist.")})
-                uom = None
+                # uom = None
         return uom
 
     @staticmethod
@@ -113,7 +113,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
                 if 'tax_percent' not in get_old_list:
                     if 'tax_percent' not in create_new_list:
                         raise serializers.ValidationError({'tax_percent': _("This tax may be already exist.")})
-                    tax = None
+                    # tax = None
         return tax
 
     @classmethod
