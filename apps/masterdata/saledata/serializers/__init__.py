@@ -5,6 +5,7 @@ from .config import *
 from .accounts import *
 from .accounts_masterdata import *
 from .price import *
+from .price_masterdata import *
 from .expense import *
 from .shipping import *
 from .warehouse import *

@@ -10,7 +10,7 @@ from apps.core.mailer.handle_html import HTMLController
 from apps.core.mailer.templates import (
     TEMPLATE_OTP_VALIDATE_DEFAULT, TEMPLATE_MAIL_WELCOME_DEFAULT,
     TEMPLATE_CALENDAR_DEFAULT, SUBJECT_MAIL_WELCOME_DEFAULT, SUBJECT_OTP_VALIDATE_DEFAULT, SUBJECT_CALENDAR_DEFAULT,
-    SUBJECT_WORKFLOW_DEFAULT, TEMPLATE_WORKFLOW_DEFAULT,
+    SUBJECT_WORKFLOW_DEFAULT, TEMPLATE_WORKFLOW_DEFAULT, SUBJECT_PROJECT_NEW_DEFAULT, TEMPLATE_PROJECT_NEW_DEFAULT
 )
 from apps.shared import MasterDataAbstractModel, StringHandler, SimpleEncryptor, SimpleAbstractModel, DisperseModel
 
@@ -205,6 +205,9 @@ class MailTemplateSystem(MasterDataAbstractModel):
                     obj.contents = TEMPLATE_WORKFLOW_DEFAULT.replace(
                         '__company_title__', company_obj.title
                     ).replace('__company_sub_domain__', tenant_obj.code.lower())
+                elif system_code in [7, '7']:
+                    obj.subject = SUBJECT_PROJECT_NEW_DEFAULT
+                    obj.contents = TEMPLATE_PROJECT_NEW_DEFAULT.replace('__company_title__', company_obj.title)
                 obj.save(update_fields=['contents', 'subject'])
             except tenant_cls.DoesNotExist:
                 pass

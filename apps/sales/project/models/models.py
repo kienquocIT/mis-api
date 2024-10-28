@@ -95,6 +95,10 @@ class Project(DataAbstractModel):
         default=1,
         help_text='choices= ' + str(SYSTEM_STATUS),
     )
+    date_close = models.DateField(
+        verbose_name='Close date',
+        blank=True, null=True
+    )
 
     def code_generator(self):
         if not self.code:

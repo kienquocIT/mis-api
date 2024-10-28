@@ -235,7 +235,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
@@ -757,7 +757,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:

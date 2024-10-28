@@ -136,3 +136,20 @@ msgstr "<h2><strong> <span style=\"text-align: center;\">  __company_title__ </s
 "<p>Thông tin lịch sự kiện được đăng ký:</p>"
 "<p></p>"
 "<p>Trân trọng.</p>"
+
+# template project new notify
+msgid "<h2><strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p>Hi <b><span class=\"params-data\" data-code=\"_project__prj_member\"></span></b></p>"
+    "<p><b><span class=\"params-data\" data-code=\"_project__prj_owner\"></span></b> create a project <b><span class=\"params-data\" data-code=\"_project__prj_title\"></span></b>. He/She added you in a member in Project, you might want to take a look.</p>"
+    "<p><a href=\"_project__prj_url\" style=\"text-decoration:none;color:#1565c0;\">View here</a></p>"
+    "<hr/>"
+    "<p>Best regards.</p>"
+msgstr "<h2><strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p>Chào <b><span class=\"params-data\" data-code=\"_project__prj_member\"></span></b></p>"
+    "<p><b><span class=\"params-data\" data-code=\"_project__prj_owner\"></span></b> tạo một dự án <b><span class=\"params-data\" data-code=\"_project__prj_title\"></span></b>. Anh/Cô ấy đã thêm bạn vào thành viên trong dự án, bạn có thể muốn xem.</p>"
+    "<p><a href=\"_project__prj_url\" style=\"text-decoration:none;color:#1565c0;\">Xem ở đây</a></p>"
+    "<hr/>"
+    "<p>Trân trọng.</p>"
+
+msgid "New Project Created"
+msgstr "Dự án mới được tạo"

@@ -78,6 +78,45 @@ def mail_workflow_sub(cls, log_cls, **kwargs):
     return state_send
 
 
+def mail_project_new(cls, log_cls, **kwargs):
+    prj_owner_obj = kwargs.get('prj_owner_obj', None)
+    prj_member_obj = kwargs.get('prj_member_obj', None)
+    prj_id = kwargs.get('prj_id', None)
+    subject = kwargs.get('subject', None)
+    template_obj = kwargs.get('template_obj', None)
+    tenant_id = kwargs.get('tenant_id', None)
+
+    tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
+    prj_obj = DisperseModel(app_model='project.Project').get_model().objects.filter(pk=prj_id).first()
+
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[prj_member_obj.email])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            mail_to=[prj_member_obj.email],
+            template=template_obj.contents,
+            data=MailDataResolver.project_new(
+                tenant_obj=tenant_obj, prj_owner=prj_owner_obj, prj_member=prj_member_obj, prj_obj=prj_obj
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send
+
+
 @shared_task
 def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: UUID or str):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=1)
@@ -342,6 +381,48 @@ def send_mail_workflow(
                             'company_id': company_id,
                             'runtime_id': runtime_id,
                             'workflow_type': workflow_type,
+                        }
+                    )
+                    if state_send is True:
+                        log_cls.update(status_code=1, status_remark=state_send)  # sent
+                        log_cls.save()
+                        return 'Success'
+                    log_cls.update(status_code=2, status_remark=state_send)  # error
+                    log_cls.save()
+                return 'SEND_FAILURE'
+            return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+@shared_task
+def send_mail_new_project_member(tenant_id, company_id, prj_owner, prj_member, prj_id):
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=7)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, template_obj, user_obj] = obj_got
+        print('user_obj', user_obj)
+        cls = SendMailController(mail_config=config_obj, timeout=3)
+        prj_owner_obj = get_employee_obj(employee_id=prj_owner, tenant_id=tenant_id, company_id=company_id)
+        prj_member_obj = get_employee_obj(employee_id=prj_member, tenant_id=tenant_id, company_id=company_id)
+
+        if cls.is_active is True and template_obj and prj_owner_obj and prj_member_obj:
+            if template_obj.contents and prj_member_obj.email and prj_owner_obj.email:
+                subject = template_obj.subject if template_obj.subject else 'New Project Create'
+                log_cls = MailLogController(
+                    tenant_id=tenant_id, company_id=company_id,
+                    system_code=7,  # PROJECT
+                    doc_id=prj_id, subject=subject,
+                )
+                if log_cls.create():
+                    state_send = mail_project_new(
+                        cls=cls, log_cls=log_cls,
+                        **{
+                            'prj_owner_obj': prj_owner_obj,
+                            'prj_member_obj': prj_member_obj,
+                            'prj_id': prj_id,
+                            'subject': subject,
+                            'template_obj': template_obj,
+                            'tenant_id': tenant_id
                         }
                     )
                     if state_send is True:
