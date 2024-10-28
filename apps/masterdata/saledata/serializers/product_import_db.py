@@ -64,7 +64,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
 
     @staticmethod
     def get_product_category(tenant, company, product_category, create_new_list, get_old_list):
-        value_format = unidecode(product_category).lower()
+        value_format = unidecode(product_category if product_category else '').lower()
         product_category = None
         for item in ProductCategory.objects.filter(tenant=tenant, company=company):
             if any([unidecode(item.code).lower() == value_format, unidecode(item.title).lower() in value_format]):
@@ -82,7 +82,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
 
     @staticmethod
     def get_uom(tenant, company, uom, create_new_list, get_old_list):
-        value_format = unidecode(uom).lower()
+        value_format = unidecode(uom if uom else '').lower()
         uom = None
         for item in UnitOfMeasure.objects.filter(tenant=tenant, company=company):
             if any([unidecode(item.code).lower() == value_format, unidecode(item.title).lower() in value_format]):
@@ -118,7 +118,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, tenant, company, product_code, product_title):
-        code_format = unidecode(product_code).lower()
+        code_format = unidecode(product_code if product_code else '').lower()
         title_format = unidecode(product_title).lower()
         product_obj = None
         for item in Product.objects.filter(tenant=tenant, company=company):
@@ -153,6 +153,8 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
                 product_obj = None
 
         if not product_obj:
+            import_data['product_code'] = import_data.get('product_code') if import_data.get('product_code') else \
+                f"PRD00{Product.objects.filter(tenant=tenant, company=company).count()}"
             ProductCreateSerializer.validate_code(import_data.get('product_code'))
 
         validate_data = {
