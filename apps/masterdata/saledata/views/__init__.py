@@ -10,3 +10,4 @@ from .product import *
 from .price import *
 from .periods import *
 from .revenue_plan_config import *
+from .document import *
