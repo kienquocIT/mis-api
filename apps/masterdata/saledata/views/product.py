@@ -531,6 +531,7 @@ class ProductQuotationListLoadDB(BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'tenant_current': request.user.tenant_current,
-            'company_current': request.user.company_current
+            'company_current': request.user.company_current,
+            'employee_current': request.user.employee_current
         }
         return self.create(request, *args, **kwargs)
