@@ -2299,3 +2299,23 @@ class InventoryReportRun:
             ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
         print('Complete!')
+
+
+def create_import_uom_group():
+    for company in Company.objects.all():
+        has_import_uom_group = UnitOfMeasureGroup.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            is_default=True,
+            code='UG_import',
+        ).exists()
+        if not has_import_uom_group:
+            UnitOfMeasureGroup.objects.create(
+                company=company,
+                tenant=company.tenant,
+                is_default=True,
+                code='UG_import',
+                title='Import group unit'
+            )
+            print(f"Added for {company.title} :))")
+    print('Done')

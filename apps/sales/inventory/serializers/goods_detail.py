@@ -295,7 +295,7 @@ class GoodsDetailDataDetailSerializer(serializers.ModelSerializer):
         fields = ('id',)
 
 
-class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
+class GoodsDetailCreateSerializerImportDB(GoodsDetailDataCreateSerializer):
     class Meta:
         model = ProductWareHouse
         fields = ()
@@ -365,3 +365,9 @@ class GoodsDetailDataCreateImportSerializer(GoodsDetailDataCreateSerializer):
             else:
                 raise serializers.ValidationError({'Product Warehouse': "ProductWareHouse object does not exist"})
         return prd_wh
+
+
+class GoodsDetailDetailSerializerImportDB(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = ('id',)
