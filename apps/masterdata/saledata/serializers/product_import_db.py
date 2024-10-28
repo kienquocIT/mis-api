@@ -1,8 +1,7 @@
 from unidecode import unidecode
 from django.utils.translation import gettext_lazy as _
-from django.db import transaction
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Currency, Price, ProductPriceList
+from apps.masterdata.saledata.models import Currency, Price
 from apps.masterdata.saledata.models import UnitOfMeasure, UnitOfMeasureGroup, ProductType, Tax, TaxCategory
 from apps.masterdata.saledata.models.product import Product, ProductCategory
 from apps.masterdata.saledata.serializers import CommonCreateUpdateProduct, ProductCreateSerializer
@@ -144,7 +143,9 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         company = self.context.get('company_current', None)
         employee = self.context.get('employee_current', None)
 
-        product_obj = self.get_product(tenant, company, import_data.get('product_code'), import_data.get('product_title'))
+        product_obj = self.get_product(
+            tenant, company, import_data.get('product_code'), import_data.get('product_title')
+        )
         if not product_obj:
             if 'product_obj' not in create_new_list:
                 raise serializers.ValidationError({'product_obj': _("This product does not exist.")})
