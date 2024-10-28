@@ -89,6 +89,7 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
+        {'code': 'UG_import', 'title': 'Import group unit', 'is_default': 1},
         {'code': 'UG001', 'title': 'Labor', 'is_default': 1},
     ]
 

@@ -45,7 +45,10 @@ class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'document_data',
             'attachment',
-            'tinymce_content',
+            'abstract_content',
+            'trade_content',
+            'legal_content',
+            'payment_content',
         )
 
     @classmethod
@@ -64,7 +67,10 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'document_data',
             'attachment',
-            'tinymce_content',
+            'abstract_content',
+            'trade_content',
+            'legal_content',
+            'payment_content',
         )
 
     def validate_attachment(self, value):
@@ -97,7 +103,10 @@ class ContractApprovalUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'document_data',
             'attachment',
-            'tinymce_content',
+            'abstract_content',
+            'trade_content',
+            'legal_content',
+            'payment_content',
         )
 
     def validate_attachment(self, value):

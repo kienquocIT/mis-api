@@ -1,5 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.serializers import PriceListCreateItemSerializerImportDB
+from apps.masterdata.saledata.serializers import PriceListItemCreateSerializerImportDB
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models import (
     TaxCategory, Tax, Currency, Price
@@ -12,7 +12,8 @@ from apps.masterdata.saledata.serializers.price_masterdata import (
 )
 from apps.masterdata.saledata.serializers.price import (
     PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer, PriceDeleteSerializer,
-    PriceListUpdateItemSerializer, PriceListDeleteItemSerializer, PriceListCreateItemSerializer
+    PriceListUpdateItemSerializer, PriceListDeleteItemSerializer, PriceListCreateItemSerializer,
+    PriceListItemDetailSerializerImportDB
 )
 
 
@@ -283,7 +284,7 @@ class PriceDelete(BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class UpdateItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
@@ -358,18 +359,16 @@ class AddItemToPriceList(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-class AddItemToPriceListImportDB(BaseCreateMixin):
+class PriceListItemListImportDB(BaseCreateMixin):
     queryset = Price.objects
-    serializer_list = PriceListSerializer
-    serializer_detail = PriceDetailSerializer
-    serializer_create = PriceListCreateItemSerializerImportDB
+    serializer_detail = PriceListItemDetailSerializerImportDB
+    serializer_create = PriceListItemCreateSerializerImportDB
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
-    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
-        operation_summary="Create Product from Price List by excel import",
-        operation_description="Create new Product from Price List by excel import",
-        request_body=PriceListCreateItemSerializerImportDB,
+        operation_summary="Price List Item List Import DB",
+        operation_description="Price List Item List Import DB",
+        request_body=PriceListItemCreateSerializerImportDB,
     )
     @mask_view(
         login_require=True, auth_require=True,

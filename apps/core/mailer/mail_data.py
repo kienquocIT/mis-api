@@ -107,11 +107,10 @@ class MailDataResolver:
                 '_workflow': {
                     'wf_title': wf_title,
                     'wf_application_title': wf_application_title,
-                    'wf_application_url': f'{wf_application_url}{doc_id}',
                     'wf_doc_id': doc_id,
                     'wf_common_text_0': wf_common_text_0,
                     'wf_common_text_1': wf_common_text_1,
-                    'wf_common_text_2': full_domain,
+                    'wf_common_text_2': f'{full_domain}/{wf_application_url}{doc_id}',
                     'wf_common_text_3': wf_common_text_3,
                 },
             }
