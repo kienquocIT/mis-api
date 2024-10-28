@@ -156,7 +156,7 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('unitofmeasure_group').order_by('-is_default')
+        return super().get_queryset().prefetch_related('unitofmeasure_group').order_by('-is_default', 'code')
 
     @swagger_auto_schema(
         operation_summary="UnitOfMeasureGroup list",

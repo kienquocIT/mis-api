@@ -40,7 +40,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
     @staticmethod
     def get_uom_group(tenant, company):
         uom_group = UnitOfMeasureGroup.objects.filter(
-            tenant=tenant, company=company, is_default=True, code='UG_import'
+            tenant=tenant, company=company, is_default=True, code='UGI'
         ).first()
         if not uom_group:
             raise serializers.ValidationError({'uom_group': _("UOM group for import does not exist.")})

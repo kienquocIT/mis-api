@@ -2307,15 +2307,60 @@ def create_import_uom_group():
             company=company,
             tenant=company.tenant,
             is_default=True,
-            code='UG_import',
+            code='UG000',
         ).exists()
         if not has_import_uom_group:
             UnitOfMeasureGroup.objects.create(
                 company=company,
                 tenant=company.tenant,
                 is_default=True,
-                code='UG_import',
-                title='Import group unit'
+                code='ImportGroup',
+                title='Nhóm đơn vị cho import'
             )
             print(f"Added for {company.title} :))")
     print('Done')
+
+
+def update_default_masterdata():
+    # UOM Group
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Nhân công', 'nhân công', 'Nhan cong', 'nhan cong', 'Labor', 'labor']
+    ).update(code='Labor', title='Nhân công', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Kích thước', 'kích thước', 'Kich thuoc', 'kich thuoc', 'Size', 'size']
+    ).update(code='Size', title='Kích thước', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Thời gian', 'thời gian', 'Thoi gian', 'thoi gian', 'Time', 'time']
+    ).update(code='Time', title='Thời gian', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Đơn vị', 'đơn vị', 'Don vi', 'don vi', 'Unit', 'unit']
+    ).update(code='Unit', title='Đơn vị', is_default=1)
+
+    # UOM
+    UnitOfMeasure.objects.filter(group__code='Labor').update(is_default=0)
+    for item in UnitOfMeasure.objects.filter(group__code='Labor', group__is_default=1):
+        if item.title.lower() in ['manhour', 'man hour']:
+            item.code = 'Manhour'
+            item.title = 'Man hour'
+            item.is_referenced_unit = 1
+            item.ratio = 1
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+        if item.title.lower() in ['manday', 'man day']:
+            item.code = 'Manday'
+            item.title = 'Man day'
+            item.is_referenced_unit = 0
+            item.ratio = 8
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+        if item.title.lower() in ['manmonth', 'man month']:
+            item.code = 'Manmonth'
+            item.title = 'Man month'
+            item.is_referenced_unit = 0
+            item.ratio = 176
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+    print('Done :))')
