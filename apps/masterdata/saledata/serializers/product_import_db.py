@@ -76,7 +76,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         elif 'product_category' not in get_old_list and 'product_category' not in create_new_list:
             raise serializers.ValidationError(
                 {'product_category': _(
-                    f"Product category may be already exist" + f": [{product_category.code}] {product_category.title}"
+                    "Product category may be already exist" + f": [{product_category.code}] {product_category.title}"
                 )}
             )
         return product_category
@@ -93,7 +93,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if 'uom' not in create_new_list:
                 raise serializers.ValidationError({'uom': _("This uom does not exist.")})
         elif 'uom' not in get_old_list and 'uom' not in create_new_list:
-            raise serializers.ValidationError({'uom': _(f"UOM may be already exist" + f": [{uom.code}] {uom.title}")})
+            raise serializers.ValidationError({'uom': _("UOM may be already exist" + f": [{uom.code}] {uom.title}")})
         return uom
 
     @staticmethod
@@ -109,7 +109,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
                     raise serializers.ValidationError({'tax': _("This tax does not exist.")})
             elif 'tax_percent' not in get_old_list and 'tax_percent' not in create_new_list:
                 raise serializers.ValidationError(
-                    {'tax_percent': _(f"Tax may be already exist" + f": [{tax.code}] {tax.title}")}
+                    {'tax_percent': _("Tax may be already exist" + f": [{tax.code}] {tax.title}")}
                 )
         return tax
 
@@ -147,7 +147,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if 'product_obj' not in get_old_list:
                 if 'product_obj' not in create_new_list:
                     raise serializers.ValidationError({'product_obj': _(
-                        f"Product may be already exist" +
+                        "Product may be already exist" +
                         f": [{product_obj.code}] {product_obj.title}"
                     )})
                 product_obj = None
