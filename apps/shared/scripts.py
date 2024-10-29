@@ -37,6 +37,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
@@ -2319,6 +2320,12 @@ def create_import_uom_group():
             )
             print(f"Added for {company.title} :))")
     print('Done')
+
+
+def remove_wf_sys_template():
+    MailTemplateSystem.objects.filter(system_code=6).delete()  # workflow
+    print('remove_wf_sys_template done.')
+    return True
 
 
 def update_default_masterdata():
