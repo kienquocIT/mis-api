@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.contract.models import ContractApproval, ContractDocument, ContractAttachment
-from apps.sales.contract.serializers.contract_sub import ContractCommonCreate
+from apps.sales.contract.serializers.contract_sub import ContractCommonCreate, ContractValid
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -43,6 +43,8 @@ class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
+            'opportunity_data',
+            'employee_inherit_data',
             'document_data',
             'attachment',
             'abstract_content',
@@ -58,6 +60,8 @@ class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
 
 class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
@@ -65,6 +69,10 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
         model = ContractApproval
         fields = (
             'title',
+            'opportunity_id',
+            'opportunity_data',
+            'employee_inherit_id',
+            'employee_inherit_data',
             'document_data',
             'attachment',
             'abstract_content',
@@ -72,6 +80,14 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
             'legal_content',
             'payment_content',
         )
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        return ContractValid.validate_opportunity_id(value=value)
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        return ContractValid.validate_employee_inherit_id(value=value)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -95,12 +111,18 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
 
 class ContractApprovalUpdateSerializer(AbstractCreateSerializerModel):
     document_data = DocumentCreateSerializer(many=True, required=False)
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = ContractApproval
         fields = (
             'title',
+            'opportunity_id',
+            'opportunity_data',
+            'employee_inherit_id',
+            'employee_inherit_data',
             'document_data',
             'attachment',
             'abstract_content',
@@ -108,6 +130,14 @@ class ContractApprovalUpdateSerializer(AbstractCreateSerializerModel):
             'legal_content',
             'payment_content',
         )
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        return ContractValid.validate_opportunity_id(value=value)
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        return ContractValid.validate_employee_inherit_id(value=value)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)

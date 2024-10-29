@@ -1,10 +1,12 @@
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 
 
-class ContractApproval(DataAbstractModel):
+class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
+    opportunity_data = models.JSONField(default=dict, help_text='data json of opportunity')
+    employee_inherit_data = models.JSONField(default=dict, help_text='data json of employee_inherit')
     document_data = models.JSONField(default=list, help_text='data json of document')
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
