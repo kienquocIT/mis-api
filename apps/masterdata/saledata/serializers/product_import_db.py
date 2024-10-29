@@ -114,7 +114,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         return tax
 
     @staticmethod
-    def valid_product(tenant, company, product_code, product_title):
+    def valid_product(tenant, company, product_code, product_title, create_new_list, get_old_list):
         code_format = unidecode(product_code if product_code else '').lower()
         title_format = unidecode(product_title).lower()
         product_obj = None
@@ -122,6 +122,16 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if any([unidecode(item.code).lower() == code_format, unidecode(item.title).lower() in title_format]):
                 product_obj = item
                 break
+        if not product_obj:
+            if 'product_obj' not in create_new_list:
+                raise serializers.ValidationError({'product_obj': _("This product does not exist.")})
+        else:
+            if 'product_obj' not in get_old_list:
+                if 'product_obj' not in create_new_list:
+                    raise serializers.ValidationError({'product_obj': _(
+                        "Product may be already exist" + f": [{product_obj.code}] {product_obj.title}"
+                    )})
+                product_obj = None
         return product_obj
 
     def validate(self, validate_data):
@@ -138,24 +148,14 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         employee = self.context.get('employee_current', None)
 
         product_obj = self.valid_product(
-            tenant, company, import_data.get('product_code'), import_data.get('product_title')
+            tenant, company,
+            import_data.get('product_code'), import_data.get('product_title'), create_new_list, get_old_list
         )
-        if not product_obj:
-            if 'product_obj' not in create_new_list:
-                raise serializers.ValidationError({'product_obj': _("This product does not exist.")})
-        else:
-            if 'product_obj' not in get_old_list:
-                if 'product_obj' not in create_new_list:
-                    raise serializers.ValidationError({'product_obj': _(
-                        "Product may be already exist" +
-                        f": [{product_obj.code}] {product_obj.title}"
-                    )})
-                product_obj = None
-
+        # kiểm tra PRODUCT CODE trước khi kiểm tra các masterdata
         if not product_obj:
             import_data['product_code'] = import_data.get('product_code') if import_data.get('product_code') else \
                 f"PRD00{Product.objects.filter(tenant=tenant, company=company).count()}"
-            ProductCreateSerializer.validate_code(import_data.get('product_code'))
+            ProductCreateSerializer.validate_code(import_data['product_code'])
 
         validate_data = {
             'tenant': tenant,
