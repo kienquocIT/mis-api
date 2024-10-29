@@ -408,29 +408,14 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], is_primary=True
         ).first()
         product = Product.objects.create(**validated_data)
+
         CommonCreateUpdateProduct.create_product_types_mapped(
-            product, self.initial_data.get('product_types_mapped_list', [])
+            product,
+            self.initial_data.get('product_types_mapped_list', [])
         )
 
-        ProductPriceList.objects.create(
-            product=product, price_list=default_pr, price=0,
-            currency_using=product.sale_currency_using,
-            uom_using=product.sale_default_uom,
-            uom_group_using=product.general_uom_group
-        )
-        bulk_info = CommonCreateUpdateProduct.create_price_list_product(product, default_pr, [])
-        price_product_created = ProductPriceList.objects.bulk_create(bulk_info)
-
-        sale_product_price_list = [{
-            'price_list_id': str(default_pr.id), 'price_value': 0, 'is_auto_update': False,
-        }]
-        for price_product in price_product_created:
-            sale_product_price_list.append({
-                'price_list_id': str(price_product.price_list.id),
-                'price_value': price_product.price,
-                'is_auto_update': price_product.get_price_from_source,
-            })
-        product.sale_product_price_list = sale_product_price_list
+        price_list_product_data = CommonCreateUpdateProduct.create_price_list_product(product, default_pr)
+        product.sale_product_price_list = price_list_product_data
         product.save(update_fields=['sale_product_price_list'])
         return product
 

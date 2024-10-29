@@ -37,6 +37,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
@@ -2299,3 +2300,29 @@ class InventoryReportRun:
             ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
         print('Complete!')
+
+
+def create_import_uom_group():
+    for company in Company.objects.all():
+        has_import_uom_group = UnitOfMeasureGroup.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            is_default=True,
+            code='UG_import',
+        ).exists()
+        if not has_import_uom_group:
+            UnitOfMeasureGroup.objects.create(
+                company=company,
+                tenant=company.tenant,
+                is_default=True,
+                code='UG_import',
+                title='Import group unit'
+            )
+            print(f"Added for {company.title} :))")
+    print('Done')
+
+
+def remove_wf_sys_template():
+    MailTemplateSystem.objects.filter(system_code=6).delete()  # workflow
+    print('remove_wf_sys_template done.')
+    return True

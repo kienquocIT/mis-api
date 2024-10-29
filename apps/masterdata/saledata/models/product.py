@@ -118,6 +118,8 @@ class UnitOfMeasure(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    create_from_import = models.BooleanField(default=False)
+    import_data_row = models.JSONField(default=dict)
     has_bom = models.BooleanField(default=False)
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
@@ -125,7 +127,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(blank=True, max_length=500)
+    description = models.CharField(null=True, blank=True, max_length=1000)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',

@@ -414,11 +414,10 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class BalanceInitializationListImportDB(BaseListMixin, BaseCreateMixin):
+class BalanceInitializationListImportDB(BaseCreateMixin):
     queryset = ReportInventoryCost.objects
     serializer_create = BalanceInitializationCreateSerializerImportDB
     serializer_detail = BalanceInitializationDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Create Balance Initialization Import BD",
