@@ -19,51 +19,51 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         fields = ('quotation_product_import_data', 'create_new_list', 'get_old_list')
 
     @staticmethod
-    def get_product_type(tenant, company, is_service):
-        product_type = ProductType.objects.filter(
+    def get_product_type_obj(tenant, company, is_service):
+        product_type_obj = ProductType.objects.filter(
             tenant=tenant, company=company, is_service=True
         ).first() if is_service else ProductType.objects.filter(
             tenant=tenant, company=company, is_goods=True
         ).first()
 
-        if not product_type:
-            raise serializers.ValidationError({'product_type': _("Product type does not exist.")})
-        return product_type
+        if not product_type_obj:
+            raise serializers.ValidationError({'product_type_obj': _("Product type does not exist.")})
+        return product_type_obj
 
     @staticmethod
-    def get_currency(tenant, company):
-        currency = Currency.objects.filter(tenant=tenant, company=company, is_primary=True).first()
-        if not currency:
-            raise serializers.ValidationError({'product': _("Currency does not exist.")})
-        return currency
+    def get_currency_obj(tenant, company):
+        currency_obj = Currency.objects.filter(tenant=tenant, company=company, is_primary=True).first()
+        if not currency_obj:
+            raise serializers.ValidationError({'currency_obj': _("Currency does not exist.")})
+        return currency_obj
 
     @staticmethod
-    def get_uom_group(tenant, company):
-        uom_group = UnitOfMeasureGroup.objects.filter(
-            tenant=tenant, company=company, is_default=True, code='UGI'
+    def get_uom_group_obj(tenant, company):
+        uom_group_obj = UnitOfMeasureGroup.objects.filter(
+            tenant=tenant, company=company, is_default=True, code='ImportGroup'
         ).first()
-        if not uom_group:
-            raise serializers.ValidationError({'uom_group': _("UOM group for import does not exist.")})
-        return uom_group
+        if not uom_group_obj:
+            raise serializers.ValidationError({'uom_group_obj': _("UOM group for import does not exist.")})
+        return uom_group_obj
 
     @staticmethod
-    def get_tax_category(tenant, company):
-        tax_category = TaxCategory.objects.filter(
+    def get_tax_category_obj(tenant, company):
+        tax_category_obj = TaxCategory.objects.filter(
             tenant=tenant, company=company, is_default=True, code='TC001'
         ).first()
-        if not tax_category:
-            raise serializers.ValidationError({'tax_category': _("Tax category does not exist.")})
-        return tax_category
+        if not tax_category_obj:
+            raise serializers.ValidationError({'tax_category_obj': _("Tax category does not exist.")})
+        return tax_category_obj
 
     @staticmethod
-    def get_default_price_list(tenant, company):
-        default_price_list = Price.objects.filter_current(tenant=tenant, company=company, is_default=True).first()
-        if not default_price_list:
-            raise serializers.ValidationError({'default_price_list': _("Default price list does not exisT.")})
-        return default_price_list
+    def get_default_price_list_obj(tenant, company):
+        default_price_list_obj = Price.objects.filter_current(tenant=tenant, company=company, is_default=True).first()
+        if not default_price_list_obj:
+            raise serializers.ValidationError({'default_price_list_obj': _("Default price list does not exist.")})
+        return default_price_list_obj
 
     @staticmethod
-    def get_product_category(tenant, company, product_category, create_new_list, get_old_list):
+    def valid_product_category(tenant, company, product_category, create_new_list, get_old_list):
         value_format = unidecode(product_category if product_category else '').lower()
         product_category = None
         for item in ProductCategory.objects.filter(tenant=tenant, company=company):
@@ -73,15 +73,16 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         if not product_category:
             if 'product_category' not in create_new_list:
                 raise serializers.ValidationError({'product_category': _("This category does not exist.")})
-        else:
-            if 'product_category' not in get_old_list:
-                if 'product_category' not in create_new_list:
-                    raise serializers.ValidationError({'product_category': _("This category may be already exist.")})
-                # product_category = None
+        elif 'product_category' not in get_old_list and 'product_category' not in create_new_list:
+            raise serializers.ValidationError(
+                {'product_category': _(
+                    f"Product category may be already exist" + f": [{product_category.code}] {product_category.title}"
+                )}
+            )
         return product_category
 
     @staticmethod
-    def get_uom(tenant, company, uom, create_new_list, get_old_list):
+    def valid_uom(tenant, company, uom, create_new_list, get_old_list):
         value_format = unidecode(uom if uom else '').lower()
         uom = None
         for item in UnitOfMeasure.objects.filter(tenant=tenant, company=company):
@@ -91,15 +92,12 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         if not uom:
             if 'uom' not in create_new_list:
                 raise serializers.ValidationError({'uom': _("This uom does not exist.")})
-        else:
-            if 'uom' not in get_old_list:
-                if 'uom' not in create_new_list:
-                    raise serializers.ValidationError({'uom': _("This uom may be already exist.")})
-                # uom = None
+        elif 'uom' not in get_old_list and 'uom' not in create_new_list:
+            raise serializers.ValidationError({'uom': _(f"UOM may be already exist" + f": [{uom.code}] {uom.title}")})
         return uom
 
     @staticmethod
-    def get_tax(tenant, company, tax_percent, create_new_list, get_old_list):
+    def valid_tax(tenant, company, tax_percent, create_new_list, get_old_list):
         tax = None
         if tax_percent:
             for item in Tax.objects.filter(tenant=tenant, company=company):
@@ -109,15 +107,14 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             if not tax:
                 if 'tax_percent' not in create_new_list:
                     raise serializers.ValidationError({'tax': _("This tax does not exist.")})
-            else:
-                if 'tax_percent' not in get_old_list:
-                    if 'tax_percent' not in create_new_list:
-                        raise serializers.ValidationError({'tax_percent': _("This tax may be already exist.")})
-                    # tax = None
+            elif 'tax_percent' not in get_old_list and 'tax_percent' not in create_new_list:
+                raise serializers.ValidationError(
+                    {'tax_percent': _(f"Tax may be already exist" + f": [{tax.code}] {tax.title}")}
+                )
         return tax
 
-    @classmethod
-    def get_product(cls, tenant, company, product_code, product_title):
+    @staticmethod
+    def valid_product(tenant, company, product_code, product_title):
         code_format = unidecode(product_code if product_code else '').lower()
         title_format = unidecode(product_title).lower()
         product_obj = None
@@ -140,7 +137,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         company = self.context.get('company_current', None)
         employee = self.context.get('employee_current', None)
 
-        product_obj = self.get_product(
+        product_obj = self.valid_product(
             tenant, company, import_data.get('product_code'), import_data.get('product_title')
         )
         if not product_obj:
@@ -149,7 +146,10 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
         else:
             if 'product_obj' not in get_old_list:
                 if 'product_obj' not in create_new_list:
-                    raise serializers.ValidationError({'product_obj': _("This product may be already exist.")})
+                    raise serializers.ValidationError({'product_obj': _(
+                        f"Product may be already exist" +
+                        f": [{product_obj.code}] {product_obj.title}"
+                    )})
                 product_obj = None
 
         if not product_obj:
@@ -163,17 +163,17 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
             'employee': employee,
 
             'product_obj': product_obj,
-            'product_category_obj': self.get_product_category(
+            'product_category_obj': self.valid_product_category(
                 tenant, company, import_data.get('product_category'), create_new_list, get_old_list
             ),
-            'uom_obj': self.get_uom(
+            'uom_obj': self.valid_uom(
                 tenant, company, import_data.get('uom'), create_new_list, get_old_list
             ),
-            'uom_group_obj': self.get_uom_group(tenant, company),
-            'product_type_obj': self.get_product_type(tenant, company, import_data.get('is_service')),
-            'currency_obj': self.get_currency(tenant, company),
-            'tax_obj': self.get_tax(tenant, company, import_data.get('tax_percent'), create_new_list, get_old_list),
-            'tax_category_obj': self.get_tax_category(tenant, company),
+            'uom_group_obj': self.get_uom_group_obj(tenant, company),
+            'product_type_obj': self.get_product_type_obj(tenant, company, import_data.get('is_service')),
+            'currency_obj': self.get_currency_obj(tenant, company),
+            'tax_obj': self.valid_tax(tenant, company, import_data.get('tax_percent'), create_new_list, get_old_list),
+            'tax_category_obj': self.get_tax_category_obj(tenant, company),
 
             'product_code': import_data.get('product_code'),
             'product_title': import_data.get('product_title'),
@@ -259,7 +259,7 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
 
             price_list_product_data = CommonCreateUpdateProduct.create_price_list_product(
                 product_obj,
-                self.get_default_price_list(tenant, company)
+                self.get_default_price_list_obj(tenant, company)
             )
             product_obj.sale_product_price_list = price_list_product_data
             product_obj.save(update_fields=['sale_product_price_list'])
