@@ -1,4 +1,4 @@
-__all__ = ['ProjectTaskList', 'ProjectTaskDetail']
+__all__ = ['ProjectTaskList', 'ProjectTaskDetail', 'ProjectAllTaskList']
 
 from typing import Union
 from django.db.models import Q
@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController, BaseUpdateMixin, BaseDestroyMixin
 from ..extend_func import get_prj_mem_of_crt_user
 from ..models import ProjectMapTasks, ProjectMapMember, Project
-from ..serializers import ProjectTaskListSerializers, ProjectTaskDetailSerializers
+from ..serializers import ProjectTaskListSerializers, ProjectTaskDetailSerializers, ProjectTaskListAllSerializers
 
 
 class ProjectTaskList(BaseListMixin):
@@ -100,6 +100,63 @@ class ProjectTaskList(BaseListMixin):
                 return self.list(request, *args, **kwargs)
             return ResponseController.forbidden_403()
         return ResponseController.notfound_404()
+
+
+class ProjectAllTaskList(BaseListMixin):
+    queryset = ProjectMapTasks.objects
+    serializer_list = ProjectTaskListAllSerializers
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "task", "task__employee_inherit", "task__employee_created", "task__parent_n", "task__task_status", "project"
+        )
+
+    def get_prj_has_view_this(self):
+        return [
+            str(item) for item in ProjectMapMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                member_id=self.cls_check.employee_attr.employee_current_id,
+                permit_view_this_project=True,
+            ).values_list('project_id', flat=True)
+        ]
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        params = self.request.query_params.dict()
+
+        # check permit config exists if from_app not calling...
+        prj_has_view_ids = self.get_prj_has_view_this()
+        if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
+            if prj_has_view_ids:
+                filter_kwargs = Q(project_id__in=prj_has_view_ids)
+                if 'project_id' in params:
+                    filter_kwargs = Q(**{'project_id': params.get('project_id')})
+                if 'task_status' in params:
+                    filter_kwargs &= Q(**{'task_status_id': params.get('task_status')})
+                if 'employee_inherit' in params:
+                    filter_kwargs &= Q(**{'employee_inherit_id': params.get('employee_inherit')})
+                return filter_kwargs
+            return self.filter_kwargs_q__from_config()
+
+        return self.list_empty()
+
+    @swagger_auto_schema(
+        operation_summary="Project task list",
+        operation_description="get project task list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='project', model_code='project', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class ProjectTaskDetail(BaseUpdateMixin, BaseDestroyMixin):
