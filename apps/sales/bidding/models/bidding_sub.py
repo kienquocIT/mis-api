@@ -43,7 +43,6 @@ class BiddingCommonCreate:
 
     @classmethod
     def create_document( cls,document_data, instance, attachment_result):
-        cls.handle_attach_file(instance=instance, attachment_result=attachment_result)
         bulk_data = []
         for item in document_data:
             bulk_data.append(
@@ -53,6 +52,7 @@ class BiddingCommonCreate:
                 )
             )
         BiddingDocument.objects.filter(bidding=instance).delete()
+        cls.handle_attach_file(instance=instance, attachment_result=attachment_result)
         bidding_doc_instance_list = BiddingDocument.objects.bulk_create(bulk_data)
         for bidding_doc_instance in bidding_doc_instance_list:
             for item in bidding_doc_instance.attachment_data:
