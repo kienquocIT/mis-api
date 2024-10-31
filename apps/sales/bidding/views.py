@@ -92,17 +92,7 @@ class AccountForBiddingList(BaseListMixin):
         'is_partner_account': ['exact'],
         'is_customer_account': ['exact'],
     }
-    search_fields = ['name', 'code', 'tax_code']
-
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
-        ).prefetch_related(
-            'contact_account_name', 'account_banks_mapped',
-            'company__saledata_periods_belong_to_company',
-            'report_customer_customer',
-            'account_mapped_billing_address'
-        )
+    search_fields = []
 
     @swagger_auto_schema(
         operation_summary="Account For Bidding list",
