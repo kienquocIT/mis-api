@@ -791,7 +791,7 @@ class UoMTestCase(AdvanceTestCase):
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
         self.assertEqual(
-            len(response.data['result']), 1
+            len(response.data['result']), 4
         )
         self.assertCountEqual(
             response.data['result'][0],
