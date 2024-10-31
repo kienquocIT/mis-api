@@ -21,7 +21,8 @@ class BiddingCommonCreate:
     def create_sub_models( cls, instance, create_data):
 
         if create_data['document_data']:
-            cls.create_document(document_data=create_data['document_data'], instance=instance, attachment_result =create_data['attachment'])
+            cls.create_document(document_data=create_data['document_data'], instance=instance,
+                                attachment_result=create_data['attachment'])
         if create_data['venture_partner']:
             cls.create_venture_partner(venture_partner=create_data['venture_partner'], instance=instance)
         return True

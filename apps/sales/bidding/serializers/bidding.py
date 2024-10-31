@@ -31,7 +31,7 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
                 return document_type
             except DocumentType.DoesNotExist:
                 raise serializers.ValidationError({'document_type': 'Document type does not exist'})
-
+        return None
     @classmethod
     def validate_id(cls, value):
         if value:
@@ -162,7 +162,7 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
                 "id": item.id,
                 "title": item.title,
                 "document_type": item.document_type.id if item.document_type else None,
-                "is_manual": False if item.document_type else True,
+                "is_manual": not item.document_type,
                 "remark": item.remark,
                 "attachment_data": item.attachment_data,
                 "order": item.order

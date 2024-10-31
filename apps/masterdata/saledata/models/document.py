@@ -8,4 +8,3 @@ class DocumentType(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
