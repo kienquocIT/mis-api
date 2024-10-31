@@ -202,7 +202,8 @@ class SaleDefaultData:
                 is_referenced_unit=1,
                 ratio=1,
                 rounding=4,
-                is_default=1
+                is_default=1,
+                group=group
             )
             UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
@@ -212,7 +213,8 @@ class SaleDefaultData:
                 is_referenced_unit=1,
                 ratio=8,
                 rounding=4,
-                is_default=1
+                is_default=1,
+                group=group
             )
             UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
@@ -222,7 +224,8 @@ class SaleDefaultData:
                 is_referenced_unit=1,
                 ratio=176,
                 rounding=4,
-                is_default=1
+                is_default=1,
+                group=group
             )
         return True
 
