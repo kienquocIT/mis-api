@@ -263,12 +263,12 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
     document_data = DocumentCreateSerializer(many=True, required=False)
-    opportunity_id = serializers.UUIDField(
+    opportunity = serializers.UUIDField(
         required=True
     )
-    bid_value = serializers.FloatField(required=False)
+    bid_value = serializers.FloatField()
+    bid_date = serializers.DateField()
     venture_partner = VenturePartnerCreateSerializer(many=True, required=False)
-    customer = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
 
     class Meta:
@@ -276,11 +276,10 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'attachment',
-            'opportunity_id',
+            'opportunity',
             'document_data',
-            'venture_partner' ,
-            'customer',
-            'bid_value' ,
+            'venture_partner',
+            'bid_value',
             'bid_date',
             'employee_inherit_id',
             'tinymce_content'
@@ -294,13 +293,13 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'customer': 'Customer does not exist'})
 
     @classmethod
-    def validate_opportunity_id(cls, value):
-        try:
-            if value is None:
-                return value
-            return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
-        except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': 'opp not exist'})
+    def validate_opportunity(cls, value):
+        if value:
+            try:
+                return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            except Opportunity.DoesNotExist:
+                raise serializers.ValidationError({'opportunity': 'Opportunity not exist'})
+        raise serializers.ValidationError({'opportunity': 'Opportunity is required'})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
@@ -308,18 +307,6 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
             return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': 'not exist'})
-
-    @classmethod
-    def validate_bid_date(cls, value):
-        if not value:
-            return None
-        return value
-
-    @classmethod
-    def validate_bid_value(cls, value):
-        if not value:
-            return 0
-        return value
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
