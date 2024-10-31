@@ -52,7 +52,7 @@ class BiddingCommonCreate:
                     **item
                 )
             )
-            BiddingDocument.objects.filter(bidding=instance).delete()
+        BiddingDocument.objects.filter(bidding=instance).delete()
         bidding_doc_instance_list = BiddingDocument.objects.bulk_create(bulk_data)
         for bidding_doc_instance in bidding_doc_instance_list:
             for item in bidding_doc_instance.attachment_data:
