@@ -1,6 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.masterdata.saledata.filters import AccountListFilter
 from apps.masterdata.saledata.models import Account, DocumentType
 from apps.sales.bidding.models import Bidding
 from apps.sales.bidding.serializers.bidding import BiddingListSerializer, \

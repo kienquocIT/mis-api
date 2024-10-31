@@ -34,6 +34,7 @@ class DocumentTypeCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
 
+
 class DocumentTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:

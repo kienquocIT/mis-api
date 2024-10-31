@@ -25,7 +25,7 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, PriceListItemListImportDB, AddItemToPriceListImportDB, DocumentTypeList
+    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,

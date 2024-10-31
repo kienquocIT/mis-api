@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import DocumentType
 from apps.masterdata.saledata.serializers import DocumentTypeListSerializer, DocumentTypeCreateSerializer, \
     DocumentTypeDetailSerializer

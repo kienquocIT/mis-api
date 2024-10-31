@@ -1,6 +1,5 @@
 from django.urls import path
 
-from .serializers.bidding import AccountForBiddingListSerializer
 from .views import (
     BiddingList, DocumentMasterDataBiddingList, AccountForBiddingList, BiddingDetail
 )

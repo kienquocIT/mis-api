@@ -1,7 +1,4 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 class DocumentType(MasterDataAbstractModel):
 
