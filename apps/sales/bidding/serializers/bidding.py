@@ -1,5 +1,3 @@
-import datetime
-from django.utils import timezone
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Account, DocumentType
@@ -220,13 +218,12 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity(cls, value):
-        try:
-            if value:
+        if value:
+            try:
                 return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            else:
-                pass
-        except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': 'opp not exist'})
+            except Opportunity.DoesNotExist:
+                raise serializers.ValidationError({'opportunity': 'Opportunity not exist'})
+        raise serializers.ValidationError({'opportunity': 'Opportunity is required'})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
