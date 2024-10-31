@@ -99,16 +99,17 @@ class BiddingListSerializer(AbstractListSerializerModel):
 class BiddingDetailSerializer(AbstractDetailSerializerModel):
     venture_partner = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    customer = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
     attachment_m2m = serializers.SerializerMethodField()
+
     class Meta:
         model = Bidding
         fields = (
             'title',
             'opportunity',
-            'venture_partner',
             'customer',
+            'venture_partner',
             'bid_value',
             'bid_date',
             'employee_inherit',
@@ -120,7 +121,7 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
     def get_customer(cls, obj):
         return {
             'id': obj.customer_id,
-            'name': obj.customer.name,
+            'title': obj.customer.name,
             'code': obj.customer.code,
         } if obj.customer else {}
 
@@ -286,13 +287,6 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
-    def validate_customer(cls, value):
-        try:
-            return Account.objects.get(id=value)
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer': 'Customer does not exist'})
-
-    @classmethod
     def validate_opportunity(cls, value):
         if value:
             try:
@@ -318,6 +312,11 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
                 return result
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    def validate(self, validate_data):
+        if validate_data.get('opportunity'):
+            validate_data['customer'] = validate_data.get('opportunity').customer
+        return validate_data
 
     # @decorator_run_workflow
     def update(self, instance, validated_data):

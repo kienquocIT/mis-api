@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Account, DocumentType
 from apps.sales.bidding.models import Bidding
-from apps.sales.bidding.serializers.bidding import BiddingListSerializer, \
-    DocumentMasterDataBiddingListSerializer, AccountForBiddingListSerializer, BiddingCreateSerializer, \
-    BiddingDetailSerializer, BiddingUpdateSerializer
+from apps.sales.bidding.serializers.bidding import (
+    BiddingListSerializer, DocumentMasterDataBiddingListSerializer, AccountForBiddingListSerializer,
+    BiddingCreateSerializer,BiddingDetailSerializer, BiddingUpdateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 class BiddingList(BaseListMixin, BaseCreateMixin):
