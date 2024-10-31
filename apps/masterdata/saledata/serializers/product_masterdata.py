@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
@@ -235,6 +236,11 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_CODE_EXIST)
         return value
 
+    def validate(self, validate_data):
+        if self.instance.is_default:
+            raise serializers.ValidationError({'is_default': _('Can not update default data')})
+        return validate_data
+
 
 # Unit Of Measure
 class UnitOfMeasureListSerializer(serializers.ModelSerializer):
@@ -242,7 +248,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group', 'ratio')
+        fields = ('id', 'code', 'title', 'group', 'ratio', 'is_default')
 
     @classmethod
     def get_group(cls, obj):
@@ -375,6 +381,11 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         if attrs is not None and attrs > 0:
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
+
+    def validate(self, validate_data):
+        if self.instance.is_default:
+            raise serializers.ValidationError({'is_default': _('Can not update default data')})
+        return validate_data
 
     def update(self, instance, validated_data):
         is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
