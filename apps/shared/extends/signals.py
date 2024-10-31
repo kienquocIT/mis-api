@@ -49,6 +49,8 @@ from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
+from .. import ProjectMsg
+from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
 
@@ -1270,4 +1272,19 @@ def project_group_event_destroy(sender, instance, **kwargs):
 def project_work_event_destroy(sender, instance, **kwargs):
     re_calc_work_group(instance.work)
     calc_rate_project(instance.project, instance)
+
+    # create activities when delete works
+    call_task_background(
+        my_task=create_project_news,
+        **{
+            'project_id': str(instance.project.id),
+            'employee_inherit_id': str(instance.work.employee_inherit.id),
+            'employee_created_id': str(instance.work.employee_created.id),
+            'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+            'document_id': str(instance.work.id),
+            'document_title': str(instance.work.title),
+            'title': ProjectMsg.DELETED_A,
+            'msg': '',
+        }
+    )
     print('re calculator rate is Done')
