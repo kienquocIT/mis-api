@@ -1,7 +1,9 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import ProductPriceList
+from apps.masterdata.saledata.serializers.product_import_db import (
+    ProductQuotationCreateSerializerLoadDB, ProductQuotationDetailSerializerLoadDB
+)
 from apps.sales.production.models import BOM
 from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -14,13 +16,10 @@ from apps.masterdata.saledata.serializers.product import (
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
-
     ProductCategoryListSerializer, ProductCategoryCreateSerializer,
     ProductCategoryDetailSerializer, ProductCategoryUpdateSerializer,
-
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
     UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
-
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer
 )
@@ -157,7 +156,7 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('unitofmeasure_group')
+        return super().get_queryset().prefetch_related('unitofmeasure_group').order_by('-is_default')
 
     @swagger_auto_schema(
         operation_summary="UnitOfMeasureGroup list",
@@ -509,3 +508,30 @@ class UnitOfMeasureOfGroupLaborList(BaseListMixin):
     @mask_view(login_require=True, auth_require=False, )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ProductQuotationListLoadDB(BaseCreateMixin):
+    queryset = Product.objects
+    serializer_create = ProductQuotationCreateSerializerLoadDB
+    serializer_detail = ProductQuotationDetailSerializerLoadDB
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Product Quotation Create ImportDB",
+        operation_description="Product Quotation Create ImportDB",
+        request_body=ProductQuotationCreateSerializerLoadDB,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current': request.user.tenant_current,
+            'company_current': request.user.company_current,
+            'employee_current': request.user.employee_current
+        }
+        return self.create(request, *args, **kwargs)

@@ -22,7 +22,8 @@ class ContractApprovalList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='contract', model_code='contractapproval', perm_code='view',
+        label_code='contract', model_code='contractapproval', perm_code='view',
+        opp_enabled=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -36,6 +37,7 @@ class ContractApprovalList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
         employee_require=True,
         label_code='contract', model_code='contractapproval', perm_code='create',
+        opp_enabled=True,
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
@@ -56,6 +58,7 @@ class ContractApprovalDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='contract', model_code='contractapproval', perm_code='view',
+        opp_enabled=True,
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -68,6 +71,7 @@ class ContractApprovalDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='contract', model_code='contractapproval', perm_code='edit',
+        opp_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}

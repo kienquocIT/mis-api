@@ -260,15 +260,6 @@ class HTMLController(ManualNH3, ManualBleach):  # pylint: disable=R0902
             if key_code:
                 data_code = DictHandler().get(key=key_code, data=data)
                 html.attrs['href'] = data_code
-
-        if '_workflow' in data:
-            for key in data['_workflow']:
-                # find key in href
-                elements_with_attrs = self.soup.find_all(href=True)
-                for element in elements_with_attrs:
-                    # Replace the placeholders in the href attribute
-                    if key in element['href']:
-                        element['href'] = element['href'].replace(key, data['_workflow'][key])
         return self
 
     def clean(

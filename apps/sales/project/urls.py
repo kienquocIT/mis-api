@@ -5,7 +5,7 @@ from .views import (
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD,
     ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate,
     ProjectConfigDetail, ProjectExpenseHomeList, ProjectNewsList, ProjectNewsCommentList, ProjectNewsCommentDetail,
-    ProjectNewsCommentDetailFlows
+    ProjectNewsCommentDetailFlows, ProjectAllTaskList
 )
 
 
@@ -27,6 +27,7 @@ urlpatterns = [
     path('work/detail/<str:pk>', ProjectWorkDetail.as_view(), name='ProjectWorkDetail'),
     # list task map project
     path('assign-task-list', ProjectTaskList.as_view(), name='ProjectTaskList'),
+    path('assign-task-list/all', ProjectAllTaskList.as_view(), name='ProjectAllTaskList'),
     path('assign-task-link/<str:pk>', ProjectTaskDetail.as_view(), name='ProjectTaskDetail'),
     # work expense list
     path('work-expense-list', ProjectWorkExpenseList.as_view(), name='ProjectWorkExpenseList'),

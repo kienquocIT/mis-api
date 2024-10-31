@@ -266,17 +266,26 @@ class PriceDetailSerializer(serializers.ModelSerializer):
 
 
 class PriceUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
     factor = serializers.FloatField(required=False)
     currency = serializers.ListField(child=serializers.UUIDField(), required=False)
 
     class Meta:
         model = Price
         fields = (
+            'title',
             'auto_update',
             'can_delete',
             'factor',
             'currency',
         )
+
+    def validate_title(self, value):
+        if Price.objects.filter_current(
+                fill__tenant=True, fill__company=True, title=value
+        ).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+        return value
 
     @classmethod
     def validate_factor(cls, attrs):
@@ -392,6 +401,9 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def validate(self, validate_data):
+        if self.instance.is_default:
+            raise serializers.ValidationError(PriceMsg.CANT_DELETE_GENERAL_PRICE_LIST)
+
         if Price.objects.filter(price_list_mapped=self.instance).exists():
             raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
 
@@ -633,7 +645,7 @@ class PriceListCreateItemSerializer(serializers.ModelSerializer):
         return obj
 
 
-class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
+class PriceListItemCreateSerializerImportDB(serializers.ModelSerializer):
     product = serializers.DictField(required=True)
 
     class Meta:
@@ -653,7 +665,7 @@ class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
             currency_using=currency_obj,
             uom_using=uom_obj,
             uom_group_using=uom_obj.group,
-            get_price_from_source=child_obj.auto_update
+            get_price_from_source=False
         )
         return obj
 
@@ -669,7 +681,7 @@ class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
             price_value=round(float(price_number) * round(factor, 2), 2),
             currency=currency_obj,
             uom=uom_obj,
-            is_auto_update=child_obj.auto_update,
+            is_auto_update=False
         )
         return obj
 
@@ -683,6 +695,8 @@ class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
             raise serializers.ValidationError({'price_list_obj': PriceMsg.PRICE_LIST_NOT_EXIST})
         if price_list_obj.is_expired(price_list_obj):
             raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+        if price_list_obj.auto_update:
+            raise serializers.ValidationError(PriceMsg.CANT_ADD_ITEM)
         validate_data['price_list_obj'] = price_list_obj
 
         if not isinstance(float(product_data.get('price')), (int, float)):
@@ -722,8 +736,8 @@ class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
         product_obj = validated_data['product_obj']
         uom_obj = validated_data['uom_obj']
         currency_obj = validated_data['currency_obj']
-        child_price_list = Price.get_children(price_list_obj)
 
+        child_price_list = Price.get_children(price_list_obj)
         bulk_info = []
         for child_obj, child_factor in child_price_list:
             if price_list_obj.price_list_type == 0:
@@ -743,3 +757,9 @@ class PriceListCreateItemSerializerImportDB(serializers.ModelSerializer):
             else:
                 ExpensePrice.objects.bulk_create(bulk_info)
         return price_list_obj
+
+
+class PriceListItemDetailSerializerImportDB(serializers.ModelSerializer):
+    class Meta:
+        model = Price
+        fields = ('id',)
