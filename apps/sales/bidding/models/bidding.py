@@ -12,8 +12,8 @@ BIDDING_STATUS = [
 
 class Bidding(DataAbstractModel):
     status = models.SmallIntegerField(choices=BIDDING_STATUS, default=0)
-    value = models.FloatField(default=0)
-    bid_date = models.DateTimeField( null=True, default=None)
+    bid_value = models.FloatField(default=0)
+    bid_date = models.DateField(null=True, blank=True)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -29,14 +29,6 @@ class Bidding(DataAbstractModel):
         null=True,
         help_text="sale data Accounts have type customer"
     )
-    customer_data = models.JSONField(default=dict, help_text='data json of customer')
-    sale_person = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        verbose_name="sale person",
-        related_name="bidding_sale_person",
-        null=True
-    )
     venture_partner = models.ManyToManyField(
         'saledata.Account',
         through='BiddingPartnerAccount',
@@ -44,7 +36,6 @@ class Bidding(DataAbstractModel):
         blank=True,
         related_name='bidding_venture_partner',
     )
-    document_data = models.JSONField(default=list, help_text='data json of document')
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
         through='BiddingAttachment',
@@ -141,7 +132,13 @@ class BiddingAttachment(M2MFilesAbstractModel):
         verbose_name="bidding",
         related_name="bidding_attachment_bidding",
     )
-
+    document = models.ForeignKey(
+        'bidding.BiddingDocument',
+        on_delete=models.CASCADE,
+        verbose_name="document",
+        related_name="bidding_attachment_bidding_document",
+        null=True
+    )
     @classmethod
     def get_doc_field_name(cls):
         return 'bidding'
@@ -159,12 +156,14 @@ class BiddingPartnerAccount(SimpleAbstractModel):
     bidding = models.ForeignKey(
         'bidding.Bidding',
         on_delete=models.CASCADE,
-        verbose_name="bidding",
+        verbose_name="bidding partner account bidding",
         related_name="bidding_partner_account_bidding",
     )
     partner_account = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
+        verbose_name="bidding partner account",
+        related_name="bidding_partner_account_partner_account",
     )
 
     class Meta:
