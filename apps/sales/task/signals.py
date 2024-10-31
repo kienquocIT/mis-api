@@ -172,16 +172,17 @@ def post_save_opp_task_summary(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=OpportunityTask)
 def post_delete_opp_task(sender, instance, **kwargs):
     # create news feed
-    call_task_background(
-        my_task=create_project_news,
-        **{
-            'project_id': str(instance.project.id),
-            'employee_inherit_id': str(instance.employee_inherit.id),
-            'employee_created_id': str(instance.employee_created.id),
-            'application_id': str('e66cfb5a-b3ce-4694-a4da-47618f53de4c'),
-            'document_id': str(instance.id),
-            'document_title': str(instance.title),
-            'title': SaleTask.DELETED_A,
-            'msg': '',
-        }
-    )
+    if instance.project:
+        call_task_background(
+            my_task=create_project_news,
+            **{
+                'project_id': str(instance.project.id),
+                'employee_inherit_id': str(instance.employee_inherit.id),
+                'employee_created_id': str(instance.employee_created.id),
+                'application_id': str('e66cfb5a-b3ce-4694-a4da-47618f53de4c'),
+                'document_id': str(instance.id),
+                'document_title': str(instance.title),
+                'title': SaleTask.DELETED_A,
+                'msg': '',
+            }
+        )
