@@ -105,11 +105,11 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
                     tax = item
                     break
             if not tax:
-                if 'tax_percent' not in create_new_list:
+                if 'tax' not in create_new_list:
                     raise serializers.ValidationError({'tax': _("This tax does not exist.")})
-            elif 'tax_percent' not in get_old_list and 'tax_percent' not in create_new_list:
+            elif 'tax' not in get_old_list and 'tax' not in create_new_list:
                 raise serializers.ValidationError(
-                    {'tax_percent': _("Tax may be already exist" + f": [{tax.code}] {tax.title}")}
+                    {'tax': _("Tax may be already exist" + f": [{tax.code}] {tax.title}")}
                 )
         return tax
 
