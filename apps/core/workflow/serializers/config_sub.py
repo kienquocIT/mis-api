@@ -140,31 +140,15 @@ class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_employee_list(cls, obj):
-        return [
-            {
-                'id': employee.id,
-                'full_name': employee.get_full_name(2),
-                'code': employee.code,
-                'role': [
-                    {'id': role.id, 'title': role.title, 'code': role.code}
-                    for role in employee.role.all()
-                ]
-            } for employee in obj.employees.all()
-        ]
+        return [employee.id for employee in obj.employees.all()]
 
     @classmethod
     def get_zone(cls, obj):
-        return [
-            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
-            for zone in obj.zone.all()
-        ]
+        return [zone.order for zone in obj.zone.all()]
 
     @classmethod
     def get_zone_hidden(cls, obj):
-        return [
-            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
-            for zone in obj.zone_hidden.all()
-        ]
+        return [zone.order for zone in obj.zone_hidden.all()]
 
 
 # COLLAB IN WORKFLOW
@@ -235,34 +219,15 @@ class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_employee(cls, obj):
-        return {
-            'id': obj.employee_id,
-            'full_name': obj.employee.get_full_name(2),
-            'code': obj.employee.code,
-            'group': {
-                'id': obj.employee.group_id,
-                'title': obj.employee.group.title,
-                'code': obj.employee.group.code
-            } if obj.employee.group else {},
-            'role': [
-                {'id': role.id, 'title': role.title, 'code': role.code}
-                for role in obj.employee.role.all()
-            ],
-        } if obj.employee else {}
+        return obj.employee_id if obj.employee else None
 
     @classmethod
     def get_zone(cls, obj):
-        return [
-            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
-            for zone in obj.zone.all()
-        ]
+        return [zone.order for zone in obj.zone.all()]
 
     @classmethod
     def get_zone_hidden(cls, obj):
-        return [
-            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
-            for zone in obj.zone_hidden.all()
-        ]
+        return [zone.order for zone in obj.zone_hidden.all()]
 
 
 # Node
