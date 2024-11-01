@@ -1,8 +1,6 @@
 import datetime
 from rest_framework import serializers
 from django.utils import timezone
-from sqlalchemy.orm.sync import update
-
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term
 from apps.masterdata.saledata.models.accounts import (
