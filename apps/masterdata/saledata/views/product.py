@@ -280,19 +280,49 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        queryset = super().get_queryset()
+        related_fields = [
             'general_product_category',
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'inventory_uom',
-        ).prefetch_related(
+            'inventory_uom'
+        ]
+        prefetch_fields = [
             'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
-                queryset=ProductPriceList.objects.select_related('price_list'),
-            ),
-        )
+                queryset=ProductPriceList.objects.select_related('price_list')
+            )
+        ]
+
+        if 'direct_first' in self.request.query_params:
+            self.pagination_class.page_size = 1
+            return queryset.order_by('date_created').select_related(*related_fields).prefetch_related(*prefetch_fields)
+        if 'direct_last' in self.request.query_params:
+            self.pagination_class.page_size = 1
+            return queryset.order_by('-date_created').select_related(*related_fields).prefetch_related(*prefetch_fields)
+        if 'direct_previous' in self.request.query_params:
+            current_pk = self.request.query_params.get('current_pk')
+            current_obj = Product.objects.filter(id=current_pk).first() if current_pk else None
+            self.pagination_class.page_size = 1
+            if current_obj:
+                current_obj_date_created = current_obj.date_created
+                return queryset.filter(
+                    date_created__lt=current_obj_date_created
+                ).order_by('-date_created').select_related(*related_fields).prefetch_related(*prefetch_fields)
+            return queryset.order_by('-date_created').select_related(*related_fields).prefetch_related(*prefetch_fields)
+        if 'direct_next' in self.request.query_params:
+            current_pk = self.request.query_params.get('current_pk')
+            current_obj = Product.objects.filter(id=current_pk).first() if current_pk else None
+            self.pagination_class.page_size = 1
+            if current_obj:
+                current_obj_date_created = current_obj.date_created
+                return queryset.filter(
+                    date_created__gt=current_obj_date_created
+                ).order_by('date_created').select_related(*related_fields).prefetch_related(*prefetch_fields)
+            return queryset.none()
+        return queryset.select_related(*related_fields).prefetch_related(*prefetch_fields)
 
     @swagger_auto_schema(
         operation_summary="Product list",
