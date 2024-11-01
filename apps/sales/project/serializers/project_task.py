@@ -1,4 +1,4 @@
-__all__ = ['ProjectTaskListSerializers', 'ProjectTaskDetailSerializers']
+__all__ = ['ProjectTaskListSerializers', 'ProjectTaskDetailSerializers', 'ProjectTaskListAllSerializers']
 
 from rest_framework import serializers
 
@@ -81,3 +81,50 @@ class ProjectTaskDetailSerializers(serializers.ModelSerializer):
         re_calc_work_group(work)
         calc_rate_project(instance.project)
         return instance
+
+
+class ProjectTaskListAllSerializers(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        task = obj.task
+        return {
+            'id': str(task.id),
+            'title': task.title,
+            'code': task.code,
+            'task_status': {
+                'id': task.task_status.id,
+                'title': task.task_status.title,
+            } if task.task_status else {},
+            'start_date': task.start_date,
+            'end_date': task.end_date,
+            'priority': task.priority,
+            'employee_inherit': {
+                'avatar': task.employee_inherit.avatar,
+                'first_name': task.employee_inherit.first_name,
+                'last_name': task.employee_inherit.last_name,
+                'full_name': task.employee_inherit.get_full_name()
+            } if task.employee_inherit else {},
+            'checklist': task.checklist if task.checklist else 0,
+            'parent_n': {
+                'id': task.parent_n.id,
+                'title': task.parent_n.title,
+                'code': task.parent_n.code
+            } if task.parent_n else {},
+            'employee_created': {
+                'avatar': task.employee_created.avatar,
+                'first_name': task.employee_created.first_name,
+                'last_name': task.employee_created.last_name,
+                'full_name': task.employee_created.get_full_name()
+            } if task.employee_created else {},
+            'date_created': task.date_created,
+            'percent_completed': task.percent_completed,
+            'project': task.project_data,
+        } if task else {}
+
+    class Meta:
+        model = ProjectMapTasks
+        fields = (
+            'task',
+        )
