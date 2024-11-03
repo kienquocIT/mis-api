@@ -25,13 +25,14 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
+        main_queryset = super().get_queryset().prefetch_related(
             'payment'
         ).select_related(
             'sale_order_mapped__opportunity',
             'quotation_mapped__opportunity',
             'opportunity_mapped',
         )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Payment list",

@@ -45,7 +45,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        main_queryset = super().get_queryset().select_related(
             "customer",
             "sale_person",
             "employee_inherit",
@@ -56,6 +56,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
             "customer__contact_account_name",
             "customer__account_mapped_shipping_address"
         )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @classmethod
     def get_opp_allowed(cls, item_data):

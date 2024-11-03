@@ -21,6 +21,9 @@ class GoodsReceiptList(
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return self.get_queryset_custom_direct_page()
+
     @swagger_auto_schema(
         operation_summary="Goods receipt List",
         operation_description="Get Goods receipt List",

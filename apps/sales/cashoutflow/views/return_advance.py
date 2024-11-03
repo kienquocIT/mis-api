@@ -22,11 +22,12 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         ap_list_id = self.request.query_params.get('advance_payment_id_list', None)
-        if ap_list_id:
-            return super().get_queryset().select_related('advance_payment').prefetch_related('return_advance').filter(
-                advance_payment_id__in=ap_list_id.split(',')
-            )
-        return super().get_queryset().select_related('advance_payment').prefetch_related('return_advance')
+        main_queryset = super().get_queryset().select_related('advance_payment').prefetch_related(
+            'return_advance').filter(advance_payment_id__in=ap_list_id.split(',')
+        ) if ap_list_id else super().get_queryset().select_related('advance_payment').prefetch_related(
+            'return_advance'
+        )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Return Advance list",
