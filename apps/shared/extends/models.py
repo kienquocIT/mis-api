@@ -373,11 +373,12 @@ class DisperseModel:
 
     def __init__(self, **kwargs):
         app_model = kwargs.get("app_model", None)
+        # '.' trước -> '_' sau cho case: app_model = 'revenue_plan.RevenuePlan'
         if app_model:
-            if '_' in app_model:
-                app_tmp, model_tmp = app_model.split("_")
-            elif '.' in app_model:
+            if '.' in app_model:
                 app_tmp, model_tmp = app_model.split(".")
+            elif '_' in app_model:
+                app_tmp, model_tmp = app_model.split("_")
             else:
                 raise AttributeError(
                     "App models must be required. It's format is  {app_name}_{model name} or {app_name}.{model name}"
