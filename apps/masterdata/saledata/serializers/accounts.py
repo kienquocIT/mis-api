@@ -759,23 +759,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
             if 'total_employees' not in validate_data:
                 raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
-
-        for account_type in validate_data.get("account_types", []):
-            account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
-            validate_data['is_customer_account'] = False
-            validate_data['is_supplier_account'] = False
-            validate_data['is_partner_account'] = False
-            validate_data['is_competitor_account'] = False
-            if account_type_obj:
-                if account_type_obj.account_type_order == 0:
-                    validate_data['is_customer_account'] = True
-                elif account_type_obj.account_type_order == 1:
-                    validate_data['is_supplier_account'] = True
-                elif account_type_obj.account_type_order == 2:
-                    validate_data['is_partner_account'] = True
-                elif account_type_obj.account_type_order == 3:
-                    validate_data['is_competitor_account'] = True
-
         return validate_data
 
     # @decorator_run_workflow
@@ -787,6 +770,25 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         contact_mapped = self.initial_data.get('contact_mapped', []) # noqa
         create_employee_map_account(instance) # noqa
         add_account_types_information(instance)
+
+        account_type_data = {
+            'is_customer_account': False,
+            'is_supplier_account': False,
+            'is_partner_account': False,
+            'is_competitor_account': False
+        }
+        for item in instance.account_account_types_mapped.all():
+            if item.account_type.account_type_order == 0:
+                account_type_data['is_customer_account'] = True
+            elif item.account_type.account_type_order == 1:
+                account_type_data['is_supplier_account'] = True
+            elif item.account_type.account_type_order == 2:
+                account_type_data['is_partner_account'] = True
+            elif item.account_type.account_type_order == 3:
+                account_type_data['is_competitor_account'] = True
+        for key, value in account_type_data.items():
+            setattr(instance, key, value)
+        instance.save(update_fields=list(account_type_data.keys()))
 
         add_shipping_address_information(instance, self.initial_data.get('shipping_address_dict', []))
         add_billing_address_information(instance, self.initial_data.get('billing_address_dict', []))

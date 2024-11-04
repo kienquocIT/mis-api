@@ -28,7 +28,7 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return self.get_queryset_custom_direct_page()
 
     @swagger_auto_schema(
         operation_summary="Lead list",

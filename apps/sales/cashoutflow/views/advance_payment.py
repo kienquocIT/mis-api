@@ -23,7 +23,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         if 'return_date_expiring_sort' in self.request.query_params:
-            return super().get_queryset().filter(
+            main_queryset = super().get_queryset().filter(
                 system_status=3
             ).order_by('return_date').prefetch_related(
                 'advance_payment__currency',
@@ -34,15 +34,17 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
                 'quotation_mapped__opportunity',
                 'opportunity_mapped',
             )
-        return super().get_queryset().prefetch_related(
-            'advance_payment__currency',
-            'advance_payment__expense_type',
-            'advance_payment__expense_tax',
-        ).select_related(
-            'sale_order_mapped__opportunity',
-            'quotation_mapped__opportunity',
-            'opportunity_mapped',
-        )
+        else:
+            main_queryset = super().get_queryset().prefetch_related(
+                'advance_payment__currency',
+                'advance_payment__expense_type',
+                'advance_payment__expense_tax',
+            ).select_related(
+                'sale_order_mapped__opportunity',
+                'quotation_mapped__opportunity',
+                'opportunity_mapped',
+            )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="AdvancePayment list",

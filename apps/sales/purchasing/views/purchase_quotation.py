@@ -31,11 +31,16 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
         # Check filter parameters in the request
         data_filter = self.request.query_params.dict()
         if 'purchase_quotation_request_mapped__purchase_request_mapped__id__in' in data_filter:
-            return super().get_queryset().select_related(
+            main_query = super().get_queryset().select_related(
                 'purchase_quotation_request_mapped',
                 'supplier_mapped__owner',
             ).distinct()
-        return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped__owner')
+        else:
+            main_query = super().get_queryset().select_related(
+                'purchase_quotation_request_mapped',
+                'supplier_mapped__owner'
+            )
+        return self.get_queryset_custom_direct_page(main_query)
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation List",
