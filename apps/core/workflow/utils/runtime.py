@@ -560,7 +560,7 @@ class RuntimeStageHandler:
             runtime=self.runtime_obj,
             node=node_passed,
             title=node_passed.title,
-            code=node_passed.code_node_system,
+            code=node_passed.code_node_system if node_passed.code_node_system else "",
             node_data={
                 "id": str(node_passed.id),
                 "title": node_passed.title,
