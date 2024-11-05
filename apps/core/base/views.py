@@ -318,7 +318,7 @@ class WardList(BaseListMixin):
 class BaseCurrencyList(BaseListMixin):
     queryset = BaseCurrency.objects
     search_fields = ('title', 'code')
-    use_cache_queryset = True
+    # use_cache_queryset = True
     serializer_list = BaseCurrencyListSerializer
 
     @swagger_auto_schema()

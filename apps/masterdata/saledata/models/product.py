@@ -108,6 +108,7 @@ class UnitOfMeasure(MasterDataAbstractModel):
     ratio = models.FloatField(default=1.0)
     rounding = models.IntegerField(default=4)
     is_referenced_unit = models.BooleanField(default=False, help_text='UoM Group Referenced Unit')
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'UnitOfMeasure'

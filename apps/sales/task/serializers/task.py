@@ -60,6 +60,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     child_task_count = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -109,11 +110,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_opportunity(cls, obj):
         if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'code': obj.opportunity.code,
-                'title': obj.opportunity.title
-            }
+            return obj.opportunity_data
         return {}
 
     @classmethod
@@ -124,6 +121,12 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             parent_n=obj
         )
         return task_list.count() if task_list else 0
+
+    @classmethod
+    def get_project(cls, obj):
+        if obj.project:
+            return obj.project_data
+        return {}
 
     class Meta:
         model = OpportunityTask
@@ -142,7 +145,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'employee_created',
             'date_created',
             'child_task_count',
-            'percent_completed'
+            'percent_completed',
+            'project',
         )
 
 

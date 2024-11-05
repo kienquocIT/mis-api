@@ -733,7 +733,9 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
         return [
             {
                 'order': bom_material.order,
-                'bom_task': {'id': bom_material.bom_process_id, 'order': bom_material.bom_process.order},
+                'bom_task': {
+                    'id': bom_material.bom_process_id, 'order': bom_material.bom_process.order
+                } if bom_material.bom_process else {},
                 'product_data': {
                     'id': str(bom_material.material_id),
                     'code': bom_material.material.code,

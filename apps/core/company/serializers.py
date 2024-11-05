@@ -131,8 +131,10 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
             this_period.save(update_fields=['definition_inventory_valuation'])
         else:
+            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+            # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
             raise serializers.ValidationError(
-                {'error': f"Can't find fiscal year {datetime.datetime.now().year}."}
+                {'fiscal_year_not_found': f"Can't find fiscal year {datetime.datetime.now().year}."}
             )
         if all([
             datetime.datetime.now().year == this_period.fiscal_year,

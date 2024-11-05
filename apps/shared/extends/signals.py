@@ -26,7 +26,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -49,6 +49,8 @@ from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
+from .. import ProjectMsg
+from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +91,11 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
-        {'code': 'UG_import', 'title': 'Import group unit', 'is_default': 1},
-        {'code': 'UG001', 'title': 'Labor', 'is_default': 1},
+        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+        {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+        {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+        {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -186,6 +191,44 @@ class SaleDefaultData:
             for uom_group_item in self.UoM_Group_data
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
+        ).first()
+        if group:
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manhour',
+                title='Man hour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manday',
+                title='Man day',
+                is_referenced_unit=1,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manmonth',
+                title='Man month',
+                is_referenced_unit=1,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
         return True
 
     def create_company_function_number(self):
@@ -1229,4 +1272,19 @@ def project_group_event_destroy(sender, instance, **kwargs):
 def project_work_event_destroy(sender, instance, **kwargs):
     re_calc_work_group(instance.work)
     calc_rate_project(instance.project, instance)
+
+    # create activities when delete works
+    call_task_background(
+        my_task=create_project_news,
+        **{
+            'project_id': str(instance.project.id),
+            'employee_inherit_id': str(instance.work.employee_inherit.id),
+            'employee_created_id': str(instance.work.employee_created.id),
+            'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+            'document_id': str(instance.work.id),
+            'document_title': str(instance.work.title),
+            'title': ProjectMsg.DELETED_A,
+            'msg': '',
+        }
+    )
     print('re calculator rate is Done')
