@@ -1555,6 +1555,14 @@ AppProp_Eoffice_Leave_data = {
         'code': 'detail_data',
         'type': 1,
     },
+    '62cba93c-ddcc-4e44-8a20-10cda49276c6': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Total leave of absence',
+        'code': 'total',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
 }
 
 AppProp_Eoffice_Business_trip_data = {
@@ -1879,6 +1887,15 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "attachment",
         "type": 1,
     },
+    # workflow
+    '10e6397d-cd03-4d1f-8bc6-18df5ca1e0ab': {
+        'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
+        'title': 'Advance value',
+        'code': 'advance_value',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     **AdvancePayment_data__params
 }
 
@@ -2015,6 +2032,15 @@ AppProp_SaleData_Payment_data = {
         "title": "File Tab",
         "code": "attachment",
         "type": 1,
+    },
+    # workflow
+    '8f89a3f6-e8ba-48df-845f-cc6d82dbfbaa': {
+        'application_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
+        'title': 'Payment value',
+        'code': 'payment_value',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
     **Payment_data__params
 }
