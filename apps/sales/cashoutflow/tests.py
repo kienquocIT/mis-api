@@ -369,6 +369,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'opportunity',
                 'customer',
                 'contact',
+                'contact_data',
                 'sale_person',
                 'payment_term_id',
                 'payment_term_data',
