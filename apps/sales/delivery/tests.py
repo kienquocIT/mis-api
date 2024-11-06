@@ -410,7 +410,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
-            contact_id=sale_order['contact']['id'],
+            contact_id=sale_order['contact_data'].get('id', None),
             kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,
             delivery_option=0 if not self.config['is_partial_ship'] else 1,
