@@ -2372,6 +2372,45 @@ def update_default_masterdata():
             item.is_default = 1
             item.save()
 
+    for company_obj in Company.objects.all():
+        group = UnitOfMeasure.objects.filter(
+            tenant=company_obj.tenant,
+            company=company_obj,
+            group__code='Labor'
+        )
+        UnitOfMeasure.objects.create(
+            tenant=company_obj.tenant,
+            company=company_obj,
+            code='Manhour',
+            title='Man hour',
+            is_referenced_unit=1,
+            ratio=1,
+            rounding=4,
+            is_default=1,
+            group=group
+        )
+        UnitOfMeasure.objects.create(
+            tenant=company_obj.tenant,
+            company=company_obj,
+            code='Manday',
+            title='Man day',
+            is_referenced_unit=1,
+            ratio=8,
+            rounding=4,
+            is_default=1,
+            group=group
+        )
+        UnitOfMeasure.objects.create(
+            tenant=company_obj.tenant,
+            company=company_obj,
+            code='Manmonth',
+            title='Man month',
+            is_referenced_unit=1,
+            ratio=176,
+            rounding=4,
+            is_default=1,
+            group=group
+        )
     print('Done :))')
 
 
