@@ -3,6 +3,7 @@ import datetime
 from uuid import uuid4
 from rest_framework import serializers
 from apps.core.hr.models import Employee, DistributionApplication
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
@@ -131,10 +132,16 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
     employee_inherit_id = serializers.UUIDField()
+    process_config = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process_config(cls, attrs):
+        return ProcessRuntimeControl.get_process_config(process_config_id=attrs, for_opp=True) if attrs else None
 
     class Meta:
         model = Opportunity
         fields = (
+            'process_config',  # process
             'title',
             'customer',
             'product_category',
@@ -290,6 +297,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'not found': 'Lead config not found.'})
 
     def create(self, validated_data):
+        # handle process
+        process_config = validated_data.pop('process_config', None)
+
         # get data product_category
         product_categories = validated_data.pop('product_category', [])
 
@@ -363,6 +373,20 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 opportunity,
                 opportunity.customer
             )
+
+        # handle process after create opp
+        if process_config:
+            process_obj = ProcessRuntimeControl.create_process_from_config(
+                title=opportunity.title,
+                remark=process_config.remark,
+                config=process_config,
+                opp=opportunity,
+                employee_created=opportunity.employee_created,
+            )
+            ProcessRuntimeControl(process_obj=process_obj).play_process()
+            # update Process to Opp
+            opportunity.process = process_obj
+            opportunity.save(update_fields=['process'])
 
         return opportunity
 

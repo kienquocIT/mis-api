@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 
@@ -16,9 +17,38 @@ from apps.core.process.serializers import (
     ProcessConfigListSerializer, ProcessConfigDetailSerializer, ProcessConfigCreateSerializer,
     ProcessConfigUpdateSerializer, ProcessRuntimeCreateSerializer, ProcessRuntimeListSerializer,
     ProcessRuntimeDetailSerializer, ProcessStageApplicationUpdateSerializer, ProcessStageApplicationDetailSerializer,
+    ProcessConfigReadySerializer,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ProcessConfigReadyList(BaseListMixin):
+    queryset = ProcessConfiguration.objects
+    serializer_list = ProcessConfigReadySerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        'for_opp': ['exact'],
+    }
+    search_fields = ['title', 'remark']
+
+    def get_queryset_and_filter_queryset(self, *args, **kwargs):
+        date_now = timezone.now()
+        data = super().get_queryset_and_filter_queryset(*args, **kwargs)
+        return data.filter(is_active=True).filter(
+            Q(apply_start__isnull=False, apply_start__lt=date_now)
+            |
+            Q(apply_start__isnull=True)
+        ).filter(
+            Q(apply_finish__isnull=False, apply_finish__gt=date_now)
+            |
+            Q(apply_finish__isnull=True)
+        )
+
+    @swagger_auto_schema(operation_summary='Process Configurate List')
+    @mask_view(login_require=True, employee_require=True)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class ProcessConfigList(BaseListMixin, BaseCreateMixin):
@@ -76,14 +106,9 @@ class ProcessRuntimeOfMeList(BaseListMixin):
     }
     search_fields = ['title', 'remark']
 
-    @property
-    def filter_kwargs_q(self):
-        data = super().filter_kwargs_q
-        return data
-
     def get_queryset_and_filter_queryset(self, *args, **kwargs):
         data = super().get_queryset_and_filter_queryset(*args, **kwargs)
-        return data.filter(
+        return data.filter(was_done=False).filter(
             Q(employee_created_id=self.request.user.employee_current_id)
             |
             Q(members__contains=[str(self.request.user.employee_current_id)])

@@ -1,12 +1,13 @@
 from django.urls import path
 
 from apps.core.process.views import (
-    ProcessConfigList, ProcessConfigDetail,
+    ProcessConfigList, ProcessConfigDetail, ProcessConfigReadyList,
     ProcessRuntimeOfMeList, ProcessRuntimeList, ProcessRuntimeDetail, ProcessRuntimeStagesAppControl,
 )
 
 urlpatterns = [
     path('config/list', ProcessConfigList.as_view(), name='ProcessConfigList'),
+    path('config/list/ready', ProcessConfigReadyList.as_view(), name='ProcessConfigReadyList'),
     path('config/detail/<str:pk>', ProcessConfigDetail.as_view(), name='ProcessConfigDetail'),
 
     path('runtime/list/me', ProcessRuntimeOfMeList.as_view(), name='ProcessRuntimeOfMeList'),
