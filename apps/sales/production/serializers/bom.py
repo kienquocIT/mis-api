@@ -701,6 +701,7 @@ class BOMOrderListSerializer(AbstractDetailSerializerModel):
             'id',
             'code',
             'bom_type',
+            'for_outsourcing',
             'sum_price',
             'sum_time',
             'bom_task',

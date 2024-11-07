@@ -13,6 +13,8 @@ class ContractValid:
     @classmethod
     def validate_opportunity_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Opportunity.objects.get(id=value).id)
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
