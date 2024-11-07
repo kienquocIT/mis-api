@@ -32,6 +32,7 @@ from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
+from ..accounting.accountchart.models import AccountingAccount
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
@@ -2371,3 +2372,168 @@ def update_default_masterdata():
             item.is_default = 1
             item.save()
     print('Done :))')
+
+
+class Accounting:
+    @staticmethod
+    def generate_account_200():
+        list_table = [
+            'account_chart_assets_table',
+            # 'account_chart_liabilities_table',
+            # 'account_chart_owner_equity_table',
+            # 'account_chart_revenue_table',
+            # 'account_chart_costs_table',
+            # 'account_chart_other_income_table',
+            # 'account_chart_other_expense_table',
+            # 'account_chart_income_summary_table'
+        ]
+        list_table_data = {
+            'account_chart_assets_table': {
+                'acc_type': 1,
+                'acc_code_list': [
+                    111, 1111, 1112, 1113,
+                    112, 1121, 1122, 1123,
+                    113, 1131, 1132,
+                    121, 1211, 1212, 1218,
+                    128, 1281, 1282, 1283, 1288,
+                    131,
+                    133, 1331, 1332,
+                    136, 1361, 1362, 1363, 1368,
+                    138, 1381, 1385, 1388,
+                    141,
+                    151,
+                    152,
+                    153, 1531, 1532, 1533, 1534,
+                    154,
+                    155, 1551, 1557,
+                    156, 1561, 1562, 1567,
+                    157,
+                    158,
+                    161, 1611, 1612,
+                    171,
+                    211, 2111, 2112, 2113, 2114, 2115, 2118,
+                    212, 2121, 2122,
+                    213, 2131, 2132, 2133, 2134, 2135, 2136, 2138,
+                    214, 2141, 2142, 2143, 2147,
+                    217,
+                    221,
+                    222,
+                    228, 2281, 2288,
+                    229, 2291, 2292, 2293, 2294,
+                    241, 2411, 2412, 2413,
+                    242,
+                    243,
+                    244
+                ],
+                'acc_name_list': [
+                    'Tiền mặt', 'Tiền Việt Nam', 'Ngoại tệ', 'Vàng tiền tệ',
+                    'Tiền gửi Ngân hàng', 'Tiền Việt Nam', 'Ngoại tệ', 'Vàng tiền tệ',
+                    'Tiền đang chuyển', 'Tiền Việt Nam', 'Ngoại tệ',
+                    'Chứng khoán kinh doanh', 'Cổ phiếu', 'Trái phiếu', 'Chứng khoán và công cụ tài chính khác',
+                    'Đầu tư nắm giữ đến ngày đáo hạn', 'Tiền gửi có kỳ hạn', 'Trái phiếu', 'Cho vay', 'Các khoản đầu tư khác nắm giữ đến ngày đáo hạn',
+                    'Phải thu của khách hàng',
+                    'Thuế GTGT được khấu trừ', 'Thuế GTGT được khấu trừ của hàng hóa, dịch vụ', 'Thuế GTGT được khấu trừ của TSCĐ',
+                    'Phải thu nội bộ', 'Vốn kinh doanh ở các đơn vị trực thuộc', 'Phải thu nội bộ về chênh lệch tỷ giá', 'Phải thu nội bộ về chi phí đi vay đủ điều kiện được vốn hóa', 'Phải thu nội bộ khác',
+                    'Phải thu khác', 'Tài sản thiếu chờ xử lý', 'Phải thu về cổ phần hóa', 'Phải thu khác',
+                    'Tạm ứng',
+                    'Hàng mua đang đi đường',
+                    'Nguyên liệu, vật liệu',
+                    'Công cụ, dụng cụ', 'Công cụ, dụng cụ', 'Bao bì luân chuyển', 'Đồ dùng cho thuê', 'Thiết bị, phụ tùng thay thế',
+                    'Chi phí sản xuất, kinh doanh dở dang',
+                    'Thành phẩm', 'Thành phẩm nhập kho', 'Thành phẩm bất động sản',
+                    'Hàng hóa', 'Giá mua hàng hóa', 'Chi phí thu mua hàng hóa', 'Hàng hóa bất động sản',
+                    'Hàng gửi đi bán',
+                    'Hàng hóa kho bảo thuế',
+                    'Chi sự nghiệp', 'Chi sự nghiệp năm trước', 'Chi sự nghiệp năm nay',
+                    'Giao dịch mua bán lại trái phiếu chính phủ',
+                    'Tài sản cố định hữu hình', 'Nhà cửa, vật kiến trúc', 'Máy móc, thiết bị', 'Phương tiện vận tải, truyền dẫn', 'Thiết bị, dụng cụ quản lý', 'Cây lâu năm, súc vật làm việc và cho sản phẩm', 'TSCĐ khác',
+                    'Tài sản cố định thuê tài chính', 'TSCĐ hữu hình thuê tài chính', 'TSCĐ vô hình thuê tài chính',
+                    'Tài sản cố định vô hình', 'Quyền sử dụng đất', 'Quyền phát hành', 'Bản quyền, bằng sáng chế', 'Nhãn hiệu, tên thương mại', 'Chương trình phần mềm', 'Giấy phép và giấy phép nhượng quyền', 'TSCĐ vô hình khác',
+                    'Hao mòn tài sản cố định', 'Hao mòn TSCĐ hữu hình', 'Hao mòn TSCĐ thuê tài chính', 'Hao mòn TSCĐ vô hình', 'Hao mòn bất động sản đầu tư',
+                    'Bất động sản đầu tư',
+                    'Đầu tư vào công ty con',
+                    'Đầu tư vào công ty liên doanh, liên kết',
+                    'Đầu tư khác', 'Cổ phiếu', 'Đầu tư khác',
+                    'Dự phòng tổn thất tài sản', 'Dự phòng giảm giá chứng khoán kinh doanh', 'Dự phòng tổn thất đầu tư vào đơn vị khác', 'Dự phòng phải thu khó đòi', 'Dự phòng giảm giá hàng tồn kho',
+                    'Xây dựng cơ bản dở dang', 'Mua sắm TSCĐ', 'Xây dựng cơ bản', 'Sửa chữa lớn TSCĐ',
+                    'Chi phí trả trước',
+                    'Tài sản thuế thu nhập hoãn lại',
+                    'Cầm cố, thế chấp, ký quỹ, ký cược',
+                ],
+                'acc_foreign_name_list': [
+                    'Cash in hand', 'Vietnam dong', 'Foreign currency', 'Monetary gold',
+                    'Cash in bank', 'Vietnam dong', 'Foreign currency', 'Monetary gold',
+                    'Cash in transit', 'Vietnam dong', 'Foreign currency',
+                    'Securities trading', 'Stocks', 'Bonds', 'Securities and other financial instruments',
+                    'Other short - term investment', 'Term deposits', 'Bonds', 'Loan', 'Other short - term investment',
+                    'Accounts receivable - trade',
+                    'VAT deducted', 'VAT deduction of goods, services', 'VAT deduction of fixed assets',
+                    'Intercompany receivable', 'Investment in equity of subsidiaries', 'Internal receivable on rate differences', 'Internal receivable the borrowing costs eligible for capitalization', 'Other receivable from subsidiaries',
+                    'Other receivable', 'Shortage of assets awaiting resolution', 'Equitization receivable', 'Other receivable',
+                    'Advances',
+                    'Goods in transit',
+                    'Raw materials',
+                    'Tools and supplies', 'Tools and supplies', 'Packaging rotation', 'Tools for rent', 'Equipment spare parts',
+                    'Work in progress',
+                    'Finished goods', 'Finished goods', 'Finished real Estate',
+                    'Merchandise inventory', 'Price of goods', 'Purchasing expense', 'Real Estate',
+                    'Goods on consignment',
+                    'Goods of bonded warehouse',
+                    'Expenditures from subsidies of state budget', 'Last year', 'This year',
+                    'Traded purchase and resell government bonds',
+                    'Tangible fixed assets', 'Houses and architectural', 'Equipment & machines', 'Means of transport, conveyance equipment', 'Managerial equipment and instruments', 'Long term trees, working & killed animals', 'Other tangible fixed assets',
+                    'Financial leasing fixed assets', 'Tangible financial leasing fixed assets', 'Intangible financial leasing fixed assets',
+                    'Intangible fixed assets', 'Land using right', 'Distribution rights', 'Copyright, patents', 'Trademark', 'Software', 'License and right concession permits', 'Other intangible fixed assets',
+                    'Depreciation of fixed assets', 'Tangible fixed assets depreciation', 'Financial leasing fixed assets depreciation', 'Intangible fixed assets depreciation', 'Investment real estate depreciation',
+                    'Investment real estate',
+                    'Investment in equity of subsidiaries',
+                    'Joint venture capital contribution',
+                    'Other long term investments', 'Stocks', 'Other long-term investment',
+                    'Provision for assets', 'Provision for the diminution in value of short-term investments', 'Provision for decline in long term investments', 'Provision for bad debts', 'Provision for decline in inventory',
+                    'Construction in process', 'Fixed assets purchases', 'Construction in process', 'Major repair of fixed assets',
+                    'Prepaid expenses',
+                    'Deffered income tax assets',
+                    'Long term collateral & deposit',
+                ]
+            }
+        }
+        for company in Company.objects.all():
+            for table in list_table:
+                main_acc_bulk_create = []
+                sub_acc_bulk_create = []
+                AccountingAccount.objects.filter(company=company, tenant=company.tenant).delete()
+                AccountingAccount.objects.filter(company=company, tenant=company.tenant).delete()
+                order = 0
+                for i in range(len(list_table_data[table]['acc_code_list'])):
+                    if len(str(list_table_data[table]['acc_code_list'][i])) == 3:
+                        main_acc = AccountingAccount(
+                            order=order,
+                            acc_code=list_table_data[table]['acc_code_list'][i],
+                            acc_name=list_table_data[table]['acc_name_list'][i],
+                            foreign_acc_name=list_table_data[table]['acc_foreign_name_list'][i],
+                            acc_type=list_table_data[table]['acc_type'],
+                            company=company,
+                            tenant=company.tenant,
+                            level=1,
+                            is_account=False,
+                        )
+                        main_acc_bulk_create.append(main_acc)
+                    else:
+                        sub_acc = AccountingAccount(
+                            order=order,
+                            parent_account=main_acc_bulk_create[-1],
+                            acc_code=list_table_data[table]['acc_code_list'][i],
+                            acc_name=list_table_data[table]['acc_name_list'][i],
+                            foreign_acc_name=list_table_data[table]['acc_foreign_name_list'][i],
+                            acc_type=list_table_data[table]['acc_type'],
+                            company=company,
+                            tenant=company.tenant,
+                            level=2,
+                            is_account=True,
+                        )
+                        sub_acc_bulk_create.append(sub_acc)
+                    order += 1
+
+                AccountingAccount.objects.bulk_create(main_acc_bulk_create)
+                AccountingAccount.objects.bulk_create(sub_acc_bulk_create)
+            print(f'Done for {company.title}')
