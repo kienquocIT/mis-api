@@ -2115,6 +2115,88 @@ AppProp_SaleData_Contract_Approval_data = {
     },
 }
 
+AppProp_SaleData_Bidding_data = {
+    "b8ad6020-c87d-4020-b72c-8a0cde3f4502": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Opportunity",
+        "code": "opportunity",
+        "type": 5,
+        "content_type": "opportunity.Opportunity",
+        'is_wf_zone': True,
+    },
+    "36f85840-f8a0-41a3-bd8a-6d958d25d6c1": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Employee Inherit",
+        "code": "employee_inherit_id",
+        "type": 5,
+        'content_type': 'hr.Employee',
+        'is_wf_zone': True,
+    },
+    "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "9ae1da51-3a1a-464e-92f5-c6ca271909f4": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Bid value",
+        "code": "bid_value",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "e426222a-abce-41bc-9c3d-5216e8bf4888": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Bid bond value",
+        "code": "bid_bond_value",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "d76baec5-3a79-4fdc-95b0-6abdcdea2e2a": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Bid date",
+        "code": "bid_date",
+        "type": 2,
+        'is_wf_zone': True,
+    },
+    "df37d7b1-c94b-4586-ae6b-6eeec518d61d": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Venture Partner",
+        "code": "venture_partner",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "1def7e01-7adf-485b-b63e-adbebebada68": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Document Data",
+        "code": "document_data",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "40ea2cdd-a173-4e8a-9bc3-1b6b8fc7ecc2": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Attachment",
+        "code": "attachment",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "5c15c1cc-2a85-4c02-a57e-ea7272f48243": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Security Type",
+        "code": "security_type",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "0ef463d5-a722-44e8-9d72-80e52e10feb0": {
+        "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+        "title": "Tinymce Content",
+        "code": "tinymce_content",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2144,5 +2226,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Purchase_Request_data,
     **AppProp_SaleData_Return_Payment_data,
     **AppProp_SaleData_Distribution_Plan_data,
-    **AppProp_SaleData_BOM_data
+    **AppProp_SaleData_BOM_data,
+    **AppProp_SaleData_Bidding_data
 }

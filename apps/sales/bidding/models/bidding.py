@@ -9,10 +9,21 @@ BIDDING_STATUS = [
     (2, _('Lost')),
 ]
 
+BIDDING_SECURITY_TYPE = [
+    (0, _('None')),
+    (1, _('Deposit')),
+    (2, _('Letter of Guarantee')),
+]
+
+CAUSE_OF_LOST = [
+    (0, _('Bids withdrawal')),
+    (1, _('Higher bid price')),
+    (2, _('Non-compliance')),
+    (3, _('Other reason')),
+]
+
 class Bidding(DataAbstractModel):
-    status = models.SmallIntegerField(choices=BIDDING_STATUS, default=0)
-    bid_value = models.FloatField(default=0)
-    bid_date = models.DateField(null=True, blank=True)
+    # general data
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -28,6 +39,31 @@ class Bidding(DataAbstractModel):
         null=True,
         help_text="sale data Accounts have type customer"
     )
+    bid_value = models.FloatField(default=0)
+    bid_date = models.DateField(null=True, blank=True)
+    bid_bond_value = models.FloatField(null=True, blank=True)
+    security_type = models.SmallIntegerField(choices=BIDDING_SECURITY_TYPE, default=0)
+
+    # bid result
+    bid_status = models.SmallIntegerField(choices=BIDDING_STATUS, default=0)
+    cause_of_lost = models.JSONField(
+        default=list,
+        help_text="1: Bids withdrawal "
+                  "2: Higher bid price "
+                  "3: Non-compliance "
+                  "4: Other reason ",
+        null=True
+    )
+    other_cause = models.CharField(max_length=100, blank=True, null=True)
+    other_bidder = models.ManyToManyField(
+        'saledata.Account',
+        through='BiddingBidderAccount',
+        symmetrical=False,
+        blank=True,
+        related_name='bidding_other_bidder',
+    )
+
+    # bids
     venture_partner = models.ManyToManyField(
         'saledata.Account',
         through='BiddingPartnerAccount',
@@ -42,6 +78,7 @@ class Bidding(DataAbstractModel):
         blank=True,
         related_name='file_of_bidding',
     )
+
     tinymce_content = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -115,6 +152,7 @@ class BiddingDocument(MasterDataAbstractModel):
     remark = models.TextField(verbose_name="remark", blank=True, null=True)
     attachment_data = models.JSONField(default=list, help_text='data json of attachment')
     order = models.IntegerField(default=1)
+    is_invite_doc = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Bidding document'
@@ -168,5 +206,26 @@ class BiddingPartnerAccount(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Bidding partner account'
         verbose_name_plural = 'Bidding partner accounts'
+        default_permissions = ()
+        permissions = ()
+
+class BiddingBidderAccount(SimpleAbstractModel):
+    is_won = models.BooleanField(default=False)
+    bidding = models.ForeignKey(
+        'bidding.Bidding',
+        on_delete=models.CASCADE,
+        verbose_name="bidding bidder account bidding",
+        related_name="bidding_bidder_account_bidding",
+    )
+    bidder_account = models.ForeignKey(
+        'saledata.Account',
+        on_delete=models.CASCADE,
+        verbose_name="bidding bidder account",
+        related_name="bidding_bidder_account_bidder_account",
+    )
+
+    class Meta:
+        verbose_name = 'Bidding bidder account'
+        verbose_name_plural = 'Bidding bidder accounts'
         default_permissions = ()
         permissions = ()

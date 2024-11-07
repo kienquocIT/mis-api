@@ -3,7 +3,7 @@ from apps.masterdata.saledata.models import Account, DocumentType
 from apps.sales.bidding.models import Bidding
 from apps.sales.bidding.serializers.bidding import (
     BiddingListSerializer, DocumentMasterDataBiddingListSerializer, AccountForBiddingListSerializer,
-    BiddingCreateSerializer,BiddingDetailSerializer, BiddingUpdateSerializer
+    BiddingCreateSerializer, BiddingDetailSerializer, BiddingUpdateSerializer, BiddingUpdateResultSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -31,7 +31,7 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Bidding List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='bidding', model_code='bidding', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -43,7 +43,7 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
         request_body=BiddingCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         employee_require=True,
         label_code='bidding', model_code='bidding', perm_code='create',
     )
@@ -64,7 +64,7 @@ class BiddingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Bidding List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='bidding', model_code='bidding', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -76,7 +76,7 @@ class BiddingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BiddingUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='bidding', model_code='bidding', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
@@ -84,23 +84,44 @@ class BiddingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
+class BiddingResult(BaseRetrieveMixin, BaseCreateMixin):
+    queryset = Bidding.objects
+    serializer_list = BiddingListSerializer
+    serializer_detail = BiddingDetailSerializer
+    serializer_create = BiddingUpdateResultSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Update Bidding Result",
+        operation_description="Create Bidding Result",
+        request_body=BiddingUpdateResultSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        employee_require=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.create(request, *args, **kwargs)
+
 class AccountForBiddingList(BaseListMixin):
     queryset = Account.objects
     serializer_list = AccountForBiddingListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'is_partner_account': ['exact'],
-        'is_customer_account': ['exact'],
+        'is_competitor_account': ['exact']
     }
     search_fields = []
+
+    def get_queryset(self):
+        return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Account For Bidding list",
         operation_description="Account List for Bidding",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='bidding', model_code='bidding', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -111,7 +132,6 @@ class DocumentMasterDataBiddingList(BaseListMixin):
     queryset = DocumentType.objects
     serializer_list = DocumentMasterDataBiddingListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     filterset_fields = {}
     search_fields = ['title']
 
@@ -120,8 +140,7 @@ class DocumentMasterDataBiddingList(BaseListMixin):
         operation_description="Document Masterdata for Bidding Document list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='bidding', model_code='bidding', perm_code='view',
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

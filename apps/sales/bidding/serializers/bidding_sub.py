@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.base.models import Application
-from apps.sales.bidding.models import BiddingAttachment, BiddingDocument, BiddingPartnerAccount
+from apps.sales.bidding.models import BiddingAttachment, BiddingDocument, BiddingPartnerAccount, BiddingBidderAccount
 from apps.shared.translations.base import AttachmentMsg
 
 class BiddingCommonCreate:
@@ -19,12 +19,13 @@ class BiddingCommonCreate:
 
     @classmethod
     def create_sub_models( cls, instance, create_data):
-
         if create_data.get('document_data'):
             cls.create_document(document_data=create_data.get('document_data'), instance=instance,
                                 attachment_result=create_data.get('attachment'))
         if create_data.get('venture_partner'):
             cls.create_venture_partner(venture_partner=create_data.get('venture_partner'), instance=instance)
+        if create_data.get('other_bidder'):
+            cls.create_other_bidder(other_bidder=create_data.get('other_bidder'), instance=instance)
         return True
 
     @classmethod
@@ -40,6 +41,20 @@ class BiddingCommonCreate:
             )
         BiddingPartnerAccount.objects.filter(bidding=instance).delete()
         BiddingPartnerAccount.objects.bulk_create(bulk_data)
+
+    @classmethod
+    def create_other_bidder(cls, other_bidder, instance):
+        bulk_data = []
+        for item in other_bidder:
+            bulk_data.append(
+                BiddingBidderAccount(
+                    bidding=instance,
+                    bidder_account=item.get('bidder_account'),
+                    is_won=item.get('is_won')
+                )
+            )
+        BiddingBidderAccount.objects.filter(bidding=instance).delete()
+        BiddingBidderAccount.objects.bulk_create(bulk_data)
 
     @classmethod
     def create_document( cls,document_data, instance, attachment_result):
