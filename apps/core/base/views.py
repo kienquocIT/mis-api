@@ -57,6 +57,7 @@ class TenantApplicationList(BaseListMixin):
         'allow_import': ['exact'],
         'allow_print': ['exact'],
         'allow_mail': ['exact'],
+        'allow_process': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -318,7 +319,7 @@ class WardList(BaseListMixin):
 class BaseCurrencyList(BaseListMixin):
     queryset = BaseCurrency.objects
     search_fields = ('title', 'code')
-    use_cache_queryset = True
+    # use_cache_queryset = True
     serializer_list = BaseCurrencyListSerializer
 
     @swagger_auto_schema()

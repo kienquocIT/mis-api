@@ -11,7 +11,7 @@ from django_celery_results.models import TaskResult
 from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
 from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
-from apps.core.process.models import SaleFunction, Process
+from apps.core.process.models import Process  # SaleFunction
 from apps.core.workflow.models import RuntimeAssignee, WorkflowConfigOfApp, Workflow
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
@@ -759,16 +759,16 @@ class ConfigDefaultData:
 
     def process_function_config(self):
         bulk_info = []
-        for data in self.function_process_data:
-            bulk_info.append(
-                SaleFunction(
-                    company=self.company_obj,
-                    tenant=self.company_obj.tenant,
-                    code='',
-                    **data,
-                )
-            )
-        SaleFunction.objects.bulk_create(bulk_info)
+        # for data in self.function_process_data:
+        #     bulk_info.append(
+        #         SaleFunction(
+        #             company=self.company_obj,
+        #             tenant=self.company_obj.tenant,
+        #             code='',
+        #             **data,
+        #         )
+        #     )
+        # SaleFunction.objects.bulk_create(bulk_info)
 
     def process_config(self):
         Process.objects.create(

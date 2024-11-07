@@ -3,9 +3,9 @@ import base64
 from rest_framework import serializers
 from rest_framework.views import APIView
 
-from apps.core.account.models import TOTPUser
+from apps.core.account.models import TOTPUser, User
 from apps.core.auths.serializers import MyTokenObtainPairSerializer
-from apps.shared import mask_view, ResponseController, AuthMsg, BaseMsg
+from apps.shared import mask_view, ResponseController, AuthMsg, BaseMsg, Caching
 from misapi.mongo_client import mongo_log_auth
 
 
@@ -16,12 +16,10 @@ from misapi.mongo_client import mongo_log_auth
 #  - GET        | All integrate status of user
 #  - POST       | New integrate
 #  - PUT        | Update status enable
+#  - DELETE     | Destroy 2FA
 #
 # 2fa/integrate/{pk}
-#  - GET        | Get integrate detail
-#  - POST       | Valid integrate
 #  - PUT        | Update integrate status
-#  - DELETE     | Destroy integrate status
 
 
 class TwoFA(APIView):
@@ -155,6 +153,7 @@ class TwoFAIntegrate(APIView):
                             endpoint="2FA_SETUP_UPDATE",
                             log_level="INFO",
                         )
+                        Caching().delete(key=User.generate_key_cache(id=request.user.id))
                         return ResponseController.success_200(
                             data={
                                 'detail': BaseMsg.SUCCESSFULLY
@@ -226,6 +225,7 @@ class TwoFAIntegrate(APIView):
                             endpoint="2FA_SETUP_DESTROY",
                             log_level="INFO",
                         )
+                        Caching().delete(key=User.generate_key_cache(id=request.user.id))
                         return ResponseController.success_200(
                             data={
                                 'detail': BaseMsg.SUCCESSFULLY
@@ -289,6 +289,7 @@ class TwoFAIntegrateDetail(APIView):
                     endpoint="2FA_SETUP_VALID",
                     log_level="INFO",
                 )
+                Caching().delete(key=User.generate_key_cache(id=request.user.id))
                 return ResponseController.success_200(
                     data={
                         'detail': BaseMsg.SUCCESSFULLY

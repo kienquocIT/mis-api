@@ -82,6 +82,7 @@ INSTALLED_APPS = \
         'apps.core.mailer',  # mail templates & rules
         'apps.core.diagram',  # diagram for apps
         'apps.core.forms',  # form
+        'apps.core.chatbot',  # chatbot AI
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -134,6 +135,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.shared.extends.middleware.AllowedMethodMiddleware',
 ]
 #
 # Author: Paul McLanahan <pmac@mozilla.com>
@@ -416,8 +418,12 @@ DJANGO_TEST_ARGS = ['--keepdb']
 
 # REST API & JWT
 REST_FRAMEWORK = {
+    'DEFAULT_METADATA_CLASS': None,
     'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 'rest_framework.permissions.AllowAny',
+        'apps.shared.extends.drf.AllowAnyDisableOptionsPermission',
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'apps.core.auths.authenticate.MyCustomJWTAuthenticate',
@@ -446,6 +452,8 @@ REST_FRAMEWORK = {
         'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
     }
 }
+if DEBUG is True:
+    REST_FRAMEWORK['DEFAULT_METADATA_CLASS'] = 'rest_framework.metadata.SimpleMetadata'
 CUSTOM_PAGE_MAXIMUM_SIZE = 1000
 
 AUTH_USER_MODEL = 'account.User'
@@ -462,7 +470,7 @@ SYNC_2FA_ENABLED = os.environ.get('SYNC_2FA_ENABLED', '1') in [1, '1']
 JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
 JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,

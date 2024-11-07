@@ -225,6 +225,10 @@ class DataAbstractModel(SimpleAbstractModel):
         model_name = cls._meta.model_name
         return f"{app_label}.{model_name}".lower()
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
+
     def save(self, *args, **kwargs):
         if 'update_fields' in kwargs and isinstance(kwargs['update_fields'], list):
             auto_update_modified = kwargs.pop('auto_update_modified', True)
@@ -373,14 +377,15 @@ class DisperseModel:
 
     def __init__(self, **kwargs):
         app_model = kwargs.get("app_model", None)
+        # '.' trước -> '_' sau cho case: app_model = 'revenue_plan.RevenuePlan'
         if app_model:
-            if '_' in app_model:
-                app_tmp, model_tmp = app_model.split("_")
-            elif '.' in app_model:
+            if '.' in app_model:
                 app_tmp, model_tmp = app_model.split(".")
+            elif '_' in app_model:
+                app_tmp, model_tmp = app_model.split("_")
             else:
                 raise AttributeError(
-                    "App models must be required. It's format is  {app_name}_{model name} or {app_name}.{model name}"
+                    "App models must be required. It's format is {app_name}_{model name} or {app_name}.{model name}"
                 )
             self.setup(app_label=app_tmp.lower(), model_name=model_tmp.lower())
         else:
