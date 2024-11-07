@@ -1794,6 +1794,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "opportunity_id",
         "type": 5,
         "content_type": 'opportunity.Opportunity',
+        'is_wf_zone': True,
     },
     "98a42060-1018-476d-965a-1158089072f6": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
@@ -1801,18 +1802,21 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "employee_inherit_id",
         "type": 5,
         "content_type": 'hr.Employee',
+        'is_wf_zone': True,
     },
     "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
     "43206581-8152-4e02-b34a-011d3651434a": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Date created",
         "code": "date_created",
         "type": 1,
+        'is_wf_zone': True,
     },
     "1b379df0-49b6-40de-a11b-dfb7a8575da2": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
@@ -1820,6 +1824,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "employee_created_id",
         "type": 5,
         "content_type": 'hr.Employee',
+        'is_wf_zone': True,
     },
     "2192a1b9-679d-48d6-881a-f85553868b42": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
@@ -1827,6 +1832,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "quotation_id",
         "type": 5,
         "content_type": 'quotation.Quotation',
+        'is_wf_zone': True,
     },
     "c3613c55-43b7-4d0b-97c4-389e8716a470": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
@@ -1834,12 +1840,14 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "sale_order_id",
         "type": 5,
         "content_type": 'saleorder.SaleOrder',
+        'is_wf_zone': True,
     },
     "ceba8e0a-1613-4903-bccd-d6895b236abf": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Advance payment type",
         "code": "advance_payment_type",
         "type": 6,
+        'is_wf_zone': True,
     },
     "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
@@ -1847,24 +1855,28 @@ AppProp_SaleData_Advance_Payment_data = {
         "code": "supplier_id",
         'type': 5,
         'content_type': 'saledata.Account',
+        'is_wf_zone': True,
     },
     "3dca605f-1a45-454c-9909-973904fcd820": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Advance payment method",
         "code": "method",
         "type": 6,
+        'is_wf_zone': True,
     },
     "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Return date",
         "code": "return_date",
         "type": 2,
+        'is_wf_zone': True,
     },
     "72848cc3-54b5-44d9-9deb-6c503cd64d04": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Money gave/received",
         "code": "money_gave",
         "type": 1,
+        'is_wf_zone': True,
     },
     # tab line detail
     "51840528-2a9f-448b-afcb-ad0f421fd523": {
@@ -1872,6 +1884,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "title": "Line detail Tab",
         "code": "ap_item_list",
         "type": 1,
+        'is_wf_zone': True,
     },
     # tab plan
     "ff3ba757-cd27-4b8c-8b4c-7405401b528c": {
@@ -1879,6 +1892,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "title": "Plan Tab",
         "code": "plan_tab",
         "type": 1,
+        'is_wf_zone': True,
     },
     # tab file
     "64580a12-f841-4e1b-82ac-73b8506f28ef": {
@@ -1886,6 +1900,7 @@ AppProp_SaleData_Advance_Payment_data = {
         "title": "File Tab",
         "code": "attachment",
         "type": 1,
+        'is_wf_zone': True,
     },
     # workflow
     '10e6397d-cd03-4d1f-8bc6-18df5ca1e0ab': {
@@ -1895,6 +1910,7 @@ AppProp_SaleData_Advance_Payment_data = {
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': True,
+        'is_wf_zone': True,
     },
     **AdvancePayment_data__params
 }
@@ -1905,6 +1921,7 @@ AppProp_SaleData_AP_Invoice_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -1914,6 +1931,7 @@ AppProp_SaleData_AR_Invoice_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -1923,6 +1941,7 @@ AppProp_SaleData_Goods_Issue_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -1945,6 +1964,7 @@ AppProp_SaleData_Payment_data = {
         "code": "opportunity_id",
         "type": 5,
         "content_type": 'opportunity.Opportunity',
+        'is_wf_zone': True,
     },
     "41511943-3112-4ef3-91ca-55123a9015cd": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1952,18 +1972,21 @@ AppProp_SaleData_Payment_data = {
         "code": "employee_inherit_id",
         "type": 5,
         "content_type": 'hr.Employee',
+        'is_wf_zone': True,
     },
     "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
     "c9e120be-5a23-43db-ac36-9ddacbaa41ec": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Date created",
         "code": "date_created",
         "type": 1,
+        'is_wf_zone': True,
     },
     "21399374-a08e-4ba9-a40f-170866fa64ee": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1971,6 +1994,7 @@ AppProp_SaleData_Payment_data = {
         "code": "employee_created_id",
         "type": 5,
         "content_type": 'hr.Employee',
+        'is_wf_zone': True,
     },
     "6c892c95-8bd5-4f09-a9be-92963b72ac29": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1978,6 +2002,7 @@ AppProp_SaleData_Payment_data = {
         "code": "quotation_id",
         "type": 5,
         "content_type": 'quotation.Quotation',
+        'is_wf_zone': True,
     },
     "c576f290-1ba7-48f6-95ee-decbd8a54079": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1985,12 +2010,14 @@ AppProp_SaleData_Payment_data = {
         "code": "sale_order_id",
         "type": 5,
         "content_type": 'saleorder.SaleOrder',
+        'is_wf_zone': True,
     },
     "85556007-ef17-427d-ac7e-c65c4b10c210": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Internal payment",
         "code": "is_internal_payment",
         'type': 4,
+        'is_wf_zone': True,
     },
     "67099494-859c-4ad9-adad-92175230d08f": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -1998,6 +2025,7 @@ AppProp_SaleData_Payment_data = {
         "code": "employee_payment_id",
         'type': 5,
         'content_type': 'hr.Employee',
+        'is_wf_zone': True,
     },
     "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
@@ -2005,12 +2033,14 @@ AppProp_SaleData_Payment_data = {
         "code": "supplier_id",
         'type': 5,
         'content_type': 'saledata.Account',
+        'is_wf_zone': True,
     },
     "3811bd07-bab6-452e-89a4-6352c2c667d3": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
         "title": "Payment method",
         "code": "method",
         "type": 6,
+        'is_wf_zone': True,
     },
     # tab line detail
     "09b7660e-adde-4515-bcf1-764020f71e71": {
@@ -2018,6 +2048,7 @@ AppProp_SaleData_Payment_data = {
         "title": "Tab detail",
         "code": "payment_expense_valid_list",
         "type": 1,
+        'is_wf_zone': True,
     },
     # tab plan
     "20183aa0-49b4-4918-9a8c-ea6790afa52d": {
@@ -2025,6 +2056,7 @@ AppProp_SaleData_Payment_data = {
         "title": "Plan Tab",
         "code": "plan_tab",
         "type": 1,
+        'is_wf_zone': True,
     },
     # tab file
     "f292552c-7dd6-47fd-8ca0-457ce117dfe3": {
@@ -2032,6 +2064,7 @@ AppProp_SaleData_Payment_data = {
         "title": "File Tab",
         "code": "attachment",
         "type": 1,
+        'is_wf_zone': True,
     },
     # workflow
     '8f89a3f6-e8ba-48df-845f-cc6d82dbfbaa': {
@@ -2041,6 +2074,7 @@ AppProp_SaleData_Payment_data = {
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': True,
+        'is_wf_zone': True,
     },
     **Payment_data__params
 }
@@ -2051,6 +2085,7 @@ AppProp_SaleData_Purchase_Quotation_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -2060,6 +2095,7 @@ AppProp_SaleData_Purchase_Quotation_Request_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -2069,6 +2105,7 @@ AppProp_SaleData_Purchase_Request_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -2078,12 +2115,14 @@ AppProp_SaleData_Return_Payment_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
     "c5c05715-bf9d-4c08-9b6b-4cfa649bf806": {
         "application_id": "65d36757-557e-4534-87ea-5579709457d7",
         "title": "Return payment method",
         "code": "method",
         "type": 6,
+        'is_wf_zone': True,
     },
     # tab line detail
     "6ae7e6cc-d3ff-417f-8407-eee143078889": {
@@ -2091,12 +2130,14 @@ AppProp_SaleData_Return_Payment_data = {
         "title": "Tab detail",
         "code": "cost",
         "type": 1,
+        'is_wf_zone': True,
     },
     "0db6a091-3f1a-4948-bcc9-716287ab9427": {
         "application_id": "65d36757-557e-4534-87ea-5579709457d7",
         "title": "Money received",
         "code": "money_received",
         "type": 3,
+        'is_wf_zone': True,
     },
 }
 
@@ -2106,6 +2147,7 @@ AppProp_SaleData_Distribution_Plan_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
@@ -2115,6 +2157,7 @@ AppProp_SaleData_BOM_data = {
         "title": "Title",
         "code": "title",
         "type": 1,
+        'is_wf_zone': True,
     },
 }
 
