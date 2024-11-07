@@ -325,6 +325,7 @@ TASK_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_process": True,
 }
 
 QUOTATION_APP_CONFIG = {
@@ -393,6 +394,7 @@ QUOTATION_APP_CONFIG = {
     "allow_print": True,
     "allow_mail": True,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 SALEORDER_APP_CONFIG = {
@@ -477,6 +479,7 @@ SALEORDER_APP_CONFIG = {
     },
     "allow_print": True,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 PRODUCT_APP_CONFIG = {
@@ -601,6 +604,7 @@ DELIVERY_APP_CONFIG = {
     "allow_print": True,
     "allow_mail": True,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 PRICES_APP_CONFIG = {
@@ -748,6 +752,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_print": True,
+    "allow_process": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -809,6 +814,7 @@ PAYMENT_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_print": True,
+    "allow_process": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -868,6 +874,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_process": True,
 }
 
 DOCUMENT_FOR_CUSTOMER_APP_CONFIG = {
@@ -878,6 +885,7 @@ DOCUMENT_FOR_CUSTOMER_APP_CONFIG = {
     "app_label": "opportunity",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 CALL_LOG_APP_CONFIG = {
@@ -888,6 +896,7 @@ CALL_LOG_APP_CONFIG = {
     "app_label": "opportunity",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 EMAIL_LOG_APP_CONFIG = {
@@ -898,6 +907,7 @@ EMAIL_LOG_APP_CONFIG = {
     "app_label": "opportunity",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 MEETING_LOG_APP_CONFIG = {
@@ -908,6 +918,7 @@ MEETING_LOG_APP_CONFIG = {
     "app_label": "opportunity",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 CONTRACT_APP_CONFIG = {
@@ -918,6 +929,7 @@ CONTRACT_APP_CONFIG = {
     "app_label": "contract",
     "is_workflow": False,
     "allow_permit": True,
+    "allow_process": True,
 }
 
 PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {

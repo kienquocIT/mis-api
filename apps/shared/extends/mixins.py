@@ -621,10 +621,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             'HTTP_DATAISSKIPAUTH',
             None
         ) == settings.HEADER_SKIP_AUTH_CODE if settings.HEADER_SKIP_AUTH_CODE else False
-        minimal = request.META.get(
-            'HTTP_DATAISMINIMAL',
-            None
-        ) == settings.HEADER_MINIMAL_CODE if settings.HEADER_MINIMAL_CODE else False
+        minimal = request.query_params.dict().get('is_minimal', False)
+        if minimal in ['True', 'true', '1', True]:
+            minimal = True
 
         return minimal, skip_auth
 

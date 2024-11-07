@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense
@@ -65,6 +66,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -110,6 +112,8 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'workflow_runtime_id',
             'is_active',
             'employee_inherit',
+            # process
+            'process',
         )
 
     @classmethod
@@ -176,6 +180,16 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
 
 class QuotationCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
@@ -209,10 +223,19 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    # process = serializers.UUIDField(allow_null=True, required=False, default=None)
+    process = serializers.UUIDField(allow_null=True)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs)
 
     class Meta:
         model = Quotation
         fields = (
+            # process
+            'process',
+            #
             'title',
             'opportunity_id',
             'customer',
@@ -301,6 +324,12 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         return True
 
     def validate(self, validate_data):
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        app_id = Quotation.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
         QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
@@ -310,6 +339,14 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
+        if quotation.process:
+            ProcessRuntimeControl(process_obj=quotation.process).register_doc(
+                app_id=Quotation.get_app_id(),
+                doc_id=quotation.id,
+                doc_title=quotation.title,
+                employee_created_id=quotation.employee_created_id,
+                date_created=quotation.date_created,
+            )
         return quotation
 
 

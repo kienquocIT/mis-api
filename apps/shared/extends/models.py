@@ -225,6 +225,10 @@ class DataAbstractModel(SimpleAbstractModel):
         model_name = cls._meta.model_name
         return f"{app_label}.{model_name}".lower()
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
+
     def save(self, *args, **kwargs):
         if 'update_fields' in kwargs and isinstance(kwargs['update_fields'], list):
             auto_update_modified = kwargs.pop('auto_update_modified', True)

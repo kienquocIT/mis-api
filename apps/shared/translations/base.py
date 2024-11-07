@@ -23,6 +23,7 @@ class BaseMsg:
     APPLICATION_NOT_EXIST = _('Application does not exist.')
     ZONE_NOT_EXIST = _('Zone does not exist.')
     ZONE_IS_ARRAY = _('Zone property must be array')
+    DOES_NOT_EXIST = _("Does not exist")
 
 
 class PermissionMsg:

@@ -259,6 +259,10 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         permissions = ()
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'b9650500aba744e3b6e02542622702a3'
+
+    @classmethod
     def find_max_number(cls, codes):
         num_max = None
         for code in codes:

@@ -84,6 +84,10 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'id': obj.employee_inherit_id,
                 'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
+                'first_name': obj.employee_inherit.first_name,
+                'last_name': obj.employee_inherit.last_name,
+                'email': obj.employee_inherit.email,
+                'is_active': obj.employee_inherit.is_active,
             }
         return {}
 

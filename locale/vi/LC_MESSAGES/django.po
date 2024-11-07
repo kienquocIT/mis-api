@@ -302,6 +302,10 @@ msgstr "Báo cáo mua hàng"
 msgid "Goods Stock Plan"
 msgstr "Kế hoạch nhập hàng"
 
+#
+msgid "Does not exist"
+msgstr "Không tồn tại"
+
 #: .\apps\shared\translations\account.py:5
 msgid "User does not exist."
 msgstr "Người dùng không tồn tại."
