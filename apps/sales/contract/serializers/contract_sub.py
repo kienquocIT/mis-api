@@ -1,8 +1,30 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Application
+from apps.core.hr.models import Employee
 from apps.sales.contract.models import ContractDocument, ContractAttachment
+from apps.sales.opportunity.models import Opportunity
+from apps.shared import SaleMsg
 from apps.shared.translations.base import AttachmentMsg
+
+
+class ContractValid:
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(Opportunity.objects.get(id=value).id)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            return str(Employee.objects.get(id=value).id)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee': SaleMsg.EMPLOYEE_INHERIT_NOT_EXIST})
 
 
 class ContractCommonCreate:

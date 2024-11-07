@@ -26,7 +26,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -40,7 +40,7 @@ from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from apps.core.tenant.models import TenantPlan
 from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.core.mailer.tasks import send_mail_otp
+from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
@@ -48,6 +48,9 @@ from apps.sales.project.models import ProjectMapMember, ProjectMapGroup, Project
 from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
+from .models import DisperseModel
+from .. import ProjectMsg
+from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +91,11 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
-        {'code': 'UG001', 'title': 'Labor', 'is_default': 1},
+        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+        {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+        {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+        {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -184,6 +191,44 @@ class SaleDefaultData:
             for uom_group_item in self.UoM_Group_data
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
+        ).first()
+        if group:
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manhour',
+                title='Man hour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manday',
+                title='Man day',
+                is_referenced_unit=1,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manmonth',
+                title='Man month',
+                is_referenced_unit=1,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
         return True
 
     def create_company_function_number(self):
@@ -1142,6 +1187,10 @@ def task_validate_user_otp(sender, instance, created, **kwargs):
 @receiver(post_save, sender=ProjectMapMember)
 def project_member_event_update(sender, instance, created, **kwargs):
     employee_obj = instance.member
+    project = instance.project
+    company = project.company
+    tenant = project.tenant
+
     if employee_obj and hasattr(employee_obj, 'id'):
         employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
         employee_permission.append_permit_by_prj(
@@ -1149,6 +1198,23 @@ def project_member_event_update(sender, instance, created, **kwargs):
             prj_id=str(instance.project_id),
             perm_config=instance.permission_by_configured,
         )
+    if created and project.employee_inherit_id != employee_obj.id:
+        mail_config_cls = DisperseModel(app_model='mailer.MailConfig').get_model()
+        if mail_config_cls and hasattr(mail_config_cls, 'get_config'):
+            config_obj = mail_config_cls.get_config(
+                tenant_id=str(tenant.id), company_id=str(company.id)
+            )
+            if config_obj and config_obj.is_active:
+                call_task_background(
+                    my_task=send_mail_new_project_member,
+                    **{
+                        'tenant_id': str(tenant.id),
+                        'company_id': str(company.id),
+                        'prj_owner': str(project.employee_inherit_id),
+                        'prj_member': str(employee_obj.id),
+                        'prj_id': str(project.id),
+                    }
+                )
 
 
 @receiver(post_delete, sender=ProjectMapMember)
@@ -1206,4 +1272,19 @@ def project_group_event_destroy(sender, instance, **kwargs):
 def project_work_event_destroy(sender, instance, **kwargs):
     re_calc_work_group(instance.work)
     calc_rate_project(instance.project, instance)
+
+    # create activities when delete works
+    call_task_background(
+        my_task=create_project_news,
+        **{
+            'project_id': str(instance.project.id),
+            'employee_inherit_id': str(instance.work.employee_inherit.id),
+            'employee_created_id': str(instance.work.employee_created.id),
+            'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+            'document_id': str(instance.work.id),
+            'document_title': str(instance.work.title),
+            'title': ProjectMsg.DELETED_A,
+            'msg': '',
+        }
+    )
     print('re calculator rate is Done')

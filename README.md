@@ -420,10 +420,13 @@ Trong các phương thức test, ta sử dụng các phương thức khác của
    
 2/ SerializerDetail kế thừa class AbstractDetailSerializerModel
    VD: class QuotationDetailSerializer(AbstractDetailSerializerModel):
+      ...
       
 3/ SerializerCreate & SerializerUpdate kế thừa class AbstractCreateSerializerModel
    VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
+      ...
    VD: class QuotationUpdateSerializer(AbstractCreateSerializerModel):
+      ...
       
 4/ Thêm decorator @decorator_run_workflow ngay trên hàm def create() trong SerializerCreate
     VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
@@ -444,6 +447,17 @@ Trong các phương thức test, ta sử dụng các phương thức khác của
     
 # BỔ SUNG THÊM
 - Định nghĩa ApplicationProperty cho chức năng trong file (apps/sharedapp/data/base/application_properties.py)
+    VD: AppProp_SaleData_Quotation_data = {
+    # b9650500-aba7-44e3-b6e0-2542622702a3 # quotation.Quotation
+       '0b6765ec-be8f-4982-8dc3-fd90f91d941c': {
+           'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+           'title': str(trans('Title')),
+           'code': 'title',
+           'type': 1,  # choice field: "type" in model ApplicationProperty 
+           'is_wf_zone': True,  # use for config workflow zone (cần thì mới bật True)
+           'is_wf_condition': True,  # use for config workflow condition (cần thì mới bật True)
+       }
+    }
 
 ```
 ---

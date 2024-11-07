@@ -63,7 +63,6 @@ class QuotationListSerializer(AbstractListSerializerModel):
 class QuotationDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
@@ -76,7 +75,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'opportunity',
             'customer',
-            'contact',
+            'contact_data',
             'sale_person',
             'payment_term_id',
             'payment_term_data',
@@ -108,6 +107,10 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -145,14 +148,6 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             } if obj.customer.payment_term_customer_mapped else {},
             'customer_price_list': obj.customer.price_list_mapped_id,
         } if obj.customer else {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'title': obj.contact.fullname,
-            'code': obj.contact.code,
-        } if obj.contact else {}
 
     @classmethod
     def get_sale_person(cls, obj):
@@ -239,7 +234,9 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'opportunity_id',
             'customer',
+            'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
@@ -269,6 +266,10 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
     @classmethod
@@ -400,7 +401,9 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'opportunity_id',
             'customer',
+            'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
@@ -430,6 +433,10 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
     @classmethod

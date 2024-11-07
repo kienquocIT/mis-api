@@ -11,6 +11,24 @@ class ReportRevenue(DataAbstractModel):
         related_name='report_revenue_sale_order',
         null=True,
     )
+    quotation = models.OneToOneField(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        related_name='report_revenue_quotation',
+        null=True,
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name='report_revenue_opportunity',
+        null=True,
+    )
+    customer = models.ForeignKey(
+        'saledata.Account',
+        on_delete=models.CASCADE,
+        related_name='report_revenue_customer',
+        null=True,
+    )
     group_inherit = models.ForeignKey(
         'hr.Group',
         null=True,
@@ -25,30 +43,29 @@ class ReportRevenue(DataAbstractModel):
     @classmethod
     def push_from_so(
             cls,
-            tenant_id,
-            company_id,
-            sale_order_id,
-            employee_created_id,
-            employee_inherit_id,
-            group_inherit_id,
-            date_approved,
-            revenue: float,
-            gross_profit: float,
-            net_income: float,
+            **kwargs
     ):
-        if not cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id).exists():
-            cls.objects.create(
-                tenant_id=tenant_id,
-                company_id=company_id,
-                sale_order_id=sale_order_id,
-                employee_created_id=employee_created_id,
-                employee_inherit_id=employee_inherit_id,
-                group_inherit_id=group_inherit_id,
-                date_approved=date_approved,
-                revenue=revenue,
-                gross_profit=gross_profit,
-                net_income=net_income,
-            )
+        quotation_id = kwargs.get('quotation_id', None)
+        sale_order_id = kwargs.get('sale_order_id', None)
+        tenant_id = kwargs.get('tenant_id', None)
+        company_id = kwargs.get('company_id', None)
+        if tenant_id and company_id:
+            if quotation_id:
+                if not cls.objects.filter(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        quotation_id=quotation_id,
+                ).exists():
+                    cls.objects.create(**kwargs)
+                    return True
+            if sale_order_id:
+                if not cls.objects.filter(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        sale_order_id=sale_order_id,
+                ).exists():
+                    cls.objects.create(**kwargs)
+                    return True
         return True
 
     @classmethod
@@ -80,7 +97,7 @@ class ReportRevenue(DataAbstractModel):
     class Meta:
         verbose_name = 'Report Revenue'
         verbose_name_plural = 'Report Revenues'
-        ordering = ('employee_inherit__code',)
+        ordering = ('-date_approved',)
         default_permissions = ()
         permissions = ()
 

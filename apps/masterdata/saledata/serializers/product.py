@@ -235,7 +235,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
@@ -408,29 +408,14 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], is_primary=True
         ).first()
         product = Product.objects.create(**validated_data)
+
         CommonCreateUpdateProduct.create_product_types_mapped(
-            product, self.initial_data.get('product_types_mapped_list', [])
+            product,
+            self.initial_data.get('product_types_mapped_list', [])
         )
 
-        ProductPriceList.objects.create(
-            product=product, price_list=default_pr, price=0,
-            currency_using=product.sale_currency_using,
-            uom_using=product.sale_default_uom,
-            uom_group_using=product.general_uom_group
-        )
-        bulk_info = CommonCreateUpdateProduct.create_price_list_product(product, default_pr, [])
-        price_product_created = ProductPriceList.objects.bulk_create(bulk_info)
-
-        sale_product_price_list = [{
-            'price_list_id': str(default_pr.id), 'price_value': 0, 'is_auto_update': False,
-        }]
-        for price_product in price_product_created:
-            sale_product_price_list.append({
-                'price_list_id': str(price_product.price_list.id),
-                'price_value': price_product.price,
-                'is_auto_update': price_product.get_price_from_source,
-            })
-        product.sale_product_price_list = sale_product_price_list
+        price_list_product_data = CommonCreateUpdateProduct.create_price_list_product(product, default_pr)
+        product.sale_product_price_list = price_list_product_data
         product.save(update_fields=['sale_product_price_list'])
         return product
 
@@ -661,7 +646,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    valuation_method = serializers.IntegerField(default=1, allow_null=True)
+    # valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -676,7 +661,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price', 'valuation_method',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
+            # 'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
@@ -756,7 +742,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
-                if CommonCreateUpdateProduct.check_expired_price_list(price_list):
+                if not Price.is_expired(price_list):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
@@ -806,11 +792,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             return value
         return None
 
-    @classmethod
-    def validate_valuation_method(cls, attrs):
-        if attrs in [0, 1, 2]:
-            return attrs
-        raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
+    # @classmethod
+    # def validate_valuation_method(cls, attrs):
+    #     if attrs in [0, 1, 2]:
+    #         return attrs
+    #     raise serializers.ValidationError({'valuation_method': "Valuation method can not null"})
 
     @classmethod
     def validate_purchase_default_uom(cls, value):

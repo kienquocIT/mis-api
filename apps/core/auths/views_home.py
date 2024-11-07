@@ -233,7 +233,8 @@ class CalendarByDay(APIView):
                             )
                     if 'business_trip' in category:
                         objs = BusinessRequest.objects.select_related('departure', 'destination').filter(
-                            date_f__date=day_check,
+                            date_f__date__lte=day_check,
+                            date_t__date__gte=day_check,
                             employee_inherit_id=employee_id,
                             employee_on_trip__contains=str(employee_id)
                         )
@@ -253,7 +254,8 @@ class CalendarByDay(APIView):
                             )
                     if 'leave' in category:
                         objs = LeaveRequestDateListRegister.objects.select_related('leave').filter(
-                            date_from=day_check,
+                            date_from__lte=day_check,
+                            date_to__gte=day_check,
                             employee_inherit_id=employee_id,
                         )
                         result['leave'] = []

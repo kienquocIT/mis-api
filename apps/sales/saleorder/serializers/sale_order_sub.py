@@ -674,6 +674,7 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
         model = SaleOrderIndicator
         fields = (
             'quotation_indicator',
+            'quotation_indicator_data',
             'indicator_value',
             'indicator_rate',
             'quotation_indicator_value',

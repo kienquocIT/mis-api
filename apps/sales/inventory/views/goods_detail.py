@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models import ProductWareHouse
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.inventory.serializers.goods_detail import (
     GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer,
-    GoodsDetailDataCreateImportSerializer
+    GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
@@ -53,16 +53,16 @@ class GoodsDetailDataList(BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
-class GoodsDetailDataListImportDB(BaseListMixin, BaseCreateMixin):
+class GoodsDetailListImportDB(BaseCreateMixin):
     queryset = ProductWareHouse.objects
-    serializer_create = GoodsDetailDataCreateImportSerializer
-    serializer_detail = GoodsDetailDataDetailSerializer
+    serializer_create = GoodsDetailCreateSerializerImportDB
+    serializer_detail = GoodsDetailDetailSerializerImportDB
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
-        operation_summary="Create Goods Detail Product Warehouse",
-        operation_description="Create new Goods Detail Product Warehouse",
-        request_body=GoodsDetailDataCreateImportSerializer,
+        operation_summary="Goods Detail List Import DB",
+        operation_description="Goods Detail List Import DB",
+        request_body=GoodsDetailCreateSerializerImportDB,
     )
     @mask_view(
         login_require=True, auth_require=True,

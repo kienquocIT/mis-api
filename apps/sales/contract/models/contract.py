@@ -1,10 +1,12 @@
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 
 
-class ContractApproval(DataAbstractModel):
+class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
+    opportunity_data = models.JSONField(default=dict, help_text='data json of opportunity')
+    employee_inherit_data = models.JSONField(default=dict, help_text='data json of employee_inherit')
     document_data = models.JSONField(default=list, help_text='data json of document')
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
@@ -13,7 +15,10 @@ class ContractApproval(DataAbstractModel):
         blank=True,
         related_name='file_of_contract_approval',
     )
-    tinymce_content = models.TextField(blank=True, null=True)
+    abstract_content = models.TextField(blank=True, null=True)
+    trade_content = models.TextField(blank=True, null=True)
+    legal_content = models.TextField(blank=True, null=True)
+    payment_content = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Contract Approval'

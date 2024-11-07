@@ -320,6 +320,11 @@ class DataAbstractModel(SimpleAbstractModel):
         blank=True,
         help_text='Title of WF current stage of document'
     )
+    next_association = models.ForeignKey(
+        'workflow.Association', null=True, on_delete=models.SET_NULL,
+        help_text='next association after check condition',
+        related_name='%(app_label)s_%(class)s_next_association',
+    )
     next_node_collab = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='employee that selected for next node defined as type out form',
@@ -372,14 +377,15 @@ class DisperseModel:
 
     def __init__(self, **kwargs):
         app_model = kwargs.get("app_model", None)
+        # '.' trước -> '_' sau cho case: app_model = 'revenue_plan.RevenuePlan'
         if app_model:
-            if '_' in app_model:
-                app_tmp, model_tmp = app_model.split("_")
-            elif '.' in app_model:
+            if '.' in app_model:
                 app_tmp, model_tmp = app_model.split(".")
+            elif '_' in app_model:
+                app_tmp, model_tmp = app_model.split("_")
             else:
                 raise AttributeError(
-                    "App models must be required. It's format is  {app_name}_{model name} or {app_name}.{model name}"
+                    "App models must be required. It's format is {app_name}_{model name} or {app_name}.{model name}"
                 )
             self.setup(app_label=app_tmp.lower(), model_name=model_tmp.lower())
         else:

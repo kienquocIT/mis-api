@@ -15,20 +15,23 @@ from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
     ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
+    ProductQuotationListLoadDB,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
+    PriceList, PriceDetail, PriceDelete, UpdateItemForPriceList, DeleteItemForPriceList, AddItemToPriceList,
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList
+    RevenuePlanConfigList, PriceListItemListImportDB
 )
-from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList, \
-    ProductWareHouseAssetToolsList, WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, \
-    ProductWareHouseListForGoodsTransfer
+from apps.masterdata.saledata.views.warehouse import (
+    ProductWareHouseLotList, ProductWareHouseSerialList,
+    ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
+    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail,
+)
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -77,7 +80,17 @@ urlpatterns += [
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('product-quick-create', ProductQuickCreateList.as_view(), name='ProductQuickCreateList'),
-    path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
+    path('create-product-from-price-list/<str:pk>', AddItemToPriceList.as_view(), name='AddItemToPriceList'),
+    path(
+        'price-list-item-import-db',
+         PriceListItemListImportDB.as_view(),
+         name='PriceListItemListImportDB'
+    ),
+    path(
+        'product-quotation-load-db',
+        ProductQuotationListLoadDB.as_view(),
+         name='ProductQuotationListLoadDB'
+    ),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
     path('products-sale/list', ProductForSaleList.as_view(), name='ProductForSaleList'),
     path('products-sale/<str:pk>', ProductForSaleDetail.as_view(), name='ProductForSaleDetail'),
@@ -98,7 +111,7 @@ urlpatterns += [
     path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
     path('delete-price/<str:pk>', PriceDelete.as_view(), name='PriceDelete'),
     path(
-        'update-products-for-price-list/<str:pk>', UpdateItemsForPriceList.as_view(),
+        'update-products-for-price-list/<str:pk>', UpdateItemForPriceList.as_view(),
         name='UpdateProductsForPriceList'
     ),
     path(

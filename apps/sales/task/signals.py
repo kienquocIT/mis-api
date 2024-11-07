@@ -2,13 +2,15 @@ from uuid import UUID
 import datetime
 
 from django.utils import timezone
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
+from apps.sales.project.tasks import create_project_news
 from apps.sales.task.tasks import opp_task_summary
 from apps.sales.task.models import OpportunityTask, OpportunityTaskSummaryDaily
 from apps.sales.task.tasks import log_task_status
 from apps.shared import call_task_background, Caching
+from apps.shared.translations.sales import SaleTask
 
 
 class OppTaskSummaryHandler:
@@ -165,3 +167,22 @@ def post_save_opp_task_summary(sender, instance, created, **kwargs):
         key=summary_obj.key_cache,
         value=instance,
     )
+
+
+@receiver(post_delete, sender=OpportunityTask)
+def post_delete_opp_task(sender, instance, **kwargs):
+    # create news feed
+    if instance.project:
+        call_task_background(
+            my_task=create_project_news,
+            **{
+                'project_id': str(instance.project.id),
+                'employee_inherit_id': str(instance.employee_inherit.id),
+                'employee_created_id': str(instance.employee_created.id),
+                'application_id': str('e66cfb5a-b3ce-4694-a4da-47618f53de4c'),
+                'document_id': str(instance.id),
+                'document_title': str(instance.title),
+                'title': SaleTask.DELETED_A,
+                'msg': '',
+            }
+        )

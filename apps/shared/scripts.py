@@ -37,6 +37,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
@@ -60,8 +61,9 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
+from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, ReportStockLogByWarehouse, ReportStock
+    ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -1229,6 +1231,8 @@ def reset_and_run_reports_sale(run_type=0):
                     employee_inherit_id=plan.employee_mapped_id,
                     group_inherit_id=plan.employee_mapped.group_id if plan.employee_mapped else None,
                 )
+        # for quotation in Quotation.objects.filter(system_status=3):
+        #     QuotationFinishHandler.push_to_report_revenue(instance=quotation)
         for sale_order in SaleOrder.objects.filter(system_status=3):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
@@ -1544,21 +1548,21 @@ def run_inventory_report():
                     'ending_balance_quantity', 'ending_balance_cost', 'ending_balance_value'
                 ])
 
-            latest_log_obj = ReportStockLogByWarehouse.objects.filter(
+            latest_log_obj = ReportInventoryCostLatestLog.objects.filter(
                 product=log.product, warehouse=log.warehouse
             ).first()
             if latest_log_obj:
                 latest_log_obj.latest_log = log
                 latest_log_obj.save(update_fields=['latest_log'])
             else:
-                ReportStockLogByWarehouse.objects.create(
+                ReportInventoryCostLatestLog.objects.create(
                     product=log.product, warehouse=log.warehouse, latest_log=log
                 )
     print('Done')
     return True
 
 
-def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
+def report_rerun(company_id, start_month):
     SubPeriods.objects.filter(
         period_mapped__fiscal_year=2024,
         period_mapped__company_id=company_id
@@ -1566,111 +1570,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
     ReportStock.objects.filter(company_id=company_id).delete()
     ReportStockLog.objects.filter(company_id=company_id).delete()
     ReportInventoryCost.objects.filter(company_id=company_id).delete()
-
-    if run_fix_data and company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
-        print('created balance')
-        company = Company.objects.get(id=company_id)
-
-        # đầu kỳ OKSS
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='9e41fb1a-7576-4ee8-85ee-962217b7fc4f',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(10),
-            opening_balance_value=float(200000000),
-            opening_balance_cost=float(20000000),
-            ending_balance_quantity=float(10),
-            ending_balance_value=float(200000000),
-            ending_balance_cost=float(20000000),
-            for_balance=True
-        )
-
-        # đầu kỳ SW
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='31735289-0a2b-4ae2-9e2d-0940bc1010ec',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(3),
-            opening_balance_value=float(24000000),
-            opening_balance_cost=float(8000000),
-            ending_balance_quantity=float(3),
-            ending_balance_value=float(24000000),
-            ending_balance_cost=float(8000000),
-            for_balance=True
-        )
-
-        # đầu kỳ Vision
-        if has_lot:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                lot_mapped_id='12de4425e1e341a0bd286e44d78ec260',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-        else:
-            ReportInventoryCost.objects.create(
-                tenant=company.tenant,
-                company=company,
-                employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-                product_id='52e45d5b-d91e-4c04-8b2d-7a09ee4820dd',
-                warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-                period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-                sub_period_order=3,
-                sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-                opening_balance_quantity=float(5),
-                opening_balance_value=float(200000000),
-                opening_balance_cost=float(40000000),
-                ending_balance_quantity=float(5),
-                ending_balance_value=float(200000000),
-                ending_balance_cost=float(40000000),
-                for_balance=True
-            )
-
-        # đầu kỳ HP
-        ReportInventoryCost.objects.create(
-            tenant=company.tenant,
-            company=company,
-            employee_created_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            employee_inherit_id='e37c69ca-c5a0-45ff-9c55-dc0bc37b476e',
-            product_id='e12e4dd2-fb4e-479d-ae8a-c902f3dbc896',
-            warehouse_id='bbac9cfc-df1b-4ed4-97c9-a57ac5c94f89',
-            period_mapped_id='5c7423ae29824f338dc5fd2c41b694bf',
-            sub_period_order=3,
-            sub_period_id='5e1c3cccb4c8439d9b3936a69b72b42a',
-            opening_balance_quantity=float(2),
-            opening_balance_value=float(276000000),
-            opening_balance_cost=float(138000000),
-            ending_balance_quantity=float(2),
-            ending_balance_value=float(276000000),
-            ending_balance_cost=float(138000000),
-            for_balance=True
-        )
 
     all_delivery = OrderDeliverySub.objects.filter(
         company_id=company_id, state=2, date_done__year=2024, date_done__month__gte=start_month
@@ -1686,7 +1585,7 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
 
     all_goods_return = GoodsReturn.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
-    ).exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028']).order_by('date_approved')
+    ).order_by('date_approved')
 
     all_goods_transfer = GoodsTransfer.objects.filter(
         company_id=company_id, system_status=3, date_approved__year=2024, date_approved__month__gte=start_month
@@ -1721,7 +1620,6 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
 
     all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
     for doc in all_doc_sorted:
-        print(doc['code'])
         if doc['type'] == 'delivery':
             instance = OrderDeliverySub.objects.get(id=doc['id'])
             instance.prepare_data_for_logging(instance)
@@ -1740,6 +1638,10 @@ def report_rerun(company_id, start_month, run_fix_data=False, has_lot=False):
 
         print(f"--- Completed run id: {doc['id']}")
         print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+
+    ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+    ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+    ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
 
     print('Complete!')
 
@@ -2337,6 +2239,8 @@ class InventoryReportRun:
         all_goods_return = GoodsReturn.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
         ).order_by('date_approved')
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            all_goods_return = all_goods_return.exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028'])
 
         all_goods_transfer = GoodsTransfer.objects.filter(
             company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
@@ -2390,4 +2294,80 @@ class InventoryReportRun:
             print(f"--- Completed run id: {doc['id']}")
             print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
 
+        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
+            ReportStock.objects.filter(product__date_created__month__lt=5).delete()
+            ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
+            ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
+
         print('Complete!')
+
+
+def create_import_uom_group():
+    for company in Company.objects.all():
+        has_import_uom_group = UnitOfMeasureGroup.objects.filter(
+            company=company,
+            tenant=company.tenant,
+            is_default=True,
+            code='UG000',
+        ).exists()
+        if not has_import_uom_group:
+            UnitOfMeasureGroup.objects.create(
+                company=company,
+                tenant=company.tenant,
+                is_default=True,
+                code='ImportGroup',
+                title='Nhóm đơn vị cho import'
+            )
+            print(f"Added for {company.title} :))")
+    print('Done')
+
+
+def remove_wf_sys_template():
+    MailTemplateSystem.objects.filter(system_code=6).delete()  # workflow
+    print('remove_wf_sys_template done.')
+    return True
+
+
+def update_default_masterdata():
+    # UOM Group
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Nhân công', 'nhân công', 'Nhan cong', 'nhan cong', 'Labor', 'labor']
+    ).update(code='Labor', title='Nhân công', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Kích thước', 'kích thước', 'Kich thuoc', 'kich thuoc', 'Size', 'size']
+    ).update(code='Size', title='Kích thước', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Thời gian', 'thời gian', 'Thoi gian', 'thoi gian', 'Time', 'time']
+    ).update(code='Time', title='Thời gian', is_default=1)
+    UnitOfMeasureGroup.objects.filter(
+        title__in=['Đơn vị', 'đơn vị', 'Don vi', 'don vi', 'Unit', 'unit']
+    ).update(code='Unit', title='Đơn vị', is_default=1)
+
+    # UOM
+    UnitOfMeasure.objects.filter(group__code='Labor').update(is_default=0)
+    for item in UnitOfMeasure.objects.filter(group__code='Labor', group__is_default=1):
+        if item.title.lower() in ['manhour', 'man hour']:
+            item.code = 'Manhour'
+            item.title = 'Man hour'
+            item.is_referenced_unit = 1
+            item.ratio = 1
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+        if item.title.lower() in ['manday', 'man day']:
+            item.code = 'Manday'
+            item.title = 'Man day'
+            item.is_referenced_unit = 0
+            item.ratio = 8
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+        if item.title.lower() in ['manmonth', 'man month']:
+            item.code = 'Manmonth'
+            item.title = 'Man month'
+            item.is_referenced_unit = 0
+            item.ratio = 176
+            item.rounding = 4
+            item.is_default = 1
+            item.save()
+    print('Done :))')

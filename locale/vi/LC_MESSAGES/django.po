@@ -1180,7 +1180,7 @@ msgstr "Ngày Công việc không khớp với ngày của Nhóm"
 
 #
 msgid "Project Baseline"
-msgstr "Dự án Đường cơ sở"
+msgstr "Trình phê duyệt dự án"
 
 #
 msgid "Error! Date end larger than Date start"
@@ -1297,3 +1297,55 @@ msgstr "Đang kiểm kê"
 #
 msgid "IA Done"
 msgstr "Kiểm kê hoàn tất"
+
+#
+msgid "Created a Work"
+msgstr "Đã tạo công việc"
+
+#
+msgid "Updated a Work"
+msgstr "Đã cập nhập công việc"
+
+#
+msgid "Deleted a Work"
+msgstr "Đã xoá công việc"
+
+#
+msgid "Created a Task"
+msgstr "Đã tạo giao việc"
+
+#
+msgid "Updated a Task"
+msgstr "Đã cập nhập giao việc"
+
+#
+msgid "Deleted a Task"
+msgstr "Đã xoá giao việc"
+
+#
+msgid "Title"
+msgstr "Tiêu đề"
+
+#
+msgid "Code"
+msgstr "Mã"
+
+#
+msgid "Customer"
+msgstr "Khách hàng"
+
+#
+msgid "Supplier"
+msgstr "Nhà cung cấp"
+
+#
+msgid "Salesperson"
+msgstr "NV kinh doanh"
+
+#
+msgid "Industry"
+msgstr "Lĩnh vực"
+
+#
+msgid "Payment term"
+msgstr "Điều khoản thanh toán"

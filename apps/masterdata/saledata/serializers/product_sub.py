@@ -1,4 +1,3 @@
-from datetime import datetime
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models import (
@@ -10,33 +9,35 @@ from apps.shared import ProductMsg
 
 class CommonCreateUpdateProduct:
     @classmethod
-    def create_price_list_product(cls, product, price_list, bulk_info):
-        for item in price_list.price_parent.all():
-            bulk_info.append(ProductPriceList(
-                product=product, price_list=item, price=0,
+    def create_price_list_product(cls, product, price_list_obj):
+        child_price_list = Price.get_children(price_list_obj)
+        bulk_info = []
+        price_list_product_data = []
+        for child_obj, _ in child_price_list:
+            price_list_product_obj = ProductPriceList(
+                product=product,
+                price_list=child_obj,
+                price=0,
                 currency_using=product.sale_currency_using,
                 uom_using=product.sale_default_uom,
                 uom_group_using=product.general_uom_group,
-                get_price_from_source=True
-            ))
-            cls.create_price_list_product(product, item, bulk_info)  # đệ quy tìm bảng giá con
-        return bulk_info
+                get_price_from_source=str(child_obj.id) != str(price_list_obj.id),
+            )
+            bulk_info.append(price_list_product_obj)
+            price_list_product_data.append({
+                'price_list_id': str(price_list_product_obj.price_list_id),
+                'price_value': price_list_product_obj.price,
+                'is_auto_update': price_list_product_obj.get_price_from_source
+            })
+        ProductPriceList.objects.bulk_create(bulk_info)
+        return price_list_product_data
 
     @classmethod
     def create_price_list(cls, product, data_price, validated_data):
         default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True, is_default=True).first()
         if default_pr:
             if len(data_price) == 0:
-                ProductPriceList.objects.create(
-                    product=product,
-                    price_list=default_pr,
-                    price=0,
-                    currency_using=product.sale_currency_using,
-                    uom_using=product.sale_default_uom,
-                    uom_group_using=product.general_uom_group
-                )
-                bulk_info = cls.create_price_list_product(product, default_pr, [])
-                ProductPriceList.objects.bulk_create(bulk_info)
+                cls.create_price_list_product(product, default_pr)
             else:
                 objs = []
                 for item in data_price:
@@ -122,12 +123,6 @@ class CommonCreateUpdateProduct:
         ProductProductType.objects.filter(product=product_obj).delete()
         ProductProductType.objects.bulk_create(bulk_info)
         return True
-
-    @classmethod
-    def check_expired_price_list(cls, price_list):
-        if not price_list.valid_time_end.date() < datetime.now().date():
-            return True
-        return False
 
     @classmethod
     def create_product_variant_attribute(cls, product_obj, product_variant_attribute_list):

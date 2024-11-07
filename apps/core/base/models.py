@@ -301,15 +301,11 @@ class ApplicationProperty(CoreAbstractModel):
         default=1
     )
     content_type = models.TextField(
-        null=True,
-        blank=True
+        max_length=100, verbose_name='Code of application',
+        help_text='{app_label}.{model}, use for property type master data', null=True, blank=True,
     )
-    properties = models.JSONField(
-        default=dict,
-    )
-    compare_operator = models.JSONField(
-        default=dict,
-    )
+    properties = models.JSONField(default=dict)
+    compare_operator = models.JSONField(default=dict)
     # use for Opp Stage
     opp_stage_operator = models.JSONField(
         default=list,
@@ -318,10 +314,6 @@ class ApplicationProperty(CoreAbstractModel):
     stage_compare_data = models.JSONField(
         default=dict,
         help_text='compare data format {"=": [...], "≠": [...]}'
-    )
-    is_sale_indicator = models.BooleanField(
-        default=False,
-        help_text="property which is only used for config sale indicators"
     )
     parent_n = models.ForeignKey(
         "self",
@@ -332,24 +324,31 @@ class ApplicationProperty(CoreAbstractModel):
     )
     code_related = models.JSONField(
         default=list,
-        verbose_name='code of other properties that relate to this property by business rule',
+        verbose_name='list field code of other properties that relate to this property by business rule',
     )
-
+    # flag to know what this property use for
     is_print = models.BooleanField(default=False, verbose_name='Access using for print')
     is_mail = models.BooleanField(default=False, verbose_name='Access using for mail')
-    title_slug = models.SlugField(blank=True)
-
-    system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
-
-    app_code_md = models.CharField(
-        max_length=100, verbose_name='Code of application',
-        help_text='{app_label}.{model}, use for property type master data', null=True,
+    is_sale_indicator = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config sale indicators"
     )
+    is_wf_zone = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config WF zone"
+    )
+    is_wf_condition = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config WF condition"
+    )
+    # system
+    title_slug = models.SlugField(blank=True)
+    system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
+    # use for sale indicator
     example = models.CharField(
         max_length=500, null=True, blank=True,
         help_text='Example of sale indicator property that guide user how to config'
     )
-
 
     class Meta:
         verbose_name = 'Application property'

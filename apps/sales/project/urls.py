@@ -5,6 +5,7 @@ from .views import (
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD,
     ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate,
     ProjectConfigDetail, ProjectExpenseHomeList, ProjectNewsList, ProjectNewsCommentList, ProjectNewsCommentDetail,
+    ProjectNewsCommentDetailFlows, ProjectAllTaskList
 )
 
 
@@ -26,6 +27,7 @@ urlpatterns = [
     path('work/detail/<str:pk>', ProjectWorkDetail.as_view(), name='ProjectWorkDetail'),
     # list task map project
     path('assign-task-list', ProjectTaskList.as_view(), name='ProjectTaskList'),
+    path('assign-task-list/all', ProjectAllTaskList.as_view(), name='ProjectAllTaskList'),
     path('assign-task-link/<str:pk>', ProjectTaskDetail.as_view(), name='ProjectTaskDetail'),
     # work expense list
     path('work-expense-list', ProjectWorkExpenseList.as_view(), name='ProjectWorkExpenseList'),
@@ -38,6 +40,6 @@ urlpatterns = [
     # news
     path('news', ProjectNewsList.as_view(), name='ProjectNewsList'),
     path('news/comment/<str:pk>', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
-    path('news/comment/<str:pk>/flows', ProjectNewsCommentDetail.as_view(), name='ProjectNewsCommentDetail'),
+    path('news/comment/<str:pk>/flows', ProjectNewsCommentDetailFlows.as_view(), name='ProjectNewsCommentDetailFlows'),
     path('new/<str:news_id>/comments', ProjectNewsCommentList.as_view(), name='ProjectNewsCommentList'),
 ]

@@ -145,6 +145,8 @@ class ApplicationPropertyList(BaseListMixin):
         'parent_n': ['exact', 'isnull'],
         'is_print': ['exact'],
         'is_mail': ['exact'],
+        'is_wf_zone': ['exact'],
+        'is_wf_condition': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
@@ -317,7 +319,7 @@ class WardList(BaseListMixin):
 class BaseCurrencyList(BaseListMixin):
     queryset = BaseCurrency.objects
     search_fields = ('title', 'code')
-    use_cache_queryset = True
+    # use_cache_queryset = True
     serializer_list = BaseCurrencyListSerializer
 
     @swagger_auto_schema()

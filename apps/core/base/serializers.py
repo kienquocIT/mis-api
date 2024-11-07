@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as trans
+
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, Zones, ZonesProperties,
@@ -34,17 +36,18 @@ class PlanListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
-    title = serializers.SerializerMethodField()
+    title_i18n = serializers.SerializerMethodField()
 
     @classmethod
-    def get_title(cls, obj):
-        return obj.get_title_i18n()
+    def get_title_i18n(cls, obj):
+        return trans(obj.title)
 
     class Meta:
         model = Application
         fields = (
             'id',
             'title',
+            'title_i18n',
             'code'
         )
 
@@ -62,7 +65,6 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'properties',
             'opp_stage_operator',
             'stage_compare_data',
-            'app_code_md',
             'example',
         )
 

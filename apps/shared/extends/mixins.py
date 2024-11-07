@@ -883,6 +883,33 @@ class BaseListMixin(BaseMixin):
         pattern = r"[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}"
         return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
+    def get_queryset_custom_direct_page(self, main_queryset=None, page_size_param=None):
+        queryset = super().get_queryset()
+        if 'direct_first' in self.request.query_params:
+            self.pagination_class.page_size = 1
+            return queryset.order_by('date_created')
+        if 'direct_last' in self.request.query_params:
+            self.pagination_class.page_size = 1
+            return queryset.order_by('-date_created')
+        if 'direct_previous' in self.request.query_params:
+            current_pk = self.request.query_params.get('current_pk')
+            current_obj = queryset.filter(id=current_pk).first() if current_pk else None
+            self.pagination_class.page_size = 1
+            if current_obj:
+                current_obj_date_created = current_obj.date_created
+                return queryset.filter(date_created__lt=current_obj_date_created).order_by('-date_created')
+            return queryset.order_by('-date_created')
+        if 'direct_next' in self.request.query_params:
+            current_pk = self.request.query_params.get('current_pk')
+            current_obj = queryset.filter(id=current_pk).first() if current_pk else None
+            self.pagination_class.page_size = 1
+            if current_obj:
+                current_obj_date_created = current_obj.date_created
+                return queryset.filter(date_created__gt=current_obj_date_created).order_by('date_created')
+            return queryset.none()
+        self.pagination_class.page_size = page_size_param if page_size_param else settings.REST_FRAMEWORK['PAGE_SIZE']
+        return main_queryset if main_queryset else super().get_queryset()
+
     def list(self, request, *args, **kwargs):
         """
         Support call get list data.

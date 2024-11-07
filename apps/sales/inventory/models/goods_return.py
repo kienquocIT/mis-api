@@ -6,7 +6,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
-from apps.sales.report.inventory_log import InventoryCostLog, ReportInvCommonFunc
+from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DataAbstractModel
 
@@ -52,7 +52,7 @@ class GoodsReturn(DataAbstractModel):
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.default_return_number)
                 casted_cost = (
-                    delivery_item.perpetual_current_cost * item.default_return_number / casted_quantity
+                    delivery_item.cost * item.default_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -76,15 +76,13 @@ class GoodsReturn(DataAbstractModel):
             else:
                 raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
         for item in product_detail_list.filter(type=1):
-            print(item.product.code, str(instance.delivery_id))
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
             ).first()
-            print(delivery_item)
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
-                    delivery_item.perpetual_current_cost * item.lot_return_number / casted_quantity
+                    delivery_item.cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -118,7 +116,7 @@ class GoodsReturn(DataAbstractModel):
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
                 casted_cost = (
-                    delivery_item.perpetual_current_cost * float(item.is_return) / casted_quantity
+                    delivery_item.cost * float(item.is_return) / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -223,7 +221,7 @@ class GoodsReturn(DataAbstractModel):
         else:
             doc_data = cls.for_periodic_inventory(instance)
 
-        InventoryCostLog.log(instance, instance.date_created, doc_data)
+        ReportInvLog.log(instance, instance.date_created, doc_data)
         return True
 
     def save(self, *args, **kwargs):

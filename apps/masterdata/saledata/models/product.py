@@ -108,6 +108,7 @@ class UnitOfMeasure(MasterDataAbstractModel):
     ratio = models.FloatField(default=1.0)
     rounding = models.IntegerField(default=4)
     is_referenced_unit = models.BooleanField(default=False, help_text='UoM Group Referenced Unit')
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'UnitOfMeasure'
@@ -118,6 +119,8 @@ class UnitOfMeasure(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    create_from_import = models.BooleanField(default=False)
+    import_data_row = models.JSONField(default=dict)
     has_bom = models.BooleanField(default=False)
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
@@ -125,7 +128,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(blank=True, max_length=500)
+    description = models.CharField(null=True, blank=True, max_length=1000)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',
@@ -293,7 +296,7 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(warehouse_id=warehouse_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
@@ -346,7 +349,7 @@ class Product(DataAbstractModel):
             fiscal_year=timezone.now().year
         ).first()
         if this_period:
-            latest_trans = self.latest_log_product.filter(sale_order_id=sale_order_id).first()
+            latest_trans = self.rp_inv_cost_product.filter(sale_order_id=sale_order_id).first()
             company_config = getattr(self.company, 'company_config')
             if latest_trans:
                 if company_config.definition_inventory_valuation == 0:
@@ -395,7 +398,7 @@ class Product(DataAbstractModel):
             sub_period_order = timezone.now().month - this_period.space_month
             company_config = getattr(self.company, 'company_config')
             for warehouse in warehouse_list:
-                latest_trans = self.latest_log_product.filter(warehouse_id=warehouse.id).first()
+                latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse.id).first()
                 if latest_trans:
                     if company_config.definition_inventory_valuation == 0 and \
                             latest_trans.latest_log.perpetual_current_quantity > 0:

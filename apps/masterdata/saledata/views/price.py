@@ -1,16 +1,19 @@
 from drf_yasg.utils import swagger_auto_schema
+from apps.masterdata.saledata.serializers import PriceListItemCreateSerializerImportDB
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
-
 from apps.masterdata.saledata.models import (
     TaxCategory, Tax, Currency, Price
 )
-from apps.masterdata.saledata.serializers.price import (
+from apps.masterdata.saledata.serializers.price_masterdata import (
     TaxCategoryListSerializer, TaxCategoryCreateSerializer, TaxCategoryDetailSerializer, TaxCategoryUpdateSerializer,
     TaxListSerializer, TaxCreateSerializer, TaxDetailSerializer, TaxUpdateSerializer,
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
-    CurrencySyncWithVCBSerializer,
+    CurrencySyncWithVCBSerializer
+)
+from apps.masterdata.saledata.serializers.price import (
     PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer, PriceDeleteSerializer,
-    PriceListUpdateItemsSerializer, PriceListDeleteItemSerializer, CreateItemInPriceListSerializer,
+    PriceListUpdateItemSerializer, PriceListDeleteItemSerializer, PriceListCreateItemSerializer,
+    PriceListItemDetailSerializerImportDB
 )
 
 
@@ -281,11 +284,11 @@ class PriceDelete(BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class UpdateItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
-    serializer_update = PriceListUpdateItemsSerializer
+    serializer_update = PriceListUpdateItemSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -298,7 +301,7 @@ class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(
         operation_summary="Update Price List's Products",
-        request_body=PriceListUpdateItemsSerializer
+        request_body=PriceListUpdateItemSerializer
     )
     @mask_view(
         login_require=True, auth_require=True,
@@ -335,18 +338,18 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class AddItemToPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
-    serializer_update = CreateItemInPriceListSerializer
+    serializer_update = PriceListCreateItemSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Create Product from Price List",
         operation_description="Create new Product from Price List",
-        request_body=CreateItemInPriceListSerializer,
+        request_body=PriceListCreateItemSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
@@ -354,3 +357,26 @@ class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class PriceListItemListImportDB(BaseCreateMixin):
+    queryset = Price.objects
+    serializer_detail = PriceListItemDetailSerializerImportDB
+    serializer_create = PriceListItemCreateSerializerImportDB
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Price List Item List Import DB",
+        operation_description="Price List Item List Import DB",
+        request_body=PriceListItemCreateSerializerImportDB,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current': request.user.tenant_current,
+            'company_current': request.user.company_current
+        }
+        return self.create(request, *args,  **kwargs)

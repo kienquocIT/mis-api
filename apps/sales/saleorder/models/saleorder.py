@@ -104,6 +104,7 @@ class SaleOrder(DataAbstractModel):
         null=True,
         help_text="sale data Accounts have type customer"
     )
+    customer_data = models.JSONField(default=dict, help_text='data json of customer')
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
@@ -111,6 +112,7 @@ class SaleOrder(DataAbstractModel):
         related_name="sale_order_contact",
         null=True
     )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     sale_person = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
