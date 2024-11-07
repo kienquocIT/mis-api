@@ -170,8 +170,7 @@ class RuntimeHandler:
                 case 0:
                     ...
                 case 1:  # approved
-                    # RuntimeStage logging
-                    # Update flag done
+                    # RuntimeStage logging & Update flag done
                     RuntimeLogHandler(
                         stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False,
@@ -186,8 +185,11 @@ class RuntimeHandler:
                         next_association_id=next_association_id,
                         next_node_collab_id=next_node_collab_id,
                     )
-                    # handle next stage
-                    if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
+                    # check condition & handle next stage
+                    check_exit = RuntimeHandler.check_exit_condition(
+                        runtime_obj=runtime_obj, rt_assignee=rt_assignee, action_code=action_code
+                    )
+                    if check_exit is True:
                         # new cls call run_next
                         try:
                             RuntimeStageHandler(
@@ -208,8 +210,7 @@ class RuntimeHandler:
                             print(err)
                             return False
                 case 2:  # reject
-                    # RuntimeStage logging
-                    # Update flag done
+                    # RuntimeStage logging & Update flag done
                     RuntimeLogHandler(
                         stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj,
                         is_system=False, remark=remark,
@@ -219,21 +220,26 @@ class RuntimeHandler:
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.remark = remark
                     rt_assignee.save(update_fields=['is_done', 'action_perform', 'remark'])
-                    # update doc to reject
-                    DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
-                    # handle next stage
-                    # close all other assignees waiting
-                    for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
-                            id=rt_assignee.id
-                    ):
-                        other_assignee.is_done = True
-                        other_assignee.action_perform.append(action_code)
-                        other_assignee.action_perform = list(set(other_assignee.action_perform))
-                        other_assignee.save(update_fields=['is_done', 'action_perform'])
-                    # update runtime + doc with reject
-                    RuntimeStageHandler(runtime_obj=runtime_obj).reject_runtime_by_assignee(
-                        stage_runtime_currently=rt_assignee.stage,
+                    # check condition & handle next stage
+                    check_exit = RuntimeHandler.check_exit_condition(
+                        runtime_obj=runtime_obj, rt_assignee=rt_assignee, action_code=action_code
                     )
+                    if check_exit is True:
+                        # update doc to reject
+                        DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
+                        # handle next stage
+                        # close all other assignees waiting
+                        for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
+                                id=rt_assignee.id
+                        ):
+                            other_assignee.is_done = True
+                            other_assignee.action_perform.append(action_code)
+                            other_assignee.action_perform = list(set(other_assignee.action_perform))
+                            other_assignee.save(update_fields=['is_done', 'action_perform'])
+                        # update runtime + doc with reject
+                        RuntimeStageHandler(runtime_obj=runtime_obj).reject_runtime_by_assignee(
+                            stage_runtime_currently=rt_assignee.stage,
+                        )
                 case 3:  # return
                     # update data for RuntimeAssignee
                     rt_assignee.is_done = True
@@ -259,6 +265,82 @@ class RuntimeHandler:
                     ...
             return True
         return False
+
+    @classmethod
+    def check_exit_condition(cls, runtime_obj, rt_assignee, action_code):
+        if runtime_obj.stage_currents:
+            if runtime_obj.stage_currents.node:
+                if RuntimeHandler.check_exit_base(runtime_obj=runtime_obj) is True:
+                    return True
+                return RuntimeHandler.check_exit_common(
+                    runtime_obj=runtime_obj, rt_assignee=rt_assignee, action_code=action_code
+                )
+        return False
+
+    @classmethod
+    def check_exit_base(cls, runtime_obj):
+        if runtime_obj.stage_currents.node.option_collaborator != 2:
+            return True
+        if len(runtime_obj.stage_currents.node.condition) <= 0:
+            return True
+        return False
+
+    @classmethod
+    def check_exit_common(cls, runtime_obj, rt_assignee, action_code):
+        for condition in runtime_obj.stage_currents.node.condition:
+            if all(key in condition for key in ('action', 'min_collab')):
+                if condition['action'] == action_code:
+                    if action_code == 1:  # action approved
+                        return RuntimeHandler.check_exit_approved(
+                            rt_assignee=rt_assignee, condition=condition, action_code=action_code
+                        )
+                    if action_code == 2:  # action rejected
+                        return RuntimeHandler.check_exit_rejected(
+                            rt_assignee=rt_assignee, condition=condition, action_code=action_code
+                        )
+                    if action_code == 3:
+                        return True
+        return False
+
+    @classmethod
+    def check_exit_approved(cls, rt_assignee, condition, action_code):
+        approved_count = 0
+        for assignee in RuntimeAssignee.objects.filter(
+            stage=rt_assignee.stage, is_done=True
+        ):
+            if 1 in assignee.action_perform:
+                approved_count += 1
+        if condition['min_collab'] != "else":
+            if approved_count == int(condition['min_collab']):
+                RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
+                return True
+        return False
+
+    @classmethod
+    def check_exit_rejected(cls, rt_assignee, condition, action_code):
+        rejected_count = 0
+        for assignee in RuntimeAssignee.objects.filter(
+                stage=rt_assignee.stage, is_done=True
+        ):
+            if 2 in assignee.action_perform:
+                rejected_count += 1
+        if condition['min_collab'] != "else":
+            if rejected_count == int(condition['min_collab']):
+                RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
+                return True
+        return False
+
+    @classmethod
+    def close_assignee_waiting(cls, rt_assignee, action_code):
+        # close all other assignees waiting
+        for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
+                id=rt_assignee.id
+        ):
+            other_assignee.is_done = True
+            other_assignee.action_perform.append(action_code)
+            other_assignee.action_perform = list(set(other_assignee.action_perform))
+            other_assignee.save(update_fields=['is_done', 'action_perform'])
+        return True
 
 
 class RuntimeStageHandler:
@@ -560,7 +642,7 @@ class RuntimeStageHandler:
             runtime=self.runtime_obj,
             node=node_passed,
             title=node_passed.title,
-            code=node_passed.code_node_system,
+            code=node_passed.code_node_system if node_passed.code_node_system else "",
             node_data={
                 "id": str(node_passed.id),
                 "title": node_passed.title,

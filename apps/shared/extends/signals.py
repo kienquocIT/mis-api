@@ -26,7 +26,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -91,8 +91,11 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
-        {'code': 'UG_import', 'title': 'Import group unit', 'is_default': 1},
-        {'code': 'UG001', 'title': 'Labor', 'is_default': 1},
+        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+        {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+        {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+        {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -188,6 +191,44 @@ class SaleDefaultData:
             for uom_group_item in self.UoM_Group_data
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
+        ).first()
+        if group:
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manhour',
+                title='Man hour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manday',
+                title='Man day',
+                is_referenced_unit=1,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manmonth',
+                title='Man month',
+                is_referenced_unit=1,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=group
+            )
         return True
 
     def create_company_function_number(self):

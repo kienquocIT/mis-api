@@ -62,7 +62,6 @@ class QuotationListSerializer(AbstractListSerializerModel):
 class QuotationDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
@@ -74,7 +73,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'opportunity',
             'customer',
-            'contact',
+            'contact_data',
             'sale_person',
             'payment_term_id',
             'payment_term_data',
@@ -147,14 +146,6 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
         } if obj.customer else {}
 
     @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'title': obj.contact.fullname,
-            'code': obj.contact.code,
-        } if obj.contact else {}
-
-    @classmethod
     def get_sale_person(cls, obj):
         return {
             'id': obj.employee_inherit_id,
@@ -222,6 +213,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'customer',
             'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
@@ -374,6 +366,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'customer',
             'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',

@@ -171,6 +171,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         related_name="quotation_contact",
         null=True
     )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     sale_person = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,

@@ -74,7 +74,6 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
 class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -87,7 +86,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'opportunity',
             'customer',
-            'contact',
+            'contact_data',
             'sale_person',
             'payment_term_id',
             'payment_term_data',
@@ -152,14 +151,6 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
                 'code': obj.customer.payment_term_customer_mapped.code,
             } if obj.customer.payment_term_customer_mapped else {}
         } if obj.customer else {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'title': obj.contact.fullname,
-            'code': obj.contact.code,
-        } if obj.contact else {}
 
     @classmethod
     def get_sale_person(cls, obj):
@@ -247,6 +238,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'customer',
             'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
@@ -403,6 +395,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             'customer',
             'customer_data',
             'contact',
+            'contact_data',
             'employee_inherit_id',
             'payment_term',
             'payment_term_data',
