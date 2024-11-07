@@ -2371,6 +2371,7 @@ def update_default_masterdata():
             item.rounding = 4
             item.is_default = 1
             item.save()
+
     print('Done :))')
 
 
