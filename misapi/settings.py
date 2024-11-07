@@ -123,6 +123,8 @@ INSTALLED_APPS = \
     ] + [
         # authenticate
         'django_otp',
+    ] + [  # HRM
+        'apps.hrm.employeeinfo',
     ]
 
 MIDDLEWARE = [
