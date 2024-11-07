@@ -27,11 +27,13 @@ class AccountingAccount(MasterDataAbstractModel):
     acc_status = models.BooleanField(default=True)
     acc_type = models.SmallIntegerField(choices=ACC_TYPE)
     parent_account = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
+    has_child = models.BooleanField(default=False)
     level = models.IntegerField(default=1)
     is_account = models.BooleanField(default=True)
     control_account = models.BooleanField(default=False)
     is_all_currency = models.BooleanField(default=True)
     currency_mapped = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE, null=True)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Main Account'

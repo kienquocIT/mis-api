@@ -16,10 +16,12 @@ class AccountingAccountListSerializer(serializers.ModelSerializer):
             'acc_status',
             'acc_type',
             'parent_account',
+            'has_child',
             'level',
             'is_account',
             'control_account',
             'is_all_currency',
+            'is_default',
             'currency_mapped'
         )
 
@@ -30,6 +32,7 @@ class AccountingAccountListSerializer(serializers.ModelSerializer):
             'abbreviation': obj.currency_mapped.abbreviation,
             'title': obj.currency_mapped.title
         } if obj.currency_mapped else {}
+
 
 class AccountingAccountCreateSerializer(serializers.ModelSerializer):
     class Meta:
