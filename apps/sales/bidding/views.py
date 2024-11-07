@@ -113,9 +113,6 @@ class AccountForBiddingList(BaseListMixin):
     }
     search_fields = []
 
-    def get_queryset(self):
-        return super().get_queryset()
-
     @swagger_auto_schema(
         operation_summary="Account For Bidding list",
         operation_description="Account List for Bidding",

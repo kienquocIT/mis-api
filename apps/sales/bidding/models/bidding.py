@@ -15,13 +15,6 @@ BIDDING_SECURITY_TYPE = [
     (2, _('Letter of Guarantee')),
 ]
 
-CAUSE_OF_LOST = [
-    (0, _('Bids withdrawal')),
-    (1, _('Higher bid price')),
-    (2, _('Non-compliance')),
-    (3, _('Other reason')),
-]
-
 class Bidding(DataAbstractModel):
     # general data
     opportunity = models.ForeignKey(
