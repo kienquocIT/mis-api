@@ -8,6 +8,12 @@ from apps.shared import TypeCheck
 from apps.core.base.models import Application
 
 
+class ProcessConfigReadySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProcessConfiguration
+        fields = ('id', 'title', 'remark', 'date_created', 'for_opp', 'is_active')
+
+
 class ProcessConfigListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
 
@@ -132,6 +138,7 @@ class ProcessRuntimeListSerializer(serializers.ModelSerializer):
                 'id': obj.config_id,
                 'title': obj.config.title,
                 'remark': obj.config.remark,
+                'for_opp': obj.config.for_opp,
             }
         return {}
 
@@ -186,6 +193,7 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
                 'id': obj.config_id,
                 'title': obj.config.title,
                 'remark': obj.config.remark,
+                'for_opp': obj.config.for_opp,
             }
         return {}
 
@@ -263,23 +271,14 @@ class ProcessRuntimeCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_config(cls, attrs):
         if attrs and TypeCheck.check_uuid(attrs):
-            try:
-                process_obj = ProcessConfiguration.objects.get_current(fill__tenant=True, fill__company=True, pk=attrs)
-                if process_obj.is_active is False:
-                    raise serializers.ValidationError(
-                        {
-                            'config': ProcessMsg.PROCESS_DEACTIVATE
-                        }
-                    )
-                if process_obj.for_opp is True:
-                    raise ValueError(
-                        {
-                            'config': ProcessMsg.NOT_SUPPORT_WITHOUT_OPP
-                        }
-                    )
-                return process_obj
-            except ProcessConfiguration.DoesNotExist:
-                pass
+            process_config_obj = ProcessRuntimeControl.get_process_config(process_config_id=attrs, for_opp=False)
+            if process_config_obj.for_opp is True:
+                raise ValueError(
+                    {
+                        'config': ProcessMsg.NOT_SUPPORT_WITHOUT_OPP
+                    }
+                )
+            return process_config_obj
         raise serializers.ValidationError(
             {
                 'config': ProcessMsg.PROCESS_NOT_FOUND
@@ -287,8 +286,12 @@ class ProcessRuntimeCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        config = validated_data['config']
-        instance = Process.objects.create(**validated_data, stages=config.stages, is_ready=False)
+        title = validated_data.pop('title', '')
+        remark = validated_data.pop('remark', '')
+        config = validated_data.pop('config', None)
+        instance = ProcessRuntimeControl.create_process_from_config(
+            title=title, remark=remark, config=config, **validated_data
+        )
         ProcessRuntimeControl(process_obj=instance).play_process()
         return instance
 

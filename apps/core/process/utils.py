@@ -8,7 +8,7 @@ from uuid import UUID
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.core.process.models import Process, ProcessStageApplication, ProcessDoc, ProcessStage
+from apps.core.process.models import Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration
 from apps.core.process.msg import ProcessMsg
 from apps.shared import TypeCheck
 
@@ -46,6 +46,72 @@ class ProcessRuntimeControl:
                     }
                 )
             return process_obj
+        raise serializers.ValidationError(
+            {
+                key_raise_error: ProcessMsg.PROCESS_NOT_FOUND
+            }
+        )
+
+    @classmethod
+    def create_process_from_config(cls, title: str, remark: str, config: ProcessConfiguration, **kwargs) -> Process:
+        return Process.objects.create(
+            title=title, remark=remark, config=config, stages=config.stages,
+            **kwargs,
+            tenant=config.tenant, company=config.company,
+        )
+
+    @classmethod
+    def get_process_config(cls, process_config_id: UUID or str, for_opp: bool, key_raise_error: str = 'process_config'):
+        if process_config_id and TypeCheck.check_uuid(process_config_id):
+            try:
+                process_config_obj = ProcessConfiguration.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    pk=process_config_id
+                )
+            except ProcessConfiguration.DoesNotExist:
+                raise serializers.ValidationError(
+                    {
+                        key_raise_error: ProcessMsg.PROCESS_CONFIG_NOT_FOUND
+                    }
+                )
+            if process_config_obj.for_opp is True:
+                if for_opp is False:
+                    raise serializers.ValidationError(
+                        {
+                            key_raise_error: ProcessMsg.PROCESS_ONLY_OPP
+                        }
+                    )
+            else:
+                if for_opp is True:
+                    raise serializers.ValidationError(
+                        {
+                            key_raise_error: ProcessMsg.PROCESS_NOT_SUPPORT_OPP
+                        }
+                    )
+            if process_config_obj.is_active is False:
+                raise serializers.ValidationError(
+                    {
+                        key_raise_error: ProcessMsg.PROCESS_DEACTIVATE
+                    }
+                )
+
+            date_now = timezone.now()
+            if process_config_obj.apply_start and process_config_obj.apply_start > date_now:
+                start_str = process_config_obj.apply_start.strftime("%m/%d/%Y, %H:%M:%S")
+                raise serializers.ValidationError(
+                    {
+                        key_raise_error: ProcessMsg.PROCESS_NOT_START.format(start_date=start_str)
+                    }
+                )
+            if process_config_obj.apply_finish and process_config_obj.apply_finish < date_now:
+                end_str = process_config_obj.apply_finish.strftime("%m/%d/%Y, %H:%M:%S")
+                raise serializers.ValidationError(
+                    {
+                        key_raise_error: ProcessMsg.PROCESS_FINISHED.format(end_date=end_str)
+                    }
+                )
+            return process_config_obj
         raise serializers.ValidationError(
             {
                 key_raise_error: ProcessMsg.PROCESS_NOT_FOUND

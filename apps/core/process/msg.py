@@ -26,3 +26,9 @@ class ProcessMsg:
     MIN_MAX_INCORRECT = _("Min or Max value is incorrect")
     MAX_MUST_LARGE_MIN = _("The maximum value must be equal or greater than the minimum value")
     FINISH_MUST_LARGE_START = _("Finish date must be greater than start date")
+
+    PROCESS_CONFIG_NOT_FOUND = _("The process configuration is not found")
+    PROCESS_NOT_SUPPORT_OPP = _("The process configurations does not support opportunity")
+    PROCESS_ONLY_OPP = _("The process only supports opportunities")
+    PROCESS_NOT_START = _("The process will start on {start_date} (day/month/year , hour:minutes:second)")
+    PROCESS_FINISHED = _("The process ended on {end_date} (day/month/year , hour:minutes:second)")

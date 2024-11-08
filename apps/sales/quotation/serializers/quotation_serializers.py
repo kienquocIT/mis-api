@@ -218,12 +218,11 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    # process = serializers.UUIDField(allow_null=True, required=False, default=None)
-    process = serializers.UUIDField(allow_null=True)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
-        return ProcessRuntimeControl.get_process_obj(process_id=attrs)
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = Quotation

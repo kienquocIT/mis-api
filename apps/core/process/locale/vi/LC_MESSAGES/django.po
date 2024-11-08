@@ -72,3 +72,23 @@ msgstr "Giá trị tối đa bắt buộc lớn hơn hoặc bằng giá trị t�
 #
 msgid "Finish date must be greater than start date"
 msgstr "Ngày kết thúc bắt buộc phải lớn hơn ngày bắt đầu"
+
+#
+msgid "The process configuration is not found"
+msgstr "Không tìm thấy tiến trình"
+
+#
+msgid "The process configurations does not support opportunity"
+msgstr "Tiến trình không hỗ trợ cho Cơ Hội Kinh Doanh"
+
+#
+msgid "The process will start on {start_date} (day/month/year , hour:minutes:second)"
+msgstr "Tiến trình này sẽ bắt đầu vào {start_date} (ngày/tháng/năm, giờ:phút:giây)"
+
+#
+msgid "The process ended on {end_date} (day/month/year , hour:minutes:second)"
+msgstr "Tiến trình đã kết thúc vào {end_date} (ngày/tháng/năm, giờ:phút:giây)"
+
+#
+msgid "The process only supports opportunities"
+msgstr "Tiến trình chỉ hỗ trợ cho Cơ hội kinh doanh"
