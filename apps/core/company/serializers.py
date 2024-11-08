@@ -58,7 +58,9 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'accounting_policies',
+            'applicable_circular'
         )
 
 
@@ -128,11 +130,10 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
         ).first()
         if this_period:
-            this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
-            this_period.save(update_fields=['definition_inventory_valuation'])
+            validate_data['this_period'] = this_period
         else:
             # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
-            # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+            # (vì trên UI company dựa vào key lỗi này để check đã có năm tài chính hay chưa)
             raise serializers.ValidationError(
                 {'fiscal_year_not_found': f"Can't find fiscal year {datetime.datetime.now().year}."}
             )
@@ -145,6 +146,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
+        this_period = validated_data.pop('this_period')
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
 
@@ -160,6 +162,20 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         ])
+
+        this_period.definition_inventory_valuation = instance.definition_inventory_valuation
+        this_period.default_inventory_value_method = instance.default_inventory_value_method
+        this_period.cost_per_warehouse = instance.cost_per_warehouse
+        this_period.cost_per_lot = instance.cost_per_lot
+        this_period.cost_per_project = instance.cost_per_project
+        this_period.save(update_fields=[
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project'
+        ])
+
         if currency_rule and all(
             key in currency_rule for key in ['prefix', 'suffix', 'thousands', 'decimal', 'precision']
         ):
@@ -186,6 +202,43 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_warehouse',
             'cost_per_lot',
             'cost_per_project'
+        )
+
+
+class AccountingPoliciesUpdateSerializer(serializers.ModelSerializer):
+    def validate(self, validate_data):
+        tenant_obj = self.instance.company.tenant
+        company_obj = self.instance.company
+        this_period = Periods.objects.filter(
+            tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
+        ).first()
+        if this_period:
+            validate_data['this_period'] = this_period
+        else:
+            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+            # (vì trên UI company dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+            raise serializers.ValidationError(
+                {'fiscal_year_not_found': f"Can't find fiscal year {datetime.datetime.now().year}."}
+            )
+        return validate_data
+
+    def update(self, instance, validated_data):
+        this_period = validated_data.pop('this_period')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save(update_fields=['accounting_policies', 'applicable_circular'])
+
+        this_period.accounting_policies = instance.accounting_policies
+        this_period.applicable_circular = instance.applicable_circular
+        this_period.save(update_fields=['accounting_policies', 'applicable_circular'])
+
+        return instance
+
+    class Meta:
+        model = CompanyConfig
+        fields = (
+            'accounting_policies',
+            'applicable_circular',
         )
 
 

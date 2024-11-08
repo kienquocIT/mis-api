@@ -19,7 +19,7 @@ from apps.core.company.serializers import (
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
     CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
-    CompanyUploadLogoSerializer,
+    CompanyUploadLogoSerializer, AccountingPoliciesUpdateSerializer,
 )
 
 
@@ -55,6 +55,31 @@ class CompanyConfigDetail(APIView):
                 company_id=company_id
             )
             ser = CompanyConfigUpdateSerializer(obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        except CompanyConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
+
+
+class AccountingPoliciesDetail(APIView):
+    serializer_class = AccountingPoliciesUpdateSerializer
+    @swagger_auto_schema(
+        operation_summary='Update config of Company',
+    )
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        try:
+            company_id = self.request.query_params['company_id'] \
+                if 'company_id' in self.request.query_params else request.user.company_current_id
+            obj = CompanyConfig.objects.select_related('currency').get(
+                company_id=company_id
+            )
+            ser = AccountingPoliciesUpdateSerializer(obj, data=request.data)
             ser.is_valid(raise_exception=True)
             ser.save()
             return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
