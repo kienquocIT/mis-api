@@ -2371,3 +2371,26 @@ def update_default_masterdata():
             item.is_default = 1
             item.save()
     print('Done :))')
+
+
+def parse_contact_data_quo_so():
+    for quotation in Quotation.objects.all():
+        quotation.contact_data = {
+            'id': str(quotation.contact_id),
+            'fullname': quotation.contact.fullname,
+            'email': quotation.contact.email,
+            'mobile': quotation.contact.mobile,
+            'job_title': quotation.contact.job_title,
+        } if quotation.contact else {}
+        quotation.save(update_fields=['contact_data'])
+    for order in SaleOrder.objects.all():
+        order.contact_data = {
+            'id': str(order.contact_id),
+            'fullname': order.contact.fullname,
+            'email': order.contact.email,
+            'mobile': order.contact.mobile,
+            'job_title': order.contact.job_title,
+        } if order.contact else {}
+        order.save(update_fields=['contact_data'])
+    print('parse_contact_data_quo_so done.')
+    return True
