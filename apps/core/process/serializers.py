@@ -70,6 +70,7 @@ class StagesApplicationSerializer(serializers.Serializer):  # noqa
             return validated_data
         raise serializers.ValidationError({'stages': ProcessMsg.MAX_MUST_LARGE_MIN})
 
+
 class ProcessStagesSerializer(serializers.Serializer):  # noqa
     title = serializers.CharField(max_length=200)
     remark = serializers.CharField(max_length=500, allow_blank=True, default=str)
@@ -100,9 +101,11 @@ class ProcessConfigCreateSerializer(serializers.ModelSerializer):
         if attrs and isinstance(attrs, list):
             if len(attrs) >= 3:
                 return attrs
-        raise serializers.ValidationError({
-            'stages': ProcessMsg.PROCESS_STAGES_REQUIRED
-        })
+        raise serializers.ValidationError(
+            {
+                'stages': ProcessMsg.PROCESS_STAGES_REQUIRED
+            }
+        )
 
     def validate(self, validated_data):
         apply_start = validated_data.get('validated_data', None)
@@ -110,9 +113,11 @@ class ProcessConfigCreateSerializer(serializers.ModelSerializer):
         if apply_start and apply_finish:
             if apply_finish > apply_start:
                 return validated_data
-            raise serializers.ValidationError({
-                'apply_finish': ProcessMsg.FINISH_MUST_LARGE_START
-            })
+            raise serializers.ValidationError(
+                {
+                    'apply_finish': ProcessMsg.FINISH_MUST_LARGE_START
+                }
+            )
         return validated_data
 
     class Meta:
@@ -232,6 +237,7 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
                         'min': obj_app.min,
                         'max': obj_app.max,
                         'was_done': obj_app.was_done,
+                        'amount_approved': obj_app.amount_approved,
                     } for obj_app in
                     ProcessStageApplication.objects.select_related('application').filter(process=obj, stage=obj_stage)
                 ],
@@ -317,7 +323,7 @@ class ProcessDocListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProcessDoc
-        fields = ('id', 'title', 'date_created', 'employee_created')
+        fields = ('id', 'title', 'date_created', 'employee_created', 'system_status', 'date_status')
 
 
 class ProcessStageApplicationDetailSerializer(serializers.ModelSerializer):
