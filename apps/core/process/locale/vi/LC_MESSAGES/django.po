@@ -30,8 +30,8 @@ msgid "The process is not found"
 msgstr "Không tìm thấy tiến trình"
 
 #
-msgid "The number of documents created must be greater than or equal to {amount} in order to complete."
-msgstr "Số lượng tài liệu được tạo ra bắt buộc lớn hơn hoặc bằng {amount} để hoàn tất."
+msgid "The number of documents approved must be greater than or equal to {amount} in order to complete."
+msgstr "Số lượng tài liệu được phê duyệt bắt buộc lớn hơn hoặc bằng {amount} để hoàn tất."
 
 #
 msgid "Unable to analyze the application's data"
