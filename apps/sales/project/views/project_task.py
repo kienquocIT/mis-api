@@ -106,11 +106,15 @@ class ProjectAllTaskList(BaseListMixin):
     queryset = ProjectMapTasks.objects
     serializer_list = ProjectTaskListAllSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        "project_id": ["exact"]
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "task", "task__employee_inherit", "task__employee_created", "task__parent_n", "task__task_status", "project"
-        )
+            "task", "task__employee_inherit", "task__employee_created", "task__parent_n", "task__task_status",
+            "project"
+        ).prefetch_related("task__employee_inherit__role")
 
     def get_prj_has_view_this(self):
         return [
