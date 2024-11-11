@@ -734,9 +734,11 @@ class RuntimeStageHandler:
                 self.runtime_obj.save(update_fields=['flow', 'state'])
                 self.run_stage(workflow=flow_apply)
                 state_task = 'SUCCESS'
+                DocHandler.force_in_progress_with_runtime(self.runtime_obj)
             elif mode_wf == 2:  # pending
                 self.runtime_obj.state = 0  # created
                 state_task = 'PENDING'
+                DocHandler.force_pending_with_runtime(self.runtime_obj)
             else:  # not support
                 raise ValueError(
                     '[RuntimeStageHandler][apply] Mode app workflow must be choice in '

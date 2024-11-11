@@ -1,14 +1,32 @@
+import logging
 from typing import Union
 
 from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.mailer.tasks import send_mail_workflow
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.utils.runtime_sub import HookEventHandler
-from apps.shared import (DisperseModel, call_task_background,)
+from apps.shared import (DisperseModel, call_task_background, )
+
+logger = logging.getLogger(__name__)
 
 
 class DocHandler:
+    @staticmethod
+    def get_app_id(obj):
+        if hasattr(obj, '__class__'):
+            try:
+                return obj.__class__.get_app_id()
+            except Exception as err:
+                logger.error(
+                    'Get app_id of object is error: %s - %s, %s',
+                    str(getattr(obj, 'id', None)),
+                    str(obj.__class__),
+                    str(err)
+                )
+        return None
+
     @property
     def model(self) -> models.Model:
         model_cls = DisperseModel(app_model=self.app_code).get_model()
@@ -31,9 +49,36 @@ class DocHandler:
         return first_obj if first_obj else None
 
     @classmethod
+    def force_in_progress_with_runtime(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
+        )
+        if obj:
+            system_status = 1  # created
+            ProcessRuntimeControl.update_status_of_doc(
+                app_id=cls.get_app_id(obj),
+                doc_id=obj.id,
+                date_now=timezone.now(),
+                status=system_status,
+            )
+            return True
+        return False
+
+    @classmethod
+    def force_pending_with_runtime(cls, runtime_obj):
+        return cls.force_in_progress_with_runtime(runtime_obj=runtime_obj)
+
+    @classmethod
     def force_added(cls, obj):
-        setattr(obj, 'system_status', 2)  # added
+        system_status = 2
+        setattr(obj, 'system_status', system_status)  # added
         obj.save(update_fields=['system_status'])
+        ProcessRuntimeControl.update_status_of_doc(
+            app_id=cls.get_app_id(obj),
+            doc_id=obj.id,
+            date_now=timezone.now(),
+            status=system_status,
+        )
         return True
 
     @classmethod
@@ -42,14 +87,13 @@ class DocHandler:
             default_filter={'tenant_id': runtime_obj.tenant_id, 'company_id': runtime_obj.company_id}
         )
         if obj:
-            setattr(obj, 'system_status', 2)  # added
-            obj.save(update_fields=['system_status'])
-            return True
+            return cls.force_added(obj)
         return False
 
     @classmethod
     def force_finish(cls, obj):
-        setattr(obj, 'system_status', 3)  # finish
+        system_status = 3
+        setattr(obj, 'system_status', system_status)  # finish
         setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
         update_fields = ['system_status', 'date_approved']
         if hasattr(obj, 'is_change'):
@@ -65,6 +109,12 @@ class DocHandler:
         except Exception as err:
             print(err)
             return False
+        ProcessRuntimeControl.update_status_of_doc(
+            app_id=cls.get_app_id(obj),
+            doc_id=obj.id,
+            date_now=timezone.now(),
+            status=system_status,
+        )
         return True
 
     @classmethod
@@ -90,8 +140,15 @@ class DocHandler:
                 case 'approved':
                     DocHandler.force_finish(obj=obj)
                 case 'rejected':
-                    setattr(obj, 'system_status', 4)  # cancel with reject
+                    system_status = 4
+                    setattr(obj, 'system_status', system_status)  # cancel with reject
                     obj.save(update_fields=['system_status'])
+                    ProcessRuntimeControl.update_status_of_doc(
+                        app_id=cls.get_app_id(obj),
+                        doc_id=obj.id,
+                        date_now=timezone.now(),
+                        status=system_status,
+                    )
             HookEventHandler(runtime_obj=runtime_obj).push_notify_end_workflow(
                 doc_obj=obj, end_type=0 if approved_or_rejected == 'approved' else 1
             )
@@ -152,9 +209,16 @@ class DocHandler:
     def force_cancel_doc_previous(cls, document_change):
         doc_previous = DocHandler.get_doc_previous(document_change=document_change)
         if doc_previous:
-            setattr(doc_previous, 'system_status', 4)
+            system_status = 4
+            setattr(doc_previous, 'system_status', system_status)
             setattr(doc_previous, 'is_change', True)
             doc_previous.save(update_fields=['system_status', 'is_change'])
+            ProcessRuntimeControl.update_status_of_doc(
+                app_id=cls.get_app_id(doc_previous),
+                doc_id=doc_previous.id,
+                date_now=timezone.now(),
+                status=system_status,
+            )
         return True
 
     @classmethod
@@ -166,8 +230,10 @@ class DocHandler:
                     document_target = DocHandler(
                         document_change.document_root_id, document_change._meta.label_lower
                     ).get_obj(
-                        default_filter={'tenant_id': document_change.tenant_id,
-                                        'company_id': document_change.company_id}
+                        default_filter={
+                            'tenant_id': document_change.tenant_id,
+                            'company_id': document_change.company_id
+                        }
                     )
                 if document_change.document_change_order > 1:
                     document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SYSTEM_STATUS
 
 
 class Process(MasterDataAbstractModel):
@@ -72,6 +72,7 @@ class ProcessStageApplication(MasterDataAbstractModel):
     title = models.CharField(max_length=100)
     remark = models.TextField(blank=True, verbose_name='Remark of process')
     amount = models.SmallIntegerField(default=0)
+    amount_approved = models.SmallIntegerField(default=0)
     min = models.CharField(default="0", max_length=2)
     max = models.CharField(default="0", max_length=2)
     was_done = models.BooleanField(default=False)
@@ -86,6 +87,14 @@ class ProcessStageApplication(MasterDataAbstractModel):
             self.save(update_fields=['amount'])
         return self
 
+    def amount_approved_count(self, commit=True):
+        self.amount_approved = ProcessDoc.objects.filter(
+            stage_app=self, system_status__in=ProcessDoc.APPROVED_STATUS
+        ).count()
+        if commit is True:
+            self.save(update_fields=['amount_approved'])
+        return self
+
     class Meta:
         verbose_name = 'Process Stage Application'
         verbose_name_plural = 'Process Stage Application'
@@ -98,6 +107,13 @@ class ProcessDoc(MasterDataAbstractModel):
     process = models.ForeignKey('process.Process', on_delete=models.CASCADE)
     stage_app = models.ForeignKey('process.ProcessStageApplication', on_delete=models.CASCADE)
     doc_id = models.UUIDField()
+    system_status = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(SYSTEM_STATUS),
+    )
+    date_status = models.JSONField(default=list, help_text='[{"status": 0, "datetime": ""},]')
+
+    APPROVED_STATUS = [2, 3]
 
     def __str__(self):
         return f'{self.title} - {self.doc_id}'

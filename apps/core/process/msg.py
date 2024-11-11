@@ -14,7 +14,7 @@ class ProcessMsg:
 
     STAGES_APP_NOT_ANALYSE = _("Unable to analyze the application's data")
     STAGES_APP_NEED_AMOUNT = _(
-        "The number of documents created must be greater than or equal to {amount} in order to complete."
+        "The number of documents approved must be greater than or equal to {amount} in order to complete."
     )
     OPP_NOT_MATCH = _("This opportunity does not match the process's opportunity")
     APPLICATION_NOT_SUPPORT = _("This process does not support this application")
