@@ -54,7 +54,7 @@ from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHand
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
+    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
@@ -2394,3 +2394,26 @@ def parse_contact_data_quo_so():
         order.save(update_fields=['contact_data'])
     print('parse_contact_data_quo_so done.')
     return True
+
+def update_activities_tenant_and_company():
+    for item in OpportunityCallLog.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityEmail.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityMeeting.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityActivityLogs.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    print('Done :))')

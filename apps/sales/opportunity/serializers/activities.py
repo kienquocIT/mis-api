@@ -2,18 +2,20 @@ from rest_framework import serializers
 from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
-    OpportunityActivityLogs, OpportunitySaleTeamMember
+    OpportunityActivityLogs, OpportunitySaleTeamMember, Opportunity
 )
+from apps.sales.opportunity.msg import OpportunityOnlyMsg
 from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor
-from apps.shared.translations.opportunity import OpportunityMsg
 from misapi import settings
 
 
+# Activity: Call Log
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -53,6 +55,7 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
+    opportunity = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
 
     class Meta:
@@ -67,29 +70,32 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def validate_opportunity(cls, value):
+        try:
+            return Opportunity.objects.get(id=value)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
     def validate_input_result(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
+        raise serializers.ValidationError({'detail': OpportunityOnlyMsg.RESULT_NOT_NULL})
 
     def validate(self, validate_data):
-        if validate_data.get('opportunity', None):
-            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-
-            is_team_members = OpportunitySaleTeamMember.objects.filter(
-                opportunity_id=validate_data['opportunity'],
-                member_id=self.context.get('employee_id', None)
-            ).exists()
-            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if is_team_members + is_inherit == 0:
-                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
-
+        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
+            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if not ActivitiesCommonFunc.check_permission_in_opp(
+                self.context.get('employee_id'), validate_data['opportunity']
+        ):
+            raise serializers.ValidationError({'permission': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         return validate_data
 
     def create(self, validated_data):
         call_log_obj = OpportunityCallLog.objects.create(**validated_data)
         OpportunityActivityLogs.objects.create(
+            tenant=call_log_obj.tenant,
+            company=call_log_obj.company,
             call=call_log_obj,
             opportunity=validated_data['opportunity'],
             date_created=validated_data['call_date'],
@@ -137,7 +143,6 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = OpportunityCallLog
         fields = ('is_cancelled',)
@@ -155,6 +160,7 @@ class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Activity: Email
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
 
@@ -179,38 +185,9 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
 
-def send_email(email_obj, employee_created):
-    try:
-        html_content = email_obj.content
-        email = EmailMultiAlternatives(
-            subject=email_obj.subject,
-            body='',
-            from_email=employee_created.email,
-            to=email_obj.email_to_list,
-            cc=email_obj.email_cc_list,
-            bcc=[],
-            reply_to=[],
-        )
-        email.attach_alternative(html_content, "text/html")
-        password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-        connection = get_connection(
-            username=employee_created.email,
-            password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
-            fail_silently=False,
-        )
-        email.connection = connection
-        email.send()
-        return True
-    except Exception as err:
-        employee_created.email_app_password_status = False
-        employee_created.save(update_fields=['email_app_password_status'])
-        print(err.args[1])
-        raise serializers.ValidationError({
-            'Send email': "Cannot send email. Try to verify your Email in Employee update page."
-        })
-
-
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
+    opportunity = serializers.UUIDField()
+
     class Meta:
         model = OpportunityEmail
         fields = (
@@ -220,6 +197,13 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'content',
             'opportunity',
         )
+
+    @classmethod
+    def validate_opportunity(cls, value):
+        try:
+            return Opportunity.objects.get(id=value)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
 
     @classmethod
     def validate_email_to_list(cls, value):
@@ -232,26 +216,20 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, validate_data):
-        if validate_data.get('opportunity', None):
-            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-
-            is_team_members = OpportunitySaleTeamMember.objects.filter(
-                opportunity_id=validate_data['opportunity'],
-                member_id=self.context.get('employee_id', None)
-            ).exists()
-            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if is_team_members + is_inherit == 0:
-                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
-
+        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
+            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if not ActivitiesCommonFunc.check_permission_in_opp(
+                self.context.get('employee_id'), validate_data['opportunity']
+        ):
+            raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         return validate_data
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-
-        send_email(email_obj, self.context.get('employee_current'))
-
+        ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
         OpportunityActivityLogs.objects.create(
+            tenant=email_obj.tenant,
+            company=email_obj.company,
             email=email_obj,
             opportunity=validated_data['opportunity'],
             log_type=3,
@@ -290,6 +268,7 @@ class OpportunityEmailUpdateSerializer(serializers.ModelSerializer):
         fields = ()
 
 
+# Activity: Meeting
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
@@ -340,38 +319,13 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
         return {}
 
 
-def create_employee_attended_map_meeting(meeting_id, employee_attended_list):
-    bulk_info = []
-    for employee_attended_item in employee_attended_list:
-        bulk_info.append(
-            OpportunityMeetingEmployeeAttended(
-                meeting_mapped=meeting_id,
-                employee_attended_mapped_id=employee_attended_item['id']
-            )
-        )
-    OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=meeting_id).delete()
-    OpportunityMeetingEmployeeAttended.objects.bulk_create(bulk_info)
-    return True
-
-
-def create_customer_member_map_meeting(meeting_id, customer_member_list):
-    bulk_info = []
-    for customer_member_item in customer_member_list:
-        bulk_info.append(
-            OpportunityMeetingCustomerMember(
-                meeting_mapped=meeting_id,
-                customer_member_mapped_id=customer_member_item['id']
-            )
-        )
-    OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=meeting_id).delete()
-    OpportunityMeetingCustomerMember.objects.bulk_create(bulk_info)
-    return True
-
-
 class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
+    opportunity = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
     meeting_from_time = serializers.TimeField(required=True)
     meeting_to_time = serializers.TimeField(required=True)
+    employee_attended_list = serializers.ListField()
+    customer_member_list = serializers.ListField(required=False)
 
     class Meta:
         model = OpportunityMeeting
@@ -390,34 +344,47 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def validate_opportunity(cls, value):
+        try:
+            return Opportunity.objects.get(id=value)
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
     def validate_input_result(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_MEETING_RESULT_NOT_NULL})
+        raise serializers.ValidationError({'detail': OpportunityOnlyMsg.RESULT_NOT_NULL})
 
     def validate(self, validate_data):
-        if validate_data.get('opportunity', None):
-            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-
-            is_team_members = OpportunitySaleTeamMember.objects.filter(
-                opportunity_id=validate_data['opportunity'],
-                member_id=self.context.get('employee_id', None)
-            ).exists()
-            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if is_team_members + is_inherit == 0:
-                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
-
-        if validate_data.get('meeting_from_time', None) and validate_data.get('meeting_to_time', None):
+        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
+            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if not ActivitiesCommonFunc.check_permission_in_opp(
+                self.context.get('employee_id'), validate_data['opportunity']
+        ):
+            raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
+        if validate_data.get('meeting_from_time') and validate_data.get('meeting_to_time'):
             if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
+        if Employee.objects.filter(
+                id__in=[item.get('id') for item in validate_data.get('employee_attended_list', [])]
+        ).count() > len(validate_data.get('employee_attended_list', [])):
+            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
+        if Employee.objects.filter(
+                id__in=[item.get('id') for item in validate_data.get('customer_member_list', [])]
+        ).count() > len(validate_data.get('customer_member_list', [])):
+            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
         return validate_data
 
     def create(self, validated_data):
+        employee_attended_list = validated_data.pop('employee_attended_list')
+        customer_member_list = validated_data.pop('customer_member_list')
         meeting_obj = OpportunityMeeting.objects.create(**validated_data)
-        create_employee_attended_map_meeting(meeting_obj, self.initial_data.get('employee_attended_list', []))
-        create_customer_member_map_meeting(meeting_obj, self.initial_data.get('customer_member_list', []))
+        ActivitiesCommonFunc.create_employee_attended_map_meeting(meeting_obj, employee_attended_list)
+        ActivitiesCommonFunc.create_customer_member_map_meeting(meeting_obj, customer_member_list)
         OpportunityActivityLogs.objects.create(
+            tenant=meeting_obj.tenant,
+            company=meeting_obj.company,
             meeting=meeting_obj,
             opportunity=validated_data['opportunity'],
             date_created=validated_data['meeting_date'],
@@ -509,6 +476,7 @@ class OpportunityMeetingUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+# Activity: Document
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     person_in_charge = serializers.SerializerMethodField()
@@ -564,7 +532,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_person_in_charge(cls, value):
         if not value:
-            raise serializers.ValidationError({'person_in_charge': OpportunityMsg.NOT_BLANK})
+            raise serializers.ValidationError({'person_in_charge': OpportunityOnlyMsg.PIC_NOT_NULL})
         return value
 
     @classmethod
@@ -615,14 +583,10 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-
-            is_team_members = OpportunitySaleTeamMember.objects.filter(
-                opportunity_id=validate_data['opportunity'],
-                member_id=self.context.get('employee_id', None)
-            ).exists()
-            is_inherit = validate_data['opportunity'].employee_inherit == self.context.get('employee_id', None)
-            if is_team_members + is_inherit == 0:
-                raise serializers.ValidationError({'Create failed': 'Dont have permission in this Opportunity'})
+            if not ActivitiesCommonFunc.check_permission_in_opp(
+                    self.context.get('employee_id'), validate_data['opportunity']
+            ):
+                raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
 
         return validate_data
 
@@ -703,6 +667,7 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
         return []
 
 
+# Activity: Logging
 class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
     task = serializers.SerializerMethodField()
 
@@ -794,3 +759,72 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'log_type',
             'doc_data',
         )
+
+
+class ActivitiesCommonFunc:
+    @staticmethod
+    def check_permission_in_opp(employee_id, opportunity_obj):
+        is_team_members = OpportunitySaleTeamMember.objects.filter(
+            opportunity=opportunity_obj, member_id=employee_id
+        ).exists()
+        is_inherit = opportunity_obj.employee_inherit_id == employee_id
+        return (is_team_members + is_inherit) > 0
+
+    @staticmethod
+    def send_email(email_obj, employee_created):
+        try:
+            html_content = email_obj.content
+            email = EmailMultiAlternatives(
+                subject=email_obj.subject,
+                body='',
+                from_email=employee_created.email,
+                to=email_obj.email_to_list,
+                cc=email_obj.email_cc_list,
+                bcc=[],
+                reply_to=[],
+            )
+            email.attach_alternative(html_content, "text/html")
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            connection = get_connection(
+                username=employee_created.email,
+                password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
+                fail_silently=False,
+            )
+            email.connection = connection
+            email.send()
+            return True
+        except Exception as err:
+            employee_created.email_app_password_status = False
+            employee_created.save(update_fields=['email_app_password_status'])
+            print(err.args[1])
+            raise serializers.ValidationError({
+                'Send email': "Cannot send email. Try to verify your Email in Employee update page."
+            })
+
+    @staticmethod
+    def create_employee_attended_map_meeting(meeting_id, employee_attended_list):
+        bulk_info = []
+        for employee_attended_item in employee_attended_list:
+            bulk_info.append(
+                OpportunityMeetingEmployeeAttended(
+                    meeting_mapped=meeting_id,
+                    employee_attended_mapped_id=employee_attended_item['id']
+                )
+            )
+        OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=meeting_id).delete()
+        OpportunityMeetingEmployeeAttended.objects.bulk_create(bulk_info)
+        return True
+
+    @staticmethod
+    def create_customer_member_map_meeting(meeting_id, customer_member_list):
+        bulk_info = []
+        for customer_member_item in customer_member_list:
+            bulk_info.append(
+                OpportunityMeetingCustomerMember(
+                    meeting_mapped=meeting_id,
+                    customer_member_mapped_id=customer_member_item['id']
+                )
+            )
+        OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=meeting_id).delete()
+        OpportunityMeetingCustomerMember.objects.bulk_create(bulk_info)
+        return True
