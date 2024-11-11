@@ -10,7 +10,7 @@ from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerM
 from apps.shared.translations.base import AttachmentMsg
 
 
-class DocumentCreateSerializer(serializers.ModelSerializer):
+class BiddingDocumentCreateSerializer(serializers.ModelSerializer):
     document_type = serializers.UUIDField(required=False, allow_null=True)
     class Meta:
         model = BiddingDocument
@@ -39,6 +39,7 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'document_type': 'Bidding Document must have data'})
         return validate_data
 
+
 class VenturePartnerCreateSerializer(serializers.ModelSerializer):
     partner_account = serializers.UUIDField()
     class Meta:
@@ -54,8 +55,6 @@ class VenturePartnerCreateSerializer(serializers.ModelSerializer):
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'partner_account': 'partner_account does not exist'})
-
-
 
 
 class OtherBidderCreateSerializer(serializers.ModelSerializer):
@@ -74,6 +73,7 @@ class OtherBidderCreateSerializer(serializers.ModelSerializer):
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'bidder_account': 'bidder_account does not exist'})
+
 
 class BiddingListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
@@ -230,7 +230,7 @@ class DocumentMasterDataBiddingListSerializer(serializers.ModelSerializer):
 class BiddingCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
-    document_data = DocumentCreateSerializer(many=True, required=False)
+    document_data = BiddingDocumentCreateSerializer(many=True, required=False)
     opportunity = serializers.UUIDField(
         required=True
     )
@@ -334,7 +334,7 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
 class BiddingUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
-    document_data = DocumentCreateSerializer(many=True, required=False)
+    document_data = BiddingDocumentCreateSerializer(many=True, required=False)
     opportunity = serializers.UUIDField(
         required=True
     )
