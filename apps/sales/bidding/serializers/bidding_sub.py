@@ -24,8 +24,6 @@ class BiddingCommonCreate:
                                 attachment_result=create_data.get('attachment'))
         if create_data.get('venture_partner'):
             cls.create_venture_partner(venture_partner=create_data.get('venture_partner'), instance=instance)
-        if create_data.get('other_bidder'):
-            cls.create_other_bidder(other_bidder=create_data.get('other_bidder'), instance=instance)
         return True
 
     @classmethod
