@@ -22,7 +22,6 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "opportunity",
             "employee_inherit",
         )
 

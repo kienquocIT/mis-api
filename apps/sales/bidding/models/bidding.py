@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
 BIDDING_STATUS = [
     (0, _('Waiting')),
@@ -15,7 +15,7 @@ BIDDING_SECURITY_TYPE = [
     (2, _('Letter of Guarantee')),
 ]
 
-class Bidding(DataAbstractModel):
+class Bidding(DataAbstractModel, BastionFieldAbstractModel):
     # general data
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
