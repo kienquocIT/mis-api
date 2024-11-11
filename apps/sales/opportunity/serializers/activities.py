@@ -368,11 +368,11 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
         if Employee.objects.filter(
                 id__in=[item.get('id') for item in validate_data.get('employee_attended_list', [])]
-        ).count() > len(validate_data.get('employee_attended_list', [])):
+        ).count() != len(validate_data.get('employee_attended_list', [])):
             raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
         if Employee.objects.filter(
                 id__in=[item.get('id') for item in validate_data.get('customer_member_list', [])]
-        ).count() > len(validate_data.get('customer_member_list', [])):
+        ).count() != len(validate_data.get('customer_member_list', [])):
             raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
         return validate_data
 
