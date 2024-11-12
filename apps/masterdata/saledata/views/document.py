@@ -16,9 +16,6 @@ class DocumentTypeList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
-    def get_queryset(self):
-        return super().get_queryset().order_by('-is_default', 'code')
-
     @swagger_auto_schema(
         operation_summary="DocumentType list",
         operation_description="DocumentType list",
