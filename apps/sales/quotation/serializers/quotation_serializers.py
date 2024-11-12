@@ -277,7 +277,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return QuotationCommonValidate().validate_opportunity(value=value)
+        return QuotationCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):
@@ -444,7 +444,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return QuotationCommonValidate().validate_opportunity(value=value)
+        return QuotationCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):

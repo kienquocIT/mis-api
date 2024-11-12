@@ -273,6 +273,8 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            #
+            'is_recurring',
         )
 
     @classmethod
@@ -281,7 +283,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return SaleOrderCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):
@@ -438,7 +440,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return SaleOrderCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):

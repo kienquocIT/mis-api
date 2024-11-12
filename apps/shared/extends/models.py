@@ -365,6 +365,15 @@ class ExtendsDataAbstractModel(SimpleAbstractModel):
     )
 
 
+class RecurrenceAbstractModel(SimpleAbstractModel):  # use for applications need recurrence
+    is_recurring = models.BooleanField(default=False, help_text="flag to know this record is recurring template")
+
+    class Meta:
+        abstract = True
+        verbose_name = 'Recurrence Abstract'
+        verbose_name_plural = 'Recurrence Abstract'
+
+
 # Forwarder class model
 class DisperseModel:
     """

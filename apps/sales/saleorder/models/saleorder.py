@@ -3,7 +3,9 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
+    BastionFieldAbstractModel
+from apps.shared.extends.models import RecurrenceAbstractModel
 
 
 # CONFIG
@@ -88,7 +90,7 @@ class ConfigOrderLongSale(SimpleAbstractModel):
 
 
 # BEGIN SALE ORDER
-class SaleOrder(DataAbstractModel):
+class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
