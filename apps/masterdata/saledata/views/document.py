@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import DocumentType
 from apps.masterdata.saledata.serializers import (
-    DocumentTypeListSerializer, DocumentTypeCreateSerializer, DocumentTypeDetailSerializer
+    DocumentTypeListSerializer, DocumentTypeCreateSerializer, DocumentTypeDetailSerializer, DocumentTypeUpdateSerializer
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
+from apps.shared import (mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, BaseRetrieveMixin)
+
 
 class DocumentTypeList(BaseListMixin, BaseCreateMixin):
     queryset = DocumentType.objects
@@ -14,6 +15,9 @@ class DocumentTypeList(BaseListMixin, BaseCreateMixin):
     serializer_detail = DocumentTypeDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().order_by('-is_default', 'code')
 
     @swagger_auto_schema(
         operation_summary="DocumentType list",
@@ -36,3 +40,27 @@ class DocumentTypeList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+class DocumentTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = DocumentType.objects
+    search_fields = ['title']
+    filterset_fields = {}
+    serializer_update = DocumentTypeUpdateSerializer
+    serializer_detail = DocumentTypeDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(operation_summary='Detail DocumentType')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update DocumentType", request_body=DocumentTypeUpdateSerializer)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
