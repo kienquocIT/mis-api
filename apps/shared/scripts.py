@@ -51,7 +51,7 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
-from ..sales.lead.models import LeadHint
+from ..sales.lead.models import LeadHint, LeadStage
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
@@ -2395,6 +2395,7 @@ def parse_contact_data_quo_so():
     print('parse_contact_data_quo_so done.')
     return True
 
+
 def update_activities_tenant_and_company():
     for item in OpportunityCallLog.objects.all():
         if item.opportunity:
@@ -2416,4 +2417,37 @@ def update_activities_tenant_and_company():
             item.tenant = item.opportunity.tenant
             item.company = item.opportunity.company
             item.save(update_fields=['tenant', 'company'])
+    print('Done :))')
+
+
+def update_lead_stage():
+    lead_stage_data = [
+        {
+            'stage_title': 'Marketing Acquired Lead',
+            'level': 1,
+        },
+        {
+            'stage_title': 'Marketing Qualified Lead',
+            'level': 2,
+        },
+        {
+            'stage_title': 'Sales Accepted Lead',
+            'level': 3,
+        },
+        {
+            'stage_title': 'Sales Qualified Lead',
+            'level': 4,
+        },
+    ]
+    bulk_info = []
+    for company in Company.objects.all():
+        num_stage = LeadStage.objects.filter(company=company).count()
+        if num_stage == 0:
+            for stage in lead_stage_data:
+                bulk_info.append(LeadStage(
+                    tenant=company.tenant,
+                    company=company,
+                    **stage
+                ))
+    LeadStage.objects.bulk_create(bulk_info)
     print('Done :))')
