@@ -26,7 +26,7 @@ from apps.sales.cashoutflow.models import (
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
-    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods,
+    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
 )
 from . import MediaForceAPI
 
@@ -2418,6 +2418,35 @@ def update_activities_tenant_and_company():
             item.company = item.opportunity.company
             item.save(update_fields=['tenant', 'company'])
     print('Done :))')
+
+
+def update_default_document_types():
+    document_type_data = [
+        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1},
+        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1},
+        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1},
+        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1},
+        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1},
+        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1},
+    ]
+    company_obj_list = Company.objects.all()
+    bulk_data = []
+    for company_obj in company_obj_list:
+        if not DocumentType.objects.filter(company=company_obj, is_default=1).exists():
+            for item in document_type_data:
+                bulk_data.append(
+                    DocumentType(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        **item,
+                    )
+                )
+    if len(bulk_data) > 0:
+        DocumentType.objects.bulk_create(bulk_data)
+    print('Done :))')
+    return True
 
 
 def update_lead_stage():

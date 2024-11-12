@@ -27,6 +27,7 @@ from apps.core.base.models import Currency as BaseCurrency, PlanApplication, Bas
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
+    DocumentType,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -96,6 +97,16 @@ class SaleDefaultData:
         {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
         {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
         {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+    ]
+    Document_Type_data = [
+        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1},
+        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1},
+        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1},
+        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1},
+        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1},
+        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -244,6 +255,13 @@ class SaleDefaultData:
         CompanyFunctionNumber.objects.bulk_create(objs)
         return True
 
+    def create_document_types(self):
+        objs = [
+            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
+            for at_item in self.Document_Type_data
+        ]
+        DocumentType.objects.bulk_create(objs)
+        return True
 
 class ConfigDefaultData:
     """

@@ -25,7 +25,7 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList
+    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
@@ -192,5 +192,6 @@ urlpatterns += [
 
 urlpatterns += [
     path('document-type', DocumentTypeList.as_view(), name='DocumentTypeList'),
+    path('document-type/<str:pk>', DocumentTypeDetail.as_view(), name='DocumentTypeDetail'),
     # path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
 ]

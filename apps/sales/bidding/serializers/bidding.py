@@ -6,8 +6,10 @@ from apps.sales.bidding.models import Bidding, BiddingAttachment, BiddingDocumen
     BiddingBidderAccount
 from apps.sales.bidding.serializers.bidding_sub import BiddingCommonCreate
 from apps.sales.opportunity.models import Opportunity
-from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, \
+    HRMsg, BaseMsg
 from apps.shared.translations.base import AttachmentMsg
+from apps.shared.translations.bidding import BiddingMsg
 
 
 class BiddingDocumentCreateSerializer(serializers.ModelSerializer):
@@ -30,13 +32,13 @@ class BiddingDocumentCreateSerializer(serializers.ModelSerializer):
                 document_type = DocumentType.objects.get(id=value)
                 return document_type
             except DocumentType.DoesNotExist:
-                raise serializers.ValidationError({'document_type': 'Document type does not exist'})
+                raise serializers.ValidationError({'document_type': BaseMsg.NOT_EXIST})
         return None
 
     def validate(self, validate_data):
         attachment_data = validate_data.get('attachment_data')
         if not attachment_data:
-            raise serializers.ValidationError({'document_type': 'Bidding Document must have data'})
+            raise serializers.ValidationError({'attachment_data': BiddingMsg.ATTACHMENT_REQUIRED})
         return validate_data
 
 
@@ -54,7 +56,7 @@ class VenturePartnerCreateSerializer(serializers.ModelSerializer):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'partner_account': 'partner_account does not exist'})
+            raise serializers.ValidationError({'partner_account': BaseMsg.NOT_EXIST})
 
 
 class OtherBidderCreateSerializer(serializers.ModelSerializer):
@@ -72,7 +74,7 @@ class OtherBidderCreateSerializer(serializers.ModelSerializer):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'bidder_account': 'bidder_account does not exist'})
+            raise serializers.ValidationError({'bidder_account': BaseMsg.NOT_EXIST})
 
 
 class BiddingListSerializer(AbstractListSerializerModel):
@@ -238,12 +240,8 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
     bid_date = serializers.DateField()
     bid_bond_value = serializers.FloatField(required=False)
     venture_partner = VenturePartnerCreateSerializer(many=True, required=False)
-    other_bidder = OtherBidderCreateSerializer(many=True, required=False)
     employee_inherit_id = serializers.UUIDField()
     security_type= serializers.IntegerField(required=False)
-    bid_status= serializers.IntegerField(required=False)
-    other_cause= serializers.CharField(required=False,allow_blank=True)
-    cause_of_lost = serializers.ListSerializer(child=serializers.IntegerField(), required=False)
 
     class Meta:
         model = Bidding
@@ -253,15 +251,11 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             'opportunity',
             'document_data',
             'venture_partner' ,
-            'other_bidder',
             'bid_value' ,
             'bid_bond_value',
             'security_type',
             'bid_date',
             'employee_inherit_id',
-            'bid_status',
-            'cause_of_lost',
-            'other_cause',
             'tinymce_content'
         )
 
@@ -271,15 +265,15 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             try:
                 return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity': 'Opportunity not exist'})
-        raise serializers.ValidationError({'opportunity': 'Opportunity is required'})
+                raise serializers.ValidationError({'opportunity': BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({'opportunity': BaseMsg.REQUIRED})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
             return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit': 'not exist'})
+            raise serializers.ValidationError({'employee_inherit': BaseMsg.NOT_EXIST})
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -295,36 +289,24 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('opportunity'):
             validate_data['customer'] = validate_data.get('opportunity').customer
-        cause_of_lost = validate_data.get('cause_of_lost', [])
-        other_cause = validate_data.get('other_cause', '')
         bid_bond_value = validate_data.get('bid_bond_value', None)
         security_type = validate_data.get('security_type', 0)
-        if validate_data.get('bid_status') == 2: #bid lost
-            if len(cause_of_lost) == 0: #no cause of lost chosen
-                raise serializers.ValidationError(
-                    {'cause_of_lost': 'If bid is lost, must choose at least one cause of lost'})
-        if '4' in cause_of_lost: #other reason
-            if not other_cause:
-                raise serializers.ValidationError(
-                    {'other_cause': 'If cause of lost is "other reason", must specify the reason'})
 
         if bid_bond_value:
             if security_type == 0:
                 raise serializers.ValidationError(
-                    {'bid_bond_value': 'If there is a bond value, must choose a security type'})
+                    {'bid_bond_value': BiddingMsg.BID_SECURITY_TYPE_REQUIRED})
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         attachment = validated_data.pop('attachment', [])
         venture_partner = validated_data.pop('venture_partner', [])
-        other_bidder = validated_data.pop('other_bidder', [])
         document_data = validated_data.pop('document_data', [])
         create_data = {
             'attachment': attachment,
             'venture_partner': venture_partner,
             'document_data': document_data,
-            'other_bidder': other_bidder
         }
         bidding = Bidding.objects.create(**validated_data)
         BiddingCommonCreate.create_sub_models( instance=bidding, create_data= create_data)
@@ -342,12 +324,8 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
     bid_date = serializers.DateField()
     bid_bond_value = serializers.FloatField(required=False)
     venture_partner = VenturePartnerCreateSerializer(many=True, required=False)
-    other_bidder = OtherBidderCreateSerializer(many=True, required=False)
     employee_inherit_id = serializers.UUIDField()
     security_type = serializers.IntegerField(required=False)
-    bid_status = serializers.IntegerField(required=False)
-    other_cause = serializers.CharField(required=False, allow_blank=True)
-    cause_of_lost = serializers.ListSerializer(child=serializers.IntegerField(), required=False)
 
     class Meta:
         model = Bidding
@@ -357,15 +335,11 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
             'opportunity',
             'document_data',
             'venture_partner',
-            'other_bidder',
             'bid_value',
             'bid_bond_value',
             'security_type',
             'bid_date',
             'employee_inherit_id',
-            'bid_status',
-            'cause_of_lost',
-            'other_cause',
             'tinymce_content'
         )
 
@@ -383,7 +357,7 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         try:
             return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit': 'not exist'})
+            raise serializers.ValidationError({'employee_inherit': BaseMsg.NOT_EXIST})
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -399,36 +373,23 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         if validate_data.get('opportunity'):
             validate_data['customer'] = validate_data.get('opportunity').customer
-        cause_of_lost = validate_data.get('cause_of_lost', [])
-        other_cause = validate_data.get('other_cause', '')
         bid_bond_value = validate_data.get('bid_bond_value', None)
         security_type = validate_data.get('security_type', 0)
-        if validate_data.get('bid_status') == 2:  # bid lost
-            if len(cause_of_lost) == 0:  # no cause of lost chosen
-                raise serializers.ValidationError(
-                    {'cause_of_lost': 'If bid is lost, must choose at least one cause of lost'})
-        if '4' in cause_of_lost:  # other reason
-            if not other_cause:
-                raise serializers.ValidationError(
-                    {'other_cause': 'If cause of lost is "other reason", must specify the reason'})
-
         if bid_bond_value:
             if security_type == 0:
                 raise serializers.ValidationError(
-                    {'bid_bond_value': 'If there is a bond value, must choose a security type'})
+                    {'bid_bond_value': BiddingMsg.BID_SECURITY_TYPE_REQUIRED})
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         attachment = validated_data.pop('attachment', [])
         venture_partner = validated_data.pop('venture_partner', [])
-        other_bidder = validated_data.pop('other_bidder', [])
         document_data = validated_data.pop('document_data', [])
         update_data = {
             'attachment': attachment,
             'venture_partner': venture_partner,
             'document_data': document_data,
-            'other_bidder': other_bidder
         }
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -460,8 +421,8 @@ class BiddingUpdateResultSerializer(serializers.ModelSerializer):
             try:
                 return Bidding.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
             except Bidding.DoesNotExist:
-                raise serializers.ValidationError({'bidding': 'Bidding not exist'})
-        raise serializers.ValidationError({'bidding': 'Bidding is required'})
+                raise serializers.ValidationError({'bidding': BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({'bidding': BaseMsg.REQUIRED})
 
     def validate(self, validate_data):
         cause_of_lost = validate_data.get('cause_of_lost', [])
@@ -469,11 +430,11 @@ class BiddingUpdateResultSerializer(serializers.ModelSerializer):
         if validate_data.get('bid_status') == 2:  # bid lost
             if len(cause_of_lost) == 0:  # no cause of lost chosen
                 raise serializers.ValidationError(
-                    {'cause_of_lost': 'If bid is lost, must choose at least one cause of lost'})
+                    {'cause_of_lost': BiddingMsg.CAUSE_OF_LOST_REQUIRED})
         if '4' in cause_of_lost:  # other reason
             if not other_cause:
                 raise serializers.ValidationError(
-                    {'other_cause': 'If cause of lost is "other reason", must specify the reason'})
+                    {'other_cause': BiddingMsg.OTHER_REASON_REQUIRED})
         return validate_data
 
     @decorator_run_workflow
