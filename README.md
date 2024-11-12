@@ -140,6 +140,98 @@ b. Sử dụng command: python manage.py runserver 8000
 9. Trong từng models được kế thừa từ shared.models sẽ có các manager truy vấn dữ liệu khác nhau: objects, object_normal,
    object_global, object_private, object_team tùy theo từng yêu cầu mà sử dụng
 
+Lưu ý: Các model có thể kế thừa từ các model abstract khác nhau:
+
+1/ DataAbstractModel: Có các field tenant, company, inherit,... + các field thông tin cơ bản + các field sử dụng cho workflow
+(thường được dùng cho model chính của chức năng)
+
+2/ MasterDataAbstractModel: Có các field tenant, company,... + các field thông tin cơ bản
+(thường được dùng cho model của master data hoặc model quan hệ 1-n với model chính)
+
+3/ BastionFieldAbstractModel: Có các field opportunity, project
+(thường được dùng cho model chính của chức năng có phân quyền opportunity/ project)
+
+4/ SimpleAbstractModel: Có các field thông tin cơ bản
+(thường được dùng cho model quan hệ n-n với model chính)
+
+5/ M2MFilesAbstractModel: Có các field dùng cho attachment
+(thường được dùng cho model quan hệ n-n giữa model chính và attachment)
+
+VD:
+
+```python
+class Quotation(DataAbstractModel):  # main model
+    purchase_requests = models.ManyToManyField(
+        'purchasing.PurchaseRequest',
+        through="QuotationPurchaseRequest",
+        symmetrical=False,
+        blank=True,
+        related_name='quotation_map_purchase_request'
+    )
+	attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='QuotationAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_quotation',
+    ) => lấy các records attachments.Files thông qua bảng *-* QuotationAttachment
+
+	def save():
+       ...
+
+- Quan hệ 1-1, 1-*
+class QuotationProduct(MasterDataAbstractModel):  # sub model
+	quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_product_quotation",
+    	)
+
+	def create(self, data):
+
+	def save():
+
+- Quan hệ *-*:
+class QuotationPurchaseRequest(SimpleAbstractModel):
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_pr_quotation",
+    	)
+    purchase_request = models.ForeignKey(
+        'purchasing.PurchaseRequest',
+        on_delete=models.CASCADE,
+        verbose_name="purchase request",
+        related_name="quotation_pr_pr",
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Purchase Request'
+        verbose_name_plural = 'Quotation Purchase Requests'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+class QuotationAttachment(M2MFilesAbstractModel):
+	quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_attachment_quotation",
+    	)
+	attachment = models.ForeignKey(
+        'attachments.Files',
+        on_delete=models.CASCADE,
+        verbose_name="attachment",
+        related_name="quotation_attachment_attachment",
+    	)
+ ```
+
+- Query thuận: quotation_product = QuotationProduct.objects.filter(quotation=quotation_obj)
+- Query ngược: quotation_product = quotation_obj.quotation_product_quotation.all()
+
 ---
 
 ### URLs: Tuân thủ quy tắc RESTful về đường dẫn điều hướng.

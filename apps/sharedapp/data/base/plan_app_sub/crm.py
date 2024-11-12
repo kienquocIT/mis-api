@@ -395,6 +395,7 @@ QUOTATION_APP_CONFIG = {
     "allow_mail": True,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 SALEORDER_APP_CONFIG = {
@@ -480,6 +481,7 @@ SALEORDER_APP_CONFIG = {
     "allow_print": True,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PRODUCT_APP_CONFIG = {
@@ -753,6 +755,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
     "allow_permit": True,
     "allow_print": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -815,6 +818,7 @@ PAYMENT_APP_CONFIG = {
     "allow_permit": True,
     "allow_print": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -897,6 +901,7 @@ CALL_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 EMAIL_LOG_APP_CONFIG = {
@@ -908,6 +913,7 @@ EMAIL_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 MEETING_LOG_APP_CONFIG = {
@@ -919,6 +925,7 @@ MEETING_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 CONTRACT_APP_CONFIG = {
@@ -1811,6 +1818,7 @@ FINAL_ACCEPTANCE_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 REPORT_PURCHASING_APP_CONFIG = {
@@ -2177,6 +2185,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 BOM_APP_CONFIG = {
@@ -2294,6 +2303,7 @@ WORK_ORDER_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 BIDDING_APP_CONFIG = {
