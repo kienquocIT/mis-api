@@ -5,7 +5,7 @@ from apps.sales.saleorder.models import (
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
     SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer,
-    SOProductWOListSerializer
+    SOProductWOListSerializer, SORecurrenceListSerializer
 )
 from apps.sales.saleorder.serializers.sale_order_config import (
     SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
@@ -295,6 +295,23 @@ class SOProductWOList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="SO Product Work Order List",
         operation_description="Get SO Product Work Order List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SORecurrenceList(BaseListMixin, BaseCreateMixin):
+    queryset = SaleOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'is_recurring': ['exact'],
+    }
+    serializer_list = SORecurrenceListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="SO Recurrence List",
+        operation_description="Get SO SORecurrence List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

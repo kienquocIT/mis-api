@@ -636,3 +636,13 @@ class SOProductWOListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quantity_wo_completed(cls, obj):
         return obj.product_quantity - obj.quantity_wo_remain
+
+
+class SORecurrenceListSerializer(AbstractListSerializerModel):
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
