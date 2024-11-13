@@ -41,7 +41,7 @@ class Recurrence(MasterDataAbstractModel):
         permissions = ()
 
 
-class RecurrenceNext(MasterDataAbstractModel):
+class RecurrenceTask(MasterDataAbstractModel):
     recurrence = models.ForeignKey(
         Recurrence,
         on_delete=models.CASCADE,
@@ -52,8 +52,8 @@ class RecurrenceNext(MasterDataAbstractModel):
     recurrence_action = models.SmallIntegerField(choices=RECURRENCE_ACTION, default=0)
 
     class Meta:
-        verbose_name = 'Recurrence Next'
-        verbose_name_plural = 'Recurrences Next'
+        verbose_name = 'Recurrence Task'
+        verbose_name_plural = 'Recurrences Tasks'
         ordering = ('-date_next',)
         default_permissions = ()
         permissions = ()

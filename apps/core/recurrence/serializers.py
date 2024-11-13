@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Application
-from apps.core.recurrence.models import Recurrence, RecurrenceNext
+from apps.core.recurrence.models import Recurrence, RecurrenceTask
 from apps.shared import BaseMsg
 
 
@@ -9,8 +9,8 @@ class RecurrenceCommonCreate:
     @classmethod
     def create_subs(cls, instance):
         if instance:
-            RecurrenceNext.objects.all().delete()
-            RecurrenceNext.objects.bulk_create([RecurrenceNext(
+            RecurrenceTask.objects.all().delete()
+            RecurrenceTask.objects.bulk_create([RecurrenceTask(
                 recurrence=instance,
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
