@@ -395,6 +395,7 @@ QUOTATION_APP_CONFIG = {
     "allow_mail": True,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 SALEORDER_APP_CONFIG = {
@@ -480,6 +481,7 @@ SALEORDER_APP_CONFIG = {
     "allow_print": True,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PRODUCT_APP_CONFIG = {
@@ -753,6 +755,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
     "allow_permit": True,
     "allow_print": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PAYMENT_APP_CONFIG = {
@@ -815,6 +818,7 @@ PAYMENT_APP_CONFIG = {
     "allow_permit": True,
     "allow_print": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -897,6 +901,7 @@ CALL_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 EMAIL_LOG_APP_CONFIG = {
@@ -908,6 +913,7 @@ EMAIL_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 MEETING_LOG_APP_CONFIG = {
@@ -919,6 +925,7 @@ MEETING_LOG_APP_CONFIG = {
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 CONTRACT_APP_CONFIG = {
@@ -1811,6 +1818,7 @@ FINAL_ACCEPTANCE_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 REPORT_PURCHASING_APP_CONFIG = {
@@ -2177,6 +2185,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 BOM_APP_CONFIG = {
@@ -2263,6 +2272,46 @@ WORK_ORDER_APP_CONFIG = {
     "code": "workorder",
     "model_code": "workorder",
     "app_label": "production",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_opportunity": True,
+}
+
+BIDDING_APP_CONFIG = {
+    "id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",
+    "title": "Bidding",
+    "code": "bidding",
+    "model_code": "bidding",
+    "app_label": "bidding",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
@@ -2571,6 +2620,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "b698df99-3e8e-4183-ba5d-0eb55aeba1b2": ApplicationConfigFrame(**WORK_ORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "ad1e1c4e-2a7e-4b98-977f-88d069554657": ApplicationConfigFrame(**BIDDING_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

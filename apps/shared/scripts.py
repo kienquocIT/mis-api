@@ -26,7 +26,7 @@ from apps.sales.cashoutflow.models import (
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
-    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods,
+    ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
 )
 from . import MediaForceAPI
 
@@ -54,7 +54,7 @@ from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHand
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting,
+    OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
@@ -2393,4 +2393,57 @@ def parse_contact_data_quo_so():
         } if order.contact else {}
         order.save(update_fields=['contact_data'])
     print('parse_contact_data_quo_so done.')
+    return True
+
+
+def update_activities_tenant_and_company():
+    for item in OpportunityCallLog.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityEmail.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityMeeting.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    for item in OpportunityActivityLogs.objects.all():
+        if item.opportunity:
+            item.tenant = item.opportunity.tenant
+            item.company = item.opportunity.company
+            item.save(update_fields=['tenant', 'company'])
+    print('Done :))')
+
+
+def update_default_document_types():
+    document_type_data = [
+        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1},
+        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1},
+        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1},
+        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1},
+        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1},
+        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1},
+        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1},
+    ]
+    company_obj_list = Company.objects.all()
+    bulk_data = []
+    for company_obj in company_obj_list:
+        if not DocumentType.objects.filter(company=company_obj, is_default=1).exists():
+            for item in document_type_data:
+                bulk_data.append(
+                    DocumentType(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        **item,
+                    )
+                )
+    if len(bulk_data) > 0:
+        DocumentType.objects.bulk_create(bulk_data)
+    print('Done :))')
     return True
