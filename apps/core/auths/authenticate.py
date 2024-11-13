@@ -20,7 +20,6 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         try:
             user = self.user_model.objects.select_related('employee_current').get(
                 **{api_settings.USER_ID_FIELD: user_id},
-                force_cache=True, cache_timeout=60 * 60  # 1 hours
             )
         except self.user_model.DoesNotExist:
             raise AuthenticationFailed(code="user_not_found")

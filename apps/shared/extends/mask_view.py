@@ -174,7 +174,7 @@ class EmployeeAttribute:
             self._manager_of_group_ids = [
                 str(x) for x in self.model_hr_group.objects.filter(
                     Q(first_manager_id=self.employee_current_id)
-                ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+                ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             ]
         return self._manager_of_group_ids
 
@@ -188,7 +188,7 @@ class EmployeeAttribute:
         ):
             employee_ids = self.model_hr_employee.objects.filter(
                 group_id__in=self.manager_of_group_ids,
-            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             self._employee_staff_ids = list(
                 set(
                     [
@@ -217,7 +217,7 @@ class EmployeeAttribute:
         if not self._employee_same_group_ids and self.group_id_of_employee_current:
             employee_ids = self.model_hr_employee.objects.filter(
                 group_id=self.group_id_of_employee_current
-            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             self._employee_same_group_ids = list(
                 set(
                     [
@@ -252,7 +252,7 @@ class EmployeeAttribute:
                     'title': obj.title,
                     'permissions_parsed': obj.permissions_parsed if obj.permissions_parsed else {},
                 }
-                for obj in self.employee_current.role.all().cache()
+                for obj in self.employee_current.role.all()
             ]
         return self._roles
 
@@ -858,7 +858,7 @@ class PermissionController:
             if label_code and model_code and perm_code:
                 app_obj_tmp = DisperseModel(app_model='base.application').get_model().objects.filter(
                     app_label=label_code, model_code=model_code,
-                ).cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10).first()
+                )
                 if settings.DEBUG_PERMIT:
                     print('=> Application Object      :', app_obj_tmp, label_code, model_code, perm_code)
                 if app_obj_tmp and app_obj_tmp.permit_mapping and perm_code in app_obj_tmp.permit_mapping:
