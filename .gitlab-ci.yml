@@ -3,7 +3,7 @@
 image: localhost:5000/gitlab-ci-api
 
 services:
-  - name: mysql:8
+  - name: localhost:5000/mysql:8
     alias: db
     environment:
       MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
