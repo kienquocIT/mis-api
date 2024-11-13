@@ -153,20 +153,6 @@ class EntryQuerySet(models.query.QuerySet):
         )
         return super().get(*args, **kwargs_converted)
 
-    # def get(self, *args, **kwargs):
-    #     # force_cache = kwargs.pop('force_cache', False)
-    #     # if force_cache and not args and kwargs:
-    #     #     key = self.table_key_cache(**kwargs)
-    #     #     if key:
-    #     #         cache_timeout = kwargs.pop('cache_timeout', 60 * 60)
-    #     #         data = Caching().get(key)
-    #     #         if data and isinstance(data, models.Model):
-    #     #             return data
-    #     #         data = super().get(*args, **kwargs)
-    #     #         Caching().set(key, data, cache_timeout)
-    #     #         return data
-    #     return super().get(*args, **kwargs)
-
 
 class NormalManager(models.Manager):
     """

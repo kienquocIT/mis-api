@@ -685,7 +685,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 obj = queryset.get(
                     **filter_kwargs,
                     **field_hidden,
-                    force_cache=self.use_cache_object
                 )
             else:
                 obj = queryset.get(
