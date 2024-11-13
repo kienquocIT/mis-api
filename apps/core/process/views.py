@@ -63,6 +63,7 @@ class ProcessConfigList(BaseListMixin, BaseCreateMixin):
         'for_opp': ['exact'],
         'employee_created': ['exact', 'in'],
         'is_active': ['exact'],
+        'id': ['in'],
     }
 
     @swagger_auto_schema(operation_summary='Process Configurate List')
@@ -175,7 +176,7 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
 
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         if instance and isinstance(instance, ProcessStageApplication):
-            state = ProcessRuntimeControl.check_application_state_done(stage_app_obj=instance)
+            state = ProcessRuntimeControl.check_application_can_state_done(stage_app_obj=instance)
             if state:
                 return True
             raise serializers.ValidationError(

@@ -17,6 +17,10 @@ RETURN_ADVANCE_METHOD = [
 
 
 class ReturnAdvance(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "65d36757-557e-4534-87ea-5579709457d7"
+
     advance_payment = models.ForeignKey(
         'cashoutflow.AdvancePayment',
         on_delete=models.CASCADE,

@@ -469,7 +469,7 @@ SYNC_2FA_ENABLED = os.environ.get('SYNC_2FA_ENABLED', '1') in [1, '1']
 JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
 JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
