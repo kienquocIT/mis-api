@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 from copy import deepcopy
 from functools import wraps
@@ -22,6 +23,9 @@ from .models import DisperseModel
 from .exceptions import Empty200, handle_exception_all_view
 from ..permissions import FilterComponent, FilterComponentList
 from ..translations.base import PermissionMsg
+
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'mask_view',
@@ -856,9 +860,17 @@ class PermissionController:
             perm_code = config_check_permit.get('perm_code', None)
             application_obj = None
             if label_code and model_code and perm_code:
-                app_obj_tmp = DisperseModel(app_model='base.application').get_model().objects.filter(
-                    app_label=label_code, model_code=model_code,
-                )
+                app_obj_tmp = None
+                app_model_cls = DisperseModel(app_model='base.application').get_model()
+                try:
+                    app_obj_tmp = app_model_cls.objects.get(
+                        app_label=label_code, model_code=model_code,
+                    )
+                except app_model_cls.DoesNotExist:
+                    logger.error(
+                        'Get application object by label and model does not exist: app_label=%s , model_code=%s',
+                        label_code, model_code,
+                    )
                 if settings.DEBUG_PERMIT:
                     print('=> Application Object      :', app_obj_tmp, label_code, model_code, perm_code)
                 if app_obj_tmp and app_obj_tmp.permit_mapping and perm_code in app_obj_tmp.permit_mapping:
