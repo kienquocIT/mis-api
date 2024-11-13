@@ -2,11 +2,21 @@
 
 image: localhost:5000/gitlab-ci-api
 
+services:
+  - name: mysql:8
+    alias: db
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
+      MYSQL_DATABASE: $MYSQL_DB
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASS
+
 variables:
-  MYSQL_DATABASE: $MYSQL_DB
-  MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
-  MYSQL_USER: $MYSQL_USER
-  MYSQL_PASSWORD: $MYSQL_PASS
+  DB_HOST: "db"
+  DB_PORT: "3306"
+  DB_NAME: $MYSQL_DB
+  DB_USER: $MYSQL_USER
+  DB_PASSWORD: $MYSQL_PASS
 
 before_script:
 #  # uncomment below commented when change image to global hub "python:3.11"
