@@ -5,6 +5,7 @@ from apps.shared import MasterDataAbstractModel, RECURRENCE_PERIOD, RECURRENCE_S
 
 class Recurrence(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE)
+    application_data = models.JSONField(default=dict, help_text="data json of application")
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
@@ -30,7 +31,7 @@ class Recurrence(MasterDataAbstractModel):
 
     next_recurrences = models.JSONField(default=list, help_text="list date (YYYY-MM-DD) of next recurrences")
 
-    status = models.SmallIntegerField(choices=RECURRENCE_STATUS, default=0)
+    recurrence_status = models.SmallIntegerField(choices=RECURRENCE_STATUS, default=0)
 
     class Meta:
         verbose_name = 'Recurrence'
