@@ -685,7 +685,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 obj = queryset.get(
                     **filter_kwargs,
                     **field_hidden,
-                    force_cache=self.use_cache_object
                 )
             else:
                 obj = queryset.get(
@@ -863,7 +862,7 @@ class BaseListMixin(BaseMixin):
             if self.use_cache_minimal and self.query_extend_base_model:
                 queryset = self.filter_queryset(
                     self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
-                ).cache()
+                )
             else:
                 queryset = self.filter_queryset(
                     self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
@@ -872,7 +871,7 @@ class BaseListMixin(BaseMixin):
             if self.use_cache_queryset and self.query_extend_base_model:
                 queryset = self.filter_queryset(
                     self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
-                ).cache()
+                )
             else:
                 queryset = self.filter_queryset(
                     self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
