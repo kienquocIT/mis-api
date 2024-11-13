@@ -4,8 +4,6 @@ from crum import get_current_user
 
 __all__ = ['NormalManager']
 
-from .caching import Caching
-
 
 DEFAULT__FILL__MAP_KEY = {
     'fill__tenant': 'tenant_id',
@@ -124,9 +122,6 @@ class EntryQuerySet(models.query.QuerySet):
         )
         return self.filter(*args, **kwargs_converted)
 
-    def cache(self, **kwargs):
-        return self
-
     def get_current(
             self, *args,
             fill__tenant: bool = False, fill__company: bool = False, fill__space: bool = False,
@@ -158,19 +153,19 @@ class EntryQuerySet(models.query.QuerySet):
         )
         return super().get(*args, **kwargs_converted)
 
-    def get(self, *args, **kwargs):
-        force_cache = kwargs.pop('force_cache', False)
-        if force_cache and not args and kwargs:
-            key = self.table_key_cache(**kwargs)
-            if key:
-                cache_timeout = kwargs.pop('cache_timeout', 60 * 60)
-                data = Caching().get(key)
-                if data and isinstance(data, models.Model):
-                    return data
-                data = super().get(*args, **kwargs)
-                Caching().set(key, data, cache_timeout)
-                return data
-        return super().get(*args, **kwargs)
+    # def get(self, *args, **kwargs):
+    #     # force_cache = kwargs.pop('force_cache', False)
+    #     # if force_cache and not args and kwargs:
+    #     #     key = self.table_key_cache(**kwargs)
+    #     #     if key:
+    #     #         cache_timeout = kwargs.pop('cache_timeout', 60 * 60)
+    #     #         data = Caching().get(key)
+    #     #         if data and isinstance(data, models.Model):
+    #     #             return data
+    #     #         data = super().get(*args, **kwargs)
+    #     #         Caching().set(key, data, cache_timeout)
+    #     #         return data
+    #     return super().get(*args, **kwargs)
 
 
 class NormalManager(models.Manager):

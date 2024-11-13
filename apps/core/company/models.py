@@ -412,7 +412,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
     def all_user_of_company(cls, company_id: Union[UUID, str]):
         return list(
             set(
-                cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
+                cls.objects.filter(company_id=company_id).values_list('user_id', flat=True)
             )
         )
 
