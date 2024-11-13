@@ -309,6 +309,11 @@ class SORecurrenceList(BaseListMixin, BaseCreateMixin):
     }
     serializer_list = SORecurrenceListSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+        )
+
     @swagger_auto_schema(
         operation_summary="SO Recurrence List",
         operation_description="Get SO SORecurrence List",
