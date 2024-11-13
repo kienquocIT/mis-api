@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, RECURRENCE_PERIOD, RECURRENCE_STATUS
+from apps.shared import MasterDataAbstractModel, RECURRENCE_PERIOD, RECURRENCE_STATUS, RECURRENCE_ACTION
 
 
 class Recurrence(MasterDataAbstractModel):
@@ -37,5 +37,23 @@ class Recurrence(MasterDataAbstractModel):
         verbose_name = 'Recurrence'
         verbose_name_plural = 'Recurrences'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class RecurrenceNext(MasterDataAbstractModel):
+    recurrence = models.ForeignKey(
+        Recurrence,
+        on_delete=models.CASCADE,
+        verbose_name="Recurrence",
+        related_name="recurrence_next_recurrence",
+    )
+    date_next = models.DateField(null=True, help_text="next recurrence date")
+    recurrence_action = models.SmallIntegerField(choices=RECURRENCE_ACTION, default=0)
+
+    class Meta:
+        verbose_name = 'Recurrence Next'
+        verbose_name_plural = 'Recurrences Next'
+        ordering = ('-date_next',)
         default_permissions = ()
         permissions = ()

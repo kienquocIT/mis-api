@@ -1,8 +1,23 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Application
-from apps.core.recurrence.models import Recurrence
+from apps.core.recurrence.models import Recurrence, RecurrenceNext
 from apps.shared import BaseMsg
+
+
+class RecurrenceCommonCreate:
+    @classmethod
+    def create_subs(cls, instance):
+        if instance:
+            RecurrenceNext.objects.all().delete()
+            RecurrenceNext.objects.bulk_create([RecurrenceNext(
+                recurrence=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                employee_created_id=instance.employee_created_id,
+                date_next=date_next,
+            ) for date_next in instance.next_recurrences])
+        return True
 
 
 # RECURRENCE BEGIN
@@ -90,6 +105,7 @@ class RecurrenceCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         recurrence = Recurrence.objects.create(**validated_data)
+        RecurrenceCommonCreate.create_subs(instance=recurrence)
         return recurrence
 
 
@@ -130,4 +146,5 @@ class RecurrenceUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        RecurrenceCommonCreate.create_subs(instance=instance)
         return instance

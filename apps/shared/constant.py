@@ -402,3 +402,9 @@ RECURRENCE_STATUS = (
     (0, 'Active'),
     (1, 'Expired'),
 )
+
+RECURRENCE_ACTION = (
+    (0, 'Wait'),
+    (1, 'Done'),
+    (2, 'Skip'),
+)
