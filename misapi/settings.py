@@ -725,7 +725,25 @@ DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'
 CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP', '0') in ["1", 1]
 if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
     # change file db of sqlite3 from default to file sqlite3
-    DATABASES['default'] = DATABASES['mockup_db_ci']
+    # DATABASES['default'] = DATABASES['mockup_db_ci']
+    DATABASES.update(
+        {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': os.environ.get('DB_NAME'),
+                'USER': os.environ.get('DB_USER'),
+                'PASSWORD': os.environ.get('DB_PASSWORD'),
+                'HOST': os.environ.get('DB_HOST'),
+                'PORT': os.environ.get('DB_PORT'),
+                'OPTIONS': {
+                    'charset': 'utf8mb4',
+                },
+                "TEST": {
+                    "NAME": os.environ.get('DB_NAME'),
+                },
+            }
+        }
+    )
 
 
 # Display config about DB, Cache, CELERY,...
