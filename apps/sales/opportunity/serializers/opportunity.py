@@ -213,6 +213,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
             "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
             "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",  # BOM
+            "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
