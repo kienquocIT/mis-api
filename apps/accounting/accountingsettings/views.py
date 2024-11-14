@@ -28,7 +28,6 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.pagination_class.page_size = -1
@@ -40,8 +39,8 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
         request_body=ChartOfAccountsCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='create',
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -66,7 +65,6 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -77,8 +75,8 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
         request_body=DefaultAccountDefinitionCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='create',
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
