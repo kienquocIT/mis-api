@@ -126,7 +126,7 @@ INSTALLED_APPS = \
         # authenticate
         'django_otp',
     ] + [
-        'apps.accounting.accountchart'
+        'apps.accounting.accountingsettings'
     ]
 
 MIDDLEWARE = [

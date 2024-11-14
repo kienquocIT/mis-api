@@ -4,9 +4,9 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
-__all__ = ['AccountingAccount']
+__all__ = ['ChartOfAccounts']
 
-ACC_TYPE = [
+CHART_OF_ACCOUNT_TYPE = [
     (0, _("Off-table accounts")),
     (1, _("Assets")),
     (2, _("Liabilities")),
@@ -18,14 +18,20 @@ ACC_TYPE = [
     (8, _("Income summary")),
 ]
 
+DEFAULT_ACCOUNT_DEFINITION_TYPE = [
+    (0, _('Sale')),
+    (1, _('Purchasing')),
+    (2, _('Inventory')),
+]
 
-class AccountingAccount(MasterDataAbstractModel):
+
+class ChartOfAccounts(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
     acc_code = models.CharField(max_length=100)
     acc_name = models.CharField(max_length=100)
     foreign_acc_name = models.CharField(max_length=100)
     acc_status = models.BooleanField(default=True)
-    acc_type = models.SmallIntegerField(choices=ACC_TYPE)
+    acc_type = models.SmallIntegerField(choices=CHART_OF_ACCOUNT_TYPE)
     parent_account = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     has_child = models.BooleanField(default=False)
     level = models.IntegerField(default=1)
@@ -36,9 +42,25 @@ class AccountingAccount(MasterDataAbstractModel):
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'Main Account'
-        verbose_name_plural = 'Main Accounts'
+        verbose_name = 'Chart Of Accounts'
+        verbose_name_plural = 'Chart Of Accounts'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+
+class DefaultAccountDefinition(MasterDataAbstractModel):
+    account_mapped = models.ForeignKey(ChartOfAccounts, on_delete=models.CASCADE)
+    type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DEFINITION_TYPE, default=0)
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Default Account Definition'
+        verbose_name_plural = 'Default Account Definition'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 

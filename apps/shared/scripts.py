@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 
-from django.utils import timezone
+from pylint.checkers.utils import is_default_argument
 
 from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber
@@ -32,42 +32,34 @@ from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
-from ..accounting.accountchart.models import AccountingAccount
+from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
-    Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
-    PlanRole, PlanRoleApp,
+    Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
-from ..masterdata.saledata.serializers import PaymentTermListSerializer
-from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
-from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
-from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
-from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
-    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
-from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
+from ..sales.delivery.utils import DeliFinishHandler
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceipt, \
+    GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnProductDetail, InventoryAdjustment
+from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import LeadHint
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
-from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
-    PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrder
 from ..sales.purchasing.utils import POFinishHandler
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
-from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
+from ..sales.report.models import ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
-    SaleOrderAppConfig, SaleOrderPaymentStage
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus
@@ -3063,7 +3055,7 @@ class Accounting:
             level1_bulk_create = []
             level2_bulk_create = []
             level3_bulk_create = []
-            AccountingAccount.objects.filter(company=company, tenant=company.tenant).delete()
+            ChartOfAccounts.objects.filter(company=company, tenant=company.tenant).delete()
             for table in list_table:
                 len1 = len(list_table_data[table]['acc_code_list'])
                 len2 = len(list_table_data[table]['acc_name_list'])
@@ -3075,7 +3067,7 @@ class Accounting:
                     order = 0
                     for i in range(len(list_table_data[table]['acc_code_list'])):
                         if len(str(list_table_data[table]['acc_code_list'][i])) == 3:
-                            item = AccountingAccount(
+                            item = ChartOfAccounts(
                                 order=order,
                                 acc_code=list_table_data[table]['acc_code_list'][i],
                                 acc_name=list_table_data[table]['acc_name_list'][i],
@@ -3089,7 +3081,7 @@ class Accounting:
                             )
                             level1_bulk_create.append(item)
                         elif len(str(list_table_data[table]['acc_code_list'][i])) == 4:
-                            item = AccountingAccount(
+                            item = ChartOfAccounts(
                                 order=order,
                                 parent_account=level1_bulk_create[-1],
                                 acc_code=list_table_data[table]['acc_code_list'][i],
@@ -3105,7 +3097,7 @@ class Accounting:
                             level1_bulk_create[-1].has_child = True
                             level2_bulk_create.append(item)
                         elif len(str(list_table_data[table]['acc_code_list'][i])) == 5:
-                            item = AccountingAccount(
+                            item = ChartOfAccounts(
                                 order=order,
                                 parent_account=level2_bulk_create[-1],
                                 acc_code=list_table_data[table]['acc_code_list'][i],
@@ -3121,8 +3113,89 @@ class Accounting:
                             level2_bulk_create[-1].has_child = True
                             level3_bulk_create.append(item)
                         order += 1
-            AccountingAccount.objects.bulk_create(level1_bulk_create)
-            AccountingAccount.objects.bulk_create(level2_bulk_create)
-            AccountingAccount.objects.bulk_create(level3_bulk_create)
+            ChartOfAccounts.objects.bulk_create(level1_bulk_create)
+            ChartOfAccounts.objects.bulk_create(level2_bulk_create)
+            ChartOfAccounts.objects.bulk_create(level3_bulk_create)
             print(f'Done for {company.title}')
         return True
+
+    @staticmethod
+    def generate_default_account_definition():
+        sale_type_data = [
+            'Phải thu của khách hàng',
+            'Thu tiền bán hàng - tiền mặt',
+            'Thu tiền bán hàng - chuyển khoản',
+            'Doanh thu bán hàng hóa',
+            'Thuế giá trị gia tăng đầu ra'
+        ]
+        purchasing_type_data = [
+            'Phải trả cho nhà cung cấp',
+            'Trả tiền mua hàng - tiền mặt',
+            'Trả tiền mua hàng - chuyển khoản',
+            'Thuế giá trị gia tăng đầu vào'
+        ]
+        inventory_type_data = [
+            'Xuất kho bán hàng hóa',
+            'Giá vốn hàng bán',
+            'Hàng gửi đi bán'
+        ]
+        for company in Company.objects.all():
+            account_mapped_data_sale = [
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1112').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='5111').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='33311').first(),
+            ]
+            account_mapped_data_purchasing = [
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1112').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1331').first(),
+            ]
+            account_mapped_data_inventory = [
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1561').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='157').first(),
+            ]
+            if None in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
+                print(f'Create data failed in {company.title}')
+            else:
+                bulk_info = []
+                for i in range(len(sale_type_data)):
+                    bulk_info.append(
+                        DefaultAccountDefinition(
+                            company=company,
+                            tenant=company.tenant,
+                            title=sale_type_data[i],
+                            account_mapped=account_mapped_data_sale[i],
+                            type=0,
+                            is_default=True
+                        )
+                    )
+                for i in range(len(purchasing_type_data)):
+                    bulk_info.append(
+                        DefaultAccountDefinition(
+                            company=company,
+                            tenant=company.tenant,
+                            title=purchasing_type_data[i],
+                            account_mapped=account_mapped_data_purchasing[i],
+                            type=1,
+                            is_default=True
+                        )
+                    )
+                for i in range(len(inventory_type_data)):
+                    bulk_info.append(
+                        DefaultAccountDefinition(
+                            company=company,
+                            tenant=company.tenant,
+                            title=inventory_type_data[i],
+                            account_mapped=account_mapped_data_inventory[i],
+                            type=2,
+                            is_default=True
+                        )
+                    )
+                DefaultAccountDefinition.objects.filter(company=company, tenant=company.tenant).delete()
+                DefaultAccountDefinition.objects.bulk_create(bulk_info)
+                print(f'Create data done in {company.title}')
+        print('Done :))')
