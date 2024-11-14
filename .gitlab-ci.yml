@@ -23,6 +23,16 @@ before_script:
 #  - pip install --upgrade pip
   - pip install -r req.txt
 
+  # Đợi dịch vụ MySQL khởi động (nếu cần)
+  - echo "Waiting for MySQL to be ready..."
+  - until mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" -e "SELECT 1"; do
+      echo "Waiting for database to be ready...";
+      sleep 2;
+    done
+
+  # Chạy init.sql vào MySQL (sử dụng mysql client để tải tệp SQL vào cơ sở dữ liệu)
+  - echo "Initializing database with init.sql..."
+  - mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./init.sql
 
 #  - pylint_check
 #  - migrations_init
