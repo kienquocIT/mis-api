@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import Union
 
@@ -30,6 +31,9 @@ from apps.shared import (
     ResponseController, TypeCheck,
 )
 from apps.shared.media_cloud_apis import APIUtil
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeUploadAvatar(BaseUpdateMixin):
@@ -76,12 +80,16 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     filterset_class = EmployeeListFilter
 
     serializer_list = EmployeeListSerializer
+    serializer_list_minimal = EmployeeListAllSerializer
     serializer_detail = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
     list_hidden_field = ('tenant_id', 'company_id')
     create_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
+        is_minimal = self.request.query_params.dict().get('is_minimal', None)
+        if is_minimal:
+            return super().get_queryset().select_related('group')
         return super().get_queryset().select_related('group').prefetch_related('role')
 
     def error_auth_require(self):
@@ -364,6 +372,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
         label_code='hr', model_code='employee', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        logger.info('EmployeeDetail.put: %s', request.data)
         return self.update(request, *args, **kwargs)
 
 

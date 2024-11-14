@@ -43,12 +43,13 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        main_queryset = super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",
@@ -91,6 +92,7 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "quotation",
             "customer__payment_term_customer_mapped",
             "employee_inherit",
+            "process",
         )
 
     @swagger_auto_schema(

@@ -302,6 +302,10 @@ msgstr "Báo cáo mua hàng"
 msgid "Goods Stock Plan"
 msgstr "Kế hoạch nhập hàng"
 
+#
+msgid "Does not exist"
+msgstr "Không tồn tại"
+
 #: .\apps\shared\translations\account.py:5
 msgid "User does not exist."
 msgstr "Người dùng không tồn tại."
@@ -1176,7 +1180,7 @@ msgstr "Ngày Công việc không khớp với ngày của Nhóm"
 
 #
 msgid "Project Baseline"
-msgstr "Dự án Đường cơ sở"
+msgstr "Trình phê duyệt dự án"
 
 #
 msgid "Error! Date end larger than Date start"
@@ -1345,3 +1349,19 @@ msgstr "Lĩnh vực"
 #
 msgid "Payment term"
 msgstr "Điều khoản thanh toán"
+
+#
+msgid "Documents must have attachment"
+msgstr "Các tài liệu phải có file đính kèm"
+
+#
+msgid "If there is a bond value, must choose a security type"
+msgstr "Nếu có giá trị bảo lãnh dự thầu, cần chọn kiểu bảo lãnh "
+
+#
+msgid "If bid status is lost, must choose at least one cause of lost"
+msgstr "Nếu thầu thua, cần chọn lí do thua"
+
+#
+msgid "If cause of lost is 'other reason', must specify the reason"
+msgstr "Nếu thầu thua do lí do khác, cần cụ thể lí do"

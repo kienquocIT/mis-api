@@ -171,6 +171,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         related_name="quotation_contact",
         null=True
     )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     sale_person = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
@@ -258,6 +259,10 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'b9650500-aba7-44e3-b6e0-2542622702a3'
 
     @classmethod
     def find_max_number(cls, codes):

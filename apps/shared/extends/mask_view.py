@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterable
 from copy import deepcopy
 from functools import wraps
@@ -22,6 +23,9 @@ from .models import DisperseModel
 from .exceptions import Empty200, handle_exception_all_view
 from ..permissions import FilterComponent, FilterComponentList
 from ..translations.base import PermissionMsg
+
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'mask_view',
@@ -174,7 +178,7 @@ class EmployeeAttribute:
             self._manager_of_group_ids = [
                 str(x) for x in self.model_hr_group.objects.filter(
                     Q(first_manager_id=self.employee_current_id)
-                ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+                ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             ]
         return self._manager_of_group_ids
 
@@ -188,7 +192,7 @@ class EmployeeAttribute:
         ):
             employee_ids = self.model_hr_employee.objects.filter(
                 group_id__in=self.manager_of_group_ids,
-            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             self._employee_staff_ids = list(
                 set(
                     [
@@ -217,7 +221,7 @@ class EmployeeAttribute:
         if not self._employee_same_group_ids and self.group_id_of_employee_current:
             employee_ids = self.model_hr_employee.objects.filter(
                 group_id=self.group_id_of_employee_current
-            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
+            ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True)
             self._employee_same_group_ids = list(
                 set(
                     [
@@ -252,7 +256,7 @@ class EmployeeAttribute:
                     'title': obj.title,
                     'permissions_parsed': obj.permissions_parsed if obj.permissions_parsed else {},
                 }
-                for obj in self.employee_current.role.all().cache()
+                for obj in self.employee_current.role.all()
             ]
         return self._roles
 
@@ -856,9 +860,17 @@ class PermissionController:
             perm_code = config_check_permit.get('perm_code', None)
             application_obj = None
             if label_code and model_code and perm_code:
-                app_obj_tmp = DisperseModel(app_model='base.application').get_model().objects.filter(
-                    app_label=label_code, model_code=model_code,
-                ).cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10).first()
+                app_obj_tmp = None
+                app_model_cls = DisperseModel(app_model='base.application').get_model()
+                try:
+                    app_obj_tmp = app_model_cls.objects.get(
+                        app_label=label_code, model_code=model_code,
+                    )
+                except app_model_cls.DoesNotExist:
+                    logger.error(
+                        'Get application object by label and model does not exist: app_label=%s , model_code=%s',
+                        label_code, model_code,
+                    )
                 if settings.DEBUG_PERMIT:
                     print('=> Application Object      :', app_obj_tmp, label_code, model_code, perm_code)
                 if app_obj_tmp and app_obj_tmp.permit_mapping and perm_code in app_obj_tmp.permit_mapping:

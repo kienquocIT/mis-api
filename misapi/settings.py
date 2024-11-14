@@ -82,6 +82,7 @@ INSTALLED_APPS = \
         'apps.core.mailer',  # mail templates & rules
         'apps.core.diagram',  # diagram for apps
         'apps.core.forms',  # form
+        'apps.core.chatbot',  # chatbot AI
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -118,6 +119,7 @@ INSTALLED_APPS = \
         'apps.sales.distributionplan',
         'apps.sales.contract',
         'apps.sales.production',
+        'apps.sales.bidding',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -135,6 +137,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.shared.extends.middleware.AllowedMethodMiddleware',
 ]
 #
 # Author: Paul McLanahan <pmac@mozilla.com>
@@ -417,8 +420,12 @@ DJANGO_TEST_ARGS = ['--keepdb']
 
 # REST API & JWT
 REST_FRAMEWORK = {
+    'DEFAULT_METADATA_CLASS': None,
     'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 'rest_framework.permissions.AllowAny',
+        'apps.shared.extends.drf.AllowAnyDisableOptionsPermission',
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'apps.core.auths.authenticate.MyCustomJWTAuthenticate',
@@ -447,6 +454,8 @@ REST_FRAMEWORK = {
         'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
     }
 }
+if DEBUG is True:
+    REST_FRAMEWORK['DEFAULT_METADATA_CLASS'] = 'rest_framework.metadata.SimpleMetadata'
 CUSTOM_PAGE_MAXIMUM_SIZE = 1000
 
 AUTH_USER_MODEL = 'account.User'
@@ -463,7 +472,7 @@ SYNC_2FA_ENABLED = os.environ.get('SYNC_2FA_ENABLED', '1') in [1, '1']
 JWT_KEY_2FA_ENABLED = 'is_2fa_enabled'
 JWT_KEY_2FA_VERIFIED = 'is_2fa_verified'
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -718,7 +727,25 @@ DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'
 CICD_ENABLED__USE_DB_MOCKUP = os.environ.get('CICD_ENABLED__USE_DB_MOCKUP', '0') in ["1", 1]
 if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
     # change file db of sqlite3 from default to file sqlite3
-    DATABASES['default'] = DATABASES['mockup_db_ci']
+    # DATABASES['default'] = DATABASES['mockup_db_ci']
+    DATABASES.update(
+        {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': os.environ.get('DB_NAME'),
+                'USER': os.environ.get('DB_USER'),
+                'PASSWORD': os.environ.get('DB_PASSWORD'),
+                'HOST': os.environ.get('DB_HOST'),
+                'PORT': os.environ.get('DB_PORT'),
+                'OPTIONS': {
+                    'charset': 'utf8mb4',
+                },
+                "TEST": {
+                    "NAME": os.environ.get('DB_NAME'),
+                },
+            }
+        }
+    )
 
 
 # Display config about DB, Cache, CELERY,...

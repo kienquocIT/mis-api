@@ -28,7 +28,7 @@ urlpatterns = [
     path('workflow/', include('apps.core.workflow.urls')),
     path('task-bg/<str:pk>', TaskBackgroundState.as_view(), name='TaskBackgroundState'),
     path('log/', include('apps.core.log.urls')),
-    path('sale-process/', include('apps.core.process.urls')),
+    path('process/', include('apps.core.process.urls')),
     path('site/public/<str:company_sub_domain>/', include('apps.core.web_builder.urls.public')),
     path('site/config/', include('apps.core.web_builder.urls.config')),
     path('attachment/', include('apps.core.attachments.urls')),
@@ -38,4 +38,5 @@ urlpatterns = [
     path('import-data/', include('apps.core.urls_import')),
     path('diagram/', include('apps.core.diagram.urls')),
     path('form/', include('apps.core.forms.urls')),
+    path('chatbot/', include('apps.core.chatbot.urls')),
 ]

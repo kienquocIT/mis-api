@@ -212,6 +212,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'group': ['exact', 'in'],
+        'group__code': ['exact'],
     }
 
     def get_queryset(self):
@@ -280,19 +281,20 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        main_queryset = super().get_queryset().select_related(
             'general_product_category',
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'inventory_uom',
+            'inventory_uom'
         ).prefetch_related(
             'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
-                queryset=ProductPriceList.objects.select_related('price_list'),
-            ),
+                queryset=ProductPriceList.objects.select_related('price_list')
+            )
         )
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Product list",

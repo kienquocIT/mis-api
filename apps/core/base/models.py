@@ -203,6 +203,9 @@ class Application(CoreAbstractModel):
     allow_import = models.BooleanField(default=False, verbose_name='Allow import data')
     allow_print = models.BooleanField(default=False, verbose_name='Allow print template')
     allow_mail = models.BooleanField(default=False, verbose_name='Allow mail template')
+    allow_process = models.BooleanField(default=False, verbose_name='Allow use at process')
+    allow_opportunity = models.BooleanField(default=False, verbose_name='Allow mapping opportunity')
+    allow_project = models.BooleanField(default=False, verbose_name='Allow mapping project')
 
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'

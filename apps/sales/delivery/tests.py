@@ -302,7 +302,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'code',
                 'opportunity',
                 'customer',
-                'contact',
+                'contact_data',
                 'sale_person',
                 'payment_term_id',
                 'payment_term_data',
@@ -343,6 +343,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                #
+                'process',
             ],
             check_sum_second=True,
         )
@@ -410,7 +412,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
-            contact_id=sale_order['contact']['id'],
+            contact_id=sale_order['contact_data'].get('id', None),
             kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,
             delivery_option=0 if not self.config['is_partial_ship'] else 1,

@@ -66,6 +66,7 @@ class EmployeeListAllSerializer(serializers.ModelSerializer):
             'email',
             'avatar_img',
             'group',
+            'is_active',
         )
 
     @classmethod

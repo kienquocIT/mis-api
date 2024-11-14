@@ -89,6 +89,10 @@ class ConfigOrderLongSale(SimpleAbstractModel):
 
 # BEGIN SALE ORDER
 class SaleOrder(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -112,6 +116,7 @@ class SaleOrder(DataAbstractModel):
         related_name="sale_order_contact",
         null=True
     )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     sale_person = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
