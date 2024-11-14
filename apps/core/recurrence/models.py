@@ -33,6 +33,12 @@ class Recurrence(MasterDataAbstractModel):
 
     recurrence_status = models.SmallIntegerField(choices=RECURRENCE_STATUS, default=0)
 
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='recurrence_employee_inherit',
+    )
+
     class Meta:
         verbose_name = 'Recurrence'
         verbose_name_plural = 'Recurrences'
@@ -50,6 +56,12 @@ class RecurrenceTask(MasterDataAbstractModel):
     )
     date_next = models.DateField(null=True, help_text="next recurrence date")
     recurrence_action = models.SmallIntegerField(choices=RECURRENCE_ACTION, default=0)
+
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='recurrence_task_employee_inherit',
+    )
 
     class Meta:
         verbose_name = 'Recurrence Task'
