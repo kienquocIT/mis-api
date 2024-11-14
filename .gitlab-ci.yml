@@ -22,7 +22,7 @@ before_script:
 #  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
 #  - pip install --upgrade pip
   - pip install -r req.txt
-  - apt-get update && apt-get install -y default-mysql-client
+# - apt-get update && apt-get install -y default-mysql-client
   - echo "Waiting for MySQL to be ready..."
   - until mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" -e "SELECT 1"; do
       echo "Waiting for database to be ready...";
@@ -31,28 +31,27 @@ before_script:
   - echo "Initializing database with init.sql..."
   - mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./.cicd.sql
 
-#  - pylint_check
-#  - migrations_init
-
 stages:
+  - pylint_check
+  - migrations_init
   - run_testcase
 
-#pylint_check:
-#  stage: pylint_check
-#  script:
-#    - python -m pylint --recursive=y .
-#
-#migrations_init:
-#  stage: migrations_init
-#  script:
-#    - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
-#      python manage.py makemigrations --check --dry-run --noinput;
-#      python manage.py migrate;
-#      python manage.py init_data;
-#      python manage.py init_system_data;
-#      fi
-#  rules:
-#    - if: '$CI_COMMIT_BRANCH != null'
+pylint_check:
+  stage: pylint_check
+  script:
+    - python -m pylint --recursive=y .
+
+migrations_init:
+  stage: migrations_init
+  script:
+    - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
+      python manage.py makemigrations --check --dry-run --noinput;
+      python manage.py migrate;
+      python manage.py init_data;
+      python manage.py init_system_data;
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH != null'
 
 run_testcase:
   stage: run_testcase
