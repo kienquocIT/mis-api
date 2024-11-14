@@ -24,9 +24,11 @@ before_script:
   - pip install -r req.txt
 
 stages:
+  - run_testcase
+
+
 #  - pylint_check
 #  - migrations_init
-  - run_testcase
 
 pylint_check:
   stage: pylint_check
