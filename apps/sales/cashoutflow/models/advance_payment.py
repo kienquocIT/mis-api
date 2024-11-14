@@ -27,6 +27,10 @@ ADVANCE_PAYMENT_METHOD = [
 
 
 class AdvancePayment(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '57725469-8b04-428a-a4b0-578091d0e4f5'
+
     opportunity_mapped = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,

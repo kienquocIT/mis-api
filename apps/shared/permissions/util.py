@@ -250,7 +250,7 @@ class PermissionParsedTool:
     def get_all_application_by_id(cls):
         return {  # caching for db, timeout: default * 10
             str(item.id): item
-            for item in Application.objects.filter().cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10)
+            for item in Application.objects.filter()
         }
 
     @classmethod

@@ -19,22 +19,44 @@ logger = logging.getLogger(__name__)
 
 class ProcessRuntimeControl:
     @classmethod
-    def check_application_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
-        not_approved = ProcessDoc.objects.filter(stage_app=stage_app_obj).exclude(
-            system_status__in=ProcessDoc.APPROVED_STATUS
+    def approved_amount(cls, stage_app_obj: ProcessStageApplication):
+        return ProcessDoc.objects.filter(
+            stage_app=stage_app_obj,
+            system_status__in=ProcessDoc.APPROVED_STATUS,
         ).count()
-        if not_approved == 0:
-            if stage_app_obj.max == "n":
-                return stage_app_obj.was_done
-            try:
-                max_num = int(stage_app_obj.max)
-            except ValueError:
-                return None
-            return stage_app_obj.amount >= max_num
-        return False
+
+    @classmethod
+    def check_application_auto_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        # approved >= max : auto done
+        # min < approved < max : allow call done
+        approved_amount = cls.approved_amount(stage_app_obj=stage_app_obj)
+        if stage_app_obj.max == "n":
+            return stage_app_obj.was_done
+        try:
+            max_num = int(stage_app_obj.max)
+        except ValueError:
+            return None
+        return approved_amount >= max_num
+
+    @classmethod
+    def check_application_can_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        # approved >= max : auto done
+        # min < approved < max : allow call done
+        approved_amount = cls.approved_amount(stage_app_obj=stage_app_obj)
+        if stage_app_obj.was_done:
+            return False
+        try:
+            min_num = int(stage_app_obj.min)
+        except ValueError:
+            return None
+        return approved_amount >= min_num
 
     @classmethod
     def check_application_state_add_new(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        if stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
+            # deny create for stages is coming!
+            return False
+
         if stage_app_obj.max == "n":
             return True
         try:
@@ -154,6 +176,7 @@ class ProcessRuntimeControl:
         return True
 
     def validate_process(self, app_id: UUID or str, opp_id: UUID or str = None) -> bool or serializers.ValidationError:
+        # for add new
         self.check_opp(opp_id=opp_id)
         app_obj = self.get_application(app_id=app_id)
         if app_obj and isinstance(app_obj, ProcessStageApplication):
@@ -176,7 +199,7 @@ class ProcessRuntimeControl:
                 system_code=system_code,
                 order_number=idx + 1,
             )
-            for app_config in stage_config.get('application', []):
+            for index, app_config in enumerate(stage_config.get('application', [])):
                 ProcessStageApplication.objects.create(
                     tenant=self.process_obj.tenant,
                     company=self.process_obj.company,
@@ -188,6 +211,7 @@ class ProcessRuntimeControl:
                     amount=0,
                     min=app_config.get('min', '0'),
                     max=app_config.get('max', '0'),
+                    order_number=index + 1,
                 )
             if idx == 0:  # loop play with zero, 1 is first user stages
                 self.process_obj.stage_current = stage_obj
@@ -278,7 +302,7 @@ class ProcessRuntimeControl:
 
     def update_stages_app(self, stage_app_obj: ProcessStageApplication):
         if stage_app_obj.was_done is False:
-            if self.check_application_state_done(stage_app_obj):
+            if self.check_application_auto_state_done(stage_app_obj):
                 stage_app_obj.was_done = True
                 stage_app_obj.date_done = timezone.now()
                 stage_app_obj.save(update_fields=['was_done', 'date_done'])

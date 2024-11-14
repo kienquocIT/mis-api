@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import Union
 
@@ -30,6 +31,9 @@ from apps.shared import (
     ResponseController, TypeCheck,
 )
 from apps.shared.media_cloud_apis import APIUtil
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeUploadAvatar(BaseUpdateMixin):
@@ -368,6 +372,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
         label_code='hr', model_code='employee', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        logger.info('EmployeeDetail.put: %s', request.data)
         return self.update(request, *args, **kwargs)
 
 

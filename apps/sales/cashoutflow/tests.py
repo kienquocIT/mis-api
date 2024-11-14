@@ -64,7 +64,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'workflow_runtime_id',
-                'system_status'
+                'system_status',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -159,6 +160,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'document_change_order',
                 'system_status',
                 'workflow_runtime_id',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -479,7 +481,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_created',
                 'sale_code',
                 'payment_value',
-                'payment_value_by_words'
+                'payment_value_by_words',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -621,7 +624,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'employee_created',
                 'sale_code',
                 'payment_value',
-                'payment_value_by_words'
+                'payment_value_by_words',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -714,6 +718,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -771,6 +776,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'process',
             ],
             check_sum_second=True,
         )
@@ -844,6 +850,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'process',
             ],
             check_sum_second=True,
         )

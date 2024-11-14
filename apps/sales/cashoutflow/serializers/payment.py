@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
@@ -138,10 +139,18 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = Payment
         fields = (
+            # process
+            'process',
+            #
             'title',
             'opportunity_mapped_id',
             'quotation_mapped_id',
@@ -181,7 +190,14 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             doc_id=None,
             validate_data=validate_data
         )
-        print('*validate done')
+
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data.get('opportunity_mapped_id', None)
+        app_id = Payment.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return validate_data
 
     @decorator_run_workflow
@@ -192,6 +208,16 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         payment_obj = Payment.objects.create(**validated_data)
         PaymentCommonFunction.create_payment_items(payment_obj, payment_item_list)
         PaymentCommonFunction.handle_attach_file(payment_obj, attachment)
+
+        if payment_obj.process:
+            ProcessRuntimeControl(process_obj=payment_obj.process).register_doc(
+                app_id=Payment.get_app_id(),
+                doc_id=payment_obj.id,
+                doc_title=payment_obj.title,
+                employee_created_id=payment_obj.employee_created_id,
+                date_created=payment_obj.date_created,
+            )
+
         return payment_obj
 
 
@@ -206,6 +232,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -228,8 +255,20 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'attachment',
             'sale_code',
             'payment_value',
-            'payment_value_by_words'
+            'payment_value_by_words',
+            # process
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_date_created(cls, obj):

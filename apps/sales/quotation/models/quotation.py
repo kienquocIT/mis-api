@@ -262,7 +262,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
 
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
-        return 'b9650500aba744e3b6e02542622702a3'
+        return 'b9650500-aba7-44e3-b6e0-2542622702a3'
 
     @classmethod
     def find_max_number(cls, codes):

@@ -89,6 +89,10 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         permissions = ()
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
+
+    @classmethod
     def generate_key_cache(cls, **kwargs):
         dict_str = json.dumps(kwargs, sort_keys=True)
         md5_str = hashlib.md5(dict_str.encode()).hexdigest()
@@ -224,10 +228,6 @@ class DataAbstractModel(SimpleAbstractModel):
         app_label = cls._meta.app_label
         model_name = cls._meta.model_name
         return f"{app_label}.{model_name}".lower()
-
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
 
     def save(self, *args, **kwargs):
         if 'update_fields' in kwargs and isinstance(kwargs['update_fields'], list):

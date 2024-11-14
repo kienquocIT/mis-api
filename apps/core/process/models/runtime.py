@@ -77,6 +77,7 @@ class ProcessStageApplication(MasterDataAbstractModel):
     max = models.CharField(default="0", max_length=2)
     was_done = models.BooleanField(default=False)
     date_done = models.DateTimeField(null=True, default=None)
+    order_number = models.SmallIntegerField(default=1)
 
     def __str__(self):
         return f'{self.title}'
