@@ -4,8 +4,7 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    BastionFieldAbstractModel
-from apps.shared.extends.models import RecurrenceAbstractModel
+    BastionFieldAbstractModel, RecurrenceAbstractModel
 
 
 # CONFIG
@@ -91,6 +90,10 @@ class ConfigOrderLongSale(SimpleAbstractModel):
 
 # BEGIN SALE ORDER
 class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,

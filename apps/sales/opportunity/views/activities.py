@@ -18,10 +18,11 @@ from ..filters import OpportunityMeetingFilters
 
 class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     queryset = OpportunityCallLog.objects
-
     serializer_list = OpportunityCallLogListSerializer
     serializer_create = OpportunityCallLogCreateSerializer
     serializer_detail = OpportunityCallLogDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity__customer", "contact")
@@ -51,6 +52,7 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityCallLog.objects
     serializer_detail = OpportunityCallLogDetailSerializer
     serializer_update = OpportunityCallLogUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity__customer", "contact")
@@ -75,10 +77,11 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
 
 class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     queryset = OpportunityEmail.objects
-
     serializer_list = OpportunityEmailListSerializer
     serializer_create = OpportunityEmailCreateSerializer
     serializer_detail = OpportunityEmailDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")
@@ -109,6 +112,7 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityEmail.objects
     serializer_detail = OpportunityEmailDetailSerializer
     serializer_update = OpportunityEmailUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")
@@ -137,6 +141,8 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityMeetingCreateSerializer
     serializer_detail = OpportunityMeetingDetailSerializer
     filterset_class = OpportunityMeetingFilters
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("opportunity").prefetch_related(
@@ -176,6 +182,7 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityMeeting.objects
     serializer_detail = OpportunityMeetingDetailSerializer
     serializer_update = OpportunityMeetingUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")

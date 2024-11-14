@@ -212,6 +212,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'group': ['exact', 'in'],
+        'group__code': ['exact'],
     }
 
     def get_queryset(self):

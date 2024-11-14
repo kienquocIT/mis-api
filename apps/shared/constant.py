@@ -121,6 +121,7 @@ MAP_FIELD_TITLE = {
     'cashoutflow.returnadvance': 'title',
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
+    'bidding.bidding': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

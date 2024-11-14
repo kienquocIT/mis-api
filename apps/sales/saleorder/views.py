@@ -92,6 +92,7 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "quotation",
             "customer__payment_term_customer_mapped",
             "employee_inherit",
+            "process",
         )
 
     @swagger_auto_schema(

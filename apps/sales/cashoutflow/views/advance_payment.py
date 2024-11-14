@@ -33,6 +33,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
                 'sale_order_mapped__opportunity',
                 'quotation_mapped__opportunity',
                 'opportunity_mapped',
+                'employee_inherit'
             )
         else:
             main_queryset = super().get_queryset().prefetch_related(
@@ -43,6 +44,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
                 'sale_order_mapped__opportunity',
                 'quotation_mapped__opportunity',
                 'opportunity_mapped',
+                'employee_inherit'
             )
         return self.get_queryset_custom_direct_page(main_queryset)
 
@@ -93,7 +95,8 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'supplier__owner',
             'supplier__industry',
             'employee_inherit__group',
-            'employee_created__group'
+            'employee_created__group',
+            'process',
         )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')

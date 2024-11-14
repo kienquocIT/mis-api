@@ -2,30 +2,61 @@ __all__ = [
     'ProcessRuntimeControl',
 ]
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.process.models import Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration
 from apps.core.process.msg import ProcessMsg
-from apps.shared import TypeCheck
+from apps.shared import TypeCheck, DisperseModel
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessRuntimeControl:
     @classmethod
-    def check_application_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+    def approved_amount(cls, stage_app_obj: ProcessStageApplication):
+        return ProcessDoc.objects.filter(
+            stage_app=stage_app_obj,
+            system_status__in=ProcessDoc.APPROVED_STATUS,
+        ).count()
+
+    @classmethod
+    def check_application_auto_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        # approved >= max : auto done
+        # min < approved < max : allow call done
+        approved_amount = cls.approved_amount(stage_app_obj=stage_app_obj)
         if stage_app_obj.max == "n":
             return stage_app_obj.was_done
         try:
             max_num = int(stage_app_obj.max)
         except ValueError:
             return None
-        return stage_app_obj.amount >= max_num
+        return approved_amount >= max_num
+
+    @classmethod
+    def check_application_can_state_done(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        # approved >= max : auto done
+        # min < approved < max : allow call done
+        approved_amount = cls.approved_amount(stage_app_obj=stage_app_obj)
+        if stage_app_obj.was_done:
+            return False
+        try:
+            min_num = int(stage_app_obj.min)
+        except ValueError:
+            return None
+        return approved_amount >= min_num
 
     @classmethod
     def check_application_state_add_new(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
+        if stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
+            # deny create for stages is coming!
+            return False
+
         if stage_app_obj.max == "n":
             return True
         try:
@@ -145,6 +176,7 @@ class ProcessRuntimeControl:
         return True
 
     def validate_process(self, app_id: UUID or str, opp_id: UUID or str = None) -> bool or serializers.ValidationError:
+        # for add new
         self.check_opp(opp_id=opp_id)
         app_obj = self.get_application(app_id=app_id)
         if app_obj and isinstance(app_obj, ProcessStageApplication):
@@ -167,7 +199,7 @@ class ProcessRuntimeControl:
                 system_code=system_code,
                 order_number=idx + 1,
             )
-            for app_config in stage_config.get('application', []):
+            for index, app_config in enumerate(stage_config.get('application', [])):
                 ProcessStageApplication.objects.create(
                     tenant=self.process_obj.tenant,
                     company=self.process_obj.company,
@@ -179,6 +211,7 @@ class ProcessRuntimeControl:
                     amount=0,
                     min=app_config.get('min', '0'),
                     max=app_config.get('max', '0'),
+                    order_number=index + 1,
                 )
             if idx == 0:  # loop play with zero, 1 is first user stages
                 self.process_obj.stage_current = stage_obj
@@ -269,8 +302,79 @@ class ProcessRuntimeControl:
 
     def update_stages_app(self, stage_app_obj: ProcessStageApplication):
         if stage_app_obj.was_done is False:
-            if self.check_application_state_done(stage_app_obj):
+            if self.check_application_auto_state_done(stage_app_obj):
                 stage_app_obj.was_done = True
                 stage_app_obj.date_done = timezone.now()
                 stage_app_obj.save(update_fields=['was_done', 'date_done'])
         return stage_app_obj.was_done
+
+    @classmethod
+    def get_doc_obj(cls, app_id, doc_id):
+        app_cls = DisperseModel(app_model='base.application').get_model()
+        try:
+            app_obj = app_cls.objects.get(pk=app_id)
+        except app_cls.DoesNotExist:
+            logger.error('[ProcessRuntimeControl][get_doc_obj] Base App not found: app=%s', app_id)
+            raise ValueError('Base App not found: ' + app_id)
+        model_cls = DisperseModel(app_model=f'{app_obj.app_label}.{app_obj.model_code}').get_model()
+        if model_cls and hasattr(model_cls, 'objects'):
+            try:
+                return model_cls.objects.get(pk=doc_id)
+            except model_cls.DoesNotExist:
+                logger.error(
+                    f'[ProcessRuntimeControl][get_doc_obj] '  # pylint: disable=W1309
+                    f'Document Object is not found doc=%s', doc_id
+                )
+                raise ValueError('Document Object is not found ' + doc_id)
+        logger.error(
+            f'[ProcessRuntimeControl][get_doc_obj] '  # pylint: disable=W1309
+            f'Model Doc not found: doc=%s - app=%s', doc_id, app_id
+        )
+        raise ValueError('Model Doc not found: ' + doc_id + ' - ' + app_id)
+
+    @classmethod
+    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None):
+        """
+        Sync system_status of doc to ProcessDoc
+        Args:
+            date_now:
+            app_id:
+            doc_id:
+            status: This value is not provide, query get object doc then get system_status
+
+        Returns:
+
+        """
+        if not status:
+            doc_obj = cls.get_doc_obj(app_id=app_id, doc_id=doc_id)
+            if doc_obj:
+                status = getattr(doc_obj, 'system_status', 0)
+        if isinstance(status, int):
+            try:
+                process_doc = ProcessDoc.objects.get(doc_id=doc_id, stage_app__application_id=app_id)
+            except ProcessDoc.DoesNotExist:
+                logger.error(
+                    f'[ProcessRuntimeControl][update_status_of_doc] '  # pylint: disable=W1309
+                    f'ProcessDoc get does not exist: app=%s - doc=%s', app_id, doc_id
+                )
+                return False
+
+            # update doc
+            process_doc.system_status = status
+            process_doc.date_status.append(
+                {
+                    "status": status,
+                    "datetime": date_now.strftime(
+                        settings.REST_FRAMEWORK['DATETIME_FORMAT']
+                    )
+                }
+            )
+            process_doc.save(update_fields=['system_status', 'date_status'])
+            # update approved amount of Stages APp
+            process_doc.stage_app.amount_approved_count(commit=True)
+            # check current stages status
+            ProcessRuntimeControl(process_obj=process_doc.process).check_stages_current(
+                from_stages_app=process_doc.stage_app
+            )
+            return True
+        return False

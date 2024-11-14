@@ -8,6 +8,7 @@ from rest_framework import serializers
 from apps.core.process.filters import ProcessRuntimeListFilter
 from apps.core.process.models.runtime import ProcessStageApplication
 from apps.core.process.msg import ProcessMsg
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
     TypeCheck, ResponseController,
@@ -62,6 +63,7 @@ class ProcessConfigList(BaseListMixin, BaseCreateMixin):
         'for_opp': ['exact'],
         'employee_created': ['exact', 'in'],
         'is_active': ['exact'],
+        'id': ['in'],
     }
 
     @swagger_auto_schema(operation_summary='Process Configurate List')
@@ -174,21 +176,12 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
 
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         if instance and isinstance(instance, ProcessStageApplication):
-            amount = instance.amount
-            try:
-                min_num = int(instance.min)
-            except Exception as err:
-                logger.error('[ProcessRuntimeStagesAppDetail] Exception of get_object: %s', str(err))
-                raise serializers.ValidationError(
-                    {
-                        'detail': ProcessMsg.STAGES_APP_NOT_ANALYSE
-                    }
-                )
-            if amount >= min_num:
+            state = ProcessRuntimeControl.check_application_can_state_done(stage_app_obj=instance)
+            if state:
                 return True
             raise serializers.ValidationError(
                 {
-                    'detail': ProcessMsg.STAGES_APP_NEED_AMOUNT.format(amount=amount)
+                    'detail': ProcessMsg.STAGES_APP_NEED_AMOUNT.format(amount=instance.amount)
                 }
             )
         return False

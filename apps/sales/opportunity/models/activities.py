@@ -10,7 +10,7 @@ __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'Oppo
 
 
 # LOGS OF CALL
-class OpportunityCallLog(SimpleAbstractModel):
+class OpportunityCallLog(MasterDataAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -40,7 +40,7 @@ class OpportunityCallLog(SimpleAbstractModel):
 
 
 # LOGS OF EMAIL
-class OpportunityEmail(SimpleAbstractModel):
+class OpportunityEmail(MasterDataAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -64,7 +64,7 @@ class OpportunityEmail(SimpleAbstractModel):
 
 
 # LOGS OF MEETING
-class OpportunityMeeting(SimpleAbstractModel):
+class OpportunityMeeting(MasterDataAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',

@@ -5,6 +5,7 @@ from rest_framework import serializers
 from apps.shared import ProjectMsg
 from ..extend_func import re_calc_work_group, calc_rate_project
 from ..models import ProjectMapTasks
+from ...task.models import OpportunityLogWork
 
 
 class ProjectTaskListSerializers(serializers.ModelSerializer):
@@ -89,6 +90,39 @@ class ProjectTaskListAllSerializers(serializers.ModelSerializer):
     @classmethod
     def get_task(cls, obj):
         task = obj.task
+        emp_role = []
+        if task.employee_inherit.role:
+            emp_role = [
+                {
+                    'id': str(emp.id),
+                    'title': emp.title
+                } for emp in task.employee_inherit.role.all()
+            ]
+        list_log_time = OpportunityLogWork.objects.filter(
+            task=task
+        )
+        task_log_work = []
+        if list_log_time.count():
+            task_log_work = [
+                {
+                    'id': item[0],
+                    'start_date': item[1],
+                    'end_date': item[2],
+                    'time_spent': item[3],
+                    'employee_created': {
+                        'id': item[4],
+                        'first_name': item[5],
+                        'last_name': item[6],
+                        'avatar': item[7]
+                    },
+                } for item in list_log_time.values_list(
+                    'id', 'start_date', 'end_date', 'time_spent',
+                    'employee_created_id',
+                    'employee_created__first_name',
+                    'employee_created__last_name',
+                    'employee_created__avatar'
+                )
+            ]
         return {
             'id': str(task.id),
             'title': task.title,
@@ -101,10 +135,12 @@ class ProjectTaskListAllSerializers(serializers.ModelSerializer):
             'end_date': task.end_date,
             'priority': task.priority,
             'employee_inherit': {
+                'id': str(task.employee_inherit.id),
                 'avatar': task.employee_inherit.avatar,
                 'first_name': task.employee_inherit.first_name,
                 'last_name': task.employee_inherit.last_name,
-                'full_name': task.employee_inherit.get_full_name()
+                'full_name': task.employee_inherit.get_full_name(),
+                'role': emp_role,
             } if task.employee_inherit else {},
             'checklist': task.checklist if task.checklist else 0,
             'parent_n': {
@@ -120,6 +156,8 @@ class ProjectTaskListAllSerializers(serializers.ModelSerializer):
             } if task.employee_created else {},
             'date_created': task.date_created,
             'percent_completed': task.percent_completed,
+            'estimate': task.estimate,
+            'log_time': task_log_work,
             'project': task.project_data,
         } if task else {}
 

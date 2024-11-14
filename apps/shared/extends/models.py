@@ -16,7 +16,7 @@ from ..constant import SYSTEM_STATUS
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
     'DisperseModel',
-    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass', 'RecurrenceAbstractModel',
 ]
 
 
@@ -87,6 +87,10 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
 
     @classmethod
     def generate_key_cache(cls, **kwargs):
@@ -224,10 +228,6 @@ class DataAbstractModel(SimpleAbstractModel):
         app_label = cls._meta.app_label
         model_name = cls._meta.model_name
         return f"{app_label}.{model_name}".lower()
-
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
 
     def save(self, *args, **kwargs):
         if 'update_fields' in kwargs and isinstance(kwargs['update_fields'], list):

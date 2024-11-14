@@ -1,14 +1,16 @@
 from rest_framework import serializers
+
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
-    ReturnAdvance, ReturnAdvanceCost, AdvancePayment, AdvancePaymentCost
+    ReturnAdvance, ReturnAdvanceCost, AdvancePayment, AdvancePaymentCost,
 )
 from apps.masterdata.saledata.models import ExpenseItem
 from apps.shared import (
     SaleMsg,
     AbstractDetailSerializerModel,
     AbstractCreateSerializerModel,
-    AbstractListSerializerModel
+    AbstractListSerializerModel,
 )
 
 
@@ -62,10 +64,18 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
     returned_list = serializers.ListField(required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = ReturnAdvance
         fields = (
+            # process
+            'process',
+            #
             'title',
             'advance_payment_id',
             'method',
@@ -73,13 +83,25 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
             'returned_list',
         )
 
+    @classmethod
+    def validate_advance_payment_id(cls, attrs):
+        return ReturnAdvanceCommonFunction.validate_advance_payment(advance_payment_id=attrs)
+
     def validate(self, validate_data):
-        ReturnAdvanceCommonFunction.validate_advance_payment_id(validate_data)
+        advance_payment_obj = validate_data.pop('advance_payment_id')
+        validate_data['advance_payment'] = advance_payment_obj
+        validate_data['employee_inherit_id'] = advance_payment_obj.employee_inherit_id
+
         ReturnAdvanceCommonFunction.validate_method(validate_data)
         ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
-        ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
-        validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
-        print('*validate done')
+
+        process_obj = validate_data.get('process', None)
+        opportunity_mapped_id = advance_payment_obj.opportunity_mapped_id
+        if process_obj:
+            app_id = ReturnAdvance.get_app_id()
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_mapped_id, app_id=app_id)
+
         return validate_data
 
     @decorator_run_workflow
@@ -87,6 +109,16 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
         returned_list = validated_data.pop('returned_list', [])
         return_advance_obj = ReturnAdvance.objects.create(**validated_data)
         ReturnAdvanceCommonFunction.common_create_return_advance_cost(returned_list, return_advance_obj)
+
+        if return_advance_obj.process:
+            ProcessRuntimeControl(process_obj=return_advance_obj.process).register_doc(
+                app_id=ReturnAdvance.get_app_id(),
+                doc_id=return_advance_obj.id,
+                doc_title=return_advance_obj.title,
+                employee_created_id=return_advance_obj.employee_created_id,
+                date_created=return_advance_obj.date_created,
+            )
+
         return return_advance_obj
 
 
@@ -95,6 +127,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     advance_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -110,8 +143,17 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'money_received',
             'date_created',
             'returned_list',
-            'return_total'
+            'return_total',
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        return {
+            'id': obj.process.id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}
 
     @classmethod
     def get_advance_payment(cls, obj):
@@ -174,13 +216,15 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     def get_returned_list(cls, obj):
         list_result = []
         for item in ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type'):
-            list_result.append({
-                'id': item.advance_payment_cost_id,
-                'expense_name': item.expense_name,
-                'expense_type': item.expense_type_data,
-                'remain_total': item.remain_value,
-                'return_value': item.return_value
-            })
+            list_result.append(
+                {
+                    'id': item.advance_payment_cost_id,
+                    'expense_name': item.expense_name,
+                    'expense_type': item.expense_type_data,
+                    'remain_total': item.remain_value,
+                    'return_value': item.return_value
+                }
+            )
         return list_result
 
 
@@ -219,6 +263,19 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class ReturnAdvanceCommonFunction:
+    @classmethod
+    def validate_advance_payment(cls, advance_payment_id) -> AdvancePayment:
+        if advance_payment_id:
+            try:
+                ap_obj = AdvancePayment.objects.get(id=advance_payment_id)
+                if ap_obj.opportunity_mapped:
+                    if ap_obj.opportunity_mapped.is_deal_close:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                return ap_obj
+            except AdvancePayment.DoesNotExist:
+                raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+        raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+
     @classmethod
     def validate_advance_payment_id(cls, validate_data):
         if 'advance_payment_id' in validate_data:
@@ -308,20 +365,22 @@ class APListForReturnSerializer(AbstractListSerializerModel):
         expense_items = []
         order = 1
         for item in all_item:
-            expense_items.append({
-                'id': item.id,
-                'order': order,
-                'expense_name': item.expense_name,
-                'expense_type': item.expense_type_data,
-                'expense_uom_name': item.expense_uom_name,
-                'expense_quantity': item.expense_quantity,
-                'expense_unit_price': item.expense_unit_price,
-                'expense_tax': item.expense_tax_data,
-                'expense_tax_price': item.expense_tax_price,
-                'expense_subtotal_price': item.expense_subtotal_price,
-                'expense_after_tax_price': item.expense_after_tax_price,
-                'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
-            })
+            expense_items.append(
+                {
+                    'id': item.id,
+                    'order': order,
+                    'expense_name': item.expense_name,
+                    'expense_type': item.expense_type_data,
+                    'expense_uom_name': item.expense_uom_name,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_unit_price': item.expense_unit_price,
+                    'expense_tax': item.expense_tax_data,
+                    'expense_tax_price': item.expense_tax_price,
+                    'expense_subtotal_price': item.expense_subtotal_price,
+                    'expense_after_tax_price': item.expense_after_tax_price,
+                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
+                }
+            )
             order += 1
         return expense_items
 
