@@ -29,7 +29,7 @@ before_script:
       sleep 2;
     done
   - echo "Initializing database with init.sql..."
-  - mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./init.sql
+  - mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./.cicd.sql
 
 #  - pylint_check
 #  - migrations_init
