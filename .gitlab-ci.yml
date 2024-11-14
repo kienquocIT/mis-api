@@ -22,6 +22,12 @@ before_script:
 #  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
 #  - pip install --upgrade pip
   - pip install -r req.txt
+# - apt-get update && apt-get install -y default-mysql-client
+  - echo "Waiting for MySQL to be ready..." && until mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" -e "SELECT 1"; do
+      echo "Waiting for database to be ready...";
+      sleep 2;
+    done
+  - echo "Initializing database with init.sql..." && mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./.cicd.sql
 
 stages:
   - pylint_check
@@ -51,7 +57,7 @@ run_testcase:
     - if [[ ! "$CI_COMMIT_BRANCH" =~ ^(master|sit|dev)$ ]]; then
       python manage.py makemigrations;
       fi
-    - python manage.py test --parallel
+    - python manage.py test --keepdb
   after_script:
     - rm -rf *.sqlite3
     - exit
