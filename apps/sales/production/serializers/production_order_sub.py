@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Group
-from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse
+from apps.masterdata.saledata.models import Product, UnitOfMeasure, WareHouse, Account
 from apps.sales.production.models import ProductionOrderTask, ProductionOrderTaskTool, ProductionOrderSaleOrder, BOM
-from apps.shared import SaleMsg
+from apps.sales.purchasing.models import PurchaseOrder
+from apps.shared import SaleMsg, PurchasingMsg, AccountsMsg
 
 
 class ProductionOrderSub:
@@ -52,6 +53,24 @@ class ProductionOrderValid:
             return str(Product.objects.get(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': SaleMsg.PRODUCT_NOT_EXIST})
+
+    @classmethod
+    def validate_supplier_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(Account.objects.get(id=value).id)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'supplier': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_purchase_order_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return str(PurchaseOrder.objects.get(id=value).id)
+        except PurchaseOrder.DoesNotExist:
+            raise serializers.ValidationError({'purchase order': PurchasingMsg.PURCHASE_ORDER_NOT_EXIST})
 
     @classmethod
     def validate_uom_id(cls, value):
