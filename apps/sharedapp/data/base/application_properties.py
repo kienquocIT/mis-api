@@ -8,7 +8,7 @@ from .application_properties_params import (
     Payment_data__params,
     IA_data__params,
     Goods_Transfer_data__params,
-    Goods_Return_data__params
+    Goods_Return_data__params, Delivery_data__params
 )
 
 __all__ = ["ApplicationProperty_data"]
@@ -1528,6 +1528,7 @@ AppProp_SaleData_Delivery_data = {
         ],
         'type': 1,
     },
+    **Delivery_data__params
 }
 
 AppProp_Eoffice_Leave_data = {
@@ -2072,7 +2073,6 @@ AppProp_SaleData_Payment_data = {
         'title': 'Payment value',
         'code': 'payment_value',
         'type': 6,
-        'is_wf_zone': False,
         'is_wf_condition': True,
         'is_wf_zone': True,
     },
