@@ -88,7 +88,11 @@ class BiddingResult(BaseRetrieveMixin, BaseCreateMixin):
     serializer_list = BiddingListSerializer
     serializer_detail = BiddingDetailSerializer
     serializer_create = BiddingUpdateResultSerializer
-
+    create_hidden_field = [
+        'tenant_id',
+        'company_id',
+        'employee_created_id',
+    ]
     @swagger_auto_schema(
         operation_summary="Update Bidding Result",
         operation_description="Create Bidding Result",

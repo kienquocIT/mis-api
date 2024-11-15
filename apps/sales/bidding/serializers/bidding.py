@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, DocumentType
+from apps.masterdata.saledata.models.bidding_result_config import BiddingResultConfig
 from apps.sales.bidding.models import Bidding, BiddingAttachment, BiddingDocument, BiddingPartnerAccount, \
     BiddingBidderAccount
 from apps.sales.bidding.serializers.bidding_sub import BiddingCommonCreate
@@ -439,6 +440,11 @@ class BiddingUpdateResultSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        user = self.context.get('user', None)
+        bid_result_config = BiddingResultConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+        bid_result_employee_list = bid_result_config.employee
+        if str(user.employee_current_id) not in bid_result_employee_list:
+            raise serializers.ValidationError({"bid_status": "User is not allowed to modify bid result"})
         other_bidder = validated_data.pop('other_bidder', [])
         bidding = Bidding.objects.filter(id=validated_data.get('id', None)).first()
         BiddingCommonCreate.create_other_bidder(other_bidder=other_bidder, instance=bidding)

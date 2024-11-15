@@ -1,6 +1,8 @@
 from rest_framework import serializers
+
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.bidding_result_config import (
-    BiddingResultConfig
+    BiddingResultConfig, BiddingResultConfigEmployee
 )
 
 class BiddingResultConfigListSerializer(serializers.ModelSerializer):
@@ -12,22 +14,44 @@ class BiddingResultConfigListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee(cls, obj):
-        return {
-            'id': obj.employee.id,
-            'name': obj.employee.last_name + ' ' + obj.employee.first_name,
-        }
+        return [{
+            'id': item.employee.id,
+            'full_name': f"{item.employee.last_name} {item.employee.first_name}",
+        }for item in obj.bidding_result_config_employee_bid_config.all()]
 
-class BiddingResultConfigCreateListSerializer(serializers.ListSerializer):
-    def create(self, validated_data):
-        bulk_data = []
-        for data in validated_data:
-            bulk_data.append({
-                "employee_id": data["id"]
-            })
-        return BiddingResultConfig.objects.bulk_create(bulk_data)
 
 class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
+    employee = serializers.ListField(child=serializers.CharField())
+
     class Meta:
-        list_serializer_class = BiddingResultConfigCreateListSerializer
+        model = BiddingResultConfig
+        fields = (
+            'employee',
+        )
+
+    @classmethod
+    def validate_employee(cls, value):
+        for item in value:
+            try:
+                Employee.objects.filter(id=item).exists()
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({"employee": "Employee does not exist"})
+        return value
+
+    def create(self, validated_data):
+        config = BiddingResultConfig.objects.create(**validated_data)
+        bulk_info = []
+        for employee in validated_data.get('employee', []):
+            bulk_info.append(BiddingResultConfigEmployee(bidding_result_config=config, employee_id=employee))
+        BiddingResultConfig.objects.filter(company=config.company).exclude(id=config.id).delete()
+        BiddingResultConfigEmployee.objects.bulk_create(bulk_info)
+        return config
+
+class BiddingResultConfigDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BiddingResultConfig
+        fields = ('id',)
+
+
 
 
