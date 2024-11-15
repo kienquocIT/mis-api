@@ -298,7 +298,6 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                 'id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
                 'purchase_status', 'request_for_string', 'purchase_status_string',
                 'distribution_plan', 'is_change', 'document_root_id', 'document_change_order',
-                'date_created',
             ],
             check_sum_second=True,
         )
