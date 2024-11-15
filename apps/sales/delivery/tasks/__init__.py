@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from celery import shared_task
 
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -19,7 +20,11 @@ __all__ = [
 
 class SaleOrderActiveDeliverySerializer:
     def __init__(
-            self, sale_order_obj: SaleOrder, order_products: list[SaleOrderProduct], delivery_config_obj: DeliveryConfig
+            self,
+            sale_order_obj: SaleOrder,
+            order_products: list[SaleOrderProduct],
+            delivery_config_obj: DeliveryConfig,
+            process_id = None,
     ):
         if sale_order_obj:
             self.tenant_id = sale_order_obj.tenant_id
@@ -30,7 +35,7 @@ class SaleOrderActiveDeliverySerializer:
             self.config_obj = delivery_config_obj
         else:
             raise AttributeError('instance must be required')
-
+        self.process_id = process_id
         self.check_has_prod_services = 0
 
     def __create_order_picking_sub_map_product(self):
@@ -200,6 +205,10 @@ class SaleOrderActiveDeliverySerializer:
             state = 1
 
         order_delivery = OrderDelivery.objects.create(
+            process_id=self.process_id,
+            title=self.order_obj.title if self.order_obj else '',
+            employee_created=self.order_obj.employee_created if self.order_obj else None,
+            #
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             sale_order=self.order_obj,
@@ -253,6 +262,10 @@ class SaleOrderActiveDeliverySerializer:
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
+            process=obj_delivery.process,
+            title=obj_delivery.title,
+            employee_created=obj_delivery.employee_created,
+            #
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             id=sub_id,
@@ -292,10 +305,8 @@ class SaleOrderActiveDeliverySerializer:
                         if self.check_has_prod_services != len(self.order_products):
                             # nếu saleorder product toàn là dịch vụ thì ko cần tạo delivery
                             self._create_order_picking()
-                        obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
-                    else:
-                        obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
-                        # setup SUB
+                    obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
+                    # setup SUB
                     sub_obj = self._create_order_delivery_sub(
                         obj_delivery=obj_delivery,
                         sub_id=sub_id,
@@ -309,6 +320,16 @@ class SaleOrderActiveDeliverySerializer:
                     self.order_obj.delivery_status = 1
                     self.order_obj.save(update_fields=['delivery_status'])
 
+                    # regis OrderDelivery to Process
+                    if sub_obj.process:
+                        ProcessRuntimeControl(process_obj=sub_obj.process).register_doc(
+                            app_id=OrderDeliverySub.get_app_id(),
+                            doc_id=sub_obj.id,
+                            doc_title=sub_obj.title,
+                            employee_created_id=sub_obj.employee_created_id,
+                            date_created=sub_obj.date_created,
+                        )
+
                     if obj_delivery:
                         return True, ''
                     raise ValueError('Have exception in create picking or delivery process')
@@ -319,7 +340,7 @@ class SaleOrderActiveDeliverySerializer:
 
 
 @shared_task
-def task_active_delivery_from_sale_order(sale_order_id):
+def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
     sale_order_obj = SaleOrder.objects.get(pk=sale_order_id)
     sale_order_products = SaleOrderProduct.objects.select_related(
         'product', 'unit_of_measure'
@@ -332,6 +353,7 @@ def task_active_delivery_from_sale_order(sale_order_id):
         sale_order_obj=sale_order_obj,
         order_products=sale_order_products,
         delivery_config_obj=config_obj,
+        process_id=process_id,
     ).active()
     if state is True:
         sale_order_obj.delivery_call = True

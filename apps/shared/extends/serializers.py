@@ -32,6 +32,7 @@ class AbstractDetailSerializerModel(serializers.ModelSerializer):
             'is_change': serializers.BooleanField(),
             'document_root_id': serializers.UUIDField(),
             'document_change_order': serializers.IntegerField(),
+            'date_created': serializers.DateTimeField(),
         }
 
     class Meta:

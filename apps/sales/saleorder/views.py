@@ -5,7 +5,7 @@ from apps.sales.saleorder.models import (
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
     SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer,
-    SOProductWOListSerializer
+    SOProductWOListSerializer, SaleOrderMinimalListSerializer,
 )
 from apps.sales.saleorder.serializers.sale_order_config import (
     SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
@@ -32,6 +32,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'has_regis': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
+    serializer_list_minimal = SaleOrderMinimalListSerializer
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -43,6 +44,10 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
+        is_minimal = self.get_param(key='is_minimal')
+        if is_minimal:
+            return super().get_queryset()
+
         main_queryset = super().get_queryset().select_related(
             "customer",
             "opportunity",
