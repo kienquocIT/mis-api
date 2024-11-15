@@ -1,10 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models.bidding_result_config import BiddingResultConfig
-from apps.masterdata.saledata.serializers.bidding_result_config import (BiddingResultConfigListSerializer,
-                                                                        BiddingResultConfigCreateSerializer,
-                                                                        BiddingResultConfigDetailSerializer)
+from apps.masterdata.saledata.serializers.bidding_result_config import (
+    BiddingResultConfigListSerializer,
+    BiddingResultConfigCreateSerializer,
+    BiddingResultConfigDetailSerializer
+)
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
+
 
 # Create your views here.
 class BiddingResultConfigList(BaseListMixin, BaseCreateMixin):

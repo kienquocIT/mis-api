@@ -16,8 +16,8 @@ class BiddingResultConfigListSerializer(serializers.ModelSerializer):
     def get_employee(cls, obj):
         return [{
             'id': item.employee.id,
-            'full_name': f"{item.employee.last_name} {item.employee.first_name}",
-        }for item in obj.bidding_result_config_employee_bid_config.all()]
+            'full_name': item.employee.get_full_name(),
+        } for item in obj.bidding_result_config_employee_bid_config.all()]
 
 
 class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
@@ -33,7 +33,7 @@ class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
     def validate_employee(cls, value):
         for item in value:
             try:
-                Employee.objects.filter(id=item).exists()
+                Employee.objects.get(id=item).exists()
             except Employee.DoesNotExist:
                 raise serializers.ValidationError({"employee": "Employee does not exist"})
         return value

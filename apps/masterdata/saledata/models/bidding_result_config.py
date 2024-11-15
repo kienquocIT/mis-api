@@ -8,6 +8,7 @@ class BiddingResultConfig(MasterDataAbstractModel):
         null=True,
         blank=True,
     )
+
     class Meta:
         verbose_name = 'BiddingResultConfig'
         verbose_name_plural = 'BiddingResultConfigs'
@@ -15,7 +16,8 @@ class BiddingResultConfig(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-class BiddingResultConfigEmployee(SimpleAbstractModel):
+
+class BiddingResultConfigEmployee(MasterDataAbstractModel):
     bidding_result_config = models.ForeignKey(
         "saledata.BiddingResultConfig",
         on_delete=models.CASCADE,
