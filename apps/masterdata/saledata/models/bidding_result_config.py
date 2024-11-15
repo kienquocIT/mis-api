@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 
 class BiddingResultConfig(MasterDataAbstractModel):
