@@ -47,11 +47,8 @@ class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
         BiddingResultConfigEmployee.objects.bulk_create(bulk_info)
         return config
 
+
 class BiddingResultConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiddingResultConfig
         fields = ('id',)
-
-
-
-
