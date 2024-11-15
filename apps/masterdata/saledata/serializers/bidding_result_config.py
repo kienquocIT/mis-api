@@ -43,7 +43,7 @@ class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
         bulk_info = []
         for employee in validated_data.get('employee', []):
             bulk_info.append(BiddingResultConfigEmployee(bidding_result_config=config, employee_id=employee))
-        BiddingResultConfig.objects.filter(company=config.company).exclude(id=config.id).delete()
+        BiddingResultConfig.objects.filter(company_id=config.company_id).exclude(id=config.id).delete()
         BiddingResultConfigEmployee.objects.bulk_create(bulk_info)
         return config
 
