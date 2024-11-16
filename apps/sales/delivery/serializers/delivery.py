@@ -267,18 +267,19 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         return True
 
     @classmethod
-    def config_two_four(cls, instance, product_done, next_node_collab_id, config):  # none_picking_many_delivery
+    def config_two_four(cls, instance, product_done, next_association_id, next_node_collab_id, config):  # none_picking_many_delivery
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
         # instance.state = 2
         instance.is_updated = True
+        instance.next_association_id = next_association_id
         instance.next_node_collab_id = next_node_collab_id
         instance.save(
             update_fields=[
                 'date_done', 'state', 'is_updated', 'estimated_delivery_date',
                 'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
-                'next_node_collab_id',
+                'next_association_id', 'next_node_collab_id',
             ]
         )
         return True
@@ -287,6 +288,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
         validated_product = validated_data.get('products', [])
+        next_association_id = validated_data.get('next_association_id', None)
         next_node_collab_id = validated_data.get('next_node_collab_id', None)
         attachments = validated_data.pop('attachments', None)
         config = instance.config_at_that_point
@@ -316,6 +318,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     self.config_two_four(
                         instance=instance,
                         product_done=product_done,
+                        next_association_id=next_association_id,
                         next_node_collab_id=next_node_collab_id,
                         config=config
                     )
