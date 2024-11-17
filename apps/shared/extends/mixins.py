@@ -795,6 +795,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             '[replace_skip_exist] type data and data_replace is incorrect: %s & %s' % (type(data), type(data_replace))
             )
 
+    def get_param(self, key, default_value=None):
+        return self.request.query_params.dict().get(key, default_value)
+
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract

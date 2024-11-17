@@ -72,6 +72,17 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
         } if obj.quotation else {}
 
 
+class SaleOrderMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
 class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()

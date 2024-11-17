@@ -55,6 +55,10 @@ class OpportunityTaskStatus(MasterDataAbstractModel):
 
 
 class OpportunityTask(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "e66cfb5a-b3ce-4694-a4da-47618f53de4c"
+
     task_status = models.ForeignKey(
         'task.OpportunityTaskStatus',
         on_delete=models.CASCADE,
