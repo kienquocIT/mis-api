@@ -11,11 +11,20 @@ __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'Oppo
 
 # LOGS OF CALL
 class OpportunityCallLog(MasterDataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "14dbc606-1453-4023-a2cf-35b1cd9e3efd"
+
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog",
+    )
+    process = models.ForeignKey(
+        'process.Process', null=True, on_delete=models.SET_NULL,
+        help_text='The process claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
     )
     contact = models.ForeignKey(
         'saledata.Contact',
@@ -41,10 +50,19 @@ class OpportunityCallLog(MasterDataAbstractModel):
 
 # LOGS OF EMAIL
 class OpportunityEmail(MasterDataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "dec012bf-b931-48ba-a746-38b7fd7ca73b"
+
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_send_email",
+    )
+    process = models.ForeignKey(
+        'process.Process', null=True, on_delete=models.SET_NULL,
+        help_text='The process claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
     )
     subject = models.CharField(max_length=250)
     email_to_list = models.JSONField(default=list)
@@ -65,11 +83,20 @@ class OpportunityEmail(MasterDataAbstractModel):
 
 # LOGS OF MEETING
 class OpportunityMeeting(MasterDataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "2fe959e3-9628-4f47-96a1-a2ef03e867e3"
+
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_meeting",
+    )
+    process = models.ForeignKey(
+        'process.Process', null=True, on_delete=models.SET_NULL,
+        help_text='The process claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
     )
     employee_attended_list = models.ManyToManyField(
         'hr.Employee',

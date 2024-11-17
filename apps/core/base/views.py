@@ -58,6 +58,8 @@ class TenantApplicationList(BaseListMixin):
         'allow_print': ['exact'],
         'allow_mail': ['exact'],
         'allow_process': ['exact'],
+        'allow_opportunity': ['exact'],
+        'allow_project': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []

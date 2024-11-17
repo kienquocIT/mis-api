@@ -935,8 +935,8 @@ CONTRACT_APP_CONFIG = {
     "model_code": "contract",
     "app_label": "contract",
     "is_workflow": False,
-    "allow_permit": True,
-    "allow_process": True,
+    "allow_permit": False,
+    "allow_process": False,
 }
 
 PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
@@ -2186,6 +2186,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_opportunity": True,
+    "allow_process": True,
 }
 
 BOM_APP_CONFIG = {

@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.sales.project.extend_func import check_permit_add_member_pj, calc_update_task, calc_rate_project
 from apps.sales.project.models import ProjectMapTasks
 from apps.sales.project.tasks import create_project_news
@@ -154,12 +155,20 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
     work = serializers.UUIDField(required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = OpportunityTask
-        fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
-                  'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
-                  'log_time', 'attach', 'attach_assignee', 'percent_completed', 'project', 'work')
+        fields = (
+            'title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
+            'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
+            'log_time', 'attach', 'attach_assignee', 'percent_completed', 'project', 'work',
+            'process',
+        )
 
     @classmethod
     def validate_end_time(cls, attrs):
@@ -245,6 +254,15 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 attrs.get('log_time', {})
         ):
             raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
+
+        process_obj = attrs.get('process', None)
+        opp_obj = attrs.get('opportunity', None)
+        opportunity_id = opp_obj.id if opp_obj else None
+        app_id = OpportunityTask.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return attrs
 
     def create(self, validated_data):
@@ -284,6 +302,16 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                     'msg': '',
                 }
             )
+
+        if task.process:
+            ProcessRuntimeControl(process_obj=task.process).register_doc(
+                app_id=OpportunityTask.get_app_id(),
+                doc_id=task.id,
+                doc_title=task.title,
+                employee_created_id=task.employee_created_id,
+                date_created=task.date_created,
+            )
+
         return task
 
 
@@ -298,6 +326,17 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     sub_task_list = serializers.SerializerMethodField()
     project = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -439,6 +478,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             'sub_task_list',
             'percent_completed',
             'project',
+            'process',
         )
 
 

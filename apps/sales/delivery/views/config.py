@@ -4,6 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.views import APIView
 
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.masterdata.saledata.models import SubPeriods
 from apps.shared import (
     BaseRetrieveMixin, BaseUpdateMixin,
@@ -11,7 +12,7 @@ from apps.shared import (
     call_task_background,
 )
 from apps.sales.delivery.models import (
-    DeliveryConfig,
+    DeliveryConfig, OrderDeliverySub,
 )
 from apps.sales.delivery.serializers import (
     DeliveryConfigDetailSerializer, DeliveryConfigUpdateSerializer,
@@ -82,7 +83,7 @@ class SaleOrderActiveDelivery(APIView):
         login_require=True, auth_require=True,
         label_code='delivery', model_code='orderDeliverySub', perm_code='create',
     )
-    def post(self, request, *args, pk, **kwargs):
+    def post(self, request, *args, pk, **kwargs):  # pylint: disable=R0914
         SubPeriods.check_open(
             request.user.company_current_id,
             request.user.tenant_current_id,
@@ -118,9 +119,20 @@ class SaleOrderActiveDelivery(APIView):
                             'detail': DeliverMsg.ERROR_CONFIG
                         }
                     )
+
+                body_data = request.data
+                process_id = None
+                if 'process' in body_data:
+                    process_id = request.data['process']
+                    process_obj = ProcessRuntimeControl.get_process_obj(process_id=process_id)
+                    app_id = OrderDeliverySub.get_app_id()
+                    if process_obj:
+                        process_cls = ProcessRuntimeControl(process_obj=process_obj)
+                        process_cls.validate_process(opp_id=None, app_id=app_id)
+
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,
-                    **{'sale_order_id': str(obj.id)}
+                    **{'sale_order_id': str(obj.id), 'process_id': process_id}
                 )
 
                 serializer = DeliveryConfigDetailSerializer(config)
