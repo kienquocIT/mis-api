@@ -131,30 +131,27 @@ class ContactListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.get_full_name(2)
-            }
-        return {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.get_full_name(2)
+        } if obj.owner else {}
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {
-                'id': obj.account_name_id,
-                'name': obj.account_name.name
-            }
-        return {}
+        return {
+            'id': obj.account_name_id,
+            'code': obj.account_name.code,
+            'name': obj.account_name.name
+        } if obj.account_name else {}
 
     @classmethod
     def get_report_to(cls, obj):
-        if obj.report_to:
-            return {
-                'id': obj.report_to_id,
-                'name': obj.report_to.fullname
-            }
-        return {}
+        return {
+            'id': obj.report_to_id,
+            'code': obj.report_to.code,
+            'name': obj.report_to.fullname
+        } if obj.report_to else {}
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
