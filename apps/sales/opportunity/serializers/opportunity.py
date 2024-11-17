@@ -1033,9 +1033,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 
         CommonOpportunityUpdate.update_opportunity_stage_for_list(instance)
 
-        LeadHint.check_and_create_lead_hint(
-            instance, None, None, None, None,
-        )
+        LeadHint.check_and_create_lead_hint(instance, None,)
 
         # handle stage & win_rate
         instance.handle_stage_win_rate(obj=instance)

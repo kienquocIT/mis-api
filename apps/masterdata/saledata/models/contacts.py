@@ -111,7 +111,7 @@ class Contact(DataAbstractModel):
     #   'twitter': 'nva.twitter.com',
     #   'linkedln': 'nva.linkedln.com',
     #   'gmail': 'nva@gmail.com',
-    #   'interests': ["e3e416d7-ae74-4bb8-a55f-169c5fde53a0", "d2f9397d-3a6c-46d6-9a67-442bc43554a8"],
+    #   'interests': [{'id', 'code', 'title'}, ...],
     #   'tags': 'tags',
     # }
     additional_information = models.JSONField(
