@@ -266,8 +266,9 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
         return True
 
+    # none_picking_many_delivery
     @classmethod
-    def config_two_four(cls, instance, product_done, next_association_id, next_node_collab_id, config):  # none_picking_many_delivery
+    def config_two_four(cls, instance, product_done, next_association_id, next_node_collab_id, config):
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
@@ -284,12 +285,41 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         )
         return True
 
+    @classmethod
+    def update_instance_and_product(cls, instance, validated_data, product_done, config):
+        next_association_id = validated_data.get('next_association_id', None)
+        next_node_collab_id = validated_data.get('next_node_collab_id', None)
+        if len(product_done) > 0:
+            # update instance info
+            cls.update_self_info(instance, validated_data)
+            # if product_done
+            # to do check if not submit product so update common info only
+            try:
+                with transaction.atomic():
+                    cls.config_two_four(
+                        instance=instance,
+                        product_done=product_done,
+                        next_association_id=next_association_id,
+                        next_node_collab_id=next_node_collab_id,
+                        config=config
+                    )
+            except Exception as err:
+                print(err)
+                raise err
+        else:
+            if 'products' in validated_data:
+                del validated_data['products']
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
+            instance.order_delivery.employee_inherit = instance.employee_inherit
+            instance.order_delivery.save()
+        return True
+
     @decorator_run_workflow
     def update(self, instance, validated_data):
         DeliHandler.check_update_prod_and_emp(instance, validated_data)
         validated_product = validated_data.get('products', [])
-        next_association_id = validated_data.get('next_association_id', None)
-        next_node_collab_id = validated_data.get('next_node_collab_id', None)
         attachments = validated_data.pop('attachments', None)
         config = instance.config_at_that_point
         if not config:
@@ -308,31 +338,14 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key]['delivery_data'] = item['delivery_data']
         instance.save()
 
-        if len(product_done) > 0:
-            # update instance info
-            self.update_self_info(instance, validated_data)
-            # if product_done
-            # to do check if not submit product so update common info only
-            try:
-                with transaction.atomic():
-                    self.config_two_four(
-                        instance=instance,
-                        product_done=product_done,
-                        next_association_id=next_association_id,
-                        next_node_collab_id=next_node_collab_id,
-                        config=config
-                    )
-            except Exception as err:
-                print(err)
-                raise err
-        else:
-            if 'products' in validated_data:
-                del validated_data['products']
-            for key, value in validated_data.items():
-                setattr(instance, key, value)
-            instance.save()
-            instance.order_delivery.employee_inherit = instance.employee_inherit
-            instance.order_delivery.save()
+        # update instance and product
+        self.update_instance_and_product(
+            instance=instance,
+            validated_data=validated_data,
+            product_done=product_done,
+            config=config,
+        )
+
         if attachments is not None:
             handle_attach_file(instance, attachments)
 
