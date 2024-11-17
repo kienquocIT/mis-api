@@ -268,14 +268,6 @@ TYPE_LIST = (
     (3, LeaveMsg.TYPE_EM),
 )
 
-# Warehouse type
-WAREHOUSE_TYPE = (
-    (0, 'None'),
-    (1, _('Drop Ship')),
-    (2, _('Bin Location')),
-    (3, _('Agency / Partner Location')),
-)
-
 # Goods transfer
 GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),

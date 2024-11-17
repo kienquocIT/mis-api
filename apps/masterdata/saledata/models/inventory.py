@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, WAREHOUSE_TYPE
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'WareHouse',
@@ -57,11 +57,6 @@ class WareHouse(MasterDataAbstractModel):
         related_name='warehouse_agency'
     )
 
-    warehouse_type = models.SmallIntegerField(
-        choices=WAREHOUSE_TYPE,
-        default=0,
-    )
-
     products = models.ManyToManyField(
         'saledata.Product',
         through='saledata.ProductWareHouse',
@@ -69,7 +64,10 @@ class WareHouse(MasterDataAbstractModel):
         blank=True,
         related_name='products_of_warehouse',
     )
+
     is_dropship = models.BooleanField(default=False)
+    is_bin_location = models.BooleanField(default=False)
+    is_agency_location = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'WareHouse storage'
