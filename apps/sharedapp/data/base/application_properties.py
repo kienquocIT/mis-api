@@ -2313,5 +2313,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Return_Payment_data,
     **AppProp_SaleData_Distribution_Plan_data,
     **AppProp_SaleData_BOM_data,
-    **AppProp_SaleData_Bidding_data
+    **AppProp_SaleData_Bidding_data,
+    **AppProp_SaleData_IA_data,
 }
