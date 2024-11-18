@@ -164,7 +164,7 @@ class BiddingAttachment(M2MFilesAbstractModel):
     )
     document = models.ForeignKey(
         'bidding.BiddingDocument',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="document",
         related_name="bidding_attachment_bidding_document",
         null=True
