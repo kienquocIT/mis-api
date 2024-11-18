@@ -39,4 +39,5 @@ urlpatterns = [
     path('diagram/', include('apps.core.diagram.urls')),
     path('form/', include('apps.core.forms.urls')),
     path('chatbot/', include('apps.core.chatbot.urls')),
+    path('recurrence/', include('apps.core.recurrence.urls')),
 ]

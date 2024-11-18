@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from apps.core.hr.models import Employee
+from apps.core.recurrence.models import RecurrenceTask
 
 from apps.eoffice.meeting.models import MeetingSchedule
 from apps.eoffice.businesstrip.models import BusinessRequest
@@ -176,7 +177,7 @@ class CalendarByDay(APIView):
                 if employee_id:
                     category = request.query_params.get('category', None)
                     category = [category] if category else [
-                        'meeting', 'meeting_opp', 'business_trip', 'leave', 'holiday', 'birthday',
+                        'meeting', 'meeting_opp', 'business_trip', 'leave', 'holiday', 'birthday', 'recurrence',
                     ]
                     if 'meeting' in category:
                         objs = MeetingSchedule.objects.select_related('meeting_room_mapped').filter(
@@ -311,6 +312,26 @@ class CalendarByDay(APIView):
                                     'id': obj.id,
                                     'title': obj.get_full_name(),
                                     'remark': '',
+                                    'start_date': None,
+                                    'end_date': None,
+                                    'location_address': '',
+                                    'location_title': '',
+                                }
+                            )
+                    if 'recurrence' in category:
+                        objs = RecurrenceTask.objects.select_related('recurrence').filter(
+                            date_next=day_check,
+                            employee_inherit_id=employee_id,
+                        )
+                        result['recurrence'] = []
+                        for obj in objs:
+                            result['recurrence'].append(
+                                {
+                                    'category': 'Recurrence',
+                                    'id': obj.id,
+                                    'title': obj.recurrence.doc_template_data.get('title', "")
+                                    if obj.recurrence else "",
+                                    'remark': "",
                                     'start_date': None,
                                     'end_date': None,
                                     'location_address': '',

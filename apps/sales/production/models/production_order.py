@@ -20,6 +20,22 @@ class ProductionOrder(DataAbstractModel):
         related_name="production_order_product",
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    supplier = models.ForeignKey(
+        'saledata.Account',
+        on_delete=models.CASCADE,
+        verbose_name="account",
+        related_name="production_order_account",
+        null=True,
+    )
+    supplier_data = models.JSONField(default=dict, help_text='data json of supplier')
+    purchase_order = models.ForeignKey(
+        'purchasing.PurchaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="production_order_purchase_order",
+        null=True,
+    )
+    purchase_order_data = models.JSONField(default=dict, help_text='data json of purchase order')
     quantity = models.FloatField(default=0, help_text='quantity order')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',

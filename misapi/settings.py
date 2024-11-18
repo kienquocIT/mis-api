@@ -83,6 +83,7 @@ INSTALLED_APPS = \
         'apps.core.diagram',  # diagram for apps
         'apps.core.forms',  # form
         'apps.core.chatbot',  # chatbot AI
+        'apps.core.recurrence',  # recurrence for apps
     ] + [  # application
         'apps.core.base',
         'apps.core.account',

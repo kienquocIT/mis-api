@@ -390,3 +390,22 @@ PRODUCTION_REPORT_TYPE = (
     (0, 'For production order'),
     (1, 'For work order'),
 )
+
+# Recurrence
+RECURRENCE_PERIOD = (
+    (1, 'Daily'),
+    (2, 'Weekly'),
+    (3, 'Monthly'),
+    (4, 'Yearly'),
+)
+
+RECURRENCE_STATUS = (
+    (0, 'Active'),
+    (1, 'Expired'),
+)
+
+RECURRENCE_ACTION = (
+    (0, 'Wait'),
+    (1, 'Done'),
+    (2, 'Skip'),
+)

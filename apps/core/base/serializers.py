@@ -48,7 +48,9 @@ class ApplicationListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'title_i18n',
-            'code'
+            'code',
+            'app_label',
+            'model_code',
         )
 
 
