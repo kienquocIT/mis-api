@@ -8,7 +8,7 @@ from .application_properties_params import (
     Payment_data__params,
     IA_data__params,
     Goods_Transfer_data__params,
-    Goods_Return_data__params, Delivery_data__params
+    Goods_Return_data__params, Delivery_data__params, Bidding_data__params
 )
 
 __all__ = ["ApplicationProperty_data"]
@@ -1909,7 +1909,6 @@ AppProp_SaleData_Advance_Payment_data = {
         'title': 'Advance value',
         'code': 'advance_value',
         'type': 6,
-        'is_wf_zone': False,
         'is_wf_condition': True,
         'is_wf_zone': True,
     },
@@ -2281,6 +2280,7 @@ AppProp_SaleData_Bidding_data = {
         "type": 1,
         'is_wf_zone': True,
     },
+    **Bidding_data__params
 }
 
 ApplicationProperty_data = {
@@ -2313,6 +2313,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Return_Payment_data,
     **AppProp_SaleData_Distribution_Plan_data,
     **AppProp_SaleData_BOM_data,
+
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
 }

@@ -33,7 +33,7 @@ class BiddingResultConfigCreateSerializer(serializers.ModelSerializer):
     def validate_employee(cls, value):
         for item in value:
             try:
-                Employee.objects.get(id=item).exists()
+                Employee.objects.get(id=item)
             except Employee.DoesNotExist:
                 raise serializers.ValidationError({"employee": "Employee does not exist"})
         return value
