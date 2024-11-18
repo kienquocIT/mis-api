@@ -1,11 +1,44 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Account, DocumentType
-from apps.sales.bidding.models import Bidding
+from apps.sales.bidding.models import Bidding, BiddingResultConfig
 from apps.sales.bidding.serializers.bidding import (
     BiddingListSerializer, DocumentMasterDataBiddingListSerializer, AccountForBiddingListSerializer,
-    BiddingCreateSerializer, BiddingDetailSerializer, BiddingUpdateSerializer, BiddingUpdateResultSerializer
+    BiddingCreateSerializer, BiddingDetailSerializer, BiddingUpdateSerializer, BiddingUpdateResultSerializer,
+    BiddingResultConfigListSerializer, BiddingResultConfigCreateSerializer, BiddingResultConfigDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+
+class BiddingResultConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = BiddingResultConfig.objects
+    serializer_list = BiddingResultConfigListSerializer
+    serializer_create = BiddingResultConfigCreateSerializer
+    serializer_detail = BiddingResultConfigDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Bidding Result Config list",
+        operation_description="Bidding Result Config list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Bidding Result Config",
+        operation_description="Create new Bidding Result Config",
+        request_body=BiddingResultConfigCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
 
 class BiddingList(BaseListMixin, BaseCreateMixin):
     queryset = Bidding.objects

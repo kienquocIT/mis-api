@@ -1,6 +1,5 @@
 from django.urls import path
 
-from apps.masterdata.saledata.views.bidding_result_config import BiddingResultConfigList
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
@@ -198,6 +197,3 @@ urlpatterns += [
     # path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
 ]
 
-urlpatterns += [
-    path('bidding-result-config', BiddingResultConfigList.as_view(), name='BiddingResultConfigList'),
-]
