@@ -196,4 +196,3 @@ urlpatterns += [
     path('document-type/<str:pk>', DocumentTypeDetail.as_view(), name='DocumentTypeDetail'),
     # path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
 ]
-
