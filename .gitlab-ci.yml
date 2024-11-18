@@ -27,6 +27,7 @@ before_script:
       echo "Waiting for database to be ready...";
       sleep 2;
     done
+  - echo "Change collation of database to utf8-unicode..." && mysql -h $DB_HOST -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "ALTER DATABASE $MYSQL_DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
   - echo "Initializing database with init.sql..." && mysql -h "$DB_HOST" -u "$MYSQL_USER" -p"$MYSQL_PASS" "$MYSQL_DB" < ./.cicd.sql
 
 stages:
