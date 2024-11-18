@@ -1114,7 +1114,7 @@ def update_product_general_price():
 
 def update_payment_cost():
     for item in PaymentCost.objects.all():
-        item.opportunity_mapped = item.payment.opportunity_mapped
+        item.opportunity = item.payment.opportunity
         item.quotation_mapped = item.payment.quotation_mapped
         item.sale_order_mapped = item.payment.sale_order_mapped
         item.save()

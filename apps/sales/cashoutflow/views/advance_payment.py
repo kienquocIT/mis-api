@@ -16,7 +16,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     serializer_create = AdvancePaymentCreateSerializer
     serializer_detail = AdvancePaymentDetailSerializer
     filterset_fields = {
-        'opportunity_mapped_id': ['exact'],
+        'opportunity_id': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
@@ -32,7 +32,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
             ).select_related(
                 'sale_order_mapped__opportunity',
                 'quotation_mapped__opportunity',
-                'opportunity_mapped',
+                'opportunity',
                 'employee_inherit'
             )
         else:
@@ -43,7 +43,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
             ).select_related(
                 'sale_order_mapped__opportunity',
                 'quotation_mapped__opportunity',
-                'opportunity_mapped',
+                'opportunity',
                 'employee_inherit'
             )
         return self.get_queryset_custom_direct_page(main_queryset)
@@ -91,7 +91,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'sale_order_mapped__opportunity__customer',
             'sale_order_mapped__quotation__customer',
             'quotation_mapped__opportunity__customer',
-            'opportunity_mapped__customer',
+            'opportunity__customer',
             'supplier__owner',
             'supplier__industry',
             'employee_inherit__group',
@@ -120,7 +120,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class AdvancePaymentCostList(BaseListMixin):
     queryset = AdvancePaymentCost.objects
     filterset_fields = {
-        'opportunity_mapped_id': ['exact'],
+        'opportunity_id': ['exact'],
         'quotation_mapped_id': ['exact'],
         'sale_order_mapped_id': ['exact'],
     }

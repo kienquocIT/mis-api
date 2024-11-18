@@ -6,11 +6,11 @@ class PaymentHandler:
     # OPPORTUNITY LOG
     @classmethod
     def push_opportunity_log(cls, instance):
-        if instance.opportunity_mapped:
+        if instance.opportunity:
             OpportunityActivityLogs.push_opportunity_log(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
-                opportunity_id=instance.opportunity_mapped_id,
+                opportunity_id=instance.opportunity_id,
                 employee_created_id=instance.employee_created_id,
                 app_code=str(instance.__class__.get_model_code()),
                 doc_id=instance.id,

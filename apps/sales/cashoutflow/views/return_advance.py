@@ -91,7 +91,7 @@ class APListForReturn(BaseListMixin):
     serializer_list = APListForReturnSerializer
     filterset_fields = {
         'id': ['exact'],
-        'opportunity_mapped_id': ['exact'],
+        'opportunity_id': ['exact'],
         'system_status': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

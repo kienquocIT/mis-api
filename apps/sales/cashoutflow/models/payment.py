@@ -51,6 +51,11 @@ class Payment(DataAbstractModel):
         on_delete=models.CASCADE, null=True,
         related_name="payment_opportunity_mapped"
     )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_opportunity"
+    )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
         help_text='0 is Sale, 1 is Purchase, 2 is None-sale'
@@ -91,10 +96,10 @@ class Payment(DataAbstractModel):
         if instance.sale_order_mapped:
             sale_order_id = instance.sale_order_mapped_id
             opportunity_id = instance.sale_order_mapped.opportunity_id
-        elif instance.opportunity_mapped:
-            if instance.opportunity_mapped.sale_order:
-                sale_order_id = instance.opportunity_mapped.sale_order_id
-                opportunity_id = instance.opportunity_mapped_id
+        elif instance.opportunity:
+            if instance.opportunity.sale_order:
+                sale_order_id = instance.opportunity.sale_order_id
+                opportunity_id = instance.opportunity_id
         if sale_order_id:
             list_data_indicator = []
             for payment_exp in instance.payment.all():
@@ -191,6 +196,11 @@ class PaymentCost(SimpleAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
         related_name="payment_cost_opportunity_mapped"
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_opportunity"
     )
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_type_data = models.JSONField(default=dict)

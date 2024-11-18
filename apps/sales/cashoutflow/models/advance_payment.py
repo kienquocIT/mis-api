@@ -36,6 +36,11 @@ class AdvancePayment(DataAbstractModel):
         on_delete=models.CASCADE, null=True,
         related_name="ap_opportunity_mapped"
     )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="ap_opportunity"
+    )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
@@ -121,6 +126,11 @@ class AdvancePaymentCost(SimpleAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
         related_name="ap_cost_opportunity_mapped"
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="ap_cost_opportunity"
     )
     expense_name = models.CharField(max_length=150, null=True)
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
