@@ -4,7 +4,8 @@ from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 __all__ = [
     'WareHouse',
     'WarehouseEmployeeConfig',
-    'WarehouseEmployeeConfigDetail'
+    'WarehouseEmployeeConfigDetail',
+    'WarehouseShelf'
 ]
 
 

@@ -1,10 +1,12 @@
 from rest_framework import serializers
-
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse, Account, ProductWareHouseLot, ProductWareHouseSerial,
+    WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
     WarehouseEmployeeConfig, WarehouseEmployeeConfigDetail
 )
+from apps.masterdata.saledata.models.inventory import WarehouseShelf
+from apps.shared import TypeCheck, WarehouseMsg
+
 
 __all__ = [
     'WareHouseListSerializer',
@@ -22,10 +24,6 @@ __all__ = [
     'WarehouseEmployeeConfigDetailSerializer',
     'ProductWareHouseListSerializerForGoodsTransfer'
 ]
-
-from apps.masterdata.saledata.models.inventory import WarehouseShelf
-
-from apps.shared import TypeCheck, WarehouseMsg
 
 
 class WareHouseListSerializer(serializers.ModelSerializer):

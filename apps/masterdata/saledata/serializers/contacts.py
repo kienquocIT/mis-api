@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
