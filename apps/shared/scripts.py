@@ -2480,3 +2480,27 @@ def update_lead_stage():
                 ))
     LeadStage.objects.bulk_create(bulk_info)
     print('Done :))')
+
+
+def move_opp_mapped_2_opp():
+    for company in Company.objects.all():
+        for ap in AdvancePayment.objects.filter(company=company):
+            if ap.opportunity_mapped:
+                ap.opportunity = ap.opportunity_mapped
+                ap.save(update_fields=['opportunity'])
+            for item in ap.advance_payment.all():
+                if item.opportunity_mapped:
+                    item.opportunity = item.opportunity_mapped
+                    item.save(update_fields=['opportunity'])
+
+        for pm in Payment.objects.filter(company=company):
+            if pm.opportunity_mapped:
+                pm.opportunity = pm.opportunity_mapped
+                pm.save(update_fields=['opportunity'])
+            for item in pm.payment.all():
+                if item.opportunity_mapped:
+                    item.opportunity = item.opportunity_mapped
+                    item.save(update_fields=['opportunity'])
+
+        print(f"Done for {company.title}")
+    print('Done :))')
