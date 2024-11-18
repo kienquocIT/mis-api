@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.cashoutflow.utils import AdvanceHandler
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
 __all__ = ['AdvancePayment', 'AdvancePaymentCost', 'AdvancePaymentAttachmentFile']
 
@@ -26,20 +26,16 @@ ADVANCE_PAYMENT_METHOD = [
 ]
 
 
-class AdvancePayment(DataAbstractModel):
+class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return '57725469-8b04-428a-a4b0-578091d0e4f5'
 
+    # cái opportunity_mapped là field cũ, không sài
     opportunity_mapped = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
         related_name="ap_opportunity_mapped"
-    )
-    opportunity = models.ForeignKey(
-        'opportunity.Opportunity',
-        on_delete=models.CASCADE, null=True,
-        related_name="ap_opportunity"
     )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
