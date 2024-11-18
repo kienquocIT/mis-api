@@ -70,6 +70,8 @@ class ProductionOrderDetailSerializer(AbstractDetailSerializerModel):
             'bom_data',
             'type_production',
             'product_data',
+            'supplier_data',
+            'purchase_order_data',
             'quantity',
             'uom_data',
             'warehouse_data',
@@ -89,6 +91,8 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     bom_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    purchase_order_id = serializers.UUIDField(required=False, allow_null=True)
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     group_id = serializers.UUIDField(required=False, allow_null=True)
@@ -103,6 +107,10 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
             'type_production',
             'product_id',
             'product_data',
+            'supplier_id',
+            'supplier_data',
+            'purchase_order_id',
+            'purchase_order_data',
             'quantity',
             'uom_id',
             'uom_data',
@@ -126,6 +134,14 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_product_id(cls, value):
         return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_supplier_id(cls, value):
+        return ProductionOrderValid.validate_supplier_id(value=value)
+
+    @classmethod
+    def validate_purchase_order_id(cls, value):
+        return ProductionOrderValid.validate_purchase_order_id(value=value)
 
     @classmethod
     def validate_uom_id(cls, value):
@@ -149,6 +165,8 @@ class ProductionOrderCreateSerializer(AbstractCreateSerializerModel):
 class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
     bom_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField(required=False, allow_null=True)
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    purchase_order_id = serializers.UUIDField(required=False, allow_null=True)
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     group_id = serializers.UUIDField(required=False, allow_null=True)
@@ -163,6 +181,10 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
             'type_production',
             'product_id',
             'product_data',
+            'supplier_id',
+            'supplier_data',
+            'purchase_order_id',
+            'purchase_order_data',
             'quantity',
             'uom_id',
             'uom_data',
@@ -186,6 +208,14 @@ class ProductionOrderUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_product_id(cls, value):
         return ProductionOrderValid.validate_product_id(value=value)
+
+    @classmethod
+    def validate_supplier_id(cls, value):
+        return ProductionOrderValid.validate_supplier_id(value=value)
+
+    @classmethod
+    def validate_purchase_order_id(cls, value):
+        return ProductionOrderValid.validate_purchase_order_id(value=value)
 
     @classmethod
     def validate_uom_id(cls, value):

@@ -60,6 +60,7 @@ class TenantApplicationList(BaseListMixin):
         'allow_process': ['exact'],
         'allow_opportunity': ['exact'],
         'allow_project': ['exact'],
+        'allow_recurrence': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []

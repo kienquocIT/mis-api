@@ -307,6 +307,8 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            #
+            'is_recurring',
         )
 
     @classmethod
@@ -315,7 +317,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return SaleOrderCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):
@@ -488,7 +490,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_opportunity_id(cls, value):
-        return SaleOrderCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
     def validate_contact(cls, value):
@@ -684,3 +686,29 @@ class SOProductWOListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quantity_wo_completed(cls, obj):
         return obj.product_quantity - obj.quantity_wo_remain
+
+
+class SORecurrenceListSerializer(AbstractListSerializerModel):
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
