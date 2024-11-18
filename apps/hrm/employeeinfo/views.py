@@ -1,19 +1,16 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 
-from apps.core.account.models import User
 from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM
 from apps.hrm.employeeinfo.serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
-    EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers
-from apps.sales.project.serializers import ProjectDetailSerializers
+    EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers, EmployeeInfoDetailSerializers
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseUpdateMixin, BaseRetrieveMixin
 
 
 class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
     queryset = EmployeeInfo.objects
     serializer_list = EmployeeInfoListSerializers
-    serializer_detail = ProjectDetailSerializers
+    serializer_detail = EmployeeInfoDetailSerializers
     serializer_create = EmployeeInfoCreateSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = [
@@ -21,7 +18,7 @@ class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee')
+        return super().get_queryset().select_related('employee', 'employee__user')
 
     @swagger_auto_schema(
         operation_summary="Employee Info list",
@@ -44,14 +41,44 @@ class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
         label_code='hrm', model_code='employeeInfo', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current': request.user.tenant_current,
+            'company_current': request.user.company_current,
+        }
         return self.create(request, *args, **kwargs)
 
 
-class EmployeeInfoDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView):
+class EmployeeInfoDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = EmployeeInfo.objects
-    serializer_detail = ProjectDetailSerializers
+    serializer_detail = EmployeeInfoDetailSerializers
     serializer_update = EmployeeInfoUpdateSerializers
     retrieve_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('nationality', 'place_of_birth', 'place_of_origin')
+
+    @swagger_auto_schema(
+        operation_summary="Employee Info detail",
+        operation_description="get employee info detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='hrm', model_code='employeeInfo', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update employee info",
+        operation_description="Update employee info",
+        request_body=EmployeeInfoUpdateSerializers,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='hrm', model_code='employeeInfo', perm_code='edit'
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class EmployeeNotMapHRMList(BaseListMixin):
@@ -72,8 +99,8 @@ class EmployeeNotMapHRMList(BaseListMixin):
         operation_description="get Employee not map HRM list",
     )
     @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True
-        # label_code='hrm', model_code='employeeInfo', perm_code='view',
+        login_require=True, auth_require=True, allow_admin_company=True,
+        label_code='hrm', model_code='employeeInfo', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

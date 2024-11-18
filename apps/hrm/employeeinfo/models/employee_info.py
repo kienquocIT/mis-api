@@ -14,6 +14,7 @@ MARITAL_STT = (
     (2, 'Separated'),
     (3, 'Divorced'),
     (4, 'Single'),
+    (5, 'Engaged'),
 )
 
 
@@ -21,9 +22,11 @@ class EmployeeInfo(TenantAbstractModel):
     employee = models.OneToOneField(
         'hr.Employee',
         on_delete=models.CASCADE,
-        related_name="employee_info"
+        related_name="employee_info",
+        null=True,
+        blank=True
     )
-    citizen_id = models.IntegerField(
+    citizen_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
         verbose_name='citizen identification',
@@ -33,19 +36,20 @@ class EmployeeInfo(TenantAbstractModel):
         blank=True,
         verbose_name='Date of issue'
     )
-    place_of_issue = models.ForeignKey(
-        'base.Country',
-        on_delete=models.SET_NULL,
+    place_of_issue = models.CharField(
         verbose_name='place of issue',
+        blank=True,
+        max_length=150,
+        null=True,
         help_text="The place of issue refers to the city where the passport processing took place",
-        null=True,
-        blank=True,
-        related_name='place_of_issue_employee_info_set'
     )
-    place_of_birth = models.DateField(
+    place_of_birth = models.ForeignKey(
+        'base.City',
+        on_delete=models.SET_NULL,
+        verbose_name="Place of birth",
         null=True,
         blank=True,
-        verbose_name='Place of birth'
+        related_name='pob_employee_info'
     )
     nationality = models.ForeignKey(
         'base.Country',
@@ -77,15 +81,15 @@ class EmployeeInfo(TenantAbstractModel):
         null=True,
         blank=True
     )
-    bank_acc_no = models.IntegerField(
+    bank_acc_no = models.PositiveBigIntegerField(
         null=True,
         blank=True,
         verbose_name='Bank account number',
     )
-    bank_name = models.CharField(
+    acc_name = models.CharField(
         blank=True, max_length=50, null=True, help_text='account name'
     )
-    acc_name = models.IntegerField(
+    bank_name = models.IntegerField(
         choices=LIST_BANK,
         null=True,
         blank=True
