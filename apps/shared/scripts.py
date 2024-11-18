@@ -41,6 +41,7 @@ from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
+from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
@@ -2447,3 +2448,20 @@ def update_default_document_types():
         DocumentType.objects.bulk_create(bulk_data)
     print('Done :))')
     return True
+
+
+def create_empl_map_hrm():
+    avai_lst = []
+    for employee in Employee.objects.all():
+        obj, _created = EmployeeHRNotMapEmployeeHRM.objects.get_or_create(
+            company_id=employee.company_id, employee=employee,
+            defaults={
+                'company_id': employee.company_id,
+                'employee_id': employee.id,
+                'is_mapped': False
+            }
+        )
+        if not _created:
+            avai_lst.append(obj)
+    print('init create hrm data list done!')
+    print('Available list has created', avai_lst)
