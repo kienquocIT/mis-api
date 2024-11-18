@@ -171,7 +171,7 @@ class ProcessRuntimeControl:
         return app_obj
 
     def check_opp(self, opp_id) -> True or serializers.ValidationError:
-        if opp_id != self.process_obj.opp_id:
+        if str(opp_id) != str(self.process_obj.opp_id):
             raise serializers.ValidationError({self.key_raise_error: ProcessMsg.OPP_NOT_MATCH})
         return True
 
