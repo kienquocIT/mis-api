@@ -2346,6 +2346,7 @@ BIDDING_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
