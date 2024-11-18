@@ -3094,7 +3094,6 @@ class Accounting:
                                 company=company,
                                 tenant=company.tenant,
                                 level=len(str(list_table_data[table]['acc_code_list'][i])) - 2,
-                                is_account=False,
                                 is_default=True
                             )
                             level1_bulk_create.append(item)
@@ -3109,7 +3108,6 @@ class Accounting:
                                 company=company,
                                 tenant=company.tenant,
                                 level=len(str(list_table_data[table]['acc_code_list'][i])) - 2,
-                                is_account=True,
                                 is_default=True
                             )
                             level1_bulk_create[-1].has_child = True
@@ -3125,7 +3123,6 @@ class Accounting:
                                 company=company,
                                 tenant=company.tenant,
                                 level=len(str(list_table_data[table]['acc_code_list'][i])) - 2,
-                                is_account=True,
                                 is_default=True
                             )
                             level2_bulk_create[-1].has_child = True
@@ -3135,6 +3132,7 @@ class Accounting:
             ChartOfAccounts.objects.bulk_create(level2_bulk_create)
             ChartOfAccounts.objects.bulk_create(level3_bulk_create)
             print(f'Done for {company.title}')
+        ChartOfAccounts.objects.filter(has_child=False).update(is_account=True)
         return True
 
     @staticmethod
