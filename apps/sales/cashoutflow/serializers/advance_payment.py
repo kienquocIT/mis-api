@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.masterdata.saledata.models import Currency, ExpenseItem, Account, Tax
@@ -198,10 +199,18 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     ap_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = AdvancePayment
         fields = (
+            # process
+            'process',
+            #
             'title',
             'opportunity_mapped_id',
             'quotation_mapped_id',
@@ -232,7 +241,14 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             doc_id=None,
             validate_data=validate_data
         )
-        print('*validate done')
+
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data.get('opportunity_mapped_id', None)
+        app_id = AdvancePayment.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return validate_data
 
     @decorator_run_workflow
@@ -243,6 +259,16 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         ap_obj = AdvancePayment.objects.create(**validated_data)
         APCommonFunction.create_ap_items(ap_obj, ap_item_list)
         APCommonFunction.handle_attach_file(ap_obj, attachment)
+
+        if ap_obj.process:
+            ProcessRuntimeControl(process_obj=ap_obj.process).register_doc(
+                app_id=AdvancePayment.get_app_id(),
+                doc_id=ap_obj.id,
+                doc_title=ap_obj.title,
+                employee_created_id=ap_obj.employee_created_id,
+                date_created=ap_obj.date_created,
+            )
+
         return ap_obj
 
 
@@ -255,6 +281,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -278,8 +305,20 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'employee_created',
             'employee_inherit',
             'attachment',
-            'sale_code'
+            'sale_code',
+            # process
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_expense_items(cls, obj):

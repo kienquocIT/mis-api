@@ -239,7 +239,9 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
                         'was_done': obj_app.was_done,
                         'amount_approved': obj_app.amount_approved,
                     } for obj_app in
-                    ProcessStageApplication.objects.select_related('application').filter(process=obj, stage=obj_stage)
+                    ProcessStageApplication.objects.select_related('application').filter(
+                        process=obj, stage=obj_stage
+                    ).order_by('order_number')
                 ],
                 'state': cls.state_of_stages(current_order_number, obj_stage.order_number),
                 'order_number': obj_stage.order_number,

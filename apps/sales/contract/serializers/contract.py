@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.contract.models import ContractApproval, ContractDocument, ContractAttachment
 from apps.sales.contract.serializers.contract_sub import ContractCommonCreate, ContractValid
@@ -36,6 +37,17 @@ class ContractApprovalListSerializer(AbstractListSerializerModel):
 
 class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     class Meta:
         model = ContractApproval
@@ -51,6 +63,7 @@ class ContractApprovalDetailSerializer(AbstractDetailSerializerModel):
             'trade_content',
             'legal_content',
             'payment_content',
+            'process',
         )
 
     @classmethod
@@ -64,6 +77,11 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     document_data = DocumentCreateSerializer(many=True, required=False)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = ContractApproval
@@ -79,6 +97,7 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
             'trade_content',
             'legal_content',
             'payment_content',
+            'process',
         )
 
     @classmethod
@@ -100,12 +119,32 @@ class ContractApprovalCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    def validate(self, validate_data):
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        app_id = ContractApproval.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
+        return validate_data
+
     @decorator_run_workflow
     def create(self, validated_data):
         attachment = validated_data.pop('attachment', [])
         contract = ContractApproval.objects.create(**validated_data)
         ContractCommonCreate.handle_attach_file(instance=contract, attachment_result=attachment)
         ContractCommonCreate.create_sub_models(validated_data=validated_data, instance=contract)
+
+        if contract.process:
+            ProcessRuntimeControl(process_obj=contract.process).register_doc(
+                app_id=ContractApproval.get_app_id(),
+                doc_id=contract.id,
+                doc_title=contract.title,
+                employee_created_id=contract.employee_created_id,
+                date_created=contract.date_created,
+            )
+
         return contract
 
 

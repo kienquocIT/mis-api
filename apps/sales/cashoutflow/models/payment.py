@@ -32,6 +32,10 @@ ADVANCE_PAYMENT_METHOD = [
 
 
 class Payment(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '1010563f-7c94-42f9-ba99-63d5d26a1aca'
+
     sale_order_mapped = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE, null=True,

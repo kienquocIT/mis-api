@@ -684,7 +684,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 obj = queryset.get(
                     **filter_kwargs,
                     **field_hidden,
-                    force_cache=self.use_cache_object
                 )
             else:
                 obj = queryset.get(
@@ -796,6 +795,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             '[replace_skip_exist] type data and data_replace is incorrect: %s & %s' % (type(data), type(data_replace))
             )
 
+    def get_param(self, key, default_value=None):
+        return self.request.query_params.dict().get(key, default_value)
+
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
@@ -862,7 +864,7 @@ class BaseListMixin(BaseMixin):
             if self.use_cache_minimal and self.query_extend_base_model:
                 queryset = self.filter_queryset(
                     self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
-                ).cache()
+                )
             else:
                 queryset = self.filter_queryset(
                     self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
@@ -871,7 +873,7 @@ class BaseListMixin(BaseMixin):
             if self.use_cache_queryset and self.query_extend_base_model:
                 queryset = self.filter_queryset(
                     self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
-                ).cache()
+                )
             else:
                 queryset = self.filter_queryset(
                     self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)

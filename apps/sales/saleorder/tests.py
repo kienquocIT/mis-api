@@ -303,6 +303,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                #
+                'process',
             ],
             check_sum_second=True,
         )
@@ -582,6 +584,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'process',
             ],
             check_sum_second=True,
         )

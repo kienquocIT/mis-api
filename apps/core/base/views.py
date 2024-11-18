@@ -42,7 +42,7 @@ class PlanList(generics.GenericAPIView):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        queryset = self.filter_queryset(self.get_queryset().filter())
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -58,6 +58,8 @@ class TenantApplicationList(BaseListMixin):
         'allow_print': ['exact'],
         'allow_mail': ['exact'],
         'allow_process': ['exact'],
+        'allow_opportunity': ['exact'],
+        'allow_project': ['exact'],
     }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -228,7 +230,7 @@ class ApplicationList(generics.GenericAPIView):
     @swagger_auto_schema()
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        queryset = self.filter_queryset(self.get_queryset().filter())  # cache 1 days | 1440 minutes
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -251,7 +253,7 @@ class PermissionApplicationList(generics.GenericAPIView):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        queryset = self.filter_queryset(self.get_queryset().filter())  # cache 1 days | 1440 minutes
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
