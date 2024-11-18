@@ -20,6 +20,7 @@ from misapi import settings
 logger = logging.getLogger(__name__)
 
 
+# Activity: Call log
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -119,6 +120,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
 
+        validate_data['title'] = f"Call log: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
@@ -301,6 +303,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
 
+        validate_data['title'] = f"Email: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
@@ -519,6 +522,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
 
+        validate_data['title'] = f"Meeting: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
