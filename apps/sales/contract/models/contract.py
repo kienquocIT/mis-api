@@ -5,6 +5,10 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, BastionField
 
 
 class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "58385bcf-f06c-474e-a372-cadc8ea30ecc"
+
     opportunity_data = models.JSONField(default=dict, help_text='data json of opportunity')
     employee_inherit_data = models.JSONField(default=dict, help_text='data json of employee_inherit')
     document_data = models.JSONField(default=list, help_text='data json of document')

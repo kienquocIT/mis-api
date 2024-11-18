@@ -482,6 +482,7 @@ SALEORDER_APP_CONFIG = {
     "allow_permit": True,
     "allow_process": True,
     "allow_opportunity": True,
+    "allow_recurrence": True,
 }
 
 PRODUCT_APP_CONFIG = {
@@ -819,6 +820,7 @@ PAYMENT_APP_CONFIG = {
     "allow_print": True,
     "allow_process": True,
     "allow_opportunity": True,
+    "allow_recurrence": True,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -935,8 +937,8 @@ CONTRACT_APP_CONFIG = {
     "model_code": "contract",
     "app_label": "contract",
     "is_workflow": False,
-    "allow_permit": True,
-    "allow_process": True,
+    "allow_permit": False,
+    "allow_process": False,
 }
 
 PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
@@ -2186,6 +2188,7 @@ CONTRACT_APPROVAL_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_opportunity": True,
+    "allow_process": True,
 }
 
 BOM_APP_CONFIG = {
@@ -2343,6 +2346,7 @@ BIDDING_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity

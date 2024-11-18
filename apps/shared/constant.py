@@ -390,3 +390,74 @@ PRODUCTION_REPORT_TYPE = (
     (0, 'For production order'),
     (1, 'For work order'),
 )
+
+LIST_BANK = (
+    (0, 'VBSP'),
+    (1, 'VDP'),
+    (3, 'Agribank'),
+    (4, 'CB'),
+    (5, 'Oceanbank'),
+    (6, 'GPBank'),
+    (7, 'BIDV'),
+    (8, 'Vietcombank'),
+    (9, 'Vietinbank'),
+    (10, 'VPBank'),
+    (11, 'MB'),
+    (12, 'ACB'),
+    (13, 'SHB'),
+    (14, 'Techcombank'),
+    (15, 'HDBank'),
+    (16, 'LPBank'),
+    (17, 'VIB'),
+    (18, 'SeABank'),
+    (19, 'TPBank'),
+    (20, 'OCB'),
+    (21, 'SCB'),
+    (22, 'MSB'),
+    (23, 'Sacombank'),
+    (24, 'Eximbank'),
+    (25, 'NCB'),
+    (26, 'NamABank'),
+    (27, 'ABBank'),
+    (28, 'PVComBank'),
+    (29, 'BacABank'),
+    (30, 'VietBank'),
+    (31, 'VAB'),
+    (32, 'BVBank'),
+    (33, 'DongABank'),
+    (34, 'KLB'),
+    (35, 'SaigonBank'),
+    (36, 'Baoviet'),
+    (37, 'PGBank'),
+    (38, 'ShinhanBank'),
+    (39, 'HSBC'),
+    (40, 'StanChart'),
+    (41, 'WooriBank'),
+    (42, 'CIMB'),
+    (43, 'PublicBank'),
+    (44, 'HongLeongBank'),
+    (45, 'UOB'),
+    (46, 'Citibank'),
+    (47, 'KBank'),
+    (48, 'BangkokBank'),
+    (49, 'DeutscheBank'),
+)
+
+# Recurrence
+RECURRENCE_PERIOD = (
+    (1, 'Daily'),
+    (2, 'Weekly'),
+    (3, 'Monthly'),
+    (4, 'Yearly'),
+)
+
+RECURRENCE_STATUS = (
+    (0, 'Active'),
+    (1, 'Expired'),
+)
+
+RECURRENCE_ACTION = (
+    (0, 'Wait'),
+    (1, 'Done'),
+    (2, 'Skip'),
+)

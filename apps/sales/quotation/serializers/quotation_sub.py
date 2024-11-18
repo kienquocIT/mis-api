@@ -138,14 +138,14 @@ class QuotationCommonCreate:
 class QuotationCommonValidate:
 
     @classmethod
-    def validate_customer(cls, value):
+    def validate_customer(cls, value) -> Account:
         try:
             return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         try:
             if value is None:
                 return value
@@ -154,14 +154,14 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
-    def validate_contact(cls, value):
+    def validate_contact(cls, value) -> Contact:
         try:
             return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_sale_person(cls, value) -> Employee:
         try:
             return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value)
         except Employee.DoesNotExist:

@@ -5,7 +5,7 @@ from apps.sales.saleorder.models import (
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
     SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer,
-    SOProductWOListSerializer
+    SOProductWOListSerializer, SaleOrderMinimalListSerializer, SORecurrenceListSerializer
 )
 from apps.sales.saleorder.serializers.sale_order_config import (
     SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
@@ -30,8 +30,10 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'opportunity_id': ['exact', 'in'],
         'opportunity__is_deal_close': ['exact'],
         'has_regis': ['exact'],
+        'is_recurring': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
+    serializer_list_minimal = SaleOrderMinimalListSerializer
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -43,6 +45,10 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
+        is_minimal = self.get_param(key='is_minimal')
+        if is_minimal:
+            return super().get_queryset()
+
         main_queryset = super().get_queryset().select_related(
             "customer",
             "opportunity",
@@ -296,6 +302,28 @@ class SOProductWOList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="SO Product Work Order List",
         operation_description="Get SO Product Work Order List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SORecurrenceList(BaseListMixin, BaseCreateMixin):
+    queryset = SaleOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'is_recurring': ['exact'],
+    }
+    serializer_list = SORecurrenceListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="SO Recurrence List",
+        operation_description="Get SO SORecurrence List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

@@ -1,8 +1,11 @@
+import logging
 from rest_framework import serializers
 from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.core.process.utils import ProcessRuntimeControl
+from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
@@ -14,11 +17,13 @@ from apps.sales.opportunity.msg import OpportunityOnlyMsg
 from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor
 from misapi import settings
 
+logger = logging.getLogger(__name__)
 
-# Activity: Call Log
+
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityCallLog
@@ -30,8 +35,19 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'call_date',
             'input_result',
             'repeat',
-            'is_cancelled'
+            'is_cancelled',
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -57,6 +73,11 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
+    process = serializers.UUIDField(required=False, allow_null=True, default=None)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = OpportunityCallLog
@@ -66,7 +87,8 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             'contact',
             'call_date',
             'input_result',
-            'repeat'
+            'repeat',
+            'process',
         )
 
     @classmethod
@@ -89,6 +111,14 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
                 self.context.get('employee_id'), validate_data['opportunity']
         ):
             raise serializers.ValidationError({'permission': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
+
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data['opportunity'].id
+        app_id = OpportunityCallLog.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return validate_data
 
     def create(self, validated_data):
@@ -101,12 +131,23 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             date_created=validated_data['call_date'],
             log_type=2,
         )
+
+        if call_log_obj.process:
+            ProcessRuntimeControl(process_obj=call_log_obj.process).register_doc(
+                app_id=OpportunityCallLog.get_app_id(),
+                doc_id=call_log_obj.id,
+                doc_title=call_log_obj.title,
+                employee_created_id=call_log_obj.employee_created_id,
+                date_created=call_log_obj.date_created,
+            )
+
         return call_log_obj
 
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField() # noqa
     contact = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityCallLog
@@ -118,8 +159,20 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'call_date',
             'input_result',
             'repeat',
-            'is_cancelled'
+            'is_cancelled',
+            # process
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -163,6 +216,17 @@ class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
 # Activity: Email
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     class Meta:
         model = OpportunityEmail
@@ -174,6 +238,7 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
+            'process',
         )
 
     @classmethod
@@ -187,6 +252,11 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.UUIDField()
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = OpportunityEmail
@@ -196,6 +266,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'email_cc_list',
             'content',
             'opportunity',
+            'process',
         )
 
     @classmethod
@@ -222,6 +293,14 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
                 self.context.get('employee_id'), validate_data['opportunity']
         ):
             raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
+
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data['opportunity'].id
+        app_id = OpportunityEmail.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return validate_data
 
     def create(self, validated_data):
@@ -234,11 +313,32 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             opportunity=validated_data['opportunity'],
             log_type=3,
         )
+
+        if email_obj.process:
+            ProcessRuntimeControl(process_obj=email_obj.process).register_doc(
+                app_id=OpportunityEmail.get_app_id(),
+                doc_id=email_obj.id,
+                doc_title=email_obj.title,
+                employee_created_id=email_obj.employee_created_id,
+                date_created=email_obj.date_created,
+            )
+
         return email_obj
 
 
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     class Meta:
         model = OpportunityEmail
@@ -250,6 +350,7 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
+            'process',
         )
 
     @classmethod
@@ -273,6 +374,17 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
     customer_member_list = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     class Meta:
         model = OpportunityMeeting
@@ -289,7 +401,8 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'room_location',
             'input_result',
             'repeat',
-            'is_cancelled'
+            'is_cancelled',
+            'process',
         )
 
     @classmethod
@@ -319,13 +432,28 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
         return {}
 
 
+class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
+    id = serializers.UUIDField()
+    fullname = serializers.CharField()
+
+
 class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
     meeting_from_time = serializers.TimeField(required=True)
     meeting_to_time = serializers.TimeField(required=True)
-    employee_attended_list = serializers.ListField()
-    customer_member_list = serializers.ListField(required=False)
+    employee_attended_list = serializers.ListField(
+        child=SubEmployeeMemberDetailSerializer(), min_length=1,
+    )
+    customer_member_list = serializers.ListField(
+        child=SubEmployeeMemberDetailSerializer(),
+        allow_empty=True, default=[], required=False,
+    )
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     class Meta:
         model = OpportunityMeeting
@@ -340,15 +468,19 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             'meeting_address',
             'room_location',
             'input_result',
-            'repeat'
+            'repeat',
+            'process',
         )
 
     @classmethod
     def validate_opportunity(cls, value):
         try:
-            return Opportunity.objects.get(id=value)
+            obj = Opportunity.objects.get(id=value)
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+        if obj.is_close_lost or obj.is_deal_close:
+            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return obj
 
     @classmethod
     def validate_input_result(cls, value):
@@ -356,24 +488,37 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({'detail': OpportunityOnlyMsg.RESULT_NOT_NULL})
 
+    @classmethod
+    def validate_employee_attended_list(cls, attrs):
+        ids = [item.get('id') for item in attrs]
+        amount = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=ids).count()
+        if amount != len(attrs):
+            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
+        return attrs
+
+    @classmethod
+    def validate_customer_member_list(cls, attrs):
+        ids = [item.get('id') for item in attrs]
+        amount = Contact.objects.filter_current(fill__tenant=True, fill__company=True, id__in=ids).count()
+        if amount != len(attrs):
+            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
+        return attrs
+
     def validate(self, validate_data):
-        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
-            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-        if not ActivitiesCommonFunc.check_permission_in_opp(
-                self.context.get('employee_id'), validate_data['opportunity']
-        ):
+        employee_id = self.context.get('employee_id')
+        if not ActivitiesCommonFunc.check_permission_in_opp(employee_id, validate_data['opportunity']):
             raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         if validate_data.get('meeting_from_time') and validate_data.get('meeting_to_time'):
             if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
-        if Employee.objects.filter(
-                id__in=[item.get('id') for item in validate_data.get('employee_attended_list', [])]
-        ).count() != len(validate_data.get('employee_attended_list', [])):
-            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
-        if Employee.objects.filter(
-                id__in=[item.get('id') for item in validate_data.get('customer_member_list', [])]
-        ).count() != len(validate_data.get('customer_member_list', [])):
-            raise serializers.ValidationError({'employee': OpportunityOnlyMsg.EMP_NOT_EXIST})
+
+        process_obj = validate_data.get('process', None)
+        opportunity_id = validate_data['opportunity'].id
+        app_id = OpportunityMeeting.get_app_id()
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+
         return validate_data
 
     def create(self, validated_data):
@@ -390,7 +535,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             date_created=validated_data['meeting_date'],
             log_type=4,
         )
-        # push to customer acticity
+        # push to customer activity
         if meeting_obj.opportunity:
             if meeting_obj.opportunity.customer:
                 AccountActivity.push_activity(
@@ -404,6 +549,16 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
                     date_activity=meeting_obj.meeting_date,
                     revenue=None,
                 )
+
+        if meeting_obj.process:
+            ProcessRuntimeControl(process_obj=meeting_obj.process).register_doc(
+                app_id=OpportunityMeeting.get_app_id(),
+                doc_id=meeting_obj.id,
+                doc_title=meeting_obj.title,
+                employee_created_id=meeting_obj.employee_created_id,
+                date_created=meeting_obj.date_created,
+            )
+
         return meeting_obj
 
 
@@ -411,6 +566,7 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
     customer_member_list = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityMeeting
@@ -427,8 +583,20 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'room_location',
             'input_result',
             'repeat',
-            'is_cancelled'
+            'is_cancelled',
+            # process
+            'process',
         )
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -772,34 +940,36 @@ class ActivitiesCommonFunc:
 
     @staticmethod
     def send_email(email_obj, employee_created):
-        try:
-            html_content = email_obj.content
-            email = EmailMultiAlternatives(
-                subject=email_obj.subject,
-                body='',
-                from_email=employee_created.email,
-                to=email_obj.email_to_list,
-                cc=email_obj.email_cc_list,
-                bcc=[],
-                reply_to=[],
-            )
-            email.attach_alternative(html_content, "text/html")
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            connection = get_connection(
-                username=employee_created.email,
-                password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
-                fail_silently=False,
-            )
-            email.connection = connection
-            email.send()
-            return True
-        except Exception as err:
-            employee_created.email_app_password_status = False
-            employee_created.save(update_fields=['email_app_password_status'])
-            print(err.args[1])
+        if settings.EMAIL_SERVER_DEFAULT_HOST:
+            try:
+                html_content = email_obj.content
+                email = EmailMultiAlternatives(
+                    subject=email_obj.subject,
+                    body='',
+                    from_email=employee_created.email,
+                    to=email_obj.email_to_list,
+                    cc=email_obj.email_cc_list,
+                    bcc=[],
+                    reply_to=[],
+                )
+                email.attach_alternative(html_content, "text/html")
+                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+                connection = get_connection(
+                    username=employee_created.email,
+                    password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
+                    fail_silently=False,
+                )
+                email.connection = connection
+                email.send()
+                return True
+            except Exception as err:
+                logger.error('[ActivitiesCommonFunc][send_email] Err: %s', str(err))
+                employee_created.email_app_password_status = False
+                employee_created.save(update_fields=['email_app_password_status'])
             raise serializers.ValidationError({
                 'Send email': "Cannot send email. Try to verify your Email in Employee update page."
             })
+        return False
 
     @staticmethod
     def create_employee_attended_map_meeting(meeting_id, employee_attended_list):

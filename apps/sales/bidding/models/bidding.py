@@ -15,6 +15,45 @@ BIDDING_SECURITY_TYPE = [
     (2, _('Letter of Guarantee')),
 ]
 
+
+class BiddingResultConfig(MasterDataAbstractModel):
+    employee = models.JSONField(
+        default=list,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'BiddingResultConfig'
+        verbose_name_plural = 'BiddingResultConfigs'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class BiddingResultConfigEmployee(SimpleAbstractModel):
+    bidding_result_config = models.ForeignKey(
+        "bidding.BiddingResultConfig",
+        on_delete=models.CASCADE,
+        verbose_name="bidding result config",
+        related_name="bidding_result_config_employee_bid_config"
+    )
+
+    employee = models.ForeignKey(
+        "hr.Employee",
+        on_delete=models.CASCADE,
+        verbose_name="employee",
+        related_name="bidding_result_config_employee_employee"
+    )
+
+    class Meta:
+        verbose_name = 'BiddingResultConfigEmployee'
+        verbose_name_plural = 'BiddingResultConfigEmployeeList'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
 class Bidding(DataAbstractModel, BastionFieldAbstractModel):
     # general data
     opportunity = models.ForeignKey(
@@ -164,7 +203,7 @@ class BiddingAttachment(M2MFilesAbstractModel):
     )
     document = models.ForeignKey(
         'bidding.BiddingDocument',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="document",
         related_name="bidding_attachment_bidding_document",
         null=True
@@ -201,6 +240,7 @@ class BiddingPartnerAccount(SimpleAbstractModel):
         verbose_name_plural = 'Bidding partner accounts'
         default_permissions = ()
         permissions = ()
+
 
 class BiddingBidderAccount(SimpleAbstractModel):
     is_won = models.BooleanField(default=False)

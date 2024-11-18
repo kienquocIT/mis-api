@@ -196,6 +196,10 @@ class OrderDelivery(DataAbstractModel):
 
 
 class OrderDeliverySub(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "1373e903-909c-4b77-9957-8bcf97e8d6d3"
+
     order_delivery = models.ForeignKey(
         OrderDelivery,
         on_delete=models.CASCADE,
