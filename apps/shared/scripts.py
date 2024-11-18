@@ -52,7 +52,7 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
-from ..sales.lead.models import LeadHint
+from ..sales.lead.models import LeadHint, LeadStage
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
@@ -1115,7 +1115,7 @@ def update_product_general_price():
 
 def update_payment_cost():
     for item in PaymentCost.objects.all():
-        item.opportunity_mapped = item.payment.opportunity_mapped
+        item.opportunity = item.payment.opportunity
         item.quotation_mapped = item.payment.quotation_mapped
         item.sale_order_mapped = item.payment.sale_order_mapped
         item.save()
@@ -2450,6 +2450,39 @@ def update_default_document_types():
     return True
 
 
+def update_lead_stage():
+    lead_stage_data = [
+        {
+            'stage_title': 'Marketing Acquired Lead',
+            'level': 1,
+        },
+        {
+            'stage_title': 'Marketing Qualified Lead',
+            'level': 2,
+        },
+        {
+            'stage_title': 'Sales Accepted Lead',
+            'level': 3,
+        },
+        {
+            'stage_title': 'Sales Qualified Lead',
+            'level': 4,
+        },
+    ]
+    bulk_info = []
+    for company in Company.objects.all():
+        num_stage = LeadStage.objects.filter(company=company).count()
+        if num_stage == 0:
+            for stage in lead_stage_data:
+                bulk_info.append(LeadStage(
+                    tenant=company.tenant,
+                    company=company,
+                    **stage
+                ))
+    LeadStage.objects.bulk_create(bulk_info)
+    print('Done :))')
+
+
 def create_empl_map_hrm():
     avai_lst = []
     for employee in Employee.objects.all():
@@ -2465,3 +2498,27 @@ def create_empl_map_hrm():
             avai_lst.append(obj)
     print('init create hrm data list done!')
     print('Available list has created', avai_lst)
+
+
+def move_opp_mapped_2_opp():
+    for company in Company.objects.all():
+        for ap in AdvancePayment.objects.filter(company=company):
+            if ap.opportunity_mapped:
+                ap.opportunity = ap.opportunity_mapped
+                ap.save(update_fields=['opportunity'])
+            for item in ap.advance_payment.all():
+                if item.opportunity_mapped:
+                    item.opportunity = item.opportunity_mapped
+                    item.save(update_fields=['opportunity'])
+
+        for pm in Payment.objects.filter(company=company):
+            if pm.opportunity_mapped:
+                pm.opportunity = pm.opportunity_mapped
+                pm.save(update_fields=['opportunity'])
+            for item in pm.payment.all():
+                if item.opportunity_mapped:
+                    item.opportunity = item.opportunity_mapped
+                    item.save(update_fields=['opportunity'])
+
+        print(f"Done for {company.title}")
+    print('Done :))')

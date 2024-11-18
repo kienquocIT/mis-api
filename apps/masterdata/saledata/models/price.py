@@ -90,7 +90,7 @@ class Price(DataAbstractModel):
         through='PriceListCurrency',
         symmetrical=False,
         blank=True,
-        related_name='opportunity_mapped'
+        related_name='price_list_currency_current'
     )
 
     valid_time_start = models.DateTimeField(

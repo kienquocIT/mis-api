@@ -1,10 +1,12 @@
 from rest_framework import serializers
-
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse, Account, ProductWareHouseLot, ProductWareHouseSerial,
+    WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
     WarehouseEmployeeConfig, WarehouseEmployeeConfigDetail
 )
+from apps.masterdata.saledata.models.inventory import WarehouseShelf
+from apps.shared import TypeCheck, WarehouseMsg
+
 
 __all__ = [
     'WareHouseListSerializer',
@@ -23,10 +25,6 @@ __all__ = [
     'ProductWareHouseListSerializerForGoodsTransfer'
 ]
 
-from apps.masterdata.saledata.models.inventory import WarehouseShelf
-
-from apps.shared import TypeCheck, WarehouseMsg
-
 
 class WareHouseListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,13 +36,12 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'remarks',
             'is_active',
             'agency',
-            'full_address'
+            'full_address',
+            'is_dropship',
         )
 
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
-    agency = serializers.UUIDField(required=False, allow_null=True)
-
     class Meta:
         model = WareHouse
         fields = (
@@ -57,18 +54,15 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'address',
             'agency',
             'full_address',
-            'warehouse_type',
-            'is_dropship'
+            'is_dropship',
+            'is_bin_location',
+            'is_agency_location',
         )
 
-    @classmethod
-    def validate_agency(cls, value):
-        if value:
-            try:
-                return Account.objects.get(id=value)
-            except Account.DoesNotExist:
-                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
-        return None
+    def validate(self, validate_data):
+        if validate_data.get('is_agency_location') is True and validate_data.get('agency') is None:
+            raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return validate_data
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):
@@ -91,9 +85,10 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'city',
             'ward',
             'district',
-            'warehouse_type',
-            'agency',
             'is_dropship',
+            'is_bin_location',
+            'is_agency_location',
+            'agency',
             'shelf_data'
         )
 
@@ -146,8 +141,6 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
 
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
-    agency = serializers.UUIDField(required=False, allow_null=True)
-
     class Meta:
         model = WareHouse
         fields = (
@@ -160,18 +153,15 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'address',
             'agency',
             'full_address',
-            'warehouse_type',
-            'is_dropship'
+            'is_dropship',
+            'is_bin_location',
+            'is_agency_location',
         )
 
-    @classmethod
-    def validate_agency(cls, value):
-        if value:
-            try:
-                return Account.objects.get(id=value)
-            except Account.DoesNotExist:
-                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
-        return None
+    def validate(self, validate_data):
+        if validate_data.get('is_agency_location') is True and validate_data.get('agency') is None:
+            raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return validate_data
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
