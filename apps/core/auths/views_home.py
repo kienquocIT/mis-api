@@ -328,16 +328,15 @@ class CalendarByDay(APIView):
                             result['recurrence'].append(
                                 {
                                     'category': 'Recurrence',
-                                    'id': obj.recurrence.doc_template_data.get('id', None)
-                                    if obj.recurrence else None,
-                                    'title': obj.recurrence.doc_template_data.get('title', "")
-                                    if obj.recurrence else "",
+                                    'id': obj.recurrence_id if obj.recurrence else None,
+                                    'title': obj.recurrence.title if obj.recurrence else "",
                                     'remark': "",
                                     'start_date': None,
                                     'end_date': None,
                                     'location_address': '',
                                     'location_title': '',
                                     'app_code': obj.recurrence.app_code if obj.recurrence else "",
+                                    'doc_template_data': obj.recurrence.doc_template_data if obj.recurrence else {},
                                 }
                             )
 
