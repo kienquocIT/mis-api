@@ -214,27 +214,25 @@ class LeadHint(SimpleAbstractModel):
         permissions = ()
 
     @classmethod
-    def check_and_create_lead_hint(cls, opportunity_obj, contact_mobile, contact_phone, contact_email, contact_id):
+    def check_and_create_lead_hint(cls, opportunity_obj, contact_obj):
         if opportunity_obj:
-            cls.objects.filter(opportunity=opportunity_obj).delete()
             bulk_info = []
             for contact_role in opportunity_obj.opportunity_contact_role_opportunity.all():
                 contact = contact_role.contact
-                bulk_info.append(
-                    cls(
-                        opportunity_id=opportunity_obj.id,
-                        contact_mobile=contact.mobile,
-                        contact_phone=contact.phone,
-                        contact_email=contact.email,
-                        contact_id=str(contact.id)
-                    )
-                )
+                bulk_info.append(cls(
+                    opportunity=opportunity_obj,
+                    contact_mobile=contact.mobile,
+                    contact_phone=contact.phone,
+                    contact_email=contact.email,
+                    contact=contact
+                ))
+            cls.objects.filter(opportunity=opportunity_obj).delete()
             cls.objects.bulk_create(bulk_info)
         else:
-            cls.objects.filter(contact_id=contact_id).update(
-                contact_mobile=contact_mobile,
-                contact_phone=contact_phone,
-                contact_email=contact_email
+            cls.objects.filter(contact=contact_obj).update(
+                contact_mobile=contact_obj.mobile,
+                contact_phone=contact_obj.phone,
+                contact_email=contact_obj.email
             )
         return True
 

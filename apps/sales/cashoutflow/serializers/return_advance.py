@@ -38,11 +38,11 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
             'code': obj.advance_payment.code,
             'title': obj.advance_payment.title,
             'sale_code': obj.advance_payment.sale_code,
-            'opportunity_mapped': {
-                'id': obj.advance_payment.opportunity_mapped_id,
-                'code': obj.advance_payment.opportunity_mapped.code,
-                'title': obj.advance_payment.opportunity_mapped.title
-            } if obj.advance_payment.opportunity_mapped else {},
+            'opportunity': {
+                'id': obj.advance_payment.opportunity_id,
+                'code': obj.advance_payment.opportunity.code,
+                'title': obj.advance_payment.opportunity.title
+            } if obj.advance_payment.opportunity else {},
             'quotation_mapped': {
                 'id': obj.advance_payment.quotation_mapped_id,
                 'code': obj.advance_payment.quotation_mapped.code,
@@ -96,11 +96,11 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
         ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
 
         process_obj = validate_data.get('process', None)
-        opportunity_mapped_id = advance_payment_obj.opportunity_mapped_id
+        opportunity_id = advance_payment_obj.opportunity_id
         if process_obj:
             app_id = ReturnAdvance.get_app_id()
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_mapped_id, app_id=app_id)
+            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
 
         return validate_data
 
@@ -161,11 +161,11 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'id': obj.advance_payment_id,
             'title': obj.advance_payment.title,
             'sale_code': obj.advance_payment.sale_code,
-            'opportunity_mapped': {
-                'id': obj.advance_payment.opportunity_mapped_id,
-                'code': obj.advance_payment.opportunity_mapped.code,
-                'title': obj.advance_payment.opportunity_mapped.title,
-            } if obj.advance_payment.opportunity_mapped else {},
+            'opportunity': {
+                'id': obj.advance_payment.opportunity_id,
+                'code': obj.advance_payment.opportunity.code,
+                'title': obj.advance_payment.opportunity.title,
+            } if obj.advance_payment.opportunity else {},
             'quotation_mapped': {
                 'id': obj.advance_payment.quotation_mapped_id,
                 'code': obj.advance_payment.quotation_mapped.code,
@@ -268,8 +268,8 @@ class ReturnAdvanceCommonFunction:
         if advance_payment_id:
             try:
                 ap_obj = AdvancePayment.objects.get(id=advance_payment_id)
-                if ap_obj.opportunity_mapped:
-                    if ap_obj.opportunity_mapped.is_deal_close:
+                if ap_obj.opportunity:
+                    if ap_obj.opportunity.is_deal_close:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                 return ap_obj
             except AdvancePayment.DoesNotExist:
@@ -282,8 +282,8 @@ class ReturnAdvanceCommonFunction:
             if validate_data.get('advance_payment_id'):
                 try:
                     ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
-                    if ap_obj.opportunity_mapped:
-                        if ap_obj.opportunity_mapped.is_deal_close:
+                    if ap_obj.opportunity:
+                        if ap_obj.opportunity.is_deal_close:
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                     validate_data['advance_payment_id'] = str(ap_obj.id)
                 except AdvancePayment.DoesNotExist:

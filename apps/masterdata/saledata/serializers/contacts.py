@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
@@ -129,40 +130,42 @@ class ContactListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.get_full_name(2)
-            }
-        return {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.get_full_name(2)
+        } if obj.owner else {}
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {
-                'id': obj.account_name_id,
-                'name': obj.account_name.name
-            }
-        return {}
+        return {
+            'id': obj.account_name_id,
+            'code': obj.account_name.code,
+            'name': obj.account_name.name
+        } if obj.account_name else {}
 
     @classmethod
     def get_report_to(cls, obj):
-        if obj.report_to:
-            return {
-                'id': obj.report_to_id,
-                'name': obj.report_to.fullname
-            }
-        return {}
+        return {
+            'id': obj.report_to_id,
+            'code': obj.report_to.code,
+            'name': obj.report_to.fullname
+        } if obj.report_to else {}
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
+    owner = serializers.UUIDField()
+    fullname = serializers.CharField(max_length=100)
+    mobile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    additional_information = serializers.JSONField()
+
     class Meta:
         model = Contact
         fields = (
             "owner",
             "job_title",
             "biography",
-            # "avatar",
             "fullname",
             "salutation",
             "phone",
@@ -182,76 +185,76 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             'home_city',
             'home_district',
             'home_ward',
-            'system_status',
         )
 
     @classmethod
-    def validate_email(cls, attrs):
-        if attrs:
-            if Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    email=attrs,
-            ).exists():
+    def validate_owner(cls, value):
+        try:
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
+
+    @classmethod
+    def validate_email(cls, value):
+        if value:
+            if Contact.objects.filter_current(fill__tenant=True, fill__company=True, email=value).exists():
                 raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
-            return attrs
+            return value
         return None
 
     @classmethod
-    def validate_mobile(cls, attrs):
-        if attrs:
-            if Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    mobile=attrs,
-            ).exists():
+    def validate_mobile(cls, value):
+        if value:
+            if Contact.objects.filter_current(fill__tenant=True, fill__company=True, mobile=value).exists():
                 raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
-            return attrs
+            return value
         return None
 
     @classmethod
-    def validate_owner(cls, attrs):
-        if attrs:
-            return attrs
-        raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
+    def validate_additional_information(cls, value):
+        interest_list = [{
+            'id': item.id,
+            'code': item.code,
+            'title': item.title
+        } for item in Interest.objects.filter(id__in=value.get('interests', []))]
+        value['interests'] = interest_list
+        return value
+
+    def validate(self, validate_data):
+        num = Contact.objects.filter_current(fill__tenant=True, fill__company=True).count()
+        validate_data['code'] = f"C00{num + 1}"
+        return validate_data
 
     @classmethod
-    def convert_contact(cls, lead, tenant_id, company_id, contact_mapped):
+    def convert_contact(cls, lead, contact_mapped):
         # convert to a new contact
         lead_configs = lead.lead_configs.first() if lead else None
         if lead_configs:
             if not lead_configs.create_contact:
-                current_stage = LeadStage.objects.filter(tenant_id=tenant_id, company_id=company_id, level=2).first()
+                current_stage = LeadStage.objects.filter(
+                    tenant_id=contact_mapped.tenant_id, company_id=contact_mapped.company_id, level=2
+                ).first()
                 lead.current_lead_stage = current_stage
                 lead.lead_status = 2
                 lead.save(update_fields=['current_lead_stage', 'lead_status'])
                 lead_configs.contact_mapped = contact_mapped
                 lead_configs.create_contact = True
                 lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
-                LeadChartInformation.create_update_chart_information(tenant_id, company_id)
+                LeadChartInformation.create_update_chart_information(
+                    contact_mapped.tenant_id, contact_mapped.company_id
+                )
                 return True
             raise serializers.ValidationError({'converted': 'Converted to contact.'})
         raise serializers.ValidationError({'not found': 'Lead config not found.'})
 
     def create(self, validated_data):
-        if 'code' not in validated_data:
-            number = Contact.objects.filter(
-                tenant_id=validated_data['tenant_id'],
-                company_id=validated_data['company_id']
-            ).count() + 1
-            validated_data['code'] = f"C00{number}"
         contact = Contact.objects.create(**validated_data)
         if contact.account_name:
             contact.account_name.owner = contact
             contact.account_name.save(update_fields=['owner'])
 
         if 'lead' in self.context:
-            self.convert_contact(
-                self.context.get('lead'),
-                validated_data['tenant_id'],
-                validated_data['company_id'],
-                contact
-            )
+            self.convert_contact(self.context.get('lead'), contact)
 
         return contact
 
@@ -265,11 +268,9 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     home_city = serializers.SerializerMethodField()
     home_district = serializers.SerializerMethodField()
     home_ward = serializers.SerializerMethodField()
-
     salutation = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
-    additional_information = serializers.SerializerMethodField()
     fullname = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
 
@@ -277,6 +278,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
         model = Contact
         fields = (
             "id",
+            "code",
             "owner",
             "job_title",
             "biography",
@@ -360,74 +362,51 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_salutation(cls, obj):
-        if obj.salutation:
-            return {
-                'id': obj.salutation_id,
-                'title': obj.salutation.title
-            }
-        return {}
+        return {
+            'id': obj.salutation_id,
+            'code': obj.salutation.code,
+            'title': obj.salutation.title
+        } if obj.salutation else {}
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.get_full_name(2)
-            }
-        return {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'full_name': obj.owner.get_full_name(2)
+        } if obj.owner else {}
 
     @classmethod
     def get_report_to(cls, obj):
-        if obj.report_to:
-            return {
-                'id': obj.report_to_id,
-                'fullname': obj.report_to.fullname
-            }
-        return {}
-
-    @classmethod
-    def get_additional_information(cls, obj):
-        if obj.additional_information:
-            interest_list = []
-            interest_id_list = list(obj.additional_information.get('interests', None))
-            interest = Interest.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=interest_id_list
-            )
-            if interest:
-                for item in interest:
-                    interest_list.append(
-                        {
-                            'id': item.id,
-                            'title': item.title
-                        }
-                    )
-            obj.additional_information['interests'] = interest_list
-            return obj.additional_information
-        return {}
+        return {
+            'id': obj.report_to_id,
+            'code': obj.report_to.code,
+            'fullname': obj.report_to.fullname
+        } if obj.report_to else {}
 
     @classmethod
     def get_fullname(cls, obj):
-        if obj.fullname:
-            return {
-                'fullname': obj.fullname,
-                'last_name': obj.fullname.split(' ')[-1],
-                'first_name': ' '.join(obj.fullname.split(' ')[:-1])
-            }
-        return {}
+        return {
+            'fullname': obj.fullname,
+            'last_name': obj.fullname.split(' ')[-1],
+            'first_name': ' '.join(obj.fullname.split(' ')[:-1])
+        } if obj.fullname else {}
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {
-                "id": obj.account_name_id,
-                "name": obj.account_name.name
-            }
-        return {}
+        return {
+            "id": obj.account_name_id,
+            "code": obj.account_name.code,
+            "name": obj.account_name.name
+        } if obj.account_name else {}
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
+    owner = serializers.UUIDField()
+    fullname = serializers.CharField(max_length=100)
+    mobile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    additional_information = serializers.JSONField()
 
     class Meta:
         model = Contact
@@ -435,7 +414,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "owner",
             "job_title",
             "biography",
-            # "avatar",
             "fullname",
             "salutation",
             "phone",
@@ -444,59 +422,51 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "report_to",
             "address_information",
             "additional_information",
-            'account_name'
+            'account_name',
+            'work_detail_address',
+            'work_country',
+            'work_city',
+            'work_district',
+            'work_ward',
+            'home_detail_address',
+            'home_country',
+            'home_city',
+            'home_district',
+            'home_ward',
         )
 
-    def validate_email(self, attrs):
-        if attrs:
-            if attrs != self.instance.email and Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    email=attrs,
-            ).exists():
-                raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
-            return attrs
-        return None
-
-    def validate_mobile(self, attrs):
-        if attrs:
-            if attrs != self.instance.mobile and Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    mobile=attrs,
-            ).exists():
-                raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
-            return attrs
-        return None
-
     @classmethod
-    def validate_owner(cls, attrs):
-        if attrs:
-            return attrs
-        raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
+    def validate_owner(cls, value):
+        try:
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
+
+    def validate_email(self, value):
+        if value:
+            if all([
+                value != self.instance.email,
+                Contact.objects.filter_current(fill__tenant=True, fill__company=True, email=value).exists()
+            ]):
+                raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
+            return value
+        return None
+
+    def validate_mobile(self, value):
+        if value:
+            if all([
+                value != self.instance.mobile,
+                Contact.objects.filter_current(fill__tenant=True, fill__company=True, mobile=value).exists()
+            ]):
+                raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
+            return value
+        return None
 
     def validate(self, validate_data):
-        home_address_dict = self.initial_data.get('home_address_dict', [])
-        work_address_dict = self.initial_data.get('work_address_dict', [])
-        if len(home_address_dict) > 0:
-            home_address_dict = home_address_dict[0]
-            for key, _ in home_address_dict.items():
-                if key not in ['home_detail_address']:
-                    validate_data[key] = home_address_dict.get(key, None)
-                else:
-                    validate_data[key] = home_address_dict.get(key, '')
-        if len(work_address_dict) > 0:
-            work_address_dict = work_address_dict[0]
-            for key, _ in work_address_dict.items():
-                if key not in ['work_detail_address']:
-                    validate_data[key] = work_address_dict.get(key, None)
-                else:
-                    validate_data[key] = work_address_dict.get(key, '')
         return validate_data
 
     def update(self, instance, validated_data):
-        if 'account_name' not in validated_data.keys():
-            validated_data.update({'account_name': None})
+        if not validated_data.get('account_name'):
             account_mapped = instance.account_name
             if account_mapped:
                 account_mapped.owner = None
@@ -506,9 +476,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        LeadHint.check_and_create_lead_hint(
-            None, instance.mobile, instance.phone, instance.email, instance.id
-        )
+        LeadHint.check_and_create_lead_hint(None, instance)
 
         return instance
 

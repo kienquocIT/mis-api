@@ -19,7 +19,7 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
     filterset_fields = {
-        'opportunity_mapped_id': ['exact'],
+        'opportunity_id': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
@@ -30,7 +30,7 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         ).select_related(
             'sale_order_mapped__opportunity',
             'quotation_mapped__opportunity',
-            'opportunity_mapped',
+            'opportunity',
         )
         return self.get_queryset_custom_direct_page(main_queryset)
 
@@ -76,7 +76,7 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         ).select_related(
             'sale_order_mapped__customer',
             'quotation_mapped__customer',
-            'opportunity_mapped__customer',
+            'opportunity__customer',
             'supplier__owner',
             'supplier__industry',
             'employee_inherit__group',
@@ -140,7 +140,7 @@ class PaymentConfigList(BaseListMixin, BaseCreateMixin):
 class PaymentCostList(BaseListMixin):
     queryset = PaymentCost.objects
     filterset_fields = {
-        'opportunity_mapped_id': ['exact'],
+        'opportunity_id': ['exact'],
         'quotation_mapped_id': ['exact'],
         'sale_order_mapped_id': ['exact'],
         # 'payment__system_status': ['exact']
