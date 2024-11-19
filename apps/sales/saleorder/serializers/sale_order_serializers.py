@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.process.utils import ProcessRuntimeControl
+from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
@@ -690,6 +691,8 @@ class SOProductWOListSerializer(serializers.ModelSerializer):
 
 class SORecurrenceListSerializer(AbstractListSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    recurrence_list = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -698,6 +701,9 @@ class SORecurrenceListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'employee_inherit',
+            'date_created',
+            'status',
+            'recurrence_list',
         )
 
     @classmethod
@@ -712,3 +718,14 @@ class SORecurrenceListSerializer(AbstractListSerializerModel):
             'phone': obj.employee_inherit.phone,
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_status(cls, obj):
+        return Recurrence.objects.filter(doc_template_id=obj.id).exists()
+
+    @classmethod
+    def get_recurrence_list(cls, obj):
+        return [{
+            'id': recurrence.id,
+            'title': recurrence.title,
+        } for recurrence in Recurrence.objects.filter(doc_template_id=obj.id)]
