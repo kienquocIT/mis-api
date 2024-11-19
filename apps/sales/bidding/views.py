@@ -91,6 +91,17 @@ class BiddingDetail(BaseRetrieveMixin, BaseUpdateMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "opportunity",
+            "customer",
+            "employee_inherit",
+        ).prefetch_related(
+            "other_bidder",
+            "venture_partner",
+            "attachment_m2m"
+        )
+
     @swagger_auto_schema(
         operation_summary="Bidding List",
         operation_description="Get Bidding List",
