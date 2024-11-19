@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 from .advance_payment import AdvancePaymentCost
 
 __all__ = [
@@ -31,25 +31,26 @@ ADVANCE_PAYMENT_METHOD = [
 ]
 
 
-class Payment(DataAbstractModel):
+class Payment(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return '1010563f-7c94-42f9-ba99-63d5d26a1aca'
 
-    sale_order_mapped = models.ForeignKey(
-        'saleorder.SaleOrder',
+    # cái opportunity_mapped là field cũ, không sài
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
-        related_name="payment_sale_order_mapped"
+        related_name="payment_opportunity_mapped"
     )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
         related_name="payment_quotation_mapped"
     )
-    opportunity_mapped = models.ForeignKey(
-        'opportunity.Opportunity',
+    sale_order_mapped = models.ForeignKey(
+        'saleorder.SaleOrder',
         on_delete=models.CASCADE, null=True,
-        related_name="payment_opportunity_mapped"
+        related_name="payment_sale_order_mapped"
     )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
@@ -91,10 +92,10 @@ class Payment(DataAbstractModel):
         if instance.sale_order_mapped:
             sale_order_id = instance.sale_order_mapped_id
             opportunity_id = instance.sale_order_mapped.opportunity_id
-        elif instance.opportunity_mapped:
-            if instance.opportunity_mapped.sale_order:
-                sale_order_id = instance.opportunity_mapped.sale_order_id
-                opportunity_id = instance.opportunity_mapped_id
+        elif instance.opportunity:
+            if instance.opportunity.sale_order:
+                sale_order_id = instance.opportunity.sale_order_id
+                opportunity_id = instance.opportunity_id
         if sale_order_id:
             list_data_indicator = []
             for payment_exp in instance.payment.all():
@@ -191,6 +192,11 @@ class PaymentCost(SimpleAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE, null=True,
         related_name="payment_cost_opportunity_mapped"
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_opportunity"
     )
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_type_data = models.JSONField(default=dict)

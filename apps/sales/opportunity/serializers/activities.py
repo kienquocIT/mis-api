@@ -20,6 +20,7 @@ from misapi import settings
 logger = logging.getLogger(__name__)
 
 
+# Activity: Call log
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -118,7 +119,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
-
+        validate_data['title'] = f"Call log: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
@@ -131,7 +132,6 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             date_created=validated_data['call_date'],
             log_type=2,
         )
-
         if call_log_obj.process:
             ProcessRuntimeControl(process_obj=call_log_obj.process).register_doc(
                 app_id=OpportunityCallLog.get_app_id(),
@@ -140,7 +140,6 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
                 employee_created_id=call_log_obj.employee_created_id,
                 date_created=call_log_obj.date_created,
             )
-
         return call_log_obj
 
 
@@ -293,14 +292,13 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
                 self.context.get('employee_id'), validate_data['opportunity']
         ):
             raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
-
         process_obj = validate_data.get('process', None)
         opportunity_id = validate_data['opportunity'].id
         app_id = OpportunityEmail.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
-
+        validate_data['title'] = f"Email: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
@@ -313,7 +311,6 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             opportunity=validated_data['opportunity'],
             log_type=3,
         )
-
         if email_obj.process:
             ProcessRuntimeControl(process_obj=email_obj.process).register_doc(
                 app_id=OpportunityEmail.get_app_id(),
@@ -322,7 +319,6 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
                 employee_created_id=email_obj.employee_created_id,
                 date_created=email_obj.date_created,
             )
-
         return email_obj
 
 
@@ -519,6 +515,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
 
+        validate_data['title'] = f"Meeting: {validate_data.get('subject', '')}"
         return validate_data
 
     def create(self, validated_data):
@@ -673,12 +670,10 @@ class OpportunityDocumentListSerializer(serializers.ModelSerializer):
             persons = obj.person_in_charge.all()
             list_result = []
             for person in persons:
-                list_result.append(
-                    {
-                        'id': person.id,
-                        'full_name': person.get_full_name()
-                    }
-                )
+                list_result.append({
+                    'id': person.id,
+                    'full_name': person.get_full_name()
+                })
             return list_result
         return []
 
@@ -719,20 +714,15 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
                 file_ids=doc['attachment'], employee_id=employee_id, doc_id=instance_id,
             )
             if state:
-                #
                 file_objs = Files.regis_media_file(
                     relate_app=relate_app, relate_doc_id=instance_id, file_objs_or_ids=att_objs
                 )
-
-                #
                 for obj in file_objs:
-                    bulk_data.append(
-                        OpportunitySubDocument(
-                            document=instance,
-                            attachment=obj,
-                            description=doc['description']
-                        )
-                    )
+                    bulk_data.append(OpportunitySubDocument(
+                        document=instance,
+                        attachment=obj,
+                        description=doc['description']
+                    ))
             else:
                 raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
         OpportunitySubDocument.objects.bulk_create(bulk_data)
@@ -755,7 +745,6 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
                     self.context.get('employee_id'), validate_data['opportunity']
             ):
                 raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
-
         return validate_data
 
     def create(self, validated_data):
@@ -819,18 +808,16 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
             attachments = []
             for item in file:
                 files = item.attachment
-                attachments.append(
-                    {
-                        "id": str(files.id),
-                        "relate_app_id": str(files.relate_app_id),
-                        "relate_app_code": files.relate_app_code,
-                        "relate_doc_id": str(files.relate_doc_id),
-                        "media_file_id": str(files.media_file_id),
-                        "file_name": files.file_name,
-                        "file_size": int(files.file_size),
-                        "file_type": files.file_type
-                    }
-                )
+                attachments.append({
+                    "id": str(files.id),
+                    "relate_app_id": str(files.relate_app_id),
+                    "relate_app_code": files.relate_app_code,
+                    "relate_doc_id": str(files.relate_doc_id),
+                    "media_file_id": str(files.media_file_id),
+                    "file_name": files.file_name,
+                    "file_size": int(files.file_size),
+                    "file_type": files.file_type
+                })
             return attachments
         return []
 

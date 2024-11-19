@@ -6,9 +6,7 @@ class AdvanceHandler:
     # OPPORTUNITY LOG
     @classmethod
     def push_opportunity_log(cls, instance):
-        opp = instance.opportunity_mapped if hasattr(
-            instance, 'opportunity_mapped'
-        ) else instance.opportunity if hasattr(
+        opp = instance.opportunity if hasattr(
             instance, 'opportunity'
         ) else None
         if opp:
