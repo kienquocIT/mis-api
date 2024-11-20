@@ -197,30 +197,32 @@ class GoodsReceipt(DataAbstractModel):
             else:  # lot
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                     for lot in gr_prd_wh.goods_receipt_lot_gr_warehouse.all():
-                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
-                        casted_cost = (
-                            gr_item.product_unit_price * lot.quantity_import / casted_quantity
-                        ) if casted_quantity > 0 else 0
-                        doc_data.append({
-                            'product': gr_item.product,
-                            'warehouse': gr_prd_wh.warehouse,
-                            'system_date': instance.date_approved,
-                            'posting_date': instance.date_approved,
-                            'document_date': instance.date_approved,
-                            'stock_type': 1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Goods receipt (IA)'
-                            if instance.goods_receipt_type == 1 else 'Goods receipt',
-                            'quantity': casted_quantity,
-                            'cost': casted_cost,
-                            'value': casted_cost * casted_quantity,
-                            'lot_data': {
-                                'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
-                                'lot_number': lot.lot_number,
-                                'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
-                            }
-                        })
+                        lot_mapped = all_lots.filter(lot_number=lot.lot_number).first()
+                        if lot_mapped:
+                            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
+                            casted_cost = (
+                                gr_item.product_unit_price * lot.quantity_import / casted_quantity
+                            ) if casted_quantity > 0 else 0
+                            doc_data.append({
+                                'product': gr_item.product,
+                                'warehouse': gr_prd_wh.warehouse,
+                                'system_date': instance.date_approved,
+                                'posting_date': instance.date_approved,
+                                'document_date': instance.date_approved,
+                                'stock_type': 1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Goods receipt (IA)'
+                                if instance.goods_receipt_type == 1 else 'Goods receipt',
+                                'quantity': casted_quantity,
+                                'cost': casted_cost,
+                                'value': casted_cost * casted_quantity,
+                                'lot_data': {
+                                    'lot_id': str(lot_mapped.id),
+                                    'lot_number': lot.lot_number,
+                                    'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
+                                }
+                            })
         return doc_data
 
     @classmethod
@@ -262,32 +264,34 @@ class GoodsReceipt(DataAbstractModel):
                         })
                     else:
                         for lot in prd_wh.goods_receipt_lot_gr_warehouse.all():
-                            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
-                                gr_item.uom, lot.quantity_import
-                            )
-                            casted_cost = (
-                                    gr_item.product_unit_price * lot.quantity_import / casted_quantity
-                            ) if casted_quantity > 0 else 0
-                            doc_data.append({
-                                'sale_order': sale_order,
-                                'product': gr_item.product,
-                                'warehouse': prd_wh.warehouse,
-                                'system_date': instance.date_approved,
-                                'posting_date': instance.date_approved,
-                                'document_date': instance.date_approved,
-                                'stock_type': 1,
-                                'trans_id': str(instance.id),
-                                'trans_code': instance.code,
-                                'trans_title': 'Goods receipt',
-                                'quantity': casted_quantity,
-                                'cost': casted_cost,
-                                'value': casted_cost * casted_quantity,
-                                'lot_data': {
-                                    'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
-                                    'lot_number': lot.lot_number,
-                                    'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
-                                }
-                            })
+                            lot_mapped = all_lots.filter(lot_number=lot.lot_number).first()
+                            if lot_mapped:
+                                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                                    gr_item.uom, lot.quantity_import
+                                )
+                                casted_cost = (
+                                        gr_item.product_unit_price * lot.quantity_import / casted_quantity
+                                ) if casted_quantity > 0 else 0
+                                doc_data.append({
+                                    'sale_order': sale_order,
+                                    'product': gr_item.product,
+                                    'warehouse': prd_wh.warehouse,
+                                    'system_date': instance.date_approved,
+                                    'posting_date': instance.date_approved,
+                                    'document_date': instance.date_approved,
+                                    'stock_type': 1,
+                                    'trans_id': str(instance.id),
+                                    'trans_code': instance.code,
+                                    'trans_title': 'Goods receipt',
+                                    'quantity': casted_quantity,
+                                    'cost': casted_cost,
+                                    'value': casted_cost * casted_quantity,
+                                    'lot_data': {
+                                        'lot_id': str(lot_mapped.id),
+                                        'lot_number': lot.lot_number,
+                                        'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
+                                    }
+                                })
         return doc_data
 
     @classmethod

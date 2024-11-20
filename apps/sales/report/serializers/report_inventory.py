@@ -522,7 +522,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     @classmethod
-    def for_serial(cls, periods, instance, quantity, data_sn,):
+    def for_serial(cls, periods, instance, quantity, data_sn):
         if not ProductWareHouse.objects.filter(
                 tenant_id=periods.tenant_id,
                 company_id=periods.company_id,
@@ -535,7 +535,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 product=instance.product,
                 warehouse=instance.warehouse,
                 uom=instance.product.general_uom_group.uom_reference,
-                unit_price=instance.value / quantity,
+                unit_price=instance.value/quantity,
                 tax=None,
                 stock_amount=quantity,
                 receipt_amount=quantity,
@@ -573,38 +573,45 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                     )
                 )
             ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
-            return True
+            return prd_wh_obj
         raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
     @classmethod
-    def for_lot(cls, quantity, value, data_lot, periods, prd_obj, wh_obj):
+    def for_lot(cls, periods, instance, quantity, data_lot):
         if not ProductWareHouse.objects.filter(
                 tenant_id=periods.tenant_id,
                 company_id=periods.company_id,
-                product=prd_obj,
-                warehouse=wh_obj
+                product=instance.product,
+                warehouse=instance.warehouse
         ).exists():
             prd_wh_obj = ProductWareHouse.objects.create(
                 tenant_id=periods.tenant_id,
                 company_id=periods.company_id,
-                product=prd_obj,
-                warehouse=wh_obj,
-                uom=prd_obj.general_uom_group.uom_reference,
-                unit_price=value / quantity,
+                product=instance.product,
+                warehouse=instance.warehouse,
+                uom=instance.product.general_uom_group.uom_reference,
+                unit_price=instance.value/quantity,
                 tax=None,
                 stock_amount=quantity,
                 receipt_amount=quantity,
                 sold_amount=0,
                 picked_ready=0,
                 used_amount=0,
-                # backup data
-                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                product_data={
+                    "id": str(instance.product_id),
+                    "code": instance.product.code,
+                    "title": instance.product.title
+                },
+                warehouse_data={
+                    "id": str(instance.warehouse_id),
+                    "code": instance.warehouse.code,
+                    "title": instance.warehouse.title
+                },
                 uom_data={
-                    "id": str(prd_obj.general_uom_group.uom_reference_id),
-                    "code": prd_obj.general_uom_group.uom_reference.code,
-                    "title": prd_obj.general_uom_group.uom_reference.title
-                } if prd_obj.general_uom_group.uom_reference else {},
+                    "id": str(instance.product.general_uom_group.uom_reference_id),
+                    "code": instance.product.general_uom_group.uom_reference.code,
+                    "title": instance.product.general_uom_group.uom_reference.title
+                } if instance.product.general_uom_group.uom_reference else {},
                 tax_data={}
             )
             bulk_info_lot = []
@@ -619,46 +626,54 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         product_warehouse=prd_wh_obj,
                         lot_number=lot.get('lot_number'),
                         quantity_import=ReportInvCommonFunc.cast_quantity_to_unit(
-                            prd_obj.inventory_uom, float(lot.get('quantity_import'))
+                            instance.product.inventory_uom, float(lot.get('quantity_import', 0))
                         )
                     )
                 )
             ProductWareHouseLot.objects.bulk_create(bulk_info_lot)
-            return True
+            return prd_wh_obj
         raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
     @classmethod
-    def for_none(cls, quantity, value, periods, prd_obj, wh_obj):
-        if not ProductWareHouse.objects.filter(
+    def for_none(cls, periods, instance, quantity):
+        prd_wh = ProductWareHouse.objects.filter(
                 tenant_id=periods.tenant_id,
                 company_id=periods.company_id,
-                product=prd_obj,
-                warehouse=wh_obj
-        ).exists():
-            ProductWareHouse.objects.create(
+                product=instance.product,
+                warehouse=instance.warehouse
+        ).first()
+        if not prd_wh:
+            prd_wh_obj = ProductWareHouse.objects.create(
                 tenant_id=periods.tenant_id,
                 company_id=periods.company_id,
-                product=prd_obj,
-                warehouse=wh_obj,
-                uom=prd_obj.general_uom_group.uom_reference,
-                unit_price=value / quantity,
+                product=instance.product,
+                warehouse=instance.warehouse,
+                uom=instance.product.general_uom_group.uom_reference,
+                unit_price=instance.value/quantity,
                 tax=None,
                 stock_amount=quantity,
                 receipt_amount=quantity,
                 sold_amount=0,
                 picked_ready=0,
                 used_amount=0,
-                # backup data
-                product_data={"id": str(prd_obj.id), "code": prd_obj.code, "title": prd_obj.title},
-                warehouse_data={"id": str(wh_obj.id), "code": wh_obj.code, "title": wh_obj.title},
+                product_data={
+                    "id": str(instance.product_id),
+                    "code": instance.product.code,
+                    "title": instance.product.title
+                },
+                warehouse_data={
+                    "id": str(instance.warehouse_id),
+                    "code": instance.warehouse.code,
+                    "title": instance.warehouse.title
+                },
                 uom_data={
-                    "id": str(prd_obj.general_uom_group.uom_reference_id),
-                    "code": prd_obj.general_uom_group.uom_reference.code,
-                    "title": prd_obj.general_uom_group.uom_reference.title
-                } if prd_obj.general_uom_group.uom_reference else {},
+                    "id": str(instance.product.general_uom_group.uom_reference_id),
+                    "code": instance.product.general_uom_group.uom_reference.code,
+                    "title": instance.product.general_uom_group.uom_reference.title
+                } if instance.product.general_uom_group.uom_reference else {},
                 tax_data={}
             )
-            return True
+            return prd_wh_obj
         raise serializers.ValidationError({"Existed": 'This Product-Warehouse already exists.'})
 
     @classmethod
@@ -674,33 +689,59 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             instance.product.save(update_fields=['stock_amount', 'available_amount'])
 
             if len(data_sn) > 0:
-                cls.for_serial(period_obj, instance, quantity, data_sn)
+                return cls.for_serial(period_obj, instance, quantity, data_sn)
             elif len(data_lot) > 0:
-                cls.for_lot(quantity, instance.value, data_lot, period_obj, instance.product, instance.warehouse)
+                return cls.for_lot(period_obj, instance, quantity, data_lot)
             elif len(data_lot) == 0 and len(data_sn) == 0:
-                cls.for_none(quantity, instance.value, period_obj, instance.product, instance.warehouse)
-
+                return cls.for_none(period_obj, instance, quantity)
             return True
 
     @classmethod
-    def prepare_data_for_logging(cls, instance):
+    def prepare_data_for_logging(cls, instance, prd_wh_obj):
         doc_data = []
-        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(instance.product.inventory_uom, instance.quantity)
-        doc_data.append({
-            'product': instance.product,
-            'warehouse': instance.warehouse,
-            'system_date': instance.date_created,
-            'posting_date': instance.date_created,
-            'document_date': instance.date_created,
-            'stock_type': 1,
-            'trans_id': '',
-            'trans_code': '',
-            'trans_title': 'Balance init input',
-            'quantity': casted_quantity,
-            'cost': instance.value / casted_quantity,
-            'value': instance.value,
-            'lot_data': {}
-        })
+        if len(instance.data_lot) > 0:
+            all_lots = prd_wh_obj.product_warehouse_lot_product_warehouse.all()
+            for lot in instance.data_lot:
+                lot_mapped = all_lots.filter(lot_number=lot.get('lot_number')).first()
+                if lot_mapped:
+                    unit_price_by_inventory_uom = instance.value/instance.quantity
+                    casted_cost = unit_price_by_inventory_uom/instance.product.inventory_uom.ratio
+                    doc_data.append({
+                        'product': instance.product,
+                        'warehouse': instance.warehouse,
+                        'system_date': instance.date_created,
+                        'posting_date': instance.date_created,
+                        'document_date': instance.date_created,
+                        'stock_type': 1,
+                        'trans_id': '',
+                        'trans_code': '',
+                        'trans_title': 'Balance init input',
+                        'quantity': lot_mapped.quantity_import,
+                        'cost': casted_cost,
+                        'value': casted_cost * lot_mapped.quantity_import,
+                        'lot_data': {
+                            'lot_id': str(lot_mapped.id),
+                            'lot_number': lot_mapped.lot_number,
+                            'lot_expire_date': str(lot_mapped.expire_date) if lot_mapped.expire_date else None
+                        }
+                    })
+        else:
+            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(instance.product.inventory_uom, instance.quantity)
+            doc_data.append({
+                'product': instance.product,
+                'warehouse': instance.warehouse,
+                'system_date': instance.date_created,
+                'posting_date': instance.date_created,
+                'document_date': instance.date_created,
+                'stock_type': 1,
+                'trans_id': '',
+                'trans_code': '',
+                'trans_title': 'Balance init input',
+                'quantity': casted_quantity,
+                'cost': instance.value / casted_quantity,
+                'value': instance.value,
+                'lot_data': {}
+            })
         ReportInvLog.log(instance, instance.company.software_start_using_time, doc_data)
         return True
 
@@ -717,8 +758,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             employee_created=self.context.get('employee_current'),
             employee_inherit=self.context.get('employee_current'),
         )
-        self.prepare_data_for_logging(instance)
-        self.create_product_warehouse_data(instance, validated_data)
+        prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
+        self.prepare_data_for_logging(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
 
@@ -784,8 +825,8 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
             employee_created=self.context.get('employee_current'),
             employee_inherit=self.context.get('employee_current'),
         )
-        self.prepare_data_for_logging(instance)
-        self.create_product_warehouse_data(instance, validated_data)
+        prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
+        self.prepare_data_for_logging(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
 
