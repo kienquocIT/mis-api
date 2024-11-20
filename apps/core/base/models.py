@@ -521,6 +521,9 @@ class Currency(SimpleAbstractModel):
     code = models.CharField(max_length=10, unique=True)
     symbol = models.CharField(max_length=10)
 
+    def __str__(self):
+        return f'{self.title} - {self.code} - {self.symbol}'
+
     class Meta:
         verbose_name = 'Currency'
         verbose_name_plural = 'Currency'
