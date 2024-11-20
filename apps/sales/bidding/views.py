@@ -45,6 +45,7 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
     serializer_list = BiddingListSerializer
     serializer_detail = BiddingDetailSerializer
     serializer_create = BiddingCreateSerializer
+    search_fields = ['title', 'customer__name']
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = [
         'tenant_id',
