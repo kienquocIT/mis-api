@@ -165,8 +165,7 @@ class AccountForBiddingList(BaseListMixin):
         operation_description="Account List for Bidding",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='bidding', model_code='bidding', perm_code='view',
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

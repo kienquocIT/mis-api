@@ -311,6 +311,20 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
+    def validate_bid_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+            return value
+
+    @classmethod
+    def validate_bid_bond_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+            return value
+
+    @classmethod
     def validate_opportunity(cls, value):
         if value:
             try:
@@ -395,13 +409,27 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
+    def validate_bid_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+            return value
+
+    @classmethod
+    def validate_bid_bond_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+            return value
+
+    @classmethod
     def validate_opportunity(cls, value):
         if value:
             try:
                 return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity': 'Opportunity not exist'})
-        raise serializers.ValidationError({'opportunity': 'Opportunity is required'})
+                raise serializers.ValidationError({'opportunity': BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({'opportunity': BaseMsg.REQUIRED})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
