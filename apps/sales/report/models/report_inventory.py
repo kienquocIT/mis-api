@@ -10,6 +10,46 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 # - ReportInventoryCostByWarehouse: lưu kho vật lí của sản phẩm (cho TH tính cost theo dự án)
 # - ReportInventoryCostLatestLog: lưu giao dịch gần nhất của sản phẩm
 
+class BalanceInitialization(DataAbstractModel):
+    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0)
+    value = models.FloatField(default=0)
+    data_lot = models.JSONField(default=list)
+    data_sn = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Balance Initialization'
+        verbose_name_plural = 'Balance Initialization'
+        ordering = ('product__code',)
+        default_permissions = ()
+        permissions = ()
+
+
+class BalanceInitializationLot(DataAbstractModel):
+    balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
+    lot_mapped = models.ForeignKey('saledata.ProductWareHouseLot', on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Balance Initialization Lot'
+        verbose_name_plural = 'Balance Initialization Lots'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class BalanceInitializationSerial(DataAbstractModel):
+    balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
+    serial_mapped = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Balance Initialization Serial'
+        verbose_name_plural = 'Balance Initialization Serials'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
 
 class ReportStock(DataAbstractModel):
     product = models.ForeignKey(

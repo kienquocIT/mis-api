@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import (
-    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, ReportStock
+    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, ReportStock, BalanceInitialization
 )
 
 
@@ -140,11 +140,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                     company=instance.company,
                     product_id=self.initial_data.get('product_id'),
                     warehouse_id=self.initial_data.get('warehouse_id')
-            ).exists():
+            ).exclude(trans_title='Balance init input').exists():
                 raise serializers.ValidationError(
                     {"Has trans": 'The transactions of this product are existed in this warehouse.'}
                 )
-
             try:
                 with transaction.atomic():
                     PeriodInventoryFunction.clear_balance_data(
@@ -169,15 +168,11 @@ class PeriodInventoryFunction:
             prd_obj.available_amount = 0
             prd_obj.save(update_fields=['stock_amount', 'available_amount'])
 
-            ReportStock.objects.filter(
-                tenant=instance.tenant,
-                company=instance.company,
-                product=prd_obj
-            ).delete()
             ReportStockLog.objects.filter(
                 tenant=instance.tenant,
                 company=instance.company,
-                product=prd_obj
+                product=prd_obj,
+                warehouse=wh_obj
             ).delete()
             ReportInventoryCost.objects.filter(
                 tenant=instance.tenant,
@@ -206,6 +201,12 @@ class PeriodInventoryFunction:
                 company=instance.company,
                 product_warehouse__product=prd_obj,
                 product_warehouse__warehouse=wh_obj
+            ).delete()
+            BalanceInitialization.objects.filter(
+                tenant=instance.tenant,
+                company=instance.company,
+                product=prd_obj,
+                warehouse=wh_obj
             ).delete()
             return True
         raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})
