@@ -315,14 +315,14 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
         if value:
             if value < 0:
                 raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
-            return value
+        return value
 
     @classmethod
     def validate_bid_bond_value(cls, value):
         if value:
             if value < 0:
                 raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
-            return value
+        return value
 
     @classmethod
     def validate_opportunity(cls, value):
@@ -413,14 +413,14 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         if value:
             if value < 0:
                 raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
-            return value
+        return value
 
     @classmethod
     def validate_bid_bond_value(cls, value):
         if value:
             if value < 0:
                 raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
-            return value
+        return value
 
     @classmethod
     def validate_opportunity(cls, value):
