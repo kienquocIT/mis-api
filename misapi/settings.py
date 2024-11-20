@@ -153,6 +153,8 @@ INTERNAL_IPS = [
     # ...
 ]
 
+CSRF_TRUSTED_ORIGINS = json.loads(os.environ.get('CSRF_TRUSTED_ORIGINS', '[]'))
+
 ROOT_URLCONF = 'misapi.urls'
 
 TEMPLATES = [

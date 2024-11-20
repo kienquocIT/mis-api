@@ -87,4 +87,7 @@ THROTTLE_ANON=50
 
 # file
 FILE_ENABLE_MAGIC_CHECK=0
+
+# HTTPS 
+CSRF_TRUSTED_ORIGINS=["https://api.x.vn"]
 ```
