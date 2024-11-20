@@ -444,7 +444,9 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
             'product',
             'warehouse',
             'quantity',
-            'value'
+            'value',
+            'data_sn',
+            'data_lot'
         )
 
     @classmethod
