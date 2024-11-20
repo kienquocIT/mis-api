@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import (
-    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, ReportStock, BalanceInitialization
+    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, BalanceInitialization
 )
 
 
