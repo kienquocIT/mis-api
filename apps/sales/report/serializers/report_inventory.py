@@ -766,7 +766,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         BalanceInitializationSerial.objects.bulk_create(bulk_info_sn)
 
         bulk_info_lot = []
-        for lot in instance.data_sn:
+        for lot in instance.data_lot:
             lot_obj = ProductWareHouseLot.objects.filter(
                 product_warehouse__product=instance.product,
                 lot_number=lot.get('lot_number')
