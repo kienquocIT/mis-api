@@ -27,23 +27,25 @@ class POFinishHandler:
     @classmethod
     def push_product_info(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
+            product = product_purchase.product
             uom_transaction = product_purchase.uom_order_actual
-            if product_purchase.uom_order_request:
-                uom_transaction = product_purchase.uom_order_request
-            final_ratio = cls.get_final_uom_ratio(
-                product_obj=product_purchase.product, uom_transaction=uom_transaction
-            )
-            product_quantity_order_request_final = product_purchase.product_quantity_order_actual * final_ratio
-            if instance.purchase_requests.exists():
-                product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
-            stock_final = product_purchase.stock * final_ratio
-            product_purchase.product.save(**{
-                'update_stock_info': {
-                    'quantity_purchase': product_quantity_order_request_final + stock_final,
-                    'system_status': instance.system_status,
-                },
-                'update_fields': ['wait_receipt_amount', 'available_amount']
-            })
+            if product and uom_transaction:
+                if product_purchase.uom_order_request:
+                    uom_transaction = product_purchase.uom_order_request
+                final_ratio = cls.get_final_uom_ratio(
+                    product_obj=product, uom_transaction=uom_transaction
+                )
+                product_quantity_order_request_final = product_purchase.product_quantity_order_actual * final_ratio
+                if instance.purchase_requests.exists():
+                    product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
+                stock_final = product_purchase.stock * final_ratio
+                product.save(**{
+                    'update_stock_info': {
+                        'quantity_purchase': product_quantity_order_request_final + stock_final,
+                        'system_status': instance.system_status,
+                    },
+                    'update_fields': ['wait_receipt_amount', 'available_amount']
+                })
         return True
 
     @classmethod

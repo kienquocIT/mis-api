@@ -105,7 +105,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    product = serializers.UUIDField()
+    product = serializers.UUIDField(required=False, allow_null=True)
     uom_order_request = serializers.UUIDField(required=False)
     uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
@@ -135,6 +135,9 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'order',
             # goods receipt information
             'gr_remain_quantity',
+            # shipping
+            'is_shipping',
+            'shipping_title',
         )
 
     @classmethod
@@ -191,6 +194,8 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
+            'is_shipping',
+            'shipping_title',
         )
 
     @classmethod
