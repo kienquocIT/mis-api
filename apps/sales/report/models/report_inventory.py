@@ -736,7 +736,7 @@ class ReportInventorySubFunction:
                         record.save(update_fields=['fifo_flag_log'])
                     break
 
-            export_fifo_cost = sum(item['log_value'] for item in fifo_cost_detail) / quantity
+            export_fifo_cost = (sum(item['log_value'] for item in fifo_cost_detail) / quantity) if quantity > 0 else 0
             return {'cost': export_fifo_cost, 'fifo_cost_detail': fifo_cost_detail} if div == 0 else 0
         return {
             'cost': cls.get_opening_cost_dict(product.id, 3, **kwargs)['cost'],
@@ -827,7 +827,7 @@ class ReportInventorySubFunction:
 
             if sum_input_quantity > 0:
                 quantity = sum_input_quantity - sum_output_quantity
-                cost = sum_input_value / sum_input_quantity if sum_input_quantity > 0 else 0
+                cost = (sum_input_value / sum_input_quantity) if sum_input_quantity > 0 else 0
                 value = quantity * cost
             else:
                 quantity = this_sub_period_cost.opening_balance_quantity
@@ -855,7 +855,7 @@ class ReportInventoryValuationMethod:
         if log.stock_type == 1:
             new_quantity = latest_cost['quantity'] + log.quantity
             sum_value = latest_cost['value'] + log.value
-            new_cost = (sum_value / new_quantity) if new_quantity else 0
+            new_cost = (sum_value / new_quantity) if new_quantity > 0 else 0
             new_value = sum_value
         else:
             new_quantity = latest_cost['quantity'] - log.quantity
@@ -877,12 +877,12 @@ class ReportInventoryValuationMethod:
         if log.stock_type == 1:
             new_quantity = latest_cost['quantity'] + log.quantity
             sum_value = latest_cost['value'] + log.value
-            new_cost = (sum_value / new_quantity) if new_quantity else 0
+            new_cost = (sum_value / new_quantity) if new_quantity > 0 else 0
             new_value = sum_value
         else:
             new_quantity = latest_cost['quantity'] - log.quantity
             new_value = latest_cost['value'] - log.value
-            new_cost = new_value / new_quantity
+            new_cost = (new_value / new_quantity) if new_quantity else 0
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
