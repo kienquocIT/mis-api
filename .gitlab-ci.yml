@@ -39,6 +39,7 @@ pylint_check:
   stage: pylint_check
   script:
     - python -m pylint --recursive=y .
+  interruptible: true
 
 migrations_init:
   stage: migrations_init
@@ -51,6 +52,7 @@ migrations_init:
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
+  interruptible: true
 
 run_testcase:
   stage: run_testcase
@@ -64,3 +66,4 @@ run_testcase:
     - exit
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
+  interruptible: true
