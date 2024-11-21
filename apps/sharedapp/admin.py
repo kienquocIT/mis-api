@@ -35,7 +35,7 @@ class MyAdminSite(admin.AdminSite):
     site_header = 'Bflow System Admin'
     site_title = 'Bflow'
     password_change_template = os.path.join(
-        settings.BASE_DIR, 'apps\\sharedapp\\templates\\admin\\change_password.html'
+        settings.BASE_DIR, os.path.normpath('apps/sharedapp/templates/admin/change_password.html')
     )
 
     def get_app_list(self, *args, **kwargs):
