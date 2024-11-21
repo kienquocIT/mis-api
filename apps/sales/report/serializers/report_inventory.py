@@ -435,6 +435,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
 class BalanceInitializationListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
 
     class Meta:
@@ -442,6 +443,7 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
+            'uom',
             'warehouse',
             'quantity',
             'value',
@@ -456,12 +458,15 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'description': obj.product.description,
-            'uom': {
-                'id': obj.uom_id,
-                'title': obj.uom.title,
-                'code': obj.uom.code,
-            }
         } if obj.product else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+        } if obj.uom else {}
 
     @classmethod
     def get_warehouse(cls, obj):
