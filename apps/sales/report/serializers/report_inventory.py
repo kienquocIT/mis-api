@@ -692,9 +692,9 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
 
             if len(data_sn) > 0:
                 return cls.for_serial(period_obj, instance, quantity, data_sn)
-            elif len(data_lot) > 0:
+            if len(data_lot) > 0:
                 return cls.for_lot(period_obj, instance, quantity, data_lot)
-            elif len(data_lot) == 0 and len(data_sn) == 0:
+            if len(data_lot) == 0 and len(data_sn) == 0:
                 return cls.for_none(period_obj, instance, quantity)
             return True
 
@@ -728,7 +728,10 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         }
                     })
         else:
-            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(instance.product.inventory_uom, instance.quantity)
+            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                instance.product.inventory_uom,
+                instance.quantity
+            )
             doc_data.append({
                 'product': instance.product,
                 'warehouse': instance.warehouse,
