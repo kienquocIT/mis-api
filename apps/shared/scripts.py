@@ -2233,6 +2233,8 @@ class InventoryReportRun:
                 warehouse=balance_init_obj.warehouse
             ).first()
             if prd_wh_obj:
+                print(f'--- Completed add balance init: '
+                      f'{balance_init_obj.product.code} {balance_init_obj.warehouse.code} {balance_init_obj.quantity}')
                 BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init_obj, prd_wh_obj)
 
         all_delivery = OrderDeliverySub.objects.filter(

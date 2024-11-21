@@ -8,7 +8,7 @@ from apps.masterdata.saledata.models import (
 from apps.sales.report.inventory_log import ReportInvCommonFunc, ReportInvLog
 from apps.sales.report.models import (
     ReportStock, ReportInventoryCost, ReportInventorySubFunction,
-    ReportStockLog, BalanceInitialization
+    ReportStockLog, BalanceInitialization, BalanceInitializationSerial, BalanceInitializationLot
 )
 
 
@@ -750,6 +750,36 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         ReportInvLog.log(instance, instance.company.software_start_using_time, doc_data)
         return True
 
+    @classmethod
+    def create_m2m_balance_init_data(cls, instance):
+        bulk_info_sn = []
+        for serial in instance.data_sn:
+            serial_obj = ProductWareHouseSerial.objects.filter(
+                product_warehouse__product=instance.product,
+                serial_number=serial.get('serial_number')
+            ).first()
+            if serial_obj:
+                bulk_info_sn.append(BalanceInitializationSerial(
+                    balance_init=instance,
+                    serial_mapped=serial_obj
+                ))
+        BalanceInitializationSerial.objects.bulk_create(bulk_info_sn)
+
+        bulk_info_lot = []
+        for lot in instance.data_sn:
+            lot_obj = ProductWareHouseLot.objects.filter(
+                product_warehouse__product=instance.product,
+                lot_number=lot.get('lot_number')
+            ).first()
+            if lot_obj:
+                bulk_info_lot.append(BalanceInitializationLot(
+                    balance_init=instance,
+                    lot_mapped=lot_obj,
+                    quantity=lot.get('quantity_import')
+                ))
+        BalanceInitializationLot.objects.bulk_create(bulk_info_lot)
+        return True
+
     def create(self, validated_data):
         instance = BalanceInitialization.objects.create(
             product=validated_data.get('product'),
@@ -764,6 +794,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             employee_inherit=self.context.get('employee_current'),
         )
         prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
+        self.create_m2m_balance_init_data(instance)
         self.prepare_data_for_logging(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
@@ -831,6 +862,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
             employee_inherit=self.context.get('employee_current'),
         )
         prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
+        self.create_m2m_balance_init_data(instance)
         self.prepare_data_for_logging(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
