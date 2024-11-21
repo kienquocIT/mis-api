@@ -2218,7 +2218,7 @@ def update_valuation_method():
 
 class InventoryReportRun:
     @classmethod
-    def weighted_average(cls, company_id, fiscal_year, start_month):
+    def run(cls, company_id, fiscal_year, start_month):
         SubPeriods.objects.filter(
             period_mapped__fiscal_year=fiscal_year,
             period_mapped__company_id=company_id
@@ -2534,3 +2534,80 @@ def move_opp_mapped_2_opp():
 
         print(f"Done for {company.title}")
     print('Done :))')
+
+
+def recreate_balance_init_for_Saty():
+    company = Company.objects.get(id='9cbe0e8e-7c57-424c-bb88-c19bf15937ce')
+    data = [
+        {
+            'product_id': '07c71d46-e4aa-4417-9894-8b4287836a5c',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 56,
+            'value': 8120000,
+        },
+        {
+            'product_id': '5fa410b8-c08c-4f32-8365-79fd54ade96a',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 1727,
+            'value': 117436000,
+        },
+        {
+            'product_id': 'c1fb682a-a124-41df-b986-7882e5cd4675',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 13,
+            'value': 884000,
+        },
+        {
+            'product_id': '07ead28b-03c9-4e0b-a5b0-c7bf5255385c',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 280,
+            'value': 19040000,
+        },
+        {
+            'product_id': '398dfae8-8e3e-4d3d-a596-c05830dd9da6',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 10,
+            'value': 680000,
+        },
+        {
+            'product_id': 'd15611a3-5cca-440e-9694-526b82472be2',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 481,
+            'value': 32708000,
+        },
+        {
+            'product_id': 'd6a9fe75-5eff-4425-b92e-5cc7e6f7f6d1',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 124,
+            'value': 5208000,
+        },
+        {
+            'product_id': '0b720ac2-4aa6-4e84-a8c3-3125624c57fc',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 52,
+            'value': 2184000,
+        },
+        {
+            'product_id': '1314f17e-e661-4ab5-abf6-f3b11134d7ee',
+            'warehouse_id': 'd8eeeb4e-192e-4de1-8bb0-c41509f00fc1',
+            'quantity': 51,
+            'value': 9052500,
+        },
+    ]
+    for item in data:
+        product_obj = Product.objects.get(id=item.get('product_id'))
+        BalanceInitialization.objects.create(
+            product=product_obj,
+            warehouse_id=item.get('warehouse_id'),
+            uom=product_obj.inventory_uom,
+            quantity=item.get('quantity'),
+            value=item.get('value'),
+            data_lot=[],
+            data_sn=[],
+            tenant=company.tenant,
+            company=company,
+            employee_created_id='b442fe11-8675-443d-adb8-5cdbd048b7e7',
+            employee_inherit_id='b442fe11-8675-443d-adb8-5cdbd048b7e7',
+        )
+        print(f"Created {product_obj.code} - {product_obj.title}")
+    print('Done :_))')
