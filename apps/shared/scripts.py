@@ -2228,7 +2228,12 @@ class InventoryReportRun:
         ReportInventoryCost.objects.filter(company_id=company_id).delete()
 
         for balance_init_obj in BalanceInitialization.objects.filter(company_id=company_id):
-            BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init_obj)
+            prd_wh_obj = ProductWareHouse.objects.filter(
+                product=balance_init_obj.product,
+                warehouse=balance_init_obj.warehouse
+            ).first()
+            if prd_wh_obj:
+                BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init_obj, prd_wh_obj)
 
         all_delivery = OrderDeliverySub.objects.filter(
             company_id=company_id, state=2, date_done__year=fiscal_year, date_done__month__gte=start_month
