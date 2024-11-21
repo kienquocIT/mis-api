@@ -45,6 +45,7 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
     serializer_list = BiddingListSerializer
     serializer_detail = BiddingDetailSerializer
     serializer_create = BiddingCreateSerializer
+    search_fields = ['title', 'customer__name']
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = [
         'tenant_id',
@@ -165,8 +166,7 @@ class AccountForBiddingList(BaseListMixin):
         operation_description="Account List for Bidding",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='bidding', model_code='bidding', perm_code='view',
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
