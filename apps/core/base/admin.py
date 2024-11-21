@@ -1,13 +1,14 @@
 from django.contrib import admin
 
 from apps.core.base.models import ApplicationProperty
+from apps.sharedapp.admin import AbstractAdmin, my_admin_site
 
 
-# Register your models here.
-@admin.register(ApplicationProperty)
-class CustomerStatusAdmin(admin.ModelAdmin):
-    def title_with_appname(self, obj):
-        return ("%s (%s)" % (obj.title, obj.application))
+@admin.register(ApplicationProperty, site=my_admin_site)
+class CustomerStatusAdmin(AbstractAdmin):
+    @classmethod
+    def title_with_appname(cls, obj):
+        return f"{obj.title} ({obj.application})"
 
     fields = ("title", "code", "application", "type", "content_type", "remark", "properties")
     search_fields = ("name",)
