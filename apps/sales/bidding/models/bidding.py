@@ -234,10 +234,12 @@ class BiddingPartnerAccount(SimpleAbstractModel):
         verbose_name="bidding partner account",
         related_name="bidding_partner_account_partner_account",
     )
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Bidding partner account'
         verbose_name_plural = 'Bidding partner accounts'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -256,9 +258,11 @@ class BiddingBidderAccount(SimpleAbstractModel):
         verbose_name="bidding bidder account",
         related_name="bidding_bidder_account_bidder_account",
     )
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Bidding bidder account'
         verbose_name_plural = 'Bidding bidder accounts'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

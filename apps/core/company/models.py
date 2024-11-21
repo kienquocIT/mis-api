@@ -205,8 +205,8 @@ class CompanyConfig(SimpleAbstractModel):
     cost_per_project = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'Currency was used by Company'
-        verbose_name_plural = 'Currency was used by Company'
+        verbose_name = 'Company Config'
+        verbose_name_plural = 'Company Config'
         default_permissions = ()
         permissions = ()
 

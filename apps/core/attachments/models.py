@@ -483,6 +483,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
+    # application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
     parent_n = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

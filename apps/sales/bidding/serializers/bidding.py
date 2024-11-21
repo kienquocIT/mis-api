@@ -96,6 +96,7 @@ class VenturePartnerCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiddingPartnerAccount
         fields = (
+            'order',
             'is_leader',
             'partner_account'
         )
@@ -114,6 +115,7 @@ class OtherBidderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiddingBidderAccount
         fields = (
+            'order',
             'is_won',
             'bidder_account'
         )
@@ -248,7 +250,7 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
                 "id": item.id,
                 "title": item.title,
                 "document_type": item.document_type.id if item.document_type else None,
-                "is_manual": not item.document_type,
+                "isManual": not item.document_type,
                 "remark": item.remark,
                 "attachment_data": item.attachment_data,
                 "order": item.order,
