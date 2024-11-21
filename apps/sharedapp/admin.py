@@ -40,22 +40,27 @@ class MyAdminSite(admin.AdminSite):
 
     def get_app_list(self, *args, **kwargs):
         app_list = super().get_app_list(*args, **kwargs)
-        log_app = {}
-        mailer_app = {}
+        try:
+            log_app = {}
+            mailer_app = {}
 
-        result = []
-        for item in app_list:
-            if item['app_label'] == 'mailer':
-                mailer_app = item
-            elif item['app_label'] == 'log':
-                log_app = item
-            else:
-                result.append(item)
+            result = []
+            for item in app_list:
+                if item['app_label'] == 'mailer':
+                    mailer_app = item
+                elif item['app_label'] == 'log':
+                    log_app = item
+                else:
+                    result.append(item)
 
-        log_app['models'] += mailer_app['models']
-        log_app['models'] = sorted(log_app['models'], key=lambda d: d['name'])
-        result.append(log_app)
-        return sorted(result, key=lambda d: d['name'])
+            if 'models' in log_app and isinstance(log_app['models'], list):
+                log_app['models'] += mailer_app['models']
+                log_app['models'] = sorted(log_app['models'], key=lambda d: d['name'])
+                result.append(log_app)
+            return sorted(result, key=lambda d: d['name'])
+        except Exception as err:
+            print('err:', err)
+        return app_list
 
 
 my_admin_site = MyAdminSite()
