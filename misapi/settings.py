@@ -138,7 +138,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.shared.extends.middleware.AllowedMethodMiddleware',
+    'apps.shared.extends.middleware.ActiveTranslateAndAllowedMethodMiddleware',
 ]
 #
 # Author: Paul McLanahan <pmac@mozilla.com>
@@ -158,6 +158,8 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
+
+CSRF_TRUSTED_ORIGINS = json.loads(os.environ.get('CSRF_TRUSTED_ORIGINS', '[]'))
 
 ROOT_URLCONF = 'misapi.urls'
 

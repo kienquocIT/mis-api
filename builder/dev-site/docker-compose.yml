@@ -10,6 +10,7 @@ services:
     restart: unless-stopped
     volumes:
       - ../../:/code
+      - ${STATIC_ROOT_PATH}:/code/static
     ports:
       - ${RUNNING_PORT}:8000
     env_file:

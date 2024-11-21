@@ -96,6 +96,7 @@ class VenturePartnerCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiddingPartnerAccount
         fields = (
+            'order',
             'is_leader',
             'partner_account'
         )
@@ -114,6 +115,7 @@ class OtherBidderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BiddingBidderAccount
         fields = (
+            'order',
             'is_won',
             'bidder_account'
         )
@@ -248,7 +250,7 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
                 "id": item.id,
                 "title": item.title,
                 "document_type": item.document_type.id if item.document_type else None,
-                "is_manual": not item.document_type,
+                "isManual": not item.document_type,
                 "remark": item.remark,
                 "attachment_data": item.attachment_data,
                 "order": item.order,
@@ -307,6 +309,20 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             'employee_inherit_id',
             'tinymce_content'
         )
+
+    @classmethod
+    def validate_bid_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+        return value
+
+    @classmethod
+    def validate_bid_bond_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+        return value
 
     @classmethod
     def validate_opportunity(cls, value):
@@ -393,13 +409,27 @@ class BiddingUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
+    def validate_bid_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+        return value
+
+    @classmethod
+    def validate_bid_bond_value(cls, value):
+        if value:
+            if value < 0:
+                raise serializers.ValidationError({'bid_bond_value': BiddingMsg.BID_VALUE_NOT_NEGATIVE})
+        return value
+
+    @classmethod
     def validate_opportunity(cls, value):
         if value:
             try:
                 return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             except Opportunity.DoesNotExist:
-                raise serializers.ValidationError({'opportunity': 'Opportunity not exist'})
-        raise serializers.ValidationError({'opportunity': 'Opportunity is required'})
+                raise serializers.ValidationError({'opportunity': BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({'opportunity': BaseMsg.REQUIRED})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):

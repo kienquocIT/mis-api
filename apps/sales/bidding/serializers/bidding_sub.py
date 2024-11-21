@@ -33,6 +33,7 @@ class BiddingCommonCreate:
             bulk_data.append(
                 BiddingPartnerAccount(
                     bidding=instance,
+                    order=item.get('order'),
                     partner_account=item.get('partner_account'),
                     is_leader=item.get('is_leader')
                 )
@@ -47,6 +48,7 @@ class BiddingCommonCreate:
             bulk_data.append(
                 BiddingBidderAccount(
                     bidding=instance,
+                    order=item.get('order'),
                     bidder_account=item.get('bidder_account'),
                     is_won=item.get('is_won')
                 )
