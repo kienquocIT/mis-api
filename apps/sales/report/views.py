@@ -381,7 +381,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product__inventory_uom', 'warehouse').prefetch_related()
+        return super().get_queryset().select_related('product', 'uom', 'warehouse').prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Balance Initialization list",

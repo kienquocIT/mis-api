@@ -457,9 +457,9 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
-                'id': obj.product.inventory_uom_id,
-                'title': obj.product.inventory_uom.title,
-                'code': obj.product.inventory_uom.code,
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
             }
         } if obj.product else {}
 
@@ -500,6 +500,10 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
         if not period_obj:
             raise serializers.ValidationError({'period_obj': 'Period is not found.'})
+        if prd_obj.inventory_uom:
+            validate_data['uom'] = prd_obj.inventory_uom
+        else:
+            raise serializers.ValidationError({'uom': 'Inventory UOM is not found.'})
         if BalanceInitialization.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
             raise serializers.ValidationError(
                 {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
@@ -784,6 +788,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         instance = BalanceInitialization.objects.create(
             product=validated_data.get('product'),
             warehouse=validated_data.get('warehouse'),
+            uom=validated_data.get('uom'),
             quantity=validated_data.get('quantity', 0),
             value=validated_data.get('value', 0),
             data_lot=validated_data.get('data_lot', []),
@@ -819,6 +824,10 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         period_obj = Periods.objects.filter(
             tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
         ).first()
+        if prd_obj.inventory_uom:
+            validate_data['uom'] = prd_obj.inventory_uom
+        else:
+            raise serializers.ValidationError({'uom': 'Inventory UOM is not found.'})
         if not prd_obj:
             raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
         if not wh_obj:

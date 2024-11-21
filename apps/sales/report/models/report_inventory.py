@@ -15,6 +15,7 @@ class BalanceInitialization(DataAbstractModel):
     warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
     quantity = models.FloatField(default=0)
     value = models.FloatField(default=0)
+    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     data_lot = models.JSONField(default=list)
     data_sn = models.JSONField(default=list)
 
