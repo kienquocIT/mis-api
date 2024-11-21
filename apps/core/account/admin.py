@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
-from apps.sharedapp.admin import AbstractAdmin
+from apps.sharedapp.admin import AbstractAdmin, my_admin_site
 from apps.core.account.models import User, VerifyContact, ValidateUser, TOTPUser
+from apps.core.company.models import CompanyUserEmployee
 
 
-@admin.register(User)
+@admin.register(User, site=my_admin_site)
 class UserAdmin(AbstractAdmin):
     list_display = (
         'username', 'first_name', 'last_name',
@@ -17,18 +18,42 @@ class UserAdmin(AbstractAdmin):
     ordering = ['username']
     date_hierarchy = 'last_login'
 
+    @classmethod
+    def company_and_employee_mapped(cls, obj):
+        html_data = []
+        for index, obj_data in enumerate(CompanyUserEmployee.objects.select_related('employee', 'company').filter(user=obj)):
+            html_data.append(
+                f'<tr>'
+                f'<td>{index + 1}</td>'
+                f'<td>{obj_data.company_id}</td>'
+                f'<td>{obj_data.company}</td>'
+                f'<td>{obj_data.employee_id}</td>'
+                f'<td>{obj_data.employee}</td>'
+                f'</tr>'
+            )
+        return mark_safe(f'<table>{"".join(html_data)}</table>')
 
-@admin.register(VerifyContact)
+    fields = [
+        'username_auth', 'username', 'first_name', 'last_name', 'email', 'phone', 'language',
+        'is_phone', 'is_email', 'is_active', 'is_staff', 'is_superuser', 'user_created', 'date_created',
+        'date_modified', 'date_joined', 'extras', 'last_login', 'is_delete', 'full_name_search',
+        'is_admin_tenant', 'tenant_current',
+        'company_current', 'employee_current', 'company_and_employee_mapped',
+        'space_current', 'is_mail_welcome', 'auth_2fa', 'auth_locked_out',
+    ]
+
+
+@admin.register(VerifyContact, site=my_admin_site)
 class VerifyContactAdmin(AbstractAdmin):
     list_display = [field.name for field in VerifyContact._meta.fields if field.name != 'id']
 
 
-@admin.register(ValidateUser)
+@admin.register(ValidateUser, site=my_admin_site)
 class ValidateUserAdmin(AbstractAdmin):
     list_display = [field.name for field in ValidateUser._meta.fields if field.name != 'id']
 
 
-@admin.register(TOTPUser)
+@admin.register(TOTPUser, site=my_admin_site)
 class TOTPUserAdmin(AbstractAdmin):
     list_display = [
         'user', 'confirmed', 'enabled', 'locked_out', 'last_used_at', 'date_created', 'date_modified',

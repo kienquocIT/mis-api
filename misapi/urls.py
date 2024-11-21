@@ -6,6 +6,7 @@ from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from apps.sharedapp.admin import my_admin_site
 
 from . import media_proxy
 
@@ -16,7 +17,7 @@ urlpatterns = [
     path('api/', include('apps.sales.urls')),
     path('api/', include('apps.eoffice.urls')),
     path('api/hrm/', include('apps.hrm.urls')),
-    path('django-admin/', admin.site.urls),
+    path('django-admin/', my_admin_site.urls),
 ]
 
 if getattr(settings, 'SHOW_API_DOCS', False):
@@ -80,39 +81,6 @@ if settings.DEBUG is True:
     urlpatterns.append(
         path('__debug__/', include('debug_toolbar.urls')),
     )
-
-
-import re
-from urllib.parse import urlsplit
-
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
-from django.urls import re_path
-from django.views.static import serve
-
-def base_static(prefix, view=serve, **kwargs):
-    """
-    Return a URL pattern for serving files in debug mode.
-
-    from django.conf import settings
-    from django.conf.urls.static import static
-
-    urlpatterns = [
-        # ... the rest of your URLconf goes here ...
-    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    """
-    # if not prefix:
-    #     raise ImproperlyConfigured("Empty static prefix not permitted")
-    # elif not settings.DEBUG or urlsplit(prefix).netloc:
-    #     # No-op if not in debug mode or a non-local prefix.
-    #     return []
-    return [
-        re_path(
-            r"^%s(?P<path>.*)$" % re.escape(prefix.lstrip("/")), view, kwargs=kwargs
-        ),
-    ]
-
-
 
 urlpatterns += base_static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

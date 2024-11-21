@@ -5,10 +5,10 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyLicenseTracking, CompanyUserEmployee,
     CompanyFunctionNumber,
 )
-from apps.sharedapp.admin import AbstractAdmin
+from apps.sharedapp.admin import AbstractAdmin, my_admin_site
 
 
-@admin.register(Company)
+@admin.register(Company, site=my_admin_site)
 class CompanyAdmin(AbstractAdmin):
     @classmethod
     def logo_icon_preview(cls, obj):
@@ -20,7 +20,7 @@ class CompanyAdmin(AbstractAdmin):
         return mark_safe(html_img) if html_img else "-"
 
     list_display = (
-        'logo_icon_preview', 'title', 'code', 'date_created', 'tenant',
+        'title', 'code', 'logo_icon_preview', 'date_created', 'tenant',
         'license_usage', 'total_user', 'software_start_using_time',
         'sub_domain',
     )
@@ -29,8 +29,32 @@ class CompanyAdmin(AbstractAdmin):
     ordering = ['title']
     date_hierarchy = 'date_created'
 
+    @classmethod
+    def total_user_recheck(cls, obj):
+        return CompanyUserEmployee.objects.filter(company=obj, user__isnull=False).count()
 
-@admin.register(CompanyConfig)
+    @classmethod
+    def total_employee_recheck(cls, obj):
+        return CompanyUserEmployee.objects.filter(company=obj, employee__isnull=False).count()
+
+    @classmethod
+    def employee_linked_in_all(cls, obj):
+        linked = CompanyUserEmployee.objects.filter(company=obj, employee__isnull=False, user__isnull=False).count()
+        all_count = CompanyUserEmployee.objects.filter(company=obj).count()
+        return f'{linked}/{all_count}'
+
+    fields = [
+        'title', 'code',
+        'logo_icon_preview',
+        'date_created', 'date_modified',
+        'tenant', 'license_usage', 'total_user',
+        'total_user_recheck', 'total_employee_recheck', 'employee_linked_in_all',
+        'representative_fullname', 'address', 'email', 'software_start_using_time', 'phone', 'fax',
+        'media_company_id', 'media_company_code', 'sub_domain',
+    ]
+
+
+@admin.register(CompanyConfig, site=my_admin_site)
 class CompanyConfigAdmin(AbstractAdmin):
     list_display = (
         'company', 'language', 'currency',
@@ -40,19 +64,19 @@ class CompanyConfigAdmin(AbstractAdmin):
     list_filter = ['language', 'currency']
 
 
-@admin.register(CompanyLicenseTracking)
+@admin.register(CompanyLicenseTracking, site=my_admin_site)
 class CompanyLicenseTrackingAdmin(AbstractAdmin):
     list_display = [field.name for field in CompanyLicenseTracking._meta.fields if field.name != 'id']
     list_filter = ['company', 'user', 'license_plan']
 
 
-@admin.register(CompanyUserEmployee)
+@admin.register(CompanyUserEmployee, site=my_admin_site)
 class CompanyUserEmployeeAdmin(AbstractAdmin):
     list_display = [field.name for field in CompanyUserEmployee._meta.fields if field.name != 'id']
     list_filter = ['company', 'user', 'employee']
 
 
-@admin.register(CompanyFunctionNumber)
+@admin.register(CompanyFunctionNumber, site=my_admin_site)
 class CompanyFunctionNumberAdmin(AbstractAdmin):
     list_display = [
         'company', 'function', 'numbering_by', 'schema',
