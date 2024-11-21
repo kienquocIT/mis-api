@@ -13,9 +13,9 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 class BalanceInitialization(DataAbstractModel):
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     quantity = models.FloatField(default=0)
     value = models.FloatField(default=0)
-    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     data_lot = models.JSONField(default=list)
     data_sn = models.JSONField(default=list)
 
