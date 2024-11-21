@@ -10,7 +10,7 @@ from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
-    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction
+    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction, BalanceInitialization
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, ReportInventoryCostListSerializer, ReportInventoryCostWarehouseDetailSerializer,
@@ -374,18 +374,14 @@ class ReportStockList(BaseListMixin):
 
 
 class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
-    queryset = ReportInventoryCost.objects
+    queryset = BalanceInitialization.objects
     serializer_list = BalanceInitializationListSerializer
     serializer_create = BalanceInitializationCreateSerializer
     serializer_detail = BalanceInitializationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'product__inventory_uom',
-            'warehouse',
-            'period_mapped'
-        ).prefetch_related().filter(for_balance=True).order_by('warehouse__code', 'product__code')
+        return super().get_queryset().select_related('product', 'uom', 'warehouse').prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Balance Initialization list",

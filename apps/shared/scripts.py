@@ -63,8 +63,10 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
+from ..sales.report.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
-    ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock
+    ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
+from ..sales.report.serializers import BalanceInitializationCreateSerializer
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig, SaleOrderPaymentStage
@@ -2224,6 +2226,16 @@ class InventoryReportRun:
         ReportStock.objects.filter(company_id=company_id).delete()
         ReportStockLog.objects.filter(company_id=company_id).delete()
         ReportInventoryCost.objects.filter(company_id=company_id).delete()
+
+        for balance_init_obj in BalanceInitialization.objects.filter(company_id=company_id):
+            prd_wh_obj = ProductWareHouse.objects.filter(
+                product=balance_init_obj.product,
+                warehouse=balance_init_obj.warehouse
+            ).first()
+            if prd_wh_obj:
+                print(f'--- Completed add balance init: '
+                      f'{balance_init_obj.product.code} {balance_init_obj.warehouse.code} {balance_init_obj.quantity}')
+                BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init_obj, prd_wh_obj)
 
         all_delivery = OrderDeliverySub.objects.filter(
             company_id=company_id, state=2, date_done__year=fiscal_year, date_done__month__gte=start_month

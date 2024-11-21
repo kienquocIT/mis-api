@@ -10,6 +10,47 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 # - ReportInventoryCostByWarehouse: lưu kho vật lí của sản phẩm (cho TH tính cost theo dự án)
 # - ReportInventoryCostLatestLog: lưu giao dịch gần nhất của sản phẩm
 
+class BalanceInitialization(DataAbstractModel):
+    product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
+    warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
+    uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0)
+    value = models.FloatField(default=0)
+    data_lot = models.JSONField(default=list)
+    data_sn = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Balance Initialization'
+        verbose_name_plural = 'Balance Initialization'
+        ordering = ('product__code',)
+        default_permissions = ()
+        permissions = ()
+
+
+class BalanceInitializationLot(DataAbstractModel):
+    balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
+    lot_mapped = models.ForeignKey('saledata.ProductWareHouseLot', on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Balance Initialization Lot'
+        verbose_name_plural = 'Balance Initialization Lots'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class BalanceInitializationSerial(DataAbstractModel):
+    balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
+    serial_mapped = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Balance Initialization Serial'
+        verbose_name_plural = 'Balance Initialization Serials'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
 
 class ReportStock(DataAbstractModel):
     product = models.ForeignKey(
@@ -696,7 +737,7 @@ class ReportInventorySubFunction:
                         record.save(update_fields=['fifo_flag_log'])
                     break
 
-            export_fifo_cost = sum(item['log_value'] for item in fifo_cost_detail) / quantity
+            export_fifo_cost = (sum(item['log_value'] for item in fifo_cost_detail) / quantity) if quantity > 0 else 0
             return {'cost': export_fifo_cost, 'fifo_cost_detail': fifo_cost_detail} if div == 0 else 0
         return {
             'cost': cls.get_opening_cost_dict(product.id, 3, **kwargs)['cost'],
@@ -787,7 +828,7 @@ class ReportInventorySubFunction:
 
             if sum_input_quantity > 0:
                 quantity = sum_input_quantity - sum_output_quantity
-                cost = sum_input_value / sum_input_quantity if sum_input_quantity > 0 else 0
+                cost = (sum_input_value / sum_input_quantity) if sum_input_quantity > 0 else 0
                 value = quantity * cost
             else:
                 quantity = this_sub_period_cost.opening_balance_quantity
@@ -815,7 +856,7 @@ class ReportInventoryValuationMethod:
         if log.stock_type == 1:
             new_quantity = latest_cost['quantity'] + log.quantity
             sum_value = latest_cost['value'] + log.value
-            new_cost = (sum_value / new_quantity) if new_quantity else 0
+            new_cost = (sum_value / new_quantity) if new_quantity > 0 else 0
             new_value = sum_value
         else:
             new_quantity = latest_cost['quantity'] - log.quantity
@@ -837,12 +878,12 @@ class ReportInventoryValuationMethod:
         if log.stock_type == 1:
             new_quantity = latest_cost['quantity'] + log.quantity
             sum_value = latest_cost['value'] + log.value
-            new_cost = (sum_value / new_quantity) if new_quantity else 0
+            new_cost = (sum_value / new_quantity) if new_quantity > 0 else 0
             new_value = sum_value
         else:
             new_quantity = latest_cost['quantity'] - log.quantity
             new_value = latest_cost['value'] - log.value
-            new_cost = new_value / new_quantity
+            new_cost = (new_value / new_quantity) if new_quantity else 0
         return {'quantity': new_quantity, 'cost': new_cost, 'value': new_value}
 
     @classmethod
