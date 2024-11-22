@@ -31,7 +31,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'general_uom_group',
             'general_price',
             'sale_tax', 'sale_default_uom', 'is_public_website',
-            'inventory_uom',
+            'inventory_uom', 'valuation_method',
             'purchase_information',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'

@@ -126,6 +126,9 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     serializer_detail = BOMDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'system_status': ['exact'],
+    }
 
     def get_queryset(self):
         if 'for_opp_space' in self.request.query_params:
