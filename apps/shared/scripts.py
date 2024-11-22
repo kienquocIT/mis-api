@@ -2538,6 +2538,7 @@ def move_opp_mapped_2_opp():
 
 def recreate_balance_init_for_Saty():
     company = Company.objects.get(id='9cbe0e8e-7c57-424c-bb88-c19bf15937ce')
+    Product.objects.filter(company_id='9cbe0e8e-7c57-424c-bb88-c19bf15937ce').update(valuation_method=0)
     data = [
         {
             'product_id': '07c71d46-e4aa-4417-9894-8b4287836a5c',
