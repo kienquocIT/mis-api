@@ -116,6 +116,9 @@ class ProductionReportGRList(BaseListMixin, BaseCreateMixin):
     serializer_list = ProductionReportGRSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("product",)
+
     @swagger_auto_schema(
         operation_summary="Production Report GR List",
         operation_description="Get Production Report GR List",

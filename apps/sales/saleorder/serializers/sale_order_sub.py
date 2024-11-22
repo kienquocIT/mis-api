@@ -324,24 +324,25 @@ class SaleOrderRuleValidate:
     @classmethod
     def validate_payment_stage(cls, validate_data):
         if 'sale_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['sale_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                date = payment_stage.get('date', '')
-                due_date = payment_stage.get('due_date', '')
-                if not date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
+            if len(validate_data['sale_order_payment_stage']) > 0:
+                total = 0
+                for payment_stage in validate_data['sale_order_payment_stage']:
+                    total += payment_stage.get('payment_ratio', 0)
+                    # check required field
+                    date = payment_stage.get('date', '')
+                    due_date = payment_stage.get('due_date', '')
+                    if not date:
+                        raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
+                    if not due_date:
+                        raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                if total != 100:
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+            else:
+                # check required by config
+                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                if so_config:
+                    if so_config.is_require_payment is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     @classmethod

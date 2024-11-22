@@ -2536,6 +2536,16 @@ def move_opp_mapped_2_opp():
     print('Done :))')
 
 
+def reset_remain_gr_for_po():
+    for pr_product in PurchaseOrderRequestProduct.objects.filter(
+            purchase_order_id="c9e2df0f-227d-4ee1-9b9e-6ba486724b02"
+    ):
+        pr_product.gr_remain_quantity = pr_product.quantity_order
+        pr_product.save(update_fields=['gr_remain_quantity'])
+    print("reset_remain_gr_for_po done.")
+    return True
+
+
 def recreate_balance_init_for_Saty():
     company = Company.objects.get(id='9cbe0e8e-7c57-424c-bb88-c19bf15937ce')
     Product.objects.filter(company_id='9cbe0e8e-7c57-424c-bb88-c19bf15937ce').update(valuation_method=0)

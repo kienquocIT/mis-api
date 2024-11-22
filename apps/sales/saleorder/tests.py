@@ -294,6 +294,10 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # indicators
+                'indicator_revenue',
+                'indicator_gross_profit',
+                'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
                 # system
@@ -575,6 +579,10 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # indicators
+                'indicator_revenue',
+                'indicator_gross_profit',
+                'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
                 # system
