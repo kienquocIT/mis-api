@@ -2622,3 +2622,12 @@ def recreate_balance_init_for_Saty():
         )
         print(f"Created {product_obj.code} - {product_obj.title}")
     print('Done :_))')
+
+
+def update_flag_recurrence():
+    for sale_order in SaleOrder.objects.filter(is_recurring=True):
+        sale_order.is_recurrence_template = True
+        sale_order.is_recurring = False
+        sale_order.save(update_fields=['is_recurrence_template', 'is_recurring'])
+    print('update_flag_recurrence done.')
+    return True

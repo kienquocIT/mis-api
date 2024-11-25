@@ -301,6 +301,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     SOFinishHandler.push_to_report_customer(instance=self)
                     SOFinishHandler.push_to_report_cashflow(instance=self)
                     SOFinishHandler.push_final_acceptance_so(instance=self)  # final acceptance
+                    SOFinishHandler.update_recurrence_task(instance=self)  # recurrence
                     DocumentChangeHandler.change_handle(instance=self)  # change document handle
 
         if self.system_status in [4]:  # cancel

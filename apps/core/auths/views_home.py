@@ -322,13 +322,15 @@ class CalendarByDay(APIView):
                         objs = RecurrenceTask.objects.select_related('recurrence').filter(
                             date_next=day_check,
                             employee_inherit_id=employee_id,
+                            recurrence_action=0,
+                            recurrence__recurrence_status=0,
                         )
                         result['recurrence'] = []
                         for obj in objs:
                             result['recurrence'].append(
                                 {
                                     'category': 'Recurrence',
-                                    'id': obj.recurrence_id if obj.recurrence else None,
+                                    'id': obj.id,
                                     'title': obj.recurrence.title if obj.recurrence else "",
                                     'remark': "",
                                     'start_date': None,

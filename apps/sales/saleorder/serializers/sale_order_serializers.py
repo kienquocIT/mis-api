@@ -258,6 +258,8 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    # recurrence
+    recurrence_task_id = serializers.UUIDField(allow_null=True, required=False)
 
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
 
@@ -312,8 +314,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
-            #
+            # recurrence
+            'is_recurrence_template',
             'is_recurring',
+            'recurrence_task_id',
         )
 
     @classmethod

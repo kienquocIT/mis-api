@@ -312,7 +312,7 @@ class SORecurrenceList(BaseListMixin, BaseCreateMixin):
     queryset = SaleOrder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'is_recurring': ['exact'],
+        'is_recurrence_template': ['exact'],
     }
     serializer_list = SORecurrenceListSerializer
 
