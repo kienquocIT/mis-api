@@ -22,9 +22,13 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         ap_list_id = self.request.query_params.get('advance_payment_id_list', None)
-        main_queryset = super().get_queryset().select_related('advance_payment').prefetch_related(
-            'return_advance').filter(advance_payment_id__in=ap_list_id.split(',')
-        ) if ap_list_id else super().get_queryset().select_related('advance_payment').prefetch_related(
+        main_queryset = super().get_queryset().select_related(
+            'advance_payment'
+        ).prefetch_related(
+            'return_advance'
+        ).filter(advance_payment_id__in=ap_list_id.split(',')) if ap_list_id else super().get_queryset().select_related(
+            'advance_payment'
+        ).prefetch_related(
             'return_advance'
         )
         return self.get_queryset_custom_direct_page(main_queryset)
@@ -62,8 +66,8 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'advance_payment', 'employee_inherit'
-        )
+            'advance_payment', 'employee_created__group', 'employee_inherit__group', 'process'
+        ).prefetch_related('return_advance')
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')
     @mask_view(
@@ -102,7 +106,13 @@ class APListForReturn(BaseListMixin):
             'advance_payment__currency',
             'advance_payment__expense_type',
             'advance_payment__expense_tax',
-        ).select_related()
+        ).select_related(
+            'process',
+            'employee_created__group',
+            'employee_inherit__group',
+            'supplier__owner',
+            'supplier__industry'
+        )
 
     @swagger_auto_schema(
         operation_summary="AdvancePayment list for return",
