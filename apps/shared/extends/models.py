@@ -15,8 +15,9 @@ from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
+    'RecurrenceAbstractModel',
     'DisperseModel',
-    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass', 'RecurrenceAbstractModel',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
 
 
