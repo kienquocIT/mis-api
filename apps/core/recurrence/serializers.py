@@ -10,7 +10,7 @@ class RecurrenceCommonCreate:
     @classmethod
     def create_subs(cls, instance):
         if instance:
-            RecurrenceTask.objects.all().delete()
+            RecurrenceTask.objects.filter(recurrence=instance).delete()
             RecurrenceTask.objects.bulk_create([RecurrenceTask(
                 recurrence=instance,
                 tenant_id=instance.tenant_id,
@@ -29,6 +29,7 @@ class RecurrenceListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'application_data',
             'app_code',
             'doc_template_id',
