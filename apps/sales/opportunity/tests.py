@@ -327,7 +327,8 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'is_deal_close',
                 'members',
                 'estimated_gross_profit_percent',
-                'estimated_gross_profit_value'
+                'estimated_gross_profit_value',
+                'process'
             ],
             check_sum_second=True,
         )
