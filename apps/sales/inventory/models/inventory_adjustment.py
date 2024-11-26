@@ -95,9 +95,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
     )
     select_for_action = models.BooleanField(default=False)
     action_status = models.BooleanField(default=False)
-    date_modified = models.DateTimeField(
-        default=timezone.now
-    )
     # goods receipt information
     gr_remain_quantity = models.FloatField(
         default=0,
