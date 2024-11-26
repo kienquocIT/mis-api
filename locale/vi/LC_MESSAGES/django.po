@@ -136,7 +136,7 @@ msgstr "Chi phí nhân công nội bộ"
 
 # c5de0a7d-bea3-4f39-922f-06a40a060aba
 msgid "Inventory Adjustment"
-msgstr "Điều chỉnh tồn kho"
+msgstr "Kiểm kê kho"
 
 # baff033a-c416-47e1-89af-b6653534f06e
 msgid "Leave"
