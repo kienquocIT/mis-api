@@ -2631,3 +2631,18 @@ def update_flag_recurrence():
         sale_order.save(update_fields=['is_recurrence_template', 'is_recurring'])
     print('update_flag_recurrence done.')
     return True
+
+
+def reset_remain_gr_for_ia():
+    for ia_product in InventoryAdjustmentItem.objects.filter(
+            inventory_adjustment_mapped_id__in=[
+                "c16020f3-924c-4c00-9da4-55b7b9f0bd3d",
+                "17d441b0-b90e-455f-85e0-9b2128889733",
+                "55b92874-5a63-4dd0-9c34-6d7a55a6f163"
+            ]
+    ):
+        difference = ia_product.count - ia_product.book_quantity
+        ia_product.gr_remain_quantity = difference if difference > 0 else 0
+        ia_product.save(update_fields=['gr_remain_quantity'])
+    print("reset_remain_gr_for_ia done.")
+    return True
