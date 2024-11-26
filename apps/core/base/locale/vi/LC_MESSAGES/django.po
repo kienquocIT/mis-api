@@ -67,7 +67,7 @@ msgstr "Điều chuyển hàng"
 
 #
 msgid "APP_Inventory Adjustment"
-msgstr "Điều chỉnh tồn kho"
+msgstr "Kiểm kê kho"
 
 #
 msgid "APP_Leave"

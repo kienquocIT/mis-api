@@ -64,7 +64,7 @@ class LaborListForBOMSerializer(serializers.ModelSerializer):
 
 class BOMProductMaterialListSerializer(serializers.ModelSerializer):
     bom_id = serializers.SerializerMethodField()
-    is_project_bom = serializers.SerializerMethodField()
+    is_opp_bom = serializers.SerializerMethodField()
     inventory_uom = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,7 +75,7 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
             'title',
             'has_bom',
             'bom_id',
-            'is_project_bom',
+            'is_opp_bom',
             'inventory_uom',
             'general_uom_group',
             'standard_price'
@@ -87,7 +87,7 @@ class BOMProductMaterialListSerializer(serializers.ModelSerializer):
         return str(bom.id) if bom else None
 
     @classmethod
-    def get_is_project_bom(cls, obj):
+    def get_is_opp_bom(cls, obj):
         bom = obj.bom_product.first()
         if bom:
             return bool(bom.opportunity)

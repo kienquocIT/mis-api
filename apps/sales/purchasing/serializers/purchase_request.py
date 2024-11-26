@@ -188,9 +188,9 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
 
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField()
-    sale_order_product = serializers.UUIDField(allow_null=True)
+    sale_order_product = serializers.UUIDField(allow_null=True, default=None)
     uom = serializers.UUIDField()
-    tax = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(allow_null=True, default=None)
 
     class Meta:
         model = PurchaseRequestProduct

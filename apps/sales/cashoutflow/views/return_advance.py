@@ -97,6 +97,7 @@ class APListForReturn(BaseListMixin):
         'id': ['exact'],
         'opportunity_id': ['exact'],
         'system_status': ['exact'],
+        'process_id': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']

@@ -411,21 +411,17 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_attended_list(cls, obj):
-        if obj.employee_attended_list:
-            employee_attended_list = []
-            for item in list(obj.employee_attended_list.all()):
-                employee_attended_list.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
-            return employee_attended_list
-        return {}
+        employee_attended_list = []
+        for item in list(obj.employee_attended_list.all()):
+            employee_attended_list.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
+        return employee_attended_list
 
     @classmethod
     def get_customer_member_list(cls, obj):
-        if obj.customer_member_list:
-            customer_member_list = []
-            for item in list(obj.customer_member_list.all()):
-                customer_member_list.append({'id': item.id, 'fullname': item.fullname})
-            return customer_member_list
-        return {}
+        customer_member_list = []
+        for item in list(obj.customer_member_list.all()):
+            customer_member_list.append({'id': item.id, 'fullname': item.fullname})
+        return customer_member_list
 
 
 class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa

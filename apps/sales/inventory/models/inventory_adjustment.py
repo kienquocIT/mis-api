@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
@@ -95,9 +94,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
     )
     select_for_action = models.BooleanField(default=False)
     action_status = models.BooleanField(default=False)
-    date_modified = models.DateTimeField(
-        default=timezone.now
-    )
     # goods receipt information
     gr_remain_quantity = models.FloatField(
         default=0,
