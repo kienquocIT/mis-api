@@ -127,6 +127,7 @@ class DeliFinishHandler:
                     # đủ hàng
                     is_done = True
                     item_sold = delivery_quantity
+                    # set data update product warehouse
                     item.sold_amount += item_sold
                     item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:

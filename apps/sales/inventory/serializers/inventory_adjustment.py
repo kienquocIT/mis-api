@@ -256,14 +256,12 @@ class IACommonFunc:
     def create_ia_items(cls, obj, data):
         bulk_info = []
         for item in data:
-            difference_quantity = int(item.get('count', 0)) - item.get('book_quantity', 0)
             bulk_info.append(
                 InventoryAdjustmentItem(
                     **item,
                     inventory_adjustment_mapped=obj,
                     tenant=obj.tenant,
                     company=obj.company,
-                    gr_remain_quantity=difference_quantity if difference_quantity > 0 else 0
                 )
             )
         InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
@@ -298,7 +296,10 @@ class IACommonFunc:
                 item_obj.count = item['count']
                 item_obj.action_type = item['action_type']
                 item_obj.select_for_action = item['select_for_action']
-                item_obj.save(update_fields=['count', 'action_type', 'select_for_action'])
+                # set remain for GR
+                difference = item.get('count', 0) - item_obj.book_quantity
+                item_obj.gr_remain_quantity = abs(difference) if difference else 0
+                item_obj.save(update_fields=['count', 'action_type', 'select_for_action', 'gr_remain_quantity'])
             else:
                 raise serializers.ValidationError('Inventory Adjustment Item not exist')
         return True
