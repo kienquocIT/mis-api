@@ -2646,3 +2646,10 @@ def reset_remain_gr_for_ia():
         ia_product.save(update_fields=['gr_remain_quantity'])
     print("reset_remain_gr_for_ia done.")
     return True
+
+
+def re_runtime_again(doc_id):
+    runtime = Runtime.objects.filter(doc_id=doc_id)
+    runtime.delete()
+    print("re_runtime_again successfully.")
+    return True
