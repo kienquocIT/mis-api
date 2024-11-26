@@ -15,8 +15,9 @@ from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
+    'RecurrenceAbstractModel',
     'DisperseModel',
-    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass', 'RecurrenceAbstractModel',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
 
 
@@ -366,7 +367,15 @@ class ExtendsDataAbstractModel(SimpleAbstractModel):
 
 
 class RecurrenceAbstractModel(SimpleAbstractModel):  # use for applications need recurrence
-    is_recurring = models.BooleanField(default=False, help_text="flag to know this record is recurring template")
+    is_recurrence_template = models.BooleanField(
+        default=False, help_text="flag to know this record is set as recurrence template"
+    )
+    is_recurring = models.BooleanField(default=False, help_text="flag to know this record is recurring")
+    recurrence_task = models.ForeignKey(
+        'recurrence.RecurrenceTask', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_recurrence_task',
+    )
 
     class Meta:
         abstract = True
