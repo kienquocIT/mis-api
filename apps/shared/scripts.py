@@ -72,7 +72,7 @@ from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct,
     SaleOrderAppConfig, SaleOrderPaymentStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
-from ..sales.task.models import OpportunityTaskStatus
+from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
 from ..sales.production.models import BOM
 
 
@@ -2653,3 +2653,14 @@ def re_runtime_again(doc_id):
     runtime.delete()
     print("re_runtime_again successfully.")
     return True
+
+
+def init_models_child_task_count():
+    for company in Company.objects.all():
+        company_task = OpportunityTask.objects.filter(company=company, tenant=company.tenant)
+        for task in company_task:
+            count = company_task.filter(parent_n=task).count()
+            task.child_task_count = count
+            task.save(update_fields=['child_task_count'])
+
+    print('done init child task count')

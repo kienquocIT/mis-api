@@ -60,7 +60,6 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     task_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
-    child_task_count = serializers.SerializerMethodField()
     project = serializers.SerializerMethodField()
 
     @classmethod
@@ -77,12 +76,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_employee_inherit(cls, obj):
         if obj.employee_inherit:
-            return {
-                'avatar': obj.employee_inherit.avatar,
-                'first_name': obj.employee_inherit.first_name,
-                'last_name': obj.employee_inherit.last_name,
-                'full_name': obj.employee_inherit.get_full_name()
-            }
+            return obj.employee_inherit.get_detail_minimal()
         return {}
 
     @classmethod
@@ -113,15 +107,6 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
         if obj.opportunity:
             return obj.opportunity_data
         return {}
-
-    @classmethod
-    def get_child_task_count(cls, obj):
-        task_list = OpportunityTask.objects.filter_current(
-            fill__company=True,
-            fill__tenant=True,
-            parent_n=obj
-        )
-        return task_list.count() if task_list else 0
 
     @classmethod
     def get_project(cls, obj):
