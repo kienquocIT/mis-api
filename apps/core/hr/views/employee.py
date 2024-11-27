@@ -13,6 +13,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.process.models import ProcessMembers
 # special import
 from apps.sales.opportunity.models import OpportunitySaleTeamMember
 # -- special import
@@ -126,6 +127,13 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         return ProjectMapMember.objects.filter_current(
             fill__tenant=True, fill__company=True, project_id=prj_id
         ).exclude(**exclude_data).values_list('member_id', flat=True)
+
+    @classmethod
+    def member_of_process(cls, process_id):
+        return [
+            str(idx)
+            for idx in ProcessMembers.objects.filter(process_id=process_id).values_list('employee_id', flat=True)
+        ]
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
@@ -294,6 +302,10 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
 
             if settings.DEBUG_PERMIT:
                 print('=> value_filter:                :', '[HAS FROM APP]', value_filter)
+
+        process_id = self.get_query_params().get('process_id', None)
+        if process_id and TypeCheck.check_uuid(process_id):
+            value_filter += self.member_of_process(process_id=process_id)
 
         if isinstance(value_filter, list):
             value_filter = list(set(value_filter))

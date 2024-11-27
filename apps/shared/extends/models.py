@@ -51,8 +51,9 @@ class CoreSignalRegisterMetaClass(models.base.ModelBase, type):
 
 class SignalRegisterMetaClass(models.base.ModelBase, type):
     def register_signals(cls):
-        models.signals.post_save.connect(cls.post_save_handler, sender=cls)
-        models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+        # models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+        # models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+        pass
 
     def post_save_handler(cls, sender, **kwargs):
         table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
@@ -289,6 +290,11 @@ class DataAbstractModel(SimpleAbstractModel):
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
         help_text='The process claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
+    )
+    process_stage_app = models.ForeignKey(
+        'process.ProcessStageApplication', null=True, on_delete=models.SET_NULL,
+        help_text='The process stage app claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
     # workflow information

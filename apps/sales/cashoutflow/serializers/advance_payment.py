@@ -200,16 +200,24 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     ap_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=AdvancePayment.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = AdvancePayment
         fields = (
             # process
             'process',
+            'process_stage_app',
             #
             'title',
             'opportunity_id',
@@ -243,11 +251,12 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         )
 
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
-        app_id = AdvancePayment.get_app_id()
         if process_obj:
-            process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            ProcessRuntimeControl(process_obj=process_obj).validate_process(
+                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+            )
 
         return validate_data
 
@@ -262,6 +271,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
 
         if ap_obj.process:
             ProcessRuntimeControl(process_obj=ap_obj.process).register_doc(
+                process_stage_app_obj=ap_obj.process_stage_app,
                 app_id=AdvancePayment.get_app_id(),
                 doc_id=ap_obj.id,
                 doc_title=ap_obj.title,
@@ -282,6 +292,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     supplier = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -308,6 +319,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'sale_code',
             # process
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -317,6 +329,16 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 

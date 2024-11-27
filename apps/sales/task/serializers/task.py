@@ -156,10 +156,17 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=250)
     work = serializers.UUIDField(required=False)
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=OpportunityTask.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = OpportunityTask
@@ -167,7 +174,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             'title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
             'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
             'log_time', 'attach', 'attach_assignee', 'percent_completed', 'project', 'work',
-            'process',
+            'process', 'process_stage_app',
         )
 
     @classmethod
@@ -256,12 +263,12 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE})
 
         process_obj = attrs.get('process', None)
+        process_stage_app_obj = attrs.get('process_stage_app', None)
         opp_obj = attrs.get('opportunity', None)
         opportunity_id = opp_obj.id if opp_obj else None
-        app_id = OpportunityTask.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
 
         return attrs
 
@@ -305,6 +312,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
         if task.process:
             ProcessRuntimeControl(process_obj=task.process).register_doc(
+                process_stage_app_obj=task.process_stage_app,
                 app_id=OpportunityTask.get_app_id(),
                 doc_id=task.id,
                 doc_title=task.title,
@@ -327,6 +335,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     sub_task_list = serializers.SerializerMethodField()
     project = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -335,6 +344,16 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 
@@ -479,6 +498,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             'percent_completed',
             'project',
             'process',
+            'process_stage_app',
         )
 
 

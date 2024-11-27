@@ -96,7 +96,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'supplier__industry',
             'employee_inherit__group',
             'employee_created__group',
-            'process',
+            'process', 'process_stage_app',
         )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')

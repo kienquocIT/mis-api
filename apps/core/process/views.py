@@ -5,7 +5,7 @@ from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 
-from apps.core.process.filters import ProcessRuntimeListFilter
+from apps.core.process.filters import ProcessRuntimeListFilter, ProcessRuntimeDataMatchFilter
 from apps.core.process.models.runtime import ProcessStageApplication
 from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
@@ -18,7 +18,8 @@ from apps.core.process.serializers import (
     ProcessConfigListSerializer, ProcessConfigDetailSerializer, ProcessConfigCreateSerializer,
     ProcessConfigUpdateSerializer, ProcessRuntimeCreateSerializer, ProcessRuntimeListSerializer,
     ProcessRuntimeDetailSerializer, ProcessStageApplicationUpdateSerializer, ProcessStageApplicationDetailSerializer,
-    ProcessConfigReadySerializer,
+    ProcessConfigReadySerializer, ProcessStageApplicationListSerializer, ProcessRuntimeDataMatchFromStageSerializer,
+    ProcessRuntimeDataMatchFromProcessSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,47 @@ class ProcessConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return self.destroy(request, *args, pk, **kwargs)
 
 
+class ProcessRuntimeDataMatch(BaseRetrieveMixin):
+    filterset_class = ProcessRuntimeDataMatchFilter
+    serializer_detail = ProcessRuntimeDataMatchFromStageSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Get Process Runtime Match With Filter',
+    )
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        result = {}
+        query_params = request.query_params.dict()
+
+        app_id = query_params.get('app_id', None)
+        stage_id = query_params.get('process_stage_id', None)
+
+        if stage_id and TypeCheck.check_uuid(stage_id):
+            select_related = ['process', 'process__opp', 'application']
+            obj_app = ProcessStageApplication.objects.select_related(*select_related).filter(id=stage_id).first()
+            if obj_app:
+                result = ProcessRuntimeDataMatchFromStageSerializer(instance=obj_app).data
+        elif app_id and TypeCheck.check_uuid(app_id):
+            opp_id = query_params.get('opp_id', None)
+            process_id = query_params.get('process_id', None)
+
+            if opp_id and process_id:
+                obj_process = Process.objects.select_related('opp').filter(opp_id=opp_id, id=process_id).first()
+            elif opp_id:
+                obj_process = Process.objects.select_related('opp').filter(opp_id=opp_id).first()
+            elif process_id:
+                obj_process = Process.objects.select_related('opp').filter(id=process_id).first()
+            else:
+                obj_process = None
+
+            if obj_process:
+                result = ProcessRuntimeDataMatchFromProcessSerializer(
+                    instance=obj_process, context={'app_id': app_id}
+                ).data
+
+        return ResponseController.success_200(data=result)
+
+
 class ProcessRuntimeOfMeList(BaseListMixin):
     queryset = Process.objects.select_related('config', 'employee_created', 'stage_current')
     serializer_list = ProcessRuntimeListSerializer
@@ -117,6 +159,36 @@ class ProcessRuntimeOfMeList(BaseListMixin):
         )
 
     @swagger_auto_schema(operation_summary='Process Runtime List')
+    @mask_view(login_require=True, employee_require=True)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProcessStagesAppsOfMeList(BaseListMixin):
+    queryset = ProcessStageApplication.objects
+    serializer_list = ProcessStageApplicationListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        'process_id': ['exact'],
+        'application_id': ['exact'],
+        'was_done': ['exact'],
+    }
+    search_fields = ['title', 'remark']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('application', 'process', 'process__opp').order_by(
+            'process__title'
+        )
+
+    def get_queryset_and_filter_queryset(self, *args, **kwargs):
+        data = super().get_queryset_and_filter_queryset(*args, **kwargs)
+        return data.filter(was_done=False).filter(
+            Q(process__employee_created_id=self.request.user.employee_current_id)
+            |
+            Q(process__members__contains=[str(self.request.user.employee_current_id)])
+        )
+
+    @swagger_auto_schema(operation_summary='Process Stages Apps Of Me')
     @mask_view(login_require=True, employee_require=True)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

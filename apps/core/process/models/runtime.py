@@ -7,6 +7,7 @@ class Process(MasterDataAbstractModel):
     remark = models.TextField(blank=True, verbose_name='Remark of process')
     config = models.ForeignKey('process.ProcessConfiguration', null=True, on_delete=models.SET_NULL)
     stages = models.JSONField(default=dict, verbose_name='Stages configurate')
+    global_app = models.JSONField(default=list, verbose_name='Cross-Stage Applications')
     opp = models.ForeignKey(
         'opportunity.Opportunity', null=True, on_delete=models.SET_NULL, related_name='process_of_opp',
     )
@@ -67,7 +68,7 @@ class ProcessStage(MasterDataAbstractModel):
 
 class ProcessStageApplication(MasterDataAbstractModel):
     process = models.ForeignKey('process.Process', on_delete=models.CASCADE)
-    stage = models.ForeignKey('process.ProcessStage', on_delete=models.CASCADE)
+    stage = models.ForeignKey('process.ProcessStage', on_delete=models.CASCADE, null=True)
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     remark = models.TextField(blank=True, verbose_name='Remark of process')
