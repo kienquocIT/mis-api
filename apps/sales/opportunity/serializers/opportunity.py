@@ -1062,6 +1062,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     product_category = serializers.SerializerMethodField()
     customer_decision_factor = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -1094,7 +1095,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'is_deal_close',
             'members',
             'estimated_gross_profit_percent',
-            'estimated_gross_profit_value'
+            'estimated_gross_profit_value',
+            'process'
         )
 
     @classmethod
@@ -1234,6 +1236,14 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 "is_active": item.is_active,
             } for item in obj.members.all()
         ] if allow_get_member else []
+
+    @classmethod
+    def get_process(cls, obj):
+        return {
+            'id': obj.process_id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

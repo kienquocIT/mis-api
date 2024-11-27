@@ -178,6 +178,13 @@ class SOFinishHandler:
                 return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
         return 1
 
+    @classmethod
+    def update_recurrence_task(cls, instance):
+        if instance.recurrence_task:
+            instance.recurrence_task.recurrence_action = 1
+            instance.recurrence_task.save(update_fields=['recurrence_action'])
+        return True
+
 
 class DocumentChangeHandler:
 

@@ -453,3 +453,8 @@ RECURRENCE_ACTION = (
     (1, 'Done'),
     (2, 'Skip'),
 )
+CONTRACT_TYPE = (
+    (0, 'Probationary contract'),
+    (1, 'Labor contract'),
+    (2, 'Addendum contract')
+)

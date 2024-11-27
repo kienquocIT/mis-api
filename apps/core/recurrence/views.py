@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.recurrence.models import Recurrence
+from apps.core.recurrence.models import Recurrence, RecurrenceTask
 from apps.core.recurrence.serializers import RecurrenceListSerializer, RecurrenceCreateSerializer, \
-    RecurrenceDetailSerializer, RecurrenceUpdateSerializer
+    RecurrenceDetailSerializer, RecurrenceUpdateSerializer, RecurrenceActionListSerializer, \
+    RecurrenceActionUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -67,6 +68,53 @@ class RecurrenceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Update Recurrence",
         operation_description="Update Recurrence By ID",
         request_body=RecurrenceUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='recurrence', model_code='recurrence', perm_code='edit',
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+
+class RecurrenceActionList(BaseListMixin):
+    queryset = RecurrenceTask.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'recurrence_id': ['exact'],
+        'date_next': ['exact'],
+        'employee_inherit_id': ['exact'],
+    }
+    serializer_list = RecurrenceActionListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "recurrence",
+            "employee_inherit",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Recurrence Action List",
+        operation_description="Get Recurrence Action List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='recurrence', model_code='recurrence', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class RecurrenceActionDetail(BaseUpdateMixin):
+    queryset = RecurrenceTask.objects
+    serializer_update = RecurrenceActionUpdateSerializer
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Update Recurrence Action",
+        operation_description="Update Recurrence Action By ID",
+        request_body=RecurrenceActionUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,

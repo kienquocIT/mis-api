@@ -240,9 +240,9 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     )
     stock = models.FloatField(default=0, help_text='quantity of product in stock')
     # product information
-    product_title = models.CharField(max_length=100, blank=True, null=True)
-    product_code = models.CharField(max_length=100, blank=True, null=True)
-    product_description = models.TextField(blank=True, null=True)
+    product_title = models.CharField(max_length=100, blank=True)
+    product_code = models.CharField(max_length=100, blank=True)
+    product_description = models.TextField(blank=True)
     product_quantity_order_request = models.FloatField(
         default=0,
         help_text='quantity of product, UI get default by purchase request',
@@ -255,7 +255,7 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         default=0,
         help_text='price of product, UI get default by supplier price',
     )
-    product_tax_title = models.CharField(max_length=100, blank=True, null=True)
+    product_tax_title = models.CharField(max_length=100, blank=True)
     product_tax_amount = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
     product_subtotal_price_after_tax = models.FloatField(default=0)
@@ -265,6 +265,9 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         default=0,
         help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
+    # shipping
+    is_shipping = models.BooleanField(default=False, help_text="flag to know this record is shipping not product")
+    shipping_title = models.CharField(max_length=100, blank=True)
 
     class Meta:
         verbose_name = 'Purchase Order Product'

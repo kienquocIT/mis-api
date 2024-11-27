@@ -64,12 +64,7 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
     returned_list = serializers.ListField(required=False)
-    process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
-
-    @classmethod
-    def validate_process(cls, attrs):
-        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
 
     @classmethod
     def validate_process_stage_app(cls, attrs):
@@ -99,12 +94,13 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
         advance_payment_obj = validate_data.pop('advance_payment_id')
         validate_data['advance_payment'] = advance_payment_obj
         validate_data['employee_inherit_id'] = advance_payment_obj.employee_inherit_id
+        validate_data['process'] = advance_payment_obj.process
 
         ReturnAdvanceCommonFunction.validate_method(validate_data)
         ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
 
-        process_obj = validate_data.get('process', None)
-        process_stage_app_obj = validate_data.get('process_stage_app', None)
+        process_obj = advance_payment_obj.process
+        process_stage_app_obj = advance_payment_obj.process_stage_app
         opportunity_id = advance_payment_obj.opportunity_id
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
@@ -236,16 +232,14 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_returned_list(cls, obj):
         list_result = []
-        for item in ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type'):
-            list_result.append(
-                {
-                    'id': item.advance_payment_cost_id,
-                    'expense_name': item.expense_name,
-                    'expense_type': item.expense_type_data,
-                    'remain_total': item.remain_value,
-                    'return_value': item.return_value
-                }
-            )
+        for item in obj.return_advance.all():
+            list_result.append({
+                'id': item.advance_payment_cost_id,
+                'expense_name': item.expense_name,
+                'expense_type': item.expense_type_data,
+                'remain_total': item.remain_value,
+                'return_value': item.return_value
+            })
         return list_result
 
 
@@ -268,10 +262,14 @@ class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
         ReturnAdvanceCommonFunction.validate_advance_payment_id(validate_data)
         ReturnAdvanceCommonFunction.validate_method(validate_data)
         ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
-        ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
-        validate_data['employee_inherit_id'] = ap_obj.employee_inherit_id
-        print('*validate done')
-        return validate_data
+        advance_payment_obj = AdvancePayment.objects.filter(id=validate_data.get('advance_payment_id')).first()
+        if advance_payment_obj:
+            validate_data['employee_inherit_id'] = advance_payment_obj.employee_inherit_id
+            validate_data['process'] = advance_payment_obj.process
+            print('*validate done')
+            return validate_data
+        raise serializers.ValidationError({'advance_payment_id': SaleMsg.AP_NOT_EXIST})
+
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
@@ -366,6 +364,7 @@ class APListForReturnSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -377,7 +376,8 @@ class APListForReturnSerializer(AbstractListSerializerModel):
             'supplier',
             'employee_created',
             'employee_inherit',
-            'sale_code'
+            'sale_code',
+            'process'
         )
 
     @classmethod
@@ -410,17 +410,15 @@ class APListForReturnSerializer(AbstractListSerializerModel):
         if obj.supplier:
             bank_accounts_mapped_list = []
             for item in obj.supplier.account_banks_mapped.all():
-                bank_accounts_mapped_list.append(
-                    {
-                        'bank_country_id': item.country_id,
-                        'bank_name': item.bank_name,
-                        'bank_code': item.bank_code,
-                        'bank_account_name': item.bank_account_name,
-                        'bank_account_number': item.bank_account_number,
-                        'bic_swift_code': item.bic_swift_code,
-                        'is_default': item.is_default
-                    }
-                )
+                bank_accounts_mapped_list.append({
+                    'bank_country_id': item.country_id,
+                    'bank_name': item.bank_name,
+                    'bank_code': item.bank_code,
+                    'bank_account_name': item.bank_account_name,
+                    'bank_account_number': item.bank_account_number,
+                    'bic_swift_code': item.bic_swift_code,
+                    'is_default': item.is_default
+                })
             return {
                 'id': obj.supplier_id,
                 'code': obj.supplier.code,
@@ -470,3 +468,11 @@ class APListForReturnSerializer(AbstractListSerializerModel):
                 'code': obj.employee_inherit.group.code
             } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_process(cls, obj):
+        return {
+            'id': obj.process_id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}

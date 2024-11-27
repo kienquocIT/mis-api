@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics
 
-from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM
-from apps.hrm.employeeinfo.serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
-    EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers, EmployeeInfoDetailSerializers
+from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContract
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseUpdateMixin, BaseRetrieveMixin
+
+from .serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
+    EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers, EmployeeInfoDetailSerializers, \
+    EmployeeContractListSerializers, EmployeeContractDetailSerializers
 
 
 class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
@@ -42,8 +43,9 @@ class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
-            'tenant_current': request.user.tenant_current,
-            'company_current': request.user.company_current,
+            'user': request.user,
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
         }
         return self.create(request, *args, **kwargs)
 
@@ -62,7 +64,7 @@ class EmployeeInfoDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="get employee info detail",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='hrm', model_code='employeeInfo', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -74,10 +76,15 @@ class EmployeeInfoDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=EmployeeInfoUpdateSerializers,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='hrm', model_code='employeeInfo', perm_code='edit'
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {
+            'user': request.user,
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.update(request, *args, pk, **kwargs)
 
 
@@ -104,3 +111,47 @@ class EmployeeNotMapHRMList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class EmployeeContractList(BaseListMixin):
+    queryset = EmployeeContract.objects
+    serializer_list = EmployeeContractListSerializers
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'employee_info': ['exact']
+    }
+
+    # def get_queryset(self):
+    #     return super().get_queryset()s
+
+    @swagger_auto_schema(
+        operation_summary="Employee Contract list",
+        operation_description="get employee contract list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='hrm', model_code='employeeInfo', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class EmployeeContractDetail(BaseRetrieveMixin):
+    queryset = EmployeeContract.objects
+    serializer_detail = EmployeeContractDetailSerializers
+    # serializer_update = EmployeeInfoUpdateSerializers
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('represent')
+
+    @swagger_auto_schema(
+        operation_summary="Employee Contract detail",
+        operation_description="get employee contract detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='hrm', model_code='employeeInfo', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)

@@ -25,7 +25,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity__customer", "contact")
+        return super().get_queryset().select_related("opportunity__customer", "contact", 'process')
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog List",
@@ -145,7 +145,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("opportunity").prefetch_related(
+        queryset = super().get_queryset().select_related("opportunity", 'process').prefetch_related(
             'employee_attended_list',
             'customer_member_list',
             'opportunity__employee_inherit'

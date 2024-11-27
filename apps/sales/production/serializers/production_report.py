@@ -188,6 +188,7 @@ class ProductionReportUpdateSerializer(serializers.ModelSerializer):
 class ProductionReportGRSerializer(serializers.ModelSerializer):
     production_report_id = serializers.SerializerMethodField()
     production_report_data = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
     product_quantity_order_actual = serializers.SerializerMethodField()
     quantity_order = serializers.SerializerMethodField()
     gr_completed_quantity = serializers.SerializerMethodField()
@@ -223,6 +224,12 @@ class ProductionReportGRSerializer(serializers.ModelSerializer):
     @classmethod
     def get_production_report_data(cls, obj):
         return {'id': str(obj.id), 'title': obj.title, 'code': obj.code}
+
+    @classmethod
+    def get_product_data(cls, obj):
+        if obj.product:
+            obj.product_data.update({'product_choice': obj.product.product_choice})
+        return obj.product_data
 
     @classmethod
     def get_product_quantity_order_actual(cls, obj):

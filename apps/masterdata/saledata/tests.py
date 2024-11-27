@@ -384,7 +384,7 @@ class ProductTestCase(AdvanceTestCase):
                 'wait_receipt_amount',
                 'available_amount',
                 'is_public_website',
-                'production_amount'
+                'production_amount', 'valuation_method',
             ],
             check_sum_second=True,
         )

@@ -263,7 +263,7 @@ class DocHandler:
                             **{
                                 'tenant_id': str(runtime_obj.tenant_id),
                                 'company_id': str(runtime_obj.company_id),
-                                'user_id': str(emp_obj.user_id),
+                                'user_id': str(emp_obj.user_id) if emp_obj.user_id else None,
                                 'employee_id': str(emp_id),
                                 'runtime_id': str(runtime_obj.id),
                                 'workflow_type': workflow_type,

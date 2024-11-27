@@ -10,7 +10,7 @@ class RecurrenceCommonCreate:
     @classmethod
     def create_subs(cls, instance):
         if instance:
-            RecurrenceTask.objects.all().delete()
+            RecurrenceTask.objects.filter(recurrence=instance).delete()
             RecurrenceTask.objects.bulk_create([RecurrenceTask(
                 recurrence=instance,
                 tenant_id=instance.tenant_id,
@@ -29,6 +29,7 @@ class RecurrenceListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'application_data',
             'app_code',
             'doc_template_id',
@@ -167,4 +168,51 @@ class RecurrenceUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         RecurrenceCommonCreate.create_subs(instance=instance)
+        return instance
+
+
+class RecurrenceActionListSerializer(serializers.ModelSerializer):
+    recurrence = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RecurrenceTask
+        fields = (
+            'id',
+            'recurrence',
+            'date_next',
+            'recurrence_action',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_recurrence(cls, obj):
+        return RecurrenceListSerializer(obj.recurrence).data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
+
+
+class RecurrenceActionUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RecurrenceTask
+        fields = (
+            'recurrence_action',
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
         return instance

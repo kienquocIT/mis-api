@@ -256,14 +256,12 @@ class IACommonFunc:
     def create_ia_items(cls, obj, data):
         bulk_info = []
         for item in data:
-            difference_quantity = int(item.get('count', 0)) - item.get('book_quantity', 0)
             bulk_info.append(
                 InventoryAdjustmentItem(
                     **item,
                     inventory_adjustment_mapped=obj,
                     tenant=obj.tenant,
                     company=obj.company,
-                    gr_remain_quantity=difference_quantity if difference_quantity > 0 else 0
                 )
             )
         InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
@@ -298,7 +296,10 @@ class IACommonFunc:
                 item_obj.count = item['count']
                 item_obj.action_type = item['action_type']
                 item_obj.select_for_action = item['select_for_action']
-                item_obj.save(update_fields=['count', 'action_type', 'select_for_action'])
+                # set remain for GR
+                difference = item.get('count', 0) - item_obj.book_quantity
+                item_obj.gr_remain_quantity = difference if difference > 0 else 0
+                item_obj.save(update_fields=['count', 'action_type', 'select_for_action', 'gr_remain_quantity'])
             else:
                 raise serializers.ValidationError('Inventory Adjustment Item not exist')
         return True
@@ -319,45 +320,52 @@ class IAGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_gr_products_data(cls, obj):
-        return [{
-            'ia_item_id': str(ia_product.id),
-            'pr_products_data': [],
-            'product_id': str(ia_product.product_mapped_id),
-            'product_data': {
-                'id': str(ia_product.product_mapped_id),
-                'title': ia_product.product_mapped.title,
-                'code': ia_product.product_mapped.code,
-                'general_traceability_method': ia_product.product_mapped.general_traceability_method,
-                'description': ia_product.product_mapped.description,
-                'product_choice': ia_product.product_mapped.product_choice,
-            } if ia_product.product_mapped else {},
-            'uom_id': str(ia_product.uom_mapped_id),
-            'uom_data': {
-                'id': str(ia_product.uom_mapped_id),
-                'title': ia_product.uom_mapped.title,
-                'code': ia_product.uom_mapped.code,
-            } if ia_product.uom_mapped else {},
-            'gr_warehouse_data': [
-                {
-                    'warehouse_id': str(ia_product.warehouse_mapped_id),
-                    'warehouse_data': {
-                        'id': ia_product.warehouse_mapped_id,
-                        'title': ia_product.warehouse_mapped.title,
-                        'code': ia_product.warehouse_mapped.code,
-                    } if ia_product.warehouse_mapped else {},
-                }
-            ],
-            'product_quantity_order_actual': (ia_product.count - ia_product.book_quantity),
-            'quantity_import': (ia_product.count - ia_product.book_quantity),
-            'select_for_action': ia_product.select_for_action,
-            'action_status': ia_product.action_status,
-            'product_unit_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
-                warehouse_id=ia_product.warehouse_mapped_id, get_type=1
-            ),
-            'product_subtotal_price': 0,
-            'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
-                warehouse_id=ia_product.warehouse_mapped_id, get_type=1
-            ),
-            'gr_completed_quantity': (ia_product.count - ia_product.book_quantity) - ia_product.gr_remain_quantity,
-            'gr_remain_quantity': ia_product.gr_remain_quantity,
-        } for ia_product in obj.inventory_adjustment_item_mapped.all()]
+        result = []
+        for ia_product in obj.inventory_adjustment_item_mapped.all():
+            difference = ia_product.count - ia_product.book_quantity
+            remain = ia_product.gr_remain_quantity
+            completed = difference - remain
+            if remain > 0:
+                result.append({
+                    'ia_item_id': str(ia_product.id),
+                    'pr_products_data': [],
+                    'product_id': str(ia_product.product_mapped_id),
+                    'product_data': {
+                        'id': str(ia_product.product_mapped_id),
+                        'title': ia_product.product_mapped.title,
+                        'code': ia_product.product_mapped.code,
+                        'general_traceability_method': ia_product.product_mapped.general_traceability_method,
+                        'description': ia_product.product_mapped.description,
+                        'product_choice': ia_product.product_mapped.product_choice,
+                    } if ia_product.product_mapped else {},
+                    'uom_id': str(ia_product.uom_mapped_id),
+                    'uom_data': {
+                        'id': str(ia_product.uom_mapped_id),
+                        'title': ia_product.uom_mapped.title,
+                        'code': ia_product.uom_mapped.code,
+                    } if ia_product.uom_mapped else {},
+                    'gr_warehouse_data': [
+                        {
+                            'warehouse_id': str(ia_product.warehouse_mapped_id),
+                            'warehouse_data': {
+                                'id': ia_product.warehouse_mapped_id,
+                                'title': ia_product.warehouse_mapped.title,
+                                'code': ia_product.warehouse_mapped.code,
+                            } if ia_product.warehouse_mapped else {},
+                        }
+                    ],
+                    'product_quantity_order_actual': difference if difference > 0 else 0,
+                    'quantity_import': difference,
+                    'select_for_action': ia_product.select_for_action,
+                    'action_status': ia_product.action_status,
+                    'product_unit_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                        warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+                    ),
+                    'product_subtotal_price': 0,
+                    'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                        warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+                    ),
+                    'gr_completed_quantity': completed if completed > 0 else 0,
+                    'gr_remain_quantity': remain,
+                })
+        return result

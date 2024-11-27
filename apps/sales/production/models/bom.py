@@ -9,7 +9,7 @@ BOM_TYPE = [
     (1, _('For service')),
     (2, _('For sale')),
     (3, _('For internal expense')),
-    (4, _('For project'))
+    (4, _('For opportunity'))
 ]
 
 

@@ -158,7 +158,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
     fullname = serializers.CharField(max_length=100)
     mobile = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     email = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    additional_information = serializers.JSONField()
+    additional_information = serializers.JSONField(required=False)
 
     class Meta:
         model = Contact

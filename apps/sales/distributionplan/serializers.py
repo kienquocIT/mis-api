@@ -163,6 +163,7 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'description': obj.product.description,
             'expected_number': obj.expected_number,
             'purchase_request_number': obj.purchase_request_number,
+            'no_of_month': obj.no_of_month,
             'uom': {
                 'id': str(obj.product.general_uom_group.uom_reference_id),
                 'code': obj.product.general_uom_group.uom_reference.code,

@@ -136,7 +136,7 @@ msgstr "Chi phí nhân công nội bộ"
 
 # c5de0a7d-bea3-4f39-922f-06a40a060aba
 msgid "Inventory Adjustment"
-msgstr "Điều chỉnh tồn kho"
+msgstr "Kiểm kê kho"
 
 # baff033a-c416-47e1-89af-b6653534f06e
 msgid "Leave"
@@ -301,6 +301,10 @@ msgstr "Báo cáo mua hàng"
 # 57a32d5a-3580-43b7-bf31-953a1afc68f4
 msgid "Goods Stock Plan"
 msgstr "Kế hoạch nhập hàng"
+
+# 7436c857-ad09-4213-a190-c1c7472e99be
+msgid "Employee info"
+msgstr "Thông tin nhân viên"
 
 #
 msgid "Does not exist"

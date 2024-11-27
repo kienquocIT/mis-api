@@ -153,6 +153,10 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
             # system
@@ -266,6 +270,8 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    # recurrence
+    recurrence_task_id = serializers.UUIDField(allow_null=True, required=False)
 
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
@@ -328,8 +334,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
-            #
+            # recurrence
+            'is_recurrence_template',
             'is_recurring',
+            'recurrence_task_id',
         )
 
     @classmethod
