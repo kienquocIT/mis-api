@@ -313,6 +313,7 @@ class SORecurrenceList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'is_recurrence_template': ['exact'],
+        'employee_inherit_id': ['exact'],
     }
     serializer_list = SORecurrenceListSerializer
 
