@@ -8,10 +8,6 @@ from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class AccountTestCase(AdvanceTestCase):
     def setUp(self):
@@ -2380,11 +2376,6 @@ class WareHouseTestCase(AdvanceTestCase):
         data_created = self.test_warehouse_create()
         url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
         response = self.client.delete(url, format='json')
-        logger.error(
-            'test_warehouse_delete: %s - %s',
-            str(url),
-            str(response.data),
-        )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
