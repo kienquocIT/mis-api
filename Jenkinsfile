@@ -55,13 +55,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "START SSH SERVER";
-                echo "START SSH SERVER IP: ${env.DEPLOY_SERVER_IP}";
                 script {
                     try {
                         if (GIT_BRANCH_NAME == 'master') {
-                            sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/compile.sh""";
+                            sh """ssh -o StrictHostKeyChecking=no -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/compile.sh""";
                         } else {
-                            sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh""";
+                            sh """ssh -o StrictHostKeyChecking=no -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh""";
                         }
                     } catch (Exception e) {
                         env.ERROR_MESSAGE = e.getMessage()
