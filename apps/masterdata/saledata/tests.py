@@ -2373,10 +2373,18 @@ class WareHouseTestCase(AdvanceTestCase):
         return response
 
     def test_warehouse_delete(self):
+        import logging
+
+        logger = logging.getLogger(__name__)
+
         data_created = self.test_warehouse_create()
         url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
         response = self.client.delete(url, format='json')
-        sys.stdout.write(f'test_warehouse_delete: {url} - {response.data}')
+        logger.error(
+            'test_warehouse_delete: %s - %s',
+            str(url),
+            str(response.data),
+        )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
