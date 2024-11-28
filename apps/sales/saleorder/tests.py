@@ -594,6 +594,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
