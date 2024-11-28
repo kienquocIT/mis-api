@@ -162,6 +162,10 @@ class OpportunityTask(DataAbstractModel):
         blank=True,
         related_name='file_of_task_request',
     )
+    child_task_count = models.SmallIntegerField(
+        verbose_name="Number of child task",
+        default=0, null=True
+    )
 
     def create_code_task(self):
         # auto create code (temporary)
@@ -177,6 +181,10 @@ class OpportunityTask(DataAbstractModel):
                 temper = task + 1
                 code = f"{char}{temper:03d}"
                 self.code = code
+            # include add child task count
+            if self.parent_n:
+                self.parent_n.child_task_count += 1
+                self.parent_n.save(update_fields=['child_task_count'])
 
     def update_percent(self):
         if self.task_status.is_finish:
