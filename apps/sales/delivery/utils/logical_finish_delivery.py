@@ -122,17 +122,21 @@ class DeliFinishHandler:
             delivery_quantity = source['quantity'] * final_ratio
             if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
+                fn_quantity = 0
                 calc = item.stock_amount - delivery_quantity
                 if calc >= 0:
-                    # đủ hàng
-                    is_done = True
-                    item_sold = delivery_quantity
-                    # set data update product warehouse
-                    item.sold_amount += item_sold
-                    item.stock_amount = item.receipt_amount - item.sold_amount
-                    if config['is_picking']:
-                        item.picked_ready = item.picked_ready - item_sold
-                    list_update.append(item)
+                    fn_quantity = delivery_quantity
+                if calc < 0:
+                    fn_quantity = delivery_quantity + calc
+                # đủ hàng
+                is_done = True
+                item_sold = fn_quantity
+                # set data update product warehouse
+                item.sold_amount += item_sold
+                item.stock_amount = item.receipt_amount - item.sold_amount
+                if config['is_picking']:
+                    item.picked_ready = item.picked_ready - item_sold
+                list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
         return True
 

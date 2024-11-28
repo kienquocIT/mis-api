@@ -313,6 +313,7 @@ class SORecurrenceList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'is_recurrence_template': ['exact'],
+        'employee_inherit_id': ['exact'],
     }
     serializer_list = SORecurrenceListSerializer
 
@@ -323,7 +324,7 @@ class SORecurrenceList(BaseListMixin, BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="SO Recurrence List",
-        operation_description="Get SO SORecurrence List",
+        operation_description="Get SO Recurrence List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
