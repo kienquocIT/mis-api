@@ -343,6 +343,8 @@ class GroupCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_parent_n(cls, value):
         try:
+            if value is None:
+                return None
             return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
@@ -353,21 +355,21 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_first_manager(cls, value):
-        if value is not None:
-            try:
-                return Employee.objects.get(id=value)
-            except Employee.DoesNotExist:
-                raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return None
+        try:
+            if value is None:
+                return None
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
-        if value is not None:
-            try:
-                return Employee.objects.get(id=value)
-            except Employee.DoesNotExist:
-                raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return None
+        try:
+            if value is None:
+                return None
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def create(self, validated_data):
         # create Group
@@ -420,6 +422,8 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_parent_n(cls, value):
         try:
+            if value is None:
+                return None
             return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
@@ -430,21 +434,21 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_first_manager(cls, value):
-        if value is not None:
-            try:
-                return Employee.objects.get(id=value)
-            except Employee.DoesNotExist:
-                raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return None
+        try:
+            if value is None:
+                return None
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
-        if value is not None:
-            try:
-                return Employee.objects.get(id=value)
-            except Employee.DoesNotExist:
-                raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return None
+        try:
+            if value is None:
+                return None
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def update(self, instance, validated_data):
         # update Group
