@@ -2375,6 +2375,7 @@ class WareHouseTestCase(AdvanceTestCase):
         data_created = self.test_warehouse_create()
         url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
         response = self.client.delete(url, format='json')
+        print('test_warehouse_delete:', url, response.data)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
