@@ -1365,3 +1365,7 @@ msgstr "Nếu thầu thua, cần chọn lí do thua"
 #
 msgid "If cause of lost is 'other reason', must specify the reason"
 msgstr "Nếu thầu thua do lí do khác, cần cụ thể lí do"
+
+#
+msgid "Employee info"
+msgstr "Thông tin nhân viên"
