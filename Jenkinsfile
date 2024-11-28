@@ -55,6 +55,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "START SSH SERVER";
+                echo "START SSH SERVER IP: $DEPLOY_SERVER_IP";
                 script {
                     try {
                         if (GIT_BRANCH_NAME == 'master') {
