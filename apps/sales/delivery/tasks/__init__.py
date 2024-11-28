@@ -263,6 +263,7 @@ class SaleOrderActiveDeliverySerializer:
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
             process=obj_delivery.process,
+            process_stage_app=obj_delivery.process_stage_app,
             title=obj_delivery.title,
             employee_created=obj_delivery.employee_created,
             #
@@ -323,6 +324,7 @@ class SaleOrderActiveDeliverySerializer:
                     # regis OrderDelivery to Process
                     if sub_obj.process:
                         ProcessRuntimeControl(process_obj=sub_obj.process).register_doc(
+                            process_stage_app_obj=sub_obj.process_stage_app,
                             app_id=OrderDeliverySub.get_app_id(),
                             doc_id=sub_obj.id,
                             doc_title=sub_obj.title,

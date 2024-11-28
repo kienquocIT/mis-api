@@ -9,6 +9,7 @@ class ProcessConfiguration(MasterDataAbstractModel):
     apply_start = models.DateTimeField(null=True)
     apply_finish = models.DateTimeField(null=True)
     stages = models.JSONField(default=dict, verbose_name='Stages configurate')
+    global_app = models.JSONField(default=list, verbose_name='Cross-Stage Applications')
     for_opp = models.BooleanField(default=False, verbose_name='Process use for Opp')
 
     class Meta:

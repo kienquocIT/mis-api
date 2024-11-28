@@ -4,6 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.views import APIView
 
+from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.masterdata.saledata.models import SubPeriods
 from apps.shared import (
@@ -124,11 +125,19 @@ class SaleOrderActiveDelivery(APIView):
                 process_id = None
                 if 'process' in body_data:
                     process_id = request.data['process']
+                    stage_app_id = request.data.get('process_stage_app', None)
+                    if not stage_app_id or not TypeCheck.check_uuid(stage_app_id):
+                        raise serializers.ValidationError({
+                            'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND
+                        })
+
                     process_obj = ProcessRuntimeControl.get_process_obj(process_id=process_id)
-                    app_id = OrderDeliverySub.get_app_id()
+                    process_stage_app_obj = ProcessRuntimeControl.get_process_stage_app(
+                        stage_app_id=stage_app_id, app_id=OrderDeliverySub.get_app_id()
+                    )
                     if process_obj:
                         process_cls = ProcessRuntimeControl(process_obj=process_obj)
-                        process_cls.validate_process(opp_id=None, app_id=app_id)
+                        process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=None)
 
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,

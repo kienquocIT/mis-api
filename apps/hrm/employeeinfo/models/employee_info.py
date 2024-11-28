@@ -98,10 +98,10 @@ class EmployeeInfo(TenantAbstractModel):
         blank=True, max_length=50, null=True, help_text='tax identification numbers'
     )
     permanent_address = models.CharField(
-        blank=True, max_length=50, null=True, help_text='frequently lived address'
+        blank=True, max_length=250, null=True, help_text='frequently lived address'
     )
     current_resident = models.CharField(
-        blank=True, max_length=50, null=True, help_text='Means the person who resides here currently'
+        blank=True, max_length=250, null=True, help_text='Means the person who resides here currently'
     )
 
     class Meta:

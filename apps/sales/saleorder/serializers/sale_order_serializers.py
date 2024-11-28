@@ -91,6 +91,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     quotation = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -99,6 +100,16 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 
@@ -154,6 +165,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             # process
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -262,16 +274,24 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     recurrence_task_id = serializers.UUIDField(allow_null=True, required=False)
 
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=SaleOrder.get_app_id(),
+        ) if attrs else None
 
     class Meta:
         model = SaleOrder
         fields = (
             # process
             'process',
+            'process_stage_app',
             #
             'title',
             'code',
@@ -368,11 +388,11 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)  # UUID or None
-        app_id = SaleOrder.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
 
         SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
@@ -387,6 +407,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
         if sale_order.process:
             ProcessRuntimeControl(process_obj=sale_order.process).register_doc(
+                process_stage_app_obj=sale_order.process_stage_app,
                 app_id=SaleOrder.get_app_id(),
                 doc_id=sale_order.id,
                 doc_title=sale_order.title,

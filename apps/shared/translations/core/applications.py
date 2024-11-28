@@ -59,3 +59,4 @@ class ApplicationName:
     workflow_workflow = _('Workflow')
     project_project = _('Project')
     project_projectbaseline = _('Project Baseline')
+    hrm_employeeinfo = _('Employee info')

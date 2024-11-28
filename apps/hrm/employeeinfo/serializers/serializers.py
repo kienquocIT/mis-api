@@ -1,10 +1,26 @@
 from django.db import transaction
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
+from apps.core.base.models import Application
 from apps.core.hr.models import Employee
-from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM
-from apps.shared import HRMsg, DisperseModel, HrMsg
+from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.hrm import HRMMsg
+from apps.shared import HRMsg, DisperseModel, HrMsg
+
+from .employee_contract import EmployeeContractCreateSerializers
+from ..models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContractMapAttachment, EmployeeContract
+
+
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.get(id="1b8a6f6e-65ec-4769-acaa-465bed2d0523")
+        state = EmployeeContractMapAttachment.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
+        if state:
+            return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
 
 
 class EmployeeInfoListSerializers(serializers.ModelSerializer):
@@ -50,6 +66,7 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
     phone = serializers.IntegerField()
     date_joined = serializers.DateField()
     code = serializers.CharField(max_length=500)
+    contract = EmployeeContractCreateSerializers()
 
     @classmethod
     def validate_employee(cls, value):
@@ -69,15 +86,15 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
                 employee_map = employee_map.first()
                 if employee_map.is_mapped is True:
                     raise serializers.ValidationError({'employee': HRMMsg.EMPLOYEE_MAPPED})
-                else:
-                    emp_is_map = is_emp
-                    emp_is_map.code = attrs['code']
-                    emp_is_map.first_name = attrs['first_name']
-                    emp_is_map.last_name = attrs['last_name']
-                    emp_is_map.email = attrs['email']
-                    emp_is_map.phone = attrs['phone']
-                    emp_is_map.date_joined = attrs['date_joined']
-                    emp_is_map.save(update_fields=['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined'])
+
+                emp_is_map = is_emp
+                emp_is_map.code = attrs['code']
+                emp_is_map.first_name = attrs['first_name']
+                emp_is_map.last_name = attrs['last_name']
+                emp_is_map.email = attrs['email']
+                emp_is_map.phone = attrs['phone']
+                emp_is_map.date_joined = attrs['date_joined']
+                emp_is_map.save(update_fields=['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined'])
             else:
                 raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
         elif 'employee_create' in attrs:
@@ -100,23 +117,52 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
             )
             emp_is_map = employee
 
-        for e in ['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined']:
-            attrs.pop(e)
+        for attr in ['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined']:
+            attrs.pop(attr)
         return emp_is_map
 
+    def create_contract(self, contract, emp_info=None):
+        attachment = contract.pop('attachment', None)
+        obj = None
+        emp_frk = contract.get('employee_info', None)
+        if contract and (emp_info or emp_frk):
+            obj = EmployeeContract.objects.create(
+                company_id=self.context.get('company_id', None),
+                tenant_id=self.context.get('tenant_id', None),
+                employee_created_id=self.context.get('user', None).employee_current_id,
+                effected_date=contract['effected_date'],
+                content=contract.get('content', ''),
+                contract_type=contract.get('contract_type'),
+                employee_info=emp_frk if emp_frk else emp_info,
+                expired_date=contract.get('expired_date'),
+                file_type=contract.get('file_type'),
+                limit_time=contract.get('limit_time'),
+                represent=contract.get('represent'),
+                signing_date=contract.get('signing_date'),
+            )
+        if attachment is not None and obj:
+            handle_attach_file(obj, attachment)
+        return True
+
     def create(self, validated_data):
-        obj_employee = self.check_is_map(validated_data)
-        pk = validated_data.pop('employee_create', None)
-        validated_data['employee'] = obj_employee
-        if pk:
-            validated_data['id'] = pk
-        info = EmployeeInfo.objects.create(**validated_data)
-        if info:
-            emp_map = info.employee.employee_hr.all()
-            for emp in emp_map:
-                emp.is_mapped = True
-                emp.save(update_fields=['is_mapped'])
-        return info
+        try:
+            with transaction.atomic():
+                obj_employee = self.check_is_map(validated_data)
+                employee_id = validated_data.pop('employee_create', None)
+                contract = validated_data.pop('contract', None)
+                validated_data['employee'] = obj_employee
+                if employee_id:
+                    validated_data['id'] = employee_id
+                info = EmployeeInfo.objects.create(**validated_data)
+                if info:
+                    emp_map = info.employee.employee_hr.all()
+                    for emp in emp_map:
+                        emp.is_mapped = True
+                        emp.save(update_fields=['is_mapped'])
+                    self.create_contract(contract, info)
+                return info
+        except Exception as err:
+            return err
 
     class Meta:
         model = EmployeeInfo
@@ -146,6 +192,8 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
             'email',
             'phone',
             'date_joined',
+            # for contract
+            'contract',
         )
 
 
@@ -228,6 +276,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
     date_joined = serializers.DateField()
     dob = serializers.DateField(required=False)
     code = serializers.CharField(max_length=500)
+    contract = EmployeeContractCreateSerializers()
 
     @classmethod
     def validate_employee(cls, value):
@@ -257,12 +306,15 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             'tax_code',
             'permanent_address',
             'current_resident',
+            # for employee
             'first_name',
             'last_name',
             'email',
             'phone',
             'date_joined',
             'dob',
+            # for contract
+            'contract',
         )
 
     @classmethod
@@ -280,13 +332,57 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             is_emp.date_joined = attrs['date_joined']
             is_emp.dob = attrs['dob']
             is_emp.save(update_fields=['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined'])
-            for e in ['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob']:
-                attrs.pop(e)
+            for attr in ['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob']:
+                attrs.pop(attr)
+
+    def create_contract(self, attrs):
+        contract = attrs.pop('contract', None)
+        attachment = contract.pop('attachment', None)
+        obj = None
+        if contract:
+            contract_id = contract.get('id', None)
+            if contract_id:
+                try:
+                    obj = EmployeeContract.objects.get(id=contract_id)
+                    obj.effected_date = contract.get('effected_date')
+                    obj.content = contract.get('content')
+                    obj.contract_type = contract.get('contract_type')
+                    obj.expired_date = contract.get('expired_date')
+                    obj.file_type = contract.get('file_type')
+                    obj.limit_time = contract.get('limit_time')
+                    obj.represent = contract.get('represent')
+                    obj.signing_date = contract.get('signing_date')
+                    obj.sign_status = contract.get('sign_status')
+                    obj.save(
+                        update_fields=['effected_date', 'content', 'contract_type', 'expired_date', 'file_type',
+                                       'limit_time', 'represent', 'signing_date', 'sign_status', 'date_modified']
+                    )
+                except EmployeeContract.DoesNotExist:
+                    raise exceptions.NotFound
+            else:
+                obj = EmployeeContract.objects.create(
+                    company_id=self.context.get('company_id', None),
+                    tenant_id=self.context.get('tenant_id', None),
+                    employee_created_id=self.context.get('user', None).employee_current_id,
+                    effected_date=contract['effected_date'],
+                    content=contract.get('content', ''),
+                    contract_type=contract.get('contract_type'),
+                    employee_info=contract.get('employee_info'),
+                    expired_date=contract.get('expired_date'),
+                    file_type=contract.get('file_type'),
+                    limit_time=contract.get('limit_time'),
+                    represent=contract.get('represent'),
+                    signing_date=contract.get('signing_date'),
+                )
+        if attachment is not None and obj:
+            handle_attach_file(obj, attachment)
+        return True
 
     def update(self, instance, validated_data):
         try:
             with transaction.atomic():
                 self.update_hr_employee(validated_data)
+                self.create_contract(validated_data)
                 for key, value in validated_data.items():
                     setattr(instance, key, value)
                 instance.save()

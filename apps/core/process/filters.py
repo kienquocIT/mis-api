@@ -1,3 +1,5 @@
+# pylint: disable=W0613
+
 from django.db.models import Q
 from django_filters.rest_framework import filters, FilterSet
 
@@ -44,3 +46,29 @@ class ProcessRuntimeListFilter(FilterSet):
             'employee_created_id': ['exact'],
             'was_done': ['exact'],
         }
+
+
+class ProcessRuntimeDataMatchFilter(FilterSet):
+    app_id = filters.UUIDFilter(method='filter_app_id')
+
+    @classmethod
+    def get_app_id(cls, queryset, name, value):
+        return queryset
+
+    opp_id = filters.UUIDFilter(method='filter_opp_id')
+
+    @classmethod
+    def filter_opp_id(cls, queryset, name, value):
+        return queryset
+
+    process_id = filters.UUIDFilter(method='filter_process_id')
+
+    @classmethod
+    def filter_process_id(cls, queryset, name, value):
+        return queryset
+
+    process_stage_id = filters.UUIDFilter(method='filter_process_stage_id')
+
+    @classmethod
+    def filter_process_stage_id(cls, queryset, name, value):
+        return queryset
