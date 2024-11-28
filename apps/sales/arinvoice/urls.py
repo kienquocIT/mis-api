@@ -1,6 +1,6 @@
 from django.urls import path
 from apps.sales.arinvoice.views import (
-    DeliveryListForARInvoice, ARInvoiceList, ARInvoiceDetail, ARInvoiceSignList
+    DeliveryListForARInvoice, ARInvoiceList, ARInvoiceDetail, ARInvoiceSignList, ARInvoiceRecurrenceList
 )
 
 urlpatterns = [
@@ -8,4 +8,5 @@ urlpatterns = [
     path('detail/<str:pk>', ARInvoiceDetail.as_view(), name='ARInvoiceDetail'),
     path('get-deliveries', DeliveryListForARInvoice.as_view(), name='DeliveryListForARInvoice'),
     path('sign/list', ARInvoiceSignList.as_view(), name='ARInvoiceSignList'),
+    path('recurrence/list', ARInvoiceRecurrenceList.as_view(), name='ARInvoiceRecurrenceList'),
 ]

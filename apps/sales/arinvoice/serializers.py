@@ -7,6 +7,8 @@ from datetime import datetime
 import requests
 
 from rest_framework import serializers
+
+from apps.core.recurrence.models import Recurrence
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, \
     ARInvoiceSign
@@ -169,6 +171,11 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'customer_billing_address',
             'customer_bank_code',
             'customer_bank_number',
+
+            # recurrence
+            'is_recurrence_template',
+            'is_recurring',
+            'recurrence_task_id',
         )
 
     def validate(self, validate_data):
@@ -640,3 +647,45 @@ class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
             'tenant',
             'company'
         )
+
+
+class ARInvoiceRecurrenceListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    recurrence_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ARInvoice
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_inherit',
+            'date_created',
+            'status',
+            'recurrence_list',
+        )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_status(cls, obj):
+        return Recurrence.objects.filter(doc_template_id=obj.id).exists()
+
+    @classmethod
+    def get_recurrence_list(cls, obj):
+        return [{
+            'id': recurrence.id,
+            'title': recurrence.title,
+        } for recurrence in Recurrence.objects.filter(doc_template_id=obj.id)]

@@ -13,7 +13,7 @@ from apps.sales.arinvoice.serializers import (
     DeliveryListSerializerForARInvoice,
     ARInvoiceListSerializer, ARInvoiceDetailSerializer,
     ARInvoiceCreateSerializer, ARInvoiceUpdateSerializer, ARInvoiceSignListSerializer, ARInvoiceSignCreateSerializer,
-    ARInvoiceSignDetailSerializer
+    ARInvoiceSignDetailSerializer, ARInvoiceRecurrenceListSerializer
 )
 
 __all__ = [
@@ -212,3 +212,26 @@ class ARInvoiceSignList(BaseListMixin, BaseCreateMixin):
             'company_id': request.user.company_current_id,
         }
         return self.create(request, *args, **kwargs)
+
+
+class ARInvoiceRecurrenceList(BaseListMixin, BaseCreateMixin):
+    queryset = ARInvoice.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'is_recurrence_template': ['exact'],
+        'employee_inherit_id': ['exact'],
+    }
+    serializer_list = ARInvoiceRecurrenceListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="AR Invoice Recurrence List",
+        operation_description="Get AR Invoice Recurrence List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

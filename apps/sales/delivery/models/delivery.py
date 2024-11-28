@@ -473,6 +473,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
+                    DeliHandler.push_diagram(instance=self)  # diagram
                     self.prepare_data_for_logging(self)
 
         SubPeriods.check_open(
@@ -486,8 +487,10 @@ class OrderDeliverySub(DataAbstractModel):
                 'times', flat=True
             )
             self.times = (max(times_arr) + 1) if len(times_arr) > 0 else 1
+
         # diagram
-        DeliHandler.push_diagram(instance=self)
+        if self.system_status not in [2, 3]:
+            DeliHandler.push_diagram(instance=self)
 
         super().save(*args, **kwargs)
 

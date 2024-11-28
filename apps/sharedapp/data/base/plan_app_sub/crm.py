@@ -820,7 +820,7 @@ PAYMENT_APP_CONFIG = {
     "allow_print": True,
     "allow_process": True,
     "allow_opportunity": True,
-    "allow_recurrence": True,
+    "allow_recurrence": False,
 }
 
 PAYMENT_TERM_APP_CONFIG = {
@@ -1646,6 +1646,7 @@ AR_INVOICE_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_recurrence": True,
 }
 
 AP_INVOICE_APP_CONFIG = {

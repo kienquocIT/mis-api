@@ -186,3 +186,8 @@ def post_delete_opp_task(sender, instance, **kwargs):
                 'msg': '',
             }
         )
+    if instance.parent_n:
+        task_parent = instance.parent_n
+        if task_parent.child_task_count > 0:
+            task_parent.child_task_count -= 1
+            task_parent.save(update_fields=['child_task_count'])
