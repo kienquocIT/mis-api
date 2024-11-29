@@ -685,12 +685,18 @@ class ProcessRuntimeMembersSerializer(serializers.ModelSerializer):
 
 
 class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
-    employee = serializers.UUIDField()
+    employees = serializers.ListSerializer(
+        child=serializers.UUIDField(),
+        min_length=1,
+        max_length=10
+    )
 
     @classmethod
-    def validate_employee(cls, attrs):
+    def validate_employees(cls, attrs):
         try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, pk=attrs)
+            objs = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=attrs)
+            if objs.count() == len(attrs):
+                return objs
         except Employee.DoesNotExist:
             pass
         raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
@@ -706,8 +712,15 @@ class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'process': ProcessMsg.PROCESS_NOT_FOUND})
 
     def create(self, validated_data):
-        return ProcessMembers.objects.create(**validated_data)
+        employees = validated_data.pop('employees', [])
+        objs = []
+        for obj in employees:
+            obj, _created = ProcessMembers.objects.get_or_create(employee=obj, **validated_data)
+            objs.append(
+                obj
+            )
+        return objs
 
     class Meta:
         model = ProcessMembers
-        fields = ('employee', 'process')
+        fields = ('employees', 'process')

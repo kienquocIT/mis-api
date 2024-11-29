@@ -254,6 +254,7 @@ class ProcessRuntimeDetail(BaseRetrieveMixin):
 class ProcessRuntimeMembers(BaseListMixin, BaseCreateMixin):
     queryset = ProcessMembers.objects.select_related('employee', 'employee_created')
     serializer_list = ProcessRuntimeMembersSerializer
+    serializer_create = ProcessRuntimeMembersCreateSerializer
     retrieve_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -295,7 +296,8 @@ class ProcessRuntimeMembers(BaseListMixin, BaseCreateMixin):
                 company_id=request.user.company_current_id,
                 employee_created_id=request.user.employee_current_id,
             )
-            return ResponseController.created_201(data=ProcessRuntimeMembersSerializer(instance=instance).data)
+            result = ProcessRuntimeMembersSerializer(instance=instance, many=True).data
+            return ResponseController.created_201(data=result)
         return ResponseController.notfound_404()
 
 
