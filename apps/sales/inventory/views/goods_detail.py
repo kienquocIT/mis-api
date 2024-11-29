@@ -1,15 +1,15 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.models import ProductWareHouse
+from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.inventory.serializers.goods_detail import (
     GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer,
-    GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB
+    GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB, GoodsDetailSerialDataSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin
 
 
-class GoodsDetailList(BaseListMixin, BaseCreateMixin):
+class GoodsDetailList(BaseListMixin):
     queryset = GoodsReceipt.objects
     serializer_list = GoodsDetailListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -35,6 +35,37 @@ class GoodsDetailList(BaseListMixin, BaseCreateMixin):
         return self.list(request, *args, **kwargs)
 
 
+class GoodsDetailSerialDataList(BaseListMixin):
+    queryset = ProductWareHouseSerial.objects
+    serializer_list = GoodsDetailSerialDataSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        product_id = self.request.query_params.get('product_id')
+        warehouse_id = self.request.query_params.get('warehouse_id')
+        goods_receipt_id = self.request.query_params.get('goods_receipt_id')
+        purchase_request_id = self.request.query_params.get('purchase_request_id')
+
+        return super().get_queryset().filter(
+            product_warehouse__product_id=product_id,
+            product_warehouse__warehouse_id=warehouse_id,
+            goods_receipt_id=goods_receipt_id,
+            purchase_request_id=purchase_request_id
+        ).select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Goods detail Serial data List",
+        operation_description="Get Goods detail Serial data List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsdetail', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
 class GoodsDetailDataList(BaseCreateMixin):
     queryset = ProductWareHouse.objects
     serializer_create = GoodsDetailDataCreateSerializer
@@ -52,6 +83,7 @@ class GoodsDetailDataList(BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
 
 class GoodsDetailListImportDB(BaseCreateMixin):
     queryset = ProductWareHouse.objects

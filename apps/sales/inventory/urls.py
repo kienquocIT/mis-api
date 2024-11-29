@@ -15,7 +15,7 @@ from apps.sales.inventory.views import (
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
     ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
-    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB,
+    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList,
 )
 
 urlpatterns = [
@@ -116,6 +116,7 @@ urlpatterns += [
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
+    path('goods-detail-sn-data/list', GoodsDetailSerialDataList.as_view(), name='GoodsDetailSerialDataList'),
     path('create-update-goods-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
     path(
         'goods-detail-import-db',

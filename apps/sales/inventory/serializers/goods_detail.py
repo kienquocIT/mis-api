@@ -84,12 +84,6 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                         gr_warehouse=gr_wh_gr_prd,
                         pr_data=pr_data
                     )
-                    serial_data = cls.find_created_serial_data(
-                        good_receipt=obj,
-                        good_receipt_product=item,
-                        gr_warehouse=gr_wh_gr_prd,
-                        pr_data=pr_data
-                    )
                     product_data.append({
                         'goods_receipt': {
                             'id': obj.id,
@@ -115,11 +109,27 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                             'code': gr_wh_gr_prd.warehouse.code,
                             'title': gr_wh_gr_prd.warehouse.title
                         } if gr_wh_gr_prd.warehouse else {},
-                        'serial_list': serial_data,
                         'quantity_import': gr_wh_gr_prd.quantity_import,
                         'status': int(count_serial_data == gr_wh_gr_prd.quantity_import)
                     })
         return product_data
+
+
+class GoodsDetailSerialDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouseSerial
+        fields = (
+            'id',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+            'is_delete',
+            'purchase_request_id',
+            'date_created',
+        )
 
 
 class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
@@ -130,24 +140,25 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def update_serial(cls, item):
         serial_id = item.get('serial_id')
-        serial = ProductWareHouseSerial.objects.filter(id=serial_id, is_delete=False).first()
+        serial = ProductWareHouseSerial.objects.filter(id=serial_id).first()
         if serial:
-            serial.vendor_serial_number = item.get('vendor_serial_number')
-            serial.serial_number = item.get('serial_number')
-            serial.expire_date = item.get('expire_date')
-            serial.manufacture_date = item.get('manufacture_date')
-            serial.warranty_start = item.get('warranty_start')
-            serial.warranty_end = item.get('warranty_end')
-            serial.save(update_fields=[
-                'vendor_serial_number',
-                'serial_number',
-                'expire_date',
-                'manufacture_date',
-                'warranty_start',
-                'warranty_end',
-            ])
-            return serial
-        # raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
+            if serial.is_delete is False:
+                serial.vendor_serial_number = item.get('vendor_serial_number')
+                serial.serial_number = item.get('serial_number')
+                serial.expire_date = item.get('expire_date')
+                serial.manufacture_date = item.get('manufacture_date')
+                serial.warranty_start = item.get('warranty_start')
+                serial.warranty_end = item.get('warranty_end')
+                serial.save(update_fields=[
+                    'vendor_serial_number',
+                    'serial_number',
+                    'expire_date',
+                    'manufacture_date',
+                    'warranty_start',
+                    'warranty_end',
+                ])
+                return serial
+            raise serializers.ValidationError({'Serial': f"Serial {serial.serial_number} is deleted."})
         raise serializers.ValidationError({'Serial': f"Serial id {serial_id} does not exist"})
 
     @classmethod
