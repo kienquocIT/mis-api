@@ -308,6 +308,10 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
             date_created: datetime,
     ):
         if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
+            try:
+                self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_created_id)
+            except exceptions.PermissionDenied:
+                return False
             if str(process_stage_app_obj.application_id) == str(app_id):
                 if process_stage_app_obj and self.check_application_state_add_new(process_stage_app_obj):
                     ProcessDoc.objects.create(
