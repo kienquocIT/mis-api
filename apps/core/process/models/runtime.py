@@ -42,6 +42,7 @@ class ProcessMembers(MasterDataAbstractModel):
         verbose_name_plural = 'Process Members'
         default_permissions = ()
         permissions = ()
+        ordering = ['date_created']
 
 
 class ProcessStage(MasterDataAbstractModel):

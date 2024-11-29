@@ -2,11 +2,12 @@ from django.utils.translation import gettext_lazy as trans
 from rest_framework import serializers
 
 from apps.core.base.models import Application
+from apps.core.hr.models import Employee
 from apps.core.process.models import ProcessConfiguration, Process, ProcessStage
-from apps.core.process.models.runtime import ProcessStageApplication, ProcessDoc
+from apps.core.process.models.runtime import ProcessStageApplication, ProcessDoc, ProcessMembers
 from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
-from apps.shared import TypeCheck
+from apps.shared import TypeCheck, HrMsg
 
 
 class ProcessConfigReadySerializer(serializers.ModelSerializer):
@@ -419,7 +420,9 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Process
-        fields = ('id', 'title', 'remark', 'config', 'stage_current', 'stages', 'global_app', 'opp')
+        fields = (
+            'id', 'title', 'remark', 'config', 'stage_current', 'stages', 'global_app', 'opp', 'employee_created_id',
+        )
 
 
 class ProcessRuntimeCreateSerializer(serializers.ModelSerializer):
@@ -657,3 +660,54 @@ class ProcessRuntimeDataMatchFromProcessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Process
         fields = ('opp', 'process', 'process_stage_app')
+
+
+class ProcessRuntimeMembersSerializer(serializers.ModelSerializer):
+    employee = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee(cls, obj):
+        if obj.employee:
+            return obj.employee.get_detail_minimal()
+        return {}
+
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        if obj.employee_created:
+            return obj.employee_created.get_detail_minimal()
+        return {}
+
+    class Meta:
+        model = ProcessMembers
+        fields = ('id', 'employee', 'employee_created', 'date_created')
+
+
+class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
+    employee = serializers.UUIDField()
+
+    @classmethod
+    def validate_employee(cls, attrs):
+        try:
+            return Employee.objects.get_current(fill__tenant=True, fill__company=True, pk=attrs)
+        except Employee.DoesNotExist:
+            pass
+        raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
+
+    process = serializers.UUIDField()
+
+    @classmethod
+    def validate_process(cls, attrs):
+        try:
+            return Process.objects.get_current(fill__tenant=True, fill__company=True, pk=attrs)
+        except Process.DoesNotExist:
+            pass
+        raise serializers.ValidationError({'process': ProcessMsg.PROCESS_NOT_FOUND})
+
+    def create(self, validated_data):
+        return ProcessMembers.objects.create(**validated_data)
+
+    class Meta:
+        model = ProcessMembers
+        fields = ('employee', 'process')

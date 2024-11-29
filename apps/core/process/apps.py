@@ -7,5 +7,4 @@ class ProcessConfig(AppConfig):
 
     def ready(self):
         # pylint: disable=import-outside-toplevel / C0415, unused-import / W0611
-        # from apps.core.process.signals import *
-        pass
+        from apps.core.process.signals import update_process_members, destroy_process_member

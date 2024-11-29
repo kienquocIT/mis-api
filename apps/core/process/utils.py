@@ -8,7 +8,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from apps.core.process.models import (
     Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration,
@@ -173,6 +173,13 @@ class ProcessRuntimeControl:
             }
         )
 
+    @classmethod
+    def check_permit_process(cls, process_obj: Process, employee_id) -> True or exceptions.PermissionDenied:
+        if process_obj and employee_id:
+            if ProcessMembers.objects.filter(process=process_obj, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
     def __init__(self, process_obj: Process, key_raise_error: str = 'process'):
         self.key_raise_error: str = key_raise_error
         self.process_obj: Process = process_obj
@@ -214,14 +221,19 @@ class ProcessRuntimeControl:
             raise serializers.ValidationError({self.key_raise_error: ProcessMsg.DOCUMENT_QUALITY_IS_FULL})
         raise serializers.ValidationError({self.key_raise_error: ProcessMsg.APPLICATION_NOT_SUPPORT})
 
-    def play_process(self) -> Process:
+    def add_members(self, employee_created_id: UUID = None):
         if self.process_obj.employee_created_id:
             ProcessMembers.objects.create(
                 tenant=self.process_obj.tenant,
                 company=self.process_obj.company,
                 process=self.process_obj,
                 employee=self.process_obj.employee_created,
+                employee_created_id=employee_created_id,
             )
+        return True
+
+    def play_process(self) -> Process:
+        self.add_members()
 
         for idx, stage_config in enumerate(self.process_obj.stages):
             is_system = stage_config.get('is_system', False)
@@ -395,7 +407,7 @@ class ProcessRuntimeControl:
         raise ValueError('Model Doc not found: ' + doc_id + ' - ' + app_id)
 
     @classmethod
-    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None, skip_check_state = False):
+    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None, skip_check_state=False):
         """
         Sync system_status of doc to ProcessDoc
         Args:

@@ -3,10 +3,10 @@ import logging
 from django.db.models import Q
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from apps.core.process.filters import ProcessRuntimeListFilter, ProcessRuntimeDataMatchFilter
-from apps.core.process.models.runtime import ProcessStageApplication
+from apps.core.process.models.runtime import ProcessStageApplication, ProcessMembers
 from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import (
@@ -19,7 +19,8 @@ from apps.core.process.serializers import (
     ProcessConfigUpdateSerializer, ProcessRuntimeCreateSerializer, ProcessRuntimeListSerializer,
     ProcessRuntimeDetailSerializer, ProcessStageApplicationUpdateSerializer, ProcessStageApplicationDetailSerializer,
     ProcessConfigReadySerializer, ProcessStageApplicationListSerializer, ProcessRuntimeDataMatchFromStageSerializer,
-    ProcessRuntimeDataMatchFromProcessSerializer,
+    ProcessRuntimeDataMatchFromProcessSerializer, ProcessRuntimeMembersSerializer,
+    ProcessRuntimeMembersCreateSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,9 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
         if stage_id and TypeCheck.check_uuid(stage_id):
             select_related = ['process', 'process__opp', 'application']
             obj_app = ProcessStageApplication.objects.select_related(*select_related).filter(id=stage_id).first()
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=obj_app.process, employee_id=request.user.employee_current_id
+            )
             if obj_app:
                 result = ProcessRuntimeDataMatchFromStageSerializer(instance=obj_app).data
         elif app_id and TypeCheck.check_uuid(app_id):
@@ -132,6 +136,10 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
                 obj_process = Process.objects.select_related('opp').filter(id=process_id).first()
             else:
                 obj_process = None
+
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=obj_process, employee_id=request.user.employee_current_id
+            )
 
             if obj_process:
                 result = ProcessRuntimeDataMatchFromProcessSerializer(
@@ -151,12 +159,14 @@ class ProcessRuntimeOfMeList(BaseListMixin):
     search_fields = ['title', 'remark']
 
     def get_queryset_and_filter_queryset(self, *args, **kwargs):
-        data = super().get_queryset_and_filter_queryset(*args, **kwargs)
-        return data.filter(was_done=False).filter(
-            Q(employee_created_id=self.request.user.employee_current_id)
-            |
-            Q(members__contains=[str(self.request.user.employee_current_id)])
-        )
+        if self.request.user.employee_current_id:
+            data = super().get_queryset_and_filter_queryset(*args, **kwargs)
+            return data.filter(was_done=False).filter(
+                Q(employee_created_id=self.request.user.employee_current_id)
+                |
+                Q(members__contains=[str(self.request.user.employee_current_id)])
+            )
+        return super().get_queryset().none()
 
     @swagger_auto_schema(operation_summary='Process Runtime List')
     @mask_view(login_require=True, employee_require=True)
@@ -205,6 +215,11 @@ class ProcessRuntimeList(BaseListMixin, BaseCreateMixin):
     filterset_class = ProcessRuntimeListFilter
     search_fields = ['title', 'remark']
 
+    def get_queryset(self):
+        if self.request.user.employee_current_id:
+            return super().get_queryset().filter(members__contains=str(self.request.user.employee_current_id))
+        return super().get_queryset().none()
+
     @swagger_auto_schema(operation_summary='Process Runtime List')
     @mask_view(login_require=True, employee_require=True)
     def get(self, request, *args, **kwargs):
@@ -221,11 +236,66 @@ class ProcessRuntimeDetail(BaseRetrieveMixin):
     serializer_detail = ProcessRuntimeDetailSerializer
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
+    def get_object(self):
+        instance = super().get_object()
+        ProcessRuntimeControl.check_permit_process(
+            process_obj=instance, employee_id=self.request.user.employee_current_id
+        )
+        return instance
+
     @swagger_auto_schema(operation_summary='Process Runtime Detail')
     @mask_view(login_require=True, employee_require=True)
     def get(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             return self.retrieve(request, *args, pk, **kwargs)
+        return ResponseController.notfound_404()
+
+
+class ProcessRuntimeMembers(BaseListMixin, BaseCreateMixin):
+    queryset = ProcessMembers.objects.select_related('employee', 'employee_created')
+    serializer_list = ProcessRuntimeMembersSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    def view_check_process(self, process_id):
+        try:
+            process_obj = Process.objects.get_current(fill__tenant=True, fill__company=True, pk=process_id)
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=process_obj, employee_id=self.request.user.employee_current_id
+            )
+            return True
+        except Process.DoesNotExist:
+            pass
+        raise exceptions.PermissionDenied
+
+    @swagger_auto_schema(operation_summary='Process Runtime Members')
+    @mask_view(login_require=True, employee_require=True)
+    def get(self, request, *args, process_id, **kwargs):
+        if process_id and TypeCheck.check_uuid(process_id):
+            self.view_check_process(process_id=process_id)
+            return self.list(request, *args, process_id, **kwargs)
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(
+        operation_summary='Process Runtime Add Members', request_body=ProcessRuntimeMembersCreateSerializer
+    )
+    @mask_view(login_require=True, employee_require=True)
+    def post(self, request, *args, process_id, **kwargs):
+        if process_id and TypeCheck.check_uuid(process_id):
+            self.view_check_process(process_id=process_id)
+            ser = ProcessRuntimeMembersCreateSerializer(
+                data={
+                    **request.data,
+                    'process': process_id,
+                }
+            )
+            ser.is_valid(raise_exception=True)
+            instance = ser.save(
+                tenant_id=request.user.tenant_current_id,
+                company_id=request.user.company_current_id,
+                employee_created_id=request.user.employee_current_id,
+            )
+            return ResponseController.created_201(data=ProcessRuntimeMembersSerializer(instance=instance).data)
         return ResponseController.notfound_404()
 
 
@@ -237,6 +307,9 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = ['employee_modified_id']
 
     def manual_check_obj_retrieve(self, instance, **kwargs):
+        ProcessRuntimeControl.check_permit_process(
+            process_obj=instance.process, employee_id=self.request.user.employee_current_id
+        )
         return True
 
     @swagger_auto_schema(operation_summary='Process Runtime Stages : All Documents of Stages App')
@@ -248,6 +321,10 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
 
     def manual_check_obj_update(self, instance, body_data, **kwargs):
         if instance and isinstance(instance, ProcessStageApplication):
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=instance.process, employee_id=self.request.user.employee_current_id
+            )
+
             state = ProcessRuntimeControl.check_application_can_state_done(stage_app_obj=instance)
             if state:
                 return True
@@ -264,3 +341,26 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
         if pk and TypeCheck.check_uuid(pk):
             return self.update(request, *args, pk, **kwargs)
         return ResponseController.notfound_404()
+
+
+class ProcessRuntimeMemberDetail(BaseDestroyMixin):
+    queryset = ProcessMembers.objects
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+
+    def manual_check_obj_destroy(self, instance, **kwargs):
+        ProcessRuntimeControl.check_permit_process(
+            process_obj=instance.process, employee_id=self.request.user.employee_current_id
+        )
+
+        employee_current_id = str(self.request.user.employee_current_id)
+        if (
+                str(instance.employee_id) == employee_current_id
+                and str(instance.process.employee_created_id) == employee_current_id
+        ):
+            raise exceptions.PermissionDenied
+        return True
+
+    @swagger_auto_schema(operation_summary='Process Runtime Stages : All Documents of Stages App')
+    @mask_view(login_require=True, employee_require=True)
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)
