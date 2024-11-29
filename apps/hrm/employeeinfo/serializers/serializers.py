@@ -98,17 +98,16 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
         elif 'employee_create' in attrs:
-            company = self.context.get('company_current', None)
-            tenant = self.context.get('tenant_current', None)
             employee = DisperseModel(app_model='hr.Employee').get_model().objects.create(
+                id=attrs['employee_create'],
                 code=attrs['code'],
                 first_name=attrs['first_name'],
                 last_name=attrs['last_name'],
                 email=attrs['email'],
                 phone=attrs['phone'],
                 date_joined=attrs['date_joined'],
-                company_id=str(company.id),
-                tenant_id=str(tenant.id)
+                company_id=self.context.get('company_id', None),
+                tenant_id=self.context.get('tenant_id', None)
             )
             EmployeeHRNotMapEmployeeHRM.objects.create(
                 company=employee.company,
@@ -148,18 +147,17 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
         try:
             with transaction.atomic():
                 obj_employee = self.check_is_map(validated_data)
-                employee_id = validated_data.pop('employee_create', None)
+                validated_data.pop('employee_create', None)
                 contract = validated_data.pop('contract', None)
                 validated_data['employee'] = obj_employee
-                if employee_id:
-                    validated_data['id'] = employee_id
                 info = EmployeeInfo.objects.create(**validated_data)
                 if info:
                     emp_map = info.employee.employee_hr.all()
                     for emp in emp_map:
                         emp.is_mapped = True
                         emp.save(update_fields=['is_mapped'])
-                    self.create_contract(contract, info)
+                    if contract:
+                        self.create_contract(contract, info)
                 return info
         except Exception as err:
             return err
