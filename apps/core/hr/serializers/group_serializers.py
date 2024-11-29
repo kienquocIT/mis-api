@@ -398,7 +398,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
 class GroupUpdateSerializer(serializers.ModelSerializer):
     group_level = serializers.UUIDField(required=False)
-    parent_n = serializers.UUIDField(required=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
     group_employee = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
