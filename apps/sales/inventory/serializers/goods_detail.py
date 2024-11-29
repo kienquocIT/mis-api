@@ -21,13 +21,13 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def created_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
+    def find_created_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
         serial_data = []
         for serial in good_receipt.pw_serial_goods_receipt.filter(
                 product_warehouse__product_id=good_receipt_product.product_id,
                 product_warehouse__warehouse_id=gr_warehouse.warehouse_id,
-        ).order_by('vendor_serial_number', 'serial_number'):
-            if not serial.purchase_request_id is None:
+        ).order_by('date_created'):
+            if serial.purchase_request_id:
                 if str(serial.purchase_request_id) == pr_data.get('id'):
                     serial_data.append({
                         'id': serial.id,
@@ -37,9 +37,38 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                         'manufacture_date': serial.manufacture_date,
                         'warranty_start': serial.warranty_start,
                         'warranty_end': serial.warranty_end,
-                        'is_delete': serial.is_delete
+                        'is_delete': serial.is_delete,
+                        'purchase_request_id': serial.purchase_request_id,
+                        'date_created': serial.date_created,
                     })
+            else:
+                serial_data.append({
+                    'id': serial.id,
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number,
+                    'expire_date': serial.expire_date,
+                    'manufacture_date': serial.manufacture_date,
+                    'warranty_start': serial.warranty_start,
+                    'warranty_end': serial.warranty_end,
+                    'is_delete': serial.is_delete,
+                    'purchase_request_id': serial.purchase_request_id,
+                    'date_created': serial.date_created,
+                })
         return serial_data
+
+    @classmethod
+    def count_created_serial_data(cls, good_receipt, good_receipt_product, gr_warehouse, pr_data):
+        count = 0
+        for serial in good_receipt.pw_serial_goods_receipt.filter(
+                product_warehouse__product_id=good_receipt_product.product_id,
+                product_warehouse__warehouse_id=gr_warehouse.warehouse_id,
+        ).order_by('date_created'):
+            if serial.purchase_request_id:
+                if str(serial.purchase_request_id) == pr_data.get('id'):
+                    count += 1
+            else:
+                count += 1
+        return count
 
     @classmethod
     def get_product_data(cls, obj):
@@ -49,7 +78,13 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                 for gr_wh_gr_prd in item.goods_receipt_warehouse_gr_product.all():
                     pr_data = gr_wh_gr_prd.goods_receipt_request_product.purchase_request_data if (
                         gr_wh_gr_prd.goods_receipt_request_product) else {}
-                    serial_data = cls.created_serial_data(
+                    count_serial_data = cls.count_created_serial_data(
+                        good_receipt=obj,
+                        good_receipt_product=item,
+                        gr_warehouse=gr_wh_gr_prd,
+                        pr_data=pr_data
+                    )
+                    serial_data = cls.find_created_serial_data(
                         good_receipt=obj,
                         good_receipt_product=item,
                         gr_warehouse=gr_wh_gr_prd,
@@ -61,8 +96,8 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                             'code': obj.code,
                             'title': obj.title,
                             'date_approved': obj.date_approved,
-                            'purchase_request': pr_data
                         } if obj else {},
+                        'purchase_request': pr_data,
                         'person_in_charge': {
                             'id': obj.employee_inherit_id,
                             'code': obj.employee_inherit.code,
@@ -79,10 +114,10 @@ class GoodsDetailListSerializer(serializers.ModelSerializer):
                             'id': gr_wh_gr_prd.warehouse_id,
                             'code': gr_wh_gr_prd.warehouse.code,
                             'title': gr_wh_gr_prd.warehouse.title
-                        } if gr_wh_gr_prd else {},
+                        } if gr_wh_gr_prd.warehouse else {},
                         'serial_list': serial_data,
                         'quantity_import': gr_wh_gr_prd.quantity_import,
-                        'status': int(len(serial_data) == gr_wh_gr_prd.quantity_import)
+                        'status': int(count_serial_data == gr_wh_gr_prd.quantity_import)
                     })
         return product_data
 
@@ -93,24 +128,26 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         fields = ()
 
     @classmethod
-    def update_serial(cls, item, all_serial, serial_id, goods_receipt_id, purchase_request_id):
-        serial = all_serial.filter(id=serial_id, is_delete=False).first()
+    def update_serial(cls, item):
+        serial_id = item.get('serial_id')
+        serial = ProductWareHouseSerial.objects.filter(id=serial_id, is_delete=False).first()
         if serial:
-            if not ProductWareHouseSerial.objects.filter(
-                purchase_request_id=purchase_request_id,
-                serial_number=item.get('serial_number')
-            ).exclude(id=serial_id).exists():
-                serial.vendor_serial_number = item.get('vendor_serial_number')
-                serial.serial_number = item.get('serial_number')
-                serial.expire_date = item.get('expire_date')
-                serial.manufacture_date = item.get('manufacture_date')
-                serial.warranty_start = item.get('warranty_start')
-                serial.warranty_end = item.get('warranty_end')
-                serial.goods_receipt_id = goods_receipt_id
-                serial.purchase_request_id = purchase_request_id
-                serial.save()
-                return serial
-            raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
+            serial.vendor_serial_number = item.get('vendor_serial_number')
+            serial.serial_number = item.get('serial_number')
+            serial.expire_date = item.get('expire_date')
+            serial.manufacture_date = item.get('manufacture_date')
+            serial.warranty_start = item.get('warranty_start')
+            serial.warranty_end = item.get('warranty_end')
+            serial.save(update_fields=[
+                'vendor_serial_number',
+                'serial_number',
+                'expire_date',
+                'manufacture_date',
+                'warranty_start',
+                'warranty_end',
+            ])
+            return serial
+        # raise serializers.ValidationError({'Serial': f"Serial {item.get('serial_number')} is existed"})
         raise serializers.ValidationError({'Serial': f"Serial id {serial_id} does not exist"})
 
     @classmethod
@@ -134,22 +171,20 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
             ).first() if gr_prd else None
             receipt_max_quantity = gr_wh_gr_prd.quantity_import if gr_wh_gr_prd else 0
 
-            if not ProductWareHouseSerial.objects.filter(
-                    product_warehouse__product=prd_wh.product,
-                    serial_number=item.get('serial_number'),
-                    purchase_request_id=purchase_request_id
-            ).exists() and receipted_sn_quantity < receipt_max_quantity:
-                bulk_info_new_serial.append(
-                    ProductWareHouseSerial(
-                        **item,
-                        product_warehouse=prd_wh,
-                        goods_receipt_id=goods_receipt_id,
-                        company_id=prd_wh.company_id,
-                        tenant_id=prd_wh.tenant_id,
-                        purchase_request_id=purchase_request_id
+            if not ProductWareHouseSerial.objects.filter(serial_number=item.get('serial_number')).exists():
+                if receipted_sn_quantity < receipt_max_quantity:
+                    bulk_info_new_serial.append(
+                        ProductWareHouseSerial(
+                            **item,
+                            product_warehouse=prd_wh,
+                            goods_receipt_id=goods_receipt_id,
+                            company_id=prd_wh.company_id,
+                            tenant_id=prd_wh.tenant_id,
+                            purchase_request_id=purchase_request_id
+                        )
                     )
-                )
                 return bulk_info_new_serial
+            raise serializers.ValidationError({'Serial': "This serial already exists."})
         raise serializers.ValidationError({'Serial': "Can not create new serial."})
 
     @classmethod
@@ -157,13 +192,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         bulk_info_new_serial = []
         for item in serial_data:
             if item.get('serial_id'):
-                cls.update_serial(
-                    item,
-                    prd_wh.product_warehouse_serial_product_warehouse.all(),
-                    item.get('serial_id'),
-                    goods_receipt_id,
-                    purchase_request_id
-                )
+                cls.update_serial(item)
             else:
                 bulk_info_new_serial = cls.create_serial(
                     item,

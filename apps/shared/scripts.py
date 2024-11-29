@@ -2646,3 +2646,15 @@ def reset_remain_gr_for_ia():
         ia_product.save(update_fields=['gr_remain_quantity'])
     print("reset_remain_gr_for_ia done.")
     return True
+
+
+def create_data_for_GR_WH_PRD():
+    for item in GoodsReceiptRequestProduct.objects.all():
+        if item.purchase_request_product:
+            item.purchase_request_data = {
+                'id': str(item.purchase_request_product.purchase_request_id),
+                'code': item.purchase_request_product.purchase_request.code,
+                'title': item.purchase_request_product.purchase_request.title
+            }
+            item.save(update_fields=['purchase_request_data'])
+    print('Done :_)')

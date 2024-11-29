@@ -1,3 +1,5 @@
+from itertools import product
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -273,6 +275,16 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def check_product_serial_existed(self, serial_number):
+        if ProductWareHouseSerial.objects.filter(
+            company=self.company,
+            tenant=self.company.tenant,
+            product_warehouse__product=self,
+            serial_number=serial_number
+        ).exists():
+            return False
+        return True
 
     def get_current_unit_cost(self, get_type=1, **kwargs):
         company_config = getattr(self.company, 'company_config')
