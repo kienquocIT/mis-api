@@ -6,15 +6,23 @@ from apps.shared import HRMsg
 
 # Group Level Serializer
 class GroupLevelListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
     class Meta:
         model = GroupLevel
         fields = (
             'id',
+            'title',
+            'code',
             'level',
             'description',
             'first_manager_description',
             'second_manager_description',
         )
+
+    @classmethod
+    def get_title(cls, obj):
+        return 'Level' + ' ' + str(obj.level)
 
 
 class GroupLevelDetailSerializer(serializers.ModelSerializer):
@@ -220,6 +228,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             'description': obj.group_level.description,
             'first_manager_description': obj.group_level.first_manager_description,
             'second_manager_description': obj.group_level.second_manager_description,
+            'title': 'Level' + ' ' + str(obj.group_level.level),
         } if obj.group_level else {}
 
     @classmethod
@@ -389,7 +398,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
 class GroupUpdateSerializer(serializers.ModelSerializer):
     group_level = serializers.UUIDField(required=False)
-    parent_n = serializers.UUIDField(required=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
     group_employee = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False

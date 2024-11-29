@@ -2664,3 +2664,15 @@ def init_models_child_task_count():
             task.save(update_fields=['child_task_count'])
 
     print('done init child task count')
+
+
+def create_data_for_GR_WH_PRD():
+    for item in GoodsReceiptRequestProduct.objects.all():
+        if item.purchase_request_product:
+            item.purchase_request_data = {
+                'id': str(item.purchase_request_product.purchase_request_id),
+                'code': item.purchase_request_product.purchase_request.code,
+                'title': item.purchase_request_product.purchase_request.title
+            }
+            item.save(update_fields=['purchase_request_data'])
+    print('Done :_)')

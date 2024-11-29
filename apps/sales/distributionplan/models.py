@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
@@ -9,7 +10,8 @@ class DistributionPlan(DataAbstractModel):
         related_name='distribution_plan_product',
         on_delete=models.CASCADE
     )
-    start_date = models.DateField()
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(default=timezone.now)
     no_of_month = models.IntegerField()
 
     product_price = models.FloatField(default=0)
