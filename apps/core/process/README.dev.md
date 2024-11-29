@@ -1,3 +1,27 @@
+### Process Instructions
+
+---
+
+Thành phần bao gồm:
+
+Cấu hình:
+- Stage: Hệ thống (start, end) và các stage người tạo dùng
+- Application: Ứng dụng trong từng stage (Hệ thống không chứa app)
+- Global App: Ứng dụng toàn cầu trong cả tiến trình - tạo phiếu cho ứng dụng đó lúc nào cũng được
+- ProcessConfigurationMembers: Chứa thành viên cơ bản đầu tiên khi runtime 1 tiến trình - chưa sử dụng!
+
+Runtime:
+- Process, ProcessStage, ProcessStageApplication: Ánh xạ từ cấu hình
+- ProcessMembers: Chứa thành viên của tiến trình, người dùng khởi tạo runtime sẽ là member không thể xoá
+- ProcessDoc: Chứa các đăng ký doc cho ProcessStageApplication của người dùng tạo
+- ProcessActivity: Lưa tất cả các nhật ký hoạt động của tiến trình
+
+Quyền:
+- Thành viên trong tiến trình có quyền xem tiến trình, tạo mọi phiếu trong tiến trình, thêm xoá thành viên.
+- Thành viên trong Opp sẽ ánh xạ sang tiến trình tương ứng
+
+---
+
 1. Models
     - Đảm bảo Models đích tính năng kế thừa từ `DataAbstractModel` hoặc có trường `process_stage_app` (copy trường mẫu từ `DataAbstractModel`)
     - Đảm bảo tên của Process liên kết trên Model đều luôn là `process` và `process_stage_app`
@@ -47,12 +71,21 @@
           ```python
           def validate(self, validate_data):
               ...
+              # Xử lý lấy nhân viên đang tạo để kiểm tra quyền trên Process
+              employee_obj = validate_data.get('employee_inherit', None)
+              if not employee_obj:
+                  raise serializers.ValidationError({
+                      'detail': 'Need employee information to check permission to create progress ticket'
+                  })
+              ...
               process_obj = validate_data.get('process', None)
               process_stage_app_obj = validate_data.get('process_stage_app', None)
               opportunity_id = validate_data.get('opportunity_id', None)
               if process_obj:
                   ProcessRuntimeControl(process_obj=process_obj).validate_process(
-                      process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+                      process_stage_app_obj=process_stage_app_obj,
+                      employee_id=employee_obj.id, 
+                      opp_id=opportunity_id,
                   )
               ...
               return validate_data
@@ -73,6 +106,21 @@
                   )
               ...
               return instance
+          ```
+      - Nếu không thể truyền employee_id vào khối kiểm tra trong validate() thì có thể sử dụng `ProcessRuntimeControl.check_permit_process_app` để kiểm tra quyền của nguười dùng đó tạo phiếu
+          ```python
+          # Ví dụ kiểm tra quyền trước khi tạo phiếu
+          def create(self, validated_data):
+              employee_created_id = validated_data.get('employee_created_id', None)
+              process_stage_app_obj = validate_data.get('process_stage_app', None)
+              if not employee_created_id or not process_stage_app_obj:
+                  raise serializers.ValidationError({
+                      'detail': 'Need employee information to check permission to create progress ticket'
+                  })
+              ProcessRuntimeControl.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_created_id)
+              ...
+              # các xử lý khác
+              return ...
           ```
    2. Detail
       - Thêm khai báo 2 trường lấy dữ liệu vào class serializer
