@@ -6,7 +6,7 @@ from apps.sales.inventory.serializers.goods_detail import (
     GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer,
     GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB, GoodsDetailSerialDataSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
 
 class GoodsDetailList(BaseListMixin):
