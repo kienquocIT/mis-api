@@ -1,3 +1,27 @@
+### Process Instructions
+
+---
+
+Thành phần bao gồm:
+
+Cấu hình:
+- Stage: Hệ thống (start, end) và các stage người tạo dùng
+- Application: Ứng dụng trong từng stage (Hệ thống không chứa app)
+- Global App: Ứng dụng toàn cầu trong cả tiến trình - tạo phiếu cho ứng dụng đó lúc nào cũng được
+- ProcessConfigurationMembers: Chứa thành viên cơ bản đầu tiên khi runtime 1 tiến trình - chưa sử dụng!
+
+Runtime:
+- Process, ProcessStage, ProcessStageApplication: Ánh xạ từ cấu hình
+- ProcessMembers: Chứa thành viên của tiến trình, người dùng khởi tạo runtime sẽ là member không thể xoá
+- ProcessDoc: Chứa các đăng ký doc cho ProcessStageApplication của người dùng tạo
+- ProcessActivity: Lưa tất cả các nhật ký hoạt động của tiến trình
+
+Quyền:
+- Thành viên trong tiến trình có quyền xem tiến trình, tạo mọi phiếu trong tiến trình, thêm xoá thành viên.
+- Thành viên trong Opp sẽ ánh xạ sang tiến trình tương ứng
+
+---
+
 1. Models
     - Đảm bảo Models đích tính năng kế thừa từ `DataAbstractModel` hoặc có trường `process_stage_app` (copy trường mẫu từ `DataAbstractModel`)
     - Đảm bảo tên của Process liên kết trên Model đều luôn là `process` và `process_stage_app`
