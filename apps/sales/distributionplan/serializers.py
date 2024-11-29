@@ -27,6 +27,7 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
             'title',
             'start_date',
             'no_of_month',
+            'end_date',
             'system_status',
             'is_create_purchase_request'
         )
