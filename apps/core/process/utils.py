@@ -20,7 +20,7 @@ from apps.shared import TypeCheck, DisperseModel
 logger = logging.getLogger(__name__)
 
 
-class ProcessRuntimeControl:
+class ProcessRuntimeControl:  # pylint: disable=R0904
     @classmethod
     def approved_amount(cls, stage_app_obj: ProcessStageApplication):
         return ProcessDoc.objects.filter(
@@ -174,9 +174,20 @@ class ProcessRuntimeControl:
         )
 
     @classmethod
-    def check_permit_process(cls, process_obj: Process, employee_id) -> True or exceptions.PermissionDenied:
+    def check_permit_process(
+            cls, process_obj: Process, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
         if process_obj and employee_id:
             if ProcessMembers.objects.filter(process=process_obj, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
+    @classmethod
+    def check_permit_process_app(
+            cls, stage_app: ProcessStageApplication, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if stage_app and isinstance(stage_app, ProcessStageApplication) and employee_id:
+            if ProcessMembers.objects.filter(process=stage_app.process, employee_id=employee_id).exists():
                 return True
         raise exceptions.PermissionDenied
 
@@ -204,8 +215,13 @@ class ProcessRuntimeControl:
     def validate_process(
             self,
             process_stage_app_obj: ProcessStageApplication,
+            employee_id: UUID or str = None,
             opp_id: UUID or str = None,
     ) -> bool or serializers.ValidationError:
+        # permit for employee in process if fill value into employee_created_id
+        if employee_id:
+            self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_id)
+
         # for add new
         if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
             # check stage app match with process
