@@ -2,7 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.shared import SimpleAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
+
 # Create your models here.
 
 
@@ -31,7 +32,7 @@ INVOICE_STATUS = (
 )
 
 
-class ARInvoice(DataAbstractModel):
+class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
     sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
     posting_date = models.DateTimeField(null=True)

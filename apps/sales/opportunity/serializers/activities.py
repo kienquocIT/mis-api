@@ -1,3 +1,4 @@
+# pylint: disable=C0302
 import logging
 from rest_framework import serializers
 from django.core.mail import get_connection, EmailMultiAlternatives
@@ -75,10 +76,17 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
     process = serializers.UUIDField(required=False, allow_null=True, default=None)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=OpportunityCallLog.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = OpportunityCallLog
@@ -90,6 +98,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat',
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -114,11 +123,11 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'permission': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
 
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data['opportunity'].id
-        app_id = OpportunityCallLog.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
         validate_data['title'] = f"Call log: {validate_data.get('subject', '')}"
         return validate_data
 
@@ -134,6 +143,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         )
         if call_log_obj.process:
             ProcessRuntimeControl(process_obj=call_log_obj.process).register_doc(
+                process_stage_app_obj=call_log_obj.process_stage_app,
                 app_id=OpportunityCallLog.get_app_id(),
                 doc_id=call_log_obj.id,
                 doc_title=call_log_obj.title,
@@ -147,6 +157,7 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField() # noqa
     contact = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityCallLog
@@ -161,6 +172,7 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'is_cancelled',
             # process
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -170,6 +182,16 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 
@@ -252,10 +274,17 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.UUIDField()
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=OpportunityEmail.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = OpportunityEmail
@@ -266,6 +295,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'content',
             'opportunity',
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -293,11 +323,11 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data['opportunity'].id
-        app_id = OpportunityEmail.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
         validate_data['title'] = f"Email: {validate_data.get('subject', '')}"
         return validate_data
 
@@ -313,6 +343,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         )
         if email_obj.process:
             ProcessRuntimeControl(process_obj=email_obj.process).register_doc(
+                process_stage_app_obj=email_obj.process_stage_app,
                 app_id=OpportunityEmail.get_app_id(),
                 doc_id=email_obj.id,
                 doc_title=email_obj.title,
@@ -325,6 +356,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -333,6 +365,16 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 
@@ -347,6 +389,7 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'date_created',
             'opportunity',
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -442,10 +485,17 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         allow_empty=True, default=[], required=False,
     )
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=OpportunityMeeting.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = OpportunityMeeting
@@ -462,6 +512,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat',
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -505,11 +556,11 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
 
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data['opportunity'].id
-        app_id = OpportunityMeeting.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
 
         validate_data['title'] = f"Meeting: {validate_data.get('subject', '')}"
         return validate_data
@@ -545,6 +596,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
 
         if meeting_obj.process:
             ProcessRuntimeControl(process_obj=meeting_obj.process).register_doc(
+                process_stage_app_obj=meeting_obj.process_stage_app,
                 app_id=OpportunityMeeting.get_app_id(),
                 doc_id=meeting_obj.id,
                 doc_title=meeting_obj.title,
@@ -560,6 +612,7 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
     employee_attended_list = serializers.SerializerMethodField()
     customer_member_list = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityMeeting
@@ -579,6 +632,7 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'is_cancelled',
             # process
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -588,6 +642,16 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 

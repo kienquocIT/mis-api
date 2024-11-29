@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
 BIDDING_STATUS = [
@@ -162,6 +163,8 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
+
+        AdvanceHandler.push_opportunity_log(self)
         # hit DB
         super().save(*args, **kwargs)
 

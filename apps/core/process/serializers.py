@@ -1,11 +1,12 @@
+from django.utils.translation import gettext_lazy as trans
 from rest_framework import serializers
+
+from apps.core.base.models import Application
 from apps.core.process.models import ProcessConfiguration, Process, ProcessStage
 from apps.core.process.models.runtime import ProcessStageApplication, ProcessDoc
 from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import TypeCheck
-
-from apps.core.base.models import Application
 
 
 class ProcessConfigReadySerializer(serializers.ModelSerializer):
@@ -31,7 +32,11 @@ class ProcessConfigListSerializer(serializers.ModelSerializer):
 class ProcessConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessConfiguration
-        fields = ('id', 'title', 'remark', 'apply_start', 'apply_finish', 'is_active', 'for_opp', 'stages')
+        fields = (
+            'id', 'title', 'remark',
+            'apply_start', 'apply_finish', 'is_active', 'for_opp',
+            'stages', 'global_app',
+        )
 
 
 class StagesApplicationSerializer(serializers.Serializer):  # noqa
@@ -87,13 +92,24 @@ class ProcessStagesSerializer(serializers.Serializer):  # noqa
             validated_data['application'] = []
             return validated_data
         if application and isinstance(application, list) and len(application) > 0:
-            return validated_data
+            app_ids = [item['application'] for item in application]
+            if len(app_ids) == len(set(app_ids)):
+                return validated_data
+            raise serializers.ValidationError(
+                {
+                    'stages': ProcessMsg.APPLICATION_DUPLICATE_IN_STAGES
+                }
+            )
         raise serializers.ValidationError({'stages': ProcessMsg.APPLICATION_LEASE_ONE})
 
 
 class ProcessConfigCreateSerializer(serializers.ModelSerializer):
     stages = serializers.ListSerializer(
         child=ProcessStagesSerializer()
+    )
+
+    global_app = serializers.ListSerializer(
+        child=StagesApplicationSerializer(), min_length=0, max_length=20
     )
 
     @classmethod
@@ -107,8 +123,30 @@ class ProcessConfigCreateSerializer(serializers.ModelSerializer):
             }
         )
 
+    @classmethod
+    def validate_global_app(cls, attrs):
+        if attrs and isinstance(attrs, list):
+            app_ids = [item['application'] for item in attrs]
+            if len(app_ids) == len(set(app_ids)):
+                return attrs
+            raise serializers.ValidationError(
+                {
+                    'global_app': ProcessMsg.GLOBAL_APPLICATION_DUPLICATE
+                }
+            )
+        return []
+
+    @staticmethod
+    def get_application_for_process(for_opp=False) -> list[str]:
+        app_objs = Application.objects.filter(
+            allow_process=True, **(
+                {'allow_opportunity': True} if for_opp else {}
+            )
+        )
+        return [str(item) for item in app_objs.values_list('id', flat=True)]
+
     def validate(self, validated_data):
-        apply_start = validated_data.get('validated_data', None)
+        apply_start = validated_data.get('apply_start', None)
         apply_finish = validated_data.get('apply_finish', None)
         if apply_start and apply_finish:
             if apply_finish > apply_start:
@@ -118,19 +156,98 @@ class ProcessConfigCreateSerializer(serializers.ModelSerializer):
                     'apply_finish': ProcessMsg.FINISH_MUST_LARGE_START
                 }
             )
+
+        for_opp = validated_data.get('for_opp', False)
+        app_ids = self.get_application_for_process(for_opp=for_opp)
+        for stage_data in validated_data.get('stages', []):
+            for app_data in stage_data.get('application', []):
+                if app_data.get('application', None) not in app_ids:
+                    raise serializers.ValidationError(
+                        {
+                            'stages': ProcessMsg.SOME_APPLICATION_NOT_SUPPORT
+                        }
+                    )
+        for app_data in validated_data.get('global_app', []):
+            if app_data.get('application', None) not in app_ids:
+                raise serializers.ValidationError(
+                    {
+                        'stages': ProcessMsg.SOME_APPLICATION_NOT_SUPPORT
+                    }
+                )
         return validated_data
 
     class Meta:
         model = ProcessConfiguration
-        fields = ('title', 'remark', 'apply_start', 'apply_finish', 'is_active', 'for_opp', 'stages')
+        fields = ('title', 'remark', 'apply_start', 'apply_finish', 'is_active', 'for_opp', 'stages', 'global_app',)
 
 
 class ProcessConfigUpdateSerializer(serializers.ModelSerializer):
-    stages = serializers.JSONField()
+    stages = serializers.ListSerializer(
+        child=ProcessStagesSerializer()
+    )
+
+    global_app = serializers.ListSerializer(
+        child=StagesApplicationSerializer(), min_length=0, max_length=20
+    )
+
+    @classmethod
+    def validate_stages(cls, attrs):
+        if attrs and isinstance(attrs, list):
+            if len(attrs) >= 3:
+                return attrs
+        raise serializers.ValidationError(
+            {
+                'stages': ProcessMsg.PROCESS_STAGES_REQUIRED
+            }
+        )
+
+    @classmethod
+    def validate_global_app(cls, attrs):
+        if attrs and isinstance(attrs, list):
+            app_ids = [item['application'] for item in attrs]
+            if len(app_ids) == len(set(app_ids)):
+                return attrs
+            raise serializers.ValidationError(
+                {
+                    'global_app': ProcessMsg.GLOBAL_APPLICATION_DUPLICATE
+                }
+            )
+        return []
+
+    def validate(self, validated_data):
+        apply_start = validated_data.get('apply_start', self.instance.apply_start)
+        apply_finish = validated_data.get('apply_finish', self.instance.apply_finish)
+        if apply_start and apply_finish:
+            if apply_finish > apply_start:
+                return validated_data
+            raise serializers.ValidationError(
+                {
+                    'apply_finish': ProcessMsg.FINISH_MUST_LARGE_START
+                }
+            )
+
+        for_opp = validated_data.get('for_opp', self.instance.for_opp)
+        app_ids = ProcessConfigCreateSerializer.get_application_for_process(for_opp=for_opp)
+        for stage_data in validated_data.get('stages', self.instance.stages):
+            for app_data in stage_data.get('application', []):
+                if app_data.get('application', None) not in app_ids:
+                    raise serializers.ValidationError(
+                        {
+                            'stages': ProcessMsg.SOME_APPLICATION_NOT_SUPPORT
+                        }
+                    )
+        for app_data in validated_data.get('global_app', self.instance.global_app):
+            if app_data.get('application', None) not in app_ids:
+                raise serializers.ValidationError(
+                    {
+                        'stages': ProcessMsg.SOME_APPLICATION_NOT_SUPPORT
+                    }
+                )
+        return validated_data
 
     class Meta:
         model = ProcessConfiguration
-        fields = ('title', 'remark', 'apply_start', 'apply_finish', 'is_active', 'for_opp', 'stages')
+        fields = ('title', 'remark', 'apply_start', 'apply_finish', 'is_active', 'for_opp', 'stages', 'global_app',)
 
 
 class ProcessRuntimeListSerializer(serializers.ModelSerializer):
@@ -178,12 +295,23 @@ class ProcessRuntimeListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    opp = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_opp(cls, obj):
+        if obj.opp:
+            return {
+                'id': obj.opp.id,
+                'title': obj.opp.title
+            }
+        return {}
+
     class Meta:
         model = Process
         fields = (
             'id', 'title', 'remark', 'config',
             'was_done', 'date_done', 'employee_created',
-            'stage_current', 'amount_stages',
+            'stage_current', 'amount_stages', 'opp',
             'date_created',
         )
 
@@ -248,6 +376,27 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
             } for obj_stage in ProcessStage.objects.filter(process=obj).order_by('order_number')
         ]
 
+    global_app = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_global_app(cls, obj):
+        return [
+            {
+                'id': obj_app.id,
+                'title': obj_app.title,
+                'remark': obj_app.remark,
+                'application': obj_app.application_id,
+                'app_label': obj_app.application.app_label,
+                'mode_code': obj_app.application.model_code,
+                'amount': obj_app.amount,
+                'min': obj_app.min,
+                'max': obj_app.max,
+                'was_done': obj_app.was_done,
+                'amount_approved': obj_app.amount_approved,
+            } for obj_app in
+            ProcessStageApplication.objects.filter(process=obj, stage__isnull=True).order_by('order_number')
+        ]
+
     stage_current = serializers.SerializerMethodField()
 
     @classmethod
@@ -270,7 +419,7 @@ class ProcessRuntimeDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Process
-        fields = ('id', 'title', 'remark', 'config', 'stage_current', 'stages', 'opp')
+        fields = ('id', 'title', 'remark', 'config', 'stage_current', 'stages', 'global_app', 'opp')
 
 
 class ProcessRuntimeCreateSerializer(serializers.ModelSerializer):
@@ -328,6 +477,48 @@ class ProcessDocListSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'date_created', 'employee_created', 'system_status', 'date_status')
 
 
+class ProcessStageApplicationListSerializer(serializers.ModelSerializer):
+    application = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_application(cls, obj):
+        if obj.application:
+            return {
+                'id': obj.application.id,
+                'title': obj.application.title,
+                'title_i18n': trans(obj.application.title),
+            }
+        return {}
+
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'opp_id': obj.process.opp_id,
+            }
+        return {}
+
+    opp = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_opp(cls, obj):
+        if obj.process and obj.process.opp:
+            return {
+                'id': obj.process.opp_id,
+                'title': obj.process.opp.title,
+                'code': obj.process.opp.code,
+            }
+        return None
+
+    class Meta:
+        model = ProcessStageApplication
+        fields = ('id', 'title', 'application', 'process', 'opp')
+
+
 class ProcessStageApplicationDetailSerializer(serializers.ModelSerializer):
     doc_list = serializers.SerializerMethodField()
 
@@ -357,3 +548,112 @@ class ProcessStageApplicationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessStageApplication
         fields = ('was_done',)
+
+
+class ProcessRuntimeDataMatchFromStageSerializer(serializers.ModelSerializer):
+    # 'opp': {
+    #                         'id': obj_app.process.opp_id,
+    #                         'title': obj_app.process.opp.title,
+    #                         'code': obj_app.process.opp.code,
+    #                     } if obj_app.process and obj_app.process.opp else {},
+    #                     'process': {
+    #                         'id': obj_app.process.id,
+    #                         'title': obj_app.process.title,
+    #                         'remark': obj_app.process.remark,
+    #                     },
+    #                     'process_stage_app': {
+    #                         'id': obj_app.id,
+    #                         'title': obj_app.title,
+    #                         'remark': obj_app.remark,
+    #                         'application': {
+    #                             'id': obj_app.application.id,
+    #                             'title': obj_app.application.title,
+    #                             'title_i18n': trans(obj_app.application.title),
+    #                         },
+    #                     } if obj_app else {},
+    opp = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_opp(cls, obj):
+        if obj.process:
+            if obj.process.opp:
+                return {
+                    'id': obj.process.opp_id,
+                    'title': obj.process.opp.title,
+                    'code': obj.process.opp.code
+                }
+        return {}
+
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process_id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    process_stage_app = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj:
+            return {
+                'id': obj.id,
+                'title': obj.title,
+                'remark': obj.remark,
+            }
+        return {}
+
+    class Meta:
+        model = ProcessStageApplication
+        fields = ('opp', 'process', 'process_stage_app')
+
+
+class ProcessRuntimeDataMatchFromProcessSerializer(serializers.ModelSerializer):
+    opp = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_opp(cls, obj):
+        if obj.opp_id:
+            return {
+                'id': obj.opp_id,
+                'title': obj.opp.title,
+                'code': obj.opp.code
+            }
+        return {}
+
+    process = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj:
+            return {
+                'id': obj.id,
+                'title': obj.title,
+                'remark': obj.remark,
+            }
+        return {}
+
+    process_stage_app = serializers.SerializerMethodField()
+
+    def get_process_stage_app(self, obj):
+        app_id = self.context.get('app_id', None)
+        if app_id:
+            obj_app = ProcessStageApplication.objects.filter(process=obj, application_id=app_id).first()
+        else:
+            obj_app = ProcessStageApplication.objects.filter(process=obj).first()
+        if obj_app:
+            return {
+                'id': obj_app.id,
+                'title': obj_app.title,
+                'remark': obj_app.remark,
+            }
+        return {}
+
+    class Meta:
+        model = Process
+        fields = ('opp', 'process', 'process_stage_app')

@@ -64,10 +64,21 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     advance_payment_id = serializers.UUIDField()
     returned_list = serializers.ListField(required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=ReturnAdvance.get_app_id(),
+        ) if attrs else None
 
     class Meta:
         model = ReturnAdvance
         fields = (
+            # process
+            'process',
+            'process_stage_app',
+            #
             'title',
             'advance_payment_id',
             'method',
@@ -89,10 +100,11 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
         ReturnAdvanceCommonFunction.validate_returned_list(validate_data)
 
         process_obj = advance_payment_obj.process
+        process_stage_app_obj = advance_payment_obj.process_stage_app
+        opportunity_id = advance_payment_obj.opportunity_id
         if process_obj:
-            app_id = ReturnAdvance.get_app_id()
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=advance_payment_obj.opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
 
         return validate_data
 
@@ -104,6 +116,7 @@ class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
 
         if return_advance_obj.process:
             ProcessRuntimeControl(process_obj=return_advance_obj.process).register_doc(
+                process_stage_app_obj=return_advance_obj.process_stage_app,
                 app_id=ReturnAdvance.get_app_id(),
                 doc_id=return_advance_obj.id,
                 doc_title=return_advance_obj.title,
@@ -120,6 +133,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -137,6 +151,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'returned_list',
             'return_total',
             'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -146,6 +161,16 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'title': obj.process.title,
             'remark': obj.process.remark,
         } if obj.process else {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
 
     @classmethod
     def get_advance_payment(cls, obj):

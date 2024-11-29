@@ -66,6 +66,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'system_status',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -161,6 +162,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -487,6 +489,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'payment_value_by_words',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -630,6 +633,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'payment_value_by_words',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -723,6 +727,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -781,6 +786,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -855,6 +861,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )

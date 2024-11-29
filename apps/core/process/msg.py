@@ -22,6 +22,9 @@ class ProcessMsg:
 
     PROCESS_STAGES_REQUIRED = _("Process requires at least 1 stage (except system stage)")
     APPLICATION_LEASE_ONE = _("Stages requires at least 1 application")
+    APPLICATION_DUPLICATE_IN_STAGES = _("Applications cannot be duplicated within a stages")
+    GLOBAL_APPLICATION_DUPLICATE = _("Global applications cannot be duplicated")
+    SOME_APPLICATION_NOT_SUPPORT = _("Some application does not support")
     APPLICATION_NOT_FOUND = _("Application is not found")
     MIN_MAX_INCORRECT = _("Min or Max value is incorrect")
     MAX_MUST_LARGE_MIN = _("The maximum value must be equal or greater than the minimum value")
@@ -32,3 +35,5 @@ class ProcessMsg:
     PROCESS_ONLY_OPP = _("The process only supports opportunities")
     PROCESS_NOT_START = _("The process will start on {start_date} (day/month/year , hour:minutes:second)")
     PROCESS_FINISHED = _("The process ended on {end_date} (day/month/year , hour:minutes:second)")
+
+    PROCESS_STAGE_APP_NOT_FOUND = _("This application was not found in the progress stage")

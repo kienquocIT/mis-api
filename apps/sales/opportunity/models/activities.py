@@ -64,6 +64,11 @@ class OpportunityEmail(MasterDataAbstractModel):
         help_text='The process claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
+    process_stage_app = models.ForeignKey(
+        'process.ProcessStageApplication', null=True, on_delete=models.SET_NULL,
+        help_text='The process stage app claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
+    )
     subject = models.CharField(max_length=250)
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)

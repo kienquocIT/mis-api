@@ -304,11 +304,19 @@ class ProductWareHouseLot(MasterDataAbstractModel):
                 }
             )
             if _created is False:  # created before => update
-                if type_transaction == 0:
+                if type_transaction == 0:  # Goods receipt
                     obj.quantity_import += lot.get('quantity_import', 0)
-                    obj.save(update_fields=['quantity_import'])
-                if type_transaction == 1:
-                    obj.quantity_import -= lot.get('quantity_import', 0)
+                if type_transaction == 1:  # Delivery
+                    if obj.quantity_import > 0:
+                        fn_quantity = 0
+                        calc = obj.quantity_import - lot.get('quantity_import', 0)
+                        if calc >= 0:
+                            fn_quantity = lot.get('quantity_import', 0)
+                        if calc < 0:
+                            fn_quantity = lot.get('quantity_import', 0) + calc
+                        obj.quantity_import -= fn_quantity
+                # save
+                if obj.quantity_import >= 0:
                     obj.save(update_fields=['quantity_import'])
             # create ProductWareHouseLotTransaction
             if type_transaction == 0:
