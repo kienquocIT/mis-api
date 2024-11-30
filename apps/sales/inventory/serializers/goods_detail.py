@@ -1,11 +1,8 @@
-from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, Product, WareHouse
 from apps.sales.inventory.models import (
     GoodsReceipt,
-    GoodsReceiptWarehouse,
     GReItemProductWarehouseSerial,
-    GReItemProductWarehouse,
     NoneGReItemProductWarehouse,
     NoneGReItemProductWarehouseSerial, GoodsDetail
 )
