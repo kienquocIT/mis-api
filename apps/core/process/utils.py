@@ -8,7 +8,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
 from apps.core.process.models import (
     Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration,
@@ -20,7 +20,7 @@ from apps.shared import TypeCheck, DisperseModel
 logger = logging.getLogger(__name__)
 
 
-class ProcessRuntimeControl:
+class ProcessRuntimeControl:  # pylint: disable=R0904
     @classmethod
     def approved_amount(cls, stage_app_obj: ProcessStageApplication):
         return ProcessDoc.objects.filter(
@@ -173,6 +173,24 @@ class ProcessRuntimeControl:
             }
         )
 
+    @classmethod
+    def check_permit_process(
+            cls, process_obj: Process, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if process_obj and employee_id:
+            if ProcessMembers.objects.filter(process=process_obj, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
+    @classmethod
+    def check_permit_process_app(
+            cls, stage_app: ProcessStageApplication, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if stage_app and isinstance(stage_app, ProcessStageApplication) and employee_id:
+            if ProcessMembers.objects.filter(process=stage_app.process, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
     def __init__(self, process_obj: Process, key_raise_error: str = 'process'):
         self.key_raise_error: str = key_raise_error
         self.process_obj: Process = process_obj
@@ -197,8 +215,13 @@ class ProcessRuntimeControl:
     def validate_process(
             self,
             process_stage_app_obj: ProcessStageApplication,
+            employee_id: UUID or str = None,
             opp_id: UUID or str = None,
     ) -> bool or serializers.ValidationError:
+        # permit for employee in process if fill value into employee_created_id
+        if employee_id:
+            self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_id)
+
         # for add new
         if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
             # check stage app match with process
@@ -214,14 +237,19 @@ class ProcessRuntimeControl:
             raise serializers.ValidationError({self.key_raise_error: ProcessMsg.DOCUMENT_QUALITY_IS_FULL})
         raise serializers.ValidationError({self.key_raise_error: ProcessMsg.APPLICATION_NOT_SUPPORT})
 
-    def play_process(self) -> Process:
+    def add_members(self, employee_created_id: UUID = None):
         if self.process_obj.employee_created_id:
             ProcessMembers.objects.create(
                 tenant=self.process_obj.tenant,
                 company=self.process_obj.company,
                 process=self.process_obj,
                 employee=self.process_obj.employee_created,
+                employee_created_id=employee_created_id,
             )
+        return True
+
+    def play_process(self) -> Process:
+        self.add_members()
 
         for idx, stage_config in enumerate(self.process_obj.stages):
             is_system = stage_config.get('is_system', False)
@@ -280,6 +308,10 @@ class ProcessRuntimeControl:
             date_created: datetime,
     ):
         if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
+            try:
+                self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_created_id)
+            except exceptions.PermissionDenied:
+                return False
             if str(process_stage_app_obj.application_id) == str(app_id):
                 if process_stage_app_obj and self.check_application_state_add_new(process_stage_app_obj):
                     ProcessDoc.objects.create(
@@ -395,7 +427,7 @@ class ProcessRuntimeControl:
         raise ValueError('Model Doc not found: ' + doc_id + ' - ' + app_id)
 
     @classmethod
-    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None, skip_check_state = False):
+    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None, skip_check_state=False):
         """
         Sync system_status of doc to ProcessDoc
         Args:
