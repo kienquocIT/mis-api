@@ -59,18 +59,15 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         warehouse_id = self.initial_data.get('warehouse_id')
         goods_receipt_id = self.initial_data.get('goods_receipt_id')
         purchase_request_id = self.initial_data.get('purchase_request_id')
-        if product_id:
-            validate_data['product_obj'] = Product.objects.filter(id=product_id).first()
-        else:
+        if not product_id:
             raise serializers.ValidationError({'product_obj': "Product does not found."})
-        if warehouse_id:
-            validate_data['warehouse_obj'] = WareHouse.objects.filter(id=warehouse_id).first()
-        else:
+        validate_data['product_obj'] = Product.objects.filter(id=product_id).first()
+        if not warehouse_id:
             raise serializers.ValidationError({'warehouse_obj': "Warehouse does not found."})
-        if goods_receipt_id:
-            validate_data['goods_receipt_obj'] = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
-        else:
+        validate_data['warehouse_obj'] = WareHouse.objects.filter(id=warehouse_id).first()
+        if not goods_receipt_id:
             raise serializers.ValidationError({'goods_receipt_obj': "Goods Receipt does not found."})
+        validate_data['goods_receipt_obj'] = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
         if purchase_request_id:
             validate_data['purchase_request_obj'] = PurchaseRequest.objects.filter(id=purchase_request_id).first()
         else:
@@ -280,18 +277,15 @@ class GoodsDetailCreateSerializerImportDB(GoodsDetailDataCreateSerializer):
             warehouse_id = initial_data.get('warehouse_id')
             goods_receipt_id = initial_data.get('goods_receipt_id')
             purchase_request_id = initial_data.get('purchase_request_id')
-            if product_id:
-                validate_data['product_obj'] = Product.objects.filter(id=product_id).first()
-            else:
+            if not product_id:
                 raise serializers.ValidationError({'product_obj': "Product does not found."})
-            if warehouse_id:
-                validate_data['warehouse_obj'] = WareHouse.objects.filter(id=warehouse_id).first()
-            else:
+            validate_data['product_obj'] = Product.objects.filter(id=product_id).first()
+            if not warehouse_id:
                 raise serializers.ValidationError({'warehouse_obj': "Warehouse does not found."})
-            if goods_receipt_id:
-                validate_data['goods_receipt_obj'] = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
-            else:
+            validate_data['warehouse_obj'] = WareHouse.objects.filter(id=warehouse_id).first()
+            if not goods_receipt_id:
                 raise serializers.ValidationError({'goods_receipt_obj': "Goods Receipt does not found."})
+            validate_data['goods_receipt_obj'] = GoodsReceipt.objects.filter(id=goods_receipt_id).first()
             if purchase_request_id:
                 validate_data['purchase_request_obj'] = PurchaseRequest.objects.filter(id=purchase_request_id).first()
             else:

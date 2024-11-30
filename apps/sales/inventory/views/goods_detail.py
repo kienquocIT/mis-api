@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
-from apps.sales.inventory.models import GoodsReceipt, GoodsDetail
+from apps.sales.inventory.models import GoodsDetail
 from apps.sales.inventory.serializers.goods_detail import (
     GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer,
     GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB, GoodsDetailSerialDataSerializer
