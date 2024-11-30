@@ -50,7 +50,8 @@ from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
-    GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment
+    GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
+from ..sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
 from ..sales.lead.models import LeadHint, LeadStage
 from ..sales.opportunity.models import (
@@ -2676,3 +2677,20 @@ def create_data_for_GR_WH_PRD():
             }
             item.save(update_fields=['purchase_request_data'])
     print('Done :_)')
+
+
+def create_data_for_GoodsReceiptLot():
+    for item in GoodsReceiptLot.objects.all():
+        lot_obj = ProductWareHouseLot.objects.filter(
+            lot_number=item.lot_number,
+            product_warehouse__product=item.goods_receipt_warehouse.goods_receipt_product.product
+        ).first()
+        item.lot = lot_obj
+        item.save(update_fields=['lot'])
+    print('Done :))')
+
+
+def create_goods_detail_data():
+    for goods_receipt_obj in GoodsReceipt.objects.all():
+        GoodsDetail.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
+    print('Done :))')

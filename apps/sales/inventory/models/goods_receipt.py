@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
+from apps.sales.inventory.models import GoodsDetail
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
@@ -341,6 +342,7 @@ class GoodsReceipt(DataAbstractModel):
                     GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
             self.prepare_data_for_logging(self)
+            GoodsDetail.push_goods_receipt_data_to_goods_detail(self)
 
         if self.system_status in [4]:  # cancel
             GRFinishHandler.push_product_info(instance=self)
