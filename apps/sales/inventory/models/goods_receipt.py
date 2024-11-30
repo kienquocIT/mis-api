@@ -2,7 +2,7 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
-from apps.sales.inventory.models import GoodsDetail
+from apps.sales.inventory.models.goods_detail import GoodsDetail
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
