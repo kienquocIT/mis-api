@@ -136,6 +136,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         ).first()
         if not goods_detail_obj:
             raise serializers.ValidationError({'goods_detail_obj': "Can not find Goods detail object."})
+        if goods_detail_obj.status:
+            raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
         validate_data['goods_detail_obj'] = goods_detail_obj
         return validate_data
 
@@ -363,6 +365,8 @@ class GoodsDetailCreateSerializerImportDB(GoodsDetailDataCreateSerializer):
             ).first()
             if not goods_detail_obj:
                 raise serializers.ValidationError({'goods_detail_obj': "Can not find Goods detail object."})
+            if goods_detail_obj.status:
+                raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
             validate_data['goods_detail_obj'] = goods_detail_obj
             return validate_data
         raise serializers.ValidationError({'validate_data': "Import data is invalid."})
