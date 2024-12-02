@@ -12,7 +12,7 @@ from rest_framework import serializers, exceptions
 
 from apps.core.process.models import (
     Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration,
-    ProcessMembers,
+    ProcessMembers, ProcessActivity,
 )
 from apps.core.process.msg import ProcessMsg
 from apps.shared import TypeCheck, DisperseModel
@@ -295,6 +295,11 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                 order_number=index + 1,
             )
         self.process_obj.save(update_fields=['stage_current'])
+        self.log(
+            title='Init process',
+            code='INIT_PROCESS',
+            employee_created_id=self.process_obj.employee_created_id,
+        )
         self.check_stages_current()
         return self.process_obj
 
@@ -314,7 +319,7 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                 return False
             if str(process_stage_app_obj.application_id) == str(app_id):
                 if process_stage_app_obj and self.check_application_state_add_new(process_stage_app_obj):
-                    ProcessDoc.objects.create(
+                    process_doc_obj = ProcessDoc.objects.create(
                         tenant=self.process_obj.tenant,
                         company=self.process_obj.company,
                         process=self.process_obj,
@@ -325,6 +330,13 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                         date_created=date_created,
                     )
                     process_stage_app_obj.amount_count(commit=True)
+                    self.log(
+                        title='Register documents',
+                        code='REGISTER_DOCUMENT',
+                        stage=process_stage_app_obj.stage,
+                        doc=process_doc_obj,
+                        employee_created_id=employee_created_id,
+                    )
                     if process_stage_app_obj.application.is_workflow is False:
                         # auto finish when not apply workflow
                         self.update_status_of_doc(
@@ -332,6 +344,13 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                             doc_id=doc_id,
                             date_now=timezone.now(),
                             status=3
+                        )
+                        self.log(
+                            title='Auto approved',
+                            code='AUTO_APPROVED',
+                            stage=process_stage_app_obj.stage,
+                            doc=process_doc_obj,
+                            employee_created_id=employee_created_id,
                         )
                     self.check_stages_current(from_stages_app=process_stage_app_obj)
                     return process_stage_app_obj
@@ -346,6 +365,13 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
         self.process_obj.date_done = timezone.now()
         self.process_obj.stage_current = None
         self.process_obj.save(update_fields=['was_done', 'date_done', 'stage_current'])
+
+        self.log(
+            title='Finish process',
+            code='FINISH_STAGES',
+            employee_created_id=self.process_obj.employee_created_id,
+        )
+
         return True
 
     def next_stage_current(self):
@@ -357,6 +383,12 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
             return None
         self.process_obj.stage_current = next_stages
         self.process_obj.save(update_fields=['stage_current'])
+        self.log(
+            title='Entering new stages',
+            code='NEXT_STAGES',
+            stage=next_stages,
+            employee_created_id=self.process_obj.employee_created_id,
+        )
         return self.check_stages_current()
 
     def check_stages_current(self, from_stages_app: ProcessStageApplication = None):
@@ -431,6 +463,7 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
         """
         Sync system_status of doc to ProcessDoc
         Args:
+            skip_check_state:
             date_now:
             app_id:
             doc_id:
@@ -473,3 +506,16 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                 )
             return True
         return False
+
+    def log(self, title, code=None,employee_created_id=None, **kwargs):
+        if isinstance(self.process_obj, Process):
+            return ProcessActivity.objects.create(
+                tenant=self.process_obj.tenant,
+                company=self.process_obj.company,
+                process=self.process_obj,
+                title=title,
+                code=code,
+                employee_created_id=employee_created_id,
+                **kwargs
+            )
+        return None
