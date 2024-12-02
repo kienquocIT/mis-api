@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.process.models import ProcessConfiguration, Process, ProcessStage
-from apps.core.process.models.runtime import ProcessStageApplication, ProcessDoc, ProcessMembers
+from apps.core.process.models.runtime import ProcessStageApplication, ProcessDoc, ProcessMembers, ProcessActivity
 from apps.core.process.msg import ProcessMsg
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import TypeCheck, HrMsg
@@ -545,7 +545,15 @@ class ProcessStageApplicationUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        ProcessRuntimeControl(process_obj=instance.process).check_stages_current(from_stages_app=instance)
+        runtime_cls = ProcessRuntimeControl(process_obj=instance.process)
+        runtime_cls.log(
+            title='Confirmation of completion of application',
+            code='STAGE_APP_COMPLETE',
+            stage=instance.stage,
+            app=instance,
+            employee_created_id=instance.employee_modified_id,
+        )
+        runtime_cls.check_stages_current(from_stages_app=instance)
         return instance
 
     class Meta:
@@ -724,3 +732,57 @@ class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessMembers
         fields = ('employees', 'process')
+
+
+class ProcessRuntimeLogList(serializers.ModelSerializer):
+    title_i18n = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.title)
+
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        if obj.employee_created:
+            return obj.employee_created.get_detail_minimal()
+        return {}
+
+    stage = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.stage:
+            return {
+                'id': obj.stage.id,
+                'title': obj.stage.title,
+                'remark': obj.stage.remark,
+            }
+        return {}
+
+    app = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_app(cls, obj):
+        if obj.app:
+            return {
+                'id': obj.app.id,
+                'title': obj.app.title,
+            }
+        return {}
+
+    doc = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_doc(cls, obj):
+        if obj.doc:
+            return {
+                'id': obj.doc.doc_id,
+                'title': obj.doc.title,
+            }
+        return {}
+
+    class Meta:
+        model = ProcessActivity
+        fields = ('title', 'title_i18n', 'code', 'employee_created', 'stage', 'app', 'doc', 'date_created')

@@ -4,6 +4,7 @@ from apps.core.process.views import (
     ProcessConfigList, ProcessConfigDetail, ProcessConfigReadyList,
     ProcessRuntimeOfMeList, ProcessRuntimeList, ProcessRuntimeDetail, ProcessRuntimeStagesAppControl,
     ProcessStagesAppsOfMeList, ProcessRuntimeDataMatch, ProcessRuntimeMembers, ProcessRuntimeMemberDetail,
+    ProcessRuntimeLog,
 )
 
 urlpatterns = [
@@ -23,4 +24,6 @@ urlpatterns = [
         name='ProcessRuntimeStagesAppComplete'
     ),
     path('runtime/member/<str:pk>', ProcessRuntimeMemberDetail.as_view(), name='ProcessRuntimeMemberDetail'),
+
+    path('runtime/detail/<str:process_id>/log', ProcessRuntimeLog.as_view(), name='ProcessRuntimeLog'),
 ]
