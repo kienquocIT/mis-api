@@ -1,3 +1,4 @@
+from django.utils.datetime_safe import datetime
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.distributionplan.models import DistributionPlan
@@ -31,6 +32,10 @@ class DistributionPlanList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
+        if 'filter_expired' in self.request.query_params:
+            return super().get_queryset().filter(
+                end_date__gte=datetime.now().date()
+            ).prefetch_related().select_related()
         return super().get_queryset().prefetch_related().select_related()
 
     @swagger_auto_schema(
