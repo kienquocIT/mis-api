@@ -48,6 +48,6 @@ class GoodsDetail(DataAbstractModel):
     class Meta:
         verbose_name = 'Goods Detail'
         verbose_name_plural = 'Goods Detail'
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

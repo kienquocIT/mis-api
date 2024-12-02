@@ -110,10 +110,7 @@ class PurchaseRequest(DataAbstractModel):
             for pr_product in instance.purchase_request.all():
                 request_quantity += pr_product.quantity
             instance.distribution_plan.purchase_request_number += request_quantity
-            instance.distribution_plan.is_create_purchase_request = (
-                    instance.distribution_plan.purchase_request_number == instance.distribution_plan.expected_number
-            )
-            instance.distribution_plan.save(update_fields=['purchase_request_number', 'is_create_purchase_request'])
+            instance.distribution_plan.save(update_fields=['purchase_request_number'])
         return True
 
     def save(self, *args, **kwargs):

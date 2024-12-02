@@ -132,6 +132,7 @@ class ProcessDoc(MasterDataAbstractModel):
 class ProcessActivity(MasterDataAbstractModel):
     process = models.ForeignKey('process.Process', on_delete=models.CASCADE)
     stage = models.ForeignKey('process.ProcessStage', null=True, on_delete=models.SET_NULL)
+    app = models.ForeignKey('process.ProcessStageApplication', null=True, on_delete=models.SET_NULL)
     doc = models.ForeignKey('process.ProcessDoc', null=True, on_delete=models.SET_NULL)
 
     class Meta:

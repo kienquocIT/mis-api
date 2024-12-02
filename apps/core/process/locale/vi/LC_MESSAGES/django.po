@@ -108,3 +108,27 @@ msgstr "Một số ứng dụng không hỗ trợ"
 #
 msgid "This application was not found in the progress stage"
 msgstr "Không tìm thấy ứng dụng này trong giai đoạn tiến trình"
+
+#
+msgid "Init process"
+msgstr "Khởi tạo tiến trình"
+
+#
+msgid "Register documents"
+msgstr "Đăng ký tài liệu"
+
+#
+msgid "Auto approved"
+msgstr "Tự động phê duyệt"
+
+#
+msgid "Finish process"
+msgstr "Kết thúc tiến trình"
+
+#
+msgid "Entering new stages"
+msgstr "Bước vào giai đoạn mới"
+
+#
+msgid "Confirmation of completion of application"
+msgstr "Xác nhận hoàn thành ứng dụng"
