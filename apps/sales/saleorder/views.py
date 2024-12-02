@@ -269,7 +269,7 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     queryset = SaleOrder.objects
     serializer_list = SaleOrderPurchasingStaffListSerializer
     filterset_fields = {
-        'employee_inherit': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
         'system_status': ['exact', 'in'],
         'opportunity__is_deal_close': ['exact'],
     }
