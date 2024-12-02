@@ -2691,6 +2691,6 @@ def create_data_for_GoodsReceiptLot():
 
 
 def create_goods_detail_data():
-    for goods_receipt_obj in GoodsReceipt.objects.all():
-        GoodsDetail.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
+    for goods_receipt_obj in GoodsReceipt.objects.filter(system_status=3):
+        GoodsReceipt.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
     print('Done :))')
