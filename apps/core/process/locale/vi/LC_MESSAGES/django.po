@@ -128,3 +128,7 @@ msgstr "Kết thúc tiến trình"
 #
 msgid "Entering new stages"
 msgstr "Bước vào giai đoạn mới"
+
+#
+msgid "Confirmation of completion of application"
+msgstr "Xác nhận hoàn thành ứng dụng"

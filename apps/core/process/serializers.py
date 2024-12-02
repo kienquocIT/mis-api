@@ -545,7 +545,15 @@ class ProcessStageApplicationUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        ProcessRuntimeControl(process_obj=instance.process).check_stages_current(from_stages_app=instance)
+        runtime_cls = ProcessRuntimeControl(process_obj=instance.process)
+        runtime_cls.log(
+            title='Confirmation of completion of application',
+            code='STAGE_APP_COMPLETE',
+            stage=instance.stage,
+            app=instance,
+            employee_created_id=instance.employee_modified_id,
+        )
+        runtime_cls.check_stages_current(from_stages_app=instance)
         return instance
 
     class Meta:
@@ -753,6 +761,17 @@ class ProcessRuntimeLogList(serializers.ModelSerializer):
             }
         return {}
 
+    app = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_app(cls, obj):
+        if obj.app:
+            return {
+                'id': obj.app.id,
+                'title': obj.app.title,
+            }
+        return {}
+
     doc = serializers.SerializerMethodField()
 
     @classmethod
@@ -766,4 +785,4 @@ class ProcessRuntimeLogList(serializers.ModelSerializer):
 
     class Meta:
         model = ProcessActivity
-        fields = ('title', 'title_i18n', 'code', 'employee_created', 'stage', 'doc', 'date_created')
+        fields = ('title', 'title_i18n', 'code', 'employee_created', 'stage', 'app', 'doc', 'date_created')

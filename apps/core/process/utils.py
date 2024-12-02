@@ -334,6 +334,7 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                         title='Register documents',
                         code='REGISTER_DOCUMENT',
                         stage=process_stage_app_obj.stage,
+                        app=process_stage_app_obj,
                         doc=process_doc_obj,
                         employee_created_id=employee_created_id,
                     )
@@ -349,6 +350,7 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                             title='Auto approved',
                             code='AUTO_APPROVED',
                             stage=process_stage_app_obj.stage,
+                            app=process_stage_app_obj,
                             doc=process_doc_obj,
                             employee_created_id=employee_created_id,
                         )
