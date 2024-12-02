@@ -150,6 +150,7 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',
