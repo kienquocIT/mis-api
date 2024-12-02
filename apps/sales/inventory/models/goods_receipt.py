@@ -398,7 +398,8 @@ class GoodsReceipt(DataAbstractModel):
                     tenant=goods_receipt_obj.tenant,
                     company=goods_receipt_obj.company,
                     employee_inherit=goods_receipt_obj.employee_inherit,
-                    employee_created=goods_receipt_obj.employee_created
+                    employee_created=goods_receipt_obj.employee_created,
+                    date_created=goods_receipt_obj.date_approved
                 )
         print('Done')
         return True

@@ -73,6 +73,7 @@ class PurchaseRequestMsg:
     PURCHASE_REQUEST_NOT_EXIST = _('Purchase request does not exist')
     PURCHASE_REQUEST_IS_ARRAY = _('Purchase request must be array')
     EMPLOYEE_DOES_NOT_EXIST = _('Employee does not exist')
+    EXPIRED_DB = _('Expired Distribution plan')
 
 
 class PurchasingMsg:

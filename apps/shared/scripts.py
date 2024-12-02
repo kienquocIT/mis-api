@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from apps.masterdata.saledata.models.periods import Periods
@@ -48,6 +48,7 @@ from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
+from ..sales.distributionplan.models import DistributionPlan
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
@@ -2691,6 +2692,21 @@ def create_data_for_GoodsReceiptLot():
 
 
 def create_goods_detail_data():
-    for goods_receipt_obj in GoodsReceipt.objects.all():
-        GoodsDetail.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
+    for goods_receipt_obj in GoodsReceipt.objects.filter(system_status=3):
+        GoodsReceipt.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
+    print('Done :))')
+
+
+def update_distribution_plan_end_date():
+    def find_end_date(start_date, n):
+        date = start_date + relativedelta(months=n)
+        if date.day < start_date.day:
+            date -= timedelta(days=date.day)
+        return date
+
+    for obj in DistributionPlan.objects.all():
+        obj.end_date = find_end_date(obj.start_date, obj.no_of_month)
+        obj.save(update_fields=['end_date'])
+        print(f'Finish {obj.code}')
+
     print('Done :))')

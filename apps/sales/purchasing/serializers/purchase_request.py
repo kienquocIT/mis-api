@@ -1,3 +1,4 @@
+from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -379,11 +380,14 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
     def validate_distribution_plan(cls, value):
         if value:
             try:
-                return DistributionPlan.objects.get_current(
+                distribution_plan_obj = DistributionPlan.objects.get_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=value
                 )
+                if distribution_plan_obj.end_date > datetime.now().date():
+                    raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.EXPIRED_DB})
+                return distribution_plan_obj
             except DistributionPlan.DoesNotExist:
                 raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.DOES_NOT_EXIST})
         return None
@@ -512,11 +516,14 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
     def validate_distribution_plan(cls, value):
         if value:
             try:
-                return DistributionPlan.objects.get_current(
+                distribution_plan_obj = DistributionPlan.objects.get_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=value
                 )
+                if distribution_plan_obj.end_date > datetime.now().date():
+                    raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.EXPIRED_DB})
+                return distribution_plan_obj
             except DistributionPlan.DoesNotExist:
                 raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.DOES_NOT_EXIST})
         return None

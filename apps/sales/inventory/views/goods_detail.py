@@ -11,6 +11,20 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
 class GoodsDetailList(BaseListMixin):
     queryset = GoodsDetail.objects
+    search_fields = [
+        'product__code',
+        'product__title',
+        'warehouse__code',
+        'warehouse__title',
+        'goods_receipt__code',
+        'goods_receipt__title',
+        'purchase_request__code',
+        'purchase_request__title',
+        'lot__lot_number',
+        'date_created',
+        'employee_inherit__first_name',
+        'employee_inherit__last_name',
+    ]
     serializer_list = GoodsDetailListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
