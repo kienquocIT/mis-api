@@ -391,6 +391,13 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
 
 
     def validate(self, validate_data):
+        # Xử lý lấy nhân viên đang tạo để kiểm tra quyền trên Process
+        employee_obj = validate_data.get('employee_inherit', None)
+        if not employee_obj:
+            raise serializers.ValidationError({
+                'detail': 'Need employee information to check permission to create progress ticket'
+            })
+
         if validate_data.get('opportunity'):
             validate_data['customer'] = validate_data.get('opportunity').customer
         bid_bond_value = validate_data.get('bid_bond_value', None)
@@ -406,9 +413,10 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
         opportunity_id = validate_data.get('opportunity_id', None)
         if process_obj:
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
-                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+                process_stage_app_obj=process_stage_app_obj,
+                employee_id=employee_obj.id,
+                opp_id=opportunity_id,
             )
-
         return validate_data
 
     @decorator_run_workflow
