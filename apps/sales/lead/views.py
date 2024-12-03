@@ -17,6 +17,8 @@ __all__ = [
     'LeadListForOpportunity'
 ]
 
+from apps.shared.extends.exceptions import handle_exception_all_view
+
 
 class LeadList(BaseListMixin, BaseCreateMixin):
     queryset = Lead.objects
@@ -28,7 +30,8 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return self.get_queryset_custom_direct_page()
+        main_queryset = super().get_queryset().select_related('current_lead_stage').prefetch_related()
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Lead list",
@@ -39,9 +42,13 @@ class LeadList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        LeadChartInformation.create_update_chart_information(
-            self.request.user.tenant_current_id, self.request.user.company_current_id
-        )
+        try:
+            LeadChartInformation.create_update_chart_information(
+                self.request.user.tenant_current_id,
+                self.request.user.company_current_id
+            )
+        except Exception as err:
+            handle_exception_all_view(err, self)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -67,45 +74,17 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
-
-    def convert_contact(self):
-        # convert to a new contact
-        lead = Lead.objects.filter(pk=self.kwargs['pk'], system_status=3).first()
-        lead_configs = lead.lead_configs.first() if lead else None
-        if lead and lead_configs:
-            ContactCreateSerializer.validate_email(lead.email)
-            ContactCreateSerializer.validate_mobile(lead.mobile)
-            ContactCreateSerializer.validate_owner(self.request.user.employee_current)
-            number = Contact.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id
-            ).count() + 1
-            contact_mapped = Contact.objects.create(
-                code=f"C00{number}",
-                email=lead.email,
-                mobile=lead.mobile,
-                fullname=lead.contact_name,
-                job_title=lead.job_title,
-                owner=self.request.user.employee_current,
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                employee_created=self.request.user.employee_current,
-                employee_inherit=self.request.user.employee_current,
-            )
-            current_stage = LeadStage.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                level=2
-            ).first()
-            lead.current_lead_stage = current_stage
-            lead.lead_status = 2
-            lead.save(update_fields=['current_lead_stage', 'lead_status'])
-            lead_configs.contact_mapped = contact_mapped
-            lead_configs.create_contact = True
-            lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
-            return True
-        raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
+        return super().get_queryset().select_related(
+            'industry',
+            'assign_to_sale',
+            'current_lead_stage'
+        ).prefetch_related(
+            'lead_notes',
+            'lead_configs__account_mapped',
+            'lead_configs__assign_to_sale_config',
+            'lead_configs__contact_mapped',
+            'lead_configs__opp_mapped',
+        )
 
     @swagger_auto_schema(operation_summary='Detail Lead')
     @mask_view(
