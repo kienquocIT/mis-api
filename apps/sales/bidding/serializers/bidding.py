@@ -392,7 +392,8 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         # Xử lý lấy nhân viên đang tạo để kiểm tra quyền trên Process
-        employee_obj = validate_data.get('employee_inherit', None)
+        employee_id = validate_data.get('employee_inherit_id', None)
+        employee_obj = Employee.objects.filter(id=employee_id).first()
         if not employee_obj:
             raise serializers.ValidationError({
                 'detail': 'Need employee information to check permission to create progress ticket'
@@ -410,12 +411,12 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
 
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data.get('opportunity_id', None)
+        opportunity_obj = validate_data.get('opportunity', None)
         if process_obj:
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
                 process_stage_app_obj=process_stage_app_obj,
                 employee_id=employee_obj.id,
-                opp_id=opportunity_id,
+                opp_id=opportunity_obj.id,
             )
         return validate_data
 

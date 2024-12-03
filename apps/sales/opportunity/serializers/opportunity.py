@@ -208,7 +208,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
             "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
             "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sales Order
-            "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+            # "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
             "57725469-8b04-428a-a4b0-578091d0e4f5",  # Advanced Payment
             "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
             "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
