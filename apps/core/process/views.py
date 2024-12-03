@@ -159,6 +159,10 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
                         'id': mock_opp_obj.id,
                         'title': mock_opp_obj.title,
                         'code': mock_opp_obj.code,
+                        'employee_inherit': mock_opp_obj.employee_inherit.get_detail_minimal()
+                        if mock_opp_obj.employee_inherit and hasattr(
+                            mock_opp_obj.employee_inherit, 'get_detail_minimal'
+                        ) else {},
                     },
                     'process': {},
                     'process_stage_app': {},

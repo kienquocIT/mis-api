@@ -591,7 +591,11 @@ class ProcessRuntimeDataMatchFromStageSerializer(serializers.ModelSerializer):
                 return {
                     'id': obj.process.opp_id,
                     'title': obj.process.opp.title,
-                    'code': obj.process.opp.code
+                    'code': obj.process.opp.code,
+                    'employee_inherit': obj.process.opp.employee_inherit.get_detail_minimal()
+                    if obj.process.opp.employee_inherit and hasattr(
+                        obj.process.opp.employee_inherit, 'get_detail_minimal'
+                    ) else {},
                 }
         return {}
 
@@ -633,7 +637,11 @@ class ProcessRuntimeDataMatchFromProcessSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.opp_id,
                 'title': obj.opp.title,
-                'code': obj.opp.code
+                'code': obj.opp.code,
+                'employee_inherit': obj.opp.employee_inherit.get_detail_minimal()
+                if obj.opp.employee_inherit and hasattr(
+                    obj.opp.employee_inherit, 'get_detail_minimal'
+                ) else {},
             }
         return {}
 
