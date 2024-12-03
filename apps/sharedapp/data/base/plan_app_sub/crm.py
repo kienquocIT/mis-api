@@ -1958,6 +1958,7 @@ SALE_PROJECT = {
         },
     },
     "allow_permit": True,
+    "allow_process": True,
 }
 
 SALE_PROJECT_BASELINE = {

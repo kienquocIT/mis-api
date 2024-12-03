@@ -217,10 +217,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meting Log
     },
-    "31c9c5b0-717d-4134-b3d0-cc4ca174b168": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
-    },
+    # "31c9c5b0-717d-4134-b3d0-cc4ca174b168": {
+    #     "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+    #     "application_id": "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+    # },
     "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "d78bd5f3-8a8d-48a3-ad62-b50d576ce173",  # Purchase Quotation Request
