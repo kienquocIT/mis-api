@@ -24,14 +24,6 @@ from apps.shared import (
 
 class OpportunityList(BaseListMixin, BaseCreateMixin):
     queryset = Opportunity.objects
-    filterset_fields = {
-        'employee_inherit': ['exact'],
-        'quotation': ['exact', 'isnull'],
-        'sale_order': ['exact', 'isnull'],
-        'is_close_lost': ['exact'],
-        'is_deal_close': ['exact'],
-        'id': ['in'],
-    }
     filterset_class = OpportunityListFilters
     search_fields = ['title', 'code']
     serializer_list = OpportunityListSerializer
