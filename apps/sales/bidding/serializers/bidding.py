@@ -10,7 +10,7 @@ from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerM
     HRMsg, BaseMsg
 from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.bidding import BiddingMsg
-
+from apps.core.process.utils import ProcessRuntimeControl
 
 class BiddingResultConfigListSerializer(serializers.ModelSerializer):
     employee = serializers.SerializerMethodField()
@@ -168,6 +168,8 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     attachment_m2m = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = Bidding
@@ -187,7 +189,9 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'employee_created_id',
             'tinymce_content',
-            'attachment_m2m'
+            'attachment_m2m',
+            'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -258,6 +262,26 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
             })
         return data
 
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
+
 
 class AccountForBiddingListSerializer(AbstractListSerializerModel):
     class Meta:
@@ -293,6 +317,8 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
     venture_partner = VenturePartnerCreateSerializer(many=True, required=False)
     employee_inherit_id = serializers.UUIDField()
     security_type= serializers.IntegerField(required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     class Meta:
         model = Bidding
@@ -307,7 +333,9 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             'security_type',
             'bid_date',
             'employee_inherit_id',
-            'tinymce_content'
+            'tinymce_content',
+            'process',
+            'process_stage_app',
         )
 
     @classmethod
@@ -351,7 +379,25 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=Bidding.get_app_id()
+        ) if attrs else None
+
+
     def validate(self, validate_data):
+        # Xử lý lấy nhân viên đang tạo để kiểm tra quyền trên Process
+        employee_obj = validate_data.get('employee_inherit', None)
+        if not employee_obj:
+            raise serializers.ValidationError({
+                'detail': 'Need employee information to check permission to create progress ticket'
+            })
+
         if validate_data.get('opportunity'):
             validate_data['customer'] = validate_data.get('opportunity').customer
         bid_bond_value = validate_data.get('bid_bond_value', None)
@@ -361,6 +407,16 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
             if security_type == 0:
                 raise serializers.ValidationError(
                     {'bid_bond_value': BiddingMsg.BID_SECURITY_TYPE_REQUIRED})
+
+        process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        if process_obj:
+            ProcessRuntimeControl(process_obj=process_obj).validate_process(
+                process_stage_app_obj=process_stage_app_obj,
+                employee_id=employee_obj.id,
+                opp_id=opportunity_id,
+            )
         return validate_data
 
     @decorator_run_workflow
@@ -375,6 +431,16 @@ class BiddingCreateSerializer(AbstractCreateSerializerModel):
         }
         bidding = Bidding.objects.create(**validated_data)
         BiddingCommonCreate.create_sub_models( instance=bidding, create_data= create_data)
+        if bidding.process:
+            ProcessRuntimeControl(process_obj=bidding.process).register_doc(
+                process_stage_app_obj=bidding.process_stage_app,
+                app_id=bidding.get_app_id(),
+                doc_id=bidding.id,
+                doc_title=bidding.title,
+                employee_created_id=bidding.employee_created_id,
+                date_created=bidding.date_created,
+            )
+
         return bidding
 
 
