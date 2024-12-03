@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from sqlalchemy import True_
 
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
     OpportunityDocument, OpportunityActivityLogs
@@ -22,7 +23,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityCallLogCreateSerializer
     serializer_detail = OpportunityCallLogDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity__customer", "contact", 'process')
@@ -31,7 +32,10 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityCallLog List",
         operation_description="Get OpportunityCallLog List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunitycall', perm_code="view"
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -40,7 +44,10 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityCallLog",
         request_body=OpportunityCallLogCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunitycall', perm_code="create"
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_id': request.user.employee_current_id,
@@ -61,7 +68,10 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_summary="OpportunityCallLog detail",
         operation_description="Get OpportunityCallLog detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunitycall', perm_code="view",
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -70,7 +80,10 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_description="Update Opportunity Call Log by ID",
         request_body=OpportunityCallLogUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunitycall', perm_code="edit",
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -81,7 +94,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityEmailCreateSerializer
     serializer_detail = OpportunityEmailDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")
@@ -90,7 +103,10 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityEmail List",
         operation_description="Get OpportunityEmail List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunityemail', perm_code="view"
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -99,7 +115,10 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityEmail",
         request_body=OpportunityEmailCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunityemail', perm_code="create"
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_id': request.user.employee_current_id,
@@ -108,7 +127,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
+class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = OpportunityEmail.objects
     serializer_detail = OpportunityEmailDetailSerializer
     serializer_update = OpportunityEmailUpdateSerializer
@@ -121,7 +140,10 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_summary="OpportunityEmail detail",
         operation_description="Get OpportunityEmail detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunityemail', perm_code="view"
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -130,7 +152,10 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_description="Update Opportunity Email by ID",
         request_body=OpportunityEmailUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunityemail', perm_code="edit"
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -142,7 +167,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityMeetingDetailSerializer
     filterset_class = OpportunityMeetingFilters
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("opportunity", 'process').prefetch_related(
@@ -159,8 +184,8 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_description="Get OpportunityMeeting List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='opportunity', model_code='opportunity', perm_code="view"
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='meetingwithcustomer', perm_code="view"
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -170,7 +195,10 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityMeeting",
         request_body=OpportunityMeetingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='meetingwithcustomer', perm_code="create"
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_id': request.user.employee_current_id,
@@ -191,7 +219,10 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_summary="Opportunity Meeting detail",
         operation_description="Get Opportunity Meeting detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code = 'opportunity', model_code = 'meetingwithcustomer', perm_code = "view"
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -200,7 +231,10 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         operation_description="Update Opportunity Meeting by ID",
         request_body=OpportunityMeetingUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='meetingwithcustomer', perm_code="edit"
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 

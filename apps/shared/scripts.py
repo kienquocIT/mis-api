@@ -2710,3 +2710,18 @@ def update_distribution_plan_end_date():
         print(f'Finish {obj.code}')
 
     print('Done :))')
+
+
+def update_sale_activities():
+    for item in OpportunityCallLog.objects.all():
+        item.employee_inherit = item.opportunity.employee_inherit
+        item.save(update_fields=['employee_inherit'])
+    print('Done Call Log')
+    for item in OpportunityMeeting.objects.all():
+        item.employee_inherit = item.opportunity.employee_inherit
+        item.save(update_fields=['employee_inherit'])
+    print('Done Meeting')
+    for item in OpportunityEmail.objects.all():
+        item.employee_inherit = item.opportunity.employee_inherit
+        item.save(update_fields=['employee_inherit'])
+    print('Done Email')
