@@ -1,7 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
-from apps.masterdata.saledata.models import Contact
-from apps.masterdata.saledata.serializers import ContactCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity
 from apps.sales.lead.serializers import (
