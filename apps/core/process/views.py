@@ -200,6 +200,7 @@ class ProcessStagesAppsOfMeList(BaseListMixin):
         'process_id': ['exact'],
         'application_id': ['exact'],
         'was_done': ['exact'],
+        'created_full': ['exact'],
     }
     search_fields = ['title', 'remark']
 
