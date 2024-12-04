@@ -1,8 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
-from sqlalchemy import True_
-
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
+from apps.sales.opportunity.models import (
+    OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityDocument, OpportunityActivityLogs
+)
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
     OpportunityCallLogDetailSerializer, OpportunityCallLogUpdateSerializer,
