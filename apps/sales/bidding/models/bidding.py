@@ -168,6 +168,10 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
         # hit DB
         super().save(*args, **kwargs)
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'ad1e1c4e-2a7e-4b98-977f-88d069554657' # bidding's application id
+
 
 class BiddingDocument(MasterDataAbstractModel):
     bidding = models.ForeignKey(

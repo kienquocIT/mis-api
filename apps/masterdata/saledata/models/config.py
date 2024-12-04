@@ -89,6 +89,7 @@ class Term(SimpleAbstractModel):
     order = models.IntegerField(
         default=1, help_text='Order number of the term list in the payment term'
     )
+    title = models.CharField(max_length=100, blank=True)
 
     class Meta:
         verbose_name = 'Term'
