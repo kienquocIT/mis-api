@@ -696,16 +696,7 @@ class SORecurrenceListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'phone': obj.employee_inherit.phone,
-            'is_active': obj.employee_inherit.is_active,
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
     @classmethod
     def get_status(cls, obj):
