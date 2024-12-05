@@ -124,7 +124,6 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
-            'employee_id': request.user.employee_current_id,
             'employee_current': request.user.employee_current,
         }
         return self.create(request, *args, **kwargs)
@@ -208,9 +207,6 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='meetingwithcustomer', perm_code="create"
     )
     def post(self, request, *args, **kwargs):
-        self.ser_context = {
-            'employee_id': request.user.employee_current_id,
-        }
         return self.create(request, *args, **kwargs)
 
 

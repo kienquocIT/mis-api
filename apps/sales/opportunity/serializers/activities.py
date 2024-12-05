@@ -161,10 +161,12 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data['opportunity_id']
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
+            process_cls.validate_process(
+                process_stage_app_obj=process_stage_app_obj,
+                opp_id=validate_data['opportunity_id']
+            )
         validate_data['title'] = f"Call log: {validate_data.get('subject', '')}"
         return validate_data
 
@@ -309,7 +311,9 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.UUIDField()
+    opportunity_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
+    content = serializers.CharField(required=True)
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
@@ -330,17 +334,35 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'email_to_list',
             'email_cc_list',
             'content',
-            'opportunity',
+            'opportunity_id',
+            'employee_inherit_id',
             'process',
             'process_stage_app',
         )
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         try:
-            return Opportunity.objects.get(id=value)
+            opportunity_obj = Opportunity.objects.get(id=value)
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+            return opportunity_obj.id
         except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+            raise serializers.ValidationError({'opportunity_id': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            employee_inherit = Employee.objects.get(id=value)
+            return employee_inherit.id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
+
+    @classmethod
+    def validate_content(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({'detail': OpportunityOnlyMsg.CONTENT_NOT_NULL})
 
     @classmethod
     def validate_email_to_list(cls, value):
@@ -353,18 +375,14 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, validate_data):
-        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
-            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-        if not ActivitiesCommonFunc.check_permission_in_opp(
-                self.context.get('employee_id'), validate_data['opportunity']
-        ):
-            raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data['opportunity'].id
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
+            process_cls.validate_process(
+                process_stage_app_obj=process_stage_app_obj,
+                opp_id=validate_data['opportunity_id']
+            )
         validate_data['title'] = f"Email: {validate_data.get('subject', '')}"
         return validate_data
 
@@ -375,7 +393,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             tenant=email_obj.tenant,
             company=email_obj.company,
             email=email_obj,
-            opportunity=validated_data['opportunity'],
+            opportunity_id=validated_data['opportunity_id'],
             log_type=3,
         )
         if email_obj.process:
@@ -541,7 +559,8 @@ class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
 
 
 class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.UUIDField()
+    opportunity_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
     input_result = serializers.CharField(required=True)
     meeting_from_time = serializers.TimeField(required=True)
     meeting_to_time = serializers.TimeField(required=True)
@@ -569,7 +588,8 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         model = OpportunityMeeting
         fields = (
             'subject',
-            'opportunity',
+            'opportunity_id',
+            'employee_inherit_id',
             'employee_attended_list',
             'customer_member_list',
             'meeting_date',
@@ -584,14 +604,22 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         try:
-            obj = Opportunity.objects.get(id=value)
+            opportunity_obj = Opportunity.objects.get(id=value)
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+            return opportunity_obj.id
         except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
-        if obj.is_close_lost or obj.is_deal_close:
-            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-        return obj
+            raise serializers.ValidationError({'opportunity_id': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            employee_inherit = Employee.objects.get(id=value)
+            return employee_inherit.id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
 
     @classmethod
     def validate_input_result(cls, value):
@@ -616,20 +644,18 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate(self, validate_data):
-        employee_id = self.context.get('employee_id')
-        if not ActivitiesCommonFunc.check_permission_in_opp(employee_id, validate_data['opportunity']):
-            raise serializers.ValidationError({'Create failed': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
         if validate_data.get('meeting_from_time') and validate_data.get('meeting_to_time'):
             if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
                 raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
 
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data['opportunity'].id
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
-
+            process_cls.validate_process(
+                process_stage_app_obj=process_stage_app_obj,
+                opp_id=validate_data['opportunity_id']
+            )
         validate_data['title'] = f"Meeting: {validate_data.get('subject', '')}"
         return validate_data
 
@@ -643,7 +669,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             tenant=meeting_obj.tenant,
             company=meeting_obj.company,
             meeting=meeting_obj,
-            opportunity=validated_data['opportunity'],
+            opportunity_id=validated_data['opportunity_id'],
             date_created=validated_data['meeting_date'],
             log_type=4,
         )
