@@ -173,7 +173,12 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("opportunity", 'process').prefetch_related(
+        queryset = super().get_queryset().select_related(
+            "opportunity",
+            'process',
+            'process_stage_app',
+            'employee_inherit__group'
+        ).prefetch_related(
             'employee_attended_list',
             'customer_member_list',
             'opportunity__employee_inherit'

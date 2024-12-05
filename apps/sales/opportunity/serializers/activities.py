@@ -46,6 +46,16 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
     def get_employee_inherit(cls, obj):
         return {
             'id': obj.employee_inherit_id,
@@ -63,14 +73,11 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
     @classmethod
-    def get_process(cls, obj):
-        if obj.process:
-            return {
-                'id': obj.process.id,
-                'title': obj.process.title,
-                'remark': obj.process.remark,
-            }
-        return {}
+    def get_contact(cls, obj):
+        return {
+            'id': obj.contact_id,
+            'fullname': obj.contact.fullname
+        } if obj.contact else {}
 
     @classmethod
     def get_process_stage_app(cls, obj):
@@ -94,13 +101,6 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
                 'title': obj.opportunity.customer.name
             } if obj.opportunity.customer else {}
         } if obj.opportunity else {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {
-            'id': obj.contact_id,
-            'fullname': obj.contact.fullname
-        } if obj.contact else {}
 
 
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
@@ -448,19 +448,11 @@ class OpportunityEmailUpdateSerializer(serializers.ModelSerializer):
 # Activity: Meeting
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
     customer_member_list = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_process(cls, obj):
-        if obj.process:
-            return {
-                'id': obj.process.id,
-                'title': obj.process.title,
-                'remark': obj.process.remark,
-            }
-        return {}
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityMeeting
@@ -468,6 +460,7 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
+            'employee_inherit',
             'employee_attended_list',
             'customer_member_list',
             'meeting_date',
@@ -479,6 +472,7 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'repeat',
             'is_cancelled',
             'process',
+            'process_stage_app'
         )
 
     @classmethod
@@ -488,6 +482,23 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'code': obj.opportunity.code,
             'title': obj.opportunity.title
         } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_employee_attended_list(cls, obj):
@@ -502,6 +513,26 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
         for item in list(obj.customer_member_list.all()):
             customer_member_list.append({'id': item.id, 'fullname': item.fullname})
         return customer_member_list
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
 
 
 class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
