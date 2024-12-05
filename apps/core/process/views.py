@@ -8,10 +8,11 @@ from rest_framework import serializers, exceptions
 from apps.core.process.filters import ProcessRuntimeListFilter, ProcessRuntimeDataMatchFilter
 from apps.core.process.models.runtime import ProcessStageApplication, ProcessMembers, ProcessActivity
 from apps.core.process.msg import ProcessMsg
+from apps.core.process.tasks import sync_member_from_opp_to_process
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
-    TypeCheck, ResponseController, DisperseModel,
+    TypeCheck, ResponseController, DisperseModel, call_task_background,
 )
 from apps.core.process.models import ProcessConfiguration, Process
 from apps.core.process.serializers import (
@@ -324,6 +325,36 @@ class ProcessRuntimeMembers(BaseListMixin, BaseCreateMixin):
         return ResponseController.notfound_404()
 
 
+class ProcessMembersSync(BaseUpdateMixin):
+    queryset = ProcessMembers.objects.select_related('employee', 'employee_created')
+    serializer_list = ProcessRuntimeMembersSerializer
+
+    def view_check_process(self, process_id):
+        try:
+            process_obj = Process.objects.get_current(fill__tenant=True, fill__company=True, pk=process_id)
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=process_obj, employee_id=self.request.user.employee_current_id
+            )
+            return True
+        except Process.DoesNotExist:
+            pass
+        raise exceptions.PermissionDenied
+
+    @swagger_auto_schema(operation_summary='Process Runtime Members')
+    @mask_view(login_require=True, employee_require=True)
+    def put(self, request, *args, process_id, **kwargs):
+        if process_id and TypeCheck.check_uuid(process_id):
+            self.view_check_process(process_id=process_id)
+            call_task_background(
+                my_task=sync_member_from_opp_to_process,
+                **{
+                    'process_id': process_id,
+                }
+            )
+            return ResponseController.success_200(data={})
+        return ResponseController.notfound_404()
+
+
 class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ProcessStageApplication.objects
     serializer_detail = ProcessStageApplicationDetailSerializer
@@ -375,6 +406,9 @@ class ProcessRuntimeMemberDetail(BaseDestroyMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def manual_check_obj_destroy(self, instance, **kwargs):
+        if instance.is_system is True:
+            raise exceptions.PermissionDenied
+
         ProcessRuntimeControl.check_permit_process(
             process_obj=instance.process, employee_id=self.request.user.employee_current_id
         )

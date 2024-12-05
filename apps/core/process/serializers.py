@@ -697,7 +697,7 @@ class ProcessRuntimeMembersSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProcessMembers
-        fields = ('id', 'employee', 'employee_created', 'date_created')
+        fields = ('id', 'employee', 'employee_created', 'is_system', 'date_created')
 
 
 class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
@@ -731,7 +731,7 @@ class ProcessRuntimeMembersCreateSerializer(serializers.ModelSerializer):
         employees = validated_data.pop('employees', [])
         objs = []
         for obj in employees:
-            obj, _created = ProcessMembers.objects.get_or_create(employee=obj, **validated_data)
+            obj, _created = ProcessMembers.objects.get_or_create(employee=obj, **validated_data, is_system=False)
             objs.append(
                 obj
             )

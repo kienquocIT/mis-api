@@ -11,7 +11,7 @@ from django_celery_results.models import TaskResult
 from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
 from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
-from apps.core.process.models import Process  # SaleFunction
+from apps.core.process.models import Process, ProcessMembers  # SaleFunction
 from apps.core.workflow.models import RuntimeAssignee, WorkflowConfigOfApp, Workflow
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
@@ -1117,6 +1117,17 @@ def opp_member_event_update(sender, instance, created, **kwargs):
             perm_config=instance.permission_by_configured,
         )
 
+        # handle sync member opp to process
+        opp = instance.opportunity
+        if opp and opp.process:
+            ProcessMembers.objects.get_or_create(
+                tenant=opp.tenant,
+                company=opp.company,
+                process=opp.process,
+                employee=employee_obj,
+                is_system=True,
+            )
+
 
 @receiver(post_delete, sender=OpportunitySaleTeamMember)
 def opp_member_event_destroy(sender, instance, **kwargs):
@@ -1126,6 +1137,21 @@ def opp_member_event_destroy(sender, instance, **kwargs):
         employee_permission.remove_permit_by_opp(
             tenant_id=instance.opportunity.tenant_id, opp_id=instance.opportunity_id
         )
+
+        # handle sync member opp to process
+        opp = instance.opportunity
+        if opp and opp.process:
+            try:
+                obj = ProcessMembers.objects.get(
+                    tenant=opp.tenant,
+                    company=opp.company,
+                    process=opp.process,
+                    employee=employee_obj,
+                    is_system=True,
+                )
+                obj.delete()
+            except ProcessMembers.DoesNotExist:
+                pass
 
 
 @receiver(pre_delete, sender=Role)

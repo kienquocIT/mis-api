@@ -245,6 +245,7 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                 process=self.process_obj,
                 employee=self.process_obj.employee_created,
                 employee_created_id=employee_created_id,
+                is_system=True,
             )
         return True
 
