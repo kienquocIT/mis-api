@@ -9,9 +9,8 @@ from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
-from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
-    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
-    QuotationIndicator, QuotationAppConfig
+from apps.sales.quotation.models import QuotationProduct, QuotationLogistic, QuotationCost, QuotationExpense, \
+    QuotationIndicatorConfig, QuotationIndicator, QuotationAppConfig
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg, WarehouseMsg, \
     DisperseModel
 from apps.shared.translations.expense import ExpenseMsg
@@ -26,38 +25,6 @@ class QuotationCommonCreate:
             QuotationProduct(quotation=instance, **quotation_product)
             for quotation_product in validated_data['quotation_products_data']
         ])
-        return True
-
-    @classmethod
-    def create_term(cls, validated_data, instance):
-        old_term = QuotationTerm.objects.filter(quotation=instance)
-        if old_term:
-            old_term_price = QuotationTermPrice.objects.filter(quotation_term__in=old_term)
-            if old_term_price:
-                old_term_price.delete()
-            old_term_discount = QuotationTermDiscount.objects.filter(quotation_term__in=old_term)
-            if old_term_discount:
-                old_term_discount.delete()
-        price_list = []
-        payment_term = {}
-        if 'price_list' in validated_data['quotation_term_data']:
-            price_list = validated_data['quotation_term_data']['price_list']
-            del validated_data['quotation_term_data']['price_list']
-        if 'payment_term' in validated_data['quotation_term_data']:
-            payment_term = validated_data['quotation_term_data']['payment_term']
-            del validated_data['quotation_term_data']['payment_term']
-        quotation_term = QuotationTerm.objects.create(
-            payment_term_id=payment_term.get('id', None),
-            quotation=instance
-        )
-        if price_list:
-            QuotationTermPrice.objects.bulk_create([
-                QuotationTermPrice(
-                    price_id=price.get('id', None),
-                    quotation_term=quotation_term
-                )
-                for price in price_list
-            ])
         return True
 
     @classmethod
@@ -112,11 +79,6 @@ class QuotationCommonCreate:
         # quotation tabs
         if 'quotation_products_data' in validated_data:
             cls.create_product(validated_data=validated_data, instance=instance)
-        if 'quotation_term_data' in validated_data:
-            cls.create_term(
-                validated_data=validated_data,
-                instance=instance
-            )
         if 'quotation_logistic_data' in validated_data:
             cls.create_logistic(
                 validated_data=validated_data,
@@ -406,33 +368,6 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_unit_price(cls, value):
         return QuotationValueValidate.validate_price(value=value)
-
-
-class QuotationTermSerializer(serializers.ModelSerializer):
-    price_list = serializers.ListField(
-        child=serializers.CharField(
-            max_length=550
-        ),
-        required=False
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
-
-    class Meta:
-        model = QuotationTerm
-        fields = (
-            'price_list',
-            'payment_term'
-        )
-
-    @classmethod
-    def validate_price_list(cls, value):
-        return QuotationCommonValidate().validate_price_list(value=value)
-
-    @classmethod
-    def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
 
 
 class QuotationLogisticSerializer(serializers.ModelSerializer):

@@ -5,7 +5,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
-    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
+    QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -81,7 +81,6 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'system_status',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping_id',
             'customer_billing_id',
@@ -197,7 +196,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
@@ -260,7 +258,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'total_expense',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping',
             'customer_billing',
@@ -381,7 +378,6 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
@@ -428,7 +424,6 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'total_expense',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping',
             'customer_billing',
