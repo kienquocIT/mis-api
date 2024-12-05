@@ -127,13 +127,13 @@ class MemberOfOpportunityAddSerializer(serializers.Serializer):  # noqa
         tenant_id = validated_data.get('tenant_id')
         company_id = validated_data.get('company_id')
         members = validated_data.pop('members')
-        objs = [
-            OpportunitySaleTeamMember(
+        objs = []
+        for member_obj in members:
+            obj = OpportunitySaleTeamMember.objects.create(
                 opportunity_id=opportunity_id,
                 member=member_obj,
                 tenant_id=tenant_id,
                 company_id=company_id,
             )
-            for member_obj in members
-        ]
-        return OpportunitySaleTeamMember.objects.bulk_create(objs)[0]
+            objs.append(obj)
+        return objs[0]
