@@ -415,7 +415,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
-            customer_id=sale_order['customer']['id'],
+            customer_id=sale_order['customer_data']['id'],
             contact_id=sale_order['contact_data'].get('id', None),
             kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,
