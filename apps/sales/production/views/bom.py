@@ -169,7 +169,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product').prefetch_related(
+        return super().get_queryset().select_related('product', 'employee_inherit').prefetch_related(
             'bom_process_bom__labor__expense__uom',
             'bom_process_bom__labor__expense__price',
             'bom_process_bom__labor__expense_item',

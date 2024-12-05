@@ -214,6 +214,7 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
     bom_summary_process_data = serializers.SerializerMethodField()
     bom_material_component_data = serializers.SerializerMethodField()
     bom_tool_data = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = BOM
@@ -229,7 +230,8 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
             'bom_process_data',
             'bom_summary_process_data',
             'bom_material_component_data',
-            'bom_tool_data'
+            'bom_tool_data',
+            'employee_inherit',
         )
 
     @classmethod
@@ -337,6 +339,10 @@ class BOMDetailSerializer(AbstractDetailSerializerModel):
                 'note': item.note
             })
         return bom_tool_data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
 
 class BOMUpdateSerializer(AbstractCreateSerializerModel):

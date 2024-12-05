@@ -73,7 +73,7 @@ class ProcessConfigList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Configurate Create')
+    @swagger_auto_schema(operation_summary='Process Configurate Create', request_body=ProcessConfigCreateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -90,7 +90,7 @@ class ProcessConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Configuration Update')
+    @swagger_auto_schema(operation_summary='Process Configuration Update', request_body=ProcessConfigUpdateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
@@ -204,6 +204,7 @@ class ProcessStagesAppsOfMeList(BaseListMixin):
         'process_id': ['exact'],
         'application_id': ['exact'],
         'was_done': ['exact'],
+        'created_full': ['exact'],
     }
     search_fields = ['title', 'remark']
 
@@ -247,7 +248,7 @@ class ProcessRuntimeList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Runtime Create')
+    @swagger_auto_schema(operation_summary='Process Runtime Create', request_body=ProcessRuntimeCreateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -359,7 +360,9 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
             )
         return False
 
-    @swagger_auto_schema(operation_summary='Process Runtime Stages App Detail')
+    @swagger_auto_schema(
+        operation_summary='Process Runtime Stages App Detail', request_body=ProcessStageApplicationUpdateSerializer
+    )
     @mask_view(login_require=True, employee_require=True)
     def put(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):

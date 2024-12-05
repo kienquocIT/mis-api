@@ -107,7 +107,9 @@ class ProjectAllTaskList(BaseListMixin):
     serializer_list = ProjectTaskListAllSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        "project_id": ["exact"]
+        "project_id": ["exact"],
+        "member_id": ["exact"],
+        "task__task_status_id": ["exact"],
     }
 
     def get_queryset(self):

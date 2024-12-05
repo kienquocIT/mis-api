@@ -36,6 +36,9 @@ class Process(MasterDataAbstractModel):
 class ProcessMembers(MasterDataAbstractModel):
     process = models.ForeignKey('process.Process', on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+    is_system = models.BooleanField(
+        default=False, help_text='End users cannot act on this if this field is enabled. Only the system can change it.'
+    )
 
     class Meta:
         verbose_name = 'Process Members'
@@ -80,14 +83,27 @@ class ProcessStageApplication(MasterDataAbstractModel):
     was_done = models.BooleanField(default=False)
     date_done = models.DateTimeField(null=True, default=None)
     order_number = models.SmallIntegerField(default=1)
+    created_full = models.BooleanField(
+        default=False, help_text='Status: Maximum number of creations allowed has been reached'
+    )
 
     def __str__(self):
         return f'{self.title}'
 
     def amount_count(self, commit=True):
+        update_fields = ['amount']
         self.amount = ProcessDoc.objects.filter(stage_app=self).count()
+        if self.max != 'n':
+            try:
+                max_num = int(self.max)
+            except ValueError:
+                pass
+            else:
+                if max_num >= self.amount:
+                    self.created_full = True
+                    update_fields.append('created_full')
         if commit is True:
-            self.save(update_fields=['amount'])
+            self.save(update_fields=update_fields)
         return self
 
     def amount_approved_count(self, commit=True):

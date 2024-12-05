@@ -40,6 +40,18 @@ class BOM(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def check_change_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
+    @classmethod
+    def check_reject_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
