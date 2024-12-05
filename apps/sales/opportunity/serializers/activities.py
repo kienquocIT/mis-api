@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 # Activity: Call log
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityCallLog
@@ -33,13 +35,32 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
+            'employee_inherit',
             'contact',
             'call_date',
             'input_result',
             'repeat',
             'is_cancelled',
             'process',
+            'process_stage_app'
         )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_process(cls, obj):
@@ -48,6 +69,16 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
                 'id': obj.process.id,
                 'title': obj.process.title,
                 'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
             }
         return {}
 
@@ -73,7 +104,8 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.UUIDField()
+    opportunity_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     input_result = serializers.CharField(required=True)
     process = serializers.UUIDField(required=False, allow_null=True, default=None)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
@@ -92,7 +124,8 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         model = OpportunityCallLog
         fields = (
             'subject',
-            'opportunity',
+            'opportunity_id',
+            'employee_inherit_id',
             'contact',
             'call_date',
             'input_result',
@@ -102,11 +135,22 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         try:
-            return Opportunity.objects.get(id=value)
+            opportunity_obj = Opportunity.objects.get(id=value)
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+            return opportunity_obj.id
         except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+            raise serializers.ValidationError({'opportunity_id': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            employee_inherit = Employee.objects.get(id=value)
+            return employee_inherit.id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
 
     @classmethod
     def validate_input_result(cls, value):
@@ -115,16 +159,9 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'detail': OpportunityOnlyMsg.RESULT_NOT_NULL})
 
     def validate(self, validate_data):
-        if validate_data['opportunity'].is_close_lost or validate_data['opportunity'].is_deal_close:
-            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-        if not ActivitiesCommonFunc.check_permission_in_opp(
-                self.context.get('employee_id'), validate_data['opportunity']
-        ):
-            raise serializers.ValidationError({'permission': OpportunityOnlyMsg.DONT_HAVE_PERMISSION})
-
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data['opportunity'].id
+        opportunity_id = validate_data['opportunity_id']
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
@@ -137,7 +174,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             tenant=call_log_obj.tenant,
             company=call_log_obj.company,
             call=call_log_obj,
-            opportunity=validated_data['opportunity'],
+            opportunity_id=validated_data['opportunity_id'],
             date_created=validated_data['call_date'],
             log_type=2,
         )

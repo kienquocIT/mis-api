@@ -26,7 +26,13 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity__customer", "contact", 'process')
+        return super().get_queryset().select_related(
+            "opportunity__customer",
+            "contact",
+            'process',
+            'process_stage_app',
+            'employee_inherit__group'
+        )
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog List",
@@ -49,9 +55,6 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='opportunitycall', perm_code="create"
     )
     def post(self, request, *args, **kwargs):
-        self.ser_context = {
-            'employee_id': request.user.employee_current_id,
-        }
         return self.create(request, *args, **kwargs)
 
 
