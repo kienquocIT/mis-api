@@ -36,6 +36,9 @@ class Process(MasterDataAbstractModel):
 class ProcessMembers(MasterDataAbstractModel):
     process = models.ForeignKey('process.Process', on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+    is_system = models.BooleanField(
+        default=False, help_text='End users cannot act on this if this field is enabled. Only the system can change it.'
+    )
 
     class Meta:
         verbose_name = 'Process Members'
