@@ -49,9 +49,6 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='opportunitycall', perm_code="create"
     )
     def post(self, request, *args, **kwargs):
-        self.ser_context = {
-            'employee_id': request.user.employee_current_id,
-        }
         return self.create(request, *args, **kwargs)
 
 
