@@ -192,7 +192,6 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "sale_order__delivery_of_sale_order",
             "quotation",
             'process',
-            'process_stage_app'
         ).prefetch_related(
             "stage",
             "members",

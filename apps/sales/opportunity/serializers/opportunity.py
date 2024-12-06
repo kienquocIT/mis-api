@@ -1066,7 +1066,6 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     customer_decision_factor = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
-    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -1100,8 +1099,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'members',
             'estimated_gross_profit_percent',
             'estimated_gross_profit_value',
-            'process',
-            'process_stage_app'
+            'process'
         )
 
     @classmethod
@@ -1249,16 +1247,6 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'title': obj.process.title,
             'remark': obj.process.remark,
         } if obj.process else {}
-
-    @classmethod
-    def get_process_stage_app(cls, obj):
-        if obj.process_stage_app:
-            return {
-                'id': obj.process_stage_app.id,
-                'title': obj.process_stage_app.title,
-                'remark': obj.process_stage_app.remark,
-            }
-        return {}
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):
