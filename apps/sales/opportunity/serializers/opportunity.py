@@ -215,6 +215,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",  # BOM
             "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
             "58385bcf-f06c-474e-a372-cadc8ea30ecc",  # Contract approval
+            "14dbc606-1453-4023-a2cf-35b1cd9e3efd",  # Call log
+            "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meeting
+            "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
@@ -1063,6 +1066,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     customer_decision_factor = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -1096,7 +1100,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'members',
             'estimated_gross_profit_percent',
             'estimated_gross_profit_value',
-            'process'
+            'process',
+            'process_stage_app'
         )
 
     @classmethod
@@ -1244,6 +1249,16 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'title': obj.process.title,
             'remark': obj.process.remark,
         } if obj.process else {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

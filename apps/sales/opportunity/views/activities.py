@@ -100,7 +100,12 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity")
+        return super().get_queryset().select_related(
+            "opportunity",
+            'employee_inherit__group',
+            'process',
+            'process_stage_app'
+        )
 
     @swagger_auto_schema(
         operation_summary="OpportunityEmail List",
