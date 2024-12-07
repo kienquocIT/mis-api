@@ -183,7 +183,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
             'process_stage_app',
             'employee_inherit__group'
         ).prefetch_related(
-            'employee_attended_list',
+            'employee_attended_list__group',
             'customer_member_list',
             'opportunity__employee_inherit'
         )
