@@ -191,9 +191,11 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "employee_inherit__group",
             "sale_order__delivery_of_sale_order",
             "quotation",
+            'process',
         ).prefetch_related(
             "stage",
             "members",
+            "customer_decision_factor"
         )
 
     def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:  # pylint: disable=R0911,R0912

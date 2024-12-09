@@ -276,17 +276,9 @@ class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
 # Activity: Email
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_process(cls, obj):
-        if obj.process:
-            return {
-                'id': obj.process.id,
-                'title': obj.process.title,
-                'remark': obj.process.remark,
-            }
-        return {}
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityEmail
@@ -298,7 +290,9 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
+            'employee_inherit',
             'process',
+            'process_stage_app'
         )
 
     @classmethod
@@ -308,6 +302,43 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'code': obj.opportunity.code,
             'title': obj.opportunity.title
         } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
@@ -522,14 +553,28 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     def get_employee_attended_list(cls, obj):
         employee_attended_list = []
         for item in list(obj.employee_attended_list.all()):
-            employee_attended_list.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
+            employee_attended_list.append({
+                'id': item.id,
+                'code': item.code,
+                'fullname': item.get_full_name(2),
+                'group': {
+                    'id': item.group_id,
+                    'title': item.group.title,
+                    'code': item.group.code
+                } if item.group else {}
+            })
         return employee_attended_list
 
     @classmethod
     def get_customer_member_list(cls, obj):
         customer_member_list = []
         for item in list(obj.customer_member_list.all()):
-            customer_member_list.append({'id': item.id, 'fullname': item.fullname})
+            customer_member_list.append({
+                'id': item.id,
+                'code': item.code,
+                'fullname': item.fullname,
+                'job_title': item.job_title,
+            })
         return customer_member_list
 
     @classmethod
@@ -1081,36 +1126,34 @@ class ActivitiesCommonFunc:
 
     @staticmethod
     def send_email(email_obj, employee_created):
-        if settings.EMAIL_SERVER_DEFAULT_HOST:
-            try:
-                html_content = email_obj.content
-                email = EmailMultiAlternatives(
-                    subject=email_obj.subject,
-                    body='',
-                    from_email=employee_created.email,
-                    to=email_obj.email_to_list,
-                    cc=email_obj.email_cc_list,
-                    bcc=[],
-                    reply_to=[],
-                )
-                email.attach_alternative(html_content, "text/html")
-                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-                connection = get_connection(
-                    username=employee_created.email,
-                    password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
-                    fail_silently=False,
-                )
-                email.connection = connection
-                email.send()
-                return True
-            except Exception as err:
-                logger.error('[ActivitiesCommonFunc][send_email] Err: %s', str(err))
-                employee_created.email_app_password_status = False
-                employee_created.save(update_fields=['email_app_password_status'])
-            raise serializers.ValidationError({
-                'Send email': "Cannot send email. Try to verify your Email in Employee update page."
-            })
-        return False
+        try:
+            html_content = email_obj.content
+            email = EmailMultiAlternatives(
+                subject=email_obj.subject,
+                body='',
+                from_email=employee_created.email,
+                to=email_obj.email_to_list,
+                cc=email_obj.email_cc_list,
+                bcc=[],
+                reply_to=[],
+            )
+            email.attach_alternative(html_content, "text/html")
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            connection = get_connection(
+                username=employee_created.email,
+                password=SimpleEncryptor(key=password).decrypt(employee_created.email_app_password),
+                fail_silently=False,
+            )
+            email.connection = connection
+            email.send()
+            return True
+        except Exception as err:
+            logger.error('[ActivitiesCommonFunc][send_email] Err: %s', str(err))
+            employee_created.email_app_password_status = False
+            employee_created.save(update_fields=['email_app_password_status'])
+        raise serializers.ValidationError({
+            'Send email': "Cannot send email. Try to verify your Email in Employee update page."
+        })
 
     @staticmethod
     def create_employee_attended_map_meeting(meeting_id, employee_attended_list):
