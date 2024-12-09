@@ -34,7 +34,7 @@ class QuotationListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_customer(cls, obj):
         return {
-            'id': obj.customer_id,
+            'id': str(obj.customer_id),
             'title': obj.customer.name,
             'code': obj.customer.code,
         } if obj.customer else {}
@@ -46,7 +46,7 @@ class QuotationListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_opportunity(cls, obj):
         return {
-            'id': obj.opportunity_id,
+            'id': str(obj.opportunity_id),
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
         } if obj.opportunity else {}
@@ -113,17 +113,17 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_opportunity(cls, obj):
         return {
-            'id': obj.opportunity_id,
+            'id': str(obj.opportunity_id),
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'is_close_lost': obj.opportunity.is_close_lost,
             'is_deal_close': obj.opportunity.is_deal_close,
-            'sale_order_id': obj.opportunity.sale_order_id,
+            'sale_order_id': str(obj.opportunity.sale_order_id),
             'customer': {
-                'id': obj.opportunity.customer_id,
+                'id': str(obj.opportunity.customer_id),
                 'title': obj.opportunity.customer.title
             } if obj.opportunity.customer else {},
-            'quotation_id': obj.opportunity.quotation_id,
+            'quotation_id': str(obj.opportunity.quotation_id),
         } if obj.opportunity else {}
 
     @classmethod
