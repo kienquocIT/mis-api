@@ -124,9 +124,9 @@ class SaleOrderCommonCreate:
 class SaleOrderCommonValidate:
 
     @classmethod
-    def validate_customer(cls, value):
+    def validate_customer_id(cls, value):
         try:
-            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -140,25 +140,25 @@ class SaleOrderCommonValidate:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
-    def validate_contact(cls, value):
+    def validate_contact_id(cls, value):
         try:
-            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_payment_term_id(cls, value):
         try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
+            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+        except PaymentTerm.DoesNotExist:
+            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_quotation(cls, value):
+    def validate_quotation_id(cls, value):
         try:
             if value is None:
                 return None
-            return Quotation.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return Quotation.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Quotation.DoesNotExist:
             raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
 
@@ -213,13 +213,6 @@ class SaleOrderCommonValidate:
                 ]
             raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
-
-    @classmethod
-    def validate_payment_term(cls, value):
-        try:
-            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-        except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
     def validate_promotion(cls, value):

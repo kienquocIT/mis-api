@@ -143,6 +143,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         related_name="sale_order_quotation",
         null=True
     )
+    quotation_data = models.JSONField(default=dict, help_text='data json of quotation')
     # sale order tabs
     sale_order_products_data = models.JSONField(
         default=list,

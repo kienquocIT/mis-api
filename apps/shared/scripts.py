@@ -64,6 +64,7 @@ from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, P
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
+from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.report.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
@@ -2725,3 +2726,13 @@ def update_sale_activities():
         item.employee_inherit = item.opportunity.employee_inherit
         item.save(update_fields=['employee_inherit'])
     print('Done Email')
+
+
+def parse_quotation_data_so():
+    for order in SaleOrder.objects.all():
+        if order.quotation:
+            quotation_data = QuotationListSerializer(order.quotation).data
+            order.quotation_data = quotation_data
+            order.save(update_fields=['quotation_data'])
+    print('parse_quotation_data_so done.')
+    return True

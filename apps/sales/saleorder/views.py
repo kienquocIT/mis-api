@@ -93,10 +93,6 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             "opportunity",
             "opportunity__customer",
-            "customer",
-            "contact",
-            "quotation",
-            "customer__payment_term_customer_mapped",
             "employee_inherit",
             "process",
         )
