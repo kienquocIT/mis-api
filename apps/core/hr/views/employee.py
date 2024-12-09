@@ -108,9 +108,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         if not exclude_data:
             exclude_data = {}
 
-        return OpportunitySaleTeamMember.objects.filter_current(
+        return list(OpportunitySaleTeamMember.objects.filter_current(
             fill__tenant=True, fill__company=True, opportunity_id=opp_id
-        ).exclude(**exclude_data).values_list('member_id', flat=True)
+        ).exclude(**exclude_data).values_list('member_id', flat=True))
 
     @classmethod
     def get_config_from_prj_id_selected(cls, item_data, prj_id) -> Union[dict, None]:
@@ -124,16 +124,13 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         if not exclude_data:
             exclude_data = {}
 
-        return ProjectMapMember.objects.filter_current(
+        return list(ProjectMapMember.objects.filter_current(
             fill__tenant=True, fill__company=True, project_id=prj_id
-        ).exclude(**exclude_data).values_list('member_id', flat=True)
+        ).exclude(**exclude_data).values_list('member_id', flat=True))
 
     @classmethod
     def member_of_process(cls, process_id):
-        return [
-            str(idx)
-            for idx in ProcessMembers.objects.filter(process_id=process_id).values_list('employee_id', flat=True)
-        ]
+        return list(ProcessMembers.objects.filter(process_id=process_id).values_list('employee_id', flat=True))
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
