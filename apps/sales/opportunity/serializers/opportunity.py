@@ -877,6 +877,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
     list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
+    estimated_gross_profit_percent = serializers.FloatField(required=False)
+    estimated_gross_profit_value = serializers.FloatField(required=False)
 
     class Meta:
         model = Opportunity
