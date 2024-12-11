@@ -299,6 +299,7 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
     @swagger_auto_schema(operation_summary='Product WareHouse Serial For GIS')
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
 
 
