@@ -455,6 +455,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': f"{os.environ.get('THROTTLE_AUTH', '200')}/minute",
         'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
+        'import_DB_throttle_scope': f"{os.environ.get('THROTTLE_AUTH_IMPORT', '200')}/minute",  # Áp dụng cho scope 'import_DB_throttle_scope'
     }
 }
 if DEBUG is True:
