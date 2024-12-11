@@ -88,9 +88,6 @@ class QuotationDetail(
         return super().get_queryset().select_related(
             "opportunity",
             "opportunity__customer",
-            "customer",
-            "contact",
-            "customer__payment_term_customer_mapped",
             "employee_inherit",
             "process",
         )

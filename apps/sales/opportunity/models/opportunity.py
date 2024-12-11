@@ -189,6 +189,10 @@ class Opportunity(DataAbstractModel):
         default=0
     )
 
+    def get_members(self, return_obj_or_id='id'):
+        key_return = 'member' if return_obj_or_id == 'obj' else 'member_id'
+        return OpportunitySaleTeamMember.objects.filter(opportunity=self).values_list(key_return, flat=True)
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'

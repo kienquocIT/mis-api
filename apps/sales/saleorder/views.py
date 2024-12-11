@@ -93,10 +93,6 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             "opportunity",
             "opportunity__customer",
-            "customer",
-            "contact",
-            "quotation",
-            "customer__payment_term_customer_mapped",
             "employee_inherit",
             "process",
         )
@@ -269,7 +265,7 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     queryset = SaleOrder.objects
     serializer_list = SaleOrderPurchasingStaffListSerializer
     filterset_fields = {
-        'employee_inherit': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
         'system_status': ['exact', 'in'],
         'opportunity__is_deal_close': ['exact'],
     }

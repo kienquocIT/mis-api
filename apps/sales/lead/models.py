@@ -244,6 +244,6 @@ class LeadOpportunity(DataAbstractModel):
     class Meta:
         verbose_name = 'Leads Opportunity'
         verbose_name_plural = 'Lead Opportunity'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

@@ -1,3 +1,4 @@
+from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ExpenseItem, Account
@@ -19,6 +20,8 @@ __all__ = [
 
 
 class DistributionPlanListSerializer(AbstractListSerializerModel):
+    is_expired = serializers.SerializerMethodField()
+
     class Meta:
         model = DistributionPlan
         fields = (
@@ -29,8 +32,12 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
             'no_of_month',
             'end_date',
             'system_status',
-            'is_create_purchase_request'
+            'is_expired'
         )
+
+    @classmethod
+    def get_is_expired(cls, obj):
+        return obj.end_date < datetime.now().date()
 
 
 class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
@@ -43,6 +50,7 @@ class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',
@@ -143,6 +151,7 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',
@@ -224,6 +233,7 @@ class DistributionPlanUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',

@@ -24,14 +24,6 @@ from apps.shared import (
 
 class OpportunityList(BaseListMixin, BaseCreateMixin):
     queryset = Opportunity.objects
-    filterset_fields = {
-        'employee_inherit': ['exact'],
-        'quotation': ['exact', 'isnull'],
-        'sale_order': ['exact', 'isnull'],
-        'is_close_lost': ['exact'],
-        'is_deal_close': ['exact'],
-        'id': ['in'],
-    }
     filterset_class = OpportunityListFilters
     search_fields = ['title', 'code']
     serializer_list = OpportunityListSerializer
@@ -199,9 +191,11 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "employee_inherit__group",
             "sale_order__delivery_of_sale_order",
             "quotation",
+            'process',
         ).prefetch_related(
             "stage",
             "members",
+            "customer_decision_factor"
         )
 
     def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:  # pylint: disable=R0911,R0912

@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
-from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, OPPORTUNITY_LOG_TYPE
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, OPPORTUNITY_LOG_TYPE
 
 __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'OpportunityMeetingEmployeeAttended',
            'OpportunityMeetingCustomerMember', 'OpportunityActivityLogTask', 'OpportunityActivityLogs',
@@ -10,7 +10,7 @@ __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'Oppo
 
 
 # LOGS OF CALL
-class OpportunityCallLog(MasterDataAbstractModel):
+class OpportunityCallLog(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "14dbc606-1453-4023-a2cf-35b1cd9e3efd"
@@ -49,7 +49,7 @@ class OpportunityCallLog(MasterDataAbstractModel):
 
 
 # LOGS OF EMAIL
-class OpportunityEmail(MasterDataAbstractModel):
+class OpportunityEmail(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "dec012bf-b931-48ba-a746-38b7fd7ca73b"
@@ -87,7 +87,7 @@ class OpportunityEmail(MasterDataAbstractModel):
 
 
 # LOGS OF MEETING
-class OpportunityMeeting(MasterDataAbstractModel):
+class OpportunityMeeting(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "2fe959e3-9628-4f47-96a1-a2ef03e867e3"

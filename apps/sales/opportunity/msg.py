@@ -7,6 +7,7 @@ __all__ = ['OpportunityOnlyMsg']
 class OpportunityOnlyMsg:
     OPP_NOT_EXIST = _('Opportunity does not exist')
     RESULT_NOT_NULL = _('Result must not be null')
+    CONTENT_NOT_NULL = _('Content must not be null')
     DONT_HAVE_PERMISSION = _('Permission denied')
     PIC_NOT_NULL = _('Person in charge is not null')
     EMP_NOT_EXIST = _('Employee does not exist')

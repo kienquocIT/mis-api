@@ -7,6 +7,7 @@ from datetime import datetime
 from rest_framework import serializers
 from django.utils import timezone
 
+from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
 from ..models import Project, ProjectMapMember, ProjectWorks, ProjectGroups, WorkMapExpense
@@ -122,6 +123,8 @@ class ProjectListSerializers(serializers.ModelSerializer):
 
 
 class ProjectCreateSerializers(serializers.ModelSerializer):
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def create_project_map_member(cls, project):
@@ -149,10 +152,39 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
                 permission_by_configured=permission_by_configured_pm
             )
 
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=Project.get_app_id()
+        ) if attrs else None
+
+    def validate(self, attrs):
+        process_obj = attrs.get('process', None)
+        process_stage_app_obj = attrs.get('process_stage_app', None)
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=None)
+        return attrs
+
     def create(self, validated_data):
         project = Project.objects.create(**validated_data)
         # create project team member
         self.create_project_map_member(project)
+
+        if project.process:
+            ProcessRuntimeControl(process_obj=project.process).register_doc(
+                process_stage_app_obj=project.process_stage_app,
+                app_id=Project.get_app_id(),
+                doc_id=project.id,
+                doc_title=project.title,
+                employee_created_id=project.employee_created_id,
+                date_created=project.date_created,
+            )
+
         return project
 
     class Meta:
@@ -163,7 +195,8 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             'start_date',
             'finish_date',
             'system_status',
-            'employee_inherit'
+            'employee_inherit',
+            'process', 'process_stage_app',
         )
 
 
@@ -175,6 +208,8 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
     project_pm = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     assignee_attachment = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     @classmethod
     def get_groups(cls, obj):
@@ -274,6 +309,26 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
                         lst.append(f_detail)
         return lst
 
+    @classmethod
+    def get_process(cls, obj):
+        if obj.process:
+            return {
+                'id': obj.process.id,
+                'title': obj.process.title,
+                'remark': obj.process.remark,
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
+
     class Meta:
         model = Project
         fields = (
@@ -290,7 +345,8 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'works',
             'groups',
             'members',
-            'assignee_attachment'
+            'assignee_attachment',
+            'process', 'process_stage_app',
         )
 
 

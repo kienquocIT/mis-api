@@ -277,11 +277,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         payment_term = self.test_1_create_config_payment_term().data['result']['id']
         data = {
             "title": "Đơn hàng test",
-            "opportunity": opportunity,
-            "customer": customer,
-            "contact": contact,
+            "opportunity_id": opportunity,
+            "customer_id": customer,
+            "contact_id": contact,
             "employee_inherit_id": employee,
-            "payment_term": payment_term,
+            "payment_term_id": payment_term,
         }
         url = reverse("SaleOrderList")
         response = self.client.post(url, data, format='json')
@@ -301,12 +301,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'title',
                 'code',
                 'opportunity',
-                'customer',
+                'customer_data',
                 'contact_data',
                 'sale_person',
-                'payment_term_id',
                 'payment_term_data',
-                'quotation',
+                'quotation_data',
                 'system_status',
                 # sale order tabs
                 'sale_order_products_data',
@@ -416,7 +415,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
-            customer_id=sale_order['customer']['id'],
+            customer_id=sale_order['customer_data'].get('id', None),
             contact_id=sale_order['contact_data'].get('id', None),
             kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,

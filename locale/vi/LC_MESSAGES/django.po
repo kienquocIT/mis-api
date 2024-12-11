@@ -1219,6 +1219,10 @@ msgid "For Stock Plan"
 msgstr "Cho Kế hoạch Nhập hàng"
 
 #
+msgid "For Fixed Asset"
+msgstr "Cho Tài sản cố định"
+
+#
 msgid "For Stock Free"
 msgstr "Cho Nhập hàng Tự do"
 
@@ -1369,3 +1373,7 @@ msgstr "Nếu thầu thua, cần chọn lí do thua"
 #
 msgid "If cause of lost is 'other reason', must specify the reason"
 msgstr "Nếu thầu thua do lí do khác, cần cụ thể lí do"
+
+#
+msgid "Bidding"
+msgstr "Thầu"

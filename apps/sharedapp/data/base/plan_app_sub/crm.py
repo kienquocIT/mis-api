@@ -900,6 +900,34 @@ CALL_LOG_APP_CONFIG = {
     "code": "opportunitycall",
     "model_code": "opportunitycall",
     "app_label": "opportunity",
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
@@ -912,6 +940,34 @@ EMAIL_LOG_APP_CONFIG = {
     "code": "opportunityemail",
     "model_code": "opportunityemail",
     "app_label": "opportunity",
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
@@ -924,6 +980,34 @@ MEETING_LOG_APP_CONFIG = {
     "code": "meetingwithcustomer",
     "model_code": "meetingwithcustomer",
     "app_label": "opportunity",
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
     "is_workflow": False,
     "allow_permit": True,
     "allow_process": True,
@@ -1958,6 +2042,7 @@ SALE_PROJECT = {
         },
     },
     "allow_permit": True,
+    "allow_process": True,
 }
 
 SALE_PROJECT_BASELINE = {
@@ -2348,6 +2433,8 @@ BIDDING_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_print": True,
+    "allow_process": True,
+    "allow_opportunity": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity

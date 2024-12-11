@@ -208,13 +208,16 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
             "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
             "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sales Order
-            "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+            # "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
             "57725469-8b04-428a-a4b0-578091d0e4f5",  # Advanced Payment
             "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
             "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
             "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",  # BOM
             "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
             "58385bcf-f06c-474e-a372-cadc8ea30ecc",  # Contract approval
+            "14dbc606-1453-4023-a2cf-35b1cd9e3efd",  # Call log
+            "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meeting
+            "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
@@ -874,6 +877,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
     list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
+    estimated_gross_profit_percent = serializers.FloatField(required=False)
+    estimated_gross_profit_value = serializers.FloatField(required=False)
 
     class Meta:
         model = Opportunity

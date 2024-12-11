@@ -21,7 +21,6 @@ class DistributionPlan(DataAbstractModel):
     rate = models.FloatField(default=0)
     plan_description = models.TextField(default="", blank=True, null=True)
 
-    is_create_purchase_request = models.BooleanField(default=False)
     purchase_request_number = models.FloatField(default=0)
 
     def save(self, *args, **kwargs):

@@ -12,6 +12,10 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstra
 
 
 class Project(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "49fe2eb9-39cd-44af-b74a-f690d7b61b67"
+
     project_pm = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='Representative of project',

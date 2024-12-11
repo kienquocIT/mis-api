@@ -6,12 +6,13 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers, exceptions
 
 from apps.core.process.filters import ProcessRuntimeListFilter, ProcessRuntimeDataMatchFilter
-from apps.core.process.models.runtime import ProcessStageApplication, ProcessMembers
+from apps.core.process.models.runtime import ProcessStageApplication, ProcessMembers, ProcessActivity
 from apps.core.process.msg import ProcessMsg
+from apps.core.process.tasks import sync_member_from_opp_to_process
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
-    TypeCheck, ResponseController,
+    TypeCheck, ResponseController, DisperseModel, call_task_background,
 )
 from apps.core.process.models import ProcessConfiguration, Process
 from apps.core.process.serializers import (
@@ -20,7 +21,7 @@ from apps.core.process.serializers import (
     ProcessRuntimeDetailSerializer, ProcessStageApplicationUpdateSerializer, ProcessStageApplicationDetailSerializer,
     ProcessConfigReadySerializer, ProcessStageApplicationListSerializer, ProcessRuntimeDataMatchFromStageSerializer,
     ProcessRuntimeDataMatchFromProcessSerializer, ProcessRuntimeMembersSerializer,
-    ProcessRuntimeMembersCreateSerializer,
+    ProcessRuntimeMembersCreateSerializer, ProcessRuntimeLogList,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,7 @@ class ProcessConfigList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Configurate Create')
+    @swagger_auto_schema(operation_summary='Process Configurate Create', request_body=ProcessConfigCreateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -90,7 +91,7 @@ class ProcessConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Configuration Update')
+    @swagger_auto_schema(operation_summary='Process Configuration Update', request_body=ProcessConfigUpdateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
@@ -128,23 +129,45 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
             opp_id = query_params.get('opp_id', None)
             process_id = query_params.get('process_id', None)
 
+            mock_opp_obj = None
             if opp_id and process_id:
                 obj_process = Process.objects.select_related('opp').filter(opp_id=opp_id, id=process_id).first()
             elif opp_id:
                 obj_process = Process.objects.select_related('opp').filter(opp_id=opp_id).first()
+                if not obj_process:
+                    opp_model_cls = DisperseModel(app_model='opportunity.opportunity').get_model()
+                    try:
+                        mock_opp_obj = opp_model_cls.objects.get_current(
+                            fill__tenant=True, fill__company=True, pk=opp_id
+                        )
+                    except opp_model_cls.DoesNotExist:
+                        pass
             elif process_id:
                 obj_process = Process.objects.select_related('opp').filter(id=process_id).first()
             else:
                 obj_process = None
 
-            ProcessRuntimeControl.check_permit_process(
-                process_obj=obj_process, employee_id=request.user.employee_current_id
-            )
-
             if obj_process:
+                ProcessRuntimeControl.check_permit_process(
+                    process_obj=obj_process, employee_id=request.user.employee_current_id
+                )
                 result = ProcessRuntimeDataMatchFromProcessSerializer(
                     instance=obj_process, context={'app_id': app_id}
                 ).data
+            elif mock_opp_obj:
+                result = {
+                    'opp': {
+                        'id': mock_opp_obj.id,
+                        'title': mock_opp_obj.title,
+                        'code': mock_opp_obj.code,
+                        'employee_inherit': mock_opp_obj.employee_inherit.get_detail_minimal()
+                        if mock_opp_obj.employee_inherit and hasattr(
+                            mock_opp_obj.employee_inherit, 'get_detail_minimal'
+                        ) else {},
+                    },
+                    'process': {},
+                    'process_stage_app': {},
+                }
 
         return ResponseController.success_200(data=result)
 
@@ -182,6 +205,7 @@ class ProcessStagesAppsOfMeList(BaseListMixin):
         'process_id': ['exact'],
         'application_id': ['exact'],
         'was_done': ['exact'],
+        'created_full': ['exact'],
     }
     search_fields = ['title', 'remark']
 
@@ -225,7 +249,7 @@ class ProcessRuntimeList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary='Process Runtime Create')
+    @swagger_auto_schema(operation_summary='Process Runtime Create', request_body=ProcessRuntimeCreateSerializer)
     @mask_view(login_require=True, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -301,6 +325,36 @@ class ProcessRuntimeMembers(BaseListMixin, BaseCreateMixin):
         return ResponseController.notfound_404()
 
 
+class ProcessMembersSync(BaseUpdateMixin):
+    queryset = ProcessMembers.objects.select_related('employee', 'employee_created')
+    serializer_list = ProcessRuntimeMembersSerializer
+
+    def view_check_process(self, process_id):
+        try:
+            process_obj = Process.objects.get_current(fill__tenant=True, fill__company=True, pk=process_id)
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=process_obj, employee_id=self.request.user.employee_current_id
+            )
+            return True
+        except Process.DoesNotExist:
+            pass
+        raise exceptions.PermissionDenied
+
+    @swagger_auto_schema(operation_summary='Process Runtime Members')
+    @mask_view(login_require=True, employee_require=True)
+    def put(self, request, *args, process_id, **kwargs):
+        if process_id and TypeCheck.check_uuid(process_id):
+            self.view_check_process(process_id=process_id)
+            call_task_background(
+                my_task=sync_member_from_opp_to_process,
+                **{
+                    'process_id': process_id,
+                }
+            )
+            return ResponseController.success_200(data={})
+        return ResponseController.notfound_404()
+
+
 class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ProcessStageApplication.objects
     serializer_detail = ProcessStageApplicationDetailSerializer
@@ -337,7 +391,9 @@ class ProcessRuntimeStagesAppControl(BaseRetrieveMixin, BaseUpdateMixin):
             )
         return False
 
-    @swagger_auto_schema(operation_summary='Process Runtime Stages App Detail')
+    @swagger_auto_schema(
+        operation_summary='Process Runtime Stages App Detail', request_body=ProcessStageApplicationUpdateSerializer
+    )
     @mask_view(login_require=True, employee_require=True)
     def put(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
@@ -350,6 +406,9 @@ class ProcessRuntimeMemberDetail(BaseDestroyMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def manual_check_obj_destroy(self, instance, **kwargs):
+        if instance.is_system is True:
+            raise exceptions.PermissionDenied
+
         ProcessRuntimeControl.check_permit_process(
             process_obj=instance.process, employee_id=self.request.user.employee_current_id
         )
@@ -366,3 +425,25 @@ class ProcessRuntimeMemberDetail(BaseDestroyMixin):
     @mask_view(login_require=True, employee_require=True)
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
+
+
+class ProcessRuntimeLog(BaseListMixin):
+    queryset = ProcessActivity.objects.select_related('employee_created', 'stage', 'doc')
+    serializer_list = ProcessRuntimeLogList
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(operation_summary='Process Runtime Logs')
+    @mask_view(login_require=True, employee_require=True)
+    def get(self, request, *args, process_id, **kwargs):
+        if process_id and TypeCheck.check_uuid(process_id):
+            try:
+                process_obj = Process.objects.get_current(fill__tenant=True, fill__company=True, pk=process_id)
+            except Process.DoesNotExist:
+                return ResponseController.success_200(data=[])
+
+            ProcessRuntimeControl.check_permit_process(
+                process_obj=process_obj, employee_id=self.request.user.employee_current_id
+            )
+
+            return self.list(request, *args, process_id, **kwargs)
+        return ResponseController.notfound_404()

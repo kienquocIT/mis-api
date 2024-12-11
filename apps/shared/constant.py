@@ -227,7 +227,7 @@ PERMISSION_OPTION_RANGE = (
 REQUEST_FOR = [
     (0, _('For Sale Order')),
     (1, _('For Stock Free')),
-    (2, _('For Other')),
+    (2, _('For Fixed Asset')),
     (3, _('For Stock Plan')),
 ]
 

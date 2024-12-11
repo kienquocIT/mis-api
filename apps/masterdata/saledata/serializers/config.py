@@ -23,6 +23,7 @@ class TermSerializer(serializers.ModelSerializer):
             'no_of_days',
             'after',
             'order',
+            'title',
         )
 
 
