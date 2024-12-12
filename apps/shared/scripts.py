@@ -2681,7 +2681,7 @@ def create_data_for_GR_WH_PRD():
     print('Done :_)')
 
 
-def create_data_for_GoodsReceiptLot():
+def update_data_for_GoodsReceiptLot():
     for item in GoodsReceiptLot.objects.all():
         lot_obj = ProductWareHouseLot.objects.filter(
             lot_number=item.lot_number,
@@ -2692,7 +2692,9 @@ def create_data_for_GoodsReceiptLot():
     print('Done :))')
 
 
-def create_goods_detail_data():
+def recreate_goods_detail_data():
+    GoodsDetail.objects.all().delete()
+    update_data_for_GoodsReceiptLot()
     for goods_receipt_obj in GoodsReceipt.objects.filter(system_status=3):
         GoodsReceipt.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
     print('Done :))')
