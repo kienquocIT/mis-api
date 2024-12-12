@@ -1,10 +1,9 @@
 import re
-from urllib.parse import urlsplit
 
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from django.conf import settings
 from django.core import exceptions
 from django.http import HttpResponseNotFound, HttpResponseForbidden, response
 from django.urls import re_path
@@ -38,7 +37,20 @@ def proxy_serve_avatar(request, path, document_root=None, **kwargs):
 @permission_classes([IsAuthenticated])
 def proxy_serve_another(request, path, document_root=None, **kwargs):
     if path.startswith('private/'):
-        return HttpResponseNotFound()
+        user = request.user
+        if (
+                user
+                and not isinstance(user, AnonymousUser)
+                and hasattr(user, 'company_current_id')
+                and hasattr(user, 'employee_current_id')
+        ):
+            prefix_path = f"private/{user.company_current_id.hex}/{user.employee_current_id.hex}/"
+            if path.startswith(prefix_path):
+                pass
+            else:
+                return HttpResponseNotFound()
+        else:
+            return HttpResponseNotFound()
 
     if request.user.is_authenticated:
         return call_serve(request, path, document_root, show_indexes=False)
