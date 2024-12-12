@@ -2437,6 +2437,48 @@ BIDDING_APP_CONFIG = {
     "allow_opportunity": True,
 }
 
+CONSULTING_APP_CONFIG = {
+    "id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+    "title": "Consulting",
+    "code": "consulting",
+    "model_code": "consulting",
+    "app_label": "consulting",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True,
+    "allow_process": True,
+    "allow_opportunity": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2716,6 +2758,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "ad1e1c4e-2a7e-4b98-977f-88d069554657": ApplicationConfigFrame(**BIDDING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "3a369ba5-82a0-4c4d-a447-3794b67d1d02": ApplicationConfigFrame(**CONSULTING_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

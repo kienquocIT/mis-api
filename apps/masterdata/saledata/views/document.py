@@ -9,12 +9,15 @@ from apps.shared import (mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMi
 class DocumentTypeList(BaseListMixin, BaseCreateMixin):
     queryset = DocumentType.objects
     search_fields = ['title']
-    filterset_fields = { }
     serializer_list = DocumentTypeListSerializer
     serializer_create = DocumentTypeCreateSerializer
     serializer_detail = DocumentTypeDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        doc_type_category = self.request.query_params.get('doc_type_category')
+        return super().get_queryset().filter(doc_type_category=doc_type_category)
 
     @swagger_auto_schema(
         operation_summary="DocumentType list",
