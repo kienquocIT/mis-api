@@ -15,6 +15,7 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
     state = serializers.SerializerMethodField()
     subs = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
 
     class Meta:
         model = Periods
@@ -27,7 +28,8 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'start_date',
             'software_start_using_time',
             'state',
-            'subs'
+            'subs',
+            'can_delete'
         )
 
     @classmethod
@@ -41,9 +43,7 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_state(cls, obj):
-        if obj.fiscal_year == datetime.now().year:
-            return 0
-        return 1
+        return obj.fiscal_year != datetime.now().year
 
     @classmethod
     def get_subs(cls, obj):
@@ -56,6 +56,10 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'end_date': sub.end_date,
             'locked': sub.locked
         } for sub in obj.sub_periods_period_mapped.all()]
+
+    @classmethod
+    def get_can_delete(cls, obj):
+        return obj.fiscal_year > datetime.now().year
 
 
 class PeriodsCreateSerializer(serializers.ModelSerializer):
