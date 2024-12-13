@@ -326,6 +326,7 @@ TASK_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_process": True,
+    "allow_opportunity": True,
 }
 
 QUOTATION_APP_CONFIG = {

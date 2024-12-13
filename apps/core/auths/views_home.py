@@ -26,7 +26,7 @@ class AliveCheckView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(operation_summary='Check session is alive')
-    @mask_view(login_require=True)
+    @mask_view(login_require=False)
     def get(self, request, *args, **kwargs):
         user = request.user
         if not user or user.is_authenticated is False or user.is_anonymous is True:
