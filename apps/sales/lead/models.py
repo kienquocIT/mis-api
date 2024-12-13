@@ -64,6 +64,11 @@ class Lead(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        self.add_auto_generate_code_to_instance(self, 'LEAD[n4]', False)
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 class LeadNote(SimpleAbstractModel):
     lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE, related_name='lead_notes')
