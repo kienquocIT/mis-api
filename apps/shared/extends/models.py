@@ -102,6 +102,7 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
             number = model_cls.objects.filter(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
+                is_delete=False,
                 system_status=3 if in_workflow else 1,
                 **filter_fields
             ).count()
