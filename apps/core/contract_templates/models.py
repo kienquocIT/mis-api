@@ -4,7 +4,7 @@ from apps.shared import MasterDataAbstractModel
 
 
 class ContractTemplate(MasterDataAbstractModel):
-    tempate = models.TextField(blank=True)
+    template = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'Contract template'
