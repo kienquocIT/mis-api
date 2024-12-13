@@ -123,6 +123,8 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
             'sale_person',
             'payment_term_data',
             'quotation_data',
+            'lease_from',
+            'lease_to',
             'system_status',
             # sale order tabs
             'lease_products_data',

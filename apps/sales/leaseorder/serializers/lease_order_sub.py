@@ -326,6 +326,7 @@ class LeaseOrderRuleValidate:
 # SUB SERIALIZERS
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
+    offset_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
     uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
@@ -337,6 +338,9 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
         fields = (
             'product_id',
             'product_data',
+            'asset_type',
+            'offset_id',
+            'offset_data',
             'unit_of_measure_id',
             'uom_data',
             'uom_time_id',
@@ -378,6 +382,10 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_offset_id(cls, value):
         return LeaseOrderCommonValidate().validate_product(value=value)
 
     @classmethod

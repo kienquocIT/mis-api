@@ -222,6 +222,14 @@ class LeaseOrderProduct(SimpleAbstractModel):
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
     asset_type = models.SmallIntegerField(default=0, help_text='choices= ' + str(ASSET_TYPE))
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
