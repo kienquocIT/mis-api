@@ -376,10 +376,9 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
                     obj.signing_date = contract.get('signing_date')
-                    obj.sign_status = contract.get('sign_status')
                     obj.save(
                         update_fields=['effected_date', 'content', 'contract_type', 'expired_date', 'file_type',
-                                       'limit_time', 'represent', 'signing_date', 'sign_status', 'date_modified']
+                                       'limit_time', 'represent', 'signing_date', 'date_modified']
                     )
                 except EmployeeContract.DoesNotExist:
                     raise exceptions.NotFound

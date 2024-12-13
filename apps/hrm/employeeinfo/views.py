@@ -122,9 +122,6 @@ class EmployeeContractList(BaseListMixin):
         'employee_info': ['exact']
     }
 
-    # def get_queryset(self):
-    #     return super().get_queryset()s
-
     @swagger_auto_schema(
         operation_summary="Employee Contract list",
         operation_description="get employee contract list",

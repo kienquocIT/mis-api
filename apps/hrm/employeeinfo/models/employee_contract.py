@@ -112,3 +112,44 @@ class EmployeeContractMapAttachment(M2MFilesAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+class EmployeeContractRuntime(MasterDataAbstractModel):
+    employee_contract = models.OneToOneField(
+        EmployeeContract,
+        on_delete=models.CASCADE,
+        related_name="runtime_of_contract"
+    )
+    members = models.JSONField(
+        default=list,
+        help_text='["employee_01_id", "employee_01_id"]',
+        verbose_name='members assignee',
+    )
+    contract = models.TextField(blank=True)
+    signatures = models.JSONField(
+        default=dict,
+        verbose_name='signatures parameter of contract',
+        help_text=json.dumps(
+            {
+                'sign_01': {
+                    'assignee': ['emp_01_id', 'emp_02_id'],
+                    'stt': 'boolean',
+                    'signed_by': 'employee_id',
+                    'sign_image': 'base64 code'
+                },
+                'sign_02': {
+                    'assignee': ['emp_01_id', 'emp_02_id'],
+                    'stt': 'boolean',
+                    'signed_by': 'employee_id',
+                    'sign_image': 'base64 code'
+                }
+            }
+        )
+    )
+
+    class Meta:
+        verbose_name = 'Contract runtime'
+        verbose_name_plural = 'Contract runtime'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

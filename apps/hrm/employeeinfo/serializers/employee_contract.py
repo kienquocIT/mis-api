@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from apps.shared import HRMsg
 from apps.shared.translations.base import AttachmentMsg
-from ..models import EmployeeContract, EmployeeContractMapAttachment
+from ..models import EmployeeContract, EmployeeContractMapAttachment, EmployeeContractRuntime
 
 
 class EmployeeContractListSerializers(serializers.ModelSerializer):
@@ -93,4 +93,15 @@ class EmployeeContractDetailSerializers(serializers.ModelSerializer):
             'attachment',
             'content',
             'sign_status',
+        )
+
+
+class EmployeeContractRuntimeCreateSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeContractRuntime
+        fields = (
+            'employee_contract',
+            'members',
+            'contract',
+            'signatures',
         )
