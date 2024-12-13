@@ -458,3 +458,10 @@ CONTRACT_TYPE = (
     (1, 'Labor contract'),
     (2, 'Addendum contract')
 )
+
+# Lease order
+ASSET_TYPE = (
+    (1, 'Product'),
+    (2, 'Tool'),
+    (3, 'Fixed asset'),
+)
