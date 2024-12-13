@@ -8,7 +8,7 @@ class ContractTemplate(MasterDataAbstractModel):
 
     class Meta:
         verbose_name = 'Contract template'
-        verbose_name_plural = 'Contract'
+        verbose_name_plural = 'Contract template'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
