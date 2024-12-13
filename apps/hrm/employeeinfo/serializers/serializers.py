@@ -8,13 +8,26 @@ from apps.shared.translations.hrm import HRMMsg
 from apps.shared import HRMsg, DisperseModel, HrMsg
 
 from .employee_contract import EmployeeContractCreateSerializers
-from ..models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContractMapAttachment, EmployeeContract
+from ..models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContractMapAttachment, EmployeeContract, \
+    EmployeeMapSignatureAttachment
 
 
-def handle_attach_file(instance, attachment_result):
+def handle_attach_file_contract(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
         relate_app = Application.objects.get(id="1b8a6f6e-65ec-4769-acaa-465bed2d0523")
         state = EmployeeContractMapAttachment.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
+        if state:
+            return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
+
+
+def handle_attachment(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.get(id="7436c857-ad09-4213-a190-c1c7472e99be")
+        state = EmployeeMapSignatureAttachment.resolve_change(
             result=attachment_result, doc_id=instance.id, doc_app=relate_app,
         )
         if state:
@@ -140,7 +153,7 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
                 signing_date=contract.get('signing_date'),
             )
         if attachment is not None and obj:
-            handle_attach_file(obj, attachment)
+            handle_attach_file_contract(obj, attachment)
         return True
 
     def create(self, validated_data):
@@ -283,6 +296,18 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
 
+    def validate_attachment(self, attrs):
+        user = self.context.get('user', None)
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = EmployeeMapSignatureAttachment.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     class Meta:
         model = EmployeeInfo
         fields = (
@@ -304,6 +329,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             'tax_code',
             'permanent_address',
             'current_resident',
+            'attachment',
             # for employee
             'first_name',
             'last_name',
@@ -373,10 +399,11 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     signing_date=contract.get('signing_date'),
                 )
         if attachment is not None and obj:
-            handle_attach_file(obj, attachment)
+            handle_attach_file_contract(obj, attachment)
         return True
 
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', None)
         try:
             with transaction.atomic():
                 self.update_hr_employee(validated_data)
@@ -384,6 +411,8 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                 for key, value in validated_data.items():
                     setattr(instance, key, value)
                 instance.save()
+                if attachment is not None:
+                    handle_attachment(instance, attachment)
                 return instance
         except Exception as err:
             return err

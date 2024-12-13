@@ -9,6 +9,7 @@ from django.core.exceptions import EmptyResultSet, ValidationError as DjangoVali
 from django.db import transaction
 from django.db.models import Q, Model
 from django.utils import timezone
+from django.utils.datetime_safe import datetime
 
 from django_filters import rest_framework as filters
 
@@ -886,8 +887,8 @@ class BaseListMixin(BaseMixin):
         return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
     def get_queryset_custom_direct_page(self, main_queryset=None):
-        direct_params = ['direct_first', 'direct_last', 'direct_previous', 'direct_next']
-        if any(item in self.request.query_params for item in direct_params):
+        if (self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
+                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')):
             queryset = super().get_queryset()
             current_pk = self.request.query_params.get('current_pk')
             current_obj = queryset.filter(id=current_pk).values('date_created').first() if current_pk else None

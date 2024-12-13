@@ -99,6 +99,8 @@ class GoodsDetailListImportDB(BaseCreateMixin):
     serializer_detail = GoodsDetailDetailSerializerImportDB
     create_hidden_field = ['tenant_id', 'company_id']
 
+    throttle_scope = 'import_DB_throttle_scope'  # Thêm phạm vi throttle
+
     @swagger_auto_schema(
         operation_summary="Goods Detail List Import DB",
         operation_description="Goods Detail List Import DB",
