@@ -22,28 +22,34 @@ class LeaseOrderCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         instance.lease_order_product_lease_order.all().delete()
-        LeaseOrderProduct.objects.bulk_create([
-            LeaseOrderProduct(lease_order=instance, **sale_order_product)
-            for sale_order_product in validated_data['lease_products_data']
-        ])
+        LeaseOrderProduct.objects.bulk_create(
+            [LeaseOrderProduct(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_product,
+            ) for sale_order_product in validated_data['lease_products_data']]
+        )
         return True
 
     @classmethod
     def create_cost(cls, validated_data, instance):
         instance.lease_order_cost_lease_order.all().delete()
-        LeaseOrderCost.objects.bulk_create([
-            LeaseOrderCost(lease_order=instance, **sale_order_cost)
-            for sale_order_cost in validated_data['lease_costs_data']
-        ])
+        LeaseOrderCost.objects.bulk_create(
+            [LeaseOrderCost(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_cost,
+            ) for sale_order_cost in validated_data['lease_costs_data']]
+        )
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
         instance.lease_order_expense_lease_order.all().delete()
-        LeaseOrderExpense.objects.bulk_create([
-            LeaseOrderExpense(lease_order=instance, **sale_order_expense)
-            for sale_order_expense in validated_data['lease_expenses_data']
-        ])
+        LeaseOrderExpense.objects.bulk_create(
+            [LeaseOrderExpense(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_expense,
+            ) for sale_order_expense in validated_data['lease_expenses_data']]
+        )
         return True
 
     @classmethod

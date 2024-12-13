@@ -319,7 +319,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
 
 
 # SUPPORT PRODUCTS
-class SaleOrderProduct(SimpleAbstractModel):
+class SaleOrderProduct(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -410,7 +410,7 @@ class SaleOrderProduct(SimpleAbstractModel):
 
 
 # SUPPORT LOGISTICS
-class SaleOrderLogistic(SimpleAbstractModel):
+class SaleOrderLogistic(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -426,7 +426,7 @@ class SaleOrderLogistic(SimpleAbstractModel):
 
 
 # SUPPORT COST
-class SaleOrderCost(SimpleAbstractModel):
+class SaleOrderCost(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,

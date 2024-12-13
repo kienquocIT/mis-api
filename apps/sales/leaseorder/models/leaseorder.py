@@ -205,7 +205,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
 
 
 # SUPPORT PRODUCTS
-class LeaseOrderProduct(SimpleAbstractModel):
+class LeaseOrderProduct(MasterDataAbstractModel):
     lease_order = models.ForeignKey(
         LeaseOrder,
         on_delete=models.CASCADE,
@@ -332,7 +332,7 @@ class LeaseOrderProduct(SimpleAbstractModel):
 
 
 # SUPPORT COST
-class LeaseOrderCost(SimpleAbstractModel):
+class LeaseOrderCost(MasterDataAbstractModel):
     lease_order = models.ForeignKey(
         LeaseOrder,
         on_delete=models.CASCADE,

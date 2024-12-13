@@ -329,7 +329,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
 
 
 # SUPPORT PRODUCTS
-class QuotationProduct(SimpleAbstractModel):
+class QuotationProduct(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
@@ -411,7 +411,7 @@ class QuotationProduct(SimpleAbstractModel):
 
 
 # SUPPORT LOGISTICS
-class QuotationLogistic(SimpleAbstractModel):
+class QuotationLogistic(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
@@ -427,7 +427,7 @@ class QuotationLogistic(SimpleAbstractModel):
 
 
 # SUPPORT COST
-class QuotationCost(SimpleAbstractModel):
+class QuotationCost(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,

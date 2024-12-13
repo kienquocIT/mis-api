@@ -23,10 +23,12 @@ class SaleOrderCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         instance.sale_order_product_sale_order.all().delete()
-        SaleOrderProduct.objects.bulk_create([
-            SaleOrderProduct(sale_order=instance, **sale_order_product)
-            for sale_order_product in validated_data['sale_order_products_data']
-        ])
+        SaleOrderProduct.objects.bulk_create(
+            [SaleOrderProduct(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_product,
+            ) for sale_order_product in validated_data['sale_order_products_data']]
+        )
         return True
 
     @classmethod
@@ -36,26 +38,30 @@ class SaleOrderCommonCreate:
             old_logistic.delete()
         SaleOrderLogistic.objects.create(
             **validated_data['sale_order_logistic_data'],
-            sale_order=instance
+            sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
         )
         return True
 
     @classmethod
     def create_cost(cls, validated_data, instance):
         instance.sale_order_cost_sale_order.all().delete()
-        SaleOrderCost.objects.bulk_create([
-            SaleOrderCost(sale_order=instance, **sale_order_cost)
-            for sale_order_cost in validated_data['sale_order_costs_data']
-        ])
+        SaleOrderCost.objects.bulk_create(
+            [SaleOrderCost(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_cost,
+            ) for sale_order_cost in validated_data['sale_order_costs_data']]
+        )
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
         instance.sale_order_expense_sale_order.all().delete()
-        SaleOrderExpense.objects.bulk_create([
-            SaleOrderExpense(sale_order=instance, **sale_order_expense)
-            for sale_order_expense in validated_data['sale_order_expenses_data']
-        ])
+        SaleOrderExpense.objects.bulk_create(
+            [SaleOrderExpense(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_expense,
+            ) for sale_order_expense in validated_data['sale_order_expenses_data']]
+        )
         return True
 
     @classmethod
