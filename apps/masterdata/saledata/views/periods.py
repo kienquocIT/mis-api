@@ -6,8 +6,10 @@ from apps.masterdata.saledata.serializers import (
     PeriodsListSerializer, PeriodsCreateSerializer,
     PeriodsDetailSerializer, PeriodsUpdateSerializer
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, \
-    ResponseController
+from apps.shared import (
+    mask_view, ResponseController,
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
+)
 
 
 # Create your views here.
