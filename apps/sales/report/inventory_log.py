@@ -27,7 +27,9 @@ class ReportInvLog:
 
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
-                        ReportInvCommonFunc.sum_up_sub_period(tenant, company, employee, period_obj, order)
+                        run_state = ReportInvCommonFunc.sum_up_sub_period(tenant, company, employee, period_obj, order)
+                        if run_state is False:
+                            break
 
                     # tạo các log
                     new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
@@ -149,7 +151,7 @@ class ReportInvCommonFunc:
                 fiscal_year=this_period.fiscal_year - 1
             ).first() if int(this_sub_order) == 1 else this_period
             last_sub_order = 12 if int(this_sub_order) == 1 else int(this_sub_order) - 1
-            if last_period and last_sub_order:
+            if this_sub and last_period and last_sub_order:
                 if not this_sub.run_report_inventory:
                     bulk_info = []
                     bulk_info_wh = []
@@ -180,7 +182,7 @@ class ReportInvCommonFunc:
                     ReportInventoryCost.objects.bulk_create(bulk_info)
                     ReportInventoryCostByWarehouse.objects.bulk_create(bulk_info_wh)
                     last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
-                    if any([
+                    if company.software_start_using_time and last_sub and any([
                         last_sub.run_report_inventory,
                         int(this_sub_order) <= company.software_start_using_time.month - this_period.space_month
                     ]):
@@ -188,5 +190,10 @@ class ReportInvCommonFunc:
                         this_sub.save(update_fields=['run_report_inventory'])
                         print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
                               f"Pushed to next sub period.")
-            return True
+                        return True
+                    else:
+                        print('Error: software_start_using_time || last_sub is None')
+            else:
+                print('Error: this_sub || last_period || last_sub_order is None')
+            return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})
