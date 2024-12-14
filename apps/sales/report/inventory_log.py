@@ -191,8 +191,7 @@ class ReportInvCommonFunc:
                         print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
                               f"Pushed to next sub period.")
                         return True
-                    else:
-                        print('Error: software_start_using_time || last_sub is None')
+                    print('Error: software_start_using_time || last_sub is None')
             else:
                 print('Error: this_sub || last_period || last_sub_order is None')
             return False
