@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
     BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
 
 

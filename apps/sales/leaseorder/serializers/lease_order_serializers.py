@@ -1,13 +1,12 @@
 from rest_framework import serializers
 
 from apps.core.process.utils import ProcessRuntimeControl
-from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
     LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate
-from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderExpense, LeaseOrder
+from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
