@@ -420,6 +420,7 @@ class GoodsReturnSubSerializerForNonPicking:
                         delivery_data=None,
                         is_updated=False,
                         state=1,  # ready
+                        system_status=1,  # created
                         sale_order_data=delivery_sub_obj.sale_order_data,
                         estimated_delivery_date=delivery_sub_obj.estimated_delivery_date,
                         actual_delivery_date=delivery_sub_obj.actual_delivery_date,

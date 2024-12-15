@@ -328,7 +328,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,
             win_rate=win_rate,
-            open_date=datetime.datetime.now()
+            open_date=datetime.datetime.now(),
+            system_status=1
         )
 
         if Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, code=opportunity.code).count() > 1:
@@ -877,6 +878,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
     list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
+    estimated_gross_profit_percent = serializers.FloatField(required=False)
+    estimated_gross_profit_value = serializers.FloatField(required=False)
 
     class Meta:
         model = Opportunity

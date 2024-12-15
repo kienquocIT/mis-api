@@ -59,8 +59,12 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
         if not stage_app_obj.stage:
             # stage app global
             pass
-        elif stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
-            # deny create for stages is coming!
+        elif stage_app_obj.process and stage_app_obj.process.stage_current:
+            if stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
+                # deny create for stages is coming!
+                return False
+        else:
+            # process not current => finish!
             return False
 
         if stage_app_obj.max == "n":

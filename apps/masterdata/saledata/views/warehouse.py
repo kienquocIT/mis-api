@@ -143,6 +143,7 @@ class ProductWareHouseList(BaseListMixin):
 
 class ProductWareHouseListForGoodsTransfer(BaseListMixin):
     queryset = ProductWareHouse.objects
+    search_fields = ['product__code', 'product__title']
     serializer_list = ProductWareHouseListSerializerForGoodsTransfer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_class = ProductWareHouseListFilter

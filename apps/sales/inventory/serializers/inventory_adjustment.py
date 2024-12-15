@@ -135,16 +135,7 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
         fields = ('title',)
 
     def create(self, validated_data):
-        if InventoryAdjustment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'IA.0001'
-        else:
-            latest_code = InventoryAdjustment.objects.filter_current(
-                fill__tenant=True, fill__company=True, is_delete=False
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'IA.000' + str(new_code)
-
-        obj = InventoryAdjustment.objects.create(**validated_data, code=new_code)
+        obj = InventoryAdjustment.objects.create(**validated_data, system_status=1)
         IACommonFunc.create_ia_warehouses(obj, self.initial_data.get('ia_warehouses_data', []))
         IACommonFunc.create_ia_employees_in_charge(obj, self.initial_data.get('ia_employees_in_charge', []))
         IACommonFunc.create_ia_items(obj, self.initial_data.get('ia_items_data', []))

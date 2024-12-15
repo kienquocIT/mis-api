@@ -12,7 +12,6 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 class GoodsReturnList(BaseListMixin, BaseCreateMixin):
     queryset = GoodsReturn.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
     serializer_list = GoodsReturnListSerializer
     serializer_create = GoodsReturnCreateSerializer
     serializer_detail = GoodsReturnDetailSerializer

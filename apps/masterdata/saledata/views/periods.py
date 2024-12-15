@@ -6,7 +6,10 @@ from apps.masterdata.saledata.serializers import (
     PeriodsListSerializer, PeriodsCreateSerializer,
     PeriodsDetailSerializer, PeriodsUpdateSerializer
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import (
+    mask_view, ResponseController,
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
+)
 
 
 # Create your views here.
@@ -47,7 +50,7 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = Periods.objects
     serializer_list = PeriodsListSerializer
     serializer_create = PeriodsCreateSerializer
@@ -71,3 +74,14 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         self.ser_context['employee_current'] = self.request.user.employee_current
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Remove member from opp'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.fiscal_year == datetime.datetime.now().year:
+            return ResponseController.internal_server_error_500(msg="Cannot delete this Period.")
+        instance.delete()
+        return ResponseController.success_200({}, key_data='result')
