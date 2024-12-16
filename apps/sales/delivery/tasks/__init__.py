@@ -11,26 +11,28 @@ from apps.sales.delivery.models import (
     OrderPicking, OrderPickingSub, OrderPickingProduct,
     OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
 )
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 
 __all__ = [
     'task_active_delivery_from_sale_order',
+    'task_active_delivery_from_lease_order',
 ]
 
 
-class SaleOrderActiveDeliverySerializer:
+class OrderActiveDeliverySerializer:
     def __init__(
             self,
-            sale_order_obj: SaleOrder,
+            order_obj,  # SaleOrder || LeaseOrder
             order_products: list[SaleOrderProduct],
             delivery_config_obj: DeliveryConfig,
             process_id = None,
     ):
-        if sale_order_obj:
-            self.tenant_id = sale_order_obj.tenant_id
-            self.company_id = sale_order_obj.company_id
+        if order_obj:
+            self.tenant_id = order_obj.tenant_id
+            self.company_id = order_obj.company_id
 
-            self.order_obj = sale_order_obj
+            self.order_obj = order_obj
             self.order_products = order_products
             self.config_obj = delivery_config_obj
         else:
@@ -100,14 +102,14 @@ class SaleOrderActiveDeliverySerializer:
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
                 product_data={
-                    'id': str(m2m_obj.product.id),
+                    'id': str(m2m_obj.product_id),
                     'title': str(m2m_obj.product.title),
                     'code': str(m2m_obj.product.code),
                     'remarks': ''
                 } if m2m_obj.product else {},
                 uom=m2m_obj.unit_of_measure,
                 uom_data={
-                    'id': str(m2m_obj.unit_of_measure.id),
+                    'id': str(m2m_obj.unit_of_measure_id),
                     'title': str(m2m_obj.unit_of_measure.title),
                     'code': str(m2m_obj.unit_of_measure.code),
                 } if m2m_obj.unit_of_measure else {},
@@ -343,21 +345,41 @@ class SaleOrderActiveDeliverySerializer:
 
 @shared_task
 def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
-    sale_order_obj = SaleOrder.objects.get(pk=sale_order_id)
-    sale_order_products = SaleOrderProduct.objects.select_related(
-        'product', 'unit_of_measure'
-    ).filter(
-        sale_order=sale_order_obj,
-        product__isnull=False,
-    )
-    config_obj = DeliveryConfig.objects.get(company=sale_order_obj.company)
-    state, msg_returned = SaleOrderActiveDeliverySerializer(
-        sale_order_obj=sale_order_obj,
-        order_products=sale_order_products,
-        delivery_config_obj=config_obj,
-        process_id=process_id,
-    ).active()
-    if state is True:
-        sale_order_obj.delivery_call = True
-        sale_order_obj.save(update_fields=['delivery_call'])
+    state, msg_returned = False, ""
+    sale_order_obj = SaleOrder.objects.filter(id=sale_order_id).first()
+    if sale_order_obj:
+        sale_order_products = SaleOrderProduct.objects.select_related(
+            'product', 'unit_of_measure'
+        ).filter(sale_order=sale_order_obj, product__isnull=False,)
+        config_obj = DeliveryConfig.objects.get(company=sale_order_obj.company)
+        state, msg_returned = OrderActiveDeliverySerializer(
+            order_obj=sale_order_obj,
+            order_products=sale_order_products,
+            delivery_config_obj=config_obj,
+            process_id=process_id,
+        ).active()
+        if state is True:
+            sale_order_obj.delivery_call = True
+            sale_order_obj.save(update_fields=['delivery_call'])
+    return state, msg_returned
+
+
+@shared_task
+def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
+    state, msg_returned = False, ""
+    lease_order_obj = LeaseOrder.objects.filter(id=lease_order_id).first()
+    if lease_order_obj:
+        lease_order_products = LeaseOrderProduct.objects.select_related(
+            'product', 'unit_of_measure'
+        ).filter(lease_order=lease_order_obj, product__isnull=False,)
+        config_obj = DeliveryConfig.objects.get(company=lease_order_obj.company)
+        state, msg_returned = OrderActiveDeliverySerializer(
+            order_obj=lease_order_obj,
+            order_products=lease_order_products,
+            delivery_config_obj=config_obj,
+            process_id=process_id,
+        ).active()
+        if state is True:
+            lease_order_obj.delivery_call = True
+            lease_order_obj.save(update_fields=['delivery_call'])
     return state, msg_returned
