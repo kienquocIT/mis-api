@@ -54,7 +54,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='leaseorder', model_code='leaseorder', perm_code='view',
+        # label_code='leaseorder', model_code='leaseorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

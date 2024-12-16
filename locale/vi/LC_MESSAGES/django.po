@@ -138,6 +138,10 @@ msgstr "Chi phí nhân công nội bộ"
 msgid "Inventory Adjustment"
 msgstr "Kiểm kê kho"
 
+# 010404b3-bb91-4b24-9538-075f5f00ef14
+msgid "Lease Order"
+msgstr "Đơn cho thuê"
+
 # baff033a-c416-47e1-89af-b6653534f06e
 msgid "Leave"
 msgstr "Nghỉ phép"

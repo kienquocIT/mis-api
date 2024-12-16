@@ -9,7 +9,7 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_D
 class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
-        return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+        return '010404b3-bb91-4b24-9538-075f5f00ef14'
 
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',

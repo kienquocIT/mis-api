@@ -26,13 +26,28 @@ class OrderDelivery(DataAbstractModel):
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
-        verbose_name='Order Picking of Sale Order',
+        verbose_name='Order Delivery of Sale Order',
         help_text='The Sale Order had one/many Order Picking',
         related_name='delivery_of_sale_order',
+        null=True,
     )
     sale_order_data = models.JSONField(
         default=dict,
         verbose_name='Sale Order data',
+        help_text='data json of sale order'
+    )
+    # lease order
+    lease_order = models.OneToOneField(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name='Order Delivery of Lease Order',
+        related_name='delivery_of_lease_order',
+        null=True,
+    )
+    lease_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Lease Order data',
+        help_text='data json of lease order'
     )
     from_picking_area = models.TextField(
         blank=True,
@@ -224,6 +239,7 @@ class OrderDeliverySub(DataAbstractModel):
         through='OrderDeliveryProduct',
         symmetrical=False,
         related_name='products_of_order_delivery',
+        through_fields=('delivery_sub', 'product')  # Explicitly specify the foreign keys
     )
     delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
@@ -518,12 +534,16 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_data = models.JSONField(
         default=dict,
         verbose_name='Product Data backup',
-        help_text=json.dumps(
-            [
-                {'id': '', 'title': '', 'code': '', 'remarks': ''}
-            ]
-        )
+        help_text='data json of product'
     )
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="delivery_product_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

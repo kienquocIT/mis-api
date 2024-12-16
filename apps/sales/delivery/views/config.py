@@ -25,6 +25,7 @@ from apps.sales.delivery.tasks import (
 __all__ = [
     'DeliveryConfigDetail',
     'SaleOrderActiveDelivery',
+    'LeaseOrderActiveDelivery',
 ]
 
 from apps.shared.translations.sales import DeliverMsg

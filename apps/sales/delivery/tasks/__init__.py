@@ -98,6 +98,10 @@ class OrderActiveDeliverySerializer:
             if self.config_obj.is_picking is False or self.check_has_prod_services > 0:
                 stock_ready = m2m_obj.product_quantity
 
+            offset = None
+            if hasattr(m2m_obj, "offset"):
+                offset = m2m_obj.offset
+
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
@@ -107,6 +111,13 @@ class OrderActiveDeliverySerializer:
                     'code': str(m2m_obj.product.code),
                     'remarks': ''
                 } if m2m_obj.product else {},
+                offset=offset,
+                offset_data={
+                    'id': str(offset.id),
+                    'title': str(offset.title),
+                    'code': str(offset.code),
+                    'remarks': ''
+                } if offset else {},
                 uom=m2m_obj.unit_of_measure,
                 uom_data={
                     'id': str(m2m_obj.unit_of_measure_id),
@@ -206,15 +217,12 @@ class OrderActiveDeliverySerializer:
                 self.check_has_prod_services:
             state = 1
 
-        order_delivery = OrderDelivery.objects.create(
-            process_id=self.process_id,
-            title=self.order_obj.title if self.order_obj else '',
-            employee_created=self.order_obj.employee_created if self.order_obj else None,
-            #
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
-            sale_order=self.order_obj,
-            sale_order_data={
+        sale_order, sale_order_data = None, {}
+        lease_order, lease_order_data = None, {}
+        label = str(self.order_obj.__class__.get_model_code())
+        if label == "saleorder.saleorder":
+            sale_order = self.order_obj
+            sale_order_data = {
                 "id": str(self.order_obj.id),
                 "title": str(self.order_obj.title),
                 "code": str(self.order_obj.code),
@@ -230,7 +238,30 @@ class OrderActiveDeliverySerializer:
                     'id': str(self.order_obj.opportunity_id), 'title': self.order_obj.opportunity.title,
                     'code': self.order_obj.opportunity.code,
                 } if self.order_obj.opportunity else {},
-            },
+            }
+        if label == "leaseorder.leaseorder":
+            lease_order = self.order_obj
+            lease_order_data = {
+                "id": str(self.order_obj.id),
+                "title": str(self.order_obj.title),
+                "code": str(self.order_obj.code),
+                "opportunity": {
+                    'id': str(self.order_obj.opportunity_id), 'title': self.order_obj.opportunity.title,
+                    'code': self.order_obj.opportunity.code,
+                } if self.order_obj.opportunity else {},
+            }
+
+        order_delivery = OrderDelivery.objects.create(
+            process_id=self.process_id,
+            title=self.order_obj.title if self.order_obj else '',
+            employee_created=self.order_obj.employee_created if self.order_obj else None,
+            #
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            sale_order=sale_order,
+            sale_order_data=sale_order_data,
+            lease_order=lease_order,
+            lease_order_data=lease_order_data,
             from_picking_area='',
             customer=self.order_obj.customer,
             customer_data={

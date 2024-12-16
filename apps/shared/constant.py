@@ -107,6 +107,7 @@ MAP_FIELD_TITLE = {
     'contract.contractapproval': 'title',
     'production.productionorder': 'title',
     'production.workorder': 'title',
+    'leaseorder.leaseorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
