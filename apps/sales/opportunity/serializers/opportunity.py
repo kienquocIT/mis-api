@@ -95,13 +95,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stage(cls, obj):
         if obj.opportunity_stage_opportunity:
-            stages = obj.opportunity_stage_opportunity.all()
-            return [
-                {
-                    'id': stage.stage.id,
-                    'is_current': stage.is_current,
-                    'indicator': stage.stage.indicator
-                } for stage in stages]
+            return [{
+                'id': stage.stage.id,
+                'is_current': stage.is_current,
+                'indicator': stage.stage.indicator,
+                'win_rate': stage.stage.win_rate
+            } for stage in obj.opportunity_stage_opportunity.all()]
         return []
 
     @classmethod
@@ -1167,16 +1166,11 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stage(cls, obj):
-        stage = obj.stage.all()
-        if stage:
-            return [
-                {
-                    'id': item.id,
-                    'is_deal_closed': item.is_deal_closed,
-                    'indicator': item.indicator,
-                } for item in stage
-            ]
-        return []
+        return [{
+            'id': item.id,
+            'is_deal_closed': item.is_deal_closed,
+            'indicator': item.indicator,
+        } for item in obj.stage.all()]
 
     @classmethod
     def get_customer(cls, obj):
