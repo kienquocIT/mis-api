@@ -1,165 +1,28 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.quotation.utils import QuotationHandler
-from apps.sales.quotation.utils.logical_finish import QuotationFinishHandler
-from apps.shared import (
-    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
-)
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
+    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
 
 
-# CONFIG
-class QuotationAppConfig(MasterDataAbstractModel):
-    company = models.OneToOneField(
-        'company.Company',
-        on_delete=models.CASCADE,
-        related_name='sales_quotation_config_detail',
-    )
-    short_sale_config = models.JSONField(
-        default=dict,
-        help_text="all config use for Quotation without Opportunity, data record in ConfigShortSale"
-    )
-    long_sale_config = models.JSONField(
-        default=dict,
-        help_text="all config use for Quotation with Opportunity, data record in ConfigLongSale"
-    )
-    is_require_payment = models.BooleanField(default=False, help_text='flag to know require payment or not')
-    ss_role = models.ManyToManyField(
-        'hr.Role',
-        through="ConfigShortSaleRole",
-        symmetrical=False,
-        blank=True,
-        related_name='config_map_ss_role'
-    )
-    ls_role = models.ManyToManyField(
-        'hr.Role',
-        through="ConfigLongSaleRole",
-        symmetrical=False,
-        blank=True,
-        related_name='config_map_ls_role'
-    )
+# BEGIN LEASE ORDER
+class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
 
-    class Meta:
-        verbose_name = 'Quotation Config'
-        verbose_name_plural = 'Quotation Configs'
-        default_permissions = ()
-        permissions = ()
-
-
-class ConfigShortSale(SimpleAbstractModel):
-    quotation_config = models.OneToOneField(
-        QuotationAppConfig,
-        on_delete=models.CASCADE,
-        verbose_name="config short sale",
-        related_name="quotation_config_short_sale"
-    )
-    is_choose_price_list = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can choose price in price list"
-    )
-    is_input_price = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input price for any product"
-    )
-    is_discount_on_product = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input discount for any product"
-    )
-    is_discount_on_total = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input discount for total of all products"
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Short Sale Config'
-        verbose_name_plural = 'Quotation Short Sale Configs'
-        default_permissions = ()
-        permissions = ()
-
-
-class ConfigLongSale(SimpleAbstractModel):
-    quotation_config = models.OneToOneField(
-        QuotationAppConfig,
-        on_delete=models.CASCADE,
-        verbose_name="config long sale",
-        related_name="quotation_config_long_sale"
-    )
-    is_not_input_price = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input price for any product"
-    )
-    is_not_discount_on_product = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input discount for any product"
-    )
-    is_not_discount_on_total = models.BooleanField(
-        default=False,
-        help_text="flag to check if user can input discount for total of all products"
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Long Sale Config'
-        verbose_name_plural = 'Quotation Long Sale Configs'
-        default_permissions = ()
-        permissions = ()
-
-
-class ConfigShortSaleRole(SimpleAbstractModel):
-    quotation_config = models.ForeignKey(
-        QuotationAppConfig,
-        on_delete=models.CASCADE,
-        verbose_name="quotation config",
-        related_name="ss_role_config"
-    )
-    role = models.ForeignKey(
-        'hr.Role',
-        on_delete=models.CASCADE,
-        verbose_name="role",
-        related_name="ss_role_role"
-    )
-
-    class Meta:
-        verbose_name = 'Short Sale Role'
-        verbose_name_plural = 'Short Sale Roles'
-        default_permissions = ()
-        permissions = ()
-
-
-class ConfigLongSaleRole(SimpleAbstractModel):
-    quotation_config = models.ForeignKey(
-        QuotationAppConfig,
-        on_delete=models.CASCADE,
-        verbose_name="quotation config",
-        related_name="ls_role_config"
-    )
-    role = models.ForeignKey(
-        'hr.Role',
-        on_delete=models.CASCADE,
-        verbose_name="role",
-        related_name="ls_role_role"
-    )
-
-    class Meta:
-        verbose_name = 'Long Sale Role'
-        verbose_name_plural = 'Long Sale Roles'
-        default_permissions = ()
-        permissions = ()
-
-
-# BEGIN QUOTATION
-class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         verbose_name="opportunity",
-        related_name="quotation_opportunity",
+        related_name="lease_opportunity",
         null=True
     )
     customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
         verbose_name="customer",
-        related_name="quotation_customer",
+        related_name="lease_customer",
         null=True,
         help_text="sale data Accounts have type customer"
     )
@@ -168,7 +31,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         verbose_name="customer",
-        related_name="quotation_contact",
+        related_name="lease_contact",
         null=True
     )
     contact_data = models.JSONField(default=dict, help_text='data json of contact')
@@ -176,50 +39,64 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         'hr.Employee',
         on_delete=models.CASCADE,
         verbose_name="sale person",
-        related_name="quotation_sale_person",
+        related_name="lease_sale_person",
         null=True
     )
     payment_term = models.ForeignKey(
         'saledata.PaymentTerm',
         on_delete=models.CASCADE,
         verbose_name="payment term",
-        related_name="quotation_payment_term",
+        related_name="lease_payment_term",
         null=True
     )
     payment_term_data = models.JSONField(
         default=dict,
-        help_text="read data payment term, use for get list or detail quotation"
+        help_text="read data payment term, use for get list or detail sale order"
     )
-    # quotation tabs
-    quotation_products_data = models.JSONField(
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="lease_quotation",
+        null=True
+    )
+    quotation_data = models.JSONField(default=dict, help_text='data json of quotation')
+    lease_from = models.DateField(null=True)
+    lease_to = models.DateField(null=True)
+    # sale order tabs
+    lease_products_data = models.JSONField(
         default=list,
-        help_text="read data products, use for get list or detail quotation"
+        help_text="read data products, use for get list or detail sale order"
     )
-    quotation_logistic_data = models.JSONField(
+    lease_logistic_data = models.JSONField(
         default=dict,
-        help_text="read data logistics, use for get list or detail quotation"
+        help_text="read data logistics, use for get list or detail sale order"
     )
     customer_shipping = models.ForeignKey(
         'saledata.AccountShippingAddress',
         on_delete=models.SET_NULL,
-        verbose_name="customer shipping",
-        related_name="quotation_customer_shipping",
+        verbose_name="lease order shipping",
+        related_name="lease_customer_shipping",
         null=True
     )
     customer_billing = models.ForeignKey(
         'saledata.AccountBillingAddress',
         on_delete=models.SET_NULL,
-        verbose_name="customer billing",
-        related_name="quotation_customer_billing",
+        verbose_name="lease order billing",
+        related_name="lease_customer_billing",
         null=True
     )
-    quotation_costs_data = models.JSONField(
+    lease_costs_data = models.JSONField(
         default=list,
-        help_text="read data cost, use for get list or detail quotation"
+        help_text="read data cost, use for get list or detail sale order"
     )
-    quotation_expenses_data = models.JSONField(
+    lease_expenses_data = models.JSONField(
         default=list,
-        help_text="read data expense, use for get list or detail quotation"
+        help_text="read data expense, use for get list or detail sale order"
+    )
+    lease_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail sale order"
     )
     # total amount of products
     total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
@@ -239,26 +116,32 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
     total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
     total_expense = models.FloatField(default=0, help_text="total amount of tab expense")
-    is_customer_confirm = models.BooleanField(default=False, help_text="flag to check customer confirm quotation")
-    # quotation indicators
-    quotation_indicators_data = models.JSONField(
+    delivery_call = models.BooleanField(
+        default=False,
+        verbose_name='Called delivery',
+        help_text='State call delivery of this',
+    )
+    # sale order indicators
+    lease_indicators_data = models.JSONField(
         default=list,
-        help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
+        help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
     )
     indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
     indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
+    # delivery status
+    delivery_status = models.SmallIntegerField(choices=SALE_ORDER_DELIVERY_STATUS, default=0)
+    has_regis = models.BooleanField(
+        default=False,
+        help_text='is True if linked with registration else False',
+    )
 
     class Meta:
-        verbose_name = 'Quotation'
-        verbose_name_plural = 'Quotations'
+        verbose_name = 'Lease Order'
+        verbose_name_plural = 'Lease Orders'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        return 'b9650500-aba7-44e3-b6e0-2542622702a3'
 
     @classmethod
     def find_max_number(cls, codes):
@@ -266,7 +149,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         for code in codes:
             try:
                 if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("SQ")[1])
+                    tmp = int(code.split('-', maxsplit=1)[0].split("LO")[1])
                     if num_max is None or (isinstance(num_max, int) and tmp > num_max):
                         num_max = tmp
             except Exception as err:
@@ -278,10 +161,10 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(codes=existing_codes)
         if num_max is None:
-            code = 'SQ0001'
+            code = 'LO0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
-            code = f'SQ{num_str}'
+            code = f'LO{num_str}'
         else:
             raise ValueError('Out of range: number exceeds 10000')
         if cls.objects.filter(code=code, company_id=company_id).exists():
@@ -291,7 +174,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def push_code(cls, instance, kwargs):
         if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=1)
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=2)
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
             kwargs['update_fields'].append('code')
         return True
@@ -314,50 +197,60 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
-                    QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
-                    QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
-                    # QuotationFinishHandler.push_to_report_revenue(instance=self)  # reports
+
         if self.system_status in [4]:  # cancel
-            # opportunity
-            QuotationFinishHandler.update_opportunity(instance=self)
-        # opportunity log
-        QuotationHandler.push_opportunity_log(instance=self)
-        # diagram
-        QuotationHandler.push_diagram(instance=self)
+            ...
         # hit DB
         super().save(*args, **kwargs)
 
 
 # SUPPORT PRODUCTS
-class QuotationProduct(MasterDataAbstractModel):
-    quotation = models.ForeignKey(
-        Quotation,
+class LeaseOrderProduct(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
         on_delete=models.CASCADE,
-        verbose_name="quotation",
-        related_name="quotation_product_quotation",
+        verbose_name="lease order",
+        related_name="lease_order_product_lease_order",
         null=True
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="quotation",
-        related_name="quotation_product_product",
+        verbose_name="product",
+        related_name="lease_order_product_product",
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset_type = models.SmallIntegerField(default=0, help_text='choices= ' + str(ASSET_TYPE))
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
-        related_name="quotation_product_uom",
+        related_name="lease_order_product_uom",
         null=True
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="lease_order_product_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
-        verbose_name="unit",
-        related_name="quotation_product_tax",
+        verbose_name="tax",
+        related_name="lease_order_product_tax",
         null=True
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
@@ -368,6 +261,9 @@ class QuotationProduct(MasterDataAbstractModel):
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
+    product_quantity_new = models.FloatField(default=0)
+    product_quantity_leased = models.FloatField(default=0)
+    product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_discount_amount = models.FloatField(default=0)
@@ -385,7 +281,7 @@ class QuotationProduct(MasterDataAbstractModel):
         'promotion.Promotion',
         on_delete=models.CASCADE,
         verbose_name="promotion",
-        related_name="quotation_product_promotion",
+        related_name="lease_order_product_promotion",
         null=True
     )
     promotion_data = models.JSONField(default=dict, help_text='data json of promotion')
@@ -394,52 +290,61 @@ class QuotationProduct(MasterDataAbstractModel):
         'saledata.Shipping',
         on_delete=models.CASCADE,
         verbose_name="shipping",
-        related_name="quotation_product_shipping",
+        related_name="lease_order_product_shipping",
         null=True
     )
     shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
+    remain_for_purchase_request = models.FloatField(default=0)
+    remain_for_purchase_order = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
+    )
     is_group = models.BooleanField(default=False, help_text="flag to know product group not product")
     group_title = models.CharField(max_length=100, blank=True, null=True)
     group_order = models.IntegerField(default=1)
+    quantity_wo_remain = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not work ordered yet, update when WO finish"
+    )
 
     class Meta:
-        verbose_name = 'Quotation Product'
-        verbose_name_plural = 'Quotation Products'
+        verbose_name = 'Lease Order Product'
+        verbose_name_plural = 'Lease Order Products'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
 # SUPPORT LOGISTICS
-class QuotationLogistic(MasterDataAbstractModel):
-    quotation = models.ForeignKey(
-        Quotation,
-        on_delete=models.CASCADE,
-    )
-    shipping_address = models.TextField(blank=True, null=True)
-    billing_address = models.TextField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = 'Quotation Logistic'
-        verbose_name_plural = 'Quotation Logistics'
-        default_permissions = ()
-        permissions = ()
+# class LeaseOrderLogistic(SimpleAbstractModel):
+#     lease_order = models.ForeignKey(
+#         LeaseOrder,
+#         on_delete=models.CASCADE,
+#     )
+#     shipping_address = models.TextField(blank=True, null=True)
+#     billing_address = models.TextField(blank=True, null=True)
+#
+#     class Meta:
+#         verbose_name = 'Lease Order Logistic'
+#         verbose_name_plural = 'Lease Order Logistics'
+#         default_permissions = ()
+#         permissions = ()
 
 
 # SUPPORT COST
-class QuotationCost(MasterDataAbstractModel):
-    quotation = models.ForeignKey(
-        Quotation,
+class LeaseOrderCost(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
         on_delete=models.CASCADE,
-        verbose_name="quotation",
-        related_name="quotation_cost_quotation",
+        verbose_name="lease order",
+        related_name="lease_order_cost_lease_order",
         null=True
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="quotation",
-        related_name="quotation_cost_product",
+        verbose_name="product",
+        related_name="lease_order_cost_product",
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
@@ -447,7 +352,7 @@ class QuotationCost(MasterDataAbstractModel):
         'saledata.WareHouse',
         on_delete=models.CASCADE,
         verbose_name="warehouse",
-        related_name="quotation_cost_warehouse",
+        related_name="lease_order_cost_warehouse",
         null=True
     )
     warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
@@ -455,15 +360,23 @@ class QuotationCost(MasterDataAbstractModel):
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
-        related_name="quotation_cost_uom",
+        related_name="lease_order_cost_uom",
         null=True
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="lease_order_cost_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
-        verbose_name="unit",
-        related_name="quotation_cost_tax",
+        verbose_name="tax",
+        related_name="lease_order_cost_tax",
         null=True
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
@@ -473,6 +386,7 @@ class QuotationCost(MasterDataAbstractModel):
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
+    product_quantity_time = models.FloatField(default=0)
     product_cost_price = models.FloatField(default=0)
     product_tax_title = models.CharField(max_length=100, blank=True, null=True)
     product_tax_value = models.FloatField(default=0)
@@ -485,34 +399,34 @@ class QuotationCost(MasterDataAbstractModel):
         'saledata.Shipping',
         on_delete=models.CASCADE,
         verbose_name="shipping",
-        related_name="quotation_cost_shipping",
+        related_name="lease_order_cost_shipping",
         null=True
     )
     shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
     supplied_by = models.SmallIntegerField(default=0)  # (0: 'purchasing', 1: 'making')
 
     class Meta:
-        verbose_name = 'Quotation Cost'
-        verbose_name_plural = 'Quotation Costs'
+        verbose_name = 'Lease Order Cost'
+        verbose_name_plural = 'Lease Order Costs'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
 # SUPPORT EXPENSE
-class QuotationExpense(MasterDataAbstractModel):
-    quotation = models.ForeignKey(
-        Quotation,
+class LeaseOrderExpense(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
         on_delete=models.CASCADE,
-        verbose_name="quotation",
-        related_name="quotation_expense_quotation",
+        verbose_name="lease order",
+        related_name="lease_order_expense_lease_order",
         null=True
     )
     expense = models.ForeignKey(
         'saledata.Expense',
         on_delete=models.CASCADE,
         verbose_name="expense",
-        related_name="quotation_expense_expense",
+        related_name="lease_order_expense_expense",
         null=True
     )
     expense_data = models.JSONField(default=dict, help_text='data json of expense')
@@ -520,7 +434,7 @@ class QuotationExpense(MasterDataAbstractModel):
         'saledata.ExpenseItem',
         on_delete=models.CASCADE,
         verbose_name="expense item",
-        related_name="quotation_expense_expense_item",
+        related_name="lease_order_expense_expense_item",
         null=True
     )
     expense_item_data = models.JSONField(default=dict, help_text='data json of expense_item')
@@ -528,22 +442,22 @@ class QuotationExpense(MasterDataAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name="product",
-        related_name="quotation_expense_product",
+        related_name="lease_order_expense_product",
         null=True
     )
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
-        related_name="quotation_expense_uom",
+        related_name="lease_order_expense_uom",
         null=True
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
-        verbose_name="unit",
-        related_name="quotation_expense_tax",
+        verbose_name="tax",
+        related_name="lease_order_expense_tax",
         null=True
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
@@ -573,8 +487,40 @@ class QuotationExpense(MasterDataAbstractModel):
     )
 
     class Meta:
-        verbose_name = 'Quotation Expense'
-        verbose_name_plural = 'Quotation Expenses'
+        verbose_name = 'Lease Order Expense'
+        verbose_name_plural = 'Lease Order Expenses'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT PAYMENT TERM STAGE
+class LeaseOrderPaymentStage(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="payment_stage_lease_order",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    term = models.ForeignKey(
+        'saledata.Term',
+        on_delete=models.SET_NULL,
+        verbose_name="payment term",
+        related_name="lease_payment_stage_term",
+        null=True
+    )
+    term_data = models.JSONField(default=dict)
+    date = models.DateTimeField(null=True)
+    payment_ratio = models.FloatField(default=0)
+    value_before_tax = models.FloatField(default=0)
+    due_date = models.DateTimeField(null=True)
+    is_ar_invoice = models.BooleanField(default=False)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Lease Order Payment Stage'
+        verbose_name_plural = 'Lease Order Payment Stages'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
