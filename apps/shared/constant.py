@@ -122,6 +122,7 @@ MAP_FIELD_TITLE = {
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
     'bidding.bidding': 'title',
+    'consulting.consulting': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
