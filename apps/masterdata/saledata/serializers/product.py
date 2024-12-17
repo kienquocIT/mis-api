@@ -646,7 +646,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    # valuation_method = serializers.IntegerField(default=1, allow_null=True)
+    valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
