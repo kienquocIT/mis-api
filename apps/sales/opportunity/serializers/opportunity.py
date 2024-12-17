@@ -218,6 +218,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "14dbc606-1453-4023-a2cf-35b1cd9e3efd",  # Call log
             "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meeting
             "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
+            "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get

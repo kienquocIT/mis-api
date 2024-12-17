@@ -4,7 +4,7 @@ __all__ = [
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.cashoutflow.utils import AdvanceHandler
-from apps.shared import DataAbstractModel, BastionFieldAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, BastionFieldAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 from django.db import models
 
 class Consulting(DataAbstractModel, BastionFieldAbstractModel):
@@ -18,6 +18,22 @@ class Consulting(DataAbstractModel, BastionFieldAbstractModel):
         related_name="consulting_customer",
         null=True,
         help_text="sale data Accounts have type customer"
+    )
+
+    product_categories = models.ManyToManyField(
+        'saledata.ProductCategory',
+        through='ConsultingProductCategory',
+        symmetrical=False,
+        blank=True,
+        related_name='consulting_product_categories',
+    )
+
+    attachment_data = models.ManyToManyField(
+        'attachments.Files',
+        through='ConsultingAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_consulting',
     )
 
     class Meta:
@@ -61,6 +77,10 @@ class Consulting(DataAbstractModel, BastionFieldAbstractModel):
             instance.code = cls.generate_code(company_id=instance.company_id)
             kwargs['update_fields'].append('code')
         return True
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '3a369ba5-82a0-4c4d-a447-3794b67d1d02' # consulting's application id
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
@@ -126,7 +146,7 @@ class ConsultingAttachment(M2MFilesAbstractModel):
         default_permissions = ()
         permissions = ()
 
-class ConsultingProductCategory(DataAbstractModel):
+class ConsultingProductCategory(SimpleAbstractModel):
     consulting = models.ForeignKey(
         'consulting.Consulting',
         on_delete=models.CASCADE,

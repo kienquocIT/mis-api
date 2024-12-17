@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.models import Account, ProductCategory
+from apps.masterdata.saledata.models import Account, ProductCategory, DocumentType
 from apps.sales.consulting.models import Consulting
 from apps.sales.consulting.serializers.consulting import ConsultingListSerializer, ConsultingDetailSerializer, \
-    ConsultingCreateSerializer, ConsultingAccountListSerializer, ConsultingProductCategoryListSerializer
+    ConsultingCreateSerializer, ConsultingAccountListSerializer, ConsultingProductCategoryListSerializer, \
+    ConsultingDocumentMasterDataListSerializer, ConsultingUpdateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -55,7 +56,7 @@ class ConsultingList(BaseListMixin, BaseCreateMixin):
 class ConsultingDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Consulting.objects
     serializer_detail = ConsultingDetailSerializer
-    # serializer_update = BiddingUpdateSerializer
+    serializer_update = ConsultingUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -65,7 +66,7 @@ class ConsultingDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "customer",
             "employee_inherit",
         ).prefetch_related(
-            "product_categories",
+            "consulting_product_category_consulting",
             "attachment_data"
         )
 
@@ -80,18 +81,18 @@ class ConsultingDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
-    # @swagger_auto_schema(
-    #     operation_summary="Bidding List",
-    #     operation_description="Get Bidding List",
-    #     request_body=BiddingUpdateSerializer,
-    # )
-    # @mask_view(
-    #     login_require=True, auth_require=True,
-    #     label_code='bidding', model_code='bidding', perm_code='edit',
-    # )
-    # def put(self, request, *args, pk, **kwargs):
-    #     self.ser_context = {'user': request.user}
-    #     return self.update(request, *args, pk, **kwargs)
+    @swagger_auto_schema(
+        operation_summary="Consulting Update",
+        operation_description="Consulting Update",
+        request_body=ConsultingUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='consulting', model_code='consulting', perm_code='edit',
+    )
+    def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.update(request, *args, pk, **kwargs)
 
 
 class ConsultingAccountList(BaseListMixin):
@@ -124,6 +125,27 @@ class ConsultingProductCategoryList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ConsultingDocumentMasterDataList(BaseListMixin):
+    queryset = DocumentType.objects
+    serializer_list = ConsultingDocumentMasterDataListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title']
+
+    def get_queryset(self):
+        doc_type_category = self.request.query_params.get('doc_type_category')
+        return super().get_queryset().filter(doc_type_category=doc_type_category)
+
+    @swagger_auto_schema(
+        operation_summary="Document Masterdata Consulting list",
+        operation_description="Document Masterdata for Consulting Document list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

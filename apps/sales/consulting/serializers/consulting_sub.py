@@ -8,7 +8,7 @@ class ConsultingCommonCreate:
     @classmethod
     def handle_attach_file( cls, instance, attachment_result):
         if attachment_result and isinstance(attachment_result, dict):
-            relate_app = Application.objects.filter(id="").first()
+            relate_app = Application.objects.filter(id="3a369ba5-82a0-4c4d-a447-3794b67d1d02").first()
             if relate_app:
                 state = ConsultingAttachment.resolve_change(
                     result=attachment_result, doc_id=instance.id, doc_app=relate_app,
