@@ -113,6 +113,7 @@ class ConsultingAccountList(BaseListMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+
 class ConsultingProductCategoryList(BaseListMixin):
     queryset = ProductCategory.objects
     serializer_list = ConsultingProductCategoryListSerializer

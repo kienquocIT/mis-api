@@ -1,6 +1,4 @@
 from django.urls import path
-
-from apps.sales.consulting.serializers.consulting import ConsultingDocumentMasterDataListSerializer
 from apps.sales.consulting.views import ConsultingList, ConsultingDetail, ConsultingAccountList, \
     ConsultingProductCategoryList, ConsultingDocumentMasterDataList
 
