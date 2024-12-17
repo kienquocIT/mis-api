@@ -662,7 +662,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
-            # 'valuation_method',
+            'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
@@ -827,6 +827,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         old_valuation_method = self.instance.valuation_method
         new_valuation_method = validate_data.get('valuation_method')
+        print(old_valuation_method, new_valuation_method)
         if all([
             ProductWareHouse.objects.filter(product=self.instance).exists(),
             new_valuation_method != old_valuation_method
