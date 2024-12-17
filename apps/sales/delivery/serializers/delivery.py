@@ -256,7 +256,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                if 1 in obj.product.product_choice:
+                if 1 in obj.product.product_choice or sub.lease_order_data:
                     # kiểm tra product id và order trùng với product update ko
                     delivery_data = product_done[obj_key]['delivery_data']  # list format
                     obj.picked_quantity = product_done[obj_key]['picked_num']
