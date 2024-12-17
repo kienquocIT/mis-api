@@ -1,5 +1,8 @@
-from rest_framework import serializers
+import logging
 from django.db import transaction
+
+from rest_framework import serializers
+
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.core.process.utils import ProcessRuntimeControl
@@ -10,7 +13,7 @@ from apps.sales.opportunity.models import Opportunity
 from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, BaseMsg, HRMsg, \
     AbstractDetailSerializerModel
 from apps.shared.translations.base import AttachmentMsg
-import logging
+
 logger = logging.getLogger(__name__)
 
 class ConsultingDocumentCreateSerializer(serializers.ModelSerializer):
@@ -70,7 +73,7 @@ class ProductCategoriesCreateSerializer(serializers.ModelSerializer):
                 return ProductCategory.objects.filter(id=value).first()
             except ProductCategory.DoesNotExist:
                 raise serializers.ValidationError({'product_category': 'Product Category does not exist'})
-
+        raise serializers.ValidationError({'product_category': BaseMsg.REQUIRED})
 
 class ConsultingListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
@@ -151,7 +154,8 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
             for item in self.initial_data.get('product_categories', []):
                 total_value += int(item.get('value'))
             if not total_value == value:
-                raise serializers.ValidationError({'value': 'Estimated value must be equal to the sum of product category value'})
+                raise serializers.ValidationError(
+                    {'value': 'Estimated value must be equal to the sum of product category value'})
             return value
         raise serializers.ValidationError({'value': BaseMsg.REQUIRED})
 
@@ -381,7 +385,8 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
             for item in self.initial_data.get('product_categories', []):
                 total_value += int(item.get('value'))
             if not total_value == value:
-                raise serializers.ValidationError({'value': 'Estimated value must be equal to the sum of product category value'})
+                raise serializers.ValidationError(
+                    {'value': 'Estimated value must be equal to the sum of product category value'})
             return value
         raise serializers.ValidationError({'value': BaseMsg.REQUIRED})
 

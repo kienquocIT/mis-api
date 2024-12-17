@@ -1,11 +1,8 @@
-__all__ = [
-    'Consulting', 'ConsultingDocument', 'ConsultingAttachment', 'ConsultingProductCategory'
-]
-
+from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, BastionFieldAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
-from django.db import models
+
 
 class Consulting(DataAbstractModel, BastionFieldAbstractModel):
     value = models.FloatField(default=0)

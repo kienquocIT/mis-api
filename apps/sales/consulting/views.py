@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import Account, ProductCategory, DocumentType
 from apps.sales.consulting.models import Consulting
 from apps.sales.consulting.serializers.consulting import ConsultingListSerializer, ConsultingDetailSerializer, \

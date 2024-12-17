@@ -1,6 +1,7 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel
 from django.utils.translation import gettext_lazy as _
+from apps.shared import MasterDataAbstractModel
+
 
 DOC_CATEGORY_CHOICES = [
     ('bidding', _('Bidding')),
