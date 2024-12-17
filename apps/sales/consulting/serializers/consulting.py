@@ -1,6 +1,5 @@
 import logging
 from django.db import transaction
-
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
