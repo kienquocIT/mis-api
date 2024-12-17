@@ -187,7 +187,7 @@ class LeaseOrderActiveDelivery(APIView):
             try:
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
                 is_not_picking = False
-                prod_lo = cls_m2m_product_model.objects.filter(sale_order=obj, product__isnull=False)
+                prod_lo = cls_m2m_product_model.objects.filter(lease_order=obj, product__isnull=False)
                 if prod_lo.count() > 0:
                     is_services = 0
                     for item in prod_lo:

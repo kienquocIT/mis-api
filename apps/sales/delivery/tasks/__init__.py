@@ -98,32 +98,19 @@ class OrderActiveDeliverySerializer:
             if self.config_obj.is_picking is False or self.check_has_prod_services > 0:
                 stock_ready = m2m_obj.product_quantity
 
-            offset = None
+            offset, offset_data = None, {}
             if hasattr(m2m_obj, "offset"):
                 offset = m2m_obj.offset
+                offset_data = m2m_obj.offset_data
 
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
-                product_data={
-                    'id': str(m2m_obj.product_id),
-                    'title': str(m2m_obj.product.title),
-                    'code': str(m2m_obj.product.code),
-                    'remarks': ''
-                } if m2m_obj.product else {},
+                product_data=m2m_obj.product_data,
                 offset=offset,
-                offset_data={
-                    'id': str(offset.id),
-                    'title': str(offset.title),
-                    'code': str(offset.code),
-                    'remarks': ''
-                } if offset else {},
+                offset_data=offset_data,
                 uom=m2m_obj.unit_of_measure,
-                uom_data={
-                    'id': str(m2m_obj.unit_of_measure_id),
-                    'title': str(m2m_obj.unit_of_measure.title),
-                    'code': str(m2m_obj.unit_of_measure.code),
-                } if m2m_obj.unit_of_measure else {},
+                uom_data=m2m_obj.uom_data,
 
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
@@ -219,8 +206,8 @@ class OrderActiveDeliverySerializer:
 
         sale_order, sale_order_data = None, {}
         lease_order, lease_order_data = None, {}
-        label = str(self.order_obj.__class__.get_model_code())
-        if label == "saleorder.saleorder":
+        app_code = str(self.order_obj.__class__.get_model_code())
+        if app_code == "saleorder.saleorder":
             sale_order = self.order_obj
             sale_order_data = {
                 "id": str(self.order_obj.id),
@@ -239,7 +226,7 @@ class OrderActiveDeliverySerializer:
                     'code': self.order_obj.opportunity.code,
                 } if self.order_obj.opportunity else {},
             }
-        if label == "leaseorder.leaseorder":
+        if app_code == "leaseorder.leaseorder":
             lease_order = self.order_obj
             lease_order_data = {
                 "id": str(self.order_obj.id),
@@ -268,13 +255,13 @@ class OrderActiveDeliverySerializer:
                 "id": str(self.order_obj.customer_id),
                 "title": str(self.order_obj.customer.name),
                 "code": str(self.order_obj.customer.code),
-            },
+            } if self.order_obj.customer else {},
             contact=self.order_obj.contact,
             contact_data={
                 "id": str(self.order_obj.contact_id),
                 "title": str(self.order_obj.contact.fullname),
                 "code": str(self.order_obj.contact.code),
-            },
+            } if self.order_obj.contact else {},
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
@@ -315,6 +302,7 @@ class OrderActiveDeliverySerializer:
             is_updated=False,
             state=obj_delivery.state,
             sale_order_data=obj_delivery.sale_order_data,
+            lease_order_data=obj_delivery.lease_order_data,
             customer_data=obj_delivery.customer_data,
             contact_data=obj_delivery.contact_data,
             date_created=obj_delivery.date_created,
@@ -327,17 +315,22 @@ class OrderActiveDeliverySerializer:
         )
         return sub_obj
 
-    def active(self) -> (bool, str):
-        try:
-            with transaction.atomic():
-                if (
+    def active(self, app_code) -> (bool, str):
+        condition = False
+        if app_code == "saleorder.saleorder":
+            condition = (
                         not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
                         and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
-                ):
+                )
+        if app_code == "leaseorder.leaseorder":
+            condition = (not OrderDelivery.objects.filter(lease_order=self.order_obj).exists())
+        try:
+            with transaction.atomic():
+                if condition:
                     sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
                     if self.config_obj.is_picking is True:
                         if self.check_has_prod_services != len(self.order_products):
-                            # nếu saleorder product toàn là dịch vụ thì ko cần tạo delivery
+                            # nếu saleorder product toàn là dịch vụ thì ko cần tạo picking
                             self._create_order_picking()
                     obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                     # setup SUB
@@ -388,7 +381,7 @@ def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
             order_products=sale_order_products,
             delivery_config_obj=config_obj,
             process_id=process_id,
-        ).active()
+        ).active(app_code="saleorder.saleorder")
         if state is True:
             sale_order_obj.delivery_call = True
             sale_order_obj.save(update_fields=['delivery_call'])
@@ -409,7 +402,7 @@ def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
             order_products=lease_order_products,
             delivery_config_obj=config_obj,
             process_id=process_id,
-        ).active()
+        ).active(app_code="leaseorder.leaseorder")
         if state is True:
             lease_order_obj.delivery_call = True
             lease_order_obj.save(update_fields=['delivery_call'])
