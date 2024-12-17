@@ -13,7 +13,6 @@ from apps.sales.report.models import (
 # Product Type
 class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
-    state = serializers.SerializerMethodField()
     subs = serializers.SerializerMethodField()
 
     class Meta:
@@ -26,8 +25,7 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'space_month',
             'start_date',
             'software_start_using_time',
-            'state',
-            'subs'
+            'subs',
         )
 
     @classmethod
@@ -38,12 +36,6 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
                 return f'{str(software_start_using_time.month).zfill(2)}/{str(software_start_using_time.year)}'
             return False
         return False
-
-    @classmethod
-    def get_state(cls, obj):
-        if obj.fiscal_year == datetime.now().year:
-            return 0
-        return 1
 
     @classmethod
     def get_subs(cls, obj):

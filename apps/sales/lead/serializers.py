@@ -73,10 +73,6 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        number = Lead.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], is_delete=False
-        ).count() + 1
-        code = f'L000{number}'
         current_stage = LeadStage.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
         ).first()
@@ -86,7 +82,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         ).first()
         if current_stage and this_period:
             lead = Lead.objects.create(
-                **validated_data, current_lead_stage=current_stage, code=code, system_status=1,
+                **validated_data, current_lead_stage=current_stage, system_status=3,
                 period_mapped=this_period
             )
 

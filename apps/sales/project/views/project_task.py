@@ -146,8 +146,8 @@ class ProjectAllTaskList(BaseListMixin):
                     filter_kwargs = Q(**{'project_id': params.get('project_id')})
                 if 'task_status' in params:
                     filter_kwargs &= Q(**{'task_status_id': params.get('task_status')})
-                if 'employee_inherit' in params:
-                    filter_kwargs &= Q(**{'employee_inherit_id': params.get('employee_inherit')})
+                if 'member_id' in params:
+                    filter_kwargs &= Q(**{'member_id': params.get('member_id')})
                 return filter_kwargs
             return self.filter_kwargs_q__from_config()
 

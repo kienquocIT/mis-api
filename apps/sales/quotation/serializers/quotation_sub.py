@@ -21,10 +21,12 @@ class QuotationCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         instance.quotation_product_quotation.all().delete()
-        QuotationProduct.objects.bulk_create([
-            QuotationProduct(quotation=instance, **quotation_product)
-            for quotation_product in validated_data['quotation_products_data']
-        ])
+        QuotationProduct.objects.bulk_create(
+            [QuotationProduct(
+                quotation=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **quotation_product,
+            ) for quotation_product in validated_data['quotation_products_data']]
+        )
         return True
 
     @classmethod
@@ -34,17 +36,19 @@ class QuotationCommonCreate:
             old_logistic.delete()
         QuotationLogistic.objects.create(
             **validated_data['quotation_logistic_data'],
-            quotation=instance
+            quotation=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
         )
         return True
 
     @classmethod
     def create_cost(cls, validated_data, instance):
         instance.quotation_cost_quotation.all().delete()
-        QuotationCost.objects.bulk_create([
-            QuotationCost(quotation=instance, **quotation_cost)
-            for quotation_cost in validated_data['quotation_costs_data']
-        ])
+        QuotationCost.objects.bulk_create(
+            [QuotationCost(
+                quotation=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **quotation_cost,
+            ) for quotation_cost in validated_data['quotation_costs_data']]
+        )
         return True
 
     @classmethod

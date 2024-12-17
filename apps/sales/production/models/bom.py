@@ -55,10 +55,7 @@ class BOM(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                count = BOM.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count()
-                self.code = f"BOM00{count + 1}"
+                self.add_auto_generate_code_to_instance(self, 'BOM[n4]', False)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

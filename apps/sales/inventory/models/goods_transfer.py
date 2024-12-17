@@ -344,11 +344,7 @@ class GoodsTransfer(DataAbstractModel):
 
         if self.system_status in [2, 3]:
             if not self.code:
-                goods_transfer = GoodsTransfer.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count()
-                code = f"GT000{goods_transfer + 1}"
-                self.code = code
+                self.add_auto_generate_code_to_instance(self, 'GT[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

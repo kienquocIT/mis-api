@@ -9,65 +9,53 @@ from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
-    SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
+from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
+    LeaseOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
-from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
     DisperseModel, WarehouseMsg
 from apps.shared.translations.expense import ExpenseMsg
 
 
-class SaleOrderCommonCreate:
+class LeaseOrderCommonCreate:
 
     @classmethod
     def create_product(cls, validated_data, instance):
-        instance.sale_order_product_sale_order.all().delete()
-        SaleOrderProduct.objects.bulk_create(
-            [SaleOrderProduct(
-                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+        instance.lease_order_product_lease_order.all().delete()
+        LeaseOrderProduct.objects.bulk_create(
+            [LeaseOrderProduct(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_product,
-            ) for sale_order_product in validated_data['sale_order_products_data']]
-        )
-        return True
-
-    @classmethod
-    def create_logistic(cls, validated_data, instance):
-        old_logistic = SaleOrderLogistic.objects.filter(sale_order=instance)
-        if old_logistic:
-            old_logistic.delete()
-        SaleOrderLogistic.objects.create(
-            **validated_data['sale_order_logistic_data'],
-            sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+            ) for sale_order_product in validated_data['lease_products_data']]
         )
         return True
 
     @classmethod
     def create_cost(cls, validated_data, instance):
-        instance.sale_order_cost_sale_order.all().delete()
-        SaleOrderCost.objects.bulk_create(
-            [SaleOrderCost(
-                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+        instance.lease_order_cost_lease_order.all().delete()
+        LeaseOrderCost.objects.bulk_create(
+            [LeaseOrderCost(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_cost,
-            ) for sale_order_cost in validated_data['sale_order_costs_data']]
+            ) for sale_order_cost in validated_data['lease_costs_data']]
         )
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
-        instance.sale_order_expense_sale_order.all().delete()
-        SaleOrderExpense.objects.bulk_create(
-            [SaleOrderExpense(
-                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+        instance.lease_order_expense_lease_order.all().delete()
+        LeaseOrderExpense.objects.bulk_create(
+            [LeaseOrderExpense(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_expense,
-            ) for sale_order_expense in validated_data['sale_order_expenses_data']]
+            ) for sale_order_expense in validated_data['lease_expenses_data']]
         )
         return True
 
     @classmethod
     def create_indicator(cls, validated_data, instance):
-        instance.sale_order_indicator_sale_order.all().delete()
-        for sale_order_indicator in validated_data['sale_order_indicators_data']:
+        instance.lease_order_indicator_lease_order.all().delete()
+        for sale_order_indicator in validated_data['lease_indicators_data']:
             # indicator_id = sale_order_indicator.get('indicator', {}).get('id')
             quotation_indicator_id = sale_order_indicator.get('quotation_indicator', {}).get('id')
             quotation_indicator_code = sale_order_indicator.get('quotation_indicator', {}).get('code')
@@ -75,11 +63,10 @@ class SaleOrderCommonCreate:
             if quotation_indicator_id:
                 # del sale_order_indicator['indicator']
                 del sale_order_indicator['quotation_indicator']
-                SaleOrderIndicator.objects.create(
-                    sale_order=instance,
+                LeaseOrderIndicator.objects.create(
+                    lease_order=instance,
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    # indicator_id=indicator_id,
                     quotation_indicator_id=quotation_indicator_id,
                     code=quotation_indicator_code,
                     **sale_order_indicator
@@ -88,38 +75,33 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_payment_stage(cls, validated_data, instance):
-        instance.payment_stage_sale_order.all().delete()
-        SaleOrderPaymentStage.objects.bulk_create(
-            [SaleOrderPaymentStage(
-                sale_order=instance,
+        instance.payment_stage_lease_order.all().delete()
+        LeaseOrderPaymentStage.objects.bulk_create(
+            [LeaseOrderPaymentStage(
+                lease_order=instance,
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 **sale_order_payment_stage,
-            ) for sale_order_payment_stage in validated_data['sale_order_payment_stage']]
+            ) for sale_order_payment_stage in validated_data['lease_payment_stage']]
         )
         return True
 
     @classmethod
-    def create_sale_order_sub_models(cls, validated_data, instance):
-        if 'sale_order_products_data' in validated_data:
+    def create_lease_sub_models(cls, validated_data, instance):
+        if 'lease_products_data' in validated_data:
             cls.create_product(validated_data=validated_data, instance=instance)
-        if 'sale_order_logistic_data' in validated_data:
-            cls.create_logistic(
-                validated_data=validated_data,
-                instance=instance
-            )
-        if 'sale_order_costs_data' in validated_data:
+        if 'lease_costs_data' in validated_data:
             cls.create_cost(validated_data=validated_data, instance=instance)
-        if 'sale_order_expenses_data' in validated_data:
+        if 'lease_expenses_data' in validated_data:
             cls.create_expense(validated_data=validated_data, instance=instance)
         # indicator tab
-        if 'sale_order_indicators_data' in validated_data:
+        if 'lease_indicators_data' in validated_data:
             cls.create_indicator(
                 validated_data=validated_data,
                 instance=instance
             )
         # payment stage tab
-        if 'sale_order_payment_stage' in validated_data:
+        if 'lease_payment_stage' in validated_data:
             cls.create_payment_stage(
                 validated_data=validated_data,
                 instance=instance
@@ -127,7 +109,7 @@ class SaleOrderCommonCreate:
         return True
 
 
-class SaleOrderCommonValidate:
+class LeaseOrderCommonValidate:
 
     @classmethod
     def validate_customer_id(cls, value):
@@ -237,18 +219,6 @@ class SaleOrderCommonValidate:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 
     @classmethod
-    def validate_indicator(cls, value):
-        try:
-            indicator = SaleOrderIndicatorConfig.objects.get_current(fill__company=True, id=value)
-            return {
-                'id': str(indicator.id),
-                'title': indicator.title,
-                'remark': indicator.remark
-            }
-        except SaleOrderIndicatorConfig.DoesNotExist:
-            raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})
-
-    @classmethod
     def validate_customer_shipping(cls, value):
         try:
             return AccountShippingAddress.objects.get(id=value)
@@ -285,7 +255,7 @@ class SaleOrderCommonValidate:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
 
 
-class SaleOrderValueValidate:
+class LeaseOrderValueValidate:
     @classmethod
     def validate_quantity(cls, value):
         if isinstance(value, float):
@@ -301,7 +271,7 @@ class SaleOrderValueValidate:
         raise serializers.ValidationError({'product_price': SaleMsg.PRICE_VALID})
 
 
-class SaleOrderRuleValidate:
+class LeaseOrderRuleValidate:
     @classmethod
     def validate_config_role(cls, validate_data):
         if 'employee_inherit_id' in validate_data:
@@ -322,10 +292,10 @@ class SaleOrderRuleValidate:
 
     @classmethod
     def validate_payment_stage(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
-            if len(validate_data['sale_order_payment_stage']) > 0:
+        if 'lease_payment_stage' in validate_data:
+            if len(validate_data['lease_payment_stage']) > 0:
                 total = 0
-                for payment_stage in validate_data['sale_order_payment_stage']:
+                for payment_stage in validate_data['lease_payment_stage']:
                     total += payment_stage.get('payment_ratio', 0)
                     # check required field
                     date = payment_stage.get('date', '')
@@ -346,8 +316,8 @@ class SaleOrderRuleValidate:
 
     @classmethod
     def validate_then_set_indicators_value(cls, validate_data):
-        if 'sale_order_indicators_data' in validate_data:
-            for so_indicator in validate_data['sale_order_indicators_data']:
+        if 'lease_indicators_data' in validate_data:
+            for so_indicator in validate_data['lease_indicators_data']:
                 indicator_code = so_indicator.get('quotation_indicator', {}).get('code')
                 indicator_value = so_indicator.get('indicator_value', 0)
                 if indicator_code == 'IN0001':
@@ -360,20 +330,27 @@ class SaleOrderRuleValidate:
 
 
 # SUB SERIALIZERS
-class SaleOrderProductSerializer(serializers.ModelSerializer):
+class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
+    offset_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
-        model = SaleOrderProduct
+        model = LeaseOrderProduct
         fields = (
             'product_id',
             'product_data',
+            'asset_type',
+            'offset_id',
+            'offset_data',
             'unit_of_measure_id',
             'uom_data',
+            'uom_time_id',
+            'uom_time_data',
             'tax_id',
             'tax_data',
             # product information
@@ -383,6 +360,9 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'product_uom_title',
             'product_uom_code',
             'product_quantity',
+            'product_quantity_new',
+            'product_quantity_leased',
+            'product_quantity_time',
             'product_unit_price',
             'product_discount_value',
             'product_discount_amount',
@@ -408,124 +388,51 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return SaleOrderCommonValidate().validate_product(value=value)
+        return LeaseOrderCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_offset_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_uom_time_id(cls, value):
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return LeaseOrderCommonValidate().validate_tax(value=value)
 
     @classmethod
     def validate_promotion_id(cls, value):
-        return SaleOrderCommonValidate().validate_promotion(value=value)
+        return LeaseOrderCommonValidate().validate_promotion(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return LeaseOrderCommonValidate().validate_shipping(value=value)
 
     @classmethod
     def validate_product_quantity(cls, value):
-        return SaleOrderValueValidate.validate_quantity(value=value)
+        return LeaseOrderValueValidate.validate_quantity(value=value)
 
     @classmethod
     def validate_product_unit_price(cls, value):
-        return SaleOrderValueValidate.validate_price(value=value)
+        return LeaseOrderValueValidate.validate_price(value=value)
 
 
-class SaleOrderProductsListSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    unit_of_measure = serializers.SerializerMethodField()
-    tax = serializers.SerializerMethodField()
-    promotion = serializers.SerializerMethodField()
-    shipping = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SaleOrderProduct
-        fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
-            # product information
-            'product_title',
-            'product_code',
-            'product_description',
-            'product_uom_title',
-            'product_uom_code',
-            'product_quantity',
-            'product_unit_price',
-            'product_discount_value',
-            'product_discount_amount',
-            'product_tax_title',
-            'product_tax_value',
-            'product_tax_amount',
-            'product_subtotal_price',
-            'product_subtotal_price_after_tax',
-            'order',
-            'is_promotion',
-            'promotion',
-            'is_shipping',
-            'shipping'
-        )
-
-    @classmethod
-    def get_product(cls, obj):
-        return ProductForSaleListSerializer(obj.product).data
-
-    @classmethod
-    def get_unit_of_measure(cls, obj):
-        return {
-            'id': obj.unit_of_measure_id,
-            'title': obj.unit_of_measure.title,
-            'code': obj.unit_of_measure.code
-        } if obj.unit_of_measure else {}
-
-    @classmethod
-    def get_tax(cls, obj):
-        return {
-            'id': obj.tax_id,
-            'title': obj.tax.title,
-            'code': obj.tax.code,
-            'rate': obj.tax.rate,
-        } if obj.tax else {}
-
-    @classmethod
-    def get_promotion(cls, obj):
-        return {
-            'id': obj.promotion_id,
-            'title': obj.promotion.title,
-            'code': obj.promotion.code
-        } if obj.promotion else {}
-
-    @classmethod
-    def get_shipping(cls, obj):
-        return {
-            'id': obj.shipping_id,
-            'title': obj.shipping.title,
-            'code': obj.shipping.code
-        } if obj.shipping else {}
-
-
-class SaleOrderLogisticSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SaleOrderLogistic
-        fields = (
-            'shipping_address',
-            'billing_address',
-        )
-
-
-class SaleOrderCostSerializer(serializers.ModelSerializer):
+class LeaseOrderCostSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
-        model = SaleOrderCost
+        model = LeaseOrderCost
         fields = (
             'product_id',
             'product_data',
@@ -533,6 +440,8 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             'warehouse_data',
             'unit_of_measure_id',
             'uom_data',
+            'uom_time_id',
+            'uom_time_data',
             'tax_id',
             'tax_data',
             # product information
@@ -541,6 +450,7 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             'product_uom_title',
             'product_uom_code',
             'product_quantity',
+            'product_quantity_time',
             'product_cost_price',
             'product_tax_title',
             'product_tax_value',
@@ -556,37 +466,41 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return SaleOrderCommonValidate().validate_product(value=value)
+        return LeaseOrderCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_uom_time_id(cls, value):
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return LeaseOrderCommonValidate().validate_tax(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return LeaseOrderCommonValidate().validate_shipping(value=value)
 
     @classmethod
     def validate_warehouse_id(cls, value):
-        return SaleOrderCommonValidate().validate_warehouse(value=value)
+        return LeaseOrderCommonValidate().validate_warehouse(value=value)
 
     @classmethod
     def validate_product_quantity(cls, value):
-        return SaleOrderValueValidate.validate_quantity(value=value)
+        return LeaseOrderValueValidate.validate_quantity(value=value)
 
 
-class SaleOrderExpenseSerializer(serializers.ModelSerializer):
+class LeaseOrderExpenseSerializer(serializers.ModelSerializer):
     expense_id = serializers.UUIDField(required=False, allow_null=True)
     expense_item_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
-        model = SaleOrderExpense
+        model = LeaseOrderExpense
         fields = (
             'expense_id',
             'expense_data',
@@ -617,26 +531,26 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_expense_id(cls, value):
-        return SaleOrderCommonValidate().validate_expense(value=value)
+        return LeaseOrderCommonValidate().validate_expense(value=value)
 
     @classmethod
     def validate_expense_item_id(cls, value):
-        return SaleOrderCommonValidate().validate_expense_item(value=value)
+        return LeaseOrderCommonValidate().validate_expense_item(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return LeaseOrderCommonValidate().validate_tax(value=value)
 
 
-class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
+class LeaseOrderIndicatorSerializer(serializers.ModelSerializer):
     quotation_indicator = serializers.UUIDField()
 
     class Meta:
-        model = SaleOrderIndicator
+        model = LeaseOrderIndicator
         fields = (
             'quotation_indicator',
             'quotation_indicator_data',
@@ -653,13 +567,13 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_indicator(value=value)
 
 
-class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
+class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
     term_id = serializers.UUIDField(required=False, allow_null=True)
     date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
-        model = SaleOrderPaymentStage
+        model = LeaseOrderPaymentStage
         fields = (
             'remark',
             'term_id',
@@ -680,4 +594,4 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_term_id(cls, value):
-        return SaleOrderCommonValidate().validate_term_id(value=value)
+        return LeaseOrderCommonValidate().validate_term_id(value=value)
