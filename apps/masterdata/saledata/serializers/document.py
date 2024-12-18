@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import DOC_CATEGORY_CHOICES
 from apps.masterdata.saledata.models.document import (
     DocumentType
 )
@@ -9,7 +11,7 @@ class DocumentTypeListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DocumentType
-        fields = ('id', 'code', 'title', 'is_default')
+        fields = ('id', 'code', 'title', 'is_default', 'doc_type_category',)
 
 
 class DocumentTypeCreateSerializer(serializers.ModelSerializer):
@@ -18,7 +20,7 @@ class DocumentTypeCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DocumentType
-        fields = ('code', 'title')
+        fields = ('code', 'title', 'doc_type_category')
 
     @classmethod
     def validate_title(cls, value):
@@ -33,6 +35,15 @@ class DocumentTypeCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(BaseMsg.CODE_IS_EXISTS)
             return value
         raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
+
+    @classmethod
+    def validate_doc_type_category(cls, value):
+        if value:
+            valid_categories = [choice[0] for choice in DOC_CATEGORY_CHOICES]
+            if value in valid_categories:
+                return value
+            raise serializers.ValidationError({"category": BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({"category": BaseMsg.REQUIRED})
 
 
 class DocumentTypeUpdateSerializer(serializers.ModelSerializer):
@@ -62,4 +73,4 @@ class DocumentTypeDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DocumentType
-        fields = ('id', 'code', 'title', 'is_default')
+        fields = ('id', 'code', 'title', 'is_default', 'doc_type_category')

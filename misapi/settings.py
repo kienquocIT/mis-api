@@ -122,6 +122,7 @@ INSTALLED_APPS = \
         'apps.sales.production',
         'apps.sales.bidding',
         'apps.sales.leaseorder',
+        'apps.sales.consulting',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
