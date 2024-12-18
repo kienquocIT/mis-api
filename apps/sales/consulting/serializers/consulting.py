@@ -38,12 +38,6 @@ class ConsultingDocumentCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'document_type': BaseMsg.NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        attachment_data = validate_data.get('attachment_data')
-        if not attachment_data:
-            raise serializers.ValidationError({'attachment_data': 'attachemnt required'})
-        return validate_data
-
 
 class ProductCategoriesCreateSerializer(serializers.ModelSerializer):
     value = serializers.FloatField()
