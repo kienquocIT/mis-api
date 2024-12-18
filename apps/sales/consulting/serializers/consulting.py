@@ -210,7 +210,8 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
 
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data.get('opportunity_id', None)
+        opportunity_obj = validate_data.get('opportunity', None)
+        opportunity_id = opportunity_obj.id
         if process_obj:
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
                 process_stage_app_obj=process_stage_app_obj,
