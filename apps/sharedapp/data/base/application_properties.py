@@ -2321,6 +2321,7 @@ AppProp_SaleData_Consulting_data = {
         "code": "value",
         "type": 6,
         'is_wf_zone': True,
+        'is_wf_condition': True,
     },
     "61560bcf-5915-49ad-9f99-4f10536f54c6": {
         "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
@@ -2392,4 +2393,5 @@ ApplicationProperty_data = {
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
+    **AppProp_SaleData_Consulting_data,
 }
