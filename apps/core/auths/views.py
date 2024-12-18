@@ -184,12 +184,13 @@ class AuthRefreshLogin(generics.GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
         ser = TokenRefreshSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-
-        token = ser.validated_data
-
-        if token:
-            return ResponseController.success_200({'access_token': str(token['access'])}, key_data='result')
+        try:
+            ser.is_valid(raise_exception=True)
+            token = ser.validated_data
+            if token:
+                return ResponseController.success_200({'access_token': str(token['access'])}, key_data='result')
+        except Exception as err:
+            print(f'err: {str(err)}')
         return ResponseController.bad_request_400({'detail': 'Refresh is failure.'})
 
 
