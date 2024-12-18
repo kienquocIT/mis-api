@@ -1377,3 +1377,19 @@ msgstr "Nếu thầu thua do lí do khác, cần cụ thể lí do"
 #
 msgid "Bidding"
 msgstr "Thầu"
+
+#
+msgid "Consulting"
+msgstr "Tư vấn"
+
+#
+msgid "Product Category does not exist"
+msgstr "Loại sản phẩm không tồn tại"
+
+#
+msgid "Estimated value must be equal to the sum of product category value"
+msgstr "Giá trị dự kiến phải bằng tổng của giá trị loại sản phẩm"
+
+#
+msgid "Error creating consulting"
+msgstr "Lỗi tạo tư vấn"

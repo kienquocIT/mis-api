@@ -12,6 +12,7 @@ from apps.sales.opportunity.models import Opportunity
 from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, BaseMsg, HRMsg, \
     AbstractDetailSerializerModel
 from apps.shared.translations.base import AttachmentMsg
+from apps.shared.translations.consulting import ConsultingMsg
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class ProductCategoriesCreateSerializer(serializers.ModelSerializer):
     def validate_value(cls, value):
         if value:
             if value < 0:
-                raise serializers.ValidationError({'value': 'Value must be a positive number'})
+                raise serializers.ValidationError({'value': ConsultingMsg.CONSULTING_VALUE_NOT_NEGATIVE})
             return value
         raise serializers.ValidationError({'value': BaseMsg.REQUIRED})
 
@@ -65,7 +66,7 @@ class ProductCategoriesCreateSerializer(serializers.ModelSerializer):
             try:
                 return ProductCategory.objects.filter(id=value).first()
             except ProductCategory.DoesNotExist:
-                raise serializers.ValidationError({'product_category': 'Product Category does not exist'})
+                raise serializers.ValidationError({'product_category': ConsultingMsg.PRODUCT_CATEGORY_NOT_EXIST})
         raise serializers.ValidationError({'product_category': BaseMsg.REQUIRED})
 
 class ConsultingListSerializer(AbstractListSerializerModel):
@@ -148,7 +149,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
                 total_value += int(item.get('value'))
             if not total_value == value:
                 raise serializers.ValidationError(
-                    {'value': 'Estimated value must be equal to the sum of product category value'})
+                    {'value': ConsultingMsg.ESTIMATED_VALUE_NOT_EQUAL_TOTAL_VALUE})
             return value
         raise serializers.ValidationError({'value': BaseMsg.REQUIRED})
 
@@ -188,7 +189,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
                 try:
                     return Account.objects.filter(id=value).first()
                 except Account.DoesNotExist:
-                    raise serializers.ValidationError({'customer': 'Customer does not exist'})
+                    raise serializers.ValidationError({'customer': BaseMsg.NOT_EXIST})
             raise serializers.ValidationError({'customer': BaseMsg.REQUIRED})
         return value
 
@@ -241,7 +242,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
                 ConsultingCommonCreate.create_sub_models(instance=consulting, create_data=create_data)
         except Exception as err:
             logger.error(msg=f'Create consulting errors: {str(err)}')
-            raise serializers.ValidationError({'consulting': 'Error creating Consulting'})
+            raise serializers.ValidationError({'consulting': ConsultingMsg.ERROR_CREATE_CONSULTING})
 
         return consulting
 
@@ -380,7 +381,7 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
                 total_value += int(item.get('value'))
             if not total_value == value:
                 raise serializers.ValidationError(
-                    {'value': 'Estimated value must be equal to the sum of product category value'})
+                    {'value': ConsultingMsg.ESTIMATED_VALUE_NOT_EQUAL_TOTAL_VALUE})
             return value
         raise serializers.ValidationError({'value': BaseMsg.REQUIRED})
 
@@ -420,7 +421,7 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
                 try:
                     return Account.objects.filter(id=value).first()
                 except Account.DoesNotExist:
-                    raise serializers.ValidationError({'customer': 'Customer does not exist'})
+                    raise serializers.ValidationError({'customer': BaseMsg.NOT_EXIST})
             raise serializers.ValidationError({'customer': BaseMsg.REQUIRED})
         return value
 
@@ -447,7 +448,7 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
                 ConsultingCommonCreate.create_sub_models(instance=instance, create_data=create_data)
         except Exception as err:
             logger.error(msg=f'Create consulting errors: {str(err)}')
-            raise serializers.ValidationError({'consulting': 'Error creating Consulting'})
+            raise serializers.ValidationError({'consulting': ConsultingMsg.ERROR_CREATE_CONSULTING})
 
         return instance
 
