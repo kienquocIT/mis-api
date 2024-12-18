@@ -3,7 +3,8 @@ from apps.masterdata.saledata.models import Account, ProductCategory, DocumentTy
 from apps.sales.consulting.models import Consulting
 from apps.sales.consulting.serializers.consulting import ConsultingListSerializer, ConsultingDetailSerializer, \
     ConsultingCreateSerializer, ConsultingAccountListSerializer, ConsultingProductCategoryListSerializer, \
-    ConsultingDocumentMasterDataListSerializer, ConsultingUpdateSerializer
+    ConsultingDocumentMasterDataListSerializer, ConsultingUpdateSerializer, ConsultingOppDetailSerializer
+from apps.sales.opportunity.models import Opportunity
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -149,3 +150,27 @@ class ConsultingDocumentMasterDataList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ConsultingOppDetail(BaseRetrieveMixin):
+    queryset = Opportunity.objects
+    serializer_detail = ConsultingOppDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "customer",
+            "process",
+            "process_stage_app"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity detail",
+        operation_description="Get Consulting Opportunity detail by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False, employee_required=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

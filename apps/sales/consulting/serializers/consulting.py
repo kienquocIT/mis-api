@@ -211,8 +211,8 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_obj = validate_data.get('opportunity', None)
-        opportunity_id = opportunity_obj.id
-        if process_obj:
+        opportunity_id = opportunity_obj.id if opportunity_obj else None
+        if process_obj and opportunity_id:
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
                 process_stage_app_obj=process_stage_app_obj,
                 employee_id=employee_obj.id,
@@ -483,3 +483,45 @@ class ConsultingDocumentMasterDataListSerializer(serializers.ModelSerializer):
             'code',
             "title",
         )
+
+class ConsultingOppDetailSerializer(serializers.ModelSerializer):
+    process = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            "id",
+            "customer",
+            "process",
+            "process_stage_app"
+        )
+
+    @classmethod
+    def get_process(cls, obj):
+        return {
+            'id': obj.process_id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'code': obj.code,
+                'title': obj.customer.name
+            }
+        return {}
+
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
