@@ -26,13 +26,28 @@ class OrderDelivery(DataAbstractModel):
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
-        verbose_name='Order Picking of Sale Order',
+        verbose_name='Order Delivery of Sale Order',
         help_text='The Sale Order had one/many Order Picking',
         related_name='delivery_of_sale_order',
+        null=True,
     )
     sale_order_data = models.JSONField(
         default=dict,
         verbose_name='Sale Order data',
+        help_text='data json of sale order',
+    )
+    # lease order
+    lease_order = models.OneToOneField(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name='Order Delivery of Lease Order',
+        related_name='delivery_of_lease_order',
+        null=True,
+    )
+    lease_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Lease Order data',
+        help_text='data json of lease order',
     )
     from_picking_area = models.TextField(
         blank=True,
@@ -133,6 +148,12 @@ class OrderDelivery(DataAbstractModel):
                 'title': str(self.sale_order.title),
                 'code': str(self.sale_order.code),
             }
+        if self.lease_order and not self.lease_order_data:
+            self.lease_order_data = {
+                'id': str(self.lease_order_id),
+                'title': str(self.lease_order.title),
+                'code': str(self.lease_order.code),
+            }
         if self.customer and not self.customer_data:
             self.customer_data = {
                 'id': str(self.customer_id),
@@ -224,6 +245,7 @@ class OrderDeliverySub(DataAbstractModel):
         through='OrderDeliveryProduct',
         symmetrical=False,
         related_name='products_of_order_delivery',
+        through_fields=('delivery_sub', 'product')  # Explicitly specify the foreign keys
     )
     delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
@@ -267,7 +289,12 @@ class OrderDeliverySub(DataAbstractModel):
     sale_order_data = models.JSONField(
         default=dict,
         verbose_name='Sale Order data',
-        null=True
+        help_text='data json of sale order',
+    )
+    lease_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Lease Order data',
+        help_text='data json of lease order',
     )
     estimated_delivery_date = models.DateTimeField(
         null=True,
@@ -518,12 +545,16 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_data = models.JSONField(
         default=dict,
         verbose_name='Product Data backup',
-        help_text=json.dumps(
-            [
-                {'id': '', 'title': '', 'code': '', 'remarks': ''}
-            ]
-        )
+        help_text='data json of product'
     )
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="delivery_product_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -592,12 +623,21 @@ class OrderDeliveryProduct(SimpleAbstractModel):
                 "id": str(self.product_id),
                 "title": str(self.product.title),
                 "code": str(self.product.code),
+                "general_traceability_method": self.product.general_traceability_method,
+            }
+        if self.offset and not self.offset_data:
+            self.offset_data = {
+                "id": str(self.offset_id),
+                "title": str(self.offset.title),
+                "code": str(self.offset.code),
+                "general_traceability_method": self.offset.general_traceability_method,
             }
         if self.uom and not self.uom_data:
             self.uom_data = {
                 "id": str(self.uom_id),
                 "title": str(self.uom.title),
                 "code": str(self.uom.code),
+                "ratio": self.uom.ratio,
             }
         return True
 
@@ -663,7 +703,11 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         new_obj = OrderDeliveryProduct(
             delivery_sub=new_sub,
             product=old_obj.product,
+            product_data=old_obj.product_data,
+            offset=old_obj.offset,
+            offset_data=old_obj.offset_data,
             uom=old_obj.uom,
+            uom_data=old_obj.uom_data,
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=delivered_quantity_before,
             remaining_quantity=remaining_quantity,

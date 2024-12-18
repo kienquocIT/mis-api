@@ -28,37 +28,40 @@ def handle_attach_file(instance, attachment_result):
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
-    product_data = serializers.SerializerMethodField()
-    uom_data = serializers.SerializerMethodField()
+    # product_data = serializers.SerializerMethodField()
+    # uom_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
         if obj.product.product_choice:
             if 1 in obj.product.product_choice:
                 return bool(True)
+        if isinstance(obj.offset_data, dict):
+            if obj.offset_data:
+                return bool(True)
         return bool(False)
 
-    @classmethod
-    def get_product_data(cls, obj):
-        return {
-            'id': obj.product_id,
-            'title': obj.product.title,
-            'code': obj.product.code,
-            'general_traceability_method': obj.product.general_traceability_method,
-        } if obj.product else {}
+    # @classmethod
+    # def get_product_data(cls, obj):
+    #     return {
+    #         'id': obj.product_id,
+    #         'title': obj.product.title,
+    #         'code': obj.product.code,
+    #         'general_traceability_method': obj.product.general_traceability_method,
+    #     } if obj.product else {}
 
-    @classmethod
-    def get_uom_data(cls, obj):
-        if obj.product:
-            so_product = obj.product.sale_order_product_product.first()
-            if so_product:
-                return {
-                    'id': so_product.unit_of_measure_id,
-                    'title': so_product.unit_of_measure.title,
-                    'code': so_product.unit_of_measure.code,
-                    'ratio': so_product.unit_of_measure.ratio,
-                } if so_product.unit_of_measure else {}
-        return {}
+    # @classmethod
+    # def get_uom_data(cls, obj):
+    #     if obj.product:
+    #         so_product = obj.product.sale_order_product_product.first()
+    #         if so_product:
+    #             return {
+    #                 'id': so_product.unit_of_measure_id,
+    #                 'title': so_product.unit_of_measure.title,
+    #                 'code': so_product.unit_of_measure.code,
+    #                 'ratio': so_product.unit_of_measure.ratio,
+    #             } if so_product.unit_of_measure else {}
+    #     return {}
 
     class Meta:
         model = OrderDeliveryProduct
@@ -67,6 +70,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'order',
             'is_promotion',
             'product_data',
+            'offset_data',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -94,6 +98,7 @@ class OrderDeliverySubListSerializer(AbstractListSerializerModel):
             'id',
             'code',
             'sale_order_data',
+            'lease_order_data',
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
@@ -157,6 +162,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'state',
             'code',
             'sale_order_data',
+            'lease_order_data',
             'estimated_delivery_date',
             'actual_delivery_date',
             'customer_data',
@@ -250,7 +256,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                if 1 in obj.product.product_choice:
+                if 1 in obj.product.product_choice or sub.lease_order_data:
                     # kiểm tra product id và order trùng với product update ko
                     delivery_data = product_done[obj_key]['delivery_data']  # list format
                     obj.picked_quantity = product_done[obj_key]['picked_num']
