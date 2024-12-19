@@ -129,6 +129,8 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+    ] + [
+        'apps.sales.financialcashflow'
     ]
 
 MIDDLEWARE = [

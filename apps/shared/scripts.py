@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from apps.masterdata.saledata.models.periods import Periods
-from apps.core.company.models import Company, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyFunctionNumber, CompanyBankAccount
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -2737,4 +2737,49 @@ def parse_quotation_data_so():
             order.quotation_data = quotation_data
             order.save(update_fields=['quotation_data'])
     print('parse_quotation_data_so done.')
+    return True
+
+
+def mockup_data_company_bank_account(company_id):
+    if company_id:
+        CompanyBankAccount.objects.filter(company_id=company_id).delete()
+        bulk_info = [
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng quân đội',
+                bank_code='MBBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='03112001',
+                bic_swift_code='',
+                is_default=True,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng TMCP Đầu tư và Phát triển Việt Nam',
+                bank_code='BIDV',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='19521464',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam',
+                bank_code='AGRIBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='18122024',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+        ]
+        CompanyBankAccount.objects.bulk_create(bulk_info)
+        print('Done :))')
+    else:
+        print('Company id :)) ???')
     return True

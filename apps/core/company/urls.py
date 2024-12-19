@@ -4,7 +4,7 @@ from apps.core.company.views import (
     CompanyDetail, CompanyUploadLogo,
     CompanyListOverview,
     CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
-    CompanyConfigDetail, RestoreDefaultOpportunityConfigStage,
+    CompanyConfigDetail, RestoreDefaultOpportunityConfigStage, CompanyBankAccountList,
 )
 
 
@@ -23,4 +23,5 @@ urlpatterns = [
         RestoreDefaultOpportunityConfigStage.as_view(),
         name='RestoreDefaultOpportunityConfigStage'
     ),
+    path('company-bank-account/list', CompanyBankAccountList.as_view(), name='CompanyBankAccountList'),
 ]

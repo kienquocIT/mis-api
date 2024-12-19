@@ -3,7 +3,7 @@ from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 
-from apps.core.company.models import CompanyUserEmployee, CompanyConfig
+from apps.core.company.models import CompanyUserEmployee, CompanyConfig, CompanyBankAccount
 from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
 from apps.core.hr.models import Employee
@@ -19,7 +19,8 @@ from apps.core.company.serializers import (
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
     CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
-    CompanyUploadLogoSerializer,
+    CompanyUploadLogoSerializer, CompanyBankAccountListSerializer, CompanyBankAccountCreateSerializer,
+    CompanyBankAccountDetailSerializer,
 )
 
 
@@ -243,3 +244,41 @@ class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class CompanyBankAccountList(BaseListMixin, BaseCreateMixin):
+    queryset = CompanyBankAccount.objects
+    serializer_list = CompanyBankAccountListSerializer
+    serializer_create = CompanyBankAccountCreateSerializer
+    serializer_detail = CompanyBankAccountDetailSerializer
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
+    search_fields = ('bank_name', 'bank_code', 'bank_account_number', 'bic_swift_code')
+
+    def get_queryset(self):
+        if 'disabled_account' and 'pk' in self.request.query_params:
+            CompanyBankAccount.objects.filter(
+                id=self.request.query_params.get('pk')
+            ).update(is_active=self.request.query_params.get('disabled_account')=='1')
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="Company Bank Account list",
+        operation_description="Company Bank Account list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Company",
+        operation_description="Create new Company",
+        request_body=CompanyBankAccountCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

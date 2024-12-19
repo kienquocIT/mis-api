@@ -490,3 +490,51 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
             return result
         return None
+
+
+class CompanyBankAccount(SimpleAbstractModel):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='company_bank_account_company'
+    )
+    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
+    bank_name = models.CharField(
+        verbose_name='Name of bank',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bank_code = models.CharField(
+        verbose_name='Code of bank',
+        blank=True,
+        null=True,
+        max_length=50
+    )
+    bank_account_name = models.CharField(
+        verbose_name='Bank account name',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bank_account_number = models.CharField(
+        verbose_name='Bank account number',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bic_swift_code = models.CharField(
+        verbose_name='BIC/SWIFT code',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Company bank account'
+        verbose_name_plural = 'Company bank accounts'
+        ordering = ('bank_code',)
+        default_permissions = ()
+        permissions = ()
