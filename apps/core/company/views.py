@@ -256,7 +256,7 @@ class CompanyBankAccountList(BaseListMixin, BaseCreateMixin):
     search_fields = ('bank_name', 'bank_code', 'bank_account_number', 'bic_swift_code')
 
     def get_queryset(self):
-        if 'disabled_account' and 'pk' in self.request.query_params:
+        if 'disabled_account' in self.request.query_params and 'pk' in self.request.query_params:
             CompanyBankAccount.objects.filter(
                 id=self.request.query_params.get('pk')
             ).update(is_active=self.request.query_params.get('disabled_account')=='1')
