@@ -66,7 +66,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
     valid_time_start = serializers.DateTimeField(required=True)
     valid_time_end = serializers.DateTimeField(required=True)
-    price_list_mapped = serializers.UUIDField(required=False)
+    price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Price
@@ -97,7 +97,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):
         return 1
 
     def validate(self, validate_data):
-        if 'price_list_mapped' in validate_data:
+        if 'price_list_mapped' in validate_data and validate_data.get('price_list_mapped') is not None:
             price_list_mapped_obj = Price.objects.filter(id=validate_data['price_list_mapped']).first()
             if price_list_mapped_obj:
                 validate_data['price_list_mapped'] = price_list_mapped_obj
