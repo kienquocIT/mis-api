@@ -99,14 +99,14 @@ class SaleDefaultData:
         {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
     Document_Type_data = [
-        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1},
-        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1},
-        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1},
-        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1},
-        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1},
-        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1},
-        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1},
-        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1},
+        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
     ]
 
     def __init__(self, company_obj):

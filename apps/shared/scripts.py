@@ -2740,6 +2740,15 @@ def parse_quotation_data_so():
     return True
 
 
+def update_current_document_type__doc_type_category_to_bidding():
+    count = 0
+    for item in DocumentType.objects.all():
+        item.doc_type_category = 'bidding'
+        item.save()
+        count += 1
+    print(f'{count} rows have been updated')
+
+
 def mockup_data_company_bank_account(company_id):
     if company_id:
         CompanyBankAccount.objects.filter(company_id=company_id).delete()

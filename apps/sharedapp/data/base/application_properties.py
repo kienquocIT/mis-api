@@ -2283,6 +2283,101 @@ AppProp_SaleData_Bidding_data = {
     **Bidding_data__params
 }
 
+AppProp_SaleData_Consulting_data = {
+    "21b8f9c1-0cba-42b4-bde4-5cadecd661f4": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Opportunity",
+        "code": "opportunity",
+        "type": 5,
+        "content_type": "opportunity.Opportunity",
+        'is_wf_zone': True,
+    },
+    "7067a027-4a9e-4396-b81b-f201df7abcff": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Employee Inherit",
+        "code": "employee_inherit",
+        "type": 5,
+        'content_type': 'hr.Employee',
+        'is_wf_zone': True,
+    },
+    "e8295df3-5e01-4a3d-bb9e-a5e771926ab5": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Customer",
+        "code": "customer",
+        "type": 5,
+        'content_type': 'saledata.Account',
+        'is_wf_zone': True,
+        'is_wf_condition': True
+    },
+    "899ff0a5-bf03-4d49-b5c4-f1efb0ae6154": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "dabe29fe-322e-4580-b3d8-5195cc7642e2": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Consulting value",
+        "code": "value",
+        "type": 6,
+        'is_wf_zone': True,
+        'is_wf_condition': True,
+    },
+    "61560bcf-5915-49ad-9f99-4f10536f54c6": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Consulting date",
+        "code": "due_date",
+        "type": 2,
+        'is_wf_zone': True,
+    },
+    "afc9f079-3b09-4a0b-a67c-705abe11f6d1": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Product Categories",
+        "code": "product_categories",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "eda3e7ab-4fc6-4cac-a291-dfb63754625c": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Document Data",
+        "code": "document_data",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "3d57b69a-d826-4e0c-a112-806bd7671645": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Attachment",
+        "code": "attachment",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "30693a4b-b7d8-4754-9d73-6bd048e5a914": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Abstract Content",
+        "code": "abstract_content",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "ccd3658e-c210-45ae-8283-3fabe11e9880": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Category in Product Categories",
+        "code": "product_categories__product_category",
+        "type": 5,
+        'content_type': 'saledata.ProductCategory',
+        'is_wf_zone': True,
+        "is_wf_condition": True,
+    },
+    "9c8d217f-45b3-441a-965b-b99203b722db": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Total number of Product Categories",
+        "code": "product_categories_total_number",
+        "type": 6,
+        'is_wf_zone': True,
+        "is_wf_condition": True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2316,4 +2411,5 @@ ApplicationProperty_data = {
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
+    **AppProp_SaleData_Consulting_data,
 }

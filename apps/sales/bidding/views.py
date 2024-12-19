@@ -176,8 +176,11 @@ class DocumentMasterDataBiddingList(BaseListMixin):
     queryset = DocumentType.objects
     serializer_list = DocumentMasterDataBiddingListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    filterset_fields = {}
     search_fields = ['title']
+
+    def get_queryset(self):
+        doc_type_category = self.request.query_params.get('doc_type_category')
+        return super().get_queryset().filter(doc_type_category=doc_type_category)
 
     @swagger_auto_schema(
         operation_summary="Document Masterdata Bidding list",

@@ -43,7 +43,8 @@ class DeliFinishHandler:
                 delivery_data=None,
                 is_updated=False,
                 state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
-                sale_order_data=instance.order_delivery.sale_order_data,
+                sale_order_data=instance.order_delivery.sale_order_data if instance.order_delivery else {},
+                lease_order_data=instance.order_delivery.lease_order_data if instance.order_delivery else {},
                 estimated_delivery_date=instance.estimated_delivery_date,
                 actual_delivery_date=instance.actual_delivery_date,
                 customer_data=instance.customer_data,
@@ -89,10 +90,13 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw(cls, instance, deli_product, config):
-        if deli_product.product and deli_product.delivery_data:
+        target = deli_product.product
+        if deli_product.offset:
+            target = deli_product.offset
+        if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse', 'uom', 'stock')):
-                    product_warehouse = deli_product.product.product_warehouse_product.filter(
+                    product_warehouse = target.product_warehouse_product.filter(
                         tenant_id=instance.tenant_id, company_id=instance.company_id,
                         warehouse_id=data_deli['warehouse'],
                     )
@@ -195,15 +199,16 @@ class DeliFinishHandler:
     # SALE ORDER STATUS
     @classmethod
     def push_so_status(cls, instance):
-        if instance.order_delivery.sale_order:
-            # update sale order delivery_status (Partially delivered)
-            if instance.order_delivery.sale_order.delivery_status in [0, 1]:
-                instance.order_delivery.sale_order.delivery_status = 2
-                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-            # update sale order delivery_status (Delivered)
-            if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
-                instance.order_delivery.sale_order.delivery_status = 3
-                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+        if instance.order_delivery:
+            if instance.order_delivery.sale_order:
+                # update sale order delivery_status (Partially delivered)
+                if instance.order_delivery.sale_order.delivery_status in [0, 1]:
+                    instance.order_delivery.sale_order.delivery_status = 2
+                    instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+                # update sale order delivery_status (Delivered)
+                if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
+                    instance.order_delivery.sale_order.delivery_status = 3
+                    instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
         return True
 
     # FINAL ACCEPTANCE

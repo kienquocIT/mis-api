@@ -107,6 +107,7 @@ MAP_FIELD_TITLE = {
     'contract.contractapproval': 'title',
     'production.productionorder': 'title',
     'production.workorder': 'title',
+    'leaseorder.leaseorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -122,6 +123,7 @@ MAP_FIELD_TITLE = {
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
     'bidding.bidding': 'title',
+    'consulting.consulting': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

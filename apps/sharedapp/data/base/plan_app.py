@@ -357,6 +357,14 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
     },
+    "3a369ba5-82a0-4c4d-a447-3794b67d1d02": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting
+    },
+    "010404b3-bb91-4b24-9538-075f5f00ef14": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
+    },
 }
 
 _PlanApplication_eOffice_data = {

@@ -9,7 +9,7 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_D
 class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
-        return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+        return '010404b3-bb91-4b24-9538-075f5f00ef14'
 
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -316,19 +316,19 @@ class LeaseOrderProduct(MasterDataAbstractModel):
 
 
 # SUPPORT LOGISTICS
-# class LeaseOrderLogistic(SimpleAbstractModel):
-#     lease_order = models.ForeignKey(
-#         LeaseOrder,
-#         on_delete=models.CASCADE,
-#     )
-#     shipping_address = models.TextField(blank=True, null=True)
-#     billing_address = models.TextField(blank=True, null=True)
-#
-#     class Meta:
-#         verbose_name = 'Lease Order Logistic'
-#         verbose_name_plural = 'Lease Order Logistics'
-#         default_permissions = ()
-#         permissions = ()
+class LeaseOrderLogistic(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+    )
+    shipping_address = models.TextField(blank=True, null=True)
+    billing_address = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Lease Order Logistic'
+        verbose_name_plural = 'Lease Order Logistics'
+        default_permissions = ()
+        permissions = ()
 
 
 # SUPPORT COST
@@ -512,8 +512,12 @@ class LeaseOrderPaymentStage(MasterDataAbstractModel):
     )
     term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
+    date_type = models.CharField(max_length=200, blank=True)
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
+    issue_invoice = models.IntegerField(null=True)
+    value_after_tax = models.FloatField(default=0)
+    value_total = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
