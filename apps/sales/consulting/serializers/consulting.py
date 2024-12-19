@@ -69,6 +69,7 @@ class ProductCategoriesCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'product_category': ConsultingMsg.PRODUCT_CATEGORY_NOT_EXIST})
         raise serializers.ValidationError({'product_category': BaseMsg.REQUIRED})
 
+
 class ConsultingListSerializer(AbstractListSerializerModel):
     customer = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -114,6 +115,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit = serializers.UUIDField()
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    product_categories_total_number = serializers.IntegerField(required=False)
 
     class Meta:
         model = Consulting
@@ -130,6 +132,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
             'product_categories',
             'process',
             'process_stage_app',
+            'product_categories_total_number',
         )
 
     @classmethod
@@ -218,6 +221,7 @@ class ConsultingCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        validated_data.pop('product_categories_total_number', None)
         attachment = validated_data.pop('attachment', [])
         product_categories = validated_data.pop('product_categories', [])
         document_data = validated_data.pop('document_data', [])
@@ -255,6 +259,7 @@ class ConsultingDetailSerializer(AbstractDetailSerializerModel):
     product_categories = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    product_categories_total_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Consulting
@@ -271,6 +276,7 @@ class ConsultingDetailSerializer(AbstractDetailSerializerModel):
             'product_categories',
             'process',
             'process_stage_app',
+            'product_categories_total_number',
         )
 
     @classmethod
@@ -326,7 +332,7 @@ class ConsultingDetailSerializer(AbstractDetailSerializerModel):
                     "id": item.id,
                     "value": item.value,
                     "title": item.product_category.title,
-                    "product_category_id": item.product_category.id,
+                    "product_category": item.product_category.id,
                     "order": item.order,
                 })
         return data
@@ -346,6 +352,9 @@ class ConsultingDetailSerializer(AbstractDetailSerializerModel):
             })
         return data
 
+    @classmethod
+    def get_product_categories_total_number(cls, obj):
+        return obj.consulting_product_category_consulting.count()
 
 class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
@@ -357,6 +366,7 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
     product_categories = ProductCategoriesCreateSerializer(many=True, required=False)
     opportunity = serializers.UUIDField(allow_null=True, required=False)
     employee_inherit = serializers.UUIDField()
+    product_categories_total_number = serializers.IntegerField(required=False)
 
     class Meta:
         model = Consulting
@@ -370,7 +380,8 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
             'value',
             'abstract_content',
             'customer',
-            'product_categories'
+            'product_categories',
+            'product_categories_total_number'
         )
 
 
@@ -432,6 +443,7 @@ class ConsultingUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        validated_data.pop('product_categories_total_number', None)
         attachment = validated_data.pop('attachment', [])
         product_categories = validated_data.pop('product_categories', [])
         document_data = validated_data.pop('document_data', [])
