@@ -2307,6 +2307,7 @@ AppProp_SaleData_Consulting_data = {
         "type": 5,
         'content_type': 'saledata.Account',
         'is_wf_zone': True,
+        'is_wf_condition': True
     },
     "899ff0a5-bf03-4d49-b5c4-f1efb0ae6154": {
         "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
@@ -2357,6 +2358,23 @@ AppProp_SaleData_Consulting_data = {
         "code": "abstract_content",
         "type": 1,
         'is_wf_zone': True,
+    },
+    "ccd3658e-c210-45ae-8283-3fabe11e9880": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Category in Product Categories",
+        "code": "product_categories__product_category",
+        "type": 5,
+        'content_type': 'saledata.ProductCategory',
+        'is_wf_zone': True,
+        "is_wf_condition": True,
+    },
+    "9c8d217f-45b3-441a-965b-b99203b722db": {
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
+        "title": "Total number of Product Categories",
+        "code": "product_categories_total_number",
+        "type": 6,
+        'is_wf_zone': True,
+        "is_wf_condition": True,
     },
 }
 
