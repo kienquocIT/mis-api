@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
-    LeaseOrderPaymentStage
+    LeaseOrderPaymentStage, LeaseOrderLogistic
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
     DisperseModel, WarehouseMsg
@@ -27,6 +27,17 @@ class LeaseOrderCommonCreate:
                 lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_product,
             ) for sale_order_product in validated_data['lease_products_data']]
+        )
+        return True
+
+    @classmethod
+    def create_logistic(cls, validated_data, instance):
+        old_logistic = LeaseOrderLogistic.objects.filter(lease_order=instance)
+        if old_logistic:
+            old_logistic.delete()
+        LeaseOrderLogistic.objects.create(
+            **validated_data['lease_logistic_data'],
+            lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
         )
         return True
 
@@ -90,6 +101,8 @@ class LeaseOrderCommonCreate:
     def create_lease_sub_models(cls, validated_data, instance):
         if 'lease_products_data' in validated_data:
             cls.create_product(validated_data=validated_data, instance=instance)
+        if 'lease_logistic_data' in validated_data:
+            cls.create_logistic(validated_data=validated_data, instance=instance)
         if 'lease_costs_data' in validated_data:
             cls.create_cost(validated_data=validated_data, instance=instance)
         if 'lease_expenses_data' in validated_data:
@@ -423,6 +436,15 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
         return LeaseOrderValueValidate.validate_price(value=value)
 
 
+class LeaseOrderLogisticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaseOrderLogistic
+        fields = (
+            'shipping_address',
+            'billing_address',
+        )
+
+
 class LeaseOrderCostSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
@@ -579,8 +601,12 @@ class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
             'term_id',
             'term_data',
             'date',
+            'date_type',
             'payment_ratio',
             'value_before_tax',
+            'issue_invoice',
+            'value_after_tax',
+            'value_total',
             'due_date',
             'is_ar_invoice',
             'order',

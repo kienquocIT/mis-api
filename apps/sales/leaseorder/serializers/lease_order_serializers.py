@@ -5,7 +5,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
-    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate
+    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -207,6 +207,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    lease_logistic_data = LeaseOrderLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
     lease_costs_data = LeaseOrderCostSerializer(
@@ -407,6 +408,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    lease_logistic_data = LeaseOrderLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
     lease_costs_data = LeaseOrderCostSerializer(
