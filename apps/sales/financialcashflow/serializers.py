@@ -5,7 +5,6 @@ from apps.sales.saleorder.models import SaleOrder
 
 __all__ = [
     'ARInvoiceListForCashInflowSerializer',
-    'SaleOrderListForCashInflowSerializer'
 ]
 
 
@@ -57,6 +56,7 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title,
             'payment_term': [{
+                'so_code': obj.sale_order_mapped.code,
                 'remark': item.remark,
                 'term_data': item.term_data,
                 'date': item.date,
@@ -71,24 +71,3 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
                 'order': item.order
             } for item in obj.sale_order_mapped.payment_stage_sale_order.all()],
         } if obj.sale_order_mapped else {}
-
-
-class SaleOrderListForCashInflowSerializer(serializers.ModelSerializer):
-    customer = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SaleOrder
-        fields = (
-            'id',
-            'title',
-            'code',
-            'customer'
-        )
-
-    @classmethod
-    def get_customer(cls, obj):
-        return {
-            'id': obj.customer_id,
-            'title': obj.customer.name,
-            'code': obj.customer.code,
-        } if obj.customer else {}
