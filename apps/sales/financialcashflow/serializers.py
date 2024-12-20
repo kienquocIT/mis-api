@@ -57,16 +57,19 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title,
             'payment_term': [{
-                'id': item.id,
                 'remark': item.remark,
                 'term_data': item.term_data,
-                'date': item.payment_ratio,
+                'date': item.date,
+                'date_type': item.date_type,
                 'payment_ratio': item.payment_ratio,
                 'value_before_tax': item.value_before_tax,
+                'issue_invoice': item.issue_invoice,
+                'value_after_tax': item.value_after_tax,
+                'value_total': item.value_total,
                 'due_date': item.due_date,
                 'is_ar_invoice': item.is_ar_invoice,
-                'order': item.order,
-            } for item in obj.sale_order_mapped.payment_stage_sale_order.filter(is_ar_invoice=True)],
+                'order': item.order
+            } for item in obj.sale_order_mapped.payment_stage_sale_order.all()],
         } if obj.sale_order_mapped else {}
 
 
