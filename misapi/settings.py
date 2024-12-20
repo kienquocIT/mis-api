@@ -84,6 +84,7 @@ INSTALLED_APPS = \
         'apps.core.forms',  # form
         'apps.core.chatbot',  # chatbot AI
         'apps.core.recurrence',  # recurrence for apps
+        'apps.core.contract_templates',  # contract template config
     ] + [  # application
         'apps.core.base',
         'apps.core.account',

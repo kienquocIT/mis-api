@@ -1,4 +1,5 @@
-__all__ = ['EmployeeContractListSerializers', 'EmployeeContractCreateSerializers', 'EmployeeContractDetailSerializers']
+__all__ = ['EmployeeContractListSerializers', 'EmployeeContractCreateSerializers', 'EmployeeContractDetailSerializers',
+           'EmployeeContractRuntimeCreateSerializers']
 
 from rest_framework import serializers
 
@@ -100,6 +101,18 @@ class EmployeeContractRuntimeCreateSerializers(serializers.ModelSerializer):
     class Meta:
         model = EmployeeContractRuntime
         fields = (
+            'employee_contract',
+            'members',
+            'contract',
+            'signatures',
+        )
+
+
+class EmployeeContractRuntimeDetailSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeContractRuntime
+        fields = (
+            'id',
             'employee_contract',
             'members',
             'contract',

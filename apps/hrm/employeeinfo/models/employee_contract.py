@@ -146,6 +146,10 @@ class EmployeeContractRuntime(MasterDataAbstractModel):
             }
         )
     )
+    contract_status = models.SmallIntegerField(
+        default=0,
+        help_text='0: Signing, 1: Finished',
+    )
 
     class Meta:
         verbose_name = 'Contract runtime'

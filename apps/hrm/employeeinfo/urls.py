@@ -1,7 +1,8 @@
 from django.urls import path
 
 from .views import EmployeeInfoList, EmployeeInfoDetail, EmployeeNotMapHRMList, \
-    EmployeeContractList, EmployeeContractDetail, EmployeeInfoSignatureList, AttachmentSignatureUpdate
+    EmployeeContractList, EmployeeContractDetail, EmployeeInfoSignatureList, AttachmentSignatureUpdate, \
+    ContractRuntimeCreate, ContractRuntimeDetail
 
 urlpatterns = [
     path('employee-not-map/list', EmployeeNotMapHRMList.as_view(), name='EmployeeNotMapHRMList'),
@@ -15,4 +16,14 @@ urlpatterns = [
     path(
         'employee-info/signature/update/<str:pk>', AttachmentSignatureUpdate.as_view(), name='AttachmentSignatureUpdate'
     ),
+    # eContract
+    path(
+        'employee-info/contract-signing/create', ContractRuntimeCreate.as_view(), name='ContractRuntimeCreate'
+    ),
+    path(
+        'employee-info/contract-signing/detail/<str:pk>', ContractRuntimeDetail.as_view(),
+        name='ContractRuntimeDetail'
+    ),
+
+
 ]

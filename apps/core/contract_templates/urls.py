@@ -1,9 +1,8 @@
 from django.urls import path
 
-from .views import (
-    DiagramList
-)
+from .views import ContractTemplateList, ContractTemplateDetail
 
 urlpatterns = [
-    # path('list', DiagramList.as_view(), name='DiagramList'),
+    path('list', ContractTemplateList.as_view(), name='ContractTemplateList'),
+    path('detail/<str:pk>', ContractTemplateDetail.as_view(), name='ContractTemplateDetail'),
 ]

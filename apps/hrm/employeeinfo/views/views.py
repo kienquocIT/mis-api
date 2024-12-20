@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContract
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseUpdateMixin, BaseRetrieveMixin
 
-from .serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
+from ..serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
     EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers, EmployeeInfoDetailSerializers, \
     EmployeeContractListSerializers, EmployeeContractDetailSerializers, EmployeeSignatureAttachmentListSerializers, \
     EmployeeSignatureUpdateAttachmentSerializers
@@ -45,8 +45,6 @@ class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user,
-            'company_id': request.user.company_current_id,
-            'tenant_id': request.user.tenant_current_id,
         }
         return self.create(request, *args, **kwargs)
 
