@@ -197,7 +197,8 @@ class LeadChartInformation(SimpleAbstractModel):
                     stage_amount_information=stage_amount_information
                 )
             return True
-        return False
+        return False  # có năm tài chính thì run block if, else không làm gì
+        # raise ValueError('This period not found. Can not update Lead chart information.')
 
 
 class LeadHint(SimpleAbstractModel):
