@@ -197,7 +197,7 @@ class LeadChartInformation(SimpleAbstractModel):
                     stage_amount_information=stage_amount_information
                 )
             return True
-        raise ValueError('This period not found. Can not update Lead chart information.')
+        return False
 
 
 class LeadHint(SimpleAbstractModel):
