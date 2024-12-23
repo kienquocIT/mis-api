@@ -248,6 +248,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.remarks = validated_data['remarks']
         if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
             instance.delivery_logistic = validated_data['delivery_logistic']
+        if 'system_status' in validated_data:
+            instance.system_status = validated_data['system_status']
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -286,7 +288,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             update_fields=[
                 'date_done', 'state', 'is_updated', 'estimated_delivery_date',
                 'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
-                'next_association_id', 'next_node_collab_id',
+                'system_status', 'next_association_id', 'next_node_collab_id',
             ]
         )
         return True

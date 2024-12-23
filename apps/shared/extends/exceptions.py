@@ -49,6 +49,18 @@ def handle_exception_all_view(_err, self):
             return self.request.user.id
         return ''
 
+    def get_remote_address():
+        ip_address = [self.request.META.get('REMOTE_ADDR')]
+        ip_forward = self.request.META.get('HTTP_X_FORWARDED_FOR', self.request.META.get('REMOTE_ADDR'))
+        if ip_forward:
+            ip_address += ip_forward.split(',')
+
+    def get_headers():
+        headers = {**self.request.headers}
+        if 'Authorization' in headers:
+            headers['Authorization'] = '**hidden**'
+        return headers
+
     data = traceback.format_exception(*sys.exc_info(), limit=None, chain=True)
     err_msg = "".join(json.loads(json.dumps(data).replace("\n", "").replace("^", "")))
     if settings.DEBUG is True:
@@ -68,12 +80,15 @@ def handle_exception_all_view(_err, self):
         status='CRITICAL',
         group_name='SERVER_EXCEPTION',
         **{
-            'url': str(self.request.path),
-            'user_id': str(get_user_id()),
-            'user': str(self.request.user),
-            'request_method': str(self.request.method),
-            'err_msg': str(err_msg),
+            'user': f'{str(get_user_id())} - {str(self.request.user)}',
+            'view': str(self.request.resolver_match.view_name),
+            'url': f'{str(self.request.method)} : {str(self.request.path)}',
+            'query_params': str(self.request.query_params.dict()),
+            'headers': str(get_headers()),
+            'ip_address': str(get_remote_address()),
+            'body': str(self.request.data),
             'err': str(_err),
+            'err_msg': str(err_msg),
         }
     )
     TeleBotPushNotify().send_msg(msg=msg)

@@ -28,7 +28,7 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
 )
-from . import MediaForceAPI
+from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
@@ -2746,6 +2746,18 @@ def update_current_document_type__doc_type_category_to_bidding():
         item.doc_type_category = 'bidding'
         item.save()
         count += 1
+    print(f'{count} rows have been updated')
+
+
+def set_system_status_doc(app_code, doc_id, system_status):
+    model_target = DisperseModel(app_model=app_code).get_model()
+    if model_target and hasattr(model_target, 'objects'):
+        obj_target = model_target.objects.filter(id=doc_id).first()
+        if obj_target:
+            obj_target.system_status = system_status
+            obj_target.save(update_fields=['system_status'])
+    print('set_system_status_doc done.')
+    return True
     print(f'{count} rows have been updated')
 
 
