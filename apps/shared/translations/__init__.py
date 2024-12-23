@@ -12,7 +12,7 @@ from .company import *
 from .accounts import AccountsMsg
 from .product import ProductMsg
 from .price import PriceMsg
-from .sales import SaleMsg, PurchaseRequestMsg, PurchasingMsg
+from .sales import SaleMsg, PurchaseRequestMsg, PurchasingMsg, CashInflowMsg
 from .promotion import PromoMsg
 from .advancepayment import AdvancePaymentMsg
 from .good_receipt import GRMsg

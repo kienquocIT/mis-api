@@ -95,3 +95,21 @@ class InventoryMsg:
     GOODS_RECEIPT_NOT_EXIST = _('Goods receipt does not exist')
     INVENTORY_ADJUSTMENT_NOT_EXIST = _('Inventory adjustment does not exist')
     GOODS_RECEIPT_QUANTITY = _('Quantity import must be greater than 0')
+
+
+class CashInflowMsg:
+    CIF_TOTAL_VALUE_NOT_MATCH = _('Cash inflow total value must = Cash value + Bank value')
+    MISSING_PAYMENT_METHOD_INFO = _('Payment method information is missing')
+    SUM_PAYMENT_VALUE_NOT_MATCH = _('Sum payment value is not match')
+    BALANCE_VALUE_CHANGED = _('Balance value has changed')
+    PAYMENT_STAGE_NOT_EXIST = _('Payment stage does not exist')
+    PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
+    AR_INVOICE_NOT_EXIST = _('AR invoice does not exist')
+    SALE_ORDER_NOT_EXIST = _('Sale order does not exist')
+    BANK_NOT_ACTIVE = _('This company bank account is not active')
+    BANK_NOT_EXIST = _('This company bank account does not exist')
+    BANK_NOT_NULL = _('This company bank account is not null')
+    ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
+    CUSTOMER_NOT_EXIST = _('Customer does not exist')
+    CUSTOMER_NOT_NULL = _('Customer is not null')
+

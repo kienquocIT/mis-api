@@ -253,6 +253,9 @@ class CompanyBankAccountList(BaseListMixin, BaseCreateMixin):
     serializer_detail = CompanyBankAccountDetailSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
+    filterset_fields = {
+        'is_active': ['exact'],
+    }
     search_fields = ('bank_name', 'bank_code', 'bank_account_number', 'bic_swift_code')
 
     def get_queryset(self):

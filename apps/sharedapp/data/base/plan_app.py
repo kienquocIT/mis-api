@@ -365,6 +365,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
     },
+    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Lease Order
+    },
 }
 
 _PlanApplication_eOffice_data = {

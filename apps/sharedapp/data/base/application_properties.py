@@ -2160,6 +2160,17 @@ AppProp_SaleData_BOM_data = {
     },
 }
 
+AppProp_SaleData_Financial_CashInflow_data = {
+    "355c278c-7901-4f6d-8330-76eb9082b40f": {
+        "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+####
+
 AppProp_SaleData_Contract_Approval_data = {
     # 58385bcf-f06c-474e-a372-cadc8ea30ecc # contract.ContractApproval
     '8c5568f7-3bde-4461-b6f0-73c53e645e5d': {
@@ -2408,6 +2419,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Return_Payment_data,
     **AppProp_SaleData_Distribution_Plan_data,
     **AppProp_SaleData_BOM_data,
+    **AppProp_SaleData_Financial_CashInflow_data,
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
