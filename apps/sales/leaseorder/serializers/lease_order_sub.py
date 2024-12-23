@@ -314,9 +314,9 @@ class LeaseOrderRuleValidate:
                     date = payment_stage.get('date', '')
                     due_date = payment_stage.get('due_date', '')
                     if not date:
-                        raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
-                        raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
                 if total != 100:
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
@@ -612,11 +612,11 @@ class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
             'order',
         )
 
-    @classmethod
-    def validate_remark(cls, value):
-        if not value:
-            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
-        return value
+    # @classmethod
+    # def validate_remark(cls, value):
+    #     if not value:
+    #         raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+    #     return value
 
     @classmethod
     def validate_term_id(cls, value):
