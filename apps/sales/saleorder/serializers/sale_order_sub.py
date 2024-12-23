@@ -13,7 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
     DisperseModel, WarehouseMsg
 from apps.shared.translations.expense import ExpenseMsg
 
@@ -676,11 +676,11 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
             'order',
         )
 
-    @classmethod
-    def validate_remark(cls, value):
-        if not value:
-            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
-        return value
+    # @classmethod
+    # def validate_remark(cls, value):
+    #     if not value:
+    #         raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+    #     return value
 
     @classmethod
     def validate_term_id(cls, value):

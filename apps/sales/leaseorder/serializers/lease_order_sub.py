@@ -12,7 +12,7 @@ from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
     LeaseOrderPaymentStage, LeaseOrderLogistic
 from apps.sales.quotation.serializers import QuotationCommonValidate
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
     DisperseModel, WarehouseMsg
 from apps.shared.translations.expense import ExpenseMsg
 
