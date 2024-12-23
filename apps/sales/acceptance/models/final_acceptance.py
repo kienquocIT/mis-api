@@ -9,6 +9,14 @@ class FinalAcceptance(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="sale order",
         related_name="final_acceptance_sale_order",
+        null=True,
+    )
+    lease_order = models.OneToOneField(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="final_acceptance_lease_order",
+        null=True,
     )
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -52,27 +60,40 @@ class FinalAcceptance(DataAbstractModel):
             tenant_id,
             company_id,
             sale_order_id,
+            lease_order_id,
             employee_created_id,
             employee_inherit_id,
             opportunity_id,
             list_data_indicator: list,
     ):
-        obj, _created = cls.objects.get_or_create(
-            tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id,
-            defaults={
-                'employee_created_id': employee_created_id,
-                'employee_inherit_id': employee_inherit_id,
-                'opportunity_id': opportunity_id,
-            }
-        )
-        list_indicator = [
-            FinalAcceptanceIndicator(
-                final_acceptance=obj,
-                **data_indicator,
+        obj = None
+        if sale_order_id:
+            obj, _created = cls.objects.get_or_create(
+                tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id,
+                defaults={
+                    'employee_created_id': employee_created_id,
+                    'employee_inherit_id': employee_inherit_id,
+                    'opportunity_id': opportunity_id,
+                }
             )
-            for data_indicator in list_data_indicator
-        ]
-        FinalAcceptanceIndicator.create_final_acceptance_indicators(list_indicator=list_indicator)
+        if lease_order_id:
+            obj, _created = cls.objects.get_or_create(
+                tenant_id=tenant_id, company_id=company_id, lease_order_id=lease_order_id,
+                defaults={
+                    'employee_created_id': employee_created_id,
+                    'employee_inherit_id': employee_inherit_id,
+                    'opportunity_id': opportunity_id,
+                }
+            )
+        if obj:
+            list_indicator = [
+                FinalAcceptanceIndicator(
+                    final_acceptance=obj,
+                    **data_indicator,
+                )
+                for data_indicator in list_data_indicator
+            ]
+            FinalAcceptanceIndicator.create_final_acceptance_indicators(list_indicator=list_indicator)
         return True
 
     def save(self, *args, **kwargs):
@@ -105,6 +126,11 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
     )
     sale_order_indicator = models.OneToOneField(
         'saleorder.SaleOrderIndicator',
+        on_delete=models.CASCADE,
+        null=True
+    )
+    lease_order_indicator = models.OneToOneField(
+        'leaseorder.LeaseOrderIndicator',
         on_delete=models.CASCADE,
         null=True
     )

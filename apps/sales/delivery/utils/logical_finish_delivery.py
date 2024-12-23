@@ -196,19 +196,25 @@ class DeliFinishHandler:
                 })
         return True
 
-    # SALE ORDER STATUS
+    # SALE/ LEASE ORDER STATUS
     @classmethod
-    def push_so_status(cls, instance):
+    def push_so_lo_status(cls, instance):
+        target = None
         if instance.order_delivery:
             if instance.order_delivery.sale_order:
-                # update sale order delivery_status (Partially delivered)
-                if instance.order_delivery.sale_order.delivery_status in [0, 1]:
-                    instance.order_delivery.sale_order.delivery_status = 2
-                    instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-                # update sale order delivery_status (Delivered)
-                if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
-                    instance.order_delivery.sale_order.delivery_status = 3
-                    instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+                target = instance.order_delivery.sale_order
+            if instance.order_delivery.lease_order:
+                target = instance.order_delivery.lease_order
+
+            if target:
+                # update sale/ lease order delivery_status (Partially delivered)
+                if target.delivery_status in [0, 1]:
+                    target.delivery_status = 2
+                    target.save(update_fields=['delivery_status'])
+                # update sale/ lease order delivery_status (Delivered)
+                if target.delivery_status in [2] and instance.order_delivery.state == 2:
+                    target.delivery_status = 3
+                    target.save(update_fields=['delivery_status'])
         return True
 
     # FINAL ACCEPTANCE

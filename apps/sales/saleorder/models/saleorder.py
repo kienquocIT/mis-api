@@ -294,7 +294,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
-                    SOFinishHandler.push_product_info(instance=self)  # product
+                    SOFinishHandler.push_product_info(instance=self)  # product info
                     SOFinishHandler.update_opportunity(instance=self)  # opportunity
                     SOFinishHandler.push_to_customer_activity(instance=self)  # customer
                     SOFinishHandler.push_to_report_revenue(instance=self)  # reports
