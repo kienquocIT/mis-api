@@ -427,10 +427,10 @@ class OrderDeliverySub(DataAbstractModel):
         return doc_data
 
     @classmethod
-    def for_sn(cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj):
+    def for_sn(cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
         casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
         doc_data.append({
-            'sale_order': instance.order_delivery.sale_order,
+            'sale_order': sale_order_obj,
             'product': product_obj,
             'warehouse': warehouse_obj,
             'system_date': instance.date_done,
@@ -484,7 +484,9 @@ class OrderDeliverySub(DataAbstractModel):
                                 instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                            cls.for_sn(instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj)
+                            cls.for_sn(
+                                instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
+                            )
         ReportInvLog.log(instance, instance.date_done, doc_data)
         return True
 
