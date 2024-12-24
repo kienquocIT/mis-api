@@ -30,7 +30,6 @@ class AccountListSerializer(serializers.ModelSerializer):
             'code',
             "name",
             "website",
-            "code",
             "tax_code",
             "account_type",
             "manager",
@@ -202,6 +201,28 @@ def add_billing_address_information(account, billing_address_list):
     return True
 
 
+def update_account_type_fields(instance):
+    account_type_data = {
+        'is_customer_account': False,
+        'is_supplier_account': False,
+        'is_partner_account': False,
+        'is_competitor_account': False
+    }
+    for item in instance.account_account_types_mapped.all():
+        if item.account_type.account_type_order == 0:
+            account_type_data['is_customer_account'] = True
+        elif item.account_type.account_type_order == 1:
+            account_type_data['is_supplier_account'] = True
+        elif item.account_type.account_type_order == 2:
+            account_type_data['is_partner_account'] = True
+        elif item.account_type.account_type_order == 3:
+            account_type_data['is_competitor_account'] = True
+    for key, value in account_type_data.items():
+        setattr(instance, key, value)
+    instance.save(update_fields=list(account_type_data.keys()))
+    return True
+
+
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
@@ -330,36 +351,18 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             )
         except Currency.DoesNotExist:
             raise serializers.ValidationError({"Currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
-
-        for account_type in validate_data.get("account_types", []):
-            account_type_obj = AccountType.objects.filter(id=account_type.get('id')).first()
-            validate_data['is_customer_account'] = False
-            validate_data['is_supplier_account'] = False
-            validate_data['is_partner_account'] = False
-            validate_data['is_competitor_account'] = False
-            if account_type_obj:
-                if account_type_obj.account_type_order == 0:
-                    validate_data['is_customer_account'] = True
-                elif account_type_obj.account_type_order == 1:
-                    validate_data['is_supplier_account'] = True
-                elif account_type_obj.account_type_order == 2:
-                    validate_data['is_partner_account'] = True
-                elif account_type_obj.account_type_order == 3:
-                    validate_data['is_competitor_account'] = True
-
         return validate_data
 
     def create(self, validated_data):
-        contact_mapped = self.initial_data.get('contact_mapped', None)
-
         account = Account.objects.create(**validated_data)
 
         create_employee_map_account(account)
         add_account_types_information(account)
-
+        update_account_type_fields(account)
         add_shipping_address_information(account, self.initial_data.get('shipping_address_dict', []))
         add_billing_address_information(account, self.initial_data.get('billing_address_dict', []))
 
+        contact_mapped = self.initial_data.get('contact_mapped', None)
         if contact_mapped:
             for obj in contact_mapped:
                 try:
@@ -767,28 +770,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        contact_mapped = self.initial_data.get('contact_mapped', []) # noqa
         create_employee_map_account(instance) # noqa
         add_account_types_information(instance)
-
-        account_type_data = {
-            'is_customer_account': False,
-            'is_supplier_account': False,
-            'is_partner_account': False,
-            'is_competitor_account': False
-        }
-        for item in instance.account_account_types_mapped.all():
-            if item.account_type.account_type_order == 0:
-                account_type_data['is_customer_account'] = True
-            elif item.account_type.account_type_order == 1:
-                account_type_data['is_supplier_account'] = True
-            elif item.account_type.account_type_order == 2:
-                account_type_data['is_partner_account'] = True
-            elif item.account_type.account_type_order == 3:
-                account_type_data['is_competitor_account'] = True
-        for key, value in account_type_data.items():
-            setattr(instance, key, value)
-        instance.save(update_fields=list(account_type_data.keys()))
+        update_account_type_fields(instance)
 
         add_shipping_address_information(instance, self.initial_data.get('shipping_address_dict', []))
         add_billing_address_information(instance, self.initial_data.get('billing_address_dict', []))
@@ -797,6 +781,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         add_credit_cards_information(instance, self.initial_data.get('credit_cards_information', []))
 
         Contact.objects.filter(account_name=instance).update(account_name=None)
+        contact_mapped = self.initial_data.get('contact_mapped', [])  # noqa
         for obj in contact_mapped:
             try:
                 contact = Contact.objects.get(id=obj.get('id', None))
