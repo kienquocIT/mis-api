@@ -148,6 +148,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_sale_order",
         null=True,
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="fa_indicator_lease_order",
+        null=True,
+    )
     payment = models.ForeignKey(
         'cashoutflow.Payment',
         on_delete=models.CASCADE,

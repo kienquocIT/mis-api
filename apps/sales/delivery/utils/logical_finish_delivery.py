@@ -221,30 +221,43 @@ class DeliFinishHandler:
     @classmethod
     def push_final_acceptance(cls, instance):
         list_data_indicator = []
+        sale_order_id = None
+        lease_order_id = None
+        opportunity_id = None
         if instance.order_delivery:
             if instance.order_delivery.sale_order:
-                for deli_product in instance.delivery_product_delivery_sub.all():
-                    if deli_product.product and deli_product.picked_quantity > 0:
-                        list_data_indicator.append({
-                            'tenant_id': instance.tenant_id,
-                            'company_id': instance.company_id,
-                            'sale_order_id': instance.order_delivery.sale_order_id,
-                            'delivery_sub_id': instance.id,
-                            'product_id': deli_product.product_id,
-                            'actual_value': DeliFinishHandler.get_delivery_cost(
-                                deli_product=deli_product, sale_order=instance.order_delivery.sale_order
-                            ),
-                            'acceptance_affect_by': 3,
-                        })
-                FinalAcceptance.push_final_acceptance(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    sale_order_id=instance.order_delivery.sale_order_id,
-                    employee_created_id=instance.employee_created_id,
-                    employee_inherit_id=instance.employee_inherit_id,
-                    opportunity_id=instance.order_delivery.sale_order.opportunity_id,
-                    list_data_indicator=list_data_indicator,
-                )
+                sale_order_id = instance.order_delivery.sale_order_id
+                if instance.order_delivery.sale_order.opportunity:
+                    opportunity_id = instance.order_delivery.sale_order.opportunity_id
+            if instance.order_delivery.lease_order:
+                lease_order_id = instance.order_delivery.lease_order_id
+                if instance.order_delivery.lease_order.opportunity:
+                    opportunity_id = instance.order_delivery.lease_order.opportunity_id
+
+            for deli_product in instance.delivery_product_delivery_sub.all():
+                if deli_product.product and deli_product.picked_quantity > 0:
+                    list_data_indicator.append({
+                        'tenant_id': instance.tenant_id,
+                        'company_id': instance.company_id,
+                        'sale_order_id': sale_order_id,
+                        'lease_order_id': lease_order_id,
+                        'delivery_sub_id': instance.id,
+                        'product_id': deli_product.product_id,
+                        'actual_value': DeliFinishHandler.get_delivery_cost(
+                            deli_product=deli_product, sale_order=instance.order_delivery.sale_order
+                        ),
+                        'acceptance_affect_by': 3,
+                    })
+            FinalAcceptance.push_final_acceptance(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                sale_order_id=sale_order_id,
+                lease_order_id=lease_order_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                opportunity_id=opportunity_id,
+                list_data_indicator=list_data_indicator,
+            )
         return True
 
     @classmethod
