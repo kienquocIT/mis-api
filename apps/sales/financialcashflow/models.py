@@ -39,6 +39,7 @@ class CashInflow(DataAbstractModel):
         'company.CompanyBankAccount',
         on_delete=models.CASCADE,
         related_name="cash_inflow_company_bank_account",
+        null=True
     )
     company_bank_account_data = models.JSONField(default=dict)
     # company_bank_account_data = {

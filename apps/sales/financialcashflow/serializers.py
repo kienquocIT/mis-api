@@ -101,7 +101,6 @@ class CashInflowCreateSerializer(AbstractCreateSerializerModel):
 
 
 class CashInflowDetailSerializer(AbstractDetailSerializerModel):
-    customer = serializers.SerializerMethodField()
     no_ar_invoice_data = serializers.SerializerMethodField()
     has_ar_invoice_data = serializers.SerializerMethodField()
 
@@ -114,7 +113,7 @@ class CashInflowDetailSerializer(AbstractDetailSerializerModel):
             'posting_date',
             'document_date',
             'description',
-            'customer',
+            'customer_data',
             'purchase_advance_value',
             'no_ar_invoice_data',
             'has_ar_invoice_data',
@@ -123,15 +122,6 @@ class CashInflowDetailSerializer(AbstractDetailSerializerModel):
             'bank_value',
             'company_bank_account_data'
         )
-
-    @classmethod
-    def get_customer(cls, obj):
-        return {
-            'id': obj.customer_id,
-            'code': obj.customer.code,
-            'name': obj.customer.name,
-            'tax_code': obj.customer.tax_code,
-        } if obj.customer else {}
 
     @classmethod
     def get_no_ar_invoice_data(cls, obj):
@@ -237,7 +227,8 @@ class CashInflowCommonFunction:
                     validate_data['customer_data'] = {
                         'id': str(customer.id),
                         'code': customer.code,
-                        'title': customer.title,
+                        'name': customer.name,
+                        'tax_code': customer.tax_code,
                     }
                     print('1. validate_customer_id --- ok')
                     return validate_data
@@ -346,11 +337,7 @@ class CashInflowCommonFunction:
     @classmethod
     def validate_payment_method_data(cls, validate_data):
         payment_method_data = validate_data.pop('payment_method_data', {})
-        if all(key in payment_method_data for key in [
-            'cash_value',
-            'bank_value',
-            'company_bank_account_id'
-        ]):
+        if all(key in payment_method_data for key in ['cash_value', 'bank_value']):
             # check cif total value == cash_value + bank_value ?
             validate_data['cash_value'] = float(payment_method_data.get('cash_value', 0))
             validate_data['bank_value'] = float(payment_method_data.get('bank_value', 0))
@@ -362,28 +349,29 @@ class CashInflowCommonFunction:
             validate_data['accounting_cash_account'] = '1111'
             validate_data['accounting_bank_account'] = '1121'
 
-            if payment_method_data.get('company_bank_account_id'):
-                try:
-                    company_bank_account = CompanyBankAccount.objects.get(
-                        id=payment_method_data.get('company_bank_account_id')
-                    )
-                    if not company_bank_account.is_active:
-                        raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_ACTIVE})
-                    validate_data['company_bank_account_id'] = str(company_bank_account.id)
-                    validate_data['company_bank_account_data'] = {
-                        'id': str(company_bank_account.id),
-                        'country_id': str(company_bank_account.country_id),
-                        'bank_name': company_bank_account.bank_name,
-                        'bank_code': company_bank_account.bank_code,
-                        'bank_account_name': company_bank_account.bank_account_name,
-                        'bank_account_number': company_bank_account.bank_account_number,
-                        'bic_swift_code': company_bank_account.bic_swift_code,
-                        'is_default': company_bank_account.is_default
-                    }
-                except CompanyBankAccount.DoesNotExist:
-                    raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_EXIST})
-            else:
-                raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_NULL})
+            if validate_data['bank_value'] > 0:
+                if 'company_bank_account_id' in payment_method_data:
+                    try:
+                        company_bank_account = CompanyBankAccount.objects.get(
+                            id=payment_method_data.get('company_bank_account_id')
+                        )
+                        if not company_bank_account.is_active:
+                            raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_ACTIVE})
+                        validate_data['company_bank_account_id'] = str(company_bank_account.id)
+                        validate_data['company_bank_account_data'] = {
+                            'id': str(company_bank_account.id),
+                            'country_id': str(company_bank_account.country_id),
+                            'bank_name': company_bank_account.bank_name,
+                            'bank_code': company_bank_account.bank_code,
+                            'bank_account_name': company_bank_account.bank_account_name,
+                            'bank_account_number': company_bank_account.bank_account_number,
+                            'bic_swift_code': company_bank_account.bic_swift_code,
+                            'is_default': company_bank_account.is_default
+                        }
+                    except CompanyBankAccount.DoesNotExist:
+                        raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_EXIST})
+                else:
+                    raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_NULL})
             print('4. validate_payment_method_data --- ok')
             return validate_data
         raise serializers.ValidationError({'payment_method': CashInflowMsg.MISSING_PAYMENT_METHOD_INFO})
@@ -454,7 +442,8 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
         return {
             'id': obj.customer_mapped_id,
             'code': obj.customer_mapped.code,
-            'name': obj.customer_mapped.name
+            'name': obj.customer_mapped.name,
+            'tax_code': obj.customer_mapped.tax_code
         } if obj.customer_mapped else {}
 
     @classmethod
@@ -463,11 +452,15 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_total(cls, obj):
-        return sum([item.product_subtotal_final for item in obj.ar_invoice_items.all()])
+        total = sum([item.product_subtotal_final for item in obj.ar_invoice_items.all()])
+        return total
 
     @classmethod
     def get_payment_value(cls, obj):
-        return 0
+        payment_value = sum([item.sum_payment_value for item in obj.cash_inflow_item_ar_invoice.filter(
+            cash_inflow__system_status=3
+        )])
+        return payment_value
 
     @classmethod
     def get_sale_order_data(cls, obj):
@@ -487,6 +480,11 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
                 'issue_invoice': item.issue_invoice,
                 'value_after_tax': item.value_after_tax,
                 'value_total': item.value_total,
+                'value_payment': sum([
+                    item.payment_value for item in item.cash_inflow_item_detail_so_pm_stage.filter(
+                        cash_inflow_item__cash_inflow__system_status=3
+                    )
+                ]),
                 'due_date': item.due_date,
                 'is_ar_invoice': item.is_ar_invoice,
                 'order': item.order
