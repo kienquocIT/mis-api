@@ -82,7 +82,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         ).first()
         if current_stage and this_period:
             lead = Lead.objects.create(
-                **validated_data, current_lead_stage=current_stage, system_status=3,
+                **validated_data, current_lead_stage=current_stage, system_status=1,
                 period_mapped=this_period
             )
 
