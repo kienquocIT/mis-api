@@ -66,7 +66,6 @@ class Lead(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         self.add_auto_generate_code_to_instance(self, 'LEAD[n4]', False)
-        print(self.code)
         # hit DB
         super().save(*args, **kwargs)
 
