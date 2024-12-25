@@ -305,11 +305,13 @@ class LeaseOrderRuleValidate:
 
     @classmethod
     def validate_payment_stage(cls, validate_data):
-        if 'lease_payment_stage' in validate_data:
+        if 'lease_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['lease_payment_stage']) > 0:
-                total = 0
+                total_ratio = 0
+                total_payment = 0
                 for payment_stage in validate_data['lease_payment_stage']:
-                    total += payment_stage.get('payment_ratio', 0)
+                    total_ratio += payment_stage.get('payment_ratio', 0)
+                    total_payment += payment_stage.get('value_total', 0)
                     # check required field
                     date = payment_stage.get('date', '')
                     due_date = payment_stage.get('due_date', '')
@@ -317,7 +319,9 @@ class LeaseOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total != 100:
+                if total_ratio != 100:
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
+                if total_payment != validate_data.get('total_product', 0):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
