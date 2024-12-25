@@ -525,6 +525,7 @@ AppProp_SaleData_Quotation_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.product',
         'example': 'prop(Product)=="Laptop"',
+        'date_created': '2025-01-01 00:00:16',
     },
     'f0ae96de-d51f-421e-87e1-4ee150095fc9': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -535,6 +536,7 @@ AppProp_SaleData_Quotation_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.producttype',
         'example': 'prop(Product type)=="Dịch vụ"',
+        'date_created': '2025-01-01 00:00:15',
     },
     '73a627ef-016a-4497-ae9f-0ba92e0f721d': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -544,6 +546,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Product quantity)',
+        'date_created': '2025-01-01 00:00:14',
     },
     '67100057-ee5b-46ef-958f-5c15e5c5e5e2': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -553,6 +556,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Product unit price)',
+        'date_created': '2025-01-01 00:00:13',
     },
     '016a8435-b564-45cb-99b6-dae38d2df5f2': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -562,6 +566,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Product subtotal)',
+        'date_created': '2025-01-01 00:00:12',
     },
     '8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -572,16 +577,18 @@ AppProp_SaleData_Quotation_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.expenseitem',
         'example': 'prop(Expense type)=="Deployment expense"',
+        'date_created': '2025-01-01 00:00:11',
     },
     'af3d550c-8b22-481f-998b-35499f0df141': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': str(trans('Labor expense type')),
         'code': 'expense_data__title',
-        'remark': 'Loại chi phí trong thông tin tab chi phí',
+        'remark': 'Loại chi phí nhân công trong thông tin tab chi phí',
         'type': 5,
         'is_sale_indicator': True,
         'content_type': 'saledata.expense',
         'example': 'prop(Labor expense type)=="Deployment manday"',
+        'date_created': '2025-01-01 00:00:10',
     },
     '195479c7-cf10-463f-95fb-8784f47041df': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -591,6 +598,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Expense quantity)',
+        'date_created': '2025-01-01 00:00:09',
     },
     'ad5ca6e1-8788-40ce-acac-9850a49a6565': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -600,6 +608,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Expense unit price)',
+        'date_created': '2025-01-01 00:00:08',
     },
     'f0251c13-0480-4ac1-94d3-ebe03afb93bf': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -609,6 +618,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Expense subtotal before tax)',
+        'date_created': '2025-01-01 00:00:07',
     },
     '6c6af508-c5b0-4295-b92a-bfc53dfad9d3': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -618,6 +628,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Expense subtotal after tax)',
+        'date_created': '2025-01-01 00:00:06',
     },
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -627,6 +638,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total revenue after tax)',
+        'date_created': '2025-01-01 00:00:05',
     },
     '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -636,6 +648,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total cost after tax)',
+        'date_created': '2025-01-01 00:00:04',
     },
     '78584833-3ad3-406a-8969-749e2c9b899c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -645,6 +658,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total expense after tax)',
+        'date_created': '2025-01-01 00:00:03',
     },
     '9a8bef37-6812-4d8b-ba6a-dc5669e61029': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -654,6 +668,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total revenue before tax)',
+        'date_created': '2025-01-01 00:00:02',
     },
     'd1dcd149-6fc8-4234-870d-29497f8cfb88': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -663,6 +678,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total cost before tax)',
+        'date_created': '2025-01-01 00:00:01',
     },
     '490ecfee-30d2-468a-b075-84d44b8b150e': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -672,6 +688,7 @@ AppProp_SaleData_Quotation_data = {
         'type': 6,
         'is_sale_indicator': True,
         'example': 'prop(Total expense before tax)',
+        'date_created': '2025-01-01 00:00:00',
     },
     # PRINT
     **Quotation_data__params,
@@ -1268,6 +1285,7 @@ AppProp_SaleData_SaleOrder_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.product',
         'example': 'prop(Product)=="Laptop"',
+        'date_created': '2025-01-01 00:00:16',
     },
     '43d04cd8-a595-4d03-8b6f-9c6eb2c3e343': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1278,6 +1296,7 @@ AppProp_SaleData_SaleOrder_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.producttype',
         'example': 'prop(Product type)=="Dịch vụ"',
+        'date_created': '2025-01-01 00:00:15',
     },
     'ab6ef6bc-e836-400e-8a89-57503c21f79c': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1286,6 +1305,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Quantity product on sale order product line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:14',
     },
     'f6e535a7-65ef-41ad-93c4-216bb82b87ae': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1294,6 +1314,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Price product on sale order product line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:13',
     },
     '0d573721-bf7c-4281-aea4-60abf26c997e': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1302,6 +1323,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Subtotal product on sale order product line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:12',
     },
     '374d7846-99e0-4af0-8073-3e048cec8c9d': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1312,16 +1334,18 @@ AppProp_SaleData_SaleOrder_data = {
         'is_sale_indicator': True,
         'content_type': 'saledata.expenseitem',
         'example': 'prop(Expense type)=="Deployment expense"',
+        'date_created': '2025-01-01 00:00:11',
     },
     'f67b209c-852a-48d0-8036-e7fdc421f42a': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': str(trans('Labor expense type')),
         'code': 'expense_data__title',
-        'remark': 'Loại chi phí trong thông tin tab chi phí',
+        'remark': 'Loại chi phí nhân công trong thông tin tab chi phí',
         'type': 5,
         'is_sale_indicator': True,
         'content_type': 'saledata.expense',
         'example': 'prop(Labor expense type)=="Deployment manday"',
+        'date_created': '2025-01-01 00:00:10',
     },
     '57933f39-3e0e-4754-8205-314573da97fe': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1330,6 +1354,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Quantity expense on sale order expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:09',
     },
     'e4e6d755-4f14-402a-ac2c-d16b1cae7dbd': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1338,6 +1363,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Price expense on sale order expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:08',
     },
     '09aa4090-762d-4942-9676-24da8340284e': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1346,6 +1372,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Subtotal before tax expense on sale order expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:07',
     },
     '8b4cdf06-400f-45a7-895f-fcf3886275d7': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1354,6 +1381,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Subtotal after tax expense on sale order expense line',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:06',
     },
     '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1362,6 +1390,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total revenue of sale order',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:05',
     },
     '1b93c48c-fbbf-460e-8bd6-00df89439c1c': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1370,6 +1399,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total cost of sale order',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:04',
     },
     'f919ddc7-bcb1-42c0-a84d-01cd48c7e9b4': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1378,6 +1408,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total expense of sale order',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:03',
     },
     '474ae19c-7dde-4c6d-b9cd-ad6b19af21ce': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1386,6 +1417,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total revenue before tax of sale order (after discount on total, apply promotion,...)',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:02',
     },
     '3b4cf21c-93fb-4e67-bb02-2eed12ef334f': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1394,6 +1426,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total cost before tax of sale order',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:01',
     },
     '9df853f6-522d-45cd-a37f-a8f18f3e496b': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1402,6 +1435,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total expense before tax of sale order',
         'type': 6,
         'is_sale_indicator': True,
+        'date_created': '2025-01-01 00:00:00',
     },
     # PRINT
     **SaleOrder_data__params,
