@@ -54,7 +54,7 @@ from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptReques
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
 from ..sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
-from ..sales.lead.models import LeadHint, LeadStage
+from ..sales.lead.models import LeadHint, LeadStage, Lead
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
@@ -2738,6 +2738,17 @@ def parse_quotation_data_so():
             order.save(update_fields=['quotation_data'])
     print('parse_quotation_data_so done.')
     return True
+
+
+def update_lead_code():
+    for company in Company.objects.all():
+        Lead.objects.filter(company=company).update(system_status=0)
+        for lead in Lead.objects.filter(company=company).order_by('date_created'):
+            lead.system_status = 1
+            lead.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
 
 def update_current_document_type__doc_type_category_to_bidding():
     count = 0
