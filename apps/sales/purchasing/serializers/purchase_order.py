@@ -604,7 +604,7 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
                 # check required field
                 due_date = payment_stage.get('due_date', '')
                 if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         else:
@@ -714,7 +714,7 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
                 # check required field
                 due_date = payment_stage.get('due_date', '')
                 if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
                 raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
         else:

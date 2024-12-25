@@ -281,8 +281,8 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"phone": AccountMsg.PHONE_FORMAT_VN_INCORRECT})
         return None
 
-    date_joined = serializers.DateField(input_formats=['%d/%m/%Y', 'iso-8601'], allow_null=True)
-    dob = serializers.DateField(input_formats=['%d/%m/%Y', 'iso-8601'], allow_null=True)
+    date_joined = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True)
+    dob = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True)
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
     email = serializers.CharField(max_length=150)
