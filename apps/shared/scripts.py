@@ -2758,7 +2758,6 @@ def set_system_status_doc(app_code, doc_id, system_status):
             obj_target.save(update_fields=['system_status'])
     print('set_system_status_doc done.')
     return True
-    print(f'{count} rows have been updated')
 
 
 def mockup_data_company_bank_account(company_id):
