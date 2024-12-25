@@ -3,21 +3,26 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyBankAccount
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, PaymentTerm
+from apps.masterdata.saledata.models import Account
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow, CashInflowItem, CashInflowItemDetail
 from apps.sales.saleorder.models import SaleOrder, SaleOrderPaymentStage
-
-__all__ = [
-    'ARInvoiceListForCashInflowSerializer',
-]
-
 from apps.shared import (
     AbstractListSerializerModel,
     AbstractCreateSerializerModel,
     AbstractDetailSerializerModel,
     CashInflowMsg
 )
+
+
+__all__ = [
+    'CashInflowListSerializer',
+    'CashInflowCreateSerializer',
+    'CashInflowDetailSerializer',
+    'CashInflowUpdateSerializer',
+    'CustomerListForCashInflowSerializer',
+    'ARInvoiceListForCashInflowSerializer',
+]
 
 
 # main serializers
@@ -285,11 +290,11 @@ class CashInflowCommonFunction:
             }
 
             # check balance value has changed ?
-            approved_cash_inflow_payments = sum([
+            approved_cash_inflow_payments = sum(
                 item.payment_value for item in so_pm_stage.cash_inflow_item_detail_so_pm_stage.filter(
                     cash_inflow_item__cash_inflow__system_status=3
                 )
-            ])
+            )
             if payment_item_balance_value != so_pm_stage.value_total - approved_cash_inflow_payments:
                 raise serializers.ValidationError({'balance_value': CashInflowMsg.BALANCE_VALUE_CHANGED})
 
@@ -334,7 +339,7 @@ class CashInflowCommonFunction:
                     'title': ar_invoice.title,
                     'type_doc': 'AR Invoice',
                     'document_date': str(ar_invoice.document_date),
-                    'sum_total_value': sum([item.product_subtotal_final for item in ar_invoice.ar_invoice_items.all()])
+                    'sum_total_value': sum(item.product_subtotal_final for item in ar_invoice.ar_invoice_items.all())
                 }
                 cls.common_valid_ar_invoice_data(item, validate_data)
         print('3. validate_has_ar_invoice_data --- ok')
@@ -362,7 +367,9 @@ class CashInflowCommonFunction:
                             id=payment_method_data.get('company_bank_account_id')
                         )
                         if not company_bank_account.is_active:
-                            raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_ACTIVE})
+                            raise serializers.ValidationError(
+                                {'company_bank_account_id': CashInflowMsg.BANK_NOT_ACTIVE}
+                            )
                         validate_data['company_bank_account_id'] = str(company_bank_account.id)
                         validate_data['company_bank_account_data'] = {
                             'id': str(company_bank_account.id),
@@ -454,18 +461,18 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_document_type(cls, obj):
-        return _('AR Invoice')
+        return _('AR Invoice') if obj else ''
 
     @classmethod
     def get_total(cls, obj):
-        total = sum([item.product_subtotal_final for item in obj.ar_invoice_items.all()])
+        total = sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
         return total
 
     @classmethod
     def get_payment_value(cls, obj):
-        payment_value = sum([item.sum_payment_value for item in obj.cash_inflow_item_ar_invoice.filter(
+        payment_value = sum(item.sum_payment_value for item in obj.cash_inflow_item_ar_invoice.filter(
             cash_inflow__system_status=3
-        )])
+        ))
         return payment_value
 
     @classmethod
@@ -486,11 +493,11 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
                 'issue_invoice': item.issue_invoice,
                 'value_after_tax': item.value_after_tax,
                 'value_total': item.value_total,
-                'value_payment': sum([
+                'value_payment': sum(
                     item.payment_value for item in item.cash_inflow_item_detail_so_pm_stage.filter(
                         cash_inflow_item__cash_inflow__system_status=3
                     )
-                ]),
+                ),
                 'due_date': item.due_date,
                 'is_ar_invoice': item.is_ar_invoice,
                 'order': item.order
