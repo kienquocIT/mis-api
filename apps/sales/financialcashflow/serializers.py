@@ -24,7 +24,13 @@ from apps.shared import (
 class CashInflowListSerializer(AbstractListSerializerModel):
     class Meta:
         model = CashInflow
-        fields = '__all__'
+        fields = (
+            'id',
+            'code',
+            'title',
+            'customer_data',
+            'system_status'
+        )
 
 
 class CashInflowCreateSerializer(AbstractCreateSerializerModel):
