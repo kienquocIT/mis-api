@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
     BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
 
@@ -197,6 +198,10 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
+                    LOFinishHandler.push_product_info(instance=self)  # product info
+
+                    LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
+                    LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
 
         if self.system_status in [4]:  # cancel
             ...
