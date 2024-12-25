@@ -2184,7 +2184,7 @@ AppProp_SaleData_Bidding_data = {
         "title": "Opportunity",
         "code": "opportunity",
         "type": 5,
-        "content_type": "opportunity.Opportunity",
+        "content_type": "opportunity.opportunity",
         'is_wf_zone': True,
     },
     "36f85840-f8a0-41a3-bd8a-6d958d25d6c1": {
@@ -2192,7 +2192,7 @@ AppProp_SaleData_Bidding_data = {
         "title": "Employee Inherit",
         "code": "employee_inherit_id",
         "type": 5,
-        'content_type': 'hr.Employee',
+        'content_type': 'hr.employee',
         'is_wf_zone': True,
     },
     "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
@@ -2267,7 +2267,7 @@ AppProp_SaleData_Consulting_data = {
         "title": "Opportunity",
         "code": "opportunity",
         "type": 5,
-        "content_type": "opportunity.Opportunity",
+        "content_type": "opportunity.opportunity",
         'is_wf_zone': True,
     },
     "7067a027-4a9e-4396-b81b-f201df7abcff": {
@@ -2275,7 +2275,7 @@ AppProp_SaleData_Consulting_data = {
         "title": "Employee Inherit",
         "code": "employee_inherit",
         "type": 5,
-        'content_type': 'hr.Employee',
+        'content_type': 'hr.employee',
         'is_wf_zone': True,
     },
     "e8295df3-5e01-4a3d-bb9e-a5e771926ab5": {
@@ -2283,7 +2283,7 @@ AppProp_SaleData_Consulting_data = {
         "title": "Customer",
         "code": "customer",
         "type": 5,
-        'content_type': 'saledata.Account',
+        'content_type': 'saledata.account',
         'is_wf_zone': True,
         'is_wf_condition': True
     },
@@ -2342,7 +2342,7 @@ AppProp_SaleData_Consulting_data = {
         "title": "Category in Product Categories",
         "code": "product_categories__product_category",
         "type": 5,
-        'content_type': 'saledata.ProductCategory',
+        'content_type': 'saledata.productcategory',
         'is_wf_zone': True,
         "is_wf_condition": True,
     },
