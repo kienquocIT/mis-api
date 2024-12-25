@@ -500,7 +500,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.push_product_info(instance=self)  # product
-                    DeliFinishHandler.push_so_status(instance=self)  # sale order
+                    DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
                     self.prepare_data_for_logging(self)

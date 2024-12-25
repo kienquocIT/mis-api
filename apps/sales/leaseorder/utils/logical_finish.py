@@ -14,16 +14,18 @@ class DocHandler:
         return None
 
 
-class SOFinishHandler:
+class LOFinishHandler:
     # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
-        for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
-            if product_order.product:
+        for product_order in instance.lease_order_product_lease_order.filter(
+                product__isnull=False, offset__isnull=False
+        ):
+            if product_order.offset:
                 final_ratio = cls.get_final_uom_ratio(
-                    product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
+                    product_obj=product_order.offset, uom_transaction=product_order.unit_of_measure
                 )
-                product_order.product.save(**{
+                product_order.offset.save(**{
                     'update_stock_info': {
                         'quantity_order': product_order.product_quantity * final_ratio,
                         'system_status': instance.system_status,
@@ -118,27 +120,27 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def push_final_acceptance_so(cls, instance):
+    def push_final_acceptance_lo(cls, instance):
         list_data_indicator = [
             {
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
-                'sale_order_id': instance.id,
-                'sale_order_indicator_id': so_ind.id,
-                'indicator_id': so_ind.quotation_indicator_id,
-                'indicator_value': so_ind.indicator_value,
-                'different_value': 0 - so_ind.indicator_value,
-                'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
-                'order': so_ind.order,
+                'lease_order_id': instance.id,
+                'lease_order_indicator_id': lo_ind.id,
+                'indicator_id': lo_ind.quotation_indicator_id,
+                'indicator_value': lo_ind.indicator_value,
+                'different_value': 0 - lo_ind.indicator_value,
+                'rate_value': 100 if lo_ind.quotation_indicator.code == 'IN0001' else 0,
+                'order': lo_ind.order,
                 'acceptance_affect_by': 1,
             }
-            for so_ind in instance.sale_order_indicator_sale_order.all()
+            for lo_ind in instance.lease_order_indicator_lease_order.all()
         ]
         FinalAcceptance.push_final_acceptance(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
-            sale_order_id=instance.id,
-            lease_order_id=None,
+            sale_order_id=None,
+            lease_order_id=instance.id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
             opportunity_id=instance.opportunity_id,

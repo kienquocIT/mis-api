@@ -300,7 +300,8 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                         'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
                         'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
                         'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
-                        'association': self.get_association(node_current=obj.stage_currents.node),
+                        'association': self.get_association(node_current=obj.stage_currents.node)
+                        if obj.stage_currents.node else [],
                     }
         return {}
 

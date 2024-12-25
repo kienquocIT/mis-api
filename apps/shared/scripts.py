@@ -2757,3 +2757,12 @@ def set_system_status_doc(app_code, doc_id, system_status):
             obj_target.save(update_fields=['system_status'])
     print('set_system_status_doc done.')
     return True
+
+
+def remove_prop_indicator(application_id, code_list):
+    objs = ApplicationProperty.objects.filter(
+        application_id=application_id, code__in=code_list, is_sale_indicator=True
+    )
+    objs.delete()
+    print("remove_prop_indicator done.")
+    return True
