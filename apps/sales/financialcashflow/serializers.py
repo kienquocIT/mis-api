@@ -178,20 +178,49 @@ class CashInflowDetailSerializer(AbstractDetailSerializerModel):
 
 
 class CashInflowUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
+    customer_id = serializers.UUIDField()
+    posting_date = serializers.DateTimeField()
+    document_date = serializers.DateTimeField()
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    no_ar_invoice_data = serializers.JSONField(default=list)
+    has_ar_invoice_data = serializers.JSONField(default=list)
+    payment_method_data = serializers.JSONField(default=dict)
+
     class Meta:
         model = CashInflow
         fields = (
+            'title',
+            'customer_id',
+            'posting_date',
+            'document_date',
+            'description',
+            'purchase_advance_value',
+            # detail data
+            'no_ar_invoice_data',
+            'has_ar_invoice_data',
+            # payment method data
+            'payment_method_data',
         )
 
     def validate(self, validate_data):
         CashInflowCommonFunction.validate_customer_id(validate_data)
+        validate_data['total_value'] = 0
+        CashInflowCommonFunction.validate_no_ar_invoice_data(validate_data)
+        CashInflowCommonFunction.validate_has_ar_invoice_data(validate_data)
+        CashInflowCommonFunction.validate_payment_method_data(validate_data)
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        no_ar_invoice_data = validated_data.pop('no_ar_invoice_data', [])
+        has_ar_invoice_data = validated_data.pop('has_ar_invoice_data', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        CashInflowCommonFunction.create_cif_item(instance, no_ar_invoice_data, has_ar_invoice_data)
         return instance
 
 
@@ -259,10 +288,12 @@ class CashInflowCommonFunction:
             }
 
             # check balance value has changed ?
-            all_payment = sum([
-                item.payment_value for item in so_pm_stage.cash_inflow_item_detail_so_pm_stage.all()
+            approved_cash_inflow_payments = sum([
+                item.payment_value for item in so_pm_stage.cash_inflow_item_detail_so_pm_stage.filter(
+                    cash_inflow_item__cash_inflow__system_status=3
+                )
             ])
-            if payment_item_balance_value != so_pm_stage.value_total - all_payment:
+            if payment_item_balance_value != so_pm_stage.value_total - approved_cash_inflow_payments:
                 raise serializers.ValidationError({'balance_value': CashInflowMsg.BALANCE_VALUE_CHANGED})
 
             # check payment value > balance value ?
@@ -378,6 +409,7 @@ class CashInflowCommonFunction:
                     cash_inflow_item=cif_item_obj,
                     **detail
                 ))
+        cash_inflow_obj.cash_inflow_item_cash_inflow.all().delete()
         CashInflowItem.objects.bulk_create(bulk_info)
         CashInflowItemDetail.objects.bulk_create(bulk_info_detail)
         print('* create_cif_item --- ok')

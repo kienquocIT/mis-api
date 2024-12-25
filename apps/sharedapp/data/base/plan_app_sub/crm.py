@@ -2567,12 +2567,12 @@ LEASEORDER_APP_CONFIG = {
     "allow_recurrence": True,
 }
 
-FINANCIAL_CASH_INFLOW_APP_CONFIG = {
+FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG = {
     "id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",
     "title": "Cash Inflow",
     "code": "cashinflow",
     "model_code": "cashinflow",
-    "app_label": "financial",
+    "app_label": "financialcashflow",
     "is_workflow": True,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
@@ -2712,7 +2712,7 @@ Application_crm_data = {
         filtering_inheritor=True,
         spacing_allow=["0", "1"],
     ),
-    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": ApplicationConfigFrame(**FINANCIAL_CASH_INFLOW_APP_CONFIG).data(
+    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": ApplicationConfigFrame(**FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],

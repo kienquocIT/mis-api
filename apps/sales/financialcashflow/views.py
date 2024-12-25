@@ -2,7 +2,6 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import Account
 from apps.sales.financialcashflow.models import CashInflow
-from apps.sales.saleorder.models import SaleOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.serializers import (
@@ -38,7 +37,7 @@ class CashInflowList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financial', model_code='cashinflow', perm_code='view',
+        label_code='financialcashflow', model_code='cashinflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -50,7 +49,7 @@ class CashInflowList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financial', model_code='cashinflow', perm_code='create',
+        label_code='financialcashflow', model_code='cashinflow', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -69,7 +68,7 @@ class CashInflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail CashInflow')
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financial', model_code='cashinflow', perm_code='view',
+        label_code='financialcashflow', model_code='cashinflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -77,7 +76,7 @@ class CashInflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update CashInflow", request_body=CashInflowUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financial', model_code='cashinflow', perm_code='edit',
+        label_code='financialcashflow', model_code='cashinflow', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
