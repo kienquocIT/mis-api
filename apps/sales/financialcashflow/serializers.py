@@ -483,6 +483,7 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
             'title': obj.sale_order_mapped.title,
             'payment_term': [{
                 'id': item.id,
+                'so_id': obj.sale_order_mapped_id,
                 'so_code': obj.sale_order_mapped.code,
                 'remark': item.remark,
                 'term_data': item.term_data,

@@ -88,6 +88,7 @@ class CashInflowItem(DataAbstractModel):
         'arinvoice.ARInvoice',
         on_delete=models.CASCADE,
         related_name="cash_inflow_item_ar_invoice",
+        null=True
     )
     ar_invoice_data = models.JSONField(default=dict)
     # ar_invoice_data = {
