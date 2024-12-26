@@ -116,7 +116,7 @@ class ProjectAllTaskList(BaseListMixin):
         return super().get_queryset().select_related(
             "task", "task__employee_inherit", "task__employee_created", "task__parent_n", "task__task_status",
             "project"
-        ).prefetch_related("task__employee_inherit__role")
+        ).prefetch_related("task__employee_inherit__role").filter(project_id__in=self.get_prj_has_view_this())
 
     def get_prj_has_view_this(self):
         return [
@@ -127,39 +127,12 @@ class ProjectAllTaskList(BaseListMixin):
             ).values_list('project_id', flat=True)
         ]
 
-    @property
-    def filter_kwargs(self) -> dict[str, any]:
-        return {
-            **self.cls_check.attr.setup_hidden(from_view='list'),
-        }
-
-    @property
-    def filter_kwargs_q(self) -> Union[Q, Response]:
-        params = self.request.query_params.dict()
-
-        # check permit config exists if from_app not calling...
-        prj_has_view_ids = self.get_prj_has_view_this()
-        if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
-            if prj_has_view_ids:
-                filter_kwargs = Q(project_id__in=prj_has_view_ids)
-                if 'project_id' in params:
-                    filter_kwargs = Q(**{'project_id': params.get('project_id')})
-                if 'task_status' in params:
-                    filter_kwargs &= Q(**{'task_status_id': params.get('task_status')})
-                if 'member_id' in params:
-                    filter_kwargs &= Q(**{'member_id': params.get('member_id')})
-                return filter_kwargs
-            return self.filter_kwargs_q__from_config()
-
-        return self.list_empty()
-
     @swagger_auto_schema(
         operation_summary="Project task list",
         operation_description="get project task list",
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
