@@ -70,6 +70,12 @@ class ReportStock(DataAbstractModel):
         related_name="report_stock_sale_order",
         null=True
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_stock_lease_order",
+        null=True
+    )
 
     period_mapped = models.ForeignKey(
         'saledata.Periods',
@@ -157,6 +163,12 @@ class ReportStockLog(DataAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name="report_stock_log_sale_order",
+        null=True
+    )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_stock_log_lease_order",
         null=True
     )
 
@@ -525,6 +537,13 @@ class ReportInventoryCost(DataAbstractModel):
         related_name="report_inventory_cost_sale_order",
         null=True
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_inventory_cost_lease_order",
+        null=True
+    )
+
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.CASCADE,
@@ -636,6 +655,12 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name="rp_inv_cost_sale_order",
+        null=True
+    )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="rp_inv_cost_lease_order",
         null=True
     )
     latest_log = models.ForeignKey(
