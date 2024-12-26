@@ -435,3 +435,86 @@ def send_mail_new_project_member(tenant_id, company_id, prj_owner, prj_member, p
             return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
         return 'MAIL_CONFIG_DEACTIVATE'
     return obj_got
+
+
+@shared_task
+def send_mail_new_contract_submit(tenant_id, company_id, assignee_id, employee_created_id, contract_id):
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=8)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, template_obj, user_obj] = obj_got
+        print('user_obj', user_obj)
+        cls = SendMailController(mail_config=config_obj, timeout=3)
+        assignee = get_employee_obj(employee_id=assignee_id, tenant_id=tenant_id, company_id=company_id)
+        employee_created = get_employee_obj(
+            employee_id=employee_created_id, tenant_id=tenant_id, company_id=company_id
+        )
+
+        if cls.is_active is True and template_obj and assignee and employee_created:
+            if template_obj.contents and assignee.email and employee_created.email:
+                subject = template_obj.subject if template_obj.subject else 'New request signing to contract'
+                log_cls = MailLogController(
+                    tenant_id=tenant_id, company_id=company_id,
+                    system_code=8,  # NEW CONTRACT
+                    doc_id=contract_id, subject=subject,
+                )
+                if log_cls.create():
+                    state_send = mail_request_sign(
+                        cls=cls, log_cls=log_cls,
+                        **{
+                            'tenant_id': tenant_id,
+                            'subject': subject,
+                            'assignee': assignee,
+                            'employee_created': employee_created,
+                            'contract_id': contract_id,
+                            'template_obj': template_obj,
+                        }
+                    )
+                    if state_send is True:
+                        log_cls.update(status_code=1, status_remark=state_send)  # sent
+                        log_cls.save()
+                        return 'Success'
+                    log_cls.update(status_code=2, status_remark=state_send)  # error
+                    log_cls.save()
+                return 'SEND_FAILURE'
+            return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+def mail_request_sign(cls, log_cls, **kwargs):
+    tenant_id = kwargs.get('tenant_id', None)
+    subject = kwargs.get('subject', None)
+    assignee = kwargs.get('assignee', None)
+    employee_created = kwargs.get('employee_created', None)
+    contract = kwargs.get('contract_id', None)
+    template_obj = kwargs.get('template_obj', None)
+
+    tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
+    contract_obj = DisperseModel(app_model='hrm.EmployeeContract').get_model().objects.filter(pk=contract).first()
+
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[assignee.email])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            mail_to=[assignee.email],
+            template=template_obj.contents,
+            data=MailDataResolver.new_contract(
+                tenant_obj=tenant_obj, assignee=assignee, employee_created=employee_created, contract=contract_obj
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send

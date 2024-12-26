@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from .models import ContractTemplate
 from .serializers import ContractTemplateListSerializers, ContractTemplateCreateSerializers, \
-    ContractTemplateDetailSerializers
+    ContractTemplateDetailSerializers, ContractTemplateDDListSerializers
 
 
 class ContractTemplateList(BaseListMixin, BaseCreateMixin):
@@ -39,10 +39,26 @@ class ContractTemplateList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=True, allow_admin_company=True
     )
     def post(self, request, *args, **kwargs):
-        self.ser_context = {
-            'user': request.user,
-        }
         return self.create(request, *args, **kwargs)
+
+
+class ContractTemplateDDList(BaseListMixin):
+    queryset = ContractTemplate.objects
+    serializer_list = ContractTemplateDDListSerializers
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'application__model_code': ['exact']
+    }
+
+    @swagger_auto_schema(
+        operation_summary="Contract template dropdown list",
+        operation_description="get contract dropdown list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class ContractTemplateDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):

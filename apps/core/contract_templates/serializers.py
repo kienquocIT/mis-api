@@ -41,9 +41,7 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
         fields = (
             'title',
             'template',
-            'application',
-            'members',
-            'signatures'
+            'application'
         )
 
     @classmethod
@@ -51,16 +49,6 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError({'detail': ProcessMsg.APPLICATION_NOT_FOUND})
         return value
-
-    @classmethod
-    def validate_members(cls, attrs):
-        if len(attrs) > 0:
-            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
-                fill__tenant=True, fill__company=True, id__in=attrs
-            )
-            if objs.count() != len(attrs):
-                raise serializers.ValidationError({'members': ContractTemplateMsg.MEMBER_NOT_EXIST})
-        return attrs
 
     def create(self, validated_data):
         info = ContractTemplate.objects.create(**validated_data)
@@ -76,9 +64,7 @@ class ContractTemplateDetailSerializers(serializers.ModelSerializer):
             'id',
             'title',
             'template',
-            'application',
-            'members',
-            'signatures'
+            'application'
         )
 
     @classmethod
@@ -88,3 +74,13 @@ class ContractTemplateDetailSerializers(serializers.ModelSerializer):
             'title': obj.application.title,
             'code': obj.application.code
         } if obj.application else {}
+
+
+class ContractTemplateDDListSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = ContractTemplate
+        fields = (
+            'title',
+            'template'
+        )

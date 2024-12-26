@@ -12,21 +12,6 @@ class ContractTemplate(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='contract_template_map_app'
     )
-    members = models.JSONField(
-        default=list,
-        help_text='["employee_01_id", "employee_01_id"]',
-        verbose_name='members assignee',
-    )
-    signatures = models.JSONField(
-        default=dict,
-        verbose_name='signatures parameter of contract',
-        help_text=json.dumps(
-            {
-                'sign_01': ['emp_01_id', 'emp_02_id'],
-                'sign_02': ['emp_01_id', 'emp_02_id'],
-            }
-        )
-    )
 
     class Meta:
         verbose_name = 'Contract template list'

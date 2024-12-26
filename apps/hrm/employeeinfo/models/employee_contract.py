@@ -61,8 +61,18 @@ class EmployeeContract(MasterDataAbstractModel):
     )
     content = models.TextField(blank=True)
     sign_status = models.SmallIntegerField(
-        help_text='0: unsigned, 1: signed',
+        help_text='0: unsigned, 1: signing, 2: signed',
         default=0,
+    )
+    content_info = models.JSONField(
+        default=dict,
+        verbose_name='contract info via config',
+        help_text=json.dumps(
+            {
+                'sign_01': ['emp_01_id', 'emp_02_id'],
+                'sign_02': ['emp_01_id', 'emp_02_id'],
+            }
+        )
     )
 
     def code_generator(self):

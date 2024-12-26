@@ -365,7 +365,10 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
         obj = None
         if contract:
             contract_id = contract.get('id', None)
-            if contract_id:
+            sign = contract.get('sign_status', None)
+            if sign == 1:
+                raise serializers.ValidationError({'contract': HRMsg.UPDATE_CONTRACT_DENIED})
+            if contract_id and (sign == 0):
                 try:
                     obj = EmployeeContract.objects.get(id=contract_id)
                     obj.effected_date = contract.get('effected_date')

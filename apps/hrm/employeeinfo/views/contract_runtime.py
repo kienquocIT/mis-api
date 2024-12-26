@@ -17,7 +17,7 @@ class ContractRuntimeCreate(BaseCreateMixin):
         request_body=EmployeeContractRuntimeCreateSerializers,
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -39,5 +39,3 @@ class ContractRuntimeDetail(BaseRetrieveMixin):
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
-
-# , BaseUpdateMixin
