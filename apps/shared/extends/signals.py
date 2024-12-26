@@ -1348,8 +1348,8 @@ def contract_runtime(sender, instance, created, **kwargs):
         instance.employee_contract.save(update_fields=['sign_status'])
     employee_active = list()
     for item in instance.signatures.values():
-        if not item.stt:
-            employee_active = item.assignee
+        if not item['stt']:
+            employee_active = item['assignee']
             break
     # gửi mail
     for employee in employee_active:
@@ -1358,7 +1358,7 @@ def contract_runtime(sender, instance, created, **kwargs):
             **{
                 'tenant_id': str(tenant.id),
                 'company_id': str(company.id),
-                'assignee_id': str(employee.id),
+                'assignee_id': str(employee),
                 'employee_created_id': str(created_email.id),
                 'contract_id': str(contract.id),
             }

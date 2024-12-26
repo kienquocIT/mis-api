@@ -490,8 +490,11 @@ def mail_request_sign(cls, log_cls, **kwargs):
     template_obj = kwargs.get('template_obj', None)
 
     tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
-    contract_obj = DisperseModel(app_model='hrm.EmployeeContract').get_model().objects.filter(pk=contract).first()
+    contract_obj = DisperseModel(app_model='employeeinfo.EmployeeContract').get_model().objects.filter(
+        pk=contract
+    ).first()
 
+    # todo here đang check đến đây test send mail khi trình ký HD
     log_cls.update(
         address_sender=cls.from_email if cls.from_email else '',
     )
