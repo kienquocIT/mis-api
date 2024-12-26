@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
     BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
@@ -205,6 +206,8 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
 
         if self.system_status in [4]:  # cancel
             ...
+        # opportunity log
+        LOHandler.push_opportunity_log(instance=self)
         # hit DB
         super().save(*args, **kwargs)
 
