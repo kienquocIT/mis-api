@@ -654,6 +654,8 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             {
                 'sale_order_id': deli_data.get('sale_order', None),
                 'sale_order_data': deli_data.get('sale_order_data', {}),
+                'lease_order_id': deli_data.get('lease_order', None),
+                'lease_order_data': deli_data.get('lease_order_data', {}),
                 'warehouse_id': deli_data.get('warehouse', None),
                 'warehouse_data': deli_data.get('warehouse_data', {}),
                 'uom_id': deli_data.get('uom', None),
@@ -755,6 +757,15 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         null=True,
     )
     sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="delivery_pw_lease_order",
+        help_text="main lease order of this delivery or lease order from other project (borrow)",
+        null=True,
+    )
+    lease_order_data = models.JSONField(default=dict, help_text='data json of lease order')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
