@@ -111,11 +111,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
+            kw_parameter['lease_order_id'] = obj.lease_order_id
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
             if 1 in cost_cfg:
-                kw_parameter['warehouse_id'] = warehouse_item[0]
+                kw_parameter['warehouse_id'] = warehouse_item[0] if len(warehouse_item) > 0 else None
             this_sub_period_cost = obj.product.report_inventory_cost_product.filter(
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order,
@@ -364,6 +365,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
+            kw_parameter['lease_order_id'] = obj.lease_order_id
 
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
