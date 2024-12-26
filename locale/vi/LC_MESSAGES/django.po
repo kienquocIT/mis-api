@@ -1099,8 +1099,8 @@ msgid "Quantity must be larger than 0."
 msgstr "Số lượng phải lớn hơn 0."
 
 #
-msgid "Total payment must be 100%."
-msgstr "Tổng thanh toán phải đủ 100%."
+msgid "Total payment ratio must be 100%."
+msgstr "Tổng tỉ lệ thanh toán phải đủ 100%."
 
 #
 msgid "Payment is required according to config."
@@ -1397,3 +1397,7 @@ msgstr "Giá trị dự kiến phải bằng tổng của giá trị loạ
 #
 msgid "Error creating consulting"
 msgstr "Lỗi tạo tư vấn"
+
+#
+msgid "Total payment must be equal to total after tax."
+msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thuế."

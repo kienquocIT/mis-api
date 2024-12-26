@@ -606,7 +606,7 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
                 if not due_date:
                     raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
         else:
             # check required by config
             so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
@@ -716,7 +716,7 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
                 if not due_date:
                     raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
         else:
             # check required by config
             so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()

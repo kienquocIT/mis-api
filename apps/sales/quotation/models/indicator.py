@@ -284,76 +284,8 @@ class SQIndicatorDefaultData:
             "remark": "Chi phí khác",
             "example": "indicator(Chi phí khác)",
             "application_code": "quotation",
-            "formula_data": [
-                {
-                    "id": "490ecfee-30d2-468a-b075-84d44b8b150e",
-                    "code": "total_expense_pretax_amount",
-                    "type": 6,
-                    "title": "Total expense before tax",
-                    "remark": "Total expense before tax of quotation",
-                    "syntax": "prop(Total expense before tax)",
-                    "properties": {},
-                    "is_property": True,
-                    "syntax_show": "prop(Total expense before tax)",
-                    "content_type": "quotation.Quotation",
-                },
-                "-",
-                {
-                    "id": "4",
-                    "order": 4,
-                    "title": "Chi phí vận hành",
-                    "remark": "Chi phí vận hành",
-                    "syntax": "indicator(Chi phí vận hành)",
-                    "example": "indicator(Chi phí vận hành)",
-                    "syntax_show": "indicator(Chi phí vận hành)",
-                    "formula_data": [
-                        {
-                            "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
-                            "code": "sumItemIf",
-                            "title": "sumItemIf",
-                            "remark": "Returns total of items that pass condition.",
-                            "syntax": "sumItemIf(",
-                            "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
-                            "param_type": 2,
-                            "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
-                            "function_data": [
-                                {
-                                    "id": "8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95",
-                                    "code": "expense_type_title",
-                                    "type": 1,
-                                    "title": "Expense type",
-                                    "remark": "Type expense on quotation expense line",
-                                    "syntax": "prop(Expense type)",
-                                    "properties": {
-
-                                    },
-                                    "is_property": True,
-                                    "syntax_show": "prop(Expense type)",
-                                    "content_type": None
-                                },
-                                "===",
-                                "chiphítriểnkhai",
-                                {
-                                    "id": "f0251c13-0480-4ac1-94d3-ebe03afb93bf",
-                                    "code": "expense_subtotal_price",
-                                    "type": 6,
-                                    "title": "Expense subtotal before tax",
-                                    "remark": "Subtotal before tax expense on quotation expense line",
-                                    "syntax": "prop(Expense subtotal before tax)",
-                                    "properties": {},
-                                    "is_property": True,
-                                    "syntax_show": "prop(Expense subtotal before tax)",
-                                    "content_type": None
-                                }
-                            ]
-                        }
-                    ],
-                    "is_indicator": True,
-                    "formula_data_show":
-                        'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
-                }
-            ],
-            "formula_data_show": 'prop(Total expense before tax) - indicator(Chi phí vận hành)',
+            "formula_data": [],
+            "formula_data_show": '',
             "order": 5
         },
         {
