@@ -28,8 +28,6 @@ def handle_attach_file(instance, attachment_result):
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
-    # product_data = serializers.SerializerMethodField()
-    # uom_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -40,28 +38,6 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             if obj.offset_data:
                 return bool(True)
         return bool(False)
-
-    # @classmethod
-    # def get_product_data(cls, obj):
-    #     return {
-    #         'id': obj.product_id,
-    #         'title': obj.product.title,
-    #         'code': obj.product.code,
-    #         'general_traceability_method': obj.product.general_traceability_method,
-    #     } if obj.product else {}
-
-    # @classmethod
-    # def get_uom_data(cls, obj):
-    #     if obj.product:
-    #         so_product = obj.product.sale_order_product_product.first()
-    #         if so_product:
-    #             return {
-    #                 'id': so_product.unit_of_measure_id,
-    #                 'title': so_product.unit_of_measure.title,
-    #                 'code': so_product.unit_of_measure.code,
-    #                 'ratio': so_product.unit_of_measure.ratio,
-    #             } if so_product.unit_of_measure else {}
-    #     return {}
 
     class Meta:
         model = OrderDeliveryProduct
@@ -104,6 +80,16 @@ class OrderDeliverySubListSerializer(AbstractListSerializerModel):
             'actual_delivery_date',
             'employee_inherit',
             'state',
+        )
+
+
+class OrderDeliverySubMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderDeliverySub
+        fields = (
+            'id',
+            'code',
+            'date_created',
         )
 
 
@@ -358,3 +344,32 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             handle_attach_file(instance, attachments)
 
         return instance
+
+
+class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
+    delivery_product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderDeliverySub
+        fields = (
+            'id',
+            'code',
+            'date_created',
+            'delivery_product',
+        )
+
+    @classmethod
+    def get_delivery_product(cls, obj):
+        return [
+            {
+                'product_id': deli_product.product_id,
+                'product_data': deli_product.product_data,
+                'asset_type': deli_product.asset_type,
+                'offset_id': deli_product.offset_id,
+                'offset_data': deli_product.offset_data,
+                'quantity_ordered': deli_product.delivery_quantity,
+                'quantity_delivered': deli_product.picked_quantity,
+                'quantity_recovered': 0,
+            }
+            for deli_product in obj.delivery_product_delivery_sub.all()
+        ]

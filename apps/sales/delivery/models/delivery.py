@@ -10,7 +10,7 @@ from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    MasterDataAbstractModel,
+    MasterDataAbstractModel, ASSET_TYPE,
 )
 
 __all__ = [
@@ -549,6 +549,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name='Product Data backup',
         help_text='data json of product'
     )
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -708,6 +709,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             delivery_sub=new_sub,
             product=old_obj.product,
             product_data=old_obj.product_data,
+            asset_type=old_obj.asset_type,
             offset=old_obj.offset,
             offset_data=old_obj.offset_data,
             uom=old_obj.uom,
