@@ -2147,6 +2147,16 @@ AppProp_SaleData_FinancialCashflow_CashInflow_data = {
         'is_wf_zone': True,
     },
 }
+
+AppProp_SaleData_FinancialRecon_Recon_data = {
+    "355c278c-7901-4f6d-8330-76eb9082b40f": {
+        "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
 ####
 
 AppProp_SaleData_Contract_Approval_data = {
@@ -2398,6 +2408,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Distribution_Plan_data,
     **AppProp_SaleData_BOM_data,
     **AppProp_SaleData_FinancialCashflow_CashInflow_data,
+    **AppProp_SaleData_FinancialRecon_Recon_data,
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,

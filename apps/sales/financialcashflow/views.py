@@ -1,18 +1,15 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.masterdata.saledata.models import Account
 from apps.sales.financialcashflow.models import CashInflow
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.serializers import (
     ARInvoiceListForCashInflowSerializer, CashInflowListSerializer, CashInflowCreateSerializer,
-    CashInflowDetailSerializer, CashInflowUpdateSerializer, CustomerListForCashInflowSerializer
+    CashInflowDetailSerializer, CashInflowUpdateSerializer
 )
 
 __all__ = [
     'CashInflowList',
     'CashInflowDetail',
-    'CustomerListForCashInflow',
     'ARInvoiceListForCashInflow',
 ]
 
@@ -83,27 +80,6 @@ class CashInflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 # related views
-class CustomerListForCashInflow(BaseListMixin):  # noqa
-    queryset = Account.objects
-    serializer_list = CustomerListForCashInflowSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    search_fields = ['name', 'code', 'tax_code']
-
-    def get_queryset(self):
-        return super().get_queryset().filter(is_customer_account=True).select_related().prefetch_related()
-
-    @swagger_auto_schema(
-        operation_summary="Customer list",
-        operation_description="Customer list",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='saledata', model_code='account', perm_code='view',
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
 class ARInvoiceListForCashInflow(BaseListMixin):
     queryset = ARInvoice.objects
     search_fields = [

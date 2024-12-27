@@ -137,6 +137,17 @@ class AccountListSerializer(serializers.ModelSerializer):
         return {}
 
 
+class CustomerListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            "id",
+            'code',
+            "name",
+            "tax_code"
+        )
+
+
 def create_employee_map_account(account):
     bulk_info = []
     for manager_obj in account.manager:

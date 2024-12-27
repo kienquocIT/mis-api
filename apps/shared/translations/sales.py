@@ -113,3 +113,9 @@ class CashInflowMsg:
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
     CUSTOMER_NOT_EXIST = _('Customer does not exist')
     CUSTOMER_NOT_NULL = _('Customer is not null')
+
+
+class ReconMsg:
+    ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
+    CUSTOMER_NOT_EXIST = _('Customer does not exist')
+    CUSTOMER_NOT_NULL = _('Customer is not null')

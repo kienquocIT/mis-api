@@ -20,7 +20,6 @@ __all__ = [
     'CashInflowCreateSerializer',
     'CashInflowDetailSerializer',
     'CashInflowUpdateSerializer',
-    'CustomerListForCashInflowSerializer',
     'ARInvoiceListForCashInflowSerializer',
 ]
 
@@ -104,6 +103,11 @@ class CashInflowCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         no_ar_invoice_data = validated_data.pop('no_ar_invoice_data', [])
         has_ar_invoice_data = validated_data.pop('has_ar_invoice_data', [])
+
+        if len(no_ar_invoice_data) > 0:
+            validated_data['no_ar_invoice_value'] = validated_data.get('total_value', 0)
+        elif len(has_ar_invoice_data) > 0:
+            validated_data['has_ar_invoice_value'] = validated_data.get('total_value', 0)
 
         cash_inflow_obj = CashInflow.objects.create(**validated_data)
         CashInflowCommonFunction.create_cif_item(cash_inflow_obj, no_ar_invoice_data, has_ar_invoice_data)
@@ -216,6 +220,11 @@ class CashInflowUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         no_ar_invoice_data = validated_data.pop('no_ar_invoice_data', [])
         has_ar_invoice_data = validated_data.pop('has_ar_invoice_data', [])
+
+        if len(no_ar_invoice_data) > 0:
+            validated_data['no_ar_invoice_value'] = validated_data.get('total_value', 0)
+        elif len(has_ar_invoice_data) > 0:
+            validated_data['has_ar_invoice_value'] = validated_data.get('total_value', 0)
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -337,8 +346,9 @@ class CashInflowCommonFunction:
                     'id': str(ar_invoice.id),
                     'code': ar_invoice.code,
                     'title': ar_invoice.title,
-                    'type_doc': 'AR Invoice',
+                    'type_doc': 'AR invoice',
                     'document_date': str(ar_invoice.document_date),
+                    'posting_date': str(ar_invoice.posting_date),
                     'sum_total_value': sum(item.product_subtotal_final for item in ar_invoice.ar_invoice_items.all())
                 }
                 cls.common_valid_ar_invoice_data(item, validate_data)
@@ -418,17 +428,6 @@ class CashInflowCommonFunction:
 
 
 # related serializers
-class CustomerListForCashInflowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Account
-        fields = (
-            "id",
-            'code',
-            "name",
-            "tax_code"
-        )
-
-
 class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
     customer_mapped = serializers.SerializerMethodField()
     document_type = serializers.SerializerMethodField()

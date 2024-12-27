@@ -49,6 +49,8 @@ from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliv
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.distributionplan.models import DistributionPlan
+from ..sales.financialcashflow.models import CashInflow
+from ..sales.financialcashflow.views import CashInflowList
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
@@ -66,6 +68,7 @@ from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
+from ..sales.reconciliation.models import Reconciliation, ReconciliationItem
 from ..sales.report.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
@@ -2822,13 +2825,3 @@ def mockup_data_company_bank_account(company_id):
     else:
         print('Company id :)) ???')
     return True
-
-
-def update_lead_code():
-    for company in Company.objects.all():
-        Lead.objects.filter(company=company).update(system_status=0)
-        for lead in Lead.objects.filter(company=company).order_by('date_created'):
-            lead.system_status = 1
-            lead.save(update_fields=['system_status', 'code'])
-        print(f'Finished {company.title}')
-    print('Done :))')

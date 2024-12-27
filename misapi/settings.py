@@ -131,7 +131,8 @@ INSTALLED_APPS = \
     ] + [  # HRM
         'apps.hrm.employeeinfo',
     ] + [
-        'apps.sales.financialcashflow'
+        'apps.sales.financialcashflow',
+        'apps.sales.reconciliation',
     ]
 
 MIDDLEWARE = [
