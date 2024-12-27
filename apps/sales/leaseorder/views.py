@@ -53,8 +53,8 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Lease Order List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='leaseorder', model_code='leaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='leaseorder', model_code='leaseorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -65,7 +65,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         request_body=LeaseOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         employee_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='create'
     )
@@ -93,7 +93,7 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Lease Order detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -105,7 +105,7 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=LeaseOrderUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
