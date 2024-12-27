@@ -22,7 +22,7 @@ class ReconList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset()
+        return super().get_queryset().select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Recon list",

@@ -116,7 +116,7 @@ class CashInflow(DataAbstractModel):
                     accounting_account='1311'
                 )
                 return True
-            return False
+        return False
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
