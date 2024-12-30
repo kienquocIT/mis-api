@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow
