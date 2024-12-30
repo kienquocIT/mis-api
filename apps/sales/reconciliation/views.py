@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.reconciliation.models import Reconciliation
 from apps.sales.reconciliation.serializers import (
-    ReconListSerializer, ReconDetailSerializer, ReconCreateSerializer, ReconUpdateSerializer
+    ReconListSerializer, ReconDetailSerializer, ReconCreateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 
@@ -53,7 +53,6 @@ class ReconDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = ReconListSerializer
     serializer_create = ReconCreateSerializer
     serializer_detail = ReconDetailSerializer
-    serializer_update = ReconUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -67,11 +66,3 @@ class ReconDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(operation_summary="Update Recon", request_body=ReconUpdateSerializer)
-    @mask_view(
-        login_require=True, auth_require=True,
-        label_code='financialrecon', model_code='reconciliation', perm_code='edit',
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)

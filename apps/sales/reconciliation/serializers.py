@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
-from apps.sales.reconciliation.models import Reconciliation
+from apps.sales.arinvoice.models import ARInvoice
+from apps.sales.financialcashflow.models import CashInflow
+from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 from apps.shared import (
     AbstractListSerializerModel,
     AbstractCreateSerializerModel,
@@ -14,7 +16,6 @@ __all__ = [
     'ReconListSerializer',
     'ReconCreateSerializer',
     'ReconDetailSerializer',
-    'ReconUpdateSerializer',
 ]
 
 
@@ -36,6 +37,8 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
     customer_id = serializers.UUIDField()
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
+    type = serializers.CharField()
+    recon_item_data = serializers.JSONField(default=list)
 
     class Meta:
         model = Reconciliation
@@ -44,16 +47,40 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
             'customer_id',
             'posting_date',
             'document_date',
+            'type',
+            'recon_item_data'
         )
 
     def validate(self, validate_data):
         ReconCommonFunction.validate_customer_id(validate_data)
+        ReconCommonFunction.validate_recon_item_data(validate_data)
         return validate_data
 
-    @decorator_run_workflow
     def create(self, validated_data):
-        cash_inflow_obj = Reconciliation.objects.create(**validated_data)
-        return cash_inflow_obj
+        recon_item_data = validated_data.pop('recon_item_data')
+        recon_obj = Reconciliation.objects.create(**validated_data)
+
+        bulk_info = []
+        for item in recon_item_data:
+            bulk_info.append(ReconciliationItem(
+                recon=recon_obj,
+                recon_data={
+                    'id': str(recon_obj.id),
+                    'code': recon_obj.code,
+                    'title': recon_obj.title
+                },
+                order=len(bulk_info),
+                ar_invoice_id=item.get('ar_invoice_id'),
+                ar_invoice_data=item.get('ar_invoice_data', {}),
+                cash_inflow_id=item.get('cash_inflow_id'),
+                cash_inflow_data=item.get('cash_inflow_data', {}),
+                recon_balance=item.get('recon_balance', 0),
+                recon_amount=item.get('recon_amount', 0),
+                note=item.get('note', ''),
+                accounting_account='1311'
+            ))
+        ReconciliationItem.objects.bulk_create(bulk_info)
+        return recon_obj
 
 
 class ReconDetailSerializer(AbstractDetailSerializerModel):
@@ -86,33 +113,6 @@ class ReconDetailSerializer(AbstractDetailSerializerModel):
         } for item in obj.recon_items.all()]
 
 
-class ReconUpdateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(max_length=100)
-    customer_id = serializers.UUIDField()
-    posting_date = serializers.DateTimeField()
-    document_date = serializers.DateTimeField()
-
-    class Meta:
-        model = Reconciliation
-        fields = (
-            'title',
-            'customer_id',
-            'posting_date',
-            'document_date',
-        )
-
-    def validate(self, validate_data):
-        ReconCommonFunction.validate_customer_id(validate_data)
-        return validate_data
-
-    @decorator_run_workflow
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance
-
-
 class ReconCommonFunction:
     @classmethod
     def validate_customer_id(cls, validate_data):
@@ -134,3 +134,35 @@ class ReconCommonFunction:
                 except Account.DoesNotExist:
                     raise serializers.ValidationError({'customer_id': ReconMsg.CUSTOMER_NOT_EXIST})
         raise serializers.ValidationError({'customer_id': ReconMsg.CUSTOMER_NOT_NULL})
+
+    @classmethod
+    def validate_recon_item_data(cls, validate_data):
+        recon_item_data = validate_data.get('recon_item_data')
+        for item in recon_item_data:
+            if item.get('ar_invoice_id'):
+                ar_invoice_obj = ARInvoice.objects.filter(id=item.get('ar_invoice_id')).first()
+                if ar_invoice_obj:
+                    item['ar_invoice_data'] = {
+                        'id': str(ar_invoice_obj.id),
+                        'code': ar_invoice_obj.code,
+                        'title': ar_invoice_obj.title,
+                        'type_doc': 'AR invoice',
+                        'document_date': str(ar_invoice_obj.document_date),
+                        'posting_date': str(ar_invoice_obj.posting_date),
+                        'sum_total_value': sum(
+                            item.product_subtotal_final for item in ar_invoice_obj.ar_invoice_items.all()
+                        )
+                    }
+            if item.get('cash_inflow_id'):
+                cif_obj = CashInflow.objects.filter(id=item.get('cash_inflow_id')).first()
+                if cif_obj:
+                    item['cash_inflow_data'] = {
+                        'id': str(cif_obj.id),
+                        'code': cif_obj.code,
+                        'title': cif_obj.title,
+                        'type_doc': 'Cash inflow',
+                        'document_date': str(cif_obj.document_date),
+                        'posting_date': str(cif_obj.posting_date),
+                        'sum_total_value': cif_obj.total_value
+                    }
+        return recon_item_data
