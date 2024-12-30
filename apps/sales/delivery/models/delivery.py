@@ -840,6 +840,7 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="product warehouse lot",
         related_name="delivery_lot_product_warehouse_lot",
     )
+    product_warehouse_lot_data = models.JSONField(default=dict, help_text='data json of lot')
     quantity_initial = models.FloatField(
         default=0,
         help_text='quantity in ProductWarehouseLot at the time create this record'
@@ -900,6 +901,7 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="product warehouse serial",
         related_name="delivery_serial_product_warehouse_serial",
     )
+    product_warehouse_serial_data = models.JSONField(default=dict, help_text='data json of serial')
     is_returned = models.BooleanField(default=False)
 
     class Meta:

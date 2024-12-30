@@ -370,6 +370,7 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'quantity_ordered': deli_product.delivery_quantity,
                 'quantity_delivered': deli_product.picked_quantity,
                 'quantity_recovered': 0,
+                'delivery_data': deli_product.delivery_data,
             }
             for deli_product in obj.delivery_product_delivery_sub.all()
         ]
