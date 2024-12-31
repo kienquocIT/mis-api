@@ -166,8 +166,8 @@ class ReconCommonFunction:
 # related features
 class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
     document_type = serializers.SerializerMethodField()
-    total = serializers.SerializerMethodField()
-    payment_value = serializers.SerializerMethodField()
+    sum_total_value = serializers.SerializerMethodField()
+    recon_total = serializers.SerializerMethodField()
     cash_inflow_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -179,8 +179,8 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
             'document_date',
             'posting_date',
             'document_type',
-            'total',
-            'payment_value',
+            'sum_total_value',
+            'recon_total',
             'cash_inflow_data'
         )
 
@@ -189,14 +189,14 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
         return _('AR Invoice') if obj else ''
 
     @classmethod
-    def get_total(cls, obj):
-        total = sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
-        return total
+    def get_sum_total_value(cls, obj):
+        sum_total_value = sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
+        return sum_total_value
 
     @classmethod
-    def get_payment_value(cls, obj):
-        payment_value = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
-        return payment_value
+    def get_recon_total(cls, obj):
+        recon_total = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
+        return recon_total
 
     @classmethod
     def get_cash_inflow_data(cls, obj):
