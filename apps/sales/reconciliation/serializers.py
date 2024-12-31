@@ -216,4 +216,3 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
                     'recon_balance': cif.total_value - recon_value,
                 })
         return cash_inflow_data
-    
