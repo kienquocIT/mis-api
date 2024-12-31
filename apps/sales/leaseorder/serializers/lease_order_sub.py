@@ -150,9 +150,11 @@ class LeaseOrderCommonValidate:
     @classmethod
     def validate_payment_term_id(cls, value):
         try:
+            if value is None:
+                return None
             return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
     @classmethod
     def validate_quotation_id(cls, value):
