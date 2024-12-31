@@ -98,8 +98,9 @@ class OrderActiveDeliverySerializer:
             if self.config_obj.is_picking is False or self.check_has_prod_services > 0:
                 stock_ready = m2m_obj.product_quantity
 
-            offset, offset_data = None, {}
-            if hasattr(m2m_obj, "offset"):
+            asset_type, offset, offset_data = None, None, {}
+            if hasattr(m2m_obj, "asset_type") and hasattr(m2m_obj, "offset") and hasattr(m2m_obj, "offset_data"):
+                asset_type = m2m_obj.asset_type
                 offset = m2m_obj.offset
                 offset_data = m2m_obj.offset_data
 
@@ -107,6 +108,7 @@ class OrderActiveDeliverySerializer:
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
                 product_data=m2m_obj.product_data,
+                asset_type=asset_type,
                 offset=offset,
                 offset_data=offset_data,
                 uom=m2m_obj.unit_of_measure,

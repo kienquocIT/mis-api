@@ -10,7 +10,7 @@ from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    MasterDataAbstractModel,
+    MasterDataAbstractModel, ASSET_TYPE,
 )
 
 __all__ = [
@@ -571,6 +571,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name='Product Data backup',
         help_text='data json of product'
     )
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -730,6 +731,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             delivery_sub=new_sub,
             product=old_obj.product,
             product_data=old_obj.product_data,
+            asset_type=old_obj.asset_type,
             offset=old_obj.offset,
             offset_data=old_obj.offset_data,
             uom=old_obj.uom,
@@ -860,6 +862,7 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="product warehouse lot",
         related_name="delivery_lot_product_warehouse_lot",
     )
+    product_warehouse_lot_data = models.JSONField(default=dict, help_text='data json of lot')
     quantity_initial = models.FloatField(
         default=0,
         help_text='quantity in ProductWarehouseLot at the time create this record'
@@ -920,6 +923,7 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="product warehouse serial",
         related_name="delivery_serial_product_warehouse_serial",
     )
+    product_warehouse_serial_data = models.JSONField(default=dict, help_text='data json of serial')
     is_returned = models.BooleanField(default=False)
 
     class Meta:

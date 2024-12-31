@@ -150,9 +150,11 @@ class LeaseOrderCommonValidate:
     @classmethod
     def validate_payment_term_id(cls, value):
         try:
+            if value is None:
+                return None
             return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
     @classmethod
     def validate_quotation_id(cls, value):
@@ -348,8 +350,9 @@ class LeaseOrderRuleValidate:
 
 # SUB SERIALIZERS
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
-    product_id = serializers.UUIDField(required=False, allow_null=True)
-    offset_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField(required=True, allow_null=False)
+    asset_type = serializers.IntegerField(required=True)
+    offset_id = serializers.UUIDField(required=True, allow_null=False)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
     uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
