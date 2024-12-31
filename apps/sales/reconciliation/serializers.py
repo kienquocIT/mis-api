@@ -1,14 +1,10 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import Account
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
-from apps.shared import (
-    AbstractListSerializerModel,
-    AbstractCreateSerializerModel,
-    AbstractDetailSerializerModel,
-    ReconMsg
-)
+from apps.shared import ReconMsg
 
 
 __all__ = [
@@ -19,7 +15,7 @@ __all__ = [
 
 
 # main serializers
-class ReconListSerializer(AbstractListSerializerModel):
+class ReconListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reconciliation
         fields = (
@@ -31,7 +27,7 @@ class ReconListSerializer(AbstractListSerializerModel):
         )
 
 
-class ReconCreateSerializer(AbstractCreateSerializerModel):
+class ReconCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     customer_id = serializers.UUIDField()
     posting_date = serializers.DateTimeField()
@@ -57,7 +53,7 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
 
     def create(self, validated_data):
         recon_item_data = validated_data.pop('recon_item_data')
-        recon_obj = Reconciliation.objects.create(**validated_data)
+        recon_obj = Reconciliation.objects.create(**validated_data, system_status=1)
 
         bulk_info = []
         for item in recon_item_data:
@@ -82,7 +78,7 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
         return recon_obj
 
 
-class ReconDetailSerializer(AbstractDetailSerializerModel):
+class ReconDetailSerializer(serializers.ModelSerializer):
     recon_items_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -165,3 +161,58 @@ class ReconCommonFunction:
                         'sum_total_value': cif_obj.total_value
                     }
         return recon_item_data
+
+
+# related features
+class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
+    document_type = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
+    payment_value = serializers.SerializerMethodField()
+    cash_inflow_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ARInvoice
+        fields = (
+            'id',
+            'title',
+            'code',
+            'document_date',
+            'posting_date',
+            'document_type',
+            'total',
+            'payment_value',
+            'cash_inflow_data'
+        )
+
+    @classmethod
+    def get_document_type(cls, obj):
+        return _('AR Invoice') if obj else ''
+
+    @classmethod
+    def get_total(cls, obj):
+        total = sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
+        return total
+
+    @classmethod
+    def get_payment_value(cls, obj):
+        payment_value = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
+        return payment_value
+
+    @classmethod
+    def get_cash_inflow_data(cls, obj):
+        cash_inflow_data = []
+        all_cif = obj.customer_mapped.cash_inflow_customer.all()
+        for cif in all_cif:
+            if cif.no_ar_invoice_value != 0:
+                recon_value = sum(item.recon_amount for item in cif.recon_item_cash_inflow.all())
+                cash_inflow_data.append({
+                    'id': str(cif.id),
+                    'code': cif.code,
+                    'title': cif.title,
+                    'type_doc': 'Cash inflow',
+                    'document_date': str(cif.document_date),
+                    'posting_date': str(cif.posting_date),
+                    'sum_total_value': cif.total_value,
+                    'recon_balance': cif.total_value - recon_value,
+                })
+        return cash_inflow_data

@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.company.models import CompanyBankAccount
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
@@ -505,57 +504,3 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
                 'order': item.order
             } for item in obj.sale_order_mapped.payment_stage_sale_order.all()],
         } if obj.sale_order_mapped else {}
-
-
-class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
-    document_type = serializers.SerializerMethodField()
-    total = serializers.SerializerMethodField()
-    payment_value = serializers.SerializerMethodField()
-    cash_inflow_data = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ARInvoice
-        fields = (
-            'id',
-            'title',
-            'code',
-            'document_date',
-            'posting_date',
-            'document_type',
-            'total',
-            'payment_value',
-            'cash_inflow_data'
-        )
-
-    @classmethod
-    def get_document_type(cls, obj):
-        return _('AR Invoice') if obj else ''
-
-    @classmethod
-    def get_total(cls, obj):
-        total = sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
-        return total
-
-    @classmethod
-    def get_payment_value(cls, obj):
-        payment_value = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
-        return payment_value
-
-    @classmethod
-    def get_cash_inflow_data(cls, obj):
-        cash_inflow_data = []
-        all_cif = obj.customer_mapped.cash_inflow_customer.all()
-        for cif in all_cif:
-            if cif.no_ar_invoice_value != 0:
-                recon_value = sum(item.recon_amount for item in cif.recon_item_cash_inflow.all())
-                cash_inflow_data.append({
-                    'id': str(cif.id),
-                    'code': cif.code,
-                    'title': cif.title,
-                    'type_doc': 'Cash inflow',
-                    'document_date': str(cif.document_date),
-                    'posting_date': str(cif.posting_date),
-                    'sum_total_value': cif.total_value,
-                    'recon_balance': cif.total_value - recon_value,
-                })
-        return cash_inflow_data
