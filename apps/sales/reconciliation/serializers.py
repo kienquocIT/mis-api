@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import Account
 from apps.sales.arinvoice.models import ARInvoice
+from apps.sales.arinvoice.serializers import ARInvoiceCreateSerializer
 from apps.sales.financialcashflow.models import CashInflow
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 from apps.shared import ReconMsg
@@ -11,6 +12,8 @@ __all__ = [
     'ReconListSerializer',
     'ReconCreateSerializer',
     'ReconDetailSerializer',
+    'ARInvoiceListForReconSerializer',
+    'CashInflowListForReconSerializer',
 ]
 
 
@@ -216,3 +219,35 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
                     'recon_balance': cif.total_value - recon_value,
                 })
         return cash_inflow_data
+
+
+class CashInflowListForReconSerializer(serializers.ModelSerializer):
+    document_type = serializers.SerializerMethodField()
+    sum_total_value = serializers.SerializerMethodField()
+    recon_balance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CashInflow
+        fields = (
+            'id',
+            'title',
+            'code',
+            'document_date',
+            'posting_date',
+            'document_type',
+            'sum_total_value',
+            'recon_balance',
+        )
+
+    @classmethod
+    def get_document_type(cls, obj):
+        return _('Cash inflow') if obj else ''
+
+    @classmethod
+    def get_sum_total_value(cls, obj):
+        return obj.total_value
+
+    @classmethod
+    def get_recon_balance(cls, obj):
+        recon_value = sum(item.recon_amount for item in obj.recon_item_cash_inflow.all())
+        return obj.total_value - recon_value

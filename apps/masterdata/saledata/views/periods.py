@@ -47,6 +47,9 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_current': request.user.company_current
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -72,7 +75,10 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, pk, **kwargs):
-        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context = {
+            'employee_current': self.request.user.employee_current,
+            'company_current': request.user.company_current
+        }
         return self.update(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(

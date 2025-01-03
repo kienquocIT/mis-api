@@ -45,6 +45,7 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
+from ..sales.arinvoice.models import ARInvoice
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
@@ -2825,3 +2826,13 @@ def mockup_data_company_bank_account(company_id):
     else:
         print('Company id :)) ???')
     return True
+
+
+def update_AR_invoice_code():
+    for company in Company.objects.all():
+        ARInvoice.objects.filter(company=company).update(system_status=0)
+        for ar in ARInvoice.objects.filter(company=company).order_by('date_created'):
+            ar.system_status = 1
+            ar.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
