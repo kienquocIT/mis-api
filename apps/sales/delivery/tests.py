@@ -605,7 +605,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             fiscal_year=timezone.now().year,
             space_month=0,
             start_date=timezone.now().strftime('%Y-%m-%d'),
-            end_date=timezone.now().strftime('%Y-%m-%d') + relativedelta(months=12) - relativedelta(days=1)
+            end_date=(timezone.now() + relativedelta(months=12) - relativedelta(days=1)).strftime('%Y-%m-%d')
         )
         bulk_info = []
         for i in range(1, 13):
