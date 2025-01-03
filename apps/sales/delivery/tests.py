@@ -614,10 +614,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 SubPeriods(
                     period_mapped=new_period,
                     order=i,
-                    code=f'P2024-M{letter}-2024',
-                    name=f'P2024-M{letter}-2024',
-                    start_date=f'2024-{letter}-01',
-                    end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
+                    code=f'P2024-M{letter}-{timezone.now().year}',
+                    name=f'P2024-M{letter}-{timezone.now().year}',
+                    start_date=f'{timezone.now().year}-{letter}-01',
+                    end_date=f'{timezone.now().year}-{letter}-{calendar.monthrange(timezone.now().year, i)[1]}',
                     locked=0
                 )
             )
