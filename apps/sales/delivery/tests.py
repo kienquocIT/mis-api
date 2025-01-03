@@ -1,5 +1,7 @@
 from urllib.parse import urlencode
 from uuid import uuid4
+
+from dateutil.relativedelta import relativedelta
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -602,7 +604,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             tenant_id=self.tenant_id,
             fiscal_year=timezone.now().year,
             space_month=0,
-            start_date=timezone.now().strftime('%Y-%m-%d')
+            start_date=timezone.now().strftime('%Y-%m-%d'),
+            end_date=timezone.now().strftime('%Y-%m-%d') + relativedelta(months=12) - relativedelta(days=1)
         )
         bulk_info = []
         for i in range(1, 13):
