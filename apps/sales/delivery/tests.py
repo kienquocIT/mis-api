@@ -600,9 +600,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         new_period = Periods.objects.create(
             company_id=self.company_id,
             tenant_id=self.tenant_id,
-            fiscal_year=2024,
+            fiscal_year=timezone.now().year,
             space_month=0,
-            start_date='2024-01-01'
+            start_date=timezone.now().strftime('%Y-%m-%d')
         )
         bulk_info = []
         for i in range(1, 13):
