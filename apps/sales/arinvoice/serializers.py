@@ -6,7 +6,6 @@ import base64
 from datetime import datetime
 import requests
 from rest_framework import serializers
-from apps.shared import AbstractListSerializerModel
 from apps.core.recurrence.models import Recurrence
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import (

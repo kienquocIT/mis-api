@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,

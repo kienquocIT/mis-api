@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.utils import timezone
 from apps.masterdata.saledata.models import Periods
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,

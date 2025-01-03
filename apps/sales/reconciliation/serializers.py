@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import Account
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.arinvoice.serializers import ARInvoiceCreateSerializer
 from apps.sales.financialcashflow.models import CashInflow
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 from apps.shared import ReconMsg
