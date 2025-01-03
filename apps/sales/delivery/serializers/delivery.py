@@ -347,7 +347,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
-    delivery_product = serializers.SerializerMethodField()
+    delivery_product_data = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
@@ -355,11 +355,11 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'date_created',
-            'delivery_product',
+            'delivery_product_data',
         )
 
     @classmethod
-    def get_delivery_product(cls, obj):
+    def get_delivery_product_data(cls, obj):
         return [
             {
                 'product_id': deli_product.product_id,
@@ -367,9 +367,12 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'asset_type': deli_product.asset_type,
                 'offset_id': deli_product.offset_id,
                 'offset_data': deli_product.offset_data,
+                'uom_id': deli_product.uom_id,
+                'uom_data': deli_product.uom_data,
                 'quantity_ordered': deli_product.delivery_quantity,
                 'quantity_delivered': deli_product.picked_quantity,
                 'quantity_recovered': 0,
+                'quantity_recovery': 0,
                 'delivery_data': deli_product.delivery_data,
             }
             for deli_product in obj.delivery_product_delivery_sub.all()
