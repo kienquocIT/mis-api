@@ -518,15 +518,19 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         create_delivery_mapped(instance, self.initial_data.get('delivery_mapped_list', []))
-        item_mapped = create_item_mapped(
+        create_item_mapped(
             instance,
             self.initial_data.get('data_item_list', [])
         )
+        # item_mapped = create_item_mapped(
+        #     instance,
+        #     self.initial_data.get('data_item_list', [])
+        # )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        self.create_update_invoice(instance, item_mapped)
+        # self.create_update_invoice(instance, item_mapped)
 
         return instance
 
