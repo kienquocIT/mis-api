@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
@@ -71,6 +72,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         validate_data['space_month'] = validate_data['start_date'].month - 1
+        validate_data['end_date'] = validate_data['start_date'] + relativedelta(months=12) - relativedelta(days=1)
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
             software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')

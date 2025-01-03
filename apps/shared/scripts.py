@@ -2836,3 +2836,10 @@ def update_AR_invoice_code():
             ar.save(update_fields=['system_status', 'code'])
         print(f'Finished {company.title}')
     print('Done :))')
+
+
+def update_end_date():
+    for item in Periods.objects.all():
+        item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
+        item.save(update_fields=['end_date'])
+    print('Done')

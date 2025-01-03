@@ -32,6 +32,7 @@ class CashInflowListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'customer_data',
+            'total_value',
             'system_status'
         )
 

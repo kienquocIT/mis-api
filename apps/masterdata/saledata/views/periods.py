@@ -1,5 +1,3 @@
-import datetime
-
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Periods
 from apps.masterdata.saledata.serializers import (
@@ -34,7 +32,9 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         if 'get_current' in request.query_params:
-            self.kwargs['fiscal_year'] = datetime.datetime.now().year
+            this_period = Periods.get_current_period(request.user.tenant_current_id, request.user.company_current_id)
+            if this_period:
+                self.kwargs['fiscal_year'] = this_period.fiscal_year
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -86,8 +86,9 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
+        this_period = Periods.get_current_period(request.user.tenant_current_id, request.user.company_current_id)
         instance = self.get_object()
-        if instance.fiscal_year == datetime.datetime.now().year:
+        if str(instance.id) == str(this_period.id):
             return ResponseController.internal_server_error_500(msg="Cannot delete this Period.")
         instance.delete()
         return ResponseController.success_200({}, key_data='result')
