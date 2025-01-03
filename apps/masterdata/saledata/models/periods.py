@@ -67,7 +67,7 @@ class SubPeriods(SimpleAbstractModel):
         if this_period:
             this_sub_period = Periods.get_current_sub_period(this_period)
             if this_sub_period:
-                if this_sub_period.locked == 0:
+                if this_sub_period.locked:
                     raise serializers.ValidationError(
                         {"Error": 'Can not create inventory activity now. This sub period has been Locked.'}
                     )
