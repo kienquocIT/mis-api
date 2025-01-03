@@ -600,9 +600,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         new_period = Periods.objects.create(
             company_id=self.company_id,
             tenant_id=self.tenant_id,
-            fiscal_year=2024,
+            fiscal_year=timezone.now().year,
             space_month=0,
-            start_date='2024-01-01'
+            start_date=timezone.now().strftime('%Y-%m-%d')
         )
         bulk_info = []
         for i in range(1, 13):
@@ -614,10 +614,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 SubPeriods(
                     period_mapped=new_period,
                     order=i,
-                    code=f'P2024-M{letter}-2024',
-                    name=f'P2024-M{letter}-2024',
-                    start_date=f'2024-{letter}-01',
-                    end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
+                    code=f'P2024-M{letter}-{timezone.now().year}',
+                    name=f'P2024-M{letter}-{timezone.now().year}',
+                    start_date=f'{timezone.now().year}-{letter}-01',
+                    end_date=f'{timezone.now().year}-{letter}-{calendar.monthrange(timezone.now().year, i)[1]}',
                     locked=0
                 )
             )
