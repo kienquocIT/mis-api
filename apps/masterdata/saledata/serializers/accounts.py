@@ -342,8 +342,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('account_type_selection', None):
             if 'tax_code' not in validate_data:
                 raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
-            if 'total_employees' not in validate_data:
-                raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
+            # if 'total_employees' not in validate_data:
+            #     raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
 
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
@@ -771,8 +771,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         if validate_data.get('account_type_selection', None):
             if 'tax_code' not in validate_data:
                 raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
-            if 'total_employees' not in validate_data:
-                raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
+            # if 'total_employees' not in validate_data:
+            #     raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
         return validate_data
 
     # @decorator_run_workflow
