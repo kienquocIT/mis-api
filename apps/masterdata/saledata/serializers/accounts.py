@@ -403,6 +403,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     bank_accounts_mapped = serializers.SerializerMethodField()
     credit_cards_mapped = serializers.SerializerMethodField()
     activity = serializers.SerializerMethodField()
+    revenue_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -434,6 +435,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'contact_mapped',
             'account_type_selection',
             "activity",
+            "revenue_information"
         )
 
     @classmethod
@@ -623,6 +625,28 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                 'revenue': activity.revenue,
             } for activity in obj.account_activity_account.all()
         ]
+
+    @classmethod
+    def get_revenue_information(cls, obj):
+        current_date = timezone.now()
+        revenue_ytd = 0
+        order_number = 0
+        for period in obj.company.saledata_periods_belong_to_company.all():
+            if period.fiscal_year == current_date.year:
+                start_date_str = str(period.start_date) + ' 00:00:00'
+                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
+                for customer_revenue in obj.report_customer_customer.filter(
+                        group_inherit__is_delete=False, sale_order__system_status=3
+                ):
+                    if customer_revenue.date_approved:
+                        if start_date <= customer_revenue.date_approved <= current_date:
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
+        return {
+            'revenue_ytd': revenue_ytd,
+            'order_number': order_number,
+            'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
+        }
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
