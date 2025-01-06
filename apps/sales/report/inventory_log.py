@@ -198,7 +198,6 @@ class ReportInvCommonFunc:
                     this_sub.run_report_inventory = True
                     this_sub.save(update_fields=['run_report_inventory'])
                     return True
-                else:
-                    print('Error: this_sub || last_period || last_sub_order is None')
+                print('Error: this_sub || last_period || last_sub_order is None')
             return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})
