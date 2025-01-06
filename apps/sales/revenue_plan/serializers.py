@@ -1,6 +1,7 @@
 from datetime import datetime
 from rest_framework import serializers
 
+from apps.masterdata.saledata.models import Periods
 from apps.sales.report.models import ReportRevenue
 # from apps.masterdata.saledata.models import Periods
 from apps.sales.revenue_plan.models import (
@@ -274,8 +275,10 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        if validate_data['period_mapped']:
-            if validate_data['period_mapped'].start_date.year < datetime.now().year:
+        this_period = Periods.get_current_period(self.instance.tenant_id, self.instance.company_id)
+        print(validate_data['period_mapped'].start_date.year, this_period.fiscal_year)
+        if validate_data['period_mapped'] and this_period:
+            if validate_data['period_mapped'].start_date.year < this_period.fiscal_year:
                 raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
         if not all([
             len(validate_data.get('group_mapped_list', [])) > 0,
