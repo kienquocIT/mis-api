@@ -20,13 +20,15 @@ AppProp_SaleData_Contact_data = {
         "title": "Owner",
         "code": "owner",
         "type": 5,
-        "content_type": "hr_Employee",
+        "content_type": "hr.Employee",
+        "is_filter_condition": True,
     },
     "3e9235f9-e7d0-4b9c-87ce-ad3e66aa41c2": {
         "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
         "title": "Job Title",
         "code": "job_title",
         "type": 1,
+        "is_filter_condition": True,
     },
     "1fea72e9-542b-48d3-adb1-5516b931160f": {
         "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
@@ -45,6 +47,7 @@ AppProp_SaleData_Contact_data = {
         "title": "Fullname",
         "code": "fullname",
         "type": 1,
+        "is_filter_condition": True,
     },
     "938f4ae5-9bcf-40c2-97bb-fc949b55e700": {
         "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
@@ -105,6 +108,7 @@ AppProp_SaleData_Account_data = {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Name",
         "code": "name",
+        "is_filter_condition": True,
         "type": 1,
     },
     "8937c428-66dd-4c97-a325-88bae5d68056": {
@@ -124,7 +128,8 @@ AppProp_SaleData_Account_data = {
         "title": "Owner",
         "code": "owner",
         "type": 5,
-        "content_type": "hr.Employee",
+        "content_type": "saledata.Contact",
+        "is_filter_condition": True,
     },
     "f2b81fd6-3657-448b-b93b-0b9552fd0f3e": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -138,6 +143,7 @@ AppProp_SaleData_Account_data = {
         "code": "account_group",
         "type": 5,
         "content_type": "saledata.AccountGroup",
+        "is_filter_condition": False,
     },
     "64dca30b-2a99-4135-9349-a739b0b83ef7": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -151,12 +157,20 @@ AppProp_SaleData_Account_data = {
         "code": "industry",
         "type": 5,
         "content_type": "saledata.Industry",
+        "is_filter_condition": True,
     },
     "bb05d49e-4825-43cf-81c1-633a03a4a1ab": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Annual Revenue",
         "code": "annual_revenue",
         "type": 3,
+    },
+    "3f7667e0-15a7-49f5-ba49-50d4ce8ca0df": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Revenue YTD",
+        "code": "revenue_ytd",
+        "type": 6,
+        "is_filter_condition": True,
     },
     "8d079e31-323a-46c5-97bb-dcfe1278e356": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -175,6 +189,7 @@ AppProp_SaleData_Account_data = {
         "title": "Email",
         "code": "email",
         "type": 1,
+        "is_filter_condition": True,
     },
     "ad5561aa-b3aa-49d2-8282-2d8b7a277929": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -182,6 +197,7 @@ AppProp_SaleData_Account_data = {
         "code": "currency",
         "type": 5,
         "content_type": "saledata.Currency",
+        "is_filter_condition": False,
     },
     "b0b2ca8d-659b-46da-81b8-449f0fcf8acf": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -211,8 +227,14 @@ AppProp_SaleData_Account_data = {
     },
     "9a7e9c1e-7b41-409c-802e-b60473023017": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Credit Limit",
-        "code": "credit_limit",
+        "title": "Credit Limit Supplier",
+        "code": "credit_limit_supplier",
+        "type": 6,
+    },
+    "9a42a3a8-0b5b-4188-ace5-21c09df5a13a": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Credit Limit Customer",
+        "code": "credit_limit_customer",
         "type": 6,
     },
     "41b9f085-9510-4163-90c1-cd3249ded458": {
@@ -232,6 +254,20 @@ AppProp_SaleData_Account_data = {
         "title": "Account Type Selection",
         "code": "account_type_selection",
         "type": 3,
+    },
+    "a08a0a2f-24cb-4baf-aac5-33464e6eb0da": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Number of Opening Opportunities",
+        "code": "open_opp_num",
+        "type": 6,
+        "is_filter_condition": True,
+    },
+    "688fccc3-b344-4bcc-83ad-b3f421cd6541": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Last Contacted For Open Opportunities",
+        "code": "last_contacted_open_opp",
+        "type": 6,
+        "is_filter_condition": True,
     },
 }
 

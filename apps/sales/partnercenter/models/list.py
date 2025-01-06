@@ -19,13 +19,23 @@ class List(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     filter_condition = models.JSONField(default=list)
+    list_result = models.JSONField(default=list)
+    num_of_records = models.IntegerField(default=0)
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
 
-class Property(SimpleAbstractModel):
-    title = models.CharField(max_length=100, blank=True)
-    field_code = models.CharField(max_length=100, help_text='Name of the model field')
-    type = models.SmallIntegerField(choices=DATA_PROPERTY_TYPE)
+    class Meta:
+        verbose_name = 'Partner List'
+        verbose_name_plural = 'Partner Lists'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
 
 class DataObject(SimpleAbstractModel):
     title = models.CharField(max_length=100)
-    model_name = models.CharField(max_length=100, help_text='Name of the model, e.g: Account, Contact ...')
-    app_name = models.CharField(max_length=100,  help_text='Name of the app folder, e.g: opportunity, cashoutflow')
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+    )
