@@ -418,7 +418,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_credit_cards_mapped(cls, obj):
         return [{
-            'credit_card_type': ['Mastercard', 'Visa', 'American express'][item.credit_card_type-1],
+            'credit_card_type': ['Mastercard', 'Visa', 'American express'][item.credit_card_type - 1],
             'credit_card_number': item.credit_card_number,
             'credit_card_name': item.credit_card_name,
             'card_expired_date': item.expired_date,
@@ -506,7 +506,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
     def validate_tax_code(self, value):
         if Account.objects.filter_current(
-            fill__tenant=True, fill__company=True, tax_code=value
+                fill__tenant=True, fill__company=True, tax_code=value
         ).exclude(id=self.instance.id).count() > 0:
             raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
@@ -606,21 +606,13 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.owner = None
         instance.save()
-        print(1)
         AccountCommonFunc.add_employee_map_account(instance)
-        print(2)
         AccountCommonFunc.add_account_types(instance)
-        print(3)
         AccountCommonFunc.update_account_type_fields(instance)
-        print(4)
         AccountCommonFunc.add_shipping_address(instance, self.initial_data.get('shipping_address_dict', []))
-        print(5)
         AccountCommonFunc.add_billing_address(instance, self.initial_data.get('billing_address_dict', []))
-        print(6)
         AccountCommonFunc.add_contact_mapped(instance, self.initial_data.get('contact_mapped', []))
-        print(7)
         AccountCommonFunc.add_banking_accounts(instance, self.initial_data.get('bank_accounts_information', []))
-        print(8)
         AccountCommonFunc.add_credit_cards(instance, self.initial_data.get('credit_cards_information', []))
         return instance
 
@@ -663,7 +655,7 @@ class AccountCommonFunc:
             AccountEmployee(account=account, employee_id=manager_obj.get('id')) for manager_obj in account.manager
         )
         return True
-    
+
     @staticmethod
     def add_banking_accounts(account, banking_accounts_list):
         AccountBanks.objects.filter(account=account).delete()
@@ -671,7 +663,7 @@ class AccountCommonFunc:
             AccountBanks(**item, account=account) for item in banking_accounts_list
         )
         return True
-    
+
     @staticmethod
     def add_credit_cards(account, credit_cards_list):
         bulk_info = []
@@ -686,7 +678,7 @@ class AccountCommonFunc:
         AccountCreditCards.objects.filter(account=account).delete()
         AccountCreditCards.objects.bulk_create(bulk_info)
         return True
-    
+
     @staticmethod
     def add_account_types(account):
         AccountAccountTypes.objects.filter(account=account).delete()
@@ -695,7 +687,7 @@ class AccountCommonFunc:
             for account_type_obj in account.account_type
         )
         return True
-    
+
     @staticmethod
     def add_contact_mapped(account, contact_mapped):
         account.contact_account_name.all().update(account_name=None)
@@ -713,7 +705,7 @@ class AccountCommonFunc:
             else:
                 raise serializers.ValidationError({"contact": AccountsMsg.CONTACT_NOT_EXIST})
         return True
-    
+
     @staticmethod
     def add_shipping_address(account, shipping_address_list):
         AccountShippingAddress.objects.filter(account=account).delete()
@@ -721,7 +713,7 @@ class AccountCommonFunc:
             AccountShippingAddress(**item, account=account) for item in shipping_address_list
         )
         return True
-    
+
     @staticmethod
     def add_billing_address(account, billing_address_list):
         AccountBillingAddress.objects.filter(account=account).delete()
@@ -729,7 +721,7 @@ class AccountCommonFunc:
             AccountBillingAddress(**item, account=account) for item in billing_address_list
         )
         return True
-    
+
     @staticmethod
     def update_account_type_fields(instance):
         account_type_data = {
