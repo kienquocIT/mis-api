@@ -195,7 +195,5 @@ class ReportInvCommonFunc:
                               f"Pushed to next sub period.")
                         return True
                     print('Error: software_start_using_time || last_sub is None')
-            else:
-                print('Error: this_sub || last_period || last_sub_order is None')
             return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})

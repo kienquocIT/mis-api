@@ -26,6 +26,7 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'fiscal_year',
             'space_month',
             'start_date',
+            'end_date',
             'software_start_using_time',
             'subs',
             'current_sub'
@@ -54,19 +55,22 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_current_sub(cls, obj):
-        current_sub = obj.get_current_sub_period(obj)
-        return {
-            'order': current_sub.order,
-            'current_month': (
-                    current_sub.order + obj.space_month - 12
-            ) if (
-                    current_sub.order + obj.space_month > 12
-            ) else (
-                    current_sub.order + obj.space_month
-            ),
-            'start_date': str(current_sub.start_date) if current_sub else None,
-            'end_date': str(current_sub.start_date) if current_sub else None
-        } if current_sub else {}
+        if obj.start_date <= datetime.now().date():
+            current_sub = obj.get_current_sub_period(obj)
+            return {
+                'id': current_sub.id,
+                'order': current_sub.order,
+                'current_month': (
+                        current_sub.order + obj.space_month - 12
+                ) if (
+                        current_sub.order + obj.space_month > 12
+                ) else (
+                        current_sub.order + obj.space_month
+                ),
+                'start_date': str(current_sub.start_date) if current_sub else None,
+                'end_date': str(current_sub.end_date) if current_sub else None
+            } if current_sub else {}
+        return {}
 
 
 class PeriodsCreateSerializer(serializers.ModelSerializer):

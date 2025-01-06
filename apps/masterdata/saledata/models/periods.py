@@ -33,7 +33,7 @@ class Periods(MasterDataAbstractModel):
     @classmethod
     def get_current_period(cls, tenant_id, company_id):
         this_period = None
-        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
+        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).order_by('fiscal_year'):
             if period.end_date > datetime.now().date():
                 this_period = period
                 break
@@ -42,7 +42,7 @@ class Periods(MasterDataAbstractModel):
     @classmethod
     def get_current_sub_period(cls, this_period):
         this_sub_period = None
-        for sub_period in this_period.sub_periods_period_mapped.all().reverse():
+        for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
             if sub_period.end_date > datetime.now().date():
                 this_sub_period = sub_period
                 break
