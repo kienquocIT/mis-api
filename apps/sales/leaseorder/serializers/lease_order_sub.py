@@ -150,9 +150,11 @@ class LeaseOrderCommonValidate:
     @classmethod
     def validate_payment_term_id(cls, value):
         try:
+            if value is None:
+                return None
             return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
     @classmethod
     def validate_quotation_id(cls, value):
@@ -305,11 +307,13 @@ class LeaseOrderRuleValidate:
 
     @classmethod
     def validate_payment_stage(cls, validate_data):
-        if 'lease_payment_stage' in validate_data:
+        if 'lease_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['lease_payment_stage']) > 0:
-                total = 0
+                total_ratio = 0
+                total_payment = 0
                 for payment_stage in validate_data['lease_payment_stage']:
-                    total += payment_stage.get('payment_ratio', 0)
+                    total_ratio += payment_stage.get('payment_ratio', 0)
+                    total_payment += payment_stage.get('value_total', 0)
                     # check required field
                     date = payment_stage.get('date', '')
                     due_date = payment_stage.get('due_date', '')
@@ -317,7 +321,9 @@ class LeaseOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total != 100:
+                if total_ratio != 100:
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
+                if total_payment != validate_data.get('total_product', 0):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
@@ -344,8 +350,9 @@ class LeaseOrderRuleValidate:
 
 # SUB SERIALIZERS
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
-    product_id = serializers.UUIDField(required=False, allow_null=True)
-    offset_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField(required=True, allow_null=False)
+    asset_type = serializers.IntegerField(required=True)
+    offset_id = serializers.UUIDField(required=True, allow_null=False)
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
     uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)

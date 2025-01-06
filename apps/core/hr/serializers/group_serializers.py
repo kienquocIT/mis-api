@@ -405,6 +405,8 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
     )
     first_manager = serializers.UUIDField(required=False, allow_null=True)
     second_manager = serializers.UUIDField(required=False, allow_null=True)
+    title = serializers.CharField(max_length=100)
+    code = serializers.CharField(max_length=100)
 
     class Meta:
         model = Group
@@ -420,6 +422,15 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
             'second_manager',
             'second_manager_title'
         )
+
+    def validate_code(self, value):
+        if Group.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exclude(id=self.instance.id).exists():
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
+        return value
 
     @classmethod
     def validate_group_level(cls, value):

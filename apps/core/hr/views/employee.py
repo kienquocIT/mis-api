@@ -25,6 +25,7 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
     EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer, EmployeeListAllSerializer,
+    EmployeeUpdateEmailAPIKeySerializer,
 )
 from apps.sales.project.models import ProjectMapMember
 from apps.shared import (
@@ -389,6 +390,26 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     )
     def put(self, request, *args, **kwargs):
         logger.info('EmployeeDetail.put: %s', request.data)
+        return self.update(request, *args, **kwargs)
+
+
+class EmployeeUpdateEmailAPIKey(BaseUpdateMixin):
+    queryset = Employee.objects
+    serializer_detail = EmployeeDetailSerializer
+    serializer_update = EmployeeUpdateEmailAPIKeySerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="Update employee Email API key",
+        operation_description="Update employee Email API key by ID",
+        request_body=EmployeeUpdateEmailAPIKeySerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
 

@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from apps.masterdata.saledata.models.periods import Periods
-from apps.core.company.models import Company, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyFunctionNumber, CompanyBankAccount
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -45,16 +45,19 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
+from ..sales.arinvoice.models import ARInvoice
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.distributionplan.models import DistributionPlan
+from ..sales.financialcashflow.models import CashInflow
+from ..sales.financialcashflow.views import CashInflowList
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
 from ..sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
-from ..sales.lead.models import LeadHint, LeadStage
+from ..sales.lead.models import LeadHint, LeadStage, Lead
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
@@ -66,6 +69,7 @@ from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
+from ..sales.reconciliation.models import Reconciliation, ReconciliationItem
 from ..sales.report.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
@@ -2739,6 +2743,17 @@ def parse_quotation_data_so():
     print('parse_quotation_data_so done.')
     return True
 
+
+def update_lead_code():
+    for company in Company.objects.all():
+        Lead.objects.filter(company=company).update(system_status=0)
+        for lead in Lead.objects.filter(company=company).order_by('date_created'):
+            lead.system_status = 1
+            lead.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
+
 def update_current_document_type__doc_type_category_to_bidding():
     count = 0
     for item in DocumentType.objects.all():
@@ -2757,3 +2772,74 @@ def set_system_status_doc(app_code, doc_id, system_status):
             obj_target.save(update_fields=['system_status'])
     print('set_system_status_doc done.')
     return True
+
+
+def remove_prop_indicator(application_id, code_list):
+    objs = ApplicationProperty.objects.filter(
+        application_id=application_id, code__in=code_list, is_sale_indicator=True
+    )
+    objs.delete()
+    print("remove_prop_indicator done.")
+    return True
+
+
+def mockup_data_company_bank_account(company_id):
+    if company_id:
+        CompanyBankAccount.objects.filter(company_id=company_id).delete()
+        bulk_info = [
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng quân đội',
+                bank_code='MBBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='03112001',
+                bic_swift_code='',
+                is_default=True,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng TMCP Đầu tư và Phát triển Việt Nam',
+                bank_code='BIDV',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='19521464',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam',
+                bank_code='AGRIBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='18122024',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+        ]
+        CompanyBankAccount.objects.bulk_create(bulk_info)
+        print('Done :))')
+    else:
+        print('Company id :)) ???')
+    return True
+
+
+def update_AR_invoice_code():
+    for company in Company.objects.all():
+        ARInvoice.objects.filter(company=company).update(system_status=0)
+        for ar in ARInvoice.objects.filter(company=company).order_by('date_created'):
+            ar.system_status = 1
+            ar.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
+
+def update_end_date():
+    for item in Periods.objects.all():
+        item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
+        item.save(update_fields=['end_date'])
+    print('Done')

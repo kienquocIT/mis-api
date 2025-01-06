@@ -70,6 +70,12 @@ class ReportStock(DataAbstractModel):
         related_name="report_stock_sale_order",
         null=True
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_stock_lease_order",
+        null=True
+    )
 
     period_mapped = models.ForeignKey(
         'saledata.Periods',
@@ -159,6 +165,12 @@ class ReportStockLog(DataAbstractModel):
         related_name="report_stock_log_sale_order",
         null=True
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_stock_log_lease_order",
+        null=True
+    )
 
     system_date = models.DateTimeField(null=True)
     posting_date = models.DateTimeField(null=True)
@@ -195,11 +207,14 @@ class ReportStockLog(DataAbstractModel):
         for item in doc_data:
             kw_parameter = {}
             if 1 in cost_cfg:
-                kw_parameter['warehouse_id'] = item['warehouse'].id
+                kw_parameter['warehouse_id'] = item.get('warehouse').id if item.get('warehouse') else None
             if 2 in cost_cfg:
-                kw_parameter['lot_mapped_id'] = item['lot_data']['lot_id'] if len(item.get('lot_data')) > 0 else None
+                kw_parameter['lot_mapped_id'] = item.get('lot_data', {}).get('lot_id') if len(
+                    item.get('lot_data', {})
+                ) > 0 else None
             if 3 in cost_cfg:
-                kw_parameter['sale_order_id'] = item['sale_order'].id if item.get('sale_order') else None
+                kw_parameter['sale_order_id'] = item.get('sale_order').id if item.get('sale_order') else None
+                kw_parameter['lease_order_id'] = item.get('lease_order').id if item.get('lease_order') else None
 
             rp_stock = ReportStock.get_or_create_report_stock(
                 doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
@@ -313,6 +328,7 @@ class ReportStockLog(DataAbstractModel):
             kw_parameter['lot_mapped_id'] = log.lot_mapped_id
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = log.sale_order_id
+            kw_parameter['lease_order_id'] = log.lease_order_id
 
         div = log.company.company_config.definition_inventory_valuation
 
@@ -525,6 +541,13 @@ class ReportInventoryCost(DataAbstractModel):
         related_name="report_inventory_cost_sale_order",
         null=True
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="report_inventory_cost_lease_order",
+        null=True
+    )
+
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.CASCADE,
@@ -636,6 +659,12 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name="rp_inv_cost_sale_order",
+        null=True
+    )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name="rp_inv_cost_lease_order",
         null=True
     )
     latest_log = models.ForeignKey(

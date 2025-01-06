@@ -196,7 +196,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
     customer_id = serializers.UUIDField()
     contact_id = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    payment_term_id = serializers.UUIDField()
+    payment_term_id = serializers.UUIDField(allow_null=True, required=False)
     quotation_id = serializers.UUIDField(
         allow_null=True,
         required=False

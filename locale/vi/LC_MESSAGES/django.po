@@ -310,6 +310,14 @@ msgstr "Kế hoạch nhập hàng"
 msgid "Employee info"
 msgstr "Thông tin nhân viên"
 
+# 7ba35923-d8ff-4f6d-bf80-468a7190a63b
+msgid "Cash Inflow"
+msgstr "Phiếu thu"
+
+# b690b9ff-670a-474b-8ae2-2c17d7c30f40
+msgid "Reconciliation"
+msgstr "Cấn trừ"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"
@@ -732,7 +740,7 @@ msgstr "Một số gói đăng ký đã hết hạn hoặc không được tìm 
 
 #
 msgid "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or reconfigure old flow."
-msgstr "Không cho phép chỉnh sửa khi quy trình này đang có {} đang thực thi. Đi tới trang hướng dẫn để dđược hướng dẫn cách áp dụng quy trình mới hoặc cấu hình lại quy trình cũ."
+msgstr "Không cho phép chỉnh sửa khi quy trình này đang có {} đang thực thi. Đi tới trang hướng dẫn để được hướng dẫn cách áp dụng quy trình mới hoặc cấu hình lại quy trình cũ."
 
 #
 msgid "The plan doesn't exist or is out of date"
@@ -1099,8 +1107,8 @@ msgid "Quantity must be larger than 0."
 msgstr "Số lượng phải lớn hơn 0."
 
 #
-msgid "Total payment must be 100%."
-msgstr "Tổng thanh toán phải đủ 100%."
+msgid "Total payment ratio must be 100%."
+msgstr "Tổng tỉ lệ thanh toán phải đủ 100%."
 
 #
 msgid "Payment is required according to config."
@@ -1397,3 +1405,7 @@ msgstr "Giá trị dự kiến phải bằng tổng của giá trị loạ
 #
 msgid "Error creating consulting"
 msgstr "Lỗi tạo tư vấn"
+
+#
+msgid "Total payment must be equal to total after tax."
+msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thuế."

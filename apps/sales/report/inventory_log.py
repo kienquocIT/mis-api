@@ -16,7 +16,7 @@ class ReportInvLog:
             employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
-                cost_cfg = ReportInvCommonFunc.get_cost_config(company.company_config)
+                cost_cfg = ReportInvCommonFunc.get_cost_config(company)
                 period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
                     sub_period_order = doc_date.month - period_obj.space_month
@@ -50,13 +50,15 @@ class ReportInvCommonFunc:
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def get_cost_config(cls, company_config):
-        cost_config = [
-            1 if company_config.cost_per_warehouse else None,
-            2 if company_config.cost_per_lot else None,
-            3 if company_config.cost_per_project else None
-        ]
-        return [i for i in cost_config if i is not None]
+    def get_cost_config(cls, company):
+        if company.company_config:
+            cost_config = [
+                1 if company.company_config.cost_per_warehouse else None,
+                2 if company.company_config.cost_per_lot else None,
+                3 if company.company_config.cost_per_project else None
+            ]
+            return [i for i in cost_config if i is not None]
+        return []
 
     @classmethod
     def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
