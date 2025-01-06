@@ -35,6 +35,10 @@ class PeriodsList(BaseListMixin, BaseCreateMixin):
             this_period = Periods.get_current_period(request.user.tenant_current_id, request.user.company_current_id)
             if this_period:
                 self.kwargs['fiscal_year'] = this_period.fiscal_year
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -76,8 +80,10 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
-            'employee_current': self.request.user.employee_current,
-            'company_current': request.user.company_current
+            'employee_current': request.user.employee_current,
+            'company_current': request.user.company_current,
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
         }
         return self.update(request, *args, pk, **kwargs)
 

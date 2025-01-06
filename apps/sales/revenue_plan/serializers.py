@@ -151,22 +151,27 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        if validate_data['period_mapped']:
-            if validate_data['period_mapped'].start_date.year < datetime.now().year:
-                raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
-        if not all([
-            len(validate_data.get('group_mapped_list', [])) > 0,
-            len(validate_data.get('company_month_target', [])) == 12,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_target', [])),
-            len(validate_data.get('company_quarter_target', [])) == 4,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_target', [])),
-            len(validate_data.get('company_month_profit_target', [])) == 12,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_profit_target', [])),
-            len(validate_data.get('company_quarter_profit_target', [])) == 4,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_profit_target', [])),
-        ]):
-            raise serializers.ValidationError({'company_data': 'Company data is not validated.'})
-        return validate_data
+        if self.context.get('tenant_id') and self.context.get('company_id'):
+            this_period = Periods.get_current_period(self.context.get('tenant_id'), self.context.get('company_id'))
+            if validate_data.get('period_mapped') and this_period:
+                if validate_data.get('period_mapped').start_date.year < this_period.fiscal_year:
+                    raise serializers.ValidationError({'period_mapped': SaleMsg.PERIOD_FINISHED})
+            else:
+                raise serializers.ValidationError({'this_period': SaleMsg.PERIOD_NULL})
+            if not all([
+                len(validate_data.get('group_mapped_list', [])) > 0,
+                len(validate_data.get('company_month_target', [])) == 12,
+                any(isinstance(item, (int, float)) for item in validate_data.get('company_month_target', [])),
+                len(validate_data.get('company_quarter_target', [])) == 4,
+                any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_target', [])),
+                len(validate_data.get('company_month_profit_target', [])) == 12,
+                any(isinstance(item, (int, float)) for item in validate_data.get('company_month_profit_target', [])),
+                len(validate_data.get('company_quarter_profit_target', [])) == 4,
+                any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_profit_target', [])),
+            ]):
+                raise serializers.ValidationError({'company_data': 'Company data is not validated.'})
+            return validate_data
+        raise serializers.ValidationError({'missing_data': 'Company || Tenant is missing.'})
 
     def create(self, validated_data):
         period = validated_data.get('period_mapped')
@@ -275,24 +280,7 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        this_period = Periods.get_current_period(self.instance.tenant_id, self.instance.company_id)
-        print(validate_data['period_mapped'].start_date.year, this_period.fiscal_year)
-        if validate_data['period_mapped'] and this_period:
-            if validate_data['period_mapped'].start_date.year < this_period.fiscal_year:
-                raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
-        if not all([
-            len(validate_data.get('group_mapped_list', [])) > 0,
-            len(validate_data.get('company_month_target', [])) == 12,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_target', [])),
-            len(validate_data.get('company_quarter_target', [])) == 4,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_target', [])),
-            len(validate_data.get('company_month_profit_target', [])) == 12,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_month_profit_target', [])),
-            len(validate_data.get('company_quarter_profit_target', [])) == 4,
-            any(isinstance(item, (int, float)) for item in validate_data.get('company_quarter_profit_target', [])),
-        ]):
-            raise serializers.ValidationError({'company_data': 'Company data is not validated.'})
-        return validate_data
+        return RevenuePlanCreateSerializer().validate(validate_data)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
