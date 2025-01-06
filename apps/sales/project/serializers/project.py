@@ -136,6 +136,7 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             member=project.employee_inherit,
             permit_add_member=True,
             permit_add_gaw=True,
+            permit_lock_fd=True,
             permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
@@ -148,6 +149,7 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
                 member=project.project_pm,
                 permit_add_member=True,
                 permit_add_gaw=True,
+                permit_lock_fd=True,
                 permit_view_this_project=True,
                 permission_by_configured=permission_by_configured_pm
             )

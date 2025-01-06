@@ -447,6 +447,10 @@ class ProjectMapMember(MasterDataAbstractModel, PermissionAbstractModel):
         blank=True,
         related_name='member_pro_map_plan'
     )
+    permit_lock_fd = models.BooleanField(
+        default=False,
+        verbose_name='member can lock finish date of project'
+    )
 
     def get_app_allowed(self) -> str:
         return str(self.member_id)
