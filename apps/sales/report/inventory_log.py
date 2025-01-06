@@ -17,9 +17,10 @@ class ReportInvLog:
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company)
-                period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
+                period_obj = Periods.get_period_by_doc_date(tenant.id, company.id, doc_date)
                 if period_obj:
                     sub_period_order = doc_date.month - period_obj.space_month
+                    print(f"\t(log to sub order [{sub_period_order}] and period [{period_obj}])")
 
                     # cho kiểm kê định kì
                     if company.company_config.definition_inventory_valuation == 1:

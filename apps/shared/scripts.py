@@ -2283,10 +2283,11 @@ class InventoryReportRun:
                 'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
             })
         for goods_return in all_goods_return:
-            all_doc.append({
-                'id': str(goods_return.id), 'code': str(goods_return.code),
-                'date_approved': goods_return.date_approved, 'type': 'goods_return'
-            })
+            if goods_return.code not in ['GRT0022', 'GRT0023', 'GRT0024'] and company_id == '2a9b19cd-935b-4900-bc5d-20971d0861e2':
+                all_doc.append({
+                    'id': str(goods_return.id), 'code': str(goods_return.code),
+                    'date_approved': goods_return.date_approved, 'type': 'goods_return'
+                })
         for goods_transfer in all_goods_transfer:
             all_doc.append({
                 'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
@@ -2295,6 +2296,8 @@ class InventoryReportRun:
 
         all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
         for doc in all_doc_sorted:
+            print(f"--- Run id: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['id']} - {doc['type']} - [{doc['code']}]")
+
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
@@ -2311,8 +2314,7 @@ class InventoryReportRun:
                 instance = GoodsTransfer.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
 
-            print(f"--- Completed run id: {doc['id']}")
-            print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+            print(f"\t# Completed")
 
         if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
             ReportStock.objects.filter(product__date_created__month__lt=5).delete()

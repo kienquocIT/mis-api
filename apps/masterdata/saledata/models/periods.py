@@ -22,6 +22,15 @@ class Periods(MasterDataAbstractModel):
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
 
     @classmethod
+    def get_period_by_doc_date(cls, tenant_id, company_id, doc_date):
+        period_by_doc_date = None
+        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
+            if period.end_date > doc_date.date():
+                period_by_doc_date = period
+                break
+        return period_by_doc_date
+
+    @classmethod
     def get_current_period(cls, tenant_id, company_id):
         this_period = None
         for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
