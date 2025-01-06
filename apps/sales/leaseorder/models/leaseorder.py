@@ -395,6 +395,7 @@ class LeaseOrderCost(MasterDataAbstractModel):
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
+    product_quantity_depreciation = models.FloatField(default=0)
     product_cost_price = models.FloatField(default=0)
     product_tax_title = models.CharField(max_length=100, blank=True, null=True)
     product_tax_value = models.FloatField(default=0)
