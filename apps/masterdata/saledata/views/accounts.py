@@ -270,6 +270,8 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'industry', 'owner', 'payment_term_supplier_mapped',
         ).prefetch_related(
             'account_activity_account',
+            'company__saledata_periods_belong_to_company',
+            'report_customer_customer',
         )
 
     @swagger_auto_schema(operation_summary='Detail Account')

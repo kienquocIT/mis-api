@@ -76,8 +76,8 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
-            'employee_current': self.request.user.employee_current,
-            'company_current': request.user.company_current
+            'employee_current': request.user.employee_current,
+            'company_current': request.user.company_current,
         }
         return self.update(request, *args, pk, **kwargs)
 

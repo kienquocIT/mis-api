@@ -51,6 +51,10 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
         label_code='revenue_plan', model_code='revenueplan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -88,4 +92,8 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='revenue_plan', model_code='revenueplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.update(request, *args, **kwargs)

@@ -51,14 +51,13 @@ class ReportInvCommonFunc:
 
     @classmethod
     def get_cost_config(cls, company):
-        if company.company_config:
-            cost_config = [
-                1 if company.company_config.cost_per_warehouse else None,
-                2 if company.company_config.cost_per_lot else None,
-                3 if company.company_config.cost_per_project else None
-            ]
-            return [i for i in cost_config if i is not None]
-        return []
+        company_config = company.company_config
+        cost_config = [
+            1 if company_config.cost_per_warehouse else None,
+            2 if company_config.cost_per_lot else None,
+            3 if company_config.cost_per_project else None
+        ]
+        return [i for i in cost_config if i is not None]
 
     @classmethod
     def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
@@ -190,11 +189,15 @@ class ReportInvCommonFunc:
                     ]):
                         this_sub.run_report_inventory = True
                         this_sub.save(update_fields=['run_report_inventory'])
-                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
+                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run."
                               f"Pushed to next sub period.")
                         return True
                     print('Error: software_start_using_time || last_sub is None')
             else:
+                if not last_period:
+                    this_sub.run_report_inventory = True
+                    this_sub.save(update_fields=['run_report_inventory'])
+                    return True
                 print('Error: this_sub || last_period || last_sub_order is None')
             return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})

@@ -15,6 +15,7 @@ from apps.sales.report.models import (
 class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
     subs = serializers.SerializerMethodField()
+    current_sub = serializers.SerializerMethodField()
 
     class Meta:
         model = Periods
@@ -25,8 +26,10 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'fiscal_year',
             'space_month',
             'start_date',
+            'end_date',
             'software_start_using_time',
             'subs',
+            'current_sub'
         )
 
     @classmethod
@@ -49,6 +52,25 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'end_date': sub.end_date,
             'locked': sub.locked
         } for sub in obj.sub_periods_period_mapped.all()]
+
+    @classmethod
+    def get_current_sub(cls, obj):
+        if obj.start_date <= datetime.now().date():
+            current_sub = obj.get_current_sub_period(obj)
+            return {
+                'id': current_sub.id,
+                'order': current_sub.order,
+                'current_month': (
+                        current_sub.order + obj.space_month - 12
+                ) if (
+                        current_sub.order + obj.space_month > 12
+                ) else (
+                        current_sub.order + obj.space_month
+                ),
+                'start_date': str(current_sub.start_date) if current_sub else None,
+                'end_date': str(current_sub.end_date) if current_sub else None
+            } if current_sub else {}
+        return {}
 
 
 class PeriodsCreateSerializer(serializers.ModelSerializer):

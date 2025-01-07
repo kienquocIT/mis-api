@@ -78,7 +78,7 @@ class AccountTestCase(AdvanceTestCase):
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped', 'activity',
+                'annual_revenue', 'price_list_mapped', 'activity', 'revenue_information'
             ],
             check_sum_second=True,
         )
