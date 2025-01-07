@@ -269,6 +269,14 @@ AppProp_SaleData_Account_data = {
         "type": 6,
         "is_filter_condition": True,
     },
+    "037a4a83-08b1-4694-91dc-de021c14989e": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Current Opportunity Stage",
+        "code": "curr_opp_stage",
+        "type": 5,
+        "is_filter_condition": True,
+        "content_type": "opportunity.OpportunityConfigStage",
+    },
 }
 
 AppProp_SaleData_Quotation_data = {

@@ -3,16 +3,18 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.core.hr.filters import EmployeeListFilter
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Industry
+from apps.sales.opportunity.models import OpportunityConfigStage
 from apps.sales.partnercenter.models import DataObject, List
 from apps.sales.partnercenter.serializers import ListDataObjectListSerializer, ListCreateSerializer, \
     ListDetailSerializer, ListResultListSerializer, ListListSerializer, ListEmployeeListSerializer, \
-    ListContactListSerializer, ListUpdateSerializer, ListIndustryListSerializer
+    ListContactListSerializer, ListUpdateSerializer, ListIndustryListSerializer, \
+    ListOpportunityConfigStageListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 class ListDataObjectList(BaseListMixin):
     queryset = DataObject.objects
     serializer_list = ListDataObjectListSerializer
-    list_hidden_field = []
+    list_hidden_field = ['company_id']
 
     @swagger_auto_schema(
         operation_summary="Data Object List",
@@ -30,7 +32,8 @@ class ListList(BaseListMixin, BaseCreateMixin):
     serializer_list = ListListSerializer
     serializer_create = ListCreateSerializer
     serializer_detail = ListDetailSerializer
-    list_hidden_field = []
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
 
     @swagger_auto_schema(
         operation_summary="list",
@@ -145,6 +148,24 @@ class ListIndustryList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Industry list",
         operation_description="Get Industry list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ListOpportunityConfigStageList(BaseListMixin):
+    queryset = OpportunityConfigStage.objects
+    serializer_list = ListOpportunityConfigStageListSerializer
+
+    list_hidden_field = ('company_id',)
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Config Stage list",
+        operation_description="Get Opportunity Config Stage list",
     )
     @mask_view(
         login_require=True, auth_require=True,

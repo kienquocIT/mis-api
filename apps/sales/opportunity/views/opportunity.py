@@ -25,7 +25,7 @@ from apps.shared import (
 class OpportunityList(BaseListMixin, BaseCreateMixin):
     queryset = Opportunity.objects
     filterset_class = OpportunityListFilters
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'customer__name']
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer

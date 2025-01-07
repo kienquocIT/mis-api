@@ -3,10 +3,10 @@ import logging
 import datetime
 from datetime import timedelta
 
-from django.db.models.functions import Greatest
+from django.db.models.functions import Greatest, Coalesce, ExtractDay
 from django.utils import timezone
 from django.apps import apps
-from django.db.models import Subquery, OuterRef, F, Q, Count
+from django.db.models import Subquery, OuterRef, F, Q, Count, Value, ExpressionWrapper, IntegerField, DurationField
 
 from rest_framework import serializers
 
@@ -14,7 +14,7 @@ from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Account, Industry
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityCallLog, \
-    OpportunityEmail
+    OpportunityEmail, OpportunityConfigStage, OpportunityStage, Opportunity
 from apps.sales.partnercenter.models import List, DataObject
 from apps.sales.partnercenter.tasks import update_num_of_records
 from apps.sales.partnercenter.translation import ListMsg
@@ -329,88 +329,109 @@ class ListResultListSerializer(serializers.ModelSerializer):
         # Apply operator logic
         match operator:
             case 'gte':
-                filtered_accounts = annotated_accounts.filter(
-                    Q(open_opp_num__gte=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True,
+                    open_opp_num__gte=right
+                )
             case 'lte':
-                filtered_accounts = annotated_accounts.filter(
-                    Q(open_opp_num__lte=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True,
+                    open_opp_num__lte=right)
             case 'gt':
-                filtered_accounts = annotated_accounts.filter(
-                    Q(open_opp_num__gt=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True,
+                    open_opp_num__gt=right)
             case 'lt':
-                filtered_accounts = annotated_accounts.filter(
-                    Q(open_opp_num__lt=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True,
+                    open_opp_num__lt=right)
             case 'exact':
-                filtered_accounts = annotated_accounts.filter(
-                    Q(open_opp_num__exact=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True,
+                    open_opp_num__exact=right)
             case 'notexact':
-                filtered_accounts = annotated_accounts.filter(
-                    ~Q(open_opp_num__exact=right))
+                filtered_accounts = annotated_accounts.filter_current(
+                    fill__company=True
+                ).filter(
+                    ~Q(open_opp_num__exact=right)
+                )
             case _:
                 raise ValueError(f"Unsupported operator for open_opp_num: {operator}")
         return set(filtered_accounts.values_list('id', flat=True))
+
     @classmethod
     def filter_last_contacted_open_opp(cls, obj, operator, right):
-        # Get model class
+        match operator:
+            case 'notexact':
+                filter_condition = ~Q(**{'comparing_days': right})
+            case _:
+                filter_condition = Q(**{f"comparing_days__{operator}": right})
+        account_list = []
+        email_list = OpportunityEmail.objects.annotate(
+            comparing_days=ExpressionWrapper(
+                (timezone.now() - F('date_created')) / timedelta(days=1),
+                output_field=IntegerField()
+            )
+        ).filter_current(
+            fill__company =True,
+            opportunity__win_rate__gt= 0,
+            opportunity__win_rate__lt=100,
+        ).filter(
+            filter_condition
+        )
+        for email in email_list:
+            account_list.append(email.opportunity.customer_id)
+
+        call_list = OpportunityCallLog.objects.annotate(
+            comparing_days=ExpressionWrapper(
+                (timezone.now() - F('call_date')) / timedelta(days=1),
+                output_field=IntegerField()
+            )
+        ).filter_current(
+            fill__company =True,
+            opportunity__win_rate__gt= 0,
+            opportunity__win_rate__lt=100
+        ).filter(
+            filter_condition
+        )
+        for call in call_list:
+            account_list.append(call.opportunity.customer_id)
+
+        meeting_list = OpportunityMeeting.objects.annotate(
+            comparing_days=ExpressionWrapper(
+                (timezone.now() - F('meeting_date')) / timedelta(days=1),
+                output_field=IntegerField()
+            )
+        ).filter_current(
+            fill__company =True,
+            opportunity__win_rate__gt= 0,
+            opportunity__win_rate__lt=100,
+        ).filter(
+            filter_condition
+        )
+        for meeting in meeting_list:
+            account_list.append(meeting.opportunity.customer_id)
+
+        return set(account_list)
+
+    @classmethod
+    def filter_curr_opp_stage(cls, obj, operator, right):
         model_class = apps.get_model(
             app_label=obj.data_object.application.app_label,
             model_name=obj.data_object.application.model_code,
         )
-        cutoff_date = timezone.now() - timedelta(days=int(right))
-
-        # Fetch latest meeting, call, and email logs using Subquery
-        latest_meeting_date = Subquery(
-            OpportunityMeeting.objects.filter(
-                Q(opportunity__customer=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
-            )
-            .order_by('-meeting_date')
-            .values('meeting_date')[:1]
-        )
-
-        latest_call_date = Subquery(
-            OpportunityCallLog.objects.filter(
-                Q(opportunity__customer=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
-            )
-            .order_by('-call_date')
-            .values('call_date')[:1]
-        )
-
-        latest_email_date = Subquery(
-            OpportunityEmail.objects.filter(
-                Q(opportunity__customer=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
-            )
-            .order_by('-date_created')
-            .values('date_created')[:1]
-        )
+        curr_stage_id_subquery = OpportunityStage.objects.filter(
+                opportunity__customer=OuterRef('id'),
+                is_current=True
+            ).values('stage_id')[:1]
 
         annotated_accounts = model_class.objects.annotate(
-            latest_meeting_date=latest_meeting_date,
-            latest_call_date=latest_call_date,
-            latest_email_date=latest_email_date,
-            latest_log_date=Greatest(
-                F('latest_meeting_date'),
-                F('latest_call_date'),
-                F('latest_email_date'),
-            ),
+            curr_stage_id=curr_stage_id_subquery
         )
 
-        match operator:
-            case 'gte':
-                filtered_accounts = annotated_accounts.filter(latest_log_date__lte=cutoff_date)
-            case 'lte':
-                filtered_accounts = annotated_accounts.filter(latest_log_date__gte=cutoff_date)
-            case 'gt':
-                filtered_accounts = annotated_accounts.filter(latest_log_date__lt=cutoff_date)
-            case 'lt':
-                filtered_accounts = annotated_accounts.filter(latest_log_date__gt=cutoff_date)
-            case 'exact':
-                filtered_accounts = annotated_accounts.filter(latest_log_date__exact=cutoff_date)
-            case 'notexact':
-                filtered_accounts = annotated_accounts.filter(~Q(**{f"latest_log_date__exact": cutoff_date}))
-            case _:
-                raise ValueError(f"Unsupported operator for last_contacted_open_opp: {operator}")
+        filter_condition = {f"curr_stage_id__{operator}": right}
 
-        # Return matching account IDs
+        filtered_accounts = annotated_accounts.filter_current(fill__company=True).filter(**filter_condition)
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
@@ -427,7 +448,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
         programmatic_handlers = {
             'revenue_ytd': cls.filter_revenue_ytd,
             'open_opp_num': cls.filter_open_opp_num,
-            'last_contacted_open_opp': cls.filter_last_contacted_open_opp
+            'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
+            'curr_opp_stage_id': cls.filter_curr_opp_stage
         }
 
         # Mapping for operator handling
@@ -460,7 +482,10 @@ class ListResultListSerializer(serializers.ModelSerializer):
                         group_query = filter_func(left_field, right)
                     else:
                         group_query = Q(**{f"{left_field}__{operator}": right})
-                    queryset = set(model_class.objects.filter(group_query).values_list('id', flat=True))
+                    queryset = set(model_class.objects.
+                                   filter_current(fill__company=True).
+                                   filter(group_query).
+                                   values_list('id', flat=True))
 
                 if group_results is None:
                     group_results = queryset
@@ -483,6 +508,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     item_obj = Account.objects.filter(id=str(item['id']).replace('-','')).first()
                     revenue_information = get_revenue_information(item_obj)
                     filter_data_list.append({
+                        'id': item.get('id'),
                         'code' : item.get('code'),
                         'name' : item.get('name'),
                         'account_type': item.get('account_type'),
@@ -507,6 +533,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     if owner_id:
                         owner_obj = Employee.objects.filter(id=str(owner_id).replace('-', '')).first()
                     filter_data_list.append({
+                        'id': item.get('id'),
                         'code': item.get('code'),
                         'name': item.get('fullname'),
                         'job_title': item.get('job_title'),
@@ -530,16 +557,6 @@ class ListResultListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_data_object(cls, obj):
         return obj.data_object.title
-
-
-def get_log_date(log):
-    if isinstance(log, OpportunityMeeting):
-        return log.meeting_date
-    elif isinstance(log, OpportunityCallLog):
-        return log.call_date
-    elif isinstance(log, OpportunityEmail):
-        return log.date_created
-    return None
 
 def get_revenue_information(obj):
     current_date = timezone.now()
@@ -604,3 +621,18 @@ class ListIndustryListSerializer(serializers.ModelSerializer):
             'code',
             'title'
         )
+
+
+class ListOpportunityConfigStageListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OpportunityConfigStage
+        fields = (
+            'id',
+            'title'
+        )
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.indicator

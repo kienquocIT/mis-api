@@ -25,6 +25,10 @@ class List(SimpleAbstractModel):
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+    )
 
     class Meta:
         verbose_name = 'Partner List'
@@ -38,4 +42,8 @@ class DataObject(SimpleAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
     )
