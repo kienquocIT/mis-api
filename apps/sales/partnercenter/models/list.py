@@ -19,7 +19,6 @@ class List(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     filter_condition = models.JSONField(default=list)
-    list_result = models.JSONField(default=list)
     num_of_records = models.IntegerField(default=0)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
@@ -42,8 +41,4 @@ class DataObject(SimpleAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
-    )
-    company = models.ForeignKey(
-        'company.Company', null=True, on_delete=models.SET_NULL,
-        help_text='The company claims that this record belongs to them',
     )

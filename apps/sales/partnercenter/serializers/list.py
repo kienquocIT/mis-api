@@ -88,12 +88,13 @@ class ListCreateSerializer(serializers.ModelSerializer):
                 left_id = filter_item.get('left', None)
                 right = filter_item.get('right', None)
                 left_type = filter_item.get('type', None)
+                operator = filter_item.get('operator', None)
 
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
-
-                if not left_id or not right:
-                    raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
+                if (operator != 'exactnull') and (operator != 'notexactnull'):
+                    if not left_id or not right:
+                        raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
 
                 # validate left object
                 left_obj = ApplicationProperty.objects.filter(id=left_id).first()
@@ -109,24 +110,27 @@ class ListCreateSerializer(serializers.ModelSerializer):
                 }
 
                 if left_type == 5:
-                    right_id = right['id']
-                    content_type = getattr(left_obj, 'content_type', None)
-                    if not content_type:
-                        logging.error('Application Property Object missing content_type')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                    if (operator != 'exactnull') and (operator != 'notexactnull'):
+                        right_id = right['id']
+                        content_type = getattr(left_obj, 'content_type', None)
+                        if not content_type:
+                            logging.error('Application Property Object missing content_type')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
 
-                    app_label = content_type.split('.')[0]
-                    model_name = content_type.split('.')[1]
-                    model_class = apps.get_model(app_label=app_label, model_name=model_name)
-                    if not model_class:
-                        logging.error('Model Class for right operand not found')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                        app_label = content_type.split('.')[0]
+                        model_name = content_type.split('.')[1]
+                        model_class = apps.get_model(app_label=app_label, model_name=model_name)
+                        if not model_class:
+                            logging.error('Model Class for right operand not found')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
 
-                    right_obj = model_class.objects.filter(id=right_id).first()
+                        right_obj = model_class.objects.filter(id=right_id).first()
 
-                    if not right_obj:
-                        logging.error('Model Class Object for right operand not found')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                        if not right_obj:
+                            logging.error('Model Class Object for right operand not found')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+
+                        filter_item['right']['id'] = right_id
                     filter_item['left'] = {
                         "id": str(left_obj.id),
                         "code": f'{left_obj.code}_id',
@@ -134,7 +138,6 @@ class ListCreateSerializer(serializers.ModelSerializer):
                         "type": left_obj.type,
                         "content_type": left_obj.content_type,
                     }
-                    filter_item['right']['id'] = right_id
         return validate_data
 
     def create(self, validated_data):
@@ -176,12 +179,13 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 left_id = filter_item.get('left', None)
                 right = filter_item.get('right', None)
                 left_type = filter_item.get('type', None)
-
+                operator = filter_item.get('operator', None)
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
 
-                if not left_id or not right:
-                    raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
+                if (operator != 'exactnull') and (operator != 'notexactnull'):
+                    if not left_id or not right:
+                        raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
 
                 # validate left object
                 left_obj = ApplicationProperty.objects.filter(id=left_id).first()
@@ -197,24 +201,28 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 }
 
                 if left_type == 5:
-                    right_id = right['id']
-                    content_type = getattr(left_obj, 'content_type', None)
-                    if not content_type:
-                        logging.error('Application Property Object missing content_type')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                    if (operator != 'exactnull') and (operator != 'notexactnull'):
 
-                    app_label = content_type.split('.')[0]
-                    model_name = content_type.split('.')[1]
-                    model_class = apps.get_model(app_label=app_label, model_name=model_name)
-                    if not model_class:
-                        logging.error('Model Class for right operand not found')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                        right_id = right['id']
+                        content_type = getattr(left_obj, 'content_type', None)
+                        if not content_type:
+                            logging.error('Application Property Object missing content_type')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
 
-                    right_obj = model_class.objects.filter(id=right_id).first()
+                        app_label = content_type.split('.')[0]
+                        model_name = content_type.split('.')[1]
+                        model_class = apps.get_model(app_label=app_label, model_name=model_name)
+                        if not model_class:
+                            logging.error('Model Class for right operand not found')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
 
-                    if not right_obj:
-                        logging.error('Model Class Object for right operand not found')
-                        raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                        right_obj = model_class.objects.filter(id=right_id).first()
+
+                        if not right_obj:
+                            logging.error('Model Class Object for right operand not found')
+                            raise serializers.ValidationError(ListMsg.STH_WENT_WRONG)
+                        filter_item['right']['id'] = right_id
+
                     filter_item['left'] = {
                         "id": str(left_obj.id),
                         "code": f'{left_obj.code}_id',
@@ -222,7 +230,6 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                         "type": left_obj.type,
                         "content_type": left_obj.content_type,
                     }
-                    filter_item['right']['id'] = right_id
         return validate_data
 
     def update(self, instance, validated_data):
@@ -456,6 +463,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
         operator_handlers = {
             'notexact': lambda field, value: ~Q(**{field: value}),
             'exactnull': lambda field, _: Q(**{f"{field}__exact": None}),
+            'notexactnull': lambda field, _: ~Q(**{f"{field}__exact": None}),
             'noticontains': lambda field, value: ~Q(**{f"{field}__icontains": value}),
         }
 
@@ -466,7 +474,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                 left_field = left.get('code')
                 operator = condition.get('operator', 'exact')
 
-                if int(condition.get('type')) == 5:
+                if int(condition.get('type')) == 5 and ((operator != 'exactnull') and (operator != 'notexactnull')):
                     right_obj = condition.get('right')
                     right = str(right_obj['id']).replace('-', '')
                 else:

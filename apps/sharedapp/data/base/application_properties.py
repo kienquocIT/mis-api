@@ -264,7 +264,7 @@ AppProp_SaleData_Account_data = {
     },
     "688fccc3-b344-4bcc-83ad-b3f421cd6541": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Last Contacted For Open Opportunities",
+        "title": "Last Contacted For Open Opportunities (days)",
         "code": "last_contacted_open_opp",
         "type": 6,
         "is_filter_condition": True,

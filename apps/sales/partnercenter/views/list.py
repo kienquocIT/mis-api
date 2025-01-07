@@ -14,7 +14,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 class ListDataObjectList(BaseListMixin):
     queryset = DataObject.objects
     serializer_list = ListDataObjectListSerializer
-    list_hidden_field = ['company_id']
+    list_hidden_field = []
 
     @swagger_auto_schema(
         operation_summary="Data Object List",
