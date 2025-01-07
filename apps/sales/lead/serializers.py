@@ -51,6 +51,8 @@ class LeadListSerializer(serializers.ModelSerializer):
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
     class Meta:
         model = Lead
         fields = (
@@ -239,6 +241,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
     class Meta:
         model = Lead
         fields = (

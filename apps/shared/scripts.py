@@ -2407,7 +2407,6 @@ class InventoryReportRun:
         return True
 
 
-
 def create_import_uom_group():
     for company in Company.objects.all():
         has_import_uom_group = UnitOfMeasureGroup.objects.filter(
