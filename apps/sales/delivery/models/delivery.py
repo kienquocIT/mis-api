@@ -627,9 +627,13 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         default=False,
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
+    product_quantity = models.FloatField(default=0)
+    product_quantity_time = models.FloatField(default=0)
+    product_quantity_depreciation = models.FloatField(default=0)
     product_unit_price = models.FloatField(
         default=0
     )
+    product_depreciation_price = models.FloatField(default=0)
     product_tax_value = models.FloatField(
         default=0
     )
@@ -732,6 +736,13 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             offset_data=old_obj.offset_data,
             uom=old_obj.uom,
             uom_data=old_obj.uom_data,
+            product_quantity=old_obj.product_quantity,
+            product_quantity_time=old_obj.product_quantity_time,
+            product_quantity_depreciation=old_obj.product_quantity_depreciation,
+            product_unit_price=old_obj.product_unit_price,
+            product_depreciation_price=old_obj.product_depreciation_price,
+            product_subtotal_price=old_obj.product_subtotal_price,
+
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=delivered_quantity_before,
             remaining_quantity=remaining_quantity,

@@ -451,7 +451,7 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Product Warehouse Serial'
         verbose_name_plural = 'Product Warehouse Serials'
-        ordering = ('-date_created',)
+        ordering = ('serial_number',)
         default_permissions = ()
         permissions = ()
 
