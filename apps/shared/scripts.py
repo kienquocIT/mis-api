@@ -45,6 +45,7 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
+from ..sales.arinvoice.models import ARInvoice
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
@@ -2282,10 +2283,11 @@ class InventoryReportRun:
                 'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
             })
         for goods_return in all_goods_return:
-            all_doc.append({
-                'id': str(goods_return.id), 'code': str(goods_return.code),
-                'date_approved': goods_return.date_approved, 'type': 'goods_return'
-            })
+            if goods_return.code not in ['GRT0022', 'GRT0023', 'GRT0024'] and company_id == '2a9b19cd-935b-4900-bc5d-20971d0861e2':
+                all_doc.append({
+                    'id': str(goods_return.id), 'code': str(goods_return.code),
+                    'date_approved': goods_return.date_approved, 'type': 'goods_return'
+                })
         for goods_transfer in all_goods_transfer:
             all_doc.append({
                 'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
@@ -2294,6 +2296,8 @@ class InventoryReportRun:
 
         all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
         for doc in all_doc_sorted:
+            print(f"--- Run id: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['id']} - {doc['type']} - [{doc['code']}]")
+
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
@@ -2310,8 +2314,7 @@ class InventoryReportRun:
                 instance = GoodsTransfer.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
 
-            print(f"--- Completed run id: {doc['id']}")
-            print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+            print(f"\t# Completed")
 
         if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
             ReportStock.objects.filter(product__date_created__month__lt=5).delete()
@@ -2825,3 +2828,20 @@ def mockup_data_company_bank_account(company_id):
     else:
         print('Company id :)) ???')
     return True
+
+
+def update_AR_invoice_code():
+    for company in Company.objects.all():
+        ARInvoice.objects.filter(company=company).update(system_status=0)
+        for ar in ARInvoice.objects.filter(company=company).order_by('date_created'):
+            ar.system_status = 1
+            ar.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
+
+def update_end_date():
+    for item in Periods.objects.all():
+        item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
+        item.save(update_fields=['end_date'])
+    print('Done')

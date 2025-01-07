@@ -290,11 +290,7 @@ class Product(DataAbstractModel):
         get_type = 3: get [quantity, cost, value]
         else: return 0
         """
-        this_period = Periods.objects.filter(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
             latest_trans = self.rp_inv_cost_product.filter(warehouse_id=warehouse_id).first()
             company_config = getattr(self.company, 'company_config')
@@ -343,11 +339,7 @@ class Product(DataAbstractModel):
         get_type = 3: get [quantity, cost, value]
         else: return 0
         """
-        this_period = Periods.objects.filter(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
             latest_trans = self.rp_inv_cost_product.filter(sale_order_id=sale_order_id).first()
             company_config = getattr(self.company, 'company_config')
@@ -391,9 +383,7 @@ class Product(DataAbstractModel):
     def get_unit_cost_list_of_all_warehouse(self):
         unit_cost_list = []
         warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
-        this_period = Periods.objects.filter(
-            tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
             sub_period_order = timezone.now().month - this_period.space_month
             company_config = getattr(self.company, 'company_config')

@@ -105,45 +105,36 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
-        has_trans = ReportStockLog.objects.filter(
-            tenant=tenant_obj, company=company_obj,
-            report_stock__period_mapped__fiscal_year=datetime.datetime.now().year
-        ).exists()
-        old_definition_inventory_valuation_config = company_obj.company_config.definition_inventory_valuation
-        if has_trans and validate_data['definition_inventory_valuation'] != old_definition_inventory_valuation_config:
-            raise serializers.ValidationError({
-                'error': "Can't update Definition inventory valuation because there are transactions in this Period."
-            })
-
-        old_cost_setting = [
-            self.instance.cost_per_warehouse,
-            self.instance.cost_per_lot,
-            self.instance.cost_per_project
-        ]
-        new_cost_setting = [
-            validate_data.get('cost_per_warehouse'),
-            validate_data.get('cost_per_lot'),
-            validate_data.get('cost_per_project')
-        ]
-        this_period = Periods.objects.filter(
-            tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
-        ).first()
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
         if this_period:
+            has_trans = ReportStockLog.objects.filter(
+                tenant=tenant_obj, company=company_obj, report_stock__period_mapped=this_period
+            ).exists()
+            old_div_config = company_obj.company_config.definition_inventory_valuation
+            if has_trans and validate_data['definition_inventory_valuation'] != old_div_config:
+                raise serializers.ValidationError({
+                    'definition_inventory_valuation':
+                        "Can't update Definition inventory valuation because there are transactions in this Period."
+                })
             this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
             this_period.save(update_fields=['definition_inventory_valuation'])
-        else:
-            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
-            # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
-            raise serializers.ValidationError(
-                {'fiscal_year_not_found': f"Can't find fiscal year {datetime.datetime.now().year}."}
-            )
-        if all([
-            datetime.datetime.now().year == this_period.fiscal_year,
-            new_cost_setting != old_cost_setting,
-            has_trans
-        ]):
-            raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
-        return validate_data
+
+            old_cost_setting = [
+                self.instance.cost_per_warehouse,
+                self.instance.cost_per_lot,
+                self.instance.cost_per_project
+            ]
+            new_cost_setting = [
+                validate_data.get('cost_per_warehouse'),
+                validate_data.get('cost_per_lot'),
+                validate_data.get('cost_per_project')
+            ]
+            if has_trans and new_cost_setting != old_cost_setting:
+                raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
+            return validate_data
+        # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+        # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+        raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
 
     def update(self, instance, validated_data):
         sub_domain = validated_data.pop('sub_domain', None)

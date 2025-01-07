@@ -527,11 +527,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliHandler.push_diagram(instance=self)  # diagram
                     self.prepare_data_for_logging(self)
 
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(

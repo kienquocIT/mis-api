@@ -89,6 +89,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        self.add_auto_generate_code_to_instance(self, 'AR[n4]', False)
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
         # hit DB
@@ -107,6 +108,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     item_index = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    ar_product_des = models.TextField(null=True, blank=True, default='')
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)

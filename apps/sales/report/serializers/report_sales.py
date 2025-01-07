@@ -153,6 +153,36 @@ class ReportProductListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
 
+class ReportProductListSerializerForDashBoard(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportProduct
+        fields = (
+            'id',
+            'product',
+            'quantity',
+            'date_approved',
+            'revenue',
+            'gross_profit',
+            'net_income',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_product_category': {
+                'id': obj.product.general_product_category_id,
+                'title': obj.product.general_product_category.title,
+                'code': obj.product.general_product_category.code,
+                'description': obj.product.general_product_category.description,
+            } if obj.product.general_product_category else {},
+        } if obj.product else {}
+
+
 # REPORT CUSTOMER
 class ReportCustomerListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
