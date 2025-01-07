@@ -95,6 +95,7 @@ class GoodsReturnSubSerializerForNonPicking:
             )
             return True
         print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def create_product_warehouse_for_lot(cls, goods_return, item, return_quantity, sample_lot):
@@ -157,6 +158,7 @@ class GoodsReturnSubSerializerForNonPicking:
             )
             return True
         print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def create_product_warehouse_for_sn(cls, goods_return, item, return_quantity, sample_sn):
@@ -221,6 +223,7 @@ class GoodsReturnSubSerializerForNonPicking:
             )
             return True
         print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def update_warehouse_prod_type_general(cls, product_wh, item, goods_return, return_quantity):
