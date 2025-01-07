@@ -85,10 +85,10 @@ class AccountListSerializer(serializers.ModelSerializer):
                     for customer_revenue in obj.report_customer_customer.filter(
                             group_inherit__is_delete=False, sale_order__system_status=3
                     ):
-                        if customer_revenue.date_approved:
-                            if start_date <= customer_revenue.date_approved <= current_date:
-                                revenue_ytd += customer_revenue.revenue
-                                order_number += 1
+                        if (customer_revenue.date_approved and
+                                start_date <= customer_revenue.date_approved <= current_date):
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
         return {
             'revenue_ytd': revenue_ytd,
             'order_number': order_number,
@@ -452,10 +452,10 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                     for customer_revenue in obj.report_customer_customer.filter(
                             group_inherit__is_delete=False, sale_order__system_status=3
                     ):
-                        if customer_revenue.date_approved:
-                            if start_date <= customer_revenue.date_approved <= current_date:
-                                revenue_ytd += customer_revenue.revenue
-                                order_number += 1
+                        if (customer_revenue.date_approved and
+                                start_date <= customer_revenue.date_approved <= current_date):
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
         return {
             'revenue_ytd': revenue_ytd,
             'order_number': order_number,
