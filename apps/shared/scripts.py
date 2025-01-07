@@ -2379,19 +2379,19 @@ class InventoryReportRun:
     @staticmethod
     def run(company_id, fiscal_year):
         """
-        0. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
         1. Xóa data inventory report data cũ
         2. Tạo lại Số dư đầu kì (nếu năm đó có setup 'Ngày bắt đầu sử dụng phần mềm')
         3. Lấy dữ liệu các phiếu nhập - xuất kho
         4. Chạy log
+        5. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
         """
         this_period = Periods.objects.filter(company_id=company_id, fiscal_year=fiscal_year).first()
         if this_period:
-            SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
             InventoryReportRun.delete_inventory_report_data(company_id, this_period)
             InventoryReportRun.recreate_balance_init_data(company_id, this_period)
             all_doc_sorted = InventoryReportRun.combine_data_all_docs(company_id, this_period)
             InventoryReportRun.log_docs(all_doc_sorted)
+            SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
             print('#run successfully!')
             return True
         print('#can not find any Period!')
