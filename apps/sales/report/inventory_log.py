@@ -11,7 +11,7 @@ class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data):
         if not doc_obj or not doc_date or len(doc_data) == 0:
-            print(f'Mot log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
+            print(f'Not log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
             return False
         try:
             tenant = doc_obj.tenant
