@@ -471,3 +471,8 @@ ASSET_TYPE = (
     (2, 'Tool'),
     (3, 'Fixed asset'),
 )
+
+# goods recovery
+STATUS_RECOVERY = (
+    (0, 'Open'),
+)

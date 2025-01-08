@@ -579,17 +579,10 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name='',
+        verbose_name='uom',
+        related_name="delivery_product_uom",
     )
-    uom_data = models.JSONField(
-        default=dict,
-        verbose_name='Unit of Measure backup',
-        help_text=json.dumps(
-            {
-                'id': '', 'title': '', 'code': '',
-            }
-        )
-    )
+    uom_data = models.JSONField(default=dict, help_text='data json of uom')
     delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
     )

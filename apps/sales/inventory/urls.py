@@ -15,13 +15,18 @@ from apps.sales.inventory.views import (
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
     ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
-    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList,
+    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList, GoodsRecoveryList,
+    GoodsRecoveryDetail,
 )
 
 urlpatterns = [
     # goods receipt
     path('goods-receipt/list', GoodsReceiptList.as_view(), name='GoodsReceiptList'),
     path('goods-receipt/<str:pk>', GoodsReceiptDetail.as_view(), name='GoodsReceiptDetail'),
+    # goods recovery
+    path('goods-recovery/list', GoodsRecoveryList.as_view(), name='GoodsRecoveryList'),
+    path('goods-recovery/<str:pk>', GoodsRecoveryDetail.as_view(), name='GoodsRecoveryDetail'),
+
     # inventory adjustment
     path('inventory-adjustments', InventoryAdjustmentList.as_view(), name='InventoryAdjustmentList'),
     path(
