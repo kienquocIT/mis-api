@@ -365,7 +365,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
-    def filter_last_contacted_open_opp(cls, obj, operator, right):
+    def filter_last_contacted_open_opp(cls, obj, operator, right): # pylint: disable=W0613
         match operator:
             case 'notexact':
                 filter_condition = ~Q(**{'comparing_days': right})
