@@ -41,4 +41,5 @@ class DataObject(SimpleAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
+        null=True
     )

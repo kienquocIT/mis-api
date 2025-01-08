@@ -1,12 +1,9 @@
-import json
 import logging
-import datetime
 from datetime import timedelta
 
-from django.db.models.functions import Greatest, Coalesce, ExtractDay
 from django.utils import timezone
 from django.apps import apps
-from django.db.models import Subquery, OuterRef, F, Q, Count, Value, ExpressionWrapper, IntegerField, DurationField
+from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField
 
 from rest_framework import serializers
 
@@ -14,13 +11,14 @@ from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Account, Industry
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityCallLog, \
-    OpportunityEmail, OpportunityConfigStage, OpportunityStage, Opportunity
+    OpportunityEmail, OpportunityConfigStage, OpportunityStage
 from apps.sales.partnercenter.models import List, DataObject
 from apps.sales.partnercenter.tasks import update_num_of_records
 from apps.sales.partnercenter.translation import ListMsg
 from apps.shared import BaseMsg, call_task_background
 
 logger = logging.getLogger(__name__)
+
 
 class ListDataObjectListSerializer(serializers.ModelSerializer):
 
@@ -81,7 +79,7 @@ class ListCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'filter_condition': BaseMsg.REQUIRED})
         return value
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=R0914
         filter_condition = validate_data['filter_condition']
         for filter_group in filter_condition:
             for filter_item in filter_group:
@@ -92,7 +90,7 @@ class ListCreateSerializer(serializers.ModelSerializer):
 
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
-                if (operator != 'exactnull') and (operator != 'notexactnull'):
+                if operator not in ('exactnull', 'notexactnull'):
                     if not left_id or not right:
                         raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
 
@@ -110,7 +108,7 @@ class ListCreateSerializer(serializers.ModelSerializer):
                 }
 
                 if left_type == 5:
-                    if (operator != 'exactnull') and (operator != 'notexactnull'):
+                    if operator not in ('exactnull', 'notexactnull'):
                         right_id = right['id']
                         content_type = getattr(left_obj, 'content_type', None)
                         if not content_type:
@@ -172,7 +170,7 @@ class ListUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'filter_condition': BaseMsg.REQUIRED})
         return value
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=R0914
         filter_condition = validate_data['filter_condition']
         for filter_group in filter_condition:
             for filter_item in filter_group:
@@ -183,7 +181,7 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
 
-                if (operator != 'exactnull') and (operator != 'notexactnull'):
+                if operator not in ('exactnull', 'notexactnull'):
                     if not left_id or not right:
                         raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
 
@@ -201,7 +199,7 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 }
 
                 if left_type == 5:
-                    if (operator != 'exactnull') and (operator != 'notexactnull'):
+                    if operator not in ('exactnull', 'notexactnull'):
 
                         right_id = right['id']
                         content_type = getattr(left_obj, 'content_type', None)
@@ -290,8 +288,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
             app_label=obj.data_object.application.app_label,
             model_name=obj.data_object.application.model_code,
         )
-        for account in model_class.objects.all():
-            revenue_info = get_revenue_information(account)
+        for account in model_class.objects.filter_current(fill__company=True, fill__tenant=True):
+            revenue_info = Account.get_revenue_information(account)
             revenue_ytd = revenue_info['revenue_ytd']
 
             # Apply operator logic
@@ -442,7 +440,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
-    def get_list_result(cls, obj):
+    def get_list_result(cls, obj):  # pylint: disable=R0912, R0915, R0914
         application = obj.data_object.application
         model_code = application.model_code
         app_label = application.app_label
@@ -474,7 +472,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                 left_field = left.get('code')
                 operator = condition.get('operator', 'exact')
 
-                if int(condition.get('type')) == 5 and ((operator != 'exactnull') and (operator != 'notexactnull')):
+                if int(condition.get('type')) == 5 and (operator not in ('exactnull', 'notexactnull')):
                     right_obj = condition.get('right')
                     right = str(right_obj['id']).replace('-', '')
                 else:
@@ -514,7 +512,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     if owner_id:
                         owner_obj = Contact.objects.filter(id=str(owner_id).replace('-','')).first()
                     item_obj = Account.objects.filter(id=str(item['id']).replace('-','')).first()
-                    revenue_information = get_revenue_information(item_obj)
+                    revenue_information = Account.get_revenue_information(item_obj)
                     filter_data_list.append({
                         'id': item.get('id'),
                         'code' : item.get('code'),
@@ -565,27 +563,6 @@ class ListResultListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_data_object(cls, obj):
         return obj.data_object.title
-
-def get_revenue_information(obj):
-    current_date = timezone.now()
-    revenue_ytd = 0
-    order_number = 0
-    for period in obj.company.saledata_periods_belong_to_company.all():
-        if period.fiscal_year == current_date.year:
-            start_date_str = str(period.start_date) + ' 00:00:00'
-            start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
-            for customer_revenue in obj.report_customer_customer.filter(
-                    group_inherit__is_delete=False, sale_order__system_status=3
-            ):
-                if customer_revenue.date_approved:
-                    if start_date <= customer_revenue.date_approved <= current_date:
-                        revenue_ytd += customer_revenue.revenue
-                        order_number += 1
-    return {
-        'revenue_ytd': revenue_ytd,
-        'order_number': order_number,
-        'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
-    }
 
 
 class ListEmployeeListSerializer(serializers.ModelSerializer):

@@ -21,7 +21,7 @@ class ListDataObjectList(BaseListMixin):
         operation_description="Get Data Object List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -40,7 +40,8 @@ class ListList(BaseListMixin, BaseCreateMixin):
         operation_description="list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='list', model_code='list', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -53,6 +54,7 @@ class ListList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
+        label_code='list', model_code='list', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -68,7 +70,8 @@ class ListDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get PartnerCenter List Detail",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='list', model_code='list', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -81,6 +84,7 @@ class ListDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
+        label_code='list', model_code='list', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
@@ -96,7 +100,8 @@ class ListResultList(BaseRetrieveMixin):
         operation_description="Get PartnerCenter List Result List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='list', model_code='list', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
