@@ -19,6 +19,7 @@ class SaleMsg:
     CAN_NOT_REACTIVE = _('Can not reactive cancelled activity.')
     PERIOD_HAS_PLAN = _('This period had been planned.')
     PERIOD_FINISHED = _('This period had been finished.')
+    PERIOD_NULL = _('Can not found this period.')
     TOTAL_RATIO_PAYMENT = _('Total payment ratio must be 100%.')
     TOTAL_PAYMENT = _('Total payment must be equal to total after tax.')
     PRICE_VALID = _('Price must be larger than 0.')
