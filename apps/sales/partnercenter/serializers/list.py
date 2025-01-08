@@ -92,7 +92,7 @@ class ListCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
 
                 if str(left_type) == '6' and not right.isnumeric():
-                    raise serializers.ValidationError({'right': ListMsg.RIGHT_VAL_MUST_BE_A_NUMBER})
+                    raise serializers.ValidationError({'right': ListMsg.VAL_MUST_BE_A_NUMBER})
 
                 if operator not in ('exactnull', 'notexactnull'):
                     if not left_id or not right:
