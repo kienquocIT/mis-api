@@ -488,6 +488,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
         model = Contact
         fields = (
             'id',
+            'code',
             'fullname',
             'job_title',
             'owner',
@@ -500,5 +501,6 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         return {
             'id': obj.owner_id,
+            'code': obj.owner.code,
             'fullname': obj.owner.get_full_name(2)
         } if obj.owner else {}

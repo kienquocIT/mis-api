@@ -22,9 +22,28 @@ class Periods(MasterDataAbstractModel):
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
 
     @classmethod
+    def get_period_by_doc_date(cls, tenant_id, company_id, doc_date):
+        period_by_doc_date = None
+        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
+            if period.end_date > doc_date.date():
+                period_by_doc_date = period
+                break
+        return period_by_doc_date
+
+
+    @classmethod
+    def get_sub_period_by_doc_date(cls, this_period, doc_date):
+        this_sub_period = None
+        for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
+            if sub_period.end_date > doc_date.date():
+                this_sub_period = sub_period
+                break
+        return this_sub_period
+
+    @classmethod
     def get_current_period(cls, tenant_id, company_id):
         this_period = None
-        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
+        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).order_by('fiscal_year'):
             if period.end_date > datetime.now().date():
                 this_period = period
                 break
@@ -33,7 +52,7 @@ class Periods(MasterDataAbstractModel):
     @classmethod
     def get_current_sub_period(cls, this_period):
         this_sub_period = None
-        for sub_period in this_period.sub_periods_period_mapped.all().reverse():
+        for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
             if sub_period.end_date > datetime.now().date():
                 this_sub_period = sub_period
                 break

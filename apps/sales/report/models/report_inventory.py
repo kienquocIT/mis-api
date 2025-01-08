@@ -274,7 +274,6 @@ class ReportStockLog(DataAbstractModel):
 
                 if 'sale_order_id' in kw_parameter:  # Project
                     GoodsRegistration.update_registration_inventory(item, doc_obj)
-
         new_logs = cls.objects.bulk_create(bulk_info)
         return new_logs
 
@@ -478,40 +477,41 @@ class ReportStockLog(DataAbstractModel):
                 this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
             )
 
-            if 'sale_order_id' in kwargs:  # Project
-                this_sub_period_cost_wh = this_sub_period_cost.report_inventory_cost_wh.filter(
-                    warehouse=log.physical_warehouse
-                ).first()
-                if this_sub_period_cost_wh:
-                    this_sub_period_cost_wh.ending_quantity += log.quantity * log.stock_type
-                    this_sub_period_cost_wh.save(update_fields=['ending_quantity'])
-                else:
-                    last_ending_quantity = ReportInventoryCostByWarehouse.get_project_last_ending_quantity(
-                        this_sub_period_cost, log.physical_warehouse
-                    )
-                    ReportInventoryCostByWarehouse.objects.create(
-                        report_inventory_cost=this_sub_period_cost,
-                        warehouse=log.physical_warehouse,
-                        opening_quantity=last_ending_quantity,
-                        ending_quantity=last_ending_quantity + log.quantity * log.stock_type
-                    )
+            if this_sub_period_cost:
+                if 'sale_order_id' in kwargs:  # Project
+                    this_sub_period_cost_wh = this_sub_period_cost.report_inventory_cost_wh.filter(
+                        warehouse=log.physical_warehouse
+                    ).first()
+                    if this_sub_period_cost_wh:
+                        this_sub_period_cost_wh.ending_quantity += log.quantity * log.stock_type
+                        this_sub_period_cost_wh.save(update_fields=['ending_quantity'])
+                    else:
+                        last_ending_quantity = ReportInventoryCostByWarehouse.get_project_last_ending_quantity(
+                            this_sub_period_cost, log.physical_warehouse
+                        )
+                        ReportInventoryCostByWarehouse.objects.create(
+                            report_inventory_cost=this_sub_period_cost,
+                            warehouse=log.physical_warehouse,
+                            opening_quantity=last_ending_quantity,
+                            ending_quantity=last_ending_quantity + log.quantity * log.stock_type
+                        )
 
-            # cập nhập log mới nhất, không có thì tạo mới
-            if 'warehouse_id' not in kwargs:
-                kwargs['warehouse_id'] = log.physical_warehouse_id
-            latest_log_obj = log.product.rp_inv_cost_product.filter(**kwargs).first()
-            if latest_log_obj:
-                latest_log_obj.latest_log = log
-                latest_log_obj.save(update_fields=['latest_log'])
-            else:
-                if log.product.valuation_method == 0:
-                    ReportInventoryCostLatestLog.objects.create(
-                        product=log.product, latest_log=log, fifo_flag_log=log, **kwargs
-                    )
-                if log.product.valuation_method == 1:
-                    ReportInventoryCostLatestLog.objects.create(
-                        product=log.product, latest_log=log, **kwargs
-                    )
+                # cập nhập log mới nhất, không có thì tạo mới
+                if 'warehouse_id' not in kwargs:
+                    kwargs['warehouse_id'] = log.physical_warehouse_id
+                latest_log_obj = log.product.rp_inv_cost_product.filter(**kwargs).first()
+                if latest_log_obj:
+                    latest_log_obj.latest_log = log
+                    latest_log_obj.save(update_fields=['latest_log'])
+                else:
+                    if log.product.valuation_method == 0:
+                        ReportInventoryCostLatestLog.objects.create(
+                            product=log.product, latest_log=log, fifo_flag_log=log, **kwargs
+                        )
+                    if log.product.valuation_method == 1:
+                        ReportInventoryCostLatestLog.objects.create(
+                            product=log.product, latest_log=log, **kwargs
+                        )
             return True
         raise serializers.ValidationError({'Sub period missing': 'Sub period of this period does not exist.'})
 

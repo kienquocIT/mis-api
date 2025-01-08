@@ -10,6 +10,9 @@ from apps.sales.report.models import (
 class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data):
+        if not doc_obj or not doc_date or len(doc_data) == 0:
+            print(f'Not log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
+            return False
         try:
             tenant = doc_obj.tenant
             company = doc_obj.company
@@ -17,9 +20,9 @@ class ReportInvLog:
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company)
-                period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
+                period_obj = Periods.get_period_by_doc_date(tenant.id, company.id, doc_date)
                 if period_obj:
-                    sub_period_order = doc_date.month - period_obj.space_month
+                    sub_period_order = Periods.get_sub_period_by_doc_date(period_obj, doc_date).order
 
                     # cho kiểm kê định kì
                     if company.company_config.definition_inventory_valuation == 1:
@@ -51,14 +54,13 @@ class ReportInvCommonFunc:
 
     @classmethod
     def get_cost_config(cls, company):
-        if company.company_config:
-            cost_config = [
-                1 if company.company_config.cost_per_warehouse else None,
-                2 if company.company_config.cost_per_lot else None,
-                3 if company.company_config.cost_per_project else None
-            ]
-            return [i for i in cost_config if i is not None]
-        return []
+        company_config = company.company_config
+        cost_config = [
+            1 if company_config.cost_per_warehouse else None,
+            2 if company_config.cost_per_lot else None,
+            3 if company_config.cost_per_project else None
+        ]
+        return [i for i in cost_config if i is not None]
 
     @classmethod
     def auto_calculate_for_periodic(cls, tenant, company, period_obj, sub_period_order):
@@ -190,11 +192,14 @@ class ReportInvCommonFunc:
                     ]):
                         this_sub.run_report_inventory = True
                         this_sub.save(update_fields=['run_report_inventory'])
-                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
-                              f"Pushed to next sub period.")
+                        print(f"{last_sub.start_date.month}/{this_period.fiscal_year} was run. Pushed to next sub.")
                         return True
                     print('Error: software_start_using_time || last_sub is None')
             else:
+                if not last_period:
+                    this_sub.run_report_inventory = True
+                    this_sub.save(update_fields=['run_report_inventory'])
+                    return True
                 print('Error: this_sub || last_period || last_sub_order is None')
             return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})

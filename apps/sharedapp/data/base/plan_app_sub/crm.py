@@ -2671,6 +2671,46 @@ FINANCIAL_RECON_APP_CONFIG = {
     "allow_opportunity": False,
 }
 
+PARTNERCENTER_LISTS_APP_CONFIG = {
+    "id": "488a6284-6341-4c51-b837-fb6964e51d82",
+    "title": "PartnerCenter/ Lists",
+    "code": "list",
+    "model_code": "list",
+    "app_label": "partnercenter",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -2969,6 +3009,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "3a369ba5-82a0-4c4d-a447-3794b67d1d02": ApplicationConfigFrame(**CONSULTING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "488a6284-6341-4c51-b837-fb6964e51d82": ApplicationConfigFrame(**PARTNERCENTER_LISTS_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
