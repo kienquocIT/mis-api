@@ -10,7 +10,7 @@ from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    MasterDataAbstractModel,
+    MasterDataAbstractModel, ASSET_TYPE,
 )
 
 __all__ = [
@@ -399,13 +399,16 @@ class OrderDeliverySub(DataAbstractModel):
         return True
 
     @classmethod
-    def for_lot(cls, instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj):
+    def for_lot(
+            cls, instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
+    ):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
             if lot_obj and lot.get('quantity_delivery'):
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, lot.get('quantity_delivery'))
                 doc_data.append({
                     'sale_order': sale_order_obj,
+                    'lease_order': lease_order_obj,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
                     'system_date': instance.date_done,
@@ -414,7 +417,7 @@ class OrderDeliverySub(DataAbstractModel):
                     'stock_type': -1,
                     'trans_id': str(instance.id),
                     'trans_code': instance.code,
-                    'trans_title': 'Delivery',
+                    'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
                     'quantity': casted_quantity,
                     'cost': 0,  # theo gia cost
                     'value': 0,  # theo gia cost
@@ -427,10 +430,13 @@ class OrderDeliverySub(DataAbstractModel):
         return doc_data
 
     @classmethod
-    def for_sn(cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj):
+    def for_sn(
+            cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
+    ):
         casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, len(sn_data))
         doc_data.append({
-            'sale_order': instance.order_delivery.sale_order,
+            'sale_order': sale_order_obj,
+            'lease_order': lease_order_obj,
             'product': product_obj,
             'warehouse': warehouse_obj,
             'system_date': instance.date_done,
@@ -439,7 +445,7 @@ class OrderDeliverySub(DataAbstractModel):
             'stock_type': -1,
             'trans_id': str(instance.id),
             'trans_code': instance.code,
-            'trans_title': 'Delivery',
+            'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
             'quantity': casted_quantity,
             'cost': 0,  # theo gia cost
             'value': 0,  # theo gia cost
@@ -455,6 +461,7 @@ class OrderDeliverySub(DataAbstractModel):
                 product_obj = deli_product.product
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     sale_order_obj = pw_data.sale_order
+                    lease_order_obj = pw_data.lease_order
                     warehouse_obj = pw_data.warehouse
                     uom_obj = pw_data.uom
                     quantity = pw_data.quantity_delivery
@@ -465,6 +472,7 @@ class OrderDeliverySub(DataAbstractModel):
                             casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, quantity)
                             doc_data.append({
                                 'sale_order': sale_order_obj,
+                                'lease_order': lease_order_obj,
                                 'product': product_obj,
                                 'warehouse': warehouse_obj,
                                 'system_date': instance.date_done,
@@ -473,7 +481,7 @@ class OrderDeliverySub(DataAbstractModel):
                                 'stock_type': -1,
                                 'trans_id': str(instance.id),
                                 'trans_code': instance.code,
-                                'trans_title': 'Delivery',
+                                'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
                                 'quantity': casted_quantity,
                                 'cost': 0,  # theo gia cost
                                 'value': 0,  # theo gia cost
@@ -481,10 +489,26 @@ class OrderDeliverySub(DataAbstractModel):
                             })
                         if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
                             cls.for_lot(
-                                instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj
+                                instance,
+                                lot_data,
+                                doc_data,
+                                product_obj,
+                                warehouse_obj,
+                                uom_obj,
+                                sale_order_obj,
+                                lease_order_obj
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                            cls.for_sn(instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj)
+                            cls.for_sn(
+                                instance,
+                                sn_data,
+                                doc_data,
+                                product_obj,
+                                warehouse_obj,
+                                uom_obj,
+                                sale_order_obj,
+                                lease_order_obj
+                            )
         ReportInvLog.log(instance, instance.date_done, doc_data)
         return True
 
@@ -498,16 +522,12 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.push_product_info(instance=self)  # product
-                    DeliFinishHandler.push_so_status(instance=self)  # sale order
+                    DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
                     self.prepare_data_for_logging(self)
 
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
@@ -547,6 +567,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name='Product Data backup',
         help_text='data json of product'
     )
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -652,6 +673,8 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             {
                 'sale_order_id': deli_data.get('sale_order', None),
                 'sale_order_data': deli_data.get('sale_order_data', {}),
+                'lease_order_id': deli_data.get('lease_order', None),
+                'lease_order_data': deli_data.get('lease_order_data', {}),
                 'warehouse_id': deli_data.get('warehouse', None),
                 'warehouse_data': deli_data.get('warehouse_data', {}),
                 'uom_id': deli_data.get('uom', None),
@@ -704,6 +727,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             delivery_sub=new_sub,
             product=old_obj.product,
             product_data=old_obj.product_data,
+            asset_type=old_obj.asset_type,
             offset=old_obj.offset,
             offset_data=old_obj.offset_data,
             uom=old_obj.uom,
@@ -753,6 +777,15 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         null=True,
     )
     sale_order_data = models.JSONField(default=dict, help_text='data json of sale order')
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="delivery_pw_lease_order",
+        help_text="main lease order of this delivery or lease order from other project (borrow)",
+        null=True,
+    )
+    lease_order_data = models.JSONField(default=dict, help_text='data json of lease order')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -825,6 +858,7 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="product warehouse lot",
         related_name="delivery_lot_product_warehouse_lot",
     )
+    product_warehouse_lot_data = models.JSONField(default=dict, help_text='data json of lot')
     quantity_initial = models.FloatField(
         default=0,
         help_text='quantity in ProductWarehouseLot at the time create this record'
@@ -885,6 +919,7 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="product warehouse serial",
         related_name="delivery_serial_product_warehouse_serial",
     )
+    product_warehouse_serial_data = models.JSONField(default=dict, help_text='data json of serial')
     is_returned = models.BooleanField(default=False)
 
     class Meta:

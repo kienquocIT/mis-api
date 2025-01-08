@@ -131,6 +131,9 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+    ] + [
+        'apps.sales.financialcashflow',
+        'apps.sales.reconciliation',
     ]
 
 MIDDLEWARE = [
@@ -458,7 +461,6 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': f"{os.environ.get('THROTTLE_AUTH', '200')}/minute",
         'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
-        'import_DB_throttle_scope': "500/minute",  # Áp dụng cho scope 'import_DB_throttle_scope'
     }
 }
 if DEBUG is True:

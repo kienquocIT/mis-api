@@ -13,7 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
     DisperseModel, WarehouseMsg
 from apps.shared.translations.expense import ExpenseMsg
 
@@ -155,9 +155,11 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_payment_term_id(cls, value):
         try:
+            if value is None:
+                return None
             return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
     @classmethod
     def validate_quotation_id(cls, value):
@@ -322,19 +324,23 @@ class SaleOrderRuleValidate:
 
     @classmethod
     def validate_payment_stage(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
+        if 'sale_order_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['sale_order_payment_stage']) > 0:
-                total = 0
+                total_ratio = 0
+                total_payment = 0
                 for payment_stage in validate_data['sale_order_payment_stage']:
-                    total += payment_stage.get('payment_ratio', 0)
+                    total_ratio += payment_stage.get('payment_ratio', 0)
+                    total_payment += payment_stage.get('value_total', 0)
                     # check required field
                     date = payment_stage.get('date', '')
                     due_date = payment_stage.get('due_date', '')
                     if not date:
-                        raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
-                        raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
-                if total != 100:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
+                if total_ratio != 100:
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
+                if total_payment != validate_data.get('total_product', 0):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
@@ -676,11 +682,11 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
             'order',
         )
 
-    @classmethod
-    def validate_remark(cls, value):
-        if not value:
-            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
-        return value
+    # @classmethod
+    # def validate_remark(cls, value):
+    #     if not value:
+    #         raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+    #     return value
 
     @classmethod
     def validate_term_id(cls, value):

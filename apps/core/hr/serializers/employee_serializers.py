@@ -398,7 +398,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(max_length=25, required=False)
     plan_app = PlanAppUpdateSerializer(required=False, many=True)
     permission_by_configured = serializers.JSONField(required=False)
-    email_app_password = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     class Meta:
         model = Employee
@@ -406,7 +405,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'code', 'user', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob',
             'group', 'role', 'is_admin_company',
             'plan_app', 'permission_by_configured',
-            'is_active', 'email_app_password'
+            'is_active',
         )
 
     @classmethod
@@ -526,22 +525,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('email_app_password'):
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            cryptor = SimpleEncryptor(key=password)
-            validate_data['email_app_password'] = cryptor.encrypt(validate_data['email_app_password'])
-            try:
-                connection = get_connection(
-                    username=validate_data['email'],
-                    password=SimpleEncryptor(key=password).decrypt(validate_data['email_app_password']),
-                    fail_silently=False,
-                )
-                print(connection.open())
-                if not connection.open():
-                    validate_data['email_app_password_status'] = True
-            except Exception as err:
-                print(err)
-                validate_data['email_app_password_status'] = False
         return validate_license_used(validate_data=validate_data)
 
     @classmethod
@@ -587,6 +570,41 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        return instance
+
+
+class EmployeeUpdateEmailAPIKeySerializer(serializers.ModelSerializer):
+    email_app_password = serializers.CharField(max_length=50, required=False, allow_blank=True)
+
+    class Meta:
+        model = Employee
+        fields = (
+            'email_app_password',
+        )
+
+    def validate(self, validate_data):
+        if validate_data.get('email_app_password'):
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            cryptor = SimpleEncryptor(key=password)
+            validate_data['email_app_password'] = cryptor.encrypt(validate_data.get('email_app_password'))
+            try:
+                connection = get_connection(
+                    username=self.instance.email,
+                    password=SimpleEncryptor(key=password).decrypt(validate_data['email_app_password']),
+                    fail_silently=False,
+                )
+                print(connection.open())
+                if not connection.open():
+                    validate_data['email_app_password_status'] = True
+            except Exception as err:
+                print(err)
+                validate_data['email_app_password_status'] = False
+        return validate_license_used(validate_data=validate_data)
+
+    def update(self, instance, validated_data):
+        instance.email_app_password = validated_data.get('email_app_password')
+        instance.email_app_password_status = validated_data.get('email_app_password_status')
+        instance.save(update_fields=(['email_app_password', 'email_app_password_status']))
         return instance
 
 

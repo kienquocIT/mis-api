@@ -7,10 +7,7 @@ from apps.masterdata.saledata.models import (
     PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory, UnitOfMeasure, TaxCategory, Tax,
 )
 from apps.masterdata.saledata.models.accounts import ACCOUNT_TYPE_SELECTION
-from apps.masterdata.saledata.serializers import (
-    create_employee_map_account, add_account_types_information,
-    add_shipping_address_information, add_billing_address_information,
-)
+from apps.masterdata.saledata.serializers.accounts import AccountCommonFunc
 from apps.shared import AccountsMsg, HrMsg, BaseMsg, PriceMsg, ProductMsg
 
 from apps.core.base.models import Currency as BaseCurrency
@@ -721,23 +718,12 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
         contact_mapped = validated_data.pop('contact_mapped', [])
         shipping_address_dict = validated_data.pop('shipping_address_dict', [])
         billing_address_dict = validated_data.pop('billing_address_dict', [])
-
         account = Account.objects.create(**validated_data)
-
-        create_employee_map_account(account)
-        add_account_types_information(account)
-        add_shipping_address_information(account, shipping_address_dict)
-        add_billing_address_information(account, billing_address_dict)
-
-        if contact_mapped:
-            for item in contact_mapped:
-                contact = item['contact']
-                contact.is_primary = item['is_account_owner']
-                contact.account_name = account
-                contact.save()
-                if item['is_account_owner']:
-                    account.owner = contact
-                    account.save()
+        AccountCommonFunc.add_employee_map_account(account)
+        AccountCommonFunc.add_account_types(account)
+        AccountCommonFunc.add_shipping_address(account, shipping_address_dict)
+        AccountCommonFunc.add_billing_address(account, billing_address_dict)
+        AccountCommonFunc.add_contact_mapped(account, contact_mapped)
         return account
 
     class Meta:

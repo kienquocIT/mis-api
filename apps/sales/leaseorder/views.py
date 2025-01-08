@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.sales.leaseorder.serializers import (
     LeaseOrderListSerializer, LeaseOrderCreateSerializer, LeaseOrderDetailSerializer, LeaseOrderUpdateSerializer,
-    LeaseOrderMinimalListSerializer,
+    LeaseOrderMinimalListSerializer, LORecurrenceListSerializer,
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -53,8 +53,8 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Lease Order List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='leaseorder', model_code='leaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='leaseorder', model_code='leaseorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -65,7 +65,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         request_body=LeaseOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         employee_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='create'
     )
@@ -93,7 +93,7 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Lease Order detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -105,8 +105,31 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=LeaseOrderUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='leaseorder', model_code='leaseorder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class LORecurrenceList(BaseListMixin, BaseCreateMixin):
+    queryset = LeaseOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'is_recurrence_template': ['exact'],
+        'employee_inherit_id': ['exact'],
+    }
+    serializer_list = LORecurrenceListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="LO Recurrence List",
+        operation_description="Get LO Recurrence List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

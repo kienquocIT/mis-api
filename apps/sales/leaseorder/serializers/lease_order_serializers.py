@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.process.utils import ProcessRuntimeControl
+from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
@@ -197,7 +198,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
     customer_id = serializers.UUIDField()
     contact_id = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    payment_term_id = serializers.UUIDField()
+    payment_term_id = serializers.UUIDField(allow_null=True, required=False)
     quotation_id = serializers.UUIDField(
         allow_null=True,
         required=False
@@ -550,3 +551,36 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         instance.save()
         LeaseOrderCommonCreate().create_lease_sub_models(validated_data=validated_data, instance=instance)
         return instance
+
+
+class LORecurrenceListSerializer(AbstractListSerializerModel):
+    employee_inherit = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    recurrence_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaseOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_inherit',
+            'date_created',
+            'status',
+            'recurrence_list',
+        )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_status(cls, obj):
+        return Recurrence.objects.filter(doc_template_id=obj.id).exists()
+
+    @classmethod
+    def get_recurrence_list(cls, obj):
+        return [{
+            'id': recurrence.id,
+            'title': recurrence.title,
+        } for recurrence in Recurrence.objects.filter(doc_template_id=obj.id)]

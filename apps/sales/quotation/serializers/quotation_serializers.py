@@ -52,6 +52,17 @@ class QuotationListSerializer(AbstractListSerializerModel):
         } if obj.opportunity else {}
 
 
+class QuotationMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
 class QuotationDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
@@ -164,7 +175,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     customer_id = serializers.UUIDField()
     contact_id = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    payment_term_id = serializers.UUIDField()
+    payment_term_id = serializers.UUIDField(allow_null=True, required=False)
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
         many=True,

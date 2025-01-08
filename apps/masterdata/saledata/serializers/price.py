@@ -97,7 +97,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):
         return 1
 
     def validate(self, validate_data):
-        if validate_data.get('price_list_mapped') is not None:
+        if validate_data.get('price_list_mapped'):
             price_list_mapped_obj = Price.objects.filter(id=validate_data['price_list_mapped']).first()
             if price_list_mapped_obj:
                 validate_data['price_list_mapped'] = price_list_mapped_obj

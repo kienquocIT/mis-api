@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.utils import timezone
 from apps.masterdata.saledata.models import Periods
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
@@ -76,13 +75,10 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         current_stage = LeadStage.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
         ).first()
-        this_period = Periods.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'],
-            fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(validated_data['tenant_id'], validated_data['company_id'])
         if current_stage and this_period:
             lead = Lead.objects.create(
-                **validated_data, current_lead_stage=current_stage, system_status=3,
+                **validated_data, current_lead_stage=current_stage, system_status=1,
                 period_mapped=this_period
             )
 
@@ -304,10 +300,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        this_period = Periods.objects.filter(
-            tenant_id=instance.tenant_id, company_id=instance.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(instance.tenant_id, instance.company_id)
         config = instance.lead_configs.first()
         if str(this_period.id) == str(instance.period_mapped_id):
             if 'goto_stage' in self.context:

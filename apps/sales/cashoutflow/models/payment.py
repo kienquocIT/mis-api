@@ -88,6 +88,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def push_final_acceptance_payment(cls, instance):
         sale_order_id = None
+        lease_order_id = None
         opportunity_id = None
         if instance.sale_order_mapped:
             sale_order_id = instance.sale_order_mapped_id
@@ -115,6 +116,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 sale_order_id=sale_order_id,
+                lease_order_id=lease_order_id,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
                 opportunity_id=opportunity_id,

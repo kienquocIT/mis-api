@@ -19,7 +19,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
         'opportunity_id': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         if 'return_date_expiring_sort' in self.request.query_params:
@@ -75,8 +75,6 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
 class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AdvancePayment.objects  # noqa
-    serializer_list = AdvancePaymentListSerializer
-    serializer_create = AdvancePaymentCreateSerializer
     serializer_detail = AdvancePaymentDetailSerializer
     serializer_update = AdvancePaymentUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT

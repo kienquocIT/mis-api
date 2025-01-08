@@ -203,14 +203,13 @@ class Runtime(SimpleAbstractModel):
                 False: All document finished process
         """
         if state_or_count == 'state':
-            # return cls.objects.filter(flow_id=workflow_id).exclude(status=2).exists()
             return cls.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 flow_id=workflow_id,
             ).exclude(state__in=[2, 3, 4], status__in=[1, 2]).exists()
         if state_or_count == 'count':
-            # return cls.objects.filter(flow_id=workflow_id).exclude(status=2).count()
+            # Count number runtimes of this workflow that in progress
             return cls.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -313,8 +312,10 @@ class RuntimeStage(SimpleAbstractModel):
     # Important infor of Stage
     node = models.ForeignKey(
         Node,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name='Relate to Config Node. node_data get data from this',
+        help_text='Workflow node for this runtime stage, this field set null if record node deleted',
+        null=True,
     )
     title = models.CharField(
         max_length=100,

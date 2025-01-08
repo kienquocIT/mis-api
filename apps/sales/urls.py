@@ -23,4 +23,6 @@ urlpatterns = [
     path('bidding/', include('apps.sales.bidding.urls')),
     path('leaseorder/', include('apps.sales.leaseorder.urls')),
     path('consulting/', include('apps.sales.consulting.urls')),
+    path('financial-cashflow/', include('apps.sales.financialcashflow.urls')),
+    path('financial-reconciliation/', include('apps.sales.reconciliation.urls')),
 ]

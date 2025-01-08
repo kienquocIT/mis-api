@@ -16,7 +16,7 @@ class ReportInvLog:
             employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
-                cost_cfg = ReportInvCommonFunc.get_cost_config(company.company_config)
+                cost_cfg = ReportInvCommonFunc.get_cost_config(company)
                 period_obj = Periods.objects.filter(tenant=tenant, company=company, fiscal_year=doc_date.year).first()
                 if period_obj:
                     sub_period_order = doc_date.month - period_obj.space_month
@@ -50,7 +50,8 @@ class ReportInvCommonFunc:
         return log_quantity * log_uom.ratio
 
     @classmethod
-    def get_cost_config(cls, company_config):
+    def get_cost_config(cls, company):
+        company_config = company.company_config
         cost_config = [
             1 if company_config.cost_per_warehouse else None,
             2 if company_config.cost_per_lot else None,
@@ -188,11 +189,15 @@ class ReportInvCommonFunc:
                     ]):
                         this_sub.run_report_inventory = True
                         this_sub.save(update_fields=['run_report_inventory'])
-                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run. "
+                        print(f"Report inventory of {last_sub.start_date.month}/{this_period.fiscal_year} was run."
                               f"Pushed to next sub period.")
                         return True
                     print('Error: software_start_using_time || last_sub is None')
             else:
+                if not last_period:
+                    this_sub.run_report_inventory = True
+                    this_sub.save(update_fields=['run_report_inventory'])
+                    return True
                 print('Error: this_sub || last_period || last_sub_order is None')
             return False
         raise serializers.ValidationError({'error': 'Some objects are not exist.'})
