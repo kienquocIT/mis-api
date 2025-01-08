@@ -349,6 +349,7 @@ class ProjectDetailSerializers(serializers.ModelSerializer):
             'members',
             'assignee_attachment',
             'process', 'process_stage_app',
+            'finish_date_lock',
         )
 
 
@@ -356,6 +357,7 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
     expense_data = serializers.JSONField(required=False)
     work_expense_data = serializers.JSONField(required=False)
     delete_expense_lst = serializers.JSONField(required=False)
+    finish_date_lock = serializers.BooleanField(required=False)
 
     @classmethod
     def validate_project_pm(cls, value):
@@ -373,6 +375,23 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
     def validate_expense_data(cls, value):
         return value
 
+    def validate_finish_date(self, attrs):
+        groups = self.instance.project_projectmapgroup_project.all()
+        for item in groups:
+            if item.group.gr_end_date > attrs:
+                raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_FINISH_DATE_INVALID_CASE1})
+        works = self.instance.project_projectmapwork_project.all()
+        for item in works:
+            if item.work.w_end_date > attrs:
+                raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_FINISH_DATE_INVALID_CASE1})
+        return attrs
+
+    def validate_finish_date_lock(self, attrs):
+        is_permit_update = self.context.get('has_permit_update_lock', None)
+        if is_permit_update is not True:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_LOCK_PERMIT_DENIED})
+        return attrs
+
     class Meta:
         model = Project
         fields = (
@@ -384,6 +403,7 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             'expense_data',
             'work_expense_data',
             'delete_expense_lst',
+            'finish_date_lock'
         )
 
     @classmethod
@@ -452,18 +472,20 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         work_expense_lst = validated_data.pop('work_expense_data', None)
         delete_expense_lst = validated_data.pop('delete_expense_lst', None)
         system_status = validated_data.pop('system_status', None)
-        if system_status == 2:
+        if system_status == 2 and instance.project_status != 3:
+            # re-open project
             validated_data['project_status'] = instance.prev_status
             instance.date_close = None
-        if system_status == 3:
+        elif system_status == 3:
+            # complete project
             validated_data['prev_status'] = instance.project_status
+            # ngày finish nhỏ hơn ngày hiện tại
             if instance.finish_date < timezone.now():
                 instance.date_close = timezone.now()
-
-        else:
+        elif system_status == 4:
+            # closed project
             validated_data['project_status'] = system_status
-            if instance.finish_date < timezone.now():
-                instance.date_close = timezone.now()
+            instance.date_close = timezone.now()
         # - delete all expense(user delete)
         # - create and update
         # - update work info

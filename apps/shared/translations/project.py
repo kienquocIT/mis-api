@@ -18,7 +18,13 @@ class ProjectMsg:
     PROJECT_UPDATE_WORK_ERROR = _('Current work is in progress can not select dependencies type "Finish to start"')
     PROJECT_UPDATE_WORK_ERROR2 = _('Can not add in progress task to work has type "Finish to start"')
     PROJECT_WEIGHT_ERROR = _('Weight is invalid, or total weight of project larger than 100%')
-    PROJECT_DATE_VALID_ERROR = _('Star date or finish date not in range of project date')
+    PROJECT_DATE_VALID_ERROR = _('Start date not in range of project date')
     CREATED_A = _('Created a Work')
     UPDATED_A = _('Updated a Work')
     DELETED_A = _('Deleted a Work')
+    PROJECT_FINISH_DATE_INVALID_CASE1 = _(
+        'The finish date must be later than or equal to the end date of the group/work'
+    )
+    PROJECT_INVALID_GROUP_DATE = _('Group date not in range of project date')
+    PROJECT_INVALID_WORK_DATE = _('Work date not in range of project date')
+    PROJECT_LOCK_PERMIT_DENIED = _('You don\'t have permission to perform the action lock finish date')

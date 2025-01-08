@@ -63,6 +63,7 @@ from ..sales.opportunity.models import (
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
+from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
@@ -2843,3 +2844,17 @@ def update_end_date():
         item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
         item.save(update_fields=['end_date'])
     print('Done')
+
+
+def update_check_lock_date_project():
+    for prj in Project.objects.all():
+        lst_emp = [str(prj.employee_inherit.id)]
+        if hasattr(prj.project_pm, 'id'):
+            lst_emp.append(str(prj.project_pm.id))
+        for item in ProjectMapMember.objects.filter(
+                tenant=prj.tenant, company=prj.company,
+                project=prj, member_id__in=lst_emp
+        ):
+            item.permit_lock_fd = True
+            item.save(update_fields=['permit_lock_fd'])
+    print('done update lock finish date')
