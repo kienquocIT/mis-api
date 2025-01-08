@@ -6,17 +6,21 @@ from apps.masterdata.saledata.serializers.product_import_db import (
 )
 from apps.sales.production.models import BOM
 from apps.sales.saleorder.models import SaleOrderProduct
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, \
-    ResponseController
+from apps.shared import (
+    mask_view, ResponseController,
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
+)
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
 )
 from apps.masterdata.saledata.serializers.product import (
-    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
+    ProductListSerializer, ProductCreateSerializer,
+    ProductDetailSerializer, ProductUpdateSerializer,
     UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
-    ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
+    ProductTypeListSerializer, ProductTypeCreateSerializer,
+    ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
     ProductCategoryListSerializer, ProductCategoryCreateSerializer,
     ProductCategoryDetailSerializer, ProductCategoryUpdateSerializer,
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
