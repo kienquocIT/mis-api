@@ -21,7 +21,7 @@ class ListDataObjectList(BaseListMixin):
         operation_description="Get Data Object List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -41,20 +41,19 @@ class ListList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='list', model_code='list', perm_code='view',
+        label_code='partnercenter', model_code='list', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="",
-        operation_description="",
+        operation_summary="Create ParnterCenter List",
+        operation_description="Create ParnterCenter List",
         request_body=ListCreateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-        label_code='list', model_code='list', perm_code='create',
+        label_code='partnercenter', model_code='list', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -71,7 +70,7 @@ class ListDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='list', model_code='list', perm_code='view',
+        label_code='partnercenter', model_code='list', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -84,7 +83,7 @@ class ListDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        label_code='list', model_code='list', perm_code='edit',
+        label_code='partnercenter', model_code='list', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
@@ -101,7 +100,7 @@ class ListResultList(BaseRetrieveMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='list', model_code='list', perm_code='view',
+        label_code='partnercenter', model_code='list', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)

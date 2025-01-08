@@ -28,6 +28,7 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
 )
+from misapi.asgi import application
 from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
@@ -63,6 +64,7 @@ from ..sales.opportunity.models import (
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
+from ..sales.partnercenter.models import DataObject
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
@@ -2845,3 +2847,16 @@ def update_end_date():
         item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
         item.save(update_fields=['end_date'])
     print('Done')
+
+def create_data_object():
+    try:
+        account = DataObject.objects.create(title='Account', application_id='4e48c863861b475aaa5e97a4ed26f294')
+        print(
+            f'{account.title} data object created'
+        )
+        contact = DataObject.objects.create(title='Contact', application_id='828b785a8f574a039f90e0edf96560d7')
+        print(
+            f'{contact.title} data object created'
+        )
+    except Exception as e:
+        print(e)
