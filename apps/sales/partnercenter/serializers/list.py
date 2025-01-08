@@ -90,6 +90,10 @@ class ListCreateSerializer(serializers.ModelSerializer):
 
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
+
+                if str(left_type) == '6' and not right.isnumeric():
+                    raise serializers.ValidationError({'right': ListMsg.RIGHT_VAL_MUST_BE_A_NUMBER})
+
                 if operator not in ('exactnull', 'notexactnull'):
                     if not left_id or not right:
                         raise serializers.ValidationError({'filter_condition': ListMsg.OPERAND_MISSING})
@@ -180,6 +184,9 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 operator = filter_item.get('operator', None)
                 if (not left_type) or (str(left_type) not in ['1', '2', '3', '4', '5', '6']):
                     raise serializers.ValidationError({'filter_condition': ListMsg.TYPE_MISSING})
+
+                if str(left_type) == '6' and not right.isnumeric():
+                    raise serializers.ValidationError({'right': ListMsg.VAL_MUST_BE_A_NUMBER})
 
                 if operator not in ('exactnull', 'notexactnull'):
                     if not left_id or not right:
