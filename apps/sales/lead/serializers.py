@@ -304,7 +304,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        this_period = Periods.get_current_period(instance.tenant_id, instance.company_id)
+        # this_period = Periods.get_current_period(instance.tenant_id, instance.company_id)
         config = instance.lead_configs.first()
         # if str(this_period.id) == str(instance.period_mapped_id):
         if 'goto_stage' in self.context:
