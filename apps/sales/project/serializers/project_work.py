@@ -30,9 +30,40 @@ def validated_date_work(attrs, w_rate=None):
     if 'group' in attrs:
         group_obj = attrs['group']
         if group_obj:
-            if attrs['w_start_date'] < group_obj.gr_start_date or attrs['w_end_date'] > group_obj.gr_end_date:
+            if attrs['w_start_date'] < group_obj.gr_start_date:
                 raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WORK_ERROR_DATE2})
     return attrs
+
+
+def update_date_group_or_prj(prj, group, validated_data):
+    is_lock = prj.finish_date_lock
+    prj_finish_date = prj.finish_date
+    work_end_date = validated_data.get('w_end_date', None)
+
+    if group:
+        if is_lock:
+            if work_end_date > prj_finish_date:
+                raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_WORK_DATE})
+            if work_end_date > group.gr_end_date:
+                group.gr_end_date = work_end_date
+                group.save(update_fields=['gr_end_date'])
+        else:
+            if work_end_date > prj_finish_date and work_end_date > group.gr_end_date:
+                group.gr_end_date = work_end_date
+                group.save(update_fields=['gr_end_date'])
+                prj.finish_date = work_end_date
+                prj.save(update_fields=['finish_date'])
+            elif work_end_date > group.gr_end_date:
+                group.gr_end_date = work_end_date
+                group.save(update_fields=['gr_end_date'])
+    else:
+        if is_lock:
+            if work_end_date > prj_finish_date:
+                raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_WORK_DATE})
+        else:
+            if work_end_date > prj_finish_date:
+                prj.finish_date = work_end_date
+                prj.save(update_fields=['finish_date'])
 
 
 class WorkListSerializers(serializers.ModelSerializer):
@@ -112,9 +143,11 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         if w_end_date < w_start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_ERROR})
 
-        if w_start_date < project.start_date or w_start_date > project.finish_date or \
-                w_end_date > project.finish_date:
+        if w_start_date < project.start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
+
+        if project.finish_date_lock is True and w_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_WORK_DATE})
 
         group = attrs['group'] if 'group' in attrs else None
         if group:
@@ -165,6 +198,9 @@ class WorkCreateSerializers(serializers.ModelSerializer):
                 'msg': '',
             }
         )
+
+        # update group and project
+        update_date_group_or_prj(project, group, validated_data)
         return work
 
     class Meta:
@@ -296,9 +332,12 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
         else:
             attrs['w_weight'] = group_calc_weight(project, attrs['w_weight'])
 
-        if w_start_date < project.start_date or w_start_date > project.finish_date or \
-                w_end_date > project.finish_date:
+        if w_start_date < project.start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
+
+        if project.finish_date_lock is True and w_end_date > project.finish_date:
+            raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_WORK_DATE})
+
         return validated_date_work(attrs, w_rate)
 
     def update(self, instance, validated_data):
@@ -328,6 +367,9 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
                 old_g_obj.delete()
         # re SUM all rate group, work in project
         calc_rate_project(prj_obj)
+
+        # update date project and group
+        update_date_group_or_prj(prj_obj, group, validated_data)
 
         # create news feed
         call_task_background(
