@@ -6,16 +6,21 @@ from apps.masterdata.saledata.serializers.product_import_db import (
 )
 from apps.sales.production.models import BOM
 from apps.sales.saleorder.models import SaleOrderProduct
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import (
+    mask_view, ResponseController,
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
+)
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
 )
 from apps.masterdata.saledata.serializers.product import (
-    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
+    ProductListSerializer, ProductCreateSerializer,
+    ProductDetailSerializer, ProductUpdateSerializer,
     UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
-    ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
+    ProductTypeListSerializer, ProductTypeCreateSerializer,
+    ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
     ProductCategoryListSerializer, ProductCategoryCreateSerializer,
     ProductCategoryDetailSerializer, ProductCategoryUpdateSerializer,
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
@@ -41,6 +46,9 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
+
     @swagger_auto_schema(
         operation_summary="ProductType list",
         operation_description="ProductType list",
@@ -64,7 +72,7 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductType.objects
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
@@ -88,6 +96,23 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary='Remove ProductType'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.has_related_records(instance):
+            return ResponseController.bad_request_400(msg="This ProductType is referenced by some records.")
+        if instance.is_default:
+            return ResponseController.bad_request_400(msg="This ProductType is system default.")
+        instance.is_delete = True
+        instance.save(update_fields=['is_delete'])
+        return ResponseController.success_200({}, key_data='result')
+
 
 class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     queryset = ProductCategory.objects
@@ -97,6 +122,9 @@ class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ProductCategoryDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="ProductCategory list",
@@ -121,7 +149,7 @@ class ProductCategoryList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductCategory.objects
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
@@ -145,6 +173,21 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary='Remove ProductCategory'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.has_related_records(instance):
+            return ResponseController.bad_request_400(msg="This ProductCategory is referenced by some records.")
+        instance.is_delete = True
+        instance.save(update_fields=['is_delete'])
+        return ResponseController.success_200({}, key_data='result')
+
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasureGroup.objects
@@ -156,7 +199,9 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('unitofmeasure_group').order_by('-is_default', 'code')
+        return super().get_queryset().filter(
+            is_delete=False
+        ).prefetch_related('unitofmeasure_group').order_by('-is_default', 'code')
 
     @swagger_auto_schema(
         operation_summary="UnitOfMeasureGroup list",
@@ -179,7 +224,7 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasureGroup.objects
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
@@ -201,6 +246,23 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary='Remove UnitOfMeasureGroup'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.has_related_records(instance):
+            return ResponseController.bad_request_400(msg="This UnitOfMeasureGroup is referenced by some records.")
+        if instance.is_default:
+            return ResponseController.bad_request_400(msg="This UnitOfMeasureGroup is system default.")
+        instance.is_delete = True
+        instance.save(update_fields=['is_delete'])
+        return ResponseController.success_200({}, key_data='result')
+
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasure.objects
@@ -216,7 +278,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('group')
+        return super().get_queryset().filter(is_delete=False).select_related('group')
 
     @swagger_auto_schema(
         operation_summary="UnitOfMeasure list",
@@ -239,7 +301,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasure.objects
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
@@ -263,6 +325,23 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Remove UnitOfMeasure'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.has_related_records(instance):
+            return ResponseController.bad_request_400(msg="This UnitOfMeasure is referenced by some records.")
+        if instance.is_default:
+            return ResponseController.bad_request_400(msg="This UnitOfMeasure is system default.")
+        instance.is_delete = True
+        instance.save(update_fields=['is_delete'])
+        return ResponseController.success_200({}, key_data='result')
 
 
 class ProductList(BaseListMixin, BaseCreateMixin):
@@ -474,10 +553,7 @@ class ProductForSaleList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ProductForSaleDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class ProductForSaleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Product.objects
     serializer_detail = ProductForSaleDetailSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -500,7 +576,7 @@ class UnitOfMeasureOfGroupLaborList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(is_delete=False).select_related(
             'group',
         ).filter(group__is_default=1)
 

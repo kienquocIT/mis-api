@@ -314,7 +314,10 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         data_stock_activity = cls.get_data_stock_activity_for_in(
                             log, data_stock_activity, obj.product
                         )
-                    elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
+                    elif log.trans_title in [
+                        'Delivery (sale)', 'Delivery (lease)',
+                        'Goods issue', 'Goods transfer (out)'
+                    ]:
                         data_stock_activity = cls.get_data_stock_activity_for_out(
                             log, data_stock_activity, obj.product
                         )
@@ -381,12 +384,16 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
                 # lấy detail cho từng TH
                 if log.trans_title in [
-                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)', 'Balance init input'
+                    'Goods receipt', 'Goods receipt (IA)', 'Goods return',
+                    'Goods transfer (in)', 'Balance init input'
                 ]:
                     data_stock_activity = cls.get_data_stock_activity_for_in(
                         log, data_stock_activity, obj.product
                     )
-                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
+                elif log.trans_title in [
+                    'Delivery (sale)', 'Delivery (lease)',
+                    'Goods issue', 'Goods transfer (out)'
+                ]:
                     data_stock_activity = cls.get_data_stock_activity_for_out(
                         log, data_stock_activity, obj.product
                     )
