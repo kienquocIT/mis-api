@@ -17,12 +17,12 @@ class RecoveryFinishHandler:
                         model_product = DisperseModel(app_model='saledata.product').get_model()
                         if model_product and hasattr(model_product, 'objects'):
                             cloned_instance = deepcopy(original_instance)
-                            # override data
+                            # Override data
                             cloned_instance.id = None  # Clear the primary key
                             cloned_instance.code = RecoveryFinishHandler.generate_code(
                                 original_instance=original_instance,
                                 model_product=model_product
-                            )  # generate lease code
+                            )  # Generate lease code
                             cloned_instance.stock_amount = 0
                             cloned_instance.wait_delivery_amount = 0
                             cloned_instance.wait_receipt_amount = 0
@@ -34,7 +34,7 @@ class RecoveryFinishHandler:
 
     @classmethod
     def find_max_number(cls, codes):
-        current_year = str(timezone.now().year)
+        current_year = str(timezone.now().year)[-2:]
         num_max = None
         for code in codes:
             try:
@@ -50,7 +50,7 @@ class RecoveryFinishHandler:
     def generate_code(cls, original_instance, model_product):
         company_id = original_instance.company_id
         original_code = original_instance.code
-        current_year = str(timezone.now().year)
+        current_year = str(timezone.now().year)[-2:]
         base_code = f'{original_code}{current_year}'
         existing_codes = model_product.objects.filter(
             company_id=company_id, code__icontains=base_code

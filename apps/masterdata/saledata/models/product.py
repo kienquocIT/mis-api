@@ -267,6 +267,18 @@ class Product(DataAbstractModel):
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
 
+    # Begin lease fields
+    # lease_source = models.ForeignKey(
+    #     "self",
+    #     null=True,
+    #     on_delete=models.SET_NULL,
+    #     related_name="product_lease_source",
+    #     help_text="source product which this lease product clone from"
+    # )
+    # lease_code = models.CharField(max_length=100, blank=True)
+    # lease_depreciation_price = models.FloatField(default=0)
+    # End lease fields
+
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
