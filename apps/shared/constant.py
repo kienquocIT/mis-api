@@ -53,9 +53,11 @@ WORKFLOW_IN_WF_OPTION = (
     (2, 'Employee'),
 )
 WORKFLOW_IN_WF_POSITION = (
-    (1, '1st manager'),
-    (2, '2nd manager'),
-    (3, 'Beneficiary'),
+    (1, 'Beneficiary'),
+    (2, '1st manager'),
+    (3, '2nd manager'),
+    (4, 'Upper manager'),
+    (5, 'Manager of x group level'),
 )
 
 
@@ -468,4 +470,9 @@ ASSET_TYPE = (
     (1, 'Product'),
     (2, 'Tool'),
     (3, 'Fixed asset'),
+)
+
+# goods recovery
+STATUS_RECOVERY = (
+    (0, 'Open'),
 )

@@ -181,12 +181,13 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if self.has_related_records(instance):
-            return ResponseController.bad_request_400(msg="This ProductCategory is referenced by some records.")
-        instance.is_delete = True
-        instance.save(update_fields=['is_delete'])
-        return ResponseController.success_200({}, key_data='result')
+        return self.destroy(request, *args, **kwargs)
+        # instance = self.get_object()
+        # if self.has_related_records(instance):
+        #     return ResponseController.bad_request_400(msg="This ProductCategory is referenced by some records.")
+        # instance.is_delete = True
+        # instance.save(update_fields=['is_delete'])
+        # return ResponseController.success_200({}, key_data='result')
 
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):

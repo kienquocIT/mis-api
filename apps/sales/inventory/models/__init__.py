@@ -6,3 +6,4 @@ from .goods_issue import *
 from .goods_return import *
 from .goods_return_sub import *
 from .goods_registration import *
+from .goods_recovery import *

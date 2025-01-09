@@ -1405,3 +1405,7 @@ msgstr "Lỗi tạo tư vấn"
 #
 msgid "Total payment must be equal to total after tax."
 msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thuế."
+
+#
+msgid "This record cannot be deleted because it is associated with other records."
+msgstr "Dữ liệu này không thể xóa vì đã liên kết với dữ liệu khác."

@@ -43,6 +43,7 @@ class SaleMsg:
     PRODUCTION_REPORT_NOT_EXIST = _('Production report does not exist.')
     EMPLOYEE_INHERIT_NOT_EXIST = _('Employee inherit does not exist.')
     WORK_ORDER_NOT_EXIST = _('Work order does not exist.')
+    LEASE_ORDER_NOT_EXIST = _('Lease order does not exist.')
 
 
 class SaleTask:

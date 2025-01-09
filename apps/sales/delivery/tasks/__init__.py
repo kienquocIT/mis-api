@@ -82,6 +82,41 @@ class OrderActiveDeliverySerializer:
                 self.check_has_prod_services += 1
         return sub_id, pickup_quantity, m2m_obj_arr
 
+    def setup_product_kwargs(self, m2m_obj):
+        product_quantity = m2m_obj.product_quantity
+        product_quantity_time = 0
+        product_quantity_depreciation = 0
+        product_unit_price = m2m_obj.product_unit_price
+        product_depreciation_price = 0
+        product_subtotal_price = m2m_obj.product_subtotal_price
+
+        asset_type, offset, offset_data = None, None, {}
+        if hasattr(m2m_obj, "asset_type") and hasattr(m2m_obj, "offset") and hasattr(m2m_obj, "offset_data"):
+            asset_type = m2m_obj.asset_type
+            offset = m2m_obj.offset
+            offset_data = m2m_obj.offset_data
+
+            if m2m_obj.product:
+                cost_product = m2m_obj.product.lease_order_cost_product.filter(lease_order=self.order_obj).first()
+                if cost_product:
+                    product_quantity = cost_product.product_quantity
+                    product_quantity_time = cost_product.product_quantity_time
+                    product_quantity_depreciation = cost_product.product_quantity_depreciation
+                    product_unit_price = cost_product.product_cost_price
+                    product_depreciation_price = cost_product.product_depreciation_price
+                    product_subtotal_price = cost_product.product_subtotal_price
+        return {
+            'asset_type': asset_type,
+            'offset': offset,
+            'offset_data': offset_data,
+            'product_quantity': product_quantity,
+            'product_quantity_time': product_quantity_time,
+            'product_quantity_depreciation': product_quantity_depreciation,
+            'product_unit_price': product_unit_price,
+            'product_depreciation_price': product_depreciation_price,
+            'product_subtotal_price': product_subtotal_price,
+        }
+
     def __prepare_order_delivery_product(self):
         sub_id = uuid4()
         m2m_obj_arr = []
@@ -98,19 +133,12 @@ class OrderActiveDeliverySerializer:
             if self.config_obj.is_picking is False or self.check_has_prod_services > 0:
                 stock_ready = m2m_obj.product_quantity
 
-            asset_type, offset, offset_data = None, None, {}
-            if hasattr(m2m_obj, "asset_type") and hasattr(m2m_obj, "offset") and hasattr(m2m_obj, "offset_data"):
-                asset_type = m2m_obj.asset_type
-                offset = m2m_obj.offset
-                offset_data = m2m_obj.offset_data
+            kwargs = self.setup_product_kwargs(m2m_obj=m2m_obj)
 
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
                 product_data=m2m_obj.product_data,
-                asset_type=asset_type,
-                offset=offset,
-                offset_data=offset_data,
                 uom=m2m_obj.unit_of_measure,
                 uom_data=m2m_obj.uom_data,
 
@@ -121,9 +149,8 @@ class OrderActiveDeliverySerializer:
                 picked_quantity=0,
                 order=m2m_obj.order,
                 is_promotion=m2m_obj.is_promotion,
-                product_unit_price=m2m_obj.product_unit_price,
                 product_tax_value=m2m_obj.product_tax_value,
-                product_subtotal_price=m2m_obj.product_subtotal_price
+                **kwargs,
             )
             obj_tmp.put_backup_data()
             m2m_obj_arr.append(obj_tmp)
