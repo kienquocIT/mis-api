@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
 DATA_PROPERTY_TYPE = (
     (1, 'Text'),
@@ -12,36 +12,17 @@ DATA_PROPERTY_TYPE = (
     (6, 'Number'),
 )
 
-class List(SimpleAbstractModel):
-    title = models.CharField(max_length=100)
+class List(MasterDataAbstractModel):
     data_object = models.ForeignKey(
         'partnercenter.DataObject',
         on_delete=models.CASCADE,
     )
     filter_condition = models.JSONField(default=list)
     num_of_records = models.IntegerField(default=0)
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
-    company = models.ForeignKey(
-        'company.Company', null=True, on_delete=models.SET_NULL,
-        help_text='The company claims that this record belongs to them',
-    )
-    tenant = models.ForeignKey(
-        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
-        help_text='The tenant claims that this record belongs to them',
-        related_name='partnercenter_list_belong_to_tenant',
-    )
     employee_inherit = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='',
         related_name='partnercenter_list_employee_inherit',
-    )
-    employee_created = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='Employee created this record',
-        related_name='partnercenter_list_employee_creator',
     )
 
     class Meta:
