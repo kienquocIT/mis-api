@@ -181,7 +181,6 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def delete(self, request, *args, **kwargs):
-        kwargs.update({'is_purge': True})
         return self.destroy(request, *args, **kwargs)
         # instance = self.get_object()
         # if self.has_related_records(instance):
