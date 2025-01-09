@@ -158,7 +158,7 @@ class LeaveTestCase(AdvanceTestCase):
         url = reverse('WorkingYearDetail', args=[year["id"]])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
-        self.assertFalse(WorkingYearConfig.objects.filter(id=year['id']).exists())
+        self.assertFalse(WorkingYearConfig.objects.filter(id=year['id'], is_delete=False).exists())
 
     def test_create_leave_request(self):
         leave_type = LeaveType.objects.filter_current(

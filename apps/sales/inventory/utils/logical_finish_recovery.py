@@ -22,7 +22,7 @@ class RecoveryFinishHandler:
                             cloned_instance.code = RecoveryFinishHandler.generate_code(
                                 original_instance=original_instance,
                                 model_product=model_product
-                            ) # generate lease code
+                            )  # generate lease code
                             cloned_instance.stock_amount = 0
                             cloned_instance.wait_delivery_amount = 0
                             cloned_instance.wait_receipt_amount = 0
@@ -66,3 +66,46 @@ class RecoveryFinishHandler:
         if model_product.objects.filter(code=code, company_id=company_id).exists():
             return cls.generate_code(original_instance=original_instance, model_product=model_product)
         return code
+
+    # PRODUCT WAREHOUSE
+    # @classmethod
+    # def push_to_warehouse_stock(cls, instance):
+    #     for lease_generate in instance.recovery_lease_generate_recovery.all():
+    #         uom_base, final_ratio, lot_data, serial_data = cls.setup_data_push(
+    #             instance=instance, gr_warehouse=gr_warehouse,
+    #         )
+    #         gr_product = gr_warehouse.goods_receipt_product
+    #         if gr_product:
+    #             if gr_product.product:
+    #                 cls.run_push_to_warehouse_stock(
+    #                     instance=instance,
+    #                     gr_product=gr_product,
+    #                     gr_warehouse=gr_warehouse,
+    #                     uom_base=uom_base,
+    #                     lot_data=lot_data,
+    #                     serial_data=serial_data,
+    #                     amount=gr_warehouse.quantity_import * final_ratio,
+    #                 )
+    #     return True
+    #
+    # @classmethod
+    # def setup_data_push(cls, instance, lease_generate):
+    #     if lease_generate.recovery_warehouse:
+    #         if lease_generate.recovery_warehouse.recovery_product:
+    #             if lease_generate.recovery_warehouse.recovery_product.offset:
+    #                 original_instance = lease_generate.recovery_warehouse.recovery_product.offset
+    #
+    #
+    # @classmethod
+    # def run_push_to_warehouse_stock(cls, instance, product_id, warehouse_id, uom_id):
+    #     ProductWareHouse.push_from_receipt(
+    #         tenant_id=instance.tenant_id,
+    #         company_id=instance.company_id,
+    #         product_id=product_id,
+    #         warehouse_id=warehouse_id,
+    #         uom_id=uom_id,
+    #         amount=1,
+    #         lot_data=[],
+    #         serial_data=[],
+    #     )
+    #     return True

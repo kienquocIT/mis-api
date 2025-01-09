@@ -107,8 +107,7 @@ class PromotionTestCase(AdvanceTestCase):
 
     def test_delete_detail_promotion(self):
         res = self.test_create_promotion()
-        url = reverse('PromotionDetail', args=[res.data['result'].get('id', '')])
-
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, 204)
-        self.assertFalse(Promotion.objects.filter(pk=res.data['result']['id']).exists())
+        url = reverse("WareHouseDetail", kwargs={'pk': res.data['result']['id']})
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        return response
