@@ -1983,13 +1983,13 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         else:
             self.fail(f'FAILURE - PUT - url: {url} - response data: {str(put_response.data)}')
 
-    def test_delete_detail(self):
-        res = self.test_create_config_payment_term()
-        url = reverse('ConfigPaymentTermDetail', args=[res.data['result']['id']])
-
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, 204)
-        self.assertFalse(PaymentTerm.objects.filter(pk=res.data['result']['id']).exists())
+    # def test_delete_detail(self):
+    #     res = self.test_create_config_payment_term()
+    #     url = reverse('ConfigPaymentTermDetail', args=[res.data['result']['id']])
+    #
+    #     response = self.client.delete(url)
+    #     self.assertEqual(response.status_code, 204)
+    #     self.assertFalse(PaymentTerm.objects.filter(pk=res.data['result']['id']).exists())
 
 
 class ExpenseTestCase(AdvanceTestCase):

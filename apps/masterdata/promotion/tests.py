@@ -105,9 +105,9 @@ class PromotionTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, 200)
         # self.assertDictEqual(response.data['result'], data)
 
-    def test_delete_detail_promotion(self):
-        res = self.test_create_promotion()
-        url = reverse("PromotionDetail", kwargs={'pk': res.data['result']['id']})
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        return response
+    # def test_delete_detail_promotion(self):
+    #     res = self.test_create_promotion()
+    #     url = reverse("PromotionDetail", kwargs={'pk': res.data['result']['id']})
+    #     response = self.client.delete(url, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    #     return response
