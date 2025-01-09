@@ -28,6 +28,21 @@ class List(SimpleAbstractModel):
         'company.Company', null=True, on_delete=models.SET_NULL,
         help_text='The company claims that this record belongs to them',
     )
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='partnercenter_list_belong_to_tenant',
+    )
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='partnercenter_list_employee_inherit',
+    )
+    employee_created = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Employee created this record',
+        related_name='partnercenter_list_employee_creator',
+    )
 
     class Meta:
         verbose_name = 'Partner List'
