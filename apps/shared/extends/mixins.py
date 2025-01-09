@@ -1170,7 +1170,7 @@ class BaseDestroyMixin(BaseMixin):
         """
         instance.is_delete = True
         instance.save(update_fields=["is_delete"])
-        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        return ResponseController.no_content_204()
 
     @staticmethod
     def perform_purge(instance):
@@ -1178,7 +1178,7 @@ class BaseDestroyMixin(BaseMixin):
         Permanently deletes the instance and handles cascading deletions.
         """
         instance.delete()
-        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        return ResponseController.no_content_204()
 
     @staticmethod
     def has_related_records(instance):

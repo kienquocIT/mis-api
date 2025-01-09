@@ -110,5 +110,5 @@ class PromotionTestCase(AdvanceTestCase):
         url = reverse('PromotionDetail', args=[res.data['result'].get('id', '')])
 
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         self.assertFalse(Promotion.objects.filter(pk=res.data['result']['id']).exists())
