@@ -24,18 +24,18 @@ class Periods(MasterDataAbstractModel):
     @classmethod
     def get_period_by_doc_date(cls, tenant_id, company_id, doc_date):
         period_by_doc_date = None
-        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).reverse():
-            if period.end_date > doc_date.date():
+        for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).order_by('fiscal_year'):
+            if period.end_date >= doc_date.date() >= period.start_date:
                 period_by_doc_date = period
                 break
         return period_by_doc_date
 
 
     @classmethod
-    def get_sub_period_by_doc_date(cls, this_period, doc_date):
+    def get_sub_period_by_doc_date(cls, period, doc_date):
         this_sub_period = None
-        for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
-            if sub_period.end_date > doc_date.date():
+        for sub_period in period.sub_periods_period_mapped.all().order_by('order'):
+            if sub_period.end_date >= doc_date.date() >= sub_period.start_date:
                 this_sub_period = sub_period
                 break
         return this_sub_period
@@ -44,7 +44,7 @@ class Periods(MasterDataAbstractModel):
     def get_current_period(cls, tenant_id, company_id):
         this_period = None
         for period in Periods.objects.filter(company_id=company_id, tenant_id=tenant_id).order_by('fiscal_year'):
-            if period.end_date > datetime.now().date():
+            if period.end_date >= datetime.now().date() >= period.start_date:
                 this_period = period
                 break
         return this_period
@@ -53,7 +53,7 @@ class Periods(MasterDataAbstractModel):
     def get_current_sub_period(cls, this_period):
         this_sub_period = None
         for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
-            if sub_period.end_date > datetime.now().date():
+            if sub_period.end_date >= datetime.now().date() >= sub_period.start_date:
                 this_sub_period = sub_period
                 break
         return this_sub_period
