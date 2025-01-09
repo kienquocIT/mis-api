@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
+# from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.shared import DataAbstractModel, STATUS_RECOVERY, MasterDataAbstractModel, ASSET_TYPE
 
 

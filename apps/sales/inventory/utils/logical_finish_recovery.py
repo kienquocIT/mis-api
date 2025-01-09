@@ -1,6 +1,5 @@
 from copy import deepcopy
 
-from django.forms.models import model_to_dict
 from django.utils import timezone
 
 from apps.shared import DisperseModel
