@@ -99,11 +99,13 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         if 'goto_stage' in request.data:
             self.ser_context = {'goto_stage': True}
+            request.data['title'] = self.get_object().title
         if all(['convert_opp' in request.data, 'map_opp' in request.data]):
             self.ser_context = {
                 'convert_opp': True,
                 'opp_mapped_id': request.data.get('opp_mapped_id')
             }
+            request.data['title'] = self.get_object().title
         return self.update(request, *args, **kwargs)
 
 

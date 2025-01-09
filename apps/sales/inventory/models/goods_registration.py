@@ -510,7 +510,7 @@ class ProjectFunction:
 
     @classmethod
     def for_delivery(cls, stock_info, gre_item, doc_obj):
-        if stock_info['trans_title'] == 'Delivery':
+        if stock_info['trans_title'] in ['Delivery (sale)', 'Delivery (lease)']:
             gre_item, _ = cls.update_gre_item_prd_wh(gre_item, stock_info)
             # case borrow
             ProjectFunction.call_update_borrow_data(gre_item=gre_item, doc_obj=doc_obj, stock_info=stock_info)
@@ -592,7 +592,7 @@ class NoneProjectFunction:
 
     @classmethod
     def for_delivery(cls, stock_info, doc_obj):
-        if stock_info['trans_title'] == 'Delivery':
+        if stock_info['trans_title'] in ['Delivery (sale)', 'Delivery (lease)']:
             _ = cls.update_none_gre_item_prd_wh(stock_info)
             # case borrow
             NoneProjectFunction.call_update_borrow_data(doc_obj=doc_obj, stock_info=stock_info)
