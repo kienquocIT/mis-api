@@ -1,6 +1,4 @@
 from django.db import models
-from django.utils import timezone
-
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
 DATA_PROPERTY_TYPE = (
