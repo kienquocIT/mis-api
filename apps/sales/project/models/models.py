@@ -103,6 +103,10 @@ class Project(DataAbstractModel):
         verbose_name='Close date',
         blank=True, null=True
     )
+    finish_date_lock = models.BooleanField(
+        default=False, null=True,
+        verbose_name='finish date lock is true can not change date'
+    )
 
     def code_generator(self):
         if not self.code:
@@ -446,6 +450,10 @@ class ProjectMapMember(MasterDataAbstractModel, PermissionAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='member_pro_map_plan'
+    )
+    permit_lock_fd = models.BooleanField(
+        default=False,
+        verbose_name='member can lock finish date of project'
     )
 
     def get_app_allowed(self) -> str:

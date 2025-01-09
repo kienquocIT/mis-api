@@ -30,6 +30,16 @@ class Periods(MasterDataAbstractModel):
                 break
         return period_by_doc_date
 
+
+    @classmethod
+    def get_sub_period_by_doc_date(cls, this_period, doc_date):
+        this_sub_period = None
+        for sub_period in this_period.sub_periods_period_mapped.all().order_by('order'):
+            if sub_period.end_date > doc_date.date():
+                this_sub_period = sub_period
+                break
+        return this_sub_period
+
     @classmethod
     def get_current_period(cls, tenant_id, company_id):
         this_period = None

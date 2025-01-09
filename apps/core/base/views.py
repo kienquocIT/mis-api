@@ -150,13 +150,14 @@ class ApplicationPropertyList(BaseListMixin):
         'is_mail': ['exact'],
         'is_wf_zone': ['exact'],
         'is_wf_condition': ['exact'],
+        'is_filter_condition': ['exact']
     }
     serializer_list = ApplicationPropertyListSerializer
 
     @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs   )
 
 
 class ApplicationPropertyForPrintList(BaseListMixin):

@@ -89,6 +89,6 @@ class PeriodsDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         this_period = Periods.get_current_period(request.user.tenant_current_id, request.user.company_current_id)
         instance = self.get_object()
         if str(instance.id) == str(this_period.id):
-            return ResponseController.internal_server_error_500(msg="Cannot delete this Period.")
+            return ResponseController.bad_request_400(msg="Cannot delete this Period.")
         instance.delete()
         return ResponseController.success_200({}, key_data='result')

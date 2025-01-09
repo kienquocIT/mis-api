@@ -74,7 +74,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         for item in product_detail_list.filter(type=1):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -108,7 +108,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         for item in product_detail_list.filter(type=2):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -138,7 +138,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         return doc_data
 
     @classmethod

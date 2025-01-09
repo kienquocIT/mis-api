@@ -1,5 +1,10 @@
+import datetime
+
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.contacts import Contact
@@ -230,6 +235,29 @@ class Account(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def get_revenue_information(cls, obj):
+        current_date = timezone.now()
+        this_period = Periods.get_current_period(obj.tenant_id, obj.company_id)
+        revenue_ytd = 0
+        order_number = 0
+        if this_period:
+            for period in obj.company.saledata_periods_belong_to_company.all():
+                if period.fiscal_year == this_period.fiscal_year:
+                    start_date_str = str(period.start_date) + ' 00:00:00'
+                    start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
+                    for customer_revenue in obj.report_customer_customer.filter(
+                            group_inherit__is_delete=False, sale_order__system_status=3
+                    ):
+                        if (customer_revenue.date_approved and
+                                start_date <= customer_revenue.date_approved <= current_date):
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
+        return {
+            'revenue_ytd': revenue_ytd,
+            'order_number': order_number,
+            'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
+        }
 
 # AccountEmployee
 class AccountEmployee(SimpleAbstractModel):
