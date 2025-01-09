@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel
@@ -248,5 +249,135 @@ class LeadOpportunity(DataAbstractModel):
         verbose_name = 'Leads Opportunity'
         verbose_name_plural = 'Lead Opportunity'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeadCall(SimpleAbstractModel):
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.CASCADE,
+        related_name='lead_call_lead',
+    )
+
+    subject = models.CharField(max_length=250)
+    contact = models.ForeignKey(
+        'saledata.Contact',
+        on_delete=models.CASCADE,
+        related_name="lead_call_contact",
+    )
+    call_date = models.DateTimeField()
+    detail = models.TextField(null=True)
+    repeat = models.BooleanField(default=False)
+    is_cancelled = models.BooleanField(default=False)
+
+    # date and employee
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    date_modified = models.DateTimeField(
+        auto_now=True,
+        help_text='Date modified this record in last',
+    )
+    employee_created = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Employee created this record',
+        related_name='lead_call_employee_creator',
+    )
+    employee_modified = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
+        related_name='lead_call_employee_modifier'
+    )
+
+    class Meta:
+        verbose_name = 'LeadCall'
+        verbose_name_plural = 'LeadCalls'
+        ordering = ('-call_date', '-date_created')
+        default_permissions = ()
+        permissions = ()
+
+
+class LeadMeeting(SimpleAbstractModel):
+    subject = models.CharField(max_length=250)
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.CASCADE,
+        related_name='lead_meeting_lead',
+    )
+    employee_member_list = models.JSONField(default=list)
+    customer_member_list = models.JSONField(default=list)
+    meeting_date = models.DateTimeField()
+    meeting_from_time = models.TimeField()
+    meeting_to_time = models.TimeField()
+    meeting_address = models.CharField(max_length=250)
+    detail = models.TextField(null=True)
+    repeat = models.BooleanField(default=False)
+    is_cancelled = models.BooleanField(default=False)
+
+    # date and employee
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    date_modified = models.DateTimeField(
+        auto_now=True,
+        help_text='Date modified this record in last',
+    )
+    employee_created = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Employee created this record',
+        related_name='lead_meeting_employee_creator',
+    )
+    employee_modified = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
+        related_name='lead_meeting_employee_modifier'
+    )
+
+    class Meta:
+        verbose_name = 'LeadMeeting'
+        verbose_name_plural = 'LeadMeetings'
+        ordering = ('-meeting_date', '-date_created')
+        default_permissions = ()
+        permissions = ()
+
+
+class LeadEmail(SimpleAbstractModel):
+    subject = models.CharField(max_length=250)
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.CASCADE,
+        related_name='lead_email_lead',
+    )
+    email_to_list = models.JSONField(default=list)
+    email_cc_list = models.JSONField(default=list)
+    content = models.CharField(max_length=1000, null=True)
+
+    # date and employee
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    date_modified = models.DateTimeField(
+        auto_now=True,
+        help_text='Date modified this record in last',
+    )
+    employee_created = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Employee created this record',
+        related_name='lead_email_employee_creator',
+    )
+    employee_modified = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
+        related_name='lead_email_employee_modifier'
+    )
+
+    class Meta:
+        verbose_name = 'LeadEmail'
+        verbose_name_plural = 'LeadEmails'
+        ordering = ('-date_created', )
         default_permissions = ()
         permissions = ()
