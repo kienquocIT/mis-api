@@ -43,3 +43,4 @@ class ProductMsg:
     PRODUCT_SIZE_NOT_NULL = _('Product size must not null when Inventory Tab is selected.')
     VALUE_INVALID = _("Invalid Value")
     NOT_NULL = _("must not be null")
+    CAN_NOT_CREATE_UOM_FOR_IMPORT_GROUP = _("Can not create UOM for Import Group")

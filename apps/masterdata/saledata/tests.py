@@ -709,7 +709,7 @@ class UoMTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response1.data['errors'],
-            ['detail'],
+            ['is_referenced_unit'],
             check_sum_second=True,
         )
 
