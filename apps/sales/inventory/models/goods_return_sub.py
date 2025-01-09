@@ -94,7 +94,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 serial_data=[],
             )
             return True
-        raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def create_product_warehouse_for_lot(cls, goods_return, item, return_quantity, sample_lot):
@@ -156,7 +157,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 manufacture_date=sample_lot.manufacture_date
             )
             return True
-        raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def create_product_warehouse_for_sn(cls, goods_return, item, return_quantity, sample_sn):
@@ -220,7 +222,8 @@ class GoodsReturnSubSerializerForNonPicking:
                 warranty_end=sample_sn.warranty_end
             )
             return True
-        raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+        print('Delivery information is not found. Can not log.')
+        return False
 
     @classmethod
     def update_warehouse_prod_type_general(cls, product_wh, item, goods_return, return_quantity):

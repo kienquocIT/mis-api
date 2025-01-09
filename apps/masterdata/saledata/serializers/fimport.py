@@ -863,8 +863,13 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def validate(self, validate_data):
-        has_referenced_unit = UnitOfMeasure.objects.filter_current(fill__tenant=True, fill__company=True,
-            group=validate_data['group'], is_referenced_unit=True).exists()
+        if validate_data['group'].code == 'ImportGroup':
+            raise serializers.ValidationError({'group': ProductMsg.CAN_NOT_CREATE_UOM_FOR_IMPORT_GROUP})
+
+        has_referenced_unit = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True, fill__company=True,
+            group=validate_data['group'], is_referenced_unit=True
+        ).exists()
         if has_referenced_unit:
             if validate_data.get('is_referenced_unit', None):
                 raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE})

@@ -7,7 +7,7 @@ from uuid import UUID
 from django.conf import settings
 from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Q, Model
+from django.db.models import Q, Model, ManyToOneRel, Count
 from django.utils import timezone
 from django.utils.datetime_safe import datetime
 
@@ -1162,3 +1162,31 @@ class BaseDestroyMixin(BaseMixin):
         except Exception as err:
             print('[perform_destroy] ERR', err)
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
+
+    @staticmethod
+    def has_related_records(instance):
+        related_objects = instance._meta.get_fields()
+        for field in related_objects:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(instance, related_name)
+                related_records = list(related_manager.all())
+                if related_records:
+                    return True
+        return False
+
+    @staticmethod
+    def list_related_records(instance):
+        related_objects = instance._meta.get_fields()
+        result = {}
+        for field in related_objects:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(instance, related_name)
+                related_records = list(related_manager.all())
+                if related_records:
+                    result[related_name] = related_records
+        for related_name, records in result.items():
+            for record in records:
+                print(record)
+        return result
