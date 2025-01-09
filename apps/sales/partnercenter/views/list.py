@@ -32,8 +32,8 @@ class ListList(BaseListMixin, BaseCreateMixin):
     serializer_list = ListListSerializer
     serializer_create = ListCreateSerializer
     serializer_detail = ListDetailSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="list",
