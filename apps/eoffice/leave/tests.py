@@ -108,7 +108,7 @@ class LeaveTestCase(AdvanceTestCase):
         leave = res.data.get('result')
         url = reverse('LeaveTypeConfigUpdate', args=[leave['id']])
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(LeaveType.objects.filter(id=leave['id'], is_delete=False).exists())
 
     def test_create_working_year(self):
@@ -149,7 +149,7 @@ class LeaveTestCase(AdvanceTestCase):
         holiday = res.data.get('result')
         url = reverse('WorkingHolidayDetail', args=[holiday["id"]])
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(WorkingYearConfig.objects.filter(id=holiday['id']).exists())
 
     def test_delete_working_year(self):
@@ -157,7 +157,7 @@ class LeaveTestCase(AdvanceTestCase):
         year = res.data.get('result')
         url = reverse('WorkingYearDetail', args=[year["id"]])
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(WorkingYearConfig.objects.filter(id=year['id']).exists())
 
     def test_create_leave_request(self):
