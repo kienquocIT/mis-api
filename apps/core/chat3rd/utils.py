@@ -111,7 +111,7 @@ class MesssageSerializer(serializers.Serializer):  # noqa
 class MessengerReceiveSerializer(BaseHookSerializer):  # noqa
     message = MesssageSerializer()
 
-    def save(self, page_obj: MessengerPageToken, **kwargs) -> MessengerMessage or None:
+    def save(self, page_obj: MessengerPageToken, **kwargs) -> MessengerMessage or None:  # pylint: disable=W0221
         validated_data = {**self.validated_data, **kwargs}
         sender = validated_data['sender']
         recipient = validated_data['recipient']
@@ -162,11 +162,10 @@ class MessengerControl:
         if page_id:
             if page_id in self._page_obj:
                 return self._page_obj[page_id]
-            else:
-                try:
-                    return MessengerPageToken.objects.get(account_id=page_id)
-                except MessengerPageToken.DoesNotExist:
-                    pass
+            try:
+                return MessengerPageToken.objects.get(account_id=page_id)
+            except MessengerPageToken.DoesNotExist:
+                pass
         return None
 
     def __init__(self, data: dict):
@@ -178,9 +177,9 @@ class MessengerControl:
             if val_obj and val_entry:
                 self._entry = val_entry
             else:
-                raise ValueError('[MessengerControl][receive] Format not support: %s' % (str(data)))
+                raise ValueError(f'[MessengerControl][receive] Format not support: {str(data)}')
         else:
-            raise ValueError('[MessengerControl][receive] Format not support: %s' % (str(data)))
+            raise ValueError(f'[MessengerControl][receive] Format not support: {str(data)}')
 
     @classmethod
     def get_serial_by_topic(cls, messaging_item: dict):
@@ -191,7 +190,7 @@ class MessengerControl:
         return None
 
     def active(self):
-        if self._entry:
+        if self._entry:  # pylint: disable=R1702
             errs = []
             for item in self._entry:
                 page_obj = self.get_page(page_id=item.get('id', None))
@@ -272,9 +271,9 @@ def call_graph_api(
         resp = None
         method = method.upper()
         if method == 'GET':
-            resp = requests.get(url=url, params=params)
+            resp = requests.get(url=url, params=params, timeout=30)
         elif method == 'POST':
-            resp = requests.post(url=url, params=params, data=payload)
+            resp = requests.post(url=url, params=params, data=payload, timeout=30)
 
         if resp:
             mongo_log_call_fb_api.insert_one(
@@ -342,9 +341,9 @@ class GraphFbAccount(GraphAbstract):
             'access_token': self.token_obj.token
         }
 
-    def sync_accounts_token(self) -> int or None:
+    def sync_accounts_token(self) -> int or None:  # pylint: disable=R0914
         count = None
-        if self.token_obj:
+        if self.token_obj:  # pylint: disable=R1702
             full_url = self.url + '/me/accounts?fields=access_token,category,category_list,name,id,tasks,picture{url,' \
                                   'height,width},link'
             response = call_graph_api(
@@ -360,7 +359,6 @@ class GraphFbAccount(GraphAbstract):
                     # re-get accounts
                     count = 0
                     response_data = response.json()
-                    print('response_data:', response_data)
                     if 'data' in response_data:
                         data = response_data['data']
                         if data and isinstance(data, list):

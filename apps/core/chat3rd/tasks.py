@@ -9,6 +9,6 @@ def messenger_scan_account_token(messenger_id):
     try:
         obj = MessengerToken.objects.get(id=messenger_id)
     except MessengerToken.DoesNotExist:
-        raise ValueError('Messenger ID not found: %s' % (str(messenger_id)))
+        raise ValueError(f'Messenger ID not found: {str(messenger_id)}')
 
     return GraphFbAccount(token_obj=obj).sync_accounts_token()

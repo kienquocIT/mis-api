@@ -1,3 +1,5 @@
+# pylint: disable=C0103
+
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
