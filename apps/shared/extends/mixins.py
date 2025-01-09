@@ -1166,12 +1166,17 @@ class BaseDestroyMixin(BaseMixin):
     @staticmethod
     def has_related_records(instance):
         related_objects = instance._meta.get_fields()
+        result = {}
         for field in related_objects:
             if field.is_relation and field.auto_created and not field.concrete:
                 related_name = field.get_accessor_name()
                 related_manager = getattr(instance, related_name)
                 related_records = list(related_manager.all())
                 if related_records:
+                    result[related_name] = related_records
+        for related_name, record_list in result.items():
+            for record in record_list:
+                if not record.is_delete:
                     return True
         return False
 
@@ -1186,7 +1191,8 @@ class BaseDestroyMixin(BaseMixin):
                 related_records = list(related_manager.all())
                 if related_records:
                     result[related_name] = related_records
-        for related_name, records in result.items():
-            for record in records:
-                print(record)
+        for related_name, record_list in result.items():
+            for record in record_list:
+                if not record.is_delete:
+                    print(record)
         return result
