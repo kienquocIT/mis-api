@@ -255,7 +255,6 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMi
     )
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.list_related_records(instance)
         if self.has_related_records(instance):
             return ResponseController.bad_request_400(msg="This UnitOfMeasureGroup is referenced by some records.")
         if instance.is_default:
