@@ -148,12 +148,11 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_referenced_unit(cls, obj):
-        uom_list = obj.unitofmeasure_group.all()
-        result = {}
-        for item in uom_list:
-            if item.is_referenced_unit:
-                result = {'id': item.id, 'title': item.title}
-        return result
+        return {
+            'id': obj.uom_reference_id,
+            'code': obj.uom_reference.code,
+            'title': obj.uom_reference.title
+        } if obj.uom_reference else {}
 
     @classmethod
     def get_uom(cls, obj):
@@ -216,10 +215,11 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
+    uom_reference = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('title', 'code')
+        fields = ('title', 'code', 'uom_reference')
 
     @classmethod
     def validate_title(cls, value):
@@ -236,10 +236,31 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_CODE_EXIST)
         return value
 
+    @classmethod
+    def validate_uom_reference(cls, value):
+        if value:
+            try:
+                return UnitOfMeasure.objects.get(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({"uom_reference": ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        return None
+
     def validate(self, validate_data):
         if self.instance.is_default:
             raise serializers.ValidationError({'is_default': _('Can not update default data')})
         return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        instance.unitofmeasure_group.all().update(is_referenced_unit=False)
+        if instance.uom_reference:
+            instance.uom_reference.is_referenced_unit = True
+            instance.uom_reference.ratio = 1
+            instance.uom_reference.save(update_fields=['is_referenced_unit', 'ratio'])
+        return instance
 
 
 # Unit Of Measure
@@ -252,13 +273,11 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group(cls, obj):
-        if obj.group:
-            return {
-                'id': obj.group_id,
-                'title': obj.group.title,
-                'is_referenced_unit': obj.is_referenced_unit
-            }
-        return {}
+        return {
+            'id': obj.group_id,
+            'title': obj.group.title,
+            'is_referenced_unit': obj.is_referenced_unit
+        } if obj.group else {}
 
 
 class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
@@ -328,21 +347,12 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_group(cls, obj):
-        if obj.group:
-            uom = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                group=obj.group,
-                is_referenced_unit=True
-            ).first()
-            if uom:
-                return {
-                    'id': obj.group_id,
-                    'title': obj.group.title,
-                    'is_referenced_unit': obj.is_referenced_unit,
-                    'referenced_unit_title': uom.title,
-                }
-        return {}
+        return {
+            'id': obj.group_id,
+            'title': obj.group.title,
+            'is_referenced_unit': obj.is_referenced_unit,
+            'referenced_unit_title': obj.group.uom_reference.title if obj.group.uom_reference else '',
+        } if obj.group else {}
 
     @classmethod
     def get_ratio(cls, obj):
@@ -354,7 +364,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
+        fields = ('code', 'title', 'group', 'ratio', 'rounding')
 
     def validate_code(self, value):
         if UnitOfMeasure.objects.filter_current(
@@ -386,37 +396,14 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         if self.instance.is_default:
             raise serializers.ValidationError({'is_default': _('Can not update default data')})
+        if validate_data.get('ratio', 0) != 1 and self.instance.is_referenced_unit:
+            raise serializers.ValidationError({'ratio': _('Ratio must be 1 for referenced unit')})
         return validate_data
 
     def update(self, instance, validated_data):
-        is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
-        if is_referenced_unit:
-            old_unit = UnitOfMeasure.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                group=self.initial_data.get('group', None),
-                is_referenced_unit=True
-            )
-            old_unit.is_referenced_unit = False
-            old_unit.save()
-
-            old_ratio = instance.ratio
-            for item in UnitOfMeasure.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=instance.group_id
-            ):
-                if item != instance:
-                    item.ratio = item.ratio / old_ratio
-                    item.save()
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        # update uom_reference of group if this uom.is_referenced_unit is True
-        if instance.is_referenced_unit is True and instance.group:
-            instance.group.uom_reference = instance
-            instance.group.save(update_fields=['uom_reference'])
         return instance
 
 

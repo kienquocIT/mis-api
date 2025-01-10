@@ -103,6 +103,7 @@ class ProcessConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
 
 class ProcessRuntimeDataMatch(BaseRetrieveMixin):
+    queryset = Process.objects
     filterset_class = ProcessRuntimeDataMatchFilter
     serializer_detail = ProcessRuntimeDataMatchFromStageSerializer
 
@@ -240,7 +241,7 @@ class ProcessRuntimeList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'remark']
 
     def get_queryset(self):
-        if self.request.user.employee_current_id:
+        if self.request.user and hasattr(self.request.user, 'employee_current_id'):
             return super().get_queryset().filter(members__contains=str(self.request.user.employee_current_id))
         return super().get_queryset().none()
 

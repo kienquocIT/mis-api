@@ -22,7 +22,8 @@ class PromotionList(BaseListMixin, BaseCreateMixin):
         operation_description="Master data promotion list, all about setup discount, coupons, gift",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='promotion', model_code='promotion', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -34,7 +35,7 @@ class PromotionList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='promotion', model_code='promotion', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -52,21 +53,22 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         operation_description="get detail, update and delete promotion by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='promotion', model_code='promotion', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='promotion', model_code='promotion', perm_code='edit'
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='promotion', model_code='promotion', perm_code='delete'
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
