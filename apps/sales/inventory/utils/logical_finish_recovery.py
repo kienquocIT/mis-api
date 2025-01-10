@@ -14,20 +14,25 @@ class RecoveryFinishHandler:
                 if lease_generate.recovery_warehouse.recovery_product:
                     if lease_generate.recovery_warehouse.recovery_product.offset:
                         original_instance = lease_generate.recovery_warehouse.recovery_product.offset
+                        price = lease_generate.recovery_warehouse.recovery_product.product_depreciation_price
                         model_product = DisperseModel(app_model='saledata.product').get_model()
                         if model_product and hasattr(model_product, 'objects'):
                             cloned_instance = deepcopy(original_instance)
                             # Override data
                             cloned_instance.id = None  # Clear the primary key
-                            cloned_instance.code = RecoveryFinishHandler.generate_code(
-                                original_instance=original_instance,
-                                model_product=model_product
-                            )  # Generate lease code
                             cloned_instance.stock_amount = 0
                             cloned_instance.wait_delivery_amount = 0
                             cloned_instance.wait_receipt_amount = 0
                             cloned_instance.production_amount = 0
                             cloned_instance.available_amount = 0
+
+                            cloned_instance.lease_source = original_instance
+                            cloned_instance.lease_code = RecoveryFinishHandler.generate_code(
+                                original_instance=original_instance,
+                                model_product=model_product
+                            )  # Generate lease code
+                            cloned_instance.lease_depreciation_price = price
+                            cloned_instance.serial_data = lease_generate.serial_data
 
                             cloned_instance.save()  # Save as a new record
 
