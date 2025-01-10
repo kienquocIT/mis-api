@@ -40,4 +40,5 @@ urlpatterns = [
     path('form/', include('apps.core.forms.urls')),
     path('chatbot/', include('apps.core.chatbot.urls')),
     path('recurrence/', include('apps.core.recurrence.urls')),
+    path('chat3rd/', include('apps.core.chat3rd.urls')),
 ]
