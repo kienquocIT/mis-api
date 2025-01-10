@@ -30,6 +30,25 @@ class RecoveryFinishHandler:
                             cloned_instance.available_amount = 0
 
                             cloned_instance.save()  # Save as a new record
+
+                            # Push to product warehouse + product info
+                            if cloned_instance:
+                                product_id = cloned_instance.id
+                                warehouse_id = lease_generate.recovery_warehouse.warehouse_id
+                                uom_id = lease_generate.recovery_warehouse.recovery_product.uom_id
+                                # To product warehouse
+                                cls.run_push_to_warehouse_stock(
+                                    instance=instance, product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id
+                                )
+                                # To product info
+                                cloned_instance.save(**{
+                                    'update_stock_info': {
+                                        'quantity_receipt_po': 0,
+                                        'quantity_receipt_actual': 1,
+                                        'system_status': 3,
+                                    },
+                                    'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
+                                })
         return True
 
     @classmethod
@@ -69,19 +88,6 @@ class RecoveryFinishHandler:
 
     # PRODUCT WAREHOUSE
     @classmethod
-    def push_to_warehouse_stock(cls, instance):
-        for lease_generate in instance.recovery_lease_generate_recovery.all():
-            if lease_generate.recovery_warehouse:
-                if lease_generate.recovery_warehouse.recovery_product:
-                    product_id = lease_generate.recovery_warehouse.recovery_product.offset_id
-                    warehouse_id = lease_generate.recovery_warehouse.warehouse_id
-                    uom_id = lease_generate.recovery_warehouse.recovery_product.uom_id
-                    return cls.run_push_to_warehouse_stock(
-                        instance=instance, product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id
-                    )
-        return True
-
-    @classmethod
     def run_push_to_warehouse_stock(cls, instance, product_id, warehouse_id, uom_id):
         model_target = DisperseModel(app_model='saledata.productwarehouse').get_model()
         if model_target and hasattr(model_target, 'objects') and hasattr(model_target, 'push_from_receipt'):
@@ -91,6 +97,8 @@ class RecoveryFinishHandler:
                 product_id=product_id,
                 warehouse_id=warehouse_id,
                 uom_id=uom_id,
+                tax_id=None,
+                unit_price=0,
                 amount=1,
                 lot_data=[],
                 serial_data=[],
