@@ -11,49 +11,53 @@ class RecoveryFinishHandler:
     def clone_product_to_lease_product(cls, instance):
         for lease_generate in instance.recovery_lease_generate_recovery.all():
             if lease_generate.recovery_warehouse:
-                if lease_generate.recovery_warehouse.recovery_product:
-                    if lease_generate.recovery_warehouse.recovery_product.offset:
-                        original_instance = lease_generate.recovery_warehouse.recovery_product.offset
-                        price = lease_generate.recovery_warehouse.recovery_product.product_depreciation_price
-                        model_product = DisperseModel(app_model='saledata.product').get_model()
-                        if model_product and hasattr(model_product, 'objects'):
-                            cloned_instance = deepcopy(original_instance)
-                            # Override data
-                            cloned_instance.id = None  # Clear the primary key
-                            cloned_instance.stock_amount = 0
-                            cloned_instance.wait_delivery_amount = 0
-                            cloned_instance.wait_receipt_amount = 0
-                            cloned_instance.production_amount = 0
-                            cloned_instance.available_amount = 0
+                recovery_warehouse = lease_generate.recovery_warehouse
+                if recovery_warehouse.recovery_product:
+                    recovery_product = recovery_warehouse.recovery_product
 
-                            cloned_instance.lease_source = original_instance
-                            cloned_instance.lease_code = RecoveryFinishHandler.generate_code(
-                                original_instance=original_instance,
-                                model_product=model_product
-                            )  # Generate lease code
-                            cloned_instance.lease_depreciation_price = price
-                            cloned_instance.serial_data = lease_generate.serial_data
+                    original_instance = recovery_product.offset
+                    price = recovery_product.product_depreciation_price
+                    warehouse_id = recovery_warehouse.warehouse_id
+                    uom_id = recovery_product.uom_id
+                    model_product = DisperseModel(app_model='saledata.product').get_model()
+                    if original_instance and model_product and hasattr(model_product, 'objects'):
+                        cloned_instance = deepcopy(original_instance)
+                        # Override data
+                        cloned_instance.id = None  # Clear the primary key
+                        cloned_instance.stock_amount = 0
+                        cloned_instance.wait_delivery_amount = 0
+                        cloned_instance.wait_receipt_amount = 0
+                        cloned_instance.production_amount = 0
+                        cloned_instance.available_amount = 0
 
-                            cloned_instance.save()  # Save as a new record
+                        cloned_instance.lease_source = original_instance
+                        cloned_instance.lease_code = RecoveryFinishHandler.generate_code(
+                            original_instance=original_instance,
+                            model_product=model_product
+                        )  # Generate lease code
+                        cloned_instance.lease_depreciation_price = price
+                        cloned_instance.serial_data = lease_generate.serial_data
 
-                            # Push to product warehouse + product info
-                            if cloned_instance:
-                                product_id = cloned_instance.id
-                                warehouse_id = lease_generate.recovery_warehouse.warehouse_id
-                                uom_id = lease_generate.recovery_warehouse.recovery_product.uom_id
-                                # To product warehouse
-                                cls.run_push_to_warehouse_stock(
-                                    instance=instance, product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id
-                                )
-                                # To product info
-                                cloned_instance.save(**{
-                                    'update_stock_info': {
-                                        'quantity_receipt_po': 0,
-                                        'quantity_receipt_actual': 1,
-                                        'system_status': 3,
-                                    },
-                                    'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
-                                })
+                        cloned_instance.save()  # Save as a new record
+
+                        # Push to product warehouse + product info
+                        if cloned_instance:
+                            # To product warehouse
+                            cls.run_push_to_warehouse_stock(
+                                instance=instance,
+                                product_id=cloned_instance.id,
+                                warehouse_id=warehouse_id,
+                                uom_id=uom_id
+                            )
+                            # To product info
+                            cloned_instance.save(**{
+                                'update_stock_info': {
+                                    'quantity_receipt_po': 0,
+                                    'quantity_receipt_actual': 1,
+                                    'system_status': 3,
+                                },
+                                'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
+                            })
         return True
 
     @classmethod
