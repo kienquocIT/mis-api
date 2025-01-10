@@ -12,13 +12,13 @@ from apps.shared import (
 )
 from apps.shared.permissions.util import PermissionController
 
+from apps.core.hr.tasks import sync_plan_app_employee
+from apps.core.base.models import Application, PlanApplication
+from apps.core.tenant.models import TenantPlan
 from .common import (
     HasPermPlanAppCreateSerializer, set_up_data_plan_app, validate_license_used,
     create_plan_employee_update_tenant_plan, PlanAppUpdateSerializer
 )
-from ..tasks import sync_plan_app_employee
-from ...base.models import Application, PlanApplication
-from ...tenant.models import TenantPlan
 
 
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
@@ -384,6 +384,15 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
                     )
                 )
             RoleHolder.objects.bulk_create(bulk_info)
+
+        # sync to distribution plan and app.
+        call_task_background(
+            sync_plan_app_employee,
+            **{
+                'employee_ids': [str(employee.id)],
+            },
+        )
+
         return employee
 
 
