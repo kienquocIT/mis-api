@@ -273,7 +273,7 @@ class ReportInventoryCostList(BaseListMixin):
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
             for order in range(1, int(sub_period_order) + 1):
-                run_state = ReportInvCommonFunc.sum_up_sub_period(
+                run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
                     self.request.user.tenant_current,
                     self.request.user.company_current,
                     self.request.user.employee_current,
@@ -652,6 +652,7 @@ class PaymentListForBudgetReport(BaseListMixin):
     def get_queryset(self):
         data_filter = {}
         if 'month_list' in self.request.query_params:
+            print(json.loads(self.request.query_params.get('month_list')))
             data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
         if 'date_approved__year' in self.request.query_params:
             data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
