@@ -269,16 +269,16 @@ class Product(DataAbstractModel):
 
     # Begin lease fields
 
-    # lease_source = models.ForeignKey(
-    #     "self",
-    #     null=True,
-    #     on_delete=models.SET_NULL,
-    #     related_name="product_lease_source",
-    #     help_text="source product which this lease product cloned from"
-    # )
-    # lease_code = models.CharField(max_length=100, blank=True)
-    # lease_depreciation_price = models.FloatField(default=0)
-    # serial_data = models.JSONField(default={}, help_text="data json of serial")
+    lease_source = models.ForeignKey(
+        "self",
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="product_lease_source",
+        help_text="source product which this lease product cloned from"
+    )
+    lease_code = models.CharField(max_length=100, blank=True)
+    lease_depreciation_price = models.FloatField(default=0)
+    serial_data = models.JSONField(default=dict, help_text="data json of serial")
 
     # End lease fields
 

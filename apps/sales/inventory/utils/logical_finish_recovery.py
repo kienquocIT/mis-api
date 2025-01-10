@@ -24,6 +24,9 @@ class RecoveryFinishHandler:
                         cloned_instance = deepcopy(original_instance)
                         # Override data
                         cloned_instance.id = None  # Clear the primary key
+                        cloned_instance.code = ""  # Clear the code
+                        cloned_instance.date_created = timezone.now()
+                        cloned_instance.date_modified = timezone.now()
                         cloned_instance.stock_amount = 0
                         cloned_instance.wait_delivery_amount = 0
                         cloned_instance.wait_receipt_amount = 0
@@ -40,8 +43,13 @@ class RecoveryFinishHandler:
 
                         cloned_instance.save()  # Save as a new record
 
-                        # Push to product warehouse + product info
+
                         if cloned_instance:
+                            # Clone m2m
+                            RecoveryFinishHandler.clone_m2m(
+                                original_instance=original_instance, cloned_instance=cloned_instance
+                            )
+                            # Push to product warehouse + product info
                             # To product warehouse
                             cls.run_push_to_warehouse_stock(
                                 instance=instance,
@@ -58,6 +66,19 @@ class RecoveryFinishHandler:
                                 },
                                 'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                             })
+        return True
+
+    @classmethod
+    def clone_m2m(cls, original_instance, cloned_instance):
+        model_m2m_type = DisperseModel(app_model='saledata.productproducttype').get_model()
+        if model_m2m_type and hasattr(model_m2m_type, 'objects'):
+            # model_m2m_type.objects.bulk_create(
+            #     [model_m2m_type(
+            #         product=cloned_instance, product_type=product_type,
+            #     ) for product_type in original_instance.general_product_types_mapped.all()]
+            # )
+            for product_type in original_instance.general_product_types_mapped.all():
+                model_m2m_type.objects.create(product=cloned_instance, product_type=product_type,)
         return True
 
     @classmethod
