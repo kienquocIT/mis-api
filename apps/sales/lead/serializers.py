@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods
+from apps.masterdata.saledata.models import Periods, Contact
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
-    LeadChartInformation, LeadHint, LeadOpportunity
+    LeadChartInformation, LeadHint, LeadOpportunity, LeadCall
 )
 
 __all__ = [
@@ -14,6 +14,8 @@ __all__ = [
     'LeadChartListSerializer',
     'LeadListForOpportunitySerializer'
 ]
+
+from apps.shared import BaseMsg
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -372,3 +374,78 @@ class LeadListForOpportunitySerializer(serializers.ModelSerializer):
             'lead_status': str(dict(LEAD_STATUS).get(obj.lead.lead_status)),
             'date_created': obj.lead.date_created
         }
+
+
+class LeadCallCreateSerializer(serializers.ModelSerializer):
+    lead = serializers.UUIDField(required=True)
+    contact = serializers.UUIDField(required=True)
+
+    class Meta:
+        model = LeadCall
+        fields = (
+            'lead',
+            'title',
+            'call_date',
+            'contact',
+            'detail'
+        )
+
+    @classmethod
+    def validate_title(cls, value):
+        if not value:
+            raise serializers.ValidationError({'title': BaseMsg.REQUIRED})
+        return value
+
+    @classmethod
+    def validate_call_date(cls, value):
+        if not value:
+            raise serializers.ValidationError({'call_date': BaseMsg.REQUIRED})
+        return value
+
+    @classmethod
+    def validate_detail(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BaseMsg.REQUIRED})
+        return value
+
+    @classmethod
+    def validate_lead(cls, value):
+        try:
+            return Lead.objects.get(pk=value)
+        except Lead.DoesNotExist:
+            raise serializers.ValidationError({'lead': 'Lead does not exist.'})
+
+    @classmethod
+    def validate_contact(cls, value):
+        try:
+            return Contact.objects.get(pk=value)
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'contact': 'Contact does not exist.'})
+
+    def create(self, validated_data):
+        instance = LeadCall.objects.create(**validated_data)
+        return instance
+
+
+class LeadCallDetailSerializer(serializers.ModelSerializer):
+    lead = serializers.SerializerMethodField()
+    contact = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeadCall
+        fields = (
+            'id',
+            'title',
+            'call_date',
+            'lead',
+            'contact',
+            'detail'
+        )
+
+    @classmethod
+    def get_lead(cls, obj):
+        return {}
+
+    @classmethod
+    def get_contact(cls, obj):
+        return {}

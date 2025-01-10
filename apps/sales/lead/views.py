@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity
+from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity, LeadCall
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
-    LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer
+    LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer, LeadCallCreateSerializer,
+    LeadCallDetailSerializer
 )
 
 
@@ -13,7 +14,8 @@ __all__ = [
     'LeadDetail',
     'LeadStageList',
     'LeadChartList',
-    'LeadListForOpportunity'
+    'LeadListForOpportunity',
+    'LeadCallList'
 ]
 
 
@@ -167,3 +169,24 @@ class LeadListForOpportunity(BaseListMixin):
             self.request.user.tenant_current_id, self.request.user.company_current_id
         )
         return self.list(request, *args, **kwargs)
+
+
+class LeadCallList(BaseListMixin, BaseCreateMixin):
+    queryset = LeadCall.objects
+    serializer_create = LeadCallCreateSerializer
+    serializer_detail = LeadCallDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Call",
+        operation_description="Create new Lead Call",
+        request_body=LeadCallCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+

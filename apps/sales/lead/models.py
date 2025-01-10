@@ -2,8 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
-from apps.shared import SimpleAbstractModel, DataAbstractModel
-
+from apps.shared import SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel
 
 TOTAL_EMPLOYEES_SELECTION = [
     (1, _('< 20 people')),
@@ -253,14 +252,12 @@ class LeadOpportunity(DataAbstractModel):
         permissions = ()
 
 
-class LeadCall(SimpleAbstractModel):
+class LeadCall(MasterDataAbstractModel):
     lead = models.ForeignKey(
         'lead.Lead',
         on_delete=models.CASCADE,
         related_name='lead_call_lead',
     )
-
-    subject = models.CharField(max_length=250)
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
@@ -271,24 +268,10 @@ class LeadCall(SimpleAbstractModel):
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
 
-    # date and employee
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
-    date_modified = models.DateTimeField(
-        auto_now=True,
-        help_text='Date modified this record in last',
-    )
-    employee_created = models.ForeignKey(
+    employee_inherit = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='Employee created this record',
-        related_name='lead_call_employee_creator',
-    )
-    employee_modified = models.ForeignKey(
-        'hr.Employee', on_delete=models.SET_NULL, null=True,
-        help_text='Employee modified this record in last',
-        related_name='lead_call_employee_modifier'
+        help_text='',
+        related_name='lead_call_employee_inherit',
     )
 
     class Meta:
@@ -299,8 +282,7 @@ class LeadCall(SimpleAbstractModel):
         permissions = ()
 
 
-class LeadMeeting(SimpleAbstractModel):
-    subject = models.CharField(max_length=250)
+class LeadMeeting(MasterDataAbstractModel):
     lead = models.ForeignKey(
         'lead.Lead',
         on_delete=models.CASCADE,
@@ -316,24 +298,10 @@ class LeadMeeting(SimpleAbstractModel):
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
 
-    # date and employee
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
-    date_modified = models.DateTimeField(
-        auto_now=True,
-        help_text='Date modified this record in last',
-    )
-    employee_created = models.ForeignKey(
+    employee_inherit = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='Employee created this record',
-        related_name='lead_meeting_employee_creator',
-    )
-    employee_modified = models.ForeignKey(
-        'hr.Employee', on_delete=models.SET_NULL, null=True,
-        help_text='Employee modified this record in last',
-        related_name='lead_meeting_employee_modifier'
+        help_text='',
+        related_name='lead_meeting_employee_inherit',
     )
 
     class Meta:
@@ -344,8 +312,7 @@ class LeadMeeting(SimpleAbstractModel):
         permissions = ()
 
 
-class LeadEmail(SimpleAbstractModel):
-    subject = models.CharField(max_length=250)
+class LeadEmail(MasterDataAbstractModel):
     lead = models.ForeignKey(
         'lead.Lead',
         on_delete=models.CASCADE,
@@ -355,24 +322,10 @@ class LeadEmail(SimpleAbstractModel):
     email_cc_list = models.JSONField(default=list)
     content = models.CharField(max_length=1000, null=True)
 
-    # date and employee
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
-    date_modified = models.DateTimeField(
-        auto_now=True,
-        help_text='Date modified this record in last',
-    )
-    employee_created = models.ForeignKey(
+    employee_inherit = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='Employee created this record',
-        related_name='lead_email_employee_creator',
-    )
-    employee_modified = models.ForeignKey(
-        'hr.Employee', on_delete=models.SET_NULL, null=True,
-        help_text='Employee modified this record in last',
-        related_name='lead_email_employee_modifier'
+        help_text='',
+        related_name='lead_email_employee_inherit',
     )
 
     class Meta:
