@@ -30,7 +30,9 @@ class ReportInvLog:
 
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
-                        run_state = ReportInvCommonFunc.check_and_push_to_this_sub(tenant, company, employee, period_obj, order)
+                        run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
+                            tenant, company, employee, period_obj, order
+                        )
                         if run_state is False:
                             break
 
