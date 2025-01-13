@@ -420,7 +420,8 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-        ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
+        if not validated_data.get('just_log'):
+            ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
         OpportunityActivityLogs.objects.create(
             tenant=email_obj.tenant,
             company=email_obj.company,
