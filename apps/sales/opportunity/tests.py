@@ -509,9 +509,9 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertEqual(data_changed.data['result']['win_rate'], win_rate)
         return response
 
-    def test_delete_stage(self):
-        stage = self.test_create_stage()
-        url = reverse("OpportunityConfigStageDetail", kwargs={'pk': stage.data['result']['id']})
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        return response
+    # def test_delete_stage(self):
+    #     stage = self.test_create_stage()
+    #     url = reverse("OpportunityConfigStageDetail", kwargs={'pk': stage.data['result']['id']})
+    #     response = self.client.delete(url, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    #     return response

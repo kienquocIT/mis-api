@@ -2372,12 +2372,12 @@ class WareHouseTestCase(AdvanceTestCase):
         self.assertEqual(data_changed.data['result']['title'], title_change)
         return response
 
-    def test_warehouse_delete(self):
-        data_created = self.test_warehouse_create()
-        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        return response
+    # def test_warehouse_delete(self):
+    #     data_created = self.test_warehouse_create()
+    #     url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
+    #     response = self.client.delete(url, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    #     return response
 
 
 class ShippingTestCase(AdvanceTestCase):

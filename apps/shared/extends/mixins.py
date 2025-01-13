@@ -700,7 +700,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     @classmethod
     def check_obj_change_or_delete(cls, instance):
         if isinstance(instance, Model):
-            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            # if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            if getattr(instance, 'workflow_runtime_id', None):
                 return False
             return True
         return False
@@ -1191,11 +1192,13 @@ class BaseDestroyMixin(BaseMixin):
         Returns:
             bool: True if there are related records, False otherwise.
         """
-        return any(
-            list(getattr(instance, field.get_accessor_name()).all())
-            for field in instance._meta.get_fields()
-            if field.is_relation and field.auto_created and not field.concrete
-        )
+        for field in instance._meta.get_fields():
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_manager = getattr(instance, field.get_accessor_name(), None)
+                if related_manager:
+                    if related_manager.all().exclude(is_delete=True).exists():
+                        return True
+        return False
 
     @staticmethod
     def list_related_records(instance, verbose=False):
