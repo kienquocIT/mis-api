@@ -701,7 +701,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def check_obj_change_or_delete(cls, instance):
         if isinstance(instance, Model):
             # if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
-            if getattr(instance, 'workflow_runtime_id', None):
+            check = [2, 3, 4]
+            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) in check:
                 return False
             return True
         return False
@@ -1196,8 +1197,10 @@ class BaseDestroyMixin(BaseMixin):
             if field.is_relation and field.auto_created and not field.concrete:
                 related_manager = getattr(instance, field.get_accessor_name(), None)
                 if related_manager:
-                    if related_manager.all().exclude(is_delete=True).exists():
-                        return True
+                    model_class = related_manager.model  # Get the related model class
+                    if hasattr(model_class, 'is_delete'):  # Check if the related model has 'is_delete'
+                        if related_manager.all().exclude(is_delete=True).exists():
+                            return True
         return False
 
     @staticmethod
