@@ -19,6 +19,9 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+import firebase_admin
+from firebase_admin import credentials
+
 from .load_env import load_env
 
 # override recursion limit
@@ -85,6 +88,7 @@ INSTALLED_APPS = \
         'apps.core.chatbot',  # chatbot AI
         'apps.core.recurrence',  # recurrence for apps
         'apps.core.chat3rd',
+        'apps.core.firebase',
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -762,6 +766,14 @@ if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
 # Display config about DB, Cache, CELERY,...
 def display_wraptext(text, length=80):
     return "\n |  ".join(textwrap.wrap(text, length))
+
+
+# Firebase
+FIREBASE_FILE_CONFIG = os.path.join(BASE_DIR, 'serviceAccountKey.json')
+FIREBASE_ENABLE = os.path.isfile(FIREBASE_FILE_CONFIG)
+if FIREBASE_ENABLE is True:
+    cred = credentials.Certificate(FIREBASE_FILE_CONFIG)
+    firebase_admin.initialize_app(cred)
 
 
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
