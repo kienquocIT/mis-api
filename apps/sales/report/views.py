@@ -643,20 +643,20 @@ class BudgetReportGroupList(BaseListMixin):
 
 class PaymentListForBudgetReport(BaseListMixin):
     queryset = Payment.objects
-    filterset_fields = {
-        'employee_inherit__group_id': ['exact'],
-    }
     serializer_list = PaymentListSerializerForBudgetPlan
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        data_filter = {}
-        if 'month_list' in self.request.query_params:
-            print(json.loads(self.request.query_params.get('month_list')))
-            data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
-        if 'date_approved__year' in self.request.query_params:
-            data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
-        if len(data_filter) == 1:
+        data_filter = {'system_status': 3}
+        if 'period_id' in self.request.query_params:
+            period_obj = Periods.objects.filter(id=self.request.query_params.get('period_id')).first()
+            if period_obj:
+                data_filter['date_approved__year__in'] = [period_obj.start_date.year, period_obj.end_date.year]
+                if 'month_list' in self.request.query_params:
+                    data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
+                if 'group_id' in self.request.query_params:
+                    data_filter['employee_inherit__group_id'] = self.request.query_params.get('group_id')
+        if len(data_filter) > 0:
             return super().get_queryset().filter(**data_filter).prefetch_related('payment').select_related()
         return super().get_queryset().none()
 
