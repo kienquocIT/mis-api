@@ -152,6 +152,10 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
                 ProcessRuntimeControl.check_permit_process(
                     process_obj=obj_process, employee_id=request.user.employee_current_id
                 )
+                # if func bellow pass, continue check app available in global app
+                ProcessRuntimeControl.check_app_available_in_process(
+                    process_obj=obj_process, app_id=app_id
+                )
                 result = ProcessRuntimeDataMatchFromProcessSerializer(
                     instance=obj_process, context={'app_id': app_id}
                 ).data
