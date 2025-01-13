@@ -77,6 +77,7 @@ class OpportunityEmail(DataAbstractModel):
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
+    just_log = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityEmail'
@@ -123,6 +124,7 @@ class OpportunityMeeting(DataAbstractModel):
     input_result = models.CharField(max_length=250, null=True)
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
+    email_notify = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityMeeting'
