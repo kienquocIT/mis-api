@@ -613,9 +613,6 @@ class APCommonFunction:
         if 'employee_inherit_id' in validate_data:
             if validate_data.get('employee_inherit_id'):
                 try:
-                    emp = Employee.objects.get(
-                        id=validate_data.get('employee_inherit_id')
-                    )
                     validate_data['employee_inherit_id'] = str(Employee.objects.get(
                         id=validate_data.get('employee_inherit_id')
                     ).id)
