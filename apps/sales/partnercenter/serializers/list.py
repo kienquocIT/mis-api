@@ -14,9 +14,8 @@ from apps.masterdata.saledata.models import Contact, Account, Industry
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityCallLog, \
     OpportunityEmail, OpportunityConfigStage, OpportunityStage, Opportunity
 from apps.sales.partnercenter.models import List, DataObject
-from apps.sales.partnercenter.tasks import update_num_of_records
 from apps.sales.partnercenter.translation import ListMsg
-from apps.shared import BaseMsg, call_task_background
+from apps.shared import BaseMsg
 
 logger = logging.getLogger(__name__)
 
