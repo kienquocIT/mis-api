@@ -367,6 +367,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'content',
             'opportunity_id',
             'employee_inherit_id',
+            'just_log',
             'process',
             'process_stage_app',
         )
@@ -419,7 +420,8 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-        ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
+        if not validated_data.get('just_log'):
+            ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
         OpportunityActivityLogs.objects.create(
             tenant=email_obj.tenant,
             company=email_obj.company,
@@ -495,6 +497,11 @@ class OpportunityEmailUpdateSerializer(serializers.ModelSerializer):
 
 
 # Activity: Meeting
+class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
+    id = serializers.UUIDField()
+    fullname = serializers.CharField()
+
+
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -598,11 +605,6 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
         return {}
 
 
-class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
-    id = serializers.UUIDField()
-    fullname = serializers.CharField()
-
-
 class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
     opportunity_id = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
@@ -644,6 +646,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             'room_location',
             'input_result',
             'repeat',
+            'email_notify',
             'process',
             'process_stage_app',
         )
