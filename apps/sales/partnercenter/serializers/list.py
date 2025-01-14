@@ -1,9 +1,10 @@
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 
+from django.db.models.functions import Greatest, Coalesce
 from django.utils import timezone
 from django.apps import apps
-from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField
+from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField, Subquery, Value
 
 from rest_framework import serializers
 
@@ -11,7 +12,7 @@ from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Account, Industry
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityCallLog, \
-    OpportunityEmail, OpportunityConfigStage, OpportunityStage
+    OpportunityEmail, OpportunityConfigStage, OpportunityStage, Opportunity
 from apps.sales.partnercenter.models import List, DataObject
 from apps.sales.partnercenter.tasks import update_num_of_records
 from apps.sales.partnercenter.translation import ListMsg
@@ -113,7 +114,7 @@ class ListCreateSerializer(serializers.ModelSerializer):
 
                 if left_type == 5:
                     if operator not in ('exactnull', 'notexactnull'):
-                        right_id = right['id']
+                        right_id = right.get('id', None)
                         content_type = getattr(left_obj, 'content_type', None)
                         if not content_type:
                             logging.error('Application Property Object missing content_type')
@@ -208,7 +209,7 @@ class ListUpdateSerializer(serializers.ModelSerializer):
                 if left_type == 5:
                     if operator not in ('exactnull', 'notexactnull'):
 
-                        right_id = right['id']
+                        right_id = right.get('id')
                         content_type = getattr(left_obj, 'content_type', None)
                         if not content_type:
                             logging.error('Application Property Object missing content_type')
@@ -373,58 +374,69 @@ class ListResultListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def filter_last_contacted_open_opp(cls, obj, operator, right): # pylint: disable=W0613
+        # Fetch latest meeting, call, and email logs using Subquery
+        latest_meeting_date = Subquery(
+            OpportunityMeeting.objects.filter(
+                Q(opportunity=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
+            )
+            .order_by('-meeting_date')
+            .values('meeting_date')[:1]
+        )
+
+        latest_call_date = Subquery(
+            OpportunityCallLog.objects.filter(
+                Q(opportunity=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
+            )
+            .order_by('-call_date')
+            .values('call_date')[:1]
+        )
+
+        latest_email_date = Subquery(
+            OpportunityEmail.objects.filter(
+                Q(opportunity=OuterRef('id')) & ~Q(opportunity__win_rate=100) & ~Q(opportunity__win_rate=0)
+            )
+            .order_by('-date_created')
+            .values('date_created')[:1]
+        )
+
+        opportunities_with_logs = Opportunity.objects.annotate(
+            latest_meeting_date=latest_meeting_date,
+            latest_call_date=latest_call_date,
+            latest_email_date=latest_email_date,
+            latest_log_date=Greatest(
+                Coalesce(F('latest_meeting_date'), Value(datetime(1970, 1, 1))),
+                Coalesce(F('latest_call_date'), Value(datetime(1970, 1, 1))),
+                Coalesce(F('latest_email_date'), Value(datetime(1970, 1, 1))),
+            ),
+            comparing_days=ExpressionWrapper(
+                (timezone.now() - F('latest_log_date')) / timedelta(days=1),
+                output_field=IntegerField()
+            )
+        ).filter(
+            Q(latest_meeting_date__isnull=False) |
+            Q(latest_call_date__isnull=False) |
+            Q(latest_email_date__isnull=False)
+        )
+
         match operator:
+            case 'gte':
+                filtered_opportunities = opportunities_with_logs.filter(comparing_days__gte=right)
+            case 'lte':
+                filtered_opportunities = opportunities_with_logs.filter(comparing_days__lte=right)
+            case 'gt':
+                filtered_opportunities = opportunities_with_logs.filter(comparing_days__gt=right)
+            case 'lt':
+                filtered_opportunities = opportunities_with_logs.filter(comparing_days__lt=right)
+            case 'exact':
+                filtered_opportunities = opportunities_with_logs.filter(comparing_days__exact=right)
             case 'notexact':
-                filter_condition = ~Q(**{'comparing_days': right})
+                filtered_opportunities = opportunities_with_logs.exclude(comparing_days__exact=right)
             case _:
-                filter_condition = Q(**{f"comparing_days__{operator}": right})
-        account_list = []
-        email_list = OpportunityEmail.objects.annotate(
-            comparing_days=ExpressionWrapper(
-                (timezone.now() - F('date_created')) / timedelta(days=1),
-                output_field=IntegerField()
-            )
-        ).filter_current(
-            fill__company =True,
-            opportunity__win_rate__gt= 0,
-            opportunity__win_rate__lt=100,
-        ).filter(
-            filter_condition
-        )
-        for email in email_list:
-            account_list.append(email.opportunity.customer_id)
+                raise ValueError(f"Unsupported operator for last_contacted_open_opp: {operator}")
 
-        call_list = OpportunityCallLog.objects.annotate(
-            comparing_days=ExpressionWrapper(
-                (timezone.now() - F('call_date')) / timedelta(days=1),
-                output_field=IntegerField()
-            )
-        ).filter_current(
-            fill__company =True,
-            opportunity__win_rate__gt= 0,
-            opportunity__win_rate__lt=100
-        ).filter(
-            filter_condition
-        )
-        for call in call_list:
-            account_list.append(call.opportunity.customer_id)
+        account_ids = filtered_opportunities.values_list('customer_id', flat=True)
 
-        meeting_list = OpportunityMeeting.objects.annotate(
-            comparing_days=ExpressionWrapper(
-                (timezone.now() - F('meeting_date')) / timedelta(days=1),
-                output_field=IntegerField()
-            )
-        ).filter_current(
-            fill__company =True,
-            opportunity__win_rate__gt= 0,
-            opportunity__win_rate__lt=100,
-        ).filter(
-            filter_condition
-        )
-        for meeting in meeting_list:
-            account_list.append(meeting.opportunity.customer_id)
-
-        return set(account_list)
+        return set(account_ids)
 
     @classmethod
     def filter_curr_opp_stage(cls, obj, operator, right):
@@ -481,7 +493,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
 
                 if int(condition.get('type')) == 5 and (operator not in ('exactnull', 'notexactnull')):
                     right_obj = condition.get('right')
-                    right = str(right_obj['id']).replace('-', '')
+                    right = str(right_obj.get('id')).replace('-', '')
                 else:
                     right = condition.get('right')
 
@@ -518,7 +530,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     owner_obj = None
                     if owner_id:
                         owner_obj = Contact.objects.filter(id=str(owner_id).replace('-','')).first()
-                    item_obj = Account.objects.filter(id=str(item['id']).replace('-','')).first()
+                    item_obj = Account.objects.filter(id=str(item.get('id')).replace('-','')).first()
                     revenue_information = Account.get_revenue_information(item_obj)
                     filter_data_list.append({
                         'id': item.get('id'),
