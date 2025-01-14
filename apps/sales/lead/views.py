@@ -1,7 +1,8 @@
 from django.db.models import OuterRef, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.opportunity.models import OpportunityCallLog
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityActivityLogs
+from apps.sales.opportunity.serializers import OpportunityActivityLogsListSerializer
 from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity, LeadCall, LeadMeeting, \
@@ -258,21 +259,21 @@ class LeadMeetingList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class LeadActivityList(BaseRetrieveMixin):
-    queryset = Lead.objects
-    serializer_detail = LeadActivityListSerializer
-    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+class LeadActivityList(BaseListMixin):
+    queryset = OpportunityActivityLogs.objects
+    serializer_detail = OpportunityActivityLogsListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('lead_call_lead', 'lead_meeting_lead', 'lead_email_lead')
+        return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Lead Activity List')
     @mask_view(
         login_require=True, auth_require=True,
         label_code='lead', model_code='lead', perm_code='view',
     )
-    def get(self, request, *args, pk, **kwargs):
-        return self.retrieve(request, *args, pk, **kwargs)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 
