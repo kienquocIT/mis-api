@@ -1,8 +1,11 @@
+from django.db import transaction
 from rest_framework import serializers
+
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Periods, Contact
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
-    LeadChartInformation, LeadHint, LeadOpportunity, LeadCall
+    LeadChartInformation, LeadHint, LeadOpportunity, LeadCall, LeadEmail, LeadMeeting
 )
 
 __all__ = [
@@ -12,10 +15,19 @@ __all__ = [
     'LeadUpdateSerializer',
     'LeadStageListSerializer',
     'LeadChartListSerializer',
-    'LeadListForOpportunitySerializer'
+    'LeadListForOpportunitySerializer',
+    'LeadCallCreateSerializer',
+    'LeadCallDetailSerializer',
+    'LeadActivityListSerializer',
+    'LeadEmailCreateSerializer',
+    'LeadEmailDetailSerializer',
+    'LeadMeetingCreateSerializer',
+    'LeadMeetingDetailSerializer'
 ]
 
-from apps.shared import BaseMsg
+from apps.sales.opportunity.serializers import ActivitiesCommonFunc
+
+from apps.shared import BaseMsg, SaleMsg
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -33,7 +45,8 @@ class LeadListSerializer(serializers.ModelSerializer):
             'source',
             'lead_status',
             'current_lead_stage',
-            'date_created'
+            'date_created',
+            'email'
         )
 
     @classmethod
@@ -173,6 +186,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
                 'id': config.contact_mapped_id,
                 'code': config.contact_mapped.code,
                 'fullname': config.contact_mapped.fullname,
+                'email': config.contact_mapped.email,
             } if config.contact_mapped else {},
             'opp_mapped': {
                 'id': config.opp_mapped_id,
@@ -378,7 +392,7 @@ class LeadListForOpportunitySerializer(serializers.ModelSerializer):
 
 class LeadCallCreateSerializer(serializers.ModelSerializer):
     lead = serializers.UUIDField(required=True)
-    contact = serializers.UUIDField(required=True)
+    contact = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = LeadCall
@@ -415,12 +429,19 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
         except Lead.DoesNotExist:
             raise serializers.ValidationError({'lead': 'Lead does not exist.'})
 
-    @classmethod
-    def validate_contact(cls, value):
-        try:
-            return Contact.objects.get(pk=value)
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'contact': 'Contact does not exist.'})
+    def validate(self, validated_data):
+        lead = validated_data.get('lead')
+        contact_id = validated_data.get('contact', None)
+        if lead.contact_name and contact_id is None:
+            raise serializers.ValidationError({'contact': BaseMsg.REQUIRED})
+
+        if contact_id:
+            try:
+                validated_data['contact'] = Contact.objects.get(pk=contact_id)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({'contact': 'Contact does not exist.'})
+
+        return validated_data
 
     def create(self, validated_data):
         instance = LeadCall.objects.create(**validated_data)
@@ -449,3 +470,202 @@ class LeadCallDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_contact(cls, obj):
         return {}
+
+
+class LeadCallUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadCall
+        fields = ('is_cancelled',)
+
+    def validate(self, validate_data):
+        if self.instance.is_cancelled is True:
+            raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+
+class LeadEmailCreateSerializer(serializers.ModelSerializer):
+    lead = serializers.UUIDField(required=True)
+
+    class Meta:
+        model = LeadEmail
+        fields = (
+            'subject',
+            'lead',
+            'email_to_list',
+            'email_cc_list',
+            'content'
+        )
+
+    @classmethod
+    def validate_subject(cls, value):
+        if not value:
+            raise serializers.ValidationError({'subject': BaseMsg.REQUIRED})
+        return value
+
+    @classmethod
+    def validate_lead(cls, value):
+        try:
+            return Lead.objects.get(pk=value)
+        except Lead.DoesNotExist:
+            raise serializers.ValidationError({'lead': 'Lead does not exist.'})
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            instance = LeadEmail(**validated_data)
+
+            email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+
+            if email_sent:
+                instance.save()
+                return instance
+            else:
+                raise Exception("Failed to send email. Model instance will not be saved.")
+
+
+class LeadEmailDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LeadEmail
+        fields = (
+            'id',
+            'title',
+        )
+
+
+class LeadMeetingCreateSerializer(serializers.ModelSerializer):
+    lead = serializers.UUIDField(required=True)
+    class Meta:
+        model = LeadMeeting
+        fields = (
+            'lead',
+            'title',
+            'employee_member_list',
+            'customer_member_list',
+            'meeting_date',
+            'meeting_from_time',
+            'meeting_to_time',
+            'meeting_address',
+            'detail',
+            'room_location'
+        )
+
+    @classmethod
+    def validate_lead(cls, value):
+        try:
+            return Lead.objects.get(pk=value)
+        except Lead.DoesNotExist:
+            raise serializers.ValidationError({'lead': 'Lead does not exist.'})
+
+
+    def create(self, validated_data):
+        instance = LeadMeeting.objects.create(**validated_data)
+        return instance
+
+
+class LeadMeetingDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadMeeting
+        fields = (
+            'id',
+        )
+
+
+class LeadActivityListSerializer(serializers.ModelSerializer):
+    activity_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lead
+        fields = (
+            'id',
+            'activity_list'
+        )
+
+    @classmethod
+    def get_activity_list(cls, obj):
+        # Combine data from the three related tables
+        activities = []
+        lead_title = obj.title
+        # Add LeadCall activities
+        for call in obj.lead_call_lead.all():
+            employee_created = Employee.objects.filter(id=call.employee_created_id).first()
+            contact = Contact.objects.filter(id=call.contact_id).first()
+            activities.append({
+                'lead_name': lead_title,
+                'type': 'call',
+                'id': call.id,
+                'title': call.title,
+                'date_created': call.date_created,
+                'employee_created': {
+                    'id': employee_created.id,
+                    'name': employee_created.get_full_name(),
+                },
+                'date': call.call_date,
+                'detail': call.detail,
+                'contact_name': contact.fullname
+            })
+
+        # Add LeadMeeting activities
+        for meeting in obj.lead_meeting_lead.all():
+            employee_created = Employee.objects.filter(id=meeting.employee_created_id).first()
+            employee_member_list = Employee.objects.filter(id__in=meeting.employee_member_list)
+            customer_member_list = Contact.objects.filter(id__in=meeting.customer_member_list)
+            activities.append({
+                'lead_name': lead_title,
+                'type': 'meeting',
+                'id': meeting.id,
+                'title': meeting.title,
+                'date_created': meeting.date_created,
+                'employee_created': {
+                    'id': employee_created.id,
+                    'name': employee_created.get_full_name(),
+                },
+                'date': meeting.meeting_date,
+                'detail': meeting.detail,
+                'meeting_from_time': meeting.meeting_from_time,
+                'meeting_to_time': meeting.meeting_to_time,
+                'meeting_address': meeting.meeting_address,
+                'room_location': meeting.room_location,
+                'employee_member_list': [{
+                    'id': employee.id,
+                    'fullname': employee.get_full_name(),
+                    'group': {
+                        'id': employee.group_id,
+                        'title': employee.group.title,
+                        'code': employee.group.code
+                    } if employee.group else {}
+                }  for employee in employee_member_list],
+                'customer_member_list': [{
+                    'id': contact.id,
+                    'fullname': contact.fullname,
+                } for contact in customer_member_list]
+            })
+
+        # Add LeadEmail activities
+        for email in obj.lead_email_lead.all():
+            employee_created = Employee.objects.filter(id=email.employee_created_id).first()
+            activities.append({
+                'lead_name': lead_title,
+                'type': 'email',
+                'id': email.id,
+                'subject': email.subject,
+                'date_created': email.date_created,
+                'employee_created': {
+                    'id': employee_created.id,
+                    'name': employee_created.get_full_name(),
+                },
+                'date': '',
+                'detail': email.content,
+                'email_cc_list': email.email_cc_list,
+                'email_to_list': email.email_to_list,
+            })
+
+        # Sort activities by date_created
+        sorted_activities = sorted(activities, key=lambda x: x['date_created'], reverse=True)
+
+        return sorted_activities

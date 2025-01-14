@@ -1,11 +1,14 @@
+from django.db.models import OuterRef, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
-from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity, LeadCall
+from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity, LeadCall, LeadMeeting, \
+    LeadEmail
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
     LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer, LeadCallCreateSerializer,
-    LeadCallDetailSerializer
+    LeadCallDetailSerializer, LeadActivityListSerializer, LeadEmailCreateSerializer, LeadEmailDetailSerializer,
+    LeadMeetingCreateSerializer, LeadMeetingDetailSerializer, LeadCallUpdateSerializer
 )
 
 
@@ -189,4 +192,86 @@ class LeadCallList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class LeadCallDetail(BaseUpdateMixin):
+    queryset = LeadCall.objects
+    serializer_update = LeadCallUpdateSerializer
+    serializer_detail = LeadCallDetailSerializer
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Update lead call",
+        operation_description="Update lead call",
+        request_body=LeadCallUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code="edit"
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+
+class LeadEmailList(BaseListMixin, BaseCreateMixin):
+    queryset = LeadEmail.objects
+    serializer_create = LeadEmailCreateSerializer
+    serializer_detail = LeadEmailDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Email",
+        operation_description="Create new Lead Email",
+        request_body=LeadEmailCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_current': request.user.employee_current,
+        }
+        return self.create(request, *args, **kwargs)
+
+
+class LeadMeetingList(BaseListMixin, BaseCreateMixin):
+    queryset = LeadMeeting.objects
+    serializer_create = LeadMeetingCreateSerializer
+    serializer_detail = LeadMeetingDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Meeting",
+        operation_description="Create new Lead Meeting",
+        request_body=LeadMeetingCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class LeadActivityList(BaseRetrieveMixin):
+    queryset = Lead.objects
+    serializer_detail = LeadActivityListSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('lead_call_lead', 'lead_meeting_lead', 'lead_email_lead')
+
+    @swagger_auto_schema(operation_summary='Lead Activity List')
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+
+
 

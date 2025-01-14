@@ -262,6 +262,7 @@ class LeadCall(MasterDataAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         related_name="lead_call_contact",
+        null=True
     )
     call_date = models.DateTimeField()
     detail = models.TextField(null=True)
@@ -291,10 +292,11 @@ class LeadMeeting(MasterDataAbstractModel):
     employee_member_list = models.JSONField(default=list)
     customer_member_list = models.JSONField(default=list)
     meeting_date = models.DateTimeField()
-    meeting_from_time = models.TimeField()
-    meeting_to_time = models.TimeField()
+    meeting_from_time = models.TimeField(null=True)
+    meeting_to_time = models.TimeField(null=True)
     meeting_address = models.CharField(max_length=250)
     detail = models.TextField(null=True)
+    room_location = models.TextField(null=True)
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
 
@@ -313,6 +315,7 @@ class LeadMeeting(MasterDataAbstractModel):
 
 
 class LeadEmail(MasterDataAbstractModel):
+    subject = models.TextField(default='')
     lead = models.ForeignKey(
         'lead.Lead',
         on_delete=models.CASCADE,
@@ -320,8 +323,7 @@ class LeadEmail(MasterDataAbstractModel):
     )
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
-    content = models.CharField(max_length=1000, null=True)
-
+    content = models.TextField( null=True)
     employee_inherit = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='',

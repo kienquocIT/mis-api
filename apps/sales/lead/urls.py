@@ -1,6 +1,6 @@
 from django.urls import path
 from apps.sales.lead.views import LeadList, LeadDetail, LeadStageList, LeadChartList, LeadListForOpportunity, \
-    LeadCallList
+    LeadCallList, LeadActivityList, LeadEmailList, LeadMeetingList, LeadCallDetail
 
 urlpatterns = [
     path('list', LeadList.as_view(), name='LeadList'),
@@ -10,4 +10,8 @@ urlpatterns = [
     path('list-lead-stage', LeadStageList.as_view(), name='LeadStageList'),
 
     path('call/list', LeadCallList.as_view(), name='LeadCallList'),
+    path('call/detail/<str:pk>', LeadCallDetail.as_view(), name='LeadCallDetail'),
+    path('email/list', LeadEmailList.as_view(), name='LeadEmailList'),
+    path('meeting/list', LeadMeetingList.as_view(), name='LeadMeetingList'),
+    path('activity/list/<str:pk>', LeadActivityList.as_view(), name='LeadActivityList'),
 ]
