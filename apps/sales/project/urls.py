@@ -5,7 +5,7 @@ from .views import (
     ProjectGroupDetail, ProjectWorkList, ProjectWorkDetail, ProjectUpdateOrder, ProjectTaskList, ProjectGroupListDD,
     ProjectTaskDetail, ProjectWorkExpenseList, ProjectListBaseline, ProjectBaselineDetail, ProjectBaselineUpdate,
     ProjectConfigDetail, ProjectExpenseHomeList, ProjectNewsList, ProjectNewsCommentList, ProjectNewsCommentDetail,
-    ProjectNewsCommentDetailFlows, ProjectAllTaskList
+    ProjectNewsCommentDetailFlows, ProjectAllTaskList, ProjectCloseOrOpen
 )
 
 
@@ -15,6 +15,7 @@ urlpatterns = [
     path('detail/<str:pk>', ProjectDetail.as_view(), name='ProjectDetail'),
     path('edit/<str:pk>', ProjectUpdate.as_view(), name='ProjectUpdate'),
     path('update-order/<str:pk>', ProjectUpdateOrder.as_view(), name='ProjectUpdateOrder'),
+    path('close-open-project/<str:pk>', ProjectCloseOrOpen.as_view(), name='ProjectCloseOrOpen'),
     # member
     path('<str:pk_pj>/member/add', ProjectMemberAdd.as_view(), name='ProjectMemberAdd'),
     path('<str:pk_pj>/member/detail/<str:pk_member>', ProjectMemberDetail.as_view(), name='ProjectMemberDetail'),
