@@ -570,13 +570,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
                         'email': item.get('email'),
                     })
                     size += 1
-        call_task_background(
-            update_num_of_records,
-            **{
-                "list_obj": obj,
-                "size": size,
-            }
-        )
+        obj.num_of_records = size
+        obj.save()
         return filter_data_list
 
     @classmethod
