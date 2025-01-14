@@ -1,5 +1,7 @@
 from django.db.models import OuterRef, Prefetch
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.sales.opportunity.models import OpportunityCallLog
 from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity, LeadCall, LeadMeeting, \
@@ -175,7 +177,7 @@ class LeadListForOpportunity(BaseListMixin):
 
 
 class LeadCallList(BaseListMixin, BaseCreateMixin):
-    queryset = LeadCall.objects
+    queryset = OpportunityCallLog.objects
     serializer_create = LeadCallCreateSerializer
     serializer_detail = LeadCallDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

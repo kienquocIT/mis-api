@@ -25,6 +25,9 @@ __all__ = [
     'LeadMeetingDetailSerializer'
 ]
 
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityActivityLogs
+
 from apps.sales.opportunity.serializers import ActivitiesCommonFunc
 
 from apps.shared import BaseMsg, SaleMsg
@@ -395,19 +398,20 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
     contact = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
-        model = LeadCall
+        model = OpportunityCallLog
         fields = (
             'lead',
-            'title',
+            'subject',
             'call_date',
             'contact',
-            'detail'
+            'input_result',
+            'employee_inherit_id'
         )
 
     @classmethod
-    def validate_title(cls, value):
+    def validate_subject(cls, value):
         if not value:
-            raise serializers.ValidationError({'title': BaseMsg.REQUIRED})
+            raise serializers.ValidationError({'subject': BaseMsg.REQUIRED})
         return value
 
     @classmethod
@@ -417,9 +421,9 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
         return value
 
     @classmethod
-    def validate_detail(cls, value):
+    def validate_input_result(cls, value):
         if not value:
-            raise serializers.ValidationError({'detail': BaseMsg.REQUIRED})
+            raise serializers.ValidationError({'input_result': BaseMsg.REQUIRED})
         return value
 
     @classmethod
@@ -444,37 +448,39 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
         return validated_data
 
     def create(self, validated_data):
-        instance = LeadCall.objects.create(**validated_data)
-        return instance
+        with transaction.atomic():
+            validated_data['employee_inherit_id'] = validated_data.get('employee_created_id', None)
+            instance = OpportunityCallLog.objects.create(**validated_data)
+            OpportunityActivityLogs.objects.create(
+                tenant=instance.tenant,
+                company=instance.company,
+                call=instance,
+                log_type=2,
+                doc_id = instance.id,
+                doc_data = {
+                    'id': str(instance.id).replace('-',''),
+                    'subject': instance.subject,
+                    'call_date': str(instance.call_date),
+                    'contact': str(instance.contact_id).replace('-',''),
+                    'input_result': instance.input_result,
+                    'lead': str(instance.lead_id).replace('-',''),
+                },
+                employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-',''),
+            )
+            return instance
+
 
 
 class LeadCallDetailSerializer(serializers.ModelSerializer):
-    lead = serializers.SerializerMethodField()
-    contact = serializers.SerializerMethodField()
-
     class Meta:
-        model = LeadCall
+        model = OpportunityCallLog
         fields = (
             'id',
-            'title',
-            'call_date',
-            'lead',
-            'contact',
-            'detail'
         )
-
-    @classmethod
-    def get_lead(cls, obj):
-        return {}
-
-    @classmethod
-    def get_contact(cls, obj):
-        return {}
-
 
 class LeadCallUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = LeadCall
+        model = OpportunityCallLog
         fields = ('is_cancelled',)
 
     def validate(self, validate_data):
@@ -493,13 +499,14 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
     lead = serializers.UUIDField(required=True)
 
     class Meta:
-        model = LeadEmail
+        model = OpportunityEmail
         fields = (
             'subject',
             'lead',
             'email_to_list',
             'email_cc_list',
-            'content'
+            'content',
+            'just_log'
         )
 
     @classmethod
@@ -517,41 +524,83 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         with transaction.atomic():
-            instance = LeadEmail(**validated_data)
-
-            email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
-
-            if email_sent:
-                instance.save()
-                return instance
-            else:
-                raise Exception("Failed to send email. Model instance will not be saved.")
+            validated_data['employee_inherit_id'] = validated_data.get('employee_created_id', None)
+            instance = OpportunityEmail.objects.create(**validated_data)
+            OpportunityActivityLogs.objects.create(
+                tenant=instance.tenant,
+                company=instance.company,
+                email=instance,
+                log_type=3,
+                doc_id=instance.id,
+                employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
+            )
+            if not validated_data.get('just_log', False):
+                email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+                if email_sent:
+                    return instance
+                else:
+                    raise Exception("Failed to send email")
+            return instance
 
 
 class LeadEmailDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = LeadEmail
+        model = OpportunityEmail
         fields = (
             'id',
-            'title',
         )
 
 
+class LeadMeetingEmployeeAttendedListSerializer(serializers.ModelSerializer):
+    employee_attended_mapped = serializers.UUIDField()
+
+    class Meta:
+        model = OpportunityMeetingEmployeeAttended
+        fields = (
+            'employee_attended_mapped',
+        )
+
+    @classmethod
+    def validate_employee_attended_mapped(cls, value):
+        try:
+            return Employee.objects.get(pk=value)
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'Employee Attended List': 'Employee does not exist.'})
+
+
+class LeadMeetingCustomerMemberListSerializer(serializers.ModelSerializer):
+    customer_member_mapped = serializers.UUIDField()
+    class Meta:
+        model = OpportunityMeetingCustomerMember
+        fields = (
+            'customer_member_mapped',
+        )
+
+    @classmethod
+    def validate_customer_member_mapped(cls, value):
+        try:
+            return Contact.objects.get(pk=value)
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'Customer Member Mapped': 'Customer does not exist.'})
+
 class LeadMeetingCreateSerializer(serializers.ModelSerializer):
     lead = serializers.UUIDField(required=True)
+    employee_attended_list = LeadMeetingEmployeeAttendedListSerializer(many=True)
+    customer_member_list = LeadMeetingCustomerMemberListSerializer(many=True)
+
     class Meta:
-        model = LeadMeeting
+        model = OpportunityMeeting
         fields = (
             'lead',
-            'title',
-            'employee_member_list',
+            'subject',
+            'employee_attended_list',
             'customer_member_list',
             'meeting_date',
             'meeting_from_time',
             'meeting_to_time',
             'meeting_address',
-            'detail',
+            'input_result',
             'room_location'
         )
 
@@ -562,10 +611,31 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
         except Lead.DoesNotExist:
             raise serializers.ValidationError({'lead': 'Lead does not exist.'})
 
-
     def create(self, validated_data):
-        instance = LeadMeeting.objects.create(**validated_data)
-        return instance
+        with transaction.atomic():
+            validated_data['employee_inherit_id'] = validated_data.get('employee_created_id', None)
+            employee_attended_list_data = validated_data.pop('employee_attended_list')
+            customer_member_list_data = validated_data.pop('customer_member_list')
+
+            employee_attended_list = [
+                {'id': item['employee_attended_mapped'].id } for item in employee_attended_list_data
+            ]
+            customer_member_list = [
+                {'id': item['customer_member_mapped'].id } for item in customer_member_list_data
+            ]
+            instance = OpportunityMeeting.objects.create(**validated_data)
+
+            ActivitiesCommonFunc.create_employee_attended_map_meeting(instance, employee_attended_list)
+            ActivitiesCommonFunc.create_customer_member_map_meeting(instance, customer_member_list)
+            OpportunityActivityLogs.objects.create(
+                tenant=instance.tenant,
+                company=instance.company,
+                meeting=instance,
+                log_type=4,
+                doc_id=instance.id,
+                employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
+            )
+            return instance
 
 
 class LeadMeetingDetailSerializer(serializers.ModelSerializer):
@@ -580,7 +650,7 @@ class LeadActivityListSerializer(serializers.ModelSerializer):
     activity_list = serializers.SerializerMethodField()
 
     class Meta:
-        model = Lead
+        model = OpportunityActivityLogs
         fields = (
             'id',
             'activity_list'
