@@ -50,6 +50,7 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'name': sub.name,
             'start_date': sub.start_date,
             'end_date': sub.end_date,
+            'run_report_inventory': sub.run_report_inventory,
             'locked': sub.locked
         } for sub in obj.sub_periods_period_mapped.all()]
 

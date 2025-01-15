@@ -130,7 +130,11 @@ class SendMailController:  # pylint: disable=R0902
         timestamp = timezone.now().timestamp()
         return f'<{timestamp}.{doc_id}@bflow.vn>'
 
-    def send(self, mail_to, template, data, doc_id=None, previous_id=None):
+    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None):
+        if mail_bcc is None:
+            mail_bcc = []
+        if mail_cc is None:
+            mail_cc = []
         if self.confirm_config():
             try:
                 with self.connection as connection:
@@ -165,11 +169,14 @@ class SendMailController:  # pylint: disable=R0902
                         headers['Reply-To'] = self.reply_to
                     elif settings.EMAIL_SERVER_DEFAULT_REPLY:
                         headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
+
                     email = EmailMultiAlternatives(
                         subject=self.subject,
                         body=json.dumps(data),
-                        from_email=self.from_email,
+                        from_email=f"{as_name} <{self.from_email}>",
                         to=mail_to if isinstance(mail_to, list) else [mail_to],
+                        cc=mail_cc if isinstance(mail_cc, list) else [],
+                        bcc=mail_bcc if isinstance(mail_bcc, list) else [],
                         connection=connection,
                         headers=headers
                     )

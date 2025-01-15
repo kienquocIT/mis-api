@@ -2382,19 +2382,19 @@ class InventoryReportRun:
     @staticmethod
     def run(company_id, fiscal_year):
         """
+        0. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
         1. Xóa data inventory report data cũ
         2. Tạo lại Số dư đầu kì (nếu năm đó có setup 'Ngày bắt đầu sử dụng phần mềm')
         3. Lấy dữ liệu các phiếu nhập - xuất kho
         4. Chạy log
-        5. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
         """
         this_period = Periods.objects.filter(company_id=company_id, fiscal_year=fiscal_year).first()
         if this_period:
+            SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
             InventoryReportRun.delete_inventory_report_data(company_id, this_period)
             InventoryReportRun.recreate_balance_init_data(company_id, this_period)
             all_doc_sorted = InventoryReportRun.combine_data_all_docs(company_id, this_period)
             InventoryReportRun.log_docs(all_doc_sorted)
-            SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
             print('#run successfully!')
             return True
         print('#can not find any Period!')
@@ -2932,6 +2932,7 @@ def update_end_date():
         item.save(update_fields=['end_date'])
     print('Done')
 
+
 def create_data_object():
     try:
         account = DataObject.objects.create(title='Account', application_id='4e48c863861b475aaa5e97a4ed26f294')
@@ -2958,3 +2959,55 @@ def update_check_lock_date_project():
             item.permit_lock_fd = True
             item.save(update_fields=['permit_lock_fd'])
     print('done update lock finish date')
+
+
+def update_email_state_just_log():
+    OpportunityEmail.objects.filter(just_log=False).update(send_success=True)
+    print('Done :))')
+    return True
+
+
+def update_address_contact():
+    for contact in Contact.objects.all():
+        home_address_data = {
+            'home_country': {
+                'id': str(contact.home_country.id),
+                'title': contact.home_country.title
+            } if contact.home_country else {},
+            'home_detail_address': contact.home_detail_address if contact.home_detail_address else '',
+            'home_city': {
+                'id': str(contact.home_city.id),
+                'title': contact.home_city.title
+            } if contact.home_city else {},
+            'home_district': {
+                'id': str(contact.home_district.id),
+                'title': contact.home_district.title
+            } if contact.home_district else {},
+            'home_ward': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.home_ward else {},
+        }
+        work_address_data = {
+            'work_country': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.work_country else {},
+            'work_detail_address': contact.work_detail_address if contact.work_detail_address else '',
+            'work_city': {
+                'id': str(contact.work_city.id),
+                'title': contact.work_city.title
+            } if contact.work_city else {},
+            'work_district': {
+                'id': str(contact.work_district.id),
+                'title': contact.work_district.title
+            } if contact.work_district else {},
+            'work_ward': {
+                'id': str(contact.work_ward.id),
+                'title': contact.work_ward.title
+            } if contact.work_ward else {},
+        }
+        contact.home_address_data = home_address_data
+        contact.work_address_data = work_address_data
+        contact.save(update_fields=['home_address_data', 'work_address_data'])
+    print('Done :))')

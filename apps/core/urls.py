@@ -41,4 +41,5 @@ urlpatterns = [
     path('chatbot/', include('apps.core.chatbot.urls')),
     path('recurrence/', include('apps.core.recurrence.urls')),
     path('chat3rd/', include('apps.core.chat3rd.urls')),
+    path('firebase/', include('apps.core.firebase.urls')),
 ]
