@@ -131,6 +131,10 @@ class SendMailController:  # pylint: disable=R0902
         return f'<{timestamp}.{doc_id}@bflow.vn>'
 
     def send(self, mail_to, mail_cc, mail_bcc, as_from_email, template, data, doc_id=None, previous_id=None):
+        if mail_bcc is None:
+            mail_bcc = []
+        if mail_cc is None:
+            mail_cc = []
         if self.confirm_config():
             try:
                 with self.connection as connection:
