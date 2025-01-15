@@ -184,7 +184,7 @@ def send_email_sale_activities_email(user_id: UUID or str, email_obj):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, _, _] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             subject = email_obj.subject
 
@@ -240,7 +240,7 @@ def send_email_sale_activities_meeting(user_id: UUID or str, meeting_obj, is_can
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, _, _] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             subject = meeting_obj.subject
             attended_email = [
