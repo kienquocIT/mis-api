@@ -147,6 +147,7 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         on_delete=models.CASCADE,
         verbose_name='uom',
         related_name="recovery_product_uom_time",
+        null=True,
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     product_quantity = models.FloatField(default=0)
