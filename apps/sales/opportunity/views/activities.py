@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.mailer.tasks import send_sale_activities_email
+from apps.core.mailer.tasks import send_email_sale_activities_email
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityDocument, OpportunityActivityLogs
@@ -168,7 +168,7 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin):
             instance = self.get_object()
             if instance:
                 if instance.just_log or not instance.send_success:
-                    state = send_sale_activities_email(
+                    state = send_email_sale_activities_email(
                         str(request.user.id),
                         instance
                     )
@@ -243,6 +243,9 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='meetingwithcustomer', perm_code="create"
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 

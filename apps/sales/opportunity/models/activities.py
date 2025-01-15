@@ -133,6 +133,7 @@ class OpportunityMeeting(DataAbstractModel):
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
     email_notify = models.BooleanField(default=False)
+    send_success = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityMeeting'
