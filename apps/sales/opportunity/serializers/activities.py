@@ -5,6 +5,7 @@ from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
+from apps.core.mailer.tasks import send_sale_activities_email
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.models.accounts import AccountActivity
@@ -291,6 +292,8 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'date_created',
             'opportunity',
             'employee_inherit',
+            'send_success',
+            'just_log',
             'process',
             'process_stage_app'
         )
@@ -421,7 +424,13 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
         if not validated_data.get('just_log'):
-            ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
+            # ActivitiesCommonFunc.send_email(email_obj, self.context.get('employee_current'))
+            state = send_sale_activities_email(
+                str(self.context.get('user_current').id),
+                email_obj
+            )
+            email_obj.send_success = state == 'Success'
+            email_obj.save(update_fields=['send_success'])
         OpportunityActivityLogs.objects.create(
             tenant=email_obj.tenant,
             company=email_obj.company,

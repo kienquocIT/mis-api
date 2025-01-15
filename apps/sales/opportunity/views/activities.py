@@ -1,4 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.core.mailer.tasks import send_sale_activities_email
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityDocument, OpportunityActivityLogs
@@ -13,7 +15,8 @@ from apps.sales.opportunity.serializers import (
     OpportunityDocumentListSerializer, OpportunityDocumentCreateSerializer,
     OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    ResponseController
 from ..filters import OpportunityMeetingFilters
 
 
@@ -136,6 +139,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_current': request.user.employee_current,
+            'user_current': request.user,
         }
         return self.create(request, *args, **kwargs)
 
@@ -158,6 +162,21 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='opportunity', model_code='opportunityemail', perm_code="view"
     )
     def get(self, request, *args, **kwargs):
+        if request.query_params.get('resend_email'):
+            instance = self.get_object()
+            if instance:
+                if instance.just_log or not instance.send_success:
+                    state = send_sale_activities_email(
+                        str(request.user.id),
+                        instance
+                    )
+                    instance.send_success = state == 'Success'
+                    instance.just_log = False
+                    instance.save(update_fields=['send_success', 'just_log'])
+                else:
+                    return ResponseController.bad_request_400(msg="Email was sent successfully.")
+            else:
+                return ResponseController.bad_request_400(msg="Email obj does not exist.")
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(

@@ -77,6 +77,7 @@ class OpportunityEmail(DataAbstractModel):
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
+    send_success = models.BooleanField(default=False)
     just_log = models.BooleanField(default=False)
 
     class Meta:

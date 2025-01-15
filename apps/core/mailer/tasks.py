@@ -175,6 +175,62 @@ def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: 
 
 
 @shared_task
+def send_sale_activities_email(user_id: UUID or str, email_obj):
+    tenant_id = email_obj.tenant_id
+    company_id = email_obj.company_id
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, _, _] = obj_got
+        cls = SendMailController(mail_config=config_obj, timeout=3)
+        if cls.is_active is True:
+            subject = email_obj.subject
+
+            log_cls = MailLogController(
+                tenant_id=tenant_id, company_id=company_id,
+                system_code=0,  # other
+                doc_id=user_id, subject=subject,
+            )
+            log_cls.create()
+            log_cls.update(
+                address_sender=cls.from_email,
+            )
+            log_cls.update_employee_to(employee_to=[], address_to_init=email_obj.email_to_list)
+            log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+            log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+            log_cls.update_log_data(host=cls.host, port=cls.port)
+
+            try:
+                state_send = cls.setup(
+                    subject=subject,
+                    from_email=cls.kwargs['from_email'],
+                    mail_cc=email_obj.email_cc_list,
+                    bcc=[],
+                    header={},
+                    reply_to=email_obj.employee_created.email,  # trả lời người gửi (employee created)
+                ).send(
+                    as_from_email=email_obj.employee_created.email,
+                    mail_to=email_obj.email_to_list,
+                    mail_cc=email_obj.email_cc_list,
+                    mail_bcc=[],
+                    template=email_obj.content,
+                    data={},
+                )
+            except Exception as err:
+                state_send = False
+                log_cls.update(errors_data=str(err))
+
+            if state_send is True:
+                log_cls.update(status_code=1, status_remark=state_send)  # sent
+                log_cls.save()
+                return 'Success'
+            log_cls.update(status_code=2, status_remark=state_send)  # error
+            log_cls.save()
+            return 'SEND_FAILURE'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+@shared_task
 def send_mail_otp(  # pylint: disable=R0911,R1702,R0914
         tenant_id: UUID or str, company_id: UUID or str, user_id: UUID or str, otp_id: UUID or str, otp: str
 ):
