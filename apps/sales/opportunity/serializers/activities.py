@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Activity: Call log
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
@@ -36,6 +37,7 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
+            'employee_created',
             'employee_inherit',
             'contact',
             'call_date',
@@ -55,6 +57,23 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
                 'remark': obj.process.remark,
             }
         return {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -277,6 +296,7 @@ class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
 # Activity: Email
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
@@ -286,11 +306,14 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'subject',
+            'from_email',
             'email_to_list',
             'email_cc_list',
+            'email_bcc_list',
             'content',
             'date_created',
             'opportunity',
+            'employee_created',
             'employee_inherit',
             'send_success',
             'just_log',
@@ -305,6 +328,23 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'code': obj.opportunity.code,
             'title': obj.opportunity.title
         } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -367,6 +407,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             'subject',
             'email_to_list',
             'email_cc_list',
+            'email_bcc_list',
             'content',
             'opportunity_id',
             'employee_inherit_id',
@@ -405,11 +446,14 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({'Email to list': 'Missing to list'})
 
-    @classmethod
-    def validate_email_cc_list(cls, value):
-        return value
-
     def validate(self, validate_data):
+        if self.context.get('employee_current'):
+            validate_data['from_email'] = self.context.get('employee_current').email
+            if not validate_data.get('from_email'):
+                raise serializers.ValidationError({'from_email': SaleMsg.FROM_EMAIL_NOT_EXIST})
+        else:
+            raise serializers.ValidationError({'employee_created': SaleMsg.EMPLOYEE_NOT_EXIST})
+
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         if process_obj:
@@ -480,8 +524,10 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'subject',
+            'from_email',
             'email_to_list',
             'email_cc_list',
+            'email_bcc_list',
             'content',
             'date_created',
             'opportunity',
@@ -513,6 +559,7 @@ class SubEmployeeMemberDetailSerializer(serializers.Serializer):  # noqa
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
     customer_member_list = serializers.SerializerMethodField()
@@ -525,6 +572,7 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
+            'employee_created',
             'employee_inherit',
             'employee_attended_list',
             'customer_member_list',
@@ -547,6 +595,23 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'code': obj.opportunity.code,
             'title': obj.opportunity.title
         } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'first_name': obj.employee_created.first_name,
+            'last_name': obj.employee_created.last_name,
+            'email': obj.employee_created.email,
+            'full_name': obj.employee_created.get_full_name(2),
+            'code': obj.employee_created.code,
+            'is_active': obj.employee_created.is_active,
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):

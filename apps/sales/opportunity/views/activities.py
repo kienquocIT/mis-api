@@ -37,6 +37,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
             "contact",
             'process',
             'process_stage_app',
+            'employee_created',
             'employee_inherit__group'
         )
 
@@ -111,6 +112,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             "opportunity",
+            'employee_created',
             'employee_inherit__group',
             'process',
             'process_stage_app'
@@ -209,6 +211,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
             "opportunity",
             'process',
             'process_stage_app',
+            'employee_created',
             'employee_inherit__group'
         ).prefetch_related(
             'employee_attended_list__group',

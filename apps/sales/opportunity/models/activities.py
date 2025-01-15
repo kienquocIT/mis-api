@@ -70,8 +70,15 @@ class OpportunityEmail(DataAbstractModel):
         related_name='%(app_label)s_%(class)s_process',
     )
     subject = models.CharField(max_length=250)
+    from_email = models.CharField(
+        verbose_name='from_email',
+        blank=True,
+        null=True,
+        max_length=150
+    )
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
+    email_bcc_list = models.JSONField(default=list)
     content = models.CharField(max_length=1000, null=True)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,

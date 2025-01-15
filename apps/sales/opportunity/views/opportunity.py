@@ -132,6 +132,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
                 request.data['employee_inherit_id'] = request.data.get('employee_inherit_id')
 
                 self.ser_context = {'lead': lead}
+        self.ser_context = {'employee_current': request.user.employee_current}
         return self.create(request, *args, **kwargs)
 
 
