@@ -90,6 +90,10 @@ msgstr "Phê duyệt hợp đồng"
 msgid "Delivery"
 msgstr "Giao hàng"
 
+# 1373e903-909c-4b77-9957-8bcf97e8d6d3
+msgid "Distribution Plan"
+msgstr "Kế hoạch phân phối"
+
 # 319356b4-f16c-4ba4-bdcb-e1b0c2a2c124
 msgid "Document For Customer"
 msgstr "Tài liệu cho khách hàng"
