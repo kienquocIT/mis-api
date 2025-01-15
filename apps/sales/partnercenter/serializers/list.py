@@ -433,7 +433,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
             case _:
                 raise ValueError(f"Unsupported operator for last_contacted_open_opp: {operator}")
 
-        account_ids = filtered_opportunities.values_list('customer_id', flat=True)
+        account_ids = filtered_opportunities.filter_current(fill__company=True).values_list('customer_id', flat=True)
 
         return set(account_ids)
 
