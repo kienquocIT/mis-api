@@ -583,6 +583,8 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat',
             'is_cancelled',
+            'email_notify',
+            'send_success',
             'process',
             'process_stage_app'
         )
@@ -903,21 +905,28 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
 
 
 class OpportunityMeetingUpdateSerializer(serializers.ModelSerializer):
+    email_cancel = serializers.BooleanField()
 
     class Meta:
         model = OpportunityMeeting
-        fields = ('is_cancelled',)
+        fields = ('is_cancelled', 'email_cancel')
 
     def validate(self, validate_data):
-        if self.instance.is_cancelled is True:
+        if self.instance.is_cancelled:
             raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
         return validate_data
 
     def update(self, instance, validated_data):
+        email_cancel = validated_data.pop('email_cancel')
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         OpportunityActivityLogs.objects.filter(meeting=instance).update(is_cancelled=instance.is_cancelled)
+
+        # send mail notify cancel
+        if email_cancel:
+            send_email_sale_activities_meeting(str(self.context.get('user_current').id), instance, True)
         return instance
 
 

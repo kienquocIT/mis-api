@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.mailer.tasks import send_email_sale_activities_email
+from apps.core.mailer.tasks import send_email_sale_activities_email, send_email_sale_activities_meeting
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityDocument, OpportunityActivityLogs
@@ -267,6 +267,21 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         label_code = 'opportunity', model_code = 'meetingwithcustomer', perm_code = "view"
     )
     def get(self, request, *args, **kwargs):
+        if request.query_params.get('resend_email'):
+            instance = self.get_object()
+            if instance:
+                if not instance.email_notify or not instance.send_success:
+                    state = send_email_sale_activities_meeting(
+                        str(request.user.id),
+                        instance
+                    )
+                    instance.send_success = state == 'Success'
+                    instance.email_notify = True
+                    instance.save(update_fields=['send_success', 'email_notify'])
+                else:
+                    return ResponseController.bad_request_400(msg="Meeting notify was sent successfully.")
+            else:
+                return ResponseController.bad_request_400(msg="Meeting obj does not exist.")
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -279,6 +294,9 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         label_code='opportunity', model_code='meetingwithcustomer', perm_code="edit"
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.update(request, *args, **kwargs)
 
 

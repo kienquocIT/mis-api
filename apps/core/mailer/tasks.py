@@ -234,7 +234,7 @@ def send_email_sale_activities_email(user_id: UUID or str, email_obj):
 
 
 @shared_task
-def send_email_sale_activities_meeting(user_id: UUID or str, meeting_obj):
+def send_email_sale_activities_meeting(user_id: UUID or str, meeting_obj, is_cancel=False):
     tenant_id = meeting_obj.tenant_id
     company_id = meeting_obj.company_id
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
@@ -276,11 +276,18 @@ def send_email_sale_activities_meeting(user_id: UUID or str, meeting_obj):
                     mail_to=attended_email,
                     mail_cc=[],
                     mail_bcc=[],
-                    template=f'Cuộc họp mới từ {meeting_obj.employee_created.get_full_name(2)}'
-                             f'\nThời gian: từ {meeting_obj.meeting_from_time}'
-                             f'đến {meeting_obj.meeting_to_time}'
-                             f'ngày {meeting_obj.meeting_date}'
-                             f'\nĐịa điểm: {meeting_obj.meeting_address} tại phòng {meeting_obj.room_location}',
+                    template=f'<p><b>Cuộc họp mới từ {meeting_obj.employee_created.get_full_name(2)}</b></p>'
+                             f'<p><b>Thời gian họp:</b> từ {meeting_obj.meeting_from_time}'
+                             f' đến {meeting_obj.meeting_to_time}'
+                             f' ngày {meeting_obj.meeting_date.strftime("%d/%m/%Y")}</p>'
+                             f'<p><b>Địa điểm họp:</b> {meeting_obj.meeting_address}'
+                             f' tại phòng {meeting_obj.room_location}</p>' if is_cancel is False else
+                             f'<p><b>Thông báo huỷ cuộc họp từ {meeting_obj.employee_created.get_full_name(2)}</b></p>'
+                             f'<p><b>Thời gian họp:</b> từ {meeting_obj.meeting_from_time}'
+                             f' đến {meeting_obj.meeting_to_time}'
+                             f' ngày {meeting_obj.meeting_date.strftime("%d/%m/%Y")}</p>'
+                             f'<p><b>Địa điểm họp:</b> {meeting_obj.meeting_address}'
+                             f' tại phòng {meeting_obj.room_location}</p>',
                     data={},
                 )
             except Exception as err:
