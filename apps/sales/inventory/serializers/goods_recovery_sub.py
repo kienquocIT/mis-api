@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models import WareHouse, ProductWareHouseSerial
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
+from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryWarehouse, RecoveryLeaseGenerate
 from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.sales.leaseorder.models import LeaseOrder
@@ -94,6 +95,13 @@ class RecoveryCommonValidate:
             raise serializers.ValidationError({'lease_order': SaleMsg.LEASE_ORDER_NOT_EXIST})
 
     @classmethod
+    def validate_delivery_id(cls, value):
+        try:
+            return str(OrderDeliverySub.objects.get_current(fill__tenant=True, fill__company=True, id=value).id)
+        except OrderDeliverySub.DoesNotExist:
+            raise serializers.ValidationError({'delivery': SaleMsg.DELIVERY_NOT_EXIST})
+
+    @classmethod
     def validate_product_id(cls, value):
         try:
             return str(Product.objects.get_current(fill__tenant=True, fill__company=True, id=value).id)
@@ -120,3 +128,114 @@ class RecoveryCommonValidate:
             return str(WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value).id)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+
+    @classmethod
+    def validate_serial_id(cls, value):
+        try:
+            return str(ProductWareHouseSerial.objects.get_current(fill__tenant=True, fill__company=True, id=value).id)
+        except ProductWareHouseSerial.DoesNotExist:
+            raise serializers.ValidationError({'serial': WarehouseMsg.SERIAL_NOT_EXIST})
+
+
+# SUB SERIALIZERS
+class RecoveryLeaseGenerateSerializer(serializers.ModelSerializer):
+    serial_id = serializers.UUIDField()
+
+    class Meta:
+        model = RecoveryLeaseGenerate
+        fields = (
+            'serial_id',
+            'serial_data',
+            'remark',
+        )
+
+    @classmethod
+    def validate_serial_id(cls, value):
+        return RecoveryCommonValidate().validate_serial_id(value=value)
+
+
+class RecoveryWarehouseSerializer(serializers.ModelSerializer):
+    warehouse_id = serializers.UUIDField()
+    lease_generate_data = RecoveryLeaseGenerateSerializer(many=True, required=False)
+
+    class Meta:
+        model = RecoveryWarehouse
+        fields = (
+            'warehouse_id',
+            'warehouse_data',
+            'quantity_recovery',
+
+            'lease_generate_data',
+        )
+
+    @classmethod
+    def validate_warehouse_id(cls, value):
+        return RecoveryCommonValidate().validate_warehouse_id(value=value)
+
+
+class RecoveryProductSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField()
+    offset_id = serializers.UUIDField()
+    uom_id = serializers.UUIDField()
+    uom_time_id = serializers.UUIDField()
+    product_warehouse_data = RecoveryWarehouseSerializer(many=True, required=False)
+
+    class Meta:
+        model = RecoveryProduct
+        fields = (
+            'product_id',
+            'product_data',
+            'asset_type',
+            'offset_id',
+            'offset_data',
+            'uom_id',
+            'uom_data',
+            'uom_time_id',
+            'uom_time_data',
+            'product_quantity',
+            'product_quantity_time',
+            'product_quantity_depreciation',
+            'product_unit_price',
+            'product_depreciation_price',
+            'product_subtotal_price',
+            'quantity_ordered',
+            'quantity_delivered',
+            'quantity_recovered',
+            'quantity_recovery',
+            'delivery_data',
+
+            'product_warehouse_data',
+        )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return RecoveryCommonValidate().validate_product_id(value=value)
+
+    @classmethod
+    def validate_offset_id(cls, value):
+        return RecoveryCommonValidate().validate_product_id(value=value)
+
+    @classmethod
+    def validate_uom_id(cls, value):
+        return RecoveryCommonValidate().validate_uom_id(value=value)
+
+    @classmethod
+    def validate_uom_time_id(cls, value):
+        return RecoveryCommonValidate().validate_uom_id(value=value)
+
+
+class RecoveryDeliverySerializer(serializers.ModelSerializer):
+    delivery_id = serializers.UUIDField()
+    delivery_product_data = RecoveryProductSerializer(many=True, required=False)
+
+    class Meta:
+        model = RecoveryDelivery
+        fields = (
+            'delivery_id',
+            'delivery_data',
+            'delivery_product_data',
+        )
+
+    @classmethod
+    def validate_delivery_id(cls, value):
+        return RecoveryCommonValidate().validate_delivery_id(value=value)

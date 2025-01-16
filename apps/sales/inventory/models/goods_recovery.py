@@ -142,11 +142,18 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         related_name="recovery_product_uom",
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name='uom',
+        related_name="recovery_product_uom_time",
+        null=True,
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     product_quantity_depreciation = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
-    product_depreciation_price = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
     quantity_ordered = models.FloatField(default=0)
     quantity_delivered = models.FloatField(default=0)
@@ -155,6 +162,17 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
 
     product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
+
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+    product_depreciation_adjustment = models.FloatField(default=0)
+
+    # End depreciation fields
 
     class Meta:
         verbose_name = 'Recovery Product'

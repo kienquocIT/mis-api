@@ -367,7 +367,7 @@ class LeaseOrderCost(MasterDataAbstractModel):
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit",
+        verbose_name="uom",
         related_name="lease_order_cost_uom",
         null=True
     )
@@ -375,11 +375,11 @@ class LeaseOrderCost(MasterDataAbstractModel):
     uom_time = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit",
+        verbose_name="uom time",
         related_name="lease_order_cost_uom_time",
         null=True
     )
-    uom_time_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -397,7 +397,6 @@ class LeaseOrderCost(MasterDataAbstractModel):
     product_quantity_time = models.FloatField(default=0)
     product_quantity_depreciation = models.FloatField(default=0)
     product_cost_price = models.FloatField(default=0)
-    product_depreciation_price = models.FloatField(default=0)
     product_tax_title = models.CharField(max_length=100, blank=True, null=True)
     product_tax_value = models.FloatField(default=0)
     product_tax_amount = models.FloatField(default=0)
@@ -414,6 +413,17 @@ class LeaseOrderCost(MasterDataAbstractModel):
     )
     shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
     supplied_by = models.SmallIntegerField(default=0)  # (0: 'purchasing', 1: 'making')
+
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+    product_depreciation_adjustment = models.FloatField(default=0)
+
+    # End depreciation fields
 
     class Meta:
         verbose_name = 'Lease Order Cost'
