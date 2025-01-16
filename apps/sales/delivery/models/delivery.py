@@ -591,26 +591,12 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         null=True
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
-    delivery_quantity = models.FloatField(
-        verbose_name='Quantity need pickup of SaleOrder',
-    )
-    delivered_quantity_before = models.FloatField(
-        default=0,
-        verbose_name='Quantity was picked before',
-    )
+    delivery_quantity = models.FloatField(verbose_name='Quantity need pickup of SaleOrder',)
+    delivered_quantity_before = models.FloatField(default=0, verbose_name='Quantity was picked before',)
     # picking information
-    remaining_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity need pick'
-    )
-    ready_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity already for delivery',
-    )
-    picked_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity was picked',
-    )
+    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need pick')
+    ready_quantity = models.FloatField(default=0, verbose_name='Quantity already for delivery',)
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was picked',)
     delivery_data = models.JSONField(
         default=list,
         verbose_name='data about product, warehouse, stock',
@@ -621,9 +607,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         ),
         null=True
     )
-    order = models.IntegerField(
-        default=1
-    )
+    order = models.IntegerField(default=1)
     is_promotion = models.BooleanField(
         default=False,
         help_text="flag to know this product is for promotion (discount, gift,...)"
@@ -631,15 +615,9 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     product_quantity_depreciation = models.FloatField(default=0)
-    product_unit_price = models.FloatField(
-        default=0
-    )
-    product_tax_value = models.FloatField(
-        default=0
-    )
-    product_subtotal_price = models.FloatField(
-        default=0
-    )
+    product_unit_price = models.FloatField(default=0)
+    product_tax_value = models.FloatField(default=0)
+    product_subtotal_price = models.FloatField(default=0)
 
     # Begin depreciation fields
 
