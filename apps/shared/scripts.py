@@ -2932,6 +2932,7 @@ def update_end_date():
         item.save(update_fields=['end_date'])
     print('Done')
 
+
 def create_data_object():
     try:
         account = DataObject.objects.create(title='Account', application_id='4e48c863861b475aaa5e97a4ed26f294')
@@ -2958,3 +2959,55 @@ def update_check_lock_date_project():
             item.permit_lock_fd = True
             item.save(update_fields=['permit_lock_fd'])
     print('done update lock finish date')
+
+
+def update_email_state_just_log():
+    OpportunityEmail.objects.filter(just_log=False).update(send_success=True)
+    print('Done :))')
+    return True
+
+
+def update_address_contact():
+    for contact in Contact.objects.all():
+        home_address_data = {
+            'home_country': {
+                'id': str(contact.home_country.id),
+                'title': contact.home_country.title
+            } if contact.home_country else {},
+            'home_detail_address': contact.home_detail_address if contact.home_detail_address else '',
+            'home_city': {
+                'id': str(contact.home_city.id),
+                'title': contact.home_city.title
+            } if contact.home_city else {},
+            'home_district': {
+                'id': str(contact.home_district.id),
+                'title': contact.home_district.title
+            } if contact.home_district else {},
+            'home_ward': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.home_ward else {},
+        }
+        work_address_data = {
+            'work_country': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.work_country else {},
+            'work_detail_address': contact.work_detail_address if contact.work_detail_address else '',
+            'work_city': {
+                'id': str(contact.work_city.id),
+                'title': contact.work_city.title
+            } if contact.work_city else {},
+            'work_district': {
+                'id': str(contact.work_district.id),
+                'title': contact.work_district.title
+            } if contact.work_district else {},
+            'work_ward': {
+                'id': str(contact.work_ward.id),
+                'title': contact.work_ward.title
+            } if contact.work_ward else {},
+        }
+        contact.home_address_data = home_address_data
+        contact.work_address_data = work_address_data
+        contact.save(update_fields=['home_address_data', 'work_address_data'])
+    print('Done :))')

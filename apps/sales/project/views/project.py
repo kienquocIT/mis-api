@@ -1,5 +1,6 @@
 __init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd', 'ProjectMemberDetail',
-            'ProjectUpdateOrder', 'ProjectCreateBaseline', 'ProjectCreateBaseline', 'ProjectBaselineDetail']
+            'ProjectUpdateOrder', 'ProjectCreateBaseline', 'ProjectCreateBaseline', 'ProjectBaselineDetail',
+            'ProjectCloseOrOpen']
 
 from typing import Union
 
@@ -13,7 +14,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
     BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
     ProjectUpdateSerializers, MemberOfProjectAddSerializer, MemberOfProjectDetailSerializer, \
-    MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers
+    MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers, ProjectUpdateStatusSerializers
 from ..extend_func import get_prj_mem_of_crt_user
 
 
@@ -463,3 +464,22 @@ class ProjectUpdateOrder(BaseUpdateMixin):
         if TypeCheck.check_uuid(pk):
             return self.update(request, *args, pk, **kwargs)
         return ResponseController.notfound_404()
+
+
+class ProjectCloseOrOpen(BaseUpdateMixin):
+    queryset = Project.objects
+    serializer_update = ProjectUpdateStatusSerializers
+    retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    @swagger_auto_schema(
+        operation_summary='Update close or open project',
+        operation_description='Update close or open project',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {
+            'tenant': request.user.tenant_current,
+            'company': request.user.company_current,
+            'employee': request.user.employee_current,
+        }
+        return self.update(request, *args, pk, **kwargs)
