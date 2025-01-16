@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel
@@ -248,91 +247,5 @@ class LeadOpportunity(DataAbstractModel):
         verbose_name = 'Leads Opportunity'
         verbose_name_plural = 'Lead Opportunity'
         ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class LeadCall(MasterDataAbstractModel):
-    lead = models.ForeignKey(
-        'lead.Lead',
-        on_delete=models.CASCADE,
-        related_name='lead_call_lead',
-    )
-    contact = models.ForeignKey(
-        'saledata.Contact',
-        on_delete=models.CASCADE,
-        related_name="lead_call_contact",
-        null=True
-    )
-    call_date = models.DateTimeField()
-    detail = models.TextField(null=True)
-    repeat = models.BooleanField(default=False)
-    is_cancelled = models.BooleanField(default=False)
-
-    employee_inherit = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='',
-        related_name='lead_call_employee_inherit',
-    )
-
-    class Meta:
-        verbose_name = 'LeadCall'
-        verbose_name_plural = 'LeadCalls'
-        ordering = ('-call_date', '-date_created')
-        default_permissions = ()
-        permissions = ()
-
-
-class LeadMeeting(MasterDataAbstractModel):
-    lead = models.ForeignKey(
-        'lead.Lead',
-        on_delete=models.CASCADE,
-        related_name='lead_meeting_lead',
-    )
-    employee_member_list = models.JSONField(default=list)
-    customer_member_list = models.JSONField(default=list)
-    meeting_date = models.DateTimeField()
-    meeting_from_time = models.TimeField(null=True)
-    meeting_to_time = models.TimeField(null=True)
-    meeting_address = models.CharField(max_length=250)
-    detail = models.TextField(null=True)
-    room_location = models.TextField(null=True)
-    repeat = models.BooleanField(default=False)
-    is_cancelled = models.BooleanField(default=False)
-
-    employee_inherit = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='',
-        related_name='lead_meeting_employee_inherit',
-    )
-
-    class Meta:
-        verbose_name = 'LeadMeeting'
-        verbose_name_plural = 'LeadMeetings'
-        ordering = ('-meeting_date', '-date_created')
-        default_permissions = ()
-        permissions = ()
-
-
-class LeadEmail(MasterDataAbstractModel):
-    subject = models.TextField(default='')
-    lead = models.ForeignKey(
-        'lead.Lead',
-        on_delete=models.CASCADE,
-        related_name='lead_email_lead',
-    )
-    email_to_list = models.JSONField(default=list)
-    email_cc_list = models.JSONField(default=list)
-    content = models.TextField( null=True)
-    employee_inherit = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='',
-        related_name='lead_email_employee_inherit',
-    )
-
-    class Meta:
-        verbose_name = 'LeadEmail'
-        verbose_name_plural = 'LeadEmails'
-        ordering = ('-date_created', )
         default_permissions = ()
         permissions = ()

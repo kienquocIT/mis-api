@@ -31,6 +31,7 @@ class OpportunityCallLog(DataAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog_contact",
+        null=True
     )
     lead = models.ForeignKey(
         'lead.Lead',

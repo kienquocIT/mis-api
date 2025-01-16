@@ -5,7 +5,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Periods, Contact
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
-    LeadChartInformation, LeadHint, LeadOpportunity, LeadCall, LeadEmail, LeadMeeting
+    LeadChartInformation, LeadHint, LeadOpportunity
 )
 
 __all__ = [
@@ -18,7 +18,6 @@ __all__ = [
     'LeadListForOpportunitySerializer',
     'LeadCallCreateSerializer',
     'LeadCallDetailSerializer',
-    'LeadActivityListSerializer',
     'LeadEmailCreateSerializer',
     'LeadEmailDetailSerializer',
     'LeadMeetingCreateSerializer',
@@ -456,19 +455,25 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 call=instance,
                 log_type=2,
-                doc_id = instance.id,
+                doc_id = str(instance.lead_id).replace('-',''),
                 doc_data = {
                     'id': str(instance.id).replace('-',''),
                     'subject': instance.subject,
                     'call_date': str(instance.call_date),
-                    'contact': str(instance.contact_id).replace('-',''),
+                    'employee_created': instance.employee_created.get_full_name(),
+                    'contact': {
+                        'id': str(instance.contact_id).replace('-',''),
+                        'fullname': instance.contact.fullname
+                    } if instance.contact else {},
                     'input_result': instance.input_result,
-                    'lead': str(instance.lead_id).replace('-',''),
+                    'lead': {
+                        'id': str(instance.lead_id).replace('-',''),
+                        'title': instance.lead.title,
+                    },
                 },
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-',''),
             )
             return instance
-
 
 
 class LeadCallDetailSerializer(serializers.ModelSerializer):
@@ -477,22 +482,6 @@ class LeadCallDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
         )
-
-class LeadCallUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OpportunityCallLog
-        fields = ('is_cancelled',)
-
-    def validate(self, validate_data):
-        if self.instance.is_cancelled is True:
-            raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
-        return validate_data
-
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance
 
 
 class LeadEmailCreateSerializer(serializers.ModelSerializer):
@@ -531,8 +520,21 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 email=instance,
                 log_type=3,
-                doc_id=instance.id,
+                doc_id=str(instance.lead_id).replace('-',''),
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
+                doc_data = {
+                    'id': str(instance.id).replace('-',''),
+                    'subject': instance.subject,
+                    'email_date': str(instance.date_created),
+                    'employee_created': instance.employee_created.get_full_name(),
+                    'email_to_list': instance.email_to_list,
+                    'email_cc_list': instance.email_cc_list,
+                    'content': instance.content,
+                    'lead': {
+                        'id': str(instance.lead_id).replace('-',''),
+                        'title': instance.lead.title,
+                    },
+                },
             )
             if not validated_data.get('just_log', False):
                 email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
@@ -632,110 +634,49 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 meeting=instance,
                 log_type=4,
-                doc_id=instance.id,
+                doc_id=str(instance.lead_id).replace('-',''),
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
+                doc_data = {
+                    'id': str(instance.id).replace('-', ''),
+                    'subject': instance.subject,
+                    'meeting_date': str(instance.meeting_date),
+                    'employee_created': instance.employee_created.get_full_name(),
+                    'employee_attended_list': [
+                        {
+                            'id': str(item.id).replace('-',''),
+                            'group': {
+                                'id': str(item.group_id).replace('-',''),
+                                'title': item.group.title,
+                                'code': item.group.code
+                            } if item.group else {},
+                            'fullname': item.get_full_name(),
+                        } for item in instance.employee_attended_list.all()
+                    ],
+                    'customer_member_list': [
+                        {
+                            'id': str(item.id).replace('-',''),
+                            'code': item.code,
+                            'fullname': item.fullname,
+                            'job_title': item.job_title,
+                        } for item in instance.customer_member_list.all()
+                    ],
+                    'meeting_from_time': str(instance.meeting_from_time),
+                    'meeting_to_time': str(instance.meeting_to_time),
+                    'input_result': instance.input_result,
+                    'room_location': instance.room_location,
+                    'meeting_address': instance.meeting_address,
+                    'lead': {
+                        'id': str(instance.lead_id).replace('-', ''),
+                        'title': instance.lead.title,
+                    },
+                }
             )
             return instance
 
 
 class LeadMeetingDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = LeadMeeting
+        model = OpportunityMeeting
         fields = (
             'id',
         )
-
-
-class LeadActivityListSerializer(serializers.ModelSerializer):
-    activity_list = serializers.SerializerMethodField()
-
-    class Meta:
-        model = OpportunityActivityLogs
-        fields = (
-            'id',
-            'activity_list'
-        )
-
-    @classmethod
-    def get_activity_list(cls, obj):
-        # Combine data from the three related tables
-        activities = []
-        lead_title = obj.title
-        # Add LeadCall activities
-        for call in obj.lead_call_lead.all():
-            employee_created = Employee.objects.filter(id=call.employee_created_id).first()
-            contact = Contact.objects.filter(id=call.contact_id).first()
-            activities.append({
-                'lead_name': lead_title,
-                'type': 'call',
-                'id': call.id,
-                'title': call.title,
-                'date_created': call.date_created,
-                'employee_created': {
-                    'id': employee_created.id,
-                    'name': employee_created.get_full_name(),
-                },
-                'date': call.call_date,
-                'detail': call.detail,
-                'contact_name': contact.fullname
-            })
-
-        # Add LeadMeeting activities
-        for meeting in obj.lead_meeting_lead.all():
-            employee_created = Employee.objects.filter(id=meeting.employee_created_id).first()
-            employee_member_list = Employee.objects.filter(id__in=meeting.employee_member_list)
-            customer_member_list = Contact.objects.filter(id__in=meeting.customer_member_list)
-            activities.append({
-                'lead_name': lead_title,
-                'type': 'meeting',
-                'id': meeting.id,
-                'title': meeting.title,
-                'date_created': meeting.date_created,
-                'employee_created': {
-                    'id': employee_created.id,
-                    'name': employee_created.get_full_name(),
-                },
-                'date': meeting.meeting_date,
-                'detail': meeting.detail,
-                'meeting_from_time': meeting.meeting_from_time,
-                'meeting_to_time': meeting.meeting_to_time,
-                'meeting_address': meeting.meeting_address,
-                'room_location': meeting.room_location,
-                'employee_member_list': [{
-                    'id': employee.id,
-                    'fullname': employee.get_full_name(),
-                    'group': {
-                        'id': employee.group_id,
-                        'title': employee.group.title,
-                        'code': employee.group.code
-                    } if employee.group else {}
-                }  for employee in employee_member_list],
-                'customer_member_list': [{
-                    'id': contact.id,
-                    'fullname': contact.fullname,
-                } for contact in customer_member_list]
-            })
-
-        # Add LeadEmail activities
-        for email in obj.lead_email_lead.all():
-            employee_created = Employee.objects.filter(id=email.employee_created_id).first()
-            activities.append({
-                'lead_name': lead_title,
-                'type': 'email',
-                'id': email.id,
-                'subject': email.subject,
-                'date_created': email.date_created,
-                'employee_created': {
-                    'id': employee_created.id,
-                    'name': employee_created.get_full_name(),
-                },
-                'date': '',
-                'detail': email.content,
-                'email_cc_list': email.email_cc_list,
-                'email_to_list': email.email_to_list,
-            })
-
-        # Sort activities by date_created
-        sorted_activities = sorted(activities, key=lambda x: x['date_created'], reverse=True)
-
-        return sorted_activities
