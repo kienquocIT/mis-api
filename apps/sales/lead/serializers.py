@@ -30,7 +30,7 @@ from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, 
 
 from apps.sales.opportunity.serializers import ActivitiesCommonFunc
 
-from apps.shared import BaseMsg, SaleMsg
+from apps.shared import BaseMsg
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -628,7 +628,7 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                 {'id': item['employee_attended_mapped'].id } for item in employee_attended_list_data
             ]
             customer_member_list = [
-                {'id': item['customer_member_mapped'].id } if ['customer_member_mapped'] else {}
+                {'id': item['customer_member_mapped'].id } if item['customer_member_mapped'] else {}
                 for item in customer_member_list_data
             ]
             instance = OpportunityMeeting.objects.create(**validated_data)
