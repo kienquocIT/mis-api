@@ -574,7 +574,7 @@ class LeadMeetingEmployeeAttendedListSerializer(serializers.ModelSerializer):
 
 
 class LeadMeetingCustomerMemberListSerializer(serializers.ModelSerializer):
-    customer_member_mapped = serializers.UUIDField()
+    customer_member_mapped = serializers.UUIDField(allow_null=True, required=False)
     class Meta:
         model = OpportunityMeetingCustomerMember
         fields = (
@@ -583,10 +583,12 @@ class LeadMeetingCustomerMemberListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_customer_member_mapped(cls, value):
-        try:
-            return Contact.objects.get(pk=value)
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'Customer Member Mapped': 'Customer does not exist.'})
+        if value:
+            try:
+                return Contact.objects.get(pk=value)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({'Customer Member Mapped': 'Customer does not exist.'})
+        return value
 
 
 class LeadMeetingCreateSerializer(serializers.ModelSerializer):
@@ -627,7 +629,8 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                 {'id': item['employee_attended_mapped'].id } for item in employee_attended_list_data
             ]
             customer_member_list = [
-                {'id': item['customer_member_mapped'].id } for item in customer_member_list_data
+                {'id': item['customer_member_mapped'].id } if ['customer_member_mapped'] else {}
+                for item in customer_member_list_data
             ]
             instance = OpportunityMeeting.objects.create(**validated_data)
 
