@@ -45,6 +45,7 @@ class SaleMsg:
     WORK_ORDER_NOT_EXIST = _('Work order does not exist.')
     LEASE_ORDER_NOT_EXIST = _('Lease order does not exist.')
     FROM_EMAIL_NOT_EXIST = _('From email does not exist.')
+    DELIVERY_NOT_EXIST = _('Delivery does not exist.')
 
 
 class SaleTask:

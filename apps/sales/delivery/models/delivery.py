@@ -583,26 +583,20 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         related_name="delivery_product_uom",
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
-    delivery_quantity = models.FloatField(
-        verbose_name='Quantity need pickup of SaleOrder',
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom time",
+        related_name="delivery_product_uom_time",
+        null=True
     )
-    delivered_quantity_before = models.FloatField(
-        default=0,
-        verbose_name='Quantity was picked before',
-    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    delivery_quantity = models.FloatField(verbose_name='Quantity need pickup of SaleOrder',)
+    delivered_quantity_before = models.FloatField(default=0, verbose_name='Quantity was picked before',)
     # picking information
-    remaining_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity need pick'
-    )
-    ready_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity already for delivery',
-    )
-    picked_quantity = models.FloatField(
-        default=0,
-        verbose_name='Quantity was picked',
-    )
+    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need pick')
+    ready_quantity = models.FloatField(default=0, verbose_name='Quantity already for delivery',)
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was picked',)
     delivery_data = models.JSONField(
         default=list,
         verbose_name='data about product, warehouse, stock',
@@ -613,9 +607,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         ),
         null=True
     )
-    order = models.IntegerField(
-        default=1
-    )
+    order = models.IntegerField(default=1)
     is_promotion = models.BooleanField(
         default=False,
         help_text="flag to know this product is for promotion (discount, gift,...)"
@@ -623,16 +615,21 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     product_quantity_depreciation = models.FloatField(default=0)
-    product_unit_price = models.FloatField(
-        default=0
-    )
+    product_unit_price = models.FloatField(default=0)
+    product_tax_value = models.FloatField(default=0)
+    product_subtotal_price = models.FloatField(default=0)
+
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
     product_depreciation_price = models.FloatField(default=0)
-    product_tax_value = models.FloatField(
-        default=0
-    )
-    product_subtotal_price = models.FloatField(
-        default=0
-    )
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+    product_depreciation_adjustment = models.FloatField(default=0)
+
+    # End depreciation fields
+
     returned_quantity_default = models.FloatField(default=0)
 
     def put_backup_data(self):
@@ -729,12 +726,20 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             offset_data=old_obj.offset_data,
             uom=old_obj.uom,
             uom_data=old_obj.uom_data,
+            uom_time=old_obj.uom_time,
+            uom_time_data=old_obj.uom_time_data,
             product_quantity=old_obj.product_quantity,
             product_quantity_time=old_obj.product_quantity_time,
             product_quantity_depreciation=old_obj.product_quantity_depreciation,
             product_unit_price=old_obj.product_unit_price,
-            product_depreciation_price=old_obj.product_depreciation_price,
             product_subtotal_price=old_obj.product_subtotal_price,
+
+            product_depreciation_subtotal=old_obj.product_depreciation_subtotal,
+            product_depreciation_price=old_obj.product_depreciation_price,
+            product_depreciation_method=old_obj.product_depreciation_method,
+            product_depreciation_start_date=old_obj.product_depreciation_start_date,
+            product_depreciation_end_date=old_obj.product_depreciation_end_date,
+            product_depreciation_adjustment=old_obj.product_depreciation_adjustment,
 
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=delivered_quantity_before,
