@@ -1,12 +1,11 @@
 __all__ = ['WorkListSerializers', 'WorkCreateSerializers', 'WorkDetailSerializers', 'WorkUpdateSerializers']
 
-from django.db import transaction
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg, DisperseModel, call_task_background
 
-from ..extend_func import reorder_work, calc_rate_project, group_calc_weight, work_calc_weight_h_group, \
-    sort_order_work_and_group
+from ..extend_func import calc_rate_project, group_calc_weight, work_calc_weight_h_group, \
+    sort_order_work_and_group, reorder_work
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups, WorkMapBOM
 from ..tasks import create_project_news
 
@@ -163,59 +162,54 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         return validated_date_work(attrs)
 
     def create(self, validated_data):
-        try:
-            with transaction.atomic():
-                project = validated_data.pop('project', None)
-                group = validated_data.pop('group', None)
-                bom_service = validated_data.pop('bom_service', None)
-                is_sort = validated_data.pop('sort_style', None)
+        project = validated_data.pop('project', None)
+        group = validated_data.pop('group', None)
+        bom_service = validated_data.pop('bom_service', None)
+        is_sort = validated_data.pop('sort_style', False)
 
-                # if group and project:
-                #     validated_data['order'] = reorder_work(group, project)
-                if bom_service:
-                    validated_data['bom_data'] = {
-                        'id': str(bom_service.id),
-                        'title': bom_service.title,
-                        'code': bom_service.code
-                    }
-                work = ProjectWorks.objects.create(**validated_data)
-                ProjectMapWork.objects.create(
-                    project=project, work=work,
-                    tenant=work.tenant,
-                    company=work.company,
-                )
-                if group:
-                    GroupMapWork.objects.create(group=group, work=work)
-                calc_rate_project(project)
+        if group and project and is_sort is False:
+            validated_data['order'] = reorder_work(group, project)
+        if bom_service:
+            validated_data['bom_data'] = {
+                'id': str(bom_service.id),
+                'title': bom_service.title,
+                'code': bom_service.code
+            }
+        work = ProjectWorks.objects.create(**validated_data)
+        ProjectMapWork.objects.create(
+            project=project, work=work,
+            tenant=work.tenant,
+            company=work.company,
+        )
+        if group:
+            GroupMapWork.objects.create(group=group, work=work)
+        calc_rate_project(project)
 
-                if bom_service:
-                    WorkMapBOM.objects.create(bom=bom_service, work=work)
+        if bom_service:
+            WorkMapBOM.objects.create(bom=bom_service, work=work)
 
-                # create news feed
-                call_task_background(
-                    my_task=create_project_news,
-                    **{
-                        'project_id': str(project.id),
-                        'employee_inherit_id': str(work.employee_inherit.id),
-                        'employee_created_id': str(work.employee_created.id),
-                        'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
-                        'document_id': str(work.id),
-                        'document_title': str(work.title),
-                        'title': ProjectMsg.CREATED_A,
-                        'msg': '',
-                    }
-                )
+        # create news feed
+        call_task_background(
+            my_task=create_project_news,
+            **{
+                'project_id': str(project.id),
+                'employee_inherit_id': str(work.employee_inherit.id),
+                'employee_created_id': str(work.employee_created.id),
+                'application_id': str('49fe2eb9-39cd-44af-b74a-f690d7b61b67'),
+                'document_id': str(work.id),
+                'document_title': str(work.title),
+                'title': ProjectMsg.CREATED_A,
+                'msg': '',
+            }
+        )
 
-                # update group and project
-                update_date_group_or_prj(project, group, validated_data)
+        # update group and project
+        update_date_group_or_prj(project, group, validated_data)
 
-                # check update order when create
-                if is_sort is True:
-                    sort_order_work_and_group(work, project)
-                return work
-        except Exception as err:
-            print(err)
-        return False
+        # check update order when create
+        if is_sort is True:
+            sort_order_work_and_group(work, project)
+        return work
 
     class Meta:
         model = ProjectWorks

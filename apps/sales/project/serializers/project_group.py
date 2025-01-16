@@ -1,6 +1,5 @@
 __all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSerializers', 'GroupListDDSerializers']
 
-from django.db import transaction
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
