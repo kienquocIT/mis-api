@@ -554,7 +554,6 @@ DELIVERY_APP_CONFIG = {
     "app_label": "delivery",
     "is_workflow": True,
     "app_depend_on": [
-        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
     ],
     "permit_mapping": {
@@ -566,16 +565,14 @@ DELIVERY_APP_CONFIG = {
         "create": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
