@@ -42,6 +42,7 @@ from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
+from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
@@ -2928,3 +2929,12 @@ def update_end_date():
         item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
         item.save(update_fields=['end_date'])
     print('Done')
+
+
+def update_employee_for_promotion():
+    for company in Company.objects.all():
+        admin = Employee.objects.filter(company=company, is_admin_company=True).first()
+        Promotion.objects.filter(company=company).update(
+            employee_inherit=admin, employee_created=admin, employee_modified=admin
+        )
+    print('Done update_employee_for_promotion !!')

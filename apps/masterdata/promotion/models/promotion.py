@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import Currency, Account, Product
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, DataAbstractModel
 
 __all__ = ['Promotion', 'CustomerByList', 'CustomerByCondition', 'DiscountMethod', 'GiftMethod']
 
@@ -13,7 +13,7 @@ VALID_TIME = (
 )
 
 
-class Promotion(MasterDataAbstractModel):
+class Promotion(DataAbstractModel):
     valid_date_start = models.DateField(
         verbose_name="Valid date start", help_text="promotion valid time from, with format '%Y-%m-%d'"
     )
