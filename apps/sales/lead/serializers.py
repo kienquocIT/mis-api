@@ -680,9 +680,8 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
             if validated_data.get('email_notify', False) and self.context.get('user_current'):
                 # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
                 email_sent = send_email_sale_activities_meeting( self.context.get('user_current').id, instance)
-                if email_sent:
-                    return instance
-                raise Exception("Failed to send email")
+                instance.send_success = email_sent == 'Success'
+                instance.save(update_fields=['send_success'])
             return instance
 
 
