@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import Currency, Account, Product
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 __all__ = ['Promotion', 'CustomerByList', 'CustomerByCondition', 'DiscountMethod', 'GiftMethod']
 
