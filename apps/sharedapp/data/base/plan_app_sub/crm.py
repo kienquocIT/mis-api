@@ -1109,7 +1109,6 @@ PURCHASE_ORDER_APP_CONFIG = {
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf",  # Purchase Request
         "f52a966a-2eb2-4851-852d-eff61efeb896",  # Purchase Quotation
     ],
     "permit_mapping": {
@@ -1123,8 +1122,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1135,8 +1133,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
