@@ -240,7 +240,7 @@ class LeadEmailList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
-            'employee_current': request.user.employee_current,
+            'user_current': request.user,
         }
         return self.create(request, *args, **kwargs)
 
@@ -262,6 +262,9 @@ class LeadMeetingList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 

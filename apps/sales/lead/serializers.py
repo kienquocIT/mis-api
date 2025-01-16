@@ -2,6 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
+from apps.core.mailer.tasks import send_email_sale_activities_email, send_email_sale_activities_meeting
 from apps.masterdata.saledata.models import Periods, Contact
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
@@ -536,8 +537,9 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
                     },
                 },
             )
-            if not validated_data.get('just_log', False):
-                email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+            if not validated_data.get('just_log', False) and self.context.get('user_current'):
+                # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+                email_sent = send_email_sale_activities_email(self.context.get('user_current').id, instance)
                 if email_sent:
                     return instance
                 else:
@@ -586,6 +588,7 @@ class LeadMeetingCustomerMemberListSerializer(serializers.ModelSerializer):
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'Customer Member Mapped': 'Customer does not exist.'})
 
+
 class LeadMeetingCreateSerializer(serializers.ModelSerializer):
     lead = serializers.UUIDField(required=True)
     employee_attended_list = LeadMeetingEmployeeAttendedListSerializer(many=True)
@@ -603,7 +606,8 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
             'meeting_to_time',
             'meeting_address',
             'input_result',
-            'room_location'
+            'room_location',
+            'email_notify'
         )
 
     @classmethod
@@ -671,6 +675,13 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                     },
                 }
             )
+            if validated_data.get('email_notify', False) and self.context.get('user_current'):
+                # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+                email_sent = send_email_sale_activities_meeting( self.context.get('user_current').id, instance)
+                if email_sent:
+                    return instance
+                else:
+                    raise Exception("Failed to send email")
             return instance
 
 
