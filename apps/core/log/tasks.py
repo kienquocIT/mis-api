@@ -96,12 +96,11 @@ def force_new_notify(
 @shared_task
 def force_new_notify_many(data_list: list[dict[str, any]]):
     # data_list[index] is ARGS of "force_new_notify" exclude args name "is_submit"
-    arr_objs = []
+    objs = []
     for item in data_list:
-        arr_objs.append(
+        objs.append(
             force_new_notify(
-                **item, is_submit=False
+                **item, is_submit=True
             )
         )
-    objs = Notifications.objects.bulk_create(arr_objs)
     return str(objs)

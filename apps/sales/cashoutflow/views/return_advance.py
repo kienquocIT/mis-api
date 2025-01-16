@@ -18,7 +18,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         ap_list_id = self.request.query_params.get('advance_payment_id_list', None)

@@ -27,8 +27,10 @@ class DiagramDocument(MasterDataAbstractModel):
                 'doc_data': doc_data,
             }
         )
-        if _created is True:  # create new record
+        # create new record -> return True
+        if _created is True:
             return True
+        # record is exists -> update data
         obj.doc_data = doc_data
         obj.save(update_fields=['doc_data'])
         return True
@@ -76,8 +78,10 @@ class DiagramPrefix(MasterDataAbstractModel):
                     'doc_data': doc_data,
                 }
             )
-            if _created is True:  # create new record
+            # create new record -> return True
+            if _created is True:
                 return True
+            # record is exists -> update data
             obj.doc_data = doc_data
             obj.save(update_fields=['doc_data'])
         return True
@@ -125,8 +129,10 @@ class DiagramSuffix(MasterDataAbstractModel):
                     'doc_data': doc_data,
                 }
             )
-            if _created is True:  # create new record
+            # create new record -> return True
+            if _created is True:
                 return True
+            # record is exists -> update data
             obj.doc_data = doc_data
             obj.save(update_fields=['doc_data'])
         return True

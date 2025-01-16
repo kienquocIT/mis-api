@@ -56,10 +56,7 @@ class ReturnAdvance(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    records = ReturnAdvance.objects.filter(
-                        company=self.company, tenant=self.tenant, is_delete=False, system_status=3
-                    )
-                    self.code = 'RP.00' + str(records.count() + 1)
+                    self.add_auto_generate_code_to_instance(self, 'RP[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

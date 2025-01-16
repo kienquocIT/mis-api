@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
-    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer,
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer,
 )
 from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
@@ -237,6 +237,27 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
         return self.create(request, *args, **kwargs)
 
 
+class CustomerList(BaseListMixin):  # noqa
+    queryset = Account.objects
+    serializer_list = CustomerListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['name', 'code', 'tax_code']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_customer_account=True).select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Customer list",
+        operation_description="Customer list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='saledata', model_code='account', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
@@ -249,6 +270,8 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'industry', 'owner', 'payment_term_supplier_mapped',
         ).prefetch_related(
             'account_activity_account',
+            'company__saledata_periods_belong_to_company',
+            'report_customer_customer',
         )
 
     @swagger_auto_schema(operation_summary='Detail Account')

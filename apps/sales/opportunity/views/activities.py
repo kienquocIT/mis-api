@@ -1,4 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.core.mailer.tasks import send_email_sale_activities_email, send_email_sale_activities_meeting
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityDocument, OpportunityActivityLogs
@@ -13,7 +15,8 @@ from apps.sales.opportunity.serializers import (
     OpportunityDocumentListSerializer, OpportunityDocumentCreateSerializer,
     OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    ResponseController
 from ..filters import OpportunityMeetingFilters
 
 
@@ -23,7 +26,10 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityCallLogCreateSerializer
     serializer_detail = OpportunityCallLogDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -31,6 +37,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
             "contact",
             'process',
             'process_stage_app',
+            'employee_created',
             'employee_inherit__group'
         )
 
@@ -97,11 +104,15 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityEmailCreateSerializer
     serializer_detail = OpportunityEmailDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             "opportunity",
+            'employee_created',
             'employee_inherit__group',
             'process',
             'process_stage_app'
@@ -130,6 +141,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee_current': request.user.employee_current,
+            'user_current': request.user,
         }
         return self.create(request, *args, **kwargs)
 
@@ -152,6 +164,21 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='opportunity', model_code='opportunityemail', perm_code="view"
     )
     def get(self, request, *args, **kwargs):
+        if request.query_params.get('resend_email'):
+            instance = self.get_object()
+            if instance:
+                if instance.just_log or not instance.send_success:
+                    state = send_email_sale_activities_email(
+                        str(request.user.id),
+                        instance
+                    )
+                    instance.send_success = state == 'Success'
+                    instance.just_log = False
+                    instance.save(update_fields=['send_success', 'just_log'])
+                else:
+                    return ResponseController.bad_request_400(msg="Email was sent successfully.")
+            else:
+                return ResponseController.bad_request_400(msg="Email obj does not exist.")
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -174,13 +201,17 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityMeetingDetailSerializer
     filterset_class = OpportunityMeetingFilters
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related(
             "opportunity",
             'process',
             'process_stage_app',
+            'employee_created',
             'employee_inherit__group'
         ).prefetch_related(
             'employee_attended_list__group',
@@ -212,6 +243,9 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         label_code='opportunity', model_code='meetingwithcustomer', perm_code="create"
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -233,6 +267,21 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         label_code = 'opportunity', model_code = 'meetingwithcustomer', perm_code = "view"
     )
     def get(self, request, *args, **kwargs):
+        if request.query_params.get('resend_email'):
+            instance = self.get_object()
+            if instance:
+                if not instance.email_notify or not instance.send_success:
+                    state = send_email_sale_activities_meeting(
+                        str(request.user.id),
+                        instance
+                    )
+                    instance.send_success = state == 'Success'
+                    instance.email_notify = True
+                    instance.save(update_fields=['send_success', 'email_notify'])
+                else:
+                    return ResponseController.bad_request_400(msg="Meeting notify was sent successfully.")
+            else:
+                return ResponseController.bad_request_400(msg="Meeting obj does not exist.")
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -245,6 +294,9 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
         label_code='opportunity', model_code='meetingwithcustomer', perm_code="edit"
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.update(request, *args, **kwargs)
 
 

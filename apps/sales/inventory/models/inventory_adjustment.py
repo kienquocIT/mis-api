@@ -33,6 +33,10 @@ class InventoryAdjustment(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        self.add_auto_generate_code_to_instance(self, 'IA[n4]', False)
+        super().save(*args, **kwargs)
+
 
 class InventoryAdjustmentWarehouse(SimpleAbstractModel):
     inventory_adjustment_mapped = models.ForeignKey(InventoryAdjustment, on_delete=models.CASCADE)

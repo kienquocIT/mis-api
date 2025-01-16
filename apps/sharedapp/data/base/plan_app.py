@@ -357,6 +357,26 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
     },
+    "3a369ba5-82a0-4c4d-a447-3794b67d1d02": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting
+    },
+    "010404b3-bb91-4b24-9538-075f5f00ef14": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
+    },
+    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash infow
+    },
+    "b690b9ff-670a-474b-8ae2-2c17d7c30f40": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",  # Recon
+    },
+    "488a6284-6341-4c51-b837-fb6964e51d82": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "488a6284-6341-4c51-b837-fb6964e51d82",  # Partner Center/ Lists
+    },
 }
 
 _PlanApplication_eOffice_data = {

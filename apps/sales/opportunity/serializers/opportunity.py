@@ -95,13 +95,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stage(cls, obj):
         if obj.opportunity_stage_opportunity:
-            stages = obj.opportunity_stage_opportunity.all()
-            return [
-                {
-                    'id': stage.stage.id,
-                    'is_current': stage.is_current,
-                    'indicator': stage.stage.indicator
-                } for stage in stages]
+            return [{
+                'id': stage.stage.id,
+                'is_current': stage.is_current,
+                'indicator': stage.stage.indicator,
+                'win_rate': stage.stage.win_rate
+            } for stage in obj.opportunity_stage_opportunity.all()]
         return []
 
     @classmethod
@@ -218,6 +217,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "14dbc606-1453-4023-a2cf-35b1cd9e3efd",  # Call log
             "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meeting
             "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
+            "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
+            "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
@@ -328,7 +329,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,
             win_rate=win_rate,
-            open_date=datetime.datetime.now()
+            open_date=datetime.datetime.now(),
+            system_status=1
         )
 
         if Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, code=opportunity.code).count() > 1:
@@ -1166,16 +1168,11 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stage(cls, obj):
-        stage = obj.stage.all()
-        if stage:
-            return [
-                {
-                    'id': item.id,
-                    'is_deal_closed': item.is_deal_closed,
-                    'indicator': item.indicator,
-                } for item in stage
-            ]
-        return []
+        return [{
+            'id': item.id,
+            'is_deal_closed': item.is_deal_closed,
+            'indicator': item.indicator,
+        } for item in obj.stage.all()]
 
     @classmethod
     def get_customer(cls, obj):

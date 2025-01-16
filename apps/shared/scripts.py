@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from apps.masterdata.saledata.models.periods import Periods
-from apps.core.company.models import Company, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyFunctionNumber, CompanyBankAccount
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -28,7 +28,8 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
 )
-from . import MediaForceAPI
+from misapi.asgi import application
+from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
@@ -45,27 +46,33 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..masterdata.saledata.serializers import PaymentTermListSerializer
 from ..sales.acceptance.models import FinalAcceptanceIndicator
+from ..sales.arinvoice.models import ARInvoice
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
 from ..sales.delivery.serializers.delivery import OrderDeliverySubUpdateSerializer
 from ..sales.distributionplan.models import DistributionPlan
+from ..sales.financialcashflow.models import CashInflow
+from ..sales.financialcashflow.views import CashInflowList
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse, GoodsReturn, GoodsIssue, GoodsTransfer, GoodsReturnSubSerializerForNonPicking, \
     GoodsReturnProductDetail, GoodsReceiptLot, InventoryAdjustment, GoodsDetail
 from ..sales.inventory.serializers.goods_detail import GoodsDetailListSerializer
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler, GRHandler
-from ..sales.lead.models import LeadHint, LeadStage
+from ..sales.lead.models import LeadHint, LeadStage, Lead
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument, OpportunityMeeting, OpportunityEmail, OpportunityActivityLogs,
 )
 from ..sales.opportunity.serializers import CommonOpportunityUpdate
+from ..sales.partnercenter.models import DataObject
+from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder, PurchaseOrderPaymentStage
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
+from ..sales.reconciliation.models import Reconciliation, ReconciliationItem
 from ..sales.report.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
@@ -2220,77 +2227,141 @@ def update_valuation_method():
 
 
 class InventoryReportRun:
-    @classmethod
-    def run(cls, company_id, fiscal_year, start_month):
-        SubPeriods.objects.filter(
-            period_mapped__fiscal_year=fiscal_year,
-            period_mapped__company_id=company_id
-        ).update(run_report_inventory=False)
-        ReportStock.objects.filter(company_id=company_id).delete()
-        ReportStockLog.objects.filter(company_id=company_id).delete()
-        ReportInventoryCost.objects.filter(company_id=company_id).delete()
+    @staticmethod
+    def delete_inventory_report_data(company_id, this_period):
+        print(f'#delete inventory report data in period [{this_period.code}]', end='')
+        ReportStock.objects.filter(company_id=company_id, period_mapped=this_period).delete()
+        ReportStockLog.objects.filter(company_id=company_id, report_stock__period_mapped=this_period).delete()
+        ReportInventoryCost.objects.filter(company_id=company_id, period_mapped=this_period).delete()
+        print('...done')
+        return True
 
-        for balance_init_obj in BalanceInitialization.objects.filter(company_id=company_id):
-            prd_wh_obj = ProductWareHouse.objects.filter(
-                product=balance_init_obj.product,
-                warehouse=balance_init_obj.warehouse
-            ).first()
-            if prd_wh_obj:
-                print(f'--- Completed add balance init: '
-                      f'{balance_init_obj.product.code} {balance_init_obj.warehouse.code} {balance_init_obj.quantity}')
-                BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init_obj, prd_wh_obj)
+    @staticmethod
+    def recreate_balance_init_data(company_id, this_period):
+        print('#recreate balance init data', end='')
+        company = Company.objects.filter(id=company_id).first()
+        software_start_using_time = company.software_start_using_time if company else None
+        if software_start_using_time:
+            print(f'...log to {software_start_using_time.date()}')
+            if this_period.start_date <= software_start_using_time.date() <= this_period.end_date:
+                for balance_init in BalanceInitialization.objects.filter(company_id=company_id):
+                    prd_wh_obj = ProductWareHouse.objects.filter(
+                        product=balance_init.product, warehouse=balance_init.warehouse
+                    ).first()
+                    if prd_wh_obj:
+                        print(f'{balance_init.product.code} {balance_init.warehouse.code} {balance_init.quantity}')
+                        BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init, prd_wh_obj)
+                print('...done')
+                return True
+        print('...nothing is created')
+        return True
 
+    @staticmethod
+    def get_all_delivery_this_period(company_id, this_period):
+        print('...get all delivery this period', end='')
         all_delivery = OrderDeliverySub.objects.filter(
-            company_id=company_id, state=2, date_done__year=fiscal_year, date_done__month__gte=start_month
+            company_id=company_id,
+            state=2,
+            date_done__date__lte=this_period.end_date,
+            date_done__date__gte=this_period.start_date
         ).order_by('date_done')
+        print(f'...found {all_delivery.count()} record(s) total')
+        return all_delivery
 
+    @staticmethod
+    def get_all_goods_issue_this_period(company_id, this_period):
+        print('...get all goods issue this period', end='')
         all_goods_issue = GoodsIssue.objects.filter(
-            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+            company_id=company_id,
+            system_status=3,
+            date_approved__date__lte=this_period.end_date,
+            date_approved__date__gte=this_period.start_date
         ).order_by('date_approved')
+        print(f'...found {all_goods_issue.count()} record(s) total')
+        return all_goods_issue
 
+    @staticmethod
+    def get_all_goods_receipt_this_period(company_id, this_period):
+        print('...get all goods receipt this period', end='')
         all_goods_receipt = GoodsReceipt.objects.filter(
-            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+            company_id=company_id,
+            system_status=3,
+            date_approved__date__lte=this_period.end_date,
+            date_approved__date__gte=this_period.start_date
         ).order_by('date_approved')
+        print(f'...found {all_goods_receipt.count()} record(s) total')
+        return all_goods_receipt
 
+    @staticmethod
+    def get_all_goods_return_this_period(company_id, this_period):
+        print('...get all goods return this period', end='')
         all_goods_return = GoodsReturn.objects.filter(
-            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+            company_id=company_id,
+            system_status=3,
+            date_approved__date__lte=this_period.end_date,
+            date_approved__date__gte=this_period.start_date
         ).order_by('date_approved')
-        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
-            all_goods_return = all_goods_return.exclude(code__in=['GRT0020', 'GRT0024', 'GRT0025', 'GRT0026', 'GRT0027', 'GRT0028'])
+        print(f'...found {all_goods_return.count()} record(s) total')
+        return all_goods_return
 
+    @staticmethod
+    def get_all_goods_transfer_this_period(company_id, this_period):
+        print('...get all goods transfer this period', end='')
         all_goods_transfer = GoodsTransfer.objects.filter(
-            company_id=company_id, system_status=3, date_approved__year=fiscal_year, date_approved__month__gte=start_month
+            company_id=company_id,
+            system_status=3,
+            date_approved__date__lte=this_period.end_date,
+            date_approved__date__gte=this_period.start_date
         ).order_by('date_approved')
+        print(f'...found {all_goods_transfer.count()} record(s) total')
+        return all_goods_transfer
 
-        all_doc = []
-        for delivery in all_delivery:
-            all_doc.append({
-                'id': str(delivery.id), 'code': str(delivery.code),
-                'date_approved': delivery.date_done, 'type': 'delivery'
+    @staticmethod
+    def combine_data_all_docs(company_id, this_period):
+        print('#combine data all docs')
+        all_docs = []
+        for delivery in InventoryReportRun.get_all_delivery_this_period(company_id, this_period):
+            all_docs.append({
+                'id': str(delivery.id),
+                'code': str(delivery.code),
+                'date_approved': delivery.date_done,
+                'type': 'delivery'
             })
-        for goods_issue in all_goods_issue:
-            all_doc.append({
-                'id': str(goods_issue.id), 'code': str(goods_issue.code),
-                'date_approved': goods_issue.date_approved, 'type': 'goods_issue'
+        for goods_issue in InventoryReportRun.get_all_goods_issue_this_period(company_id, this_period):
+            all_docs.append({
+                'id': str(goods_issue.id),
+                'code': str(goods_issue.code),
+                'date_approved': goods_issue.date_approved,
+                'type': 'goods_issue'
             })
-        for goods_receipt in all_goods_receipt:
-            all_doc.append({
-                'id': str(goods_receipt.id), 'code': str(goods_receipt.code),
-                'date_approved': goods_receipt.date_approved, 'type': 'goods_receipt'
+        for goods_receipt in InventoryReportRun.get_all_goods_receipt_this_period(company_id, this_period):
+            all_docs.append({
+                'id': str(goods_receipt.id),
+                'code': str(goods_receipt.code),
+                'date_approved': goods_receipt.date_approved,
+                'type': 'goods_receipt'
             })
-        for goods_return in all_goods_return:
-            all_doc.append({
-                'id': str(goods_return.id), 'code': str(goods_return.code),
-                'date_approved': goods_return.date_approved, 'type': 'goods_return'
+        for goods_return in InventoryReportRun.get_all_goods_return_this_period(company_id, this_period):
+            all_docs.append({
+                'id': str(goods_return.id),
+                'code': str(goods_return.code),
+                'date_approved': goods_return.date_approved,
+                'type': 'goods_return'
             })
-        for goods_transfer in all_goods_transfer:
-            all_doc.append({
-                'id': str(goods_transfer.id), 'code': str(goods_transfer.code),
-                'date_approved': goods_transfer.date_approved, 'type': 'goods_transfer'
+        for goods_transfer in InventoryReportRun.get_all_goods_transfer_this_period(company_id, this_period):
+            all_docs.append({
+                'id': str(goods_transfer.id),
+                'code': str(goods_transfer.code),
+                'date_approved': goods_transfer.date_approved,
+                'type': 'goods_transfer'
             })
+        return sorted(all_docs, key=lambda x: x['date_approved'])
 
-        all_doc_sorted = sorted(all_doc, key=lambda x: x['date_approved'])
+    @staticmethod
+    def log_docs(all_doc_sorted):
+        print('#log docs')
         for doc in all_doc_sorted:
+            print(f"> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
@@ -2306,16 +2377,37 @@ class InventoryReportRun:
             if doc['type'] == 'goods_transfer':
                 instance = GoodsTransfer.objects.get(id=doc['id'])
                 instance.prepare_data_for_logging(instance)
+        return True
 
-            print(f"--- Completed run id: {doc['id']}")
-            print(f"\t{doc['date_approved'].strftime('%d/%m/%Y')}: {doc['type']} - [{doc['code']}]")
+    @staticmethod
+    def run(company_id, fiscal_year):
+        """
+        0. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
+        1. Xóa data inventory report data cũ
+        2. Tạo lại Số dư đầu kì (nếu năm đó có setup 'Ngày bắt đầu sử dụng phần mềm')
+        3. Lấy dữ liệu các phiếu nhập - xuất kho
+        4. Chạy log
+        """
+        this_period = Periods.objects.filter(company_id=company_id, fiscal_year=fiscal_year).first()
+        if this_period:
+            SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
+            InventoryReportRun.delete_inventory_report_data(company_id, this_period)
+            InventoryReportRun.recreate_balance_init_data(company_id, this_period)
+            all_doc_sorted = InventoryReportRun.combine_data_all_docs(company_id, this_period)
+            InventoryReportRun.log_docs(all_doc_sorted)
+            print('#run successfully!')
+            return True
+        print('#can not find any Period!')
+        return False
 
-        if company_id == '80785ce8-f138-48b8-b7fa-5fb1971fe204':
-            ReportStock.objects.filter(product__date_created__month__lt=5).delete()
-            ReportStockLog.objects.filter(product__date_created__month__lt=5).delete()
-            ReportInventoryCost.objects.filter(product__date_created__month__lt=5).delete()
-
-        print('Complete!')
+    @staticmethod
+    def run_tenant(tenant_id, fiscal_year):
+        for company in Company.objects.filter(tenant_id=tenant_id):
+            print(f'\n*** Run for {company.title}')
+            InventoryReportRun.run(company.id, fiscal_year)
+            print('...done')
+        print('Done :))')
+        return True
 
 
 def create_import_uom_group():
@@ -2681,7 +2773,7 @@ def create_data_for_GR_WH_PRD():
     print('Done :_)')
 
 
-def create_data_for_GoodsReceiptLot():
+def update_data_for_GoodsReceiptLot():
     for item in GoodsReceiptLot.objects.all():
         lot_obj = ProductWareHouseLot.objects.filter(
             lot_number=item.lot_number,
@@ -2692,7 +2784,9 @@ def create_data_for_GoodsReceiptLot():
     print('Done :))')
 
 
-def create_goods_detail_data():
+def recreate_goods_detail_data():
+    GoodsDetail.objects.all().delete()
+    update_data_for_GoodsReceiptLot()
     for goods_receipt_obj in GoodsReceipt.objects.filter(system_status=3):
         GoodsReceipt.push_goods_receipt_data_to_goods_detail(goods_receipt_obj)
     print('Done :))')
@@ -2736,3 +2830,184 @@ def parse_quotation_data_so():
             order.save(update_fields=['quotation_data'])
     print('parse_quotation_data_so done.')
     return True
+
+
+def update_lead_code():
+    for company in Company.objects.all():
+        Lead.objects.filter(company=company).update(system_status=0)
+        for lead in Lead.objects.filter(company=company).order_by('date_created'):
+            lead.system_status = 1
+            lead.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
+
+def update_current_document_type__doc_type_category_to_bidding():
+    count = 0
+    for item in DocumentType.objects.all():
+        item.doc_type_category = 'bidding'
+        item.save()
+        count += 1
+    print(f'{count} rows have been updated')
+
+
+def set_system_status_doc(app_code, doc_id, system_status):
+    model_target = DisperseModel(app_model=app_code).get_model()
+    if model_target and hasattr(model_target, 'objects'):
+        obj_target = model_target.objects.filter(id=doc_id).first()
+        if obj_target:
+            obj_target.system_status = system_status
+            obj_target.save(update_fields=['system_status'])
+    print('set_system_status_doc done.')
+    return True
+
+
+def remove_prop_indicator(application_id, code_list):
+    objs = ApplicationProperty.objects.filter(
+        application_id=application_id, code__in=code_list, is_sale_indicator=True
+    )
+    objs.delete()
+    print("remove_prop_indicator done.")
+    return True
+
+
+def mockup_data_company_bank_account(company_id):
+    if company_id:
+        CompanyBankAccount.objects.filter(company_id=company_id).delete()
+        bulk_info = [
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng quân đội',
+                bank_code='MBBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='03112001',
+                bic_swift_code='',
+                is_default=True,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng TMCP Đầu tư và Phát triển Việt Nam',
+                bank_code='BIDV',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='19521464',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+            CompanyBankAccount(
+                company_id=company_id,
+                country_id='bbf52b7b77ed4e8caf0a86ca00771d83',
+                bank_name='Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam',
+                bank_code='AGRIBANK',
+                bank_account_name='NGUYEN DUONG HAI',
+                bank_account_number='18122024',
+                bic_swift_code='',
+                is_default=False,
+                is_active=True,
+            ),
+        ]
+        CompanyBankAccount.objects.bulk_create(bulk_info)
+        print('Done :))')
+    else:
+        print('Company id :)) ???')
+    return True
+
+
+def update_AR_invoice_code():
+    for company in Company.objects.all():
+        ARInvoice.objects.filter(company=company).update(system_status=0)
+        for ar in ARInvoice.objects.filter(company=company).order_by('date_created'):
+            ar.system_status = 1
+            ar.save(update_fields=['system_status', 'code'])
+        print(f'Finished {company.title}')
+    print('Done :))')
+
+
+def update_end_date():
+    for item in Periods.objects.all():
+        item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
+        item.save(update_fields=['end_date'])
+    print('Done')
+
+
+def create_data_object():
+    try:
+        account = DataObject.objects.create(title='Account', application_id='4e48c863861b475aaa5e97a4ed26f294')
+        print(
+            f'{account.title} data object created'
+        )
+        contact = DataObject.objects.create(title='Contact', application_id='828b785a8f574a039f90e0edf96560d7')
+        print(
+            f'{contact.title} data object created'
+        )
+    except Exception as e:
+        print(e)
+
+
+def update_check_lock_date_project():
+    for prj in Project.objects.all():
+        lst_emp = [str(prj.employee_inherit.id)]
+        if hasattr(prj.project_pm, 'id'):
+            lst_emp.append(str(prj.project_pm.id))
+        for item in ProjectMapMember.objects.filter(
+                tenant=prj.tenant, company=prj.company,
+                project=prj, member_id__in=lst_emp
+        ):
+            item.permit_lock_fd = True
+            item.save(update_fields=['permit_lock_fd'])
+    print('done update lock finish date')
+
+
+def update_email_state_just_log():
+    OpportunityEmail.objects.filter(just_log=False).update(send_success=True)
+    print('Done :))')
+    return True
+
+
+def update_address_contact():
+    for contact in Contact.objects.all():
+        home_address_data = {
+            'home_country': {
+                'id': str(contact.home_country.id),
+                'title': contact.home_country.title
+            } if contact.home_country else {},
+            'home_detail_address': contact.home_detail_address if contact.home_detail_address else '',
+            'home_city': {
+                'id': str(contact.home_city.id),
+                'title': contact.home_city.title
+            } if contact.home_city else {},
+            'home_district': {
+                'id': str(contact.home_district.id),
+                'title': contact.home_district.title
+            } if contact.home_district else {},
+            'home_ward': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.home_ward else {},
+        }
+        work_address_data = {
+            'work_country': {
+                'id': str(contact.work_country.id),
+                'title': contact.work_country.title
+            } if contact.work_country else {},
+            'work_detail_address': contact.work_detail_address if contact.work_detail_address else '',
+            'work_city': {
+                'id': str(contact.work_city.id),
+                'title': contact.work_city.title
+            } if contact.work_city else {},
+            'work_district': {
+                'id': str(contact.work_district.id),
+                'title': contact.work_district.title
+            } if contact.work_district else {},
+            'work_ward': {
+                'id': str(contact.work_ward.id),
+                'title': contact.work_ward.title
+            } if contact.work_ward else {},
+        }
+        contact.home_address_data = home_address_data
+        contact.work_address_data = work_address_data
+        contact.save(update_fields=['home_address_data', 'work_address_data'])
+    print('Done :))')

@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
@@ -111,11 +110,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
+            kw_parameter['lease_order_id'] = obj.lease_order_id
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
             if 1 in cost_cfg:
-                kw_parameter['warehouse_id'] = warehouse_item[0]
+                kw_parameter['warehouse_id'] = warehouse_item[0] if len(warehouse_item) > 0 else None
             this_sub_period_cost = obj.product.report_inventory_cost_product.filter(
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order,
@@ -298,6 +298,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                     report_stock__sub_period_order=obj.sub_period_order,
                     **kw_parameter
             ):
+                print(1, log.trans_title)
                 if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                     if log.stock_type == 1:
                         sum_in_quantity += log.quantity
@@ -307,6 +308,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         sum_out_value += log.value
 
                     # lấy detail cho từng TH
+                    print(2, log.trans_title)
                     if log.trans_title in [
                         'Goods receipt', 'Goods receipt (IA)', 'Goods return',
                         'Goods transfer (in)', 'Balance init input'
@@ -314,7 +316,10 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         data_stock_activity = cls.get_data_stock_activity_for_in(
                             log, data_stock_activity, obj.product
                         )
-                    elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
+                    elif log.trans_title in [
+                        'Delivery (sale)', 'Delivery (lease)',
+                        'Goods issue', 'Goods transfer (out)'
+                    ]:
                         data_stock_activity = cls.get_data_stock_activity_for_out(
                             log, data_stock_activity, obj.product
                         )
@@ -364,6 +369,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
+            kw_parameter['lease_order_id'] = obj.lease_order_id
 
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
@@ -380,12 +386,16 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
                 # lấy detail cho từng TH
                 if log.trans_title in [
-                    'Goods receipt', 'Goods receipt (IA)', 'Goods return', 'Goods transfer (in)', 'Balance init input'
+                    'Goods receipt', 'Goods receipt (IA)', 'Goods return',
+                    'Goods transfer (in)', 'Balance init input'
                 ]:
                     data_stock_activity = cls.get_data_stock_activity_for_in(
                         log, data_stock_activity, obj.product
                     )
-                elif log.trans_title in ['Delivery', 'Goods issue', 'Goods transfer (out)']:
+                elif log.trans_title in [
+                    'Delivery (sale)', 'Delivery (lease)',
+                    'Goods issue', 'Goods transfer (out)'
+                ]:
                     data_stock_activity = cls.get_data_stock_activity_for_out(
                         log, data_stock_activity, obj.product
                     )
@@ -496,15 +506,13 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         wh_obj = WareHouse.objects.filter(
             tenant=tenant_current, company=company_current, id=balance_data.get('warehouse_id')
         ).first()
-        period_obj = Periods.objects.filter(
-            tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
-        ).first()
+        this_period = Periods.get_current_period(tenant_current.id, company_current.id)
         if not prd_obj:
             raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
         if not wh_obj:
             raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
-        if not period_obj:
-            raise serializers.ValidationError({'period_obj': 'Period is not found.'})
+        if not this_period:
+            raise serializers.ValidationError({'this_period': 'Period is not found.'})
         if prd_obj.inventory_uom:
             validate_data['uom'] = prd_obj.inventory_uom
         else:
@@ -515,17 +523,17 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             )
         if ReportStockLog.objects.filter(
                 product=prd_obj,
-                warehouse=wh_obj if not period_obj.company.company_config.cost_per_project else None
+                warehouse=wh_obj if not this_period.company.company_config.cost_per_project else None
         ).exists():
             raise serializers.ValidationError(
                 {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
             )
-        sub_period_order = period_obj.company.software_start_using_time.month - period_obj.space_month
-        sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        sub_period_order = this_period.company.software_start_using_time.month - this_period.space_month
+        this_sub_period = this_period.sub_periods_period_mapped.filter(order=sub_period_order).first()
         validate_data['product'] = prd_obj
         validate_data['warehouse'] = wh_obj
-        validate_data['period_obj'] = period_obj
-        validate_data['sub_period_obj'] = sub_period_obj
+        validate_data['period_obj'] = this_period
+        validate_data['sub_period_obj'] = this_sub_period
         validate_data['quantity'] = float(balance_data.get('quantity', 0))
         validate_data['value'] = float(balance_data.get('value', 0))
         validate_data['data_lot'] = balance_data.get('data_lot', [])
@@ -826,9 +834,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         wh_obj = WareHouse.objects.filter(
             tenant=tenant_current, company=company_current, code=balance_data.get('warehouse_code')
         ).first()
-        period_obj = Periods.objects.filter(
-            tenant=tenant_current, company=company_current, fiscal_year=datetime.now().year
-        ).first()
+        this_period = Periods.get_current_period(tenant_current.id, company_current.id)
         if prd_obj.inventory_uom:
             validate_data['uom'] = prd_obj.inventory_uom
         else:
@@ -837,8 +843,8 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
             raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
         if not wh_obj:
             raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
-        if not period_obj:
-            raise serializers.ValidationError({'period_obj': 'Period is not found.'})
+        if not this_period:
+            raise serializers.ValidationError({'this_period': 'Period is not found.'})
         if prd_obj.general_traceability_method != 0:
             raise serializers.ValidationError({'error': 'Serial or LOT traceability method is not supported.'})
         if BalanceInitialization.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
@@ -847,17 +853,17 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
             )
         if ReportStockLog.objects.filter(
                 product=prd_obj,
-                warehouse=wh_obj if not period_obj.company.company_config.cost_per_project else None
+                warehouse=wh_obj if not this_period.company.company_config.cost_per_project else None
         ).exists():
             raise serializers.ValidationError(
                 {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
             )
-        sub_period_order = period_obj.company.software_start_using_time.month - period_obj.space_month
-        sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        sub_period_order = this_period.company.software_start_using_time.month - this_period.space_month
+        this_sub_period = this_period.sub_periods_period_mapped.filter(order=sub_period_order).first()
         validate_data['product'] = prd_obj
         validate_data['warehouse'] = wh_obj
-        validate_data['period_obj'] = period_obj
-        validate_data['sub_period_obj'] = sub_period_obj
+        validate_data['period_obj'] = this_period
+        validate_data['sub_period_obj'] = this_sub_period
         validate_data['quantity'] = float(balance_data.get('quantity', 0))
         validate_data['value'] = float(balance_data.get('value', 0))
         validate_data['data_lot'] = []

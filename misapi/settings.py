@@ -19,6 +19,9 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+import firebase_admin
+from firebase_admin import credentials
+
 from .load_env import load_env
 
 # override recursion limit
@@ -84,6 +87,8 @@ INSTALLED_APPS = \
         'apps.core.forms',  # form
         'apps.core.chatbot',  # chatbot AI
         'apps.core.recurrence',  # recurrence for apps
+        'apps.core.chat3rd',
+        'apps.core.firebase',
         'apps.core.contract_templates',  # contract template config
     ] + [  # application
         'apps.core.base',
@@ -122,6 +127,9 @@ INSTALLED_APPS = \
         'apps.sales.contract',
         'apps.sales.production',
         'apps.sales.bidding',
+        'apps.sales.leaseorder',
+        'apps.sales.consulting',
+        'apps.sales.partnercenter'
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -129,6 +137,9 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+    ] + [
+        'apps.sales.financialcashflow',
+        'apps.sales.reconciliation',
     ]
 
 MIDDLEWARE = [
@@ -456,7 +467,6 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': f"{os.environ.get('THROTTLE_AUTH', '200')}/minute",
         'anon': f"{os.environ.get('THROTTLE_ANON', '50')}/minute",
-        'import_DB_throttle_scope': f"{os.environ.get('THROTTLE_AUTH_IMPORT', '200')}/minute",  # Áp dụng cho scope 'import_DB_throttle_scope'
     }
 }
 if DEBUG is True:
@@ -670,6 +680,7 @@ if ENABLE_PROD is True:
                 'OPTIONS': {
                     'charset': 'utf8mb4',
                 },
+                'CONN_MAX_AGE': 600,  # 60 * 10
             }
         }
     )
@@ -756,6 +767,14 @@ if CICD_ENABLED__USE_DB_MOCKUP is True and DB_SQLITE_MOCKUP is True:
 # Display config about DB, Cache, CELERY,...
 def display_wraptext(text, length=80):
     return "\n |  ".join(textwrap.wrap(text, length))
+
+
+# Firebase
+FIREBASE_FILE_CONFIG = os.path.join(BASE_DIR, 'serviceAccountKey.json')
+FIREBASE_ENABLE = os.path.isfile(FIREBASE_FILE_CONFIG)
+if FIREBASE_ENABLE is True:
+    cred = credentials.Certificate(FIREBASE_FILE_CONFIG)
+    firebase_admin.initialize_app(cred)
 
 
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']

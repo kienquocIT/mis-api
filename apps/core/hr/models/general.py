@@ -6,7 +6,6 @@ __all__ = [
 from typing import Union
 from uuid import UUID
 from django.db import models
-from django.utils import timezone
 from apps.core.models import TenantAbstractModel
 from apps.masterdata.saledata.models import Periods
 from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
@@ -156,9 +155,7 @@ class Group(TenantAbstractModel):
 
     def save(self, *args, **kwargs):
         if self.is_delete:
-            this_period = Periods.objects.filter(
-                tenant_id=self.tenant_id, company_id=self.company_id, fiscal_year=timezone.now().year
-            ).first()
+            this_period = Periods.get_current_period(self.tenant_id, self.company_id)
             if this_period:
                 this_budget_plan = this_period.budget_plan_period_mapped.first()
                 self.update_budget_plan(this_budget_plan)

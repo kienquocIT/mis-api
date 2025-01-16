@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.utils import timezone
 from apps.masterdata.saledata.models import Periods
 from apps.sales.lead.models import (
     Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
@@ -52,6 +51,8 @@ class LeadListSerializer(serializers.ModelSerializer):
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
     class Meta:
         model = Lead
         fields = (
@@ -73,20 +74,13 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        number = Lead.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], is_delete=False
-        ).count() + 1
-        code = f'L000{number}'
         current_stage = LeadStage.objects.filter(
             tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
         ).first()
-        this_period = Periods.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'],
-            fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(validated_data['tenant_id'], validated_data['company_id'])
         if current_stage and this_period:
             lead = Lead.objects.create(
-                **validated_data, current_lead_stage=current_stage, code=code, system_status=1,
+                **validated_data, current_lead_stage=current_stage, system_status=1,
                 period_mapped=this_period
             )
 
@@ -247,6 +241,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
     class Meta:
         model = Lead
         fields = (
@@ -308,32 +304,29 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        this_period = Periods.objects.filter(
-            tenant_id=instance.tenant_id, company_id=instance.company_id,
-            fiscal_year=timezone.now().year
-        ).first()
+        # this_period = Periods.get_current_period(instance.tenant_id, instance.company_id)
         config = instance.lead_configs.first()
-        if str(this_period.id) == str(instance.period_mapped_id):
-            if 'goto_stage' in self.context:
-                self.goto_stage(instance)
-            elif 'convert_opp' in self.context:
-                self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
-            else:
-                if config.contact_mapped or config.convert_opp:
-                    raise serializers.ValidationError(
-                        {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
-                    )
-                for key, value in validated_data.items():
-                    setattr(instance, key, value)
-                instance.save()
+        # if str(this_period.id) == str(instance.period_mapped_id):
+        if 'goto_stage' in self.context:
+            self.goto_stage(instance)
+        elif 'convert_opp' in self.context:
+            self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
+        else:
+            if config.contact_mapped or config.convert_opp:
+                raise serializers.ValidationError(
+                    {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
+                )
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
 
-                # update notes
-                LeadNote.objects.filter(lead=instance).delete()
-                for note_content in self.initial_data.get('note_data', []):
-                    LeadNote.objects.create(lead=instance, note=note_content)
+            # update notes
+            LeadNote.objects.filter(lead=instance).delete()
+            for note_content in self.initial_data.get('note_data', []):
+                LeadNote.objects.create(lead=instance, note=note_content)
 
-            return instance
-        raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
+        return instance
+        # raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
 
 
 class LeadStageListSerializer(serializers.ModelSerializer):

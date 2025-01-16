@@ -341,75 +341,123 @@ class GoodsReceipt(DataAbstractModel):
     @classmethod
     def push_goods_receipt_data_to_goods_detail(cls, goods_receipt_obj):
         print(f'* Push goods receipt data ({goods_receipt_obj.code}) to_goods detail.')
+        bulk_info = []
         for gr_prd_obj in goods_receipt_obj.goods_receipt_product_goods_receipt.all():
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
                 pr_data = gr_wh_obj.goods_receipt_request_product.purchase_request_data if (
                     gr_wh_obj.goods_receipt_request_product) else {}
-                gr_wh_lot_obj = gr_wh_obj.goods_receipt_lot_gr_warehouse.first()
+                gr_wh_lot_list = gr_wh_obj.goods_receipt_lot_gr_warehouse.all()
                 count_serial_data = cls.count_created_serial_data(
                     goods_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data
                 )
-                GoodsDetail.objects.create(
-                    product=gr_prd_obj.product,
-                    product_data={
-                        'id': str(gr_prd_obj.product_id),
-                        'code': gr_prd_obj.product.code,
-                        'title': gr_prd_obj.product.title,
-                        'category': str(gr_prd_obj.product.general_product_category_id),
-                        'general_traceability_method': gr_prd_obj.product.general_traceability_method
-                    } if gr_prd_obj.product else {},
-                    warehouse=gr_wh_obj.warehouse,
-                    warehouse_data={
-                        'id': str(gr_wh_obj.warehouse_id),
-                        'code': gr_wh_obj.warehouse.code,
-                        'title': gr_wh_obj.warehouse.title
-                    } if gr_wh_obj.warehouse else {},
-                    uom=gr_prd_obj.uom,
-                    uom_data=gr_prd_obj.uom_data,
-                    goods_receipt=goods_receipt_obj,
-                    goods_receipt_data={
-                        'id': str(goods_receipt_obj.id),
-                        'code': goods_receipt_obj.code,
-                        'title': goods_receipt_obj.title,
-                        'date_approved': str(goods_receipt_obj.date_approved),
-                        'pic': {
-                            'id': str(goods_receipt_obj.employee_inherit_id),
-                            'code': goods_receipt_obj.employee_inherit.code,
-                            'fullname': goods_receipt_obj.employee_inherit.get_full_name(2),
-                            'group': {
-                                'id': str(goods_receipt_obj.employee_inherit.group_id),
-                                'code': goods_receipt_obj.employee_inherit.group.code,
-                                'title': goods_receipt_obj.employee_inherit.group.title,
-                            } if goods_receipt_obj.employee_inherit.group else {},
-                        } if goods_receipt_obj.employee_inherit else {},
-                    } if goods_receipt_obj else {},
-                    purchase_request_id=pr_data.get('id'),
-                    purchase_request_data=pr_data,
-                    lot=gr_wh_lot_obj.lot if gr_wh_lot_obj else None,
-                    lot_data={
-                        'id': str(gr_wh_lot_obj.lot_id),
-                        'lot_number': gr_wh_lot_obj.lot.lot_number,
-                        'expire_date': str(gr_wh_lot_obj.lot.expire_date),
-                        'manufacture_date': str(gr_wh_lot_obj.lot.manufacture_date)
-                    } if gr_wh_lot_obj else {},
-                    imported_sn_quantity=count_serial_data,
-                    receipt_quantity=gr_wh_obj.quantity_import,
-                    status=int(count_serial_data == gr_wh_obj.quantity_import),
-                    tenant=goods_receipt_obj.tenant,
-                    company=goods_receipt_obj.company,
-                    employee_inherit=goods_receipt_obj.employee_inherit,
-                    employee_created=goods_receipt_obj.employee_created,
-                    date_created=goods_receipt_obj.date_approved
-                )
+                if gr_wh_lot_list.count() > 0:
+                    for gr_wh_lot_obj in gr_wh_lot_list:
+                        bulk_info.append(GoodsDetail(
+                            product=gr_prd_obj.product,
+                            product_data={
+                                'id': str(gr_prd_obj.product_id),
+                                'code': gr_prd_obj.product.code,
+                                'title': gr_prd_obj.product.title,
+                                'category': str(gr_prd_obj.product.general_product_category_id),
+                                'general_traceability_method': gr_prd_obj.product.general_traceability_method
+                            } if gr_prd_obj.product else {},
+                            warehouse=gr_wh_obj.warehouse,
+                            warehouse_data={
+                                'id': str(gr_wh_obj.warehouse_id),
+                                'code': gr_wh_obj.warehouse.code,
+                                'title': gr_wh_obj.warehouse.title
+                            } if gr_wh_obj.warehouse else {},
+                            uom=gr_prd_obj.uom,
+                            uom_data=gr_prd_obj.uom_data,
+                            goods_receipt=goods_receipt_obj,
+                            goods_receipt_data={
+                                'id': str(goods_receipt_obj.id),
+                                'code': goods_receipt_obj.code,
+                                'title': goods_receipt_obj.title,
+                                'date_approved': str(goods_receipt_obj.date_approved),
+                                'pic': {
+                                    'id': str(goods_receipt_obj.employee_inherit_id),
+                                    'code': goods_receipt_obj.employee_inherit.code,
+                                    'fullname': goods_receipt_obj.employee_inherit.get_full_name(2),
+                                    'group': {
+                                        'id': str(goods_receipt_obj.employee_inherit.group_id),
+                                        'code': goods_receipt_obj.employee_inherit.group.code,
+                                        'title': goods_receipt_obj.employee_inherit.group.title,
+                                    } if goods_receipt_obj.employee_inherit.group else {},
+                                } if goods_receipt_obj.employee_inherit else {},
+                            } if goods_receipt_obj else {},
+                            purchase_request_id=pr_data.get('id'),
+                            purchase_request_data=pr_data,
+                            lot=gr_wh_lot_obj.lot,
+                            lot_data={
+                                'id': str(gr_wh_lot_obj.lot_id),
+                                'lot_number': gr_wh_lot_obj.lot.lot_number,
+                                'expire_date': str(gr_wh_lot_obj.lot.expire_date),
+                                'manufacture_date': str(gr_wh_lot_obj.lot.manufacture_date)
+                            } if gr_wh_lot_obj.lot else {},
+                            imported_sn_quantity=count_serial_data,
+                            receipt_quantity=gr_wh_obj.quantity_import,
+                            status=int(count_serial_data == gr_wh_obj.quantity_import),
+                            tenant=goods_receipt_obj.tenant,
+                            company=goods_receipt_obj.company,
+                            employee_inherit=goods_receipt_obj.employee_inherit,
+                            employee_created=goods_receipt_obj.employee_created,
+                            date_created=goods_receipt_obj.date_approved
+                        ))
+                else:
+                    bulk_info.append(GoodsDetail(
+                        product=gr_prd_obj.product,
+                        product_data={
+                            'id': str(gr_prd_obj.product_id),
+                            'code': gr_prd_obj.product.code,
+                            'title': gr_prd_obj.product.title,
+                            'category': str(gr_prd_obj.product.general_product_category_id),
+                            'general_traceability_method': gr_prd_obj.product.general_traceability_method
+                        } if gr_prd_obj.product else {},
+                        warehouse=gr_wh_obj.warehouse,
+                        warehouse_data={
+                            'id': str(gr_wh_obj.warehouse_id),
+                            'code': gr_wh_obj.warehouse.code,
+                            'title': gr_wh_obj.warehouse.title
+                        } if gr_wh_obj.warehouse else {},
+                        uom=gr_prd_obj.uom,
+                        uom_data=gr_prd_obj.uom_data,
+                        goods_receipt=goods_receipt_obj,
+                        goods_receipt_data={
+                            'id': str(goods_receipt_obj.id),
+                            'code': goods_receipt_obj.code,
+                            'title': goods_receipt_obj.title,
+                            'date_approved': str(goods_receipt_obj.date_approved),
+                            'pic': {
+                                'id': str(goods_receipt_obj.employee_inherit_id),
+                                'code': goods_receipt_obj.employee_inherit.code,
+                                'fullname': goods_receipt_obj.employee_inherit.get_full_name(2),
+                                'group': {
+                                    'id': str(goods_receipt_obj.employee_inherit.group_id),
+                                    'code': goods_receipt_obj.employee_inherit.group.code,
+                                    'title': goods_receipt_obj.employee_inherit.group.title,
+                                } if goods_receipt_obj.employee_inherit.group else {},
+                            } if goods_receipt_obj.employee_inherit else {},
+                        } if goods_receipt_obj else {},
+                        purchase_request_id=pr_data.get('id'),
+                        purchase_request_data=pr_data,
+                        lot=None,
+                        lot_data={},
+                        imported_sn_quantity=count_serial_data,
+                        receipt_quantity=gr_wh_obj.quantity_import,
+                        status=int(count_serial_data == gr_wh_obj.quantity_import),
+                        tenant=goods_receipt_obj.tenant,
+                        company=goods_receipt_obj.company,
+                        employee_inherit=goods_receipt_obj.employee_inherit,
+                        employee_created=goods_receipt_obj.employee_created,
+                        date_created=goods_receipt_obj.date_approved
+                    ))
+        GoodsDetail.objects.bulk_create(bulk_info)
         print('Done')
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
@@ -421,6 +469,14 @@ class GoodsReceipt(DataAbstractModel):
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
+            # update lot_id in GoodsReceiptLot (for new LOT)
+            for item in self.goods_receipt_lot_goods_receipt.all():
+                lot_obj = ProductWareHouseLot.objects.filter(
+                    lot_number=item.lot_number,
+                    product_warehouse__product=item.goods_receipt_warehouse.goods_receipt_product.product
+                ).first()
+                item.lot = lot_obj
+                item.save(update_fields=['lot'])
             self.prepare_data_for_logging(self)
             self.push_goods_receipt_data_to_goods_detail(self)
 

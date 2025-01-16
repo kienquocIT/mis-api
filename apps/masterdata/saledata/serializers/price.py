@@ -66,7 +66,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
     valid_time_start = serializers.DateTimeField(required=True)
     valid_time_end = serializers.DateTimeField(required=True)
-    price_list_mapped = serializers.UUIDField(required=False)
+    price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Price
@@ -97,7 +97,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):
         return 1
 
     def validate(self, validate_data):
-        if 'price_list_mapped' in validate_data:
+        if validate_data.get('price_list_mapped'):
             price_list_mapped_obj = Price.objects.filter(id=validate_data['price_list_mapped']).first()
             if price_list_mapped_obj:
                 validate_data['price_list_mapped'] = price_list_mapped_obj
@@ -437,12 +437,18 @@ class PriceListUpdateItemSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
         list_item_data = []
         for item in validate_data.get('list_item', []):
-            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+
             uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
             currency_obj = Currency.objects.filter(id=item.get('currency')).first()
             uom_group_obj = UnitOfMeasureGroup.objects.filter(id=item.get('uom_group_id')).first()
-            if not product_obj:
-                raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            if self.instance.price_list_type == 0:
+                item_obj = Product.objects.filter(id=item.get('product_id')).first()
+                if not item_obj:
+                    raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            else:
+                item_obj = Expense.objects.filter(id=item.get('product_id')).first()
+                if not item_obj:
+                    raise serializers.ValidationError({'expense_obj': ProductMsg.EXPENSE_DOES_NOT_EXIST})
             if not uom_obj:
                 raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
             if not currency_obj:
@@ -454,7 +460,7 @@ class PriceListUpdateItemSerializer(serializers.ModelSerializer):  # noqa
             else:
                 price = float(item.get('price'))
             list_item_data.append({
-                'product_obj': product_obj,
+                'product_obj': item_obj,
                 'uom_obj': uom_obj,
                 'currency_obj': currency_obj,
                 'uom_group_obj': uom_group_obj,
@@ -576,11 +582,13 @@ class PriceListCreateItemSerializer(serializers.ModelSerializer):
 
         if self.instance.price_list_type == 0:
             item_obj = Product.objects.filter(id=product_data.get('id')).first()
+            if not item_obj:
+                raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         else:
             item_obj = Expense.objects.filter(id=product_data.get('id')).first()
+            if not item_obj:
+                raise serializers.ValidationError({'expense_obj': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
-        if not item_obj:
-            raise serializers.ValidationError({'product_obj': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         validate_data['item_obj'] = item_obj
 
         uom_obj = UnitOfMeasure.objects.filter(id=product_data.get('uom')).first()

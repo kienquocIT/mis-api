@@ -294,7 +294,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
-                    SOFinishHandler.push_product_info(instance=self)  # product
+                    SOFinishHandler.push_product_info(instance=self)  # product info
                     SOFinishHandler.update_opportunity(instance=self)  # opportunity
                     SOFinishHandler.push_to_customer_activity(instance=self)  # customer
                     SOFinishHandler.push_to_report_revenue(instance=self)  # reports
@@ -319,7 +319,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
 
 
 # SUPPORT PRODUCTS
-class SaleOrderProduct(SimpleAbstractModel):
+class SaleOrderProduct(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -410,7 +410,7 @@ class SaleOrderProduct(SimpleAbstractModel):
 
 
 # SUPPORT LOGISTICS
-class SaleOrderLogistic(SimpleAbstractModel):
+class SaleOrderLogistic(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -426,7 +426,7 @@ class SaleOrderLogistic(SimpleAbstractModel):
 
 
 # SUPPORT COST
-class SaleOrderCost(SimpleAbstractModel):
+class SaleOrderCost(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -597,8 +597,12 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
     )
     term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
+    date_type = models.CharField(max_length=200, blank=True)
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
+    issue_invoice = models.IntegerField(null=True)
+    value_after_tax = models.FloatField(default=0)
+    value_total = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)

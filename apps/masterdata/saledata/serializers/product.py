@@ -565,7 +565,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company.company_config)
+                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company)
 
                     result.append({
                         'id': item.id,
@@ -646,7 +646,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
-    # valuation_method = serializers.IntegerField(default=1, allow_null=True)
+    valuation_method = serializers.IntegerField(default=1, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
@@ -662,7 +662,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom', 'sale_tax', 'sale_currency_using',
             'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
-            # 'valuation_method',
+            'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )
 
@@ -827,6 +827,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         old_valuation_method = self.instance.valuation_method
         new_valuation_method = validate_data.get('valuation_method')
+        print(old_valuation_method, new_valuation_method)
         if all([
             ProductWareHouse.objects.filter(product=self.instance).exists(),
             new_valuation_method != old_valuation_method

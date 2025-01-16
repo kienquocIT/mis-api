@@ -385,7 +385,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
                     fill__company=True,
                     id=value
                 )
-                if distribution_plan_obj.end_date > datetime.now().date():
+                if distribution_plan_obj.end_date < datetime.now().date():
                     raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.EXPIRED_DB})
                 return distribution_plan_obj
             except DistributionPlan.DoesNotExist:

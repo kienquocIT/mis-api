@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel
@@ -63,6 +62,11 @@ class Lead(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        self.add_auto_generate_code_to_instance(self, 'LEAD[n4]', False)
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class LeadNote(SimpleAbstractModel):
@@ -170,9 +174,7 @@ class LeadChartInformation(SimpleAbstractModel):
 
     @classmethod
     def create_update_chart_information(cls, tenant_id, company_id):
-        this_period = Periods.objects.filter(
-            tenant_id=tenant_id, company_id=company_id, fiscal_year=timezone.now().year
-        ).first()
+        this_period = Periods.get_current_period(tenant_id, company_id)
         chart_info_obj = LeadChartInformation.objects.filter(
             tenant_id=tenant_id, company_id=company_id, period_mapped=this_period
         ).first()
@@ -192,7 +194,8 @@ class LeadChartInformation(SimpleAbstractModel):
                     stage_amount_information=stage_amount_information
                 )
             return True
-        raise ValueError('This period not found. Can not update Lead chart information.')
+        return False  # có năm tài chính thì run block if, else không làm gì
+        # raise ValueError('This period not found. Can not update Lead chart information.')
 
 
 class LeadHint(SimpleAbstractModel):

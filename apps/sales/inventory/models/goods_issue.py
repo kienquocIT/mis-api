@@ -155,19 +155,11 @@ class GoodsIssue(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:
             if not self.code:
-                goods_issue = GoodsIssue.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count()
-                temper = "%04d" % (goods_issue + 1)  # pylint: disable=C0209
-                self.code = f"GI{temper}"
+                self.add_auto_generate_code_to_instance(self, 'GI[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

@@ -83,22 +83,6 @@ class PurchaseRequest(DataAbstractModel):
         return num_max
 
     @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            # code = 'PR0001-' + StringHandler.random_str(17)
-            code = 'PR0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'PR{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
     def update_remain_for_purchase_request_so(cls, instance):
         if instance.request_for == 0:
             for pr_product in instance.purchase_request.all():
@@ -120,7 +104,7 @@ class PurchaseRequest(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    self.code = self.generate_code(self.company_id)
+                    self.add_auto_generate_code_to_instance(self, 'PR[n4]', True)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')

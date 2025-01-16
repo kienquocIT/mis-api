@@ -28,3 +28,31 @@ msgstr "Trả lời bình luận không hỗ trợ"
 #
 msgid "Activities not found"
 msgstr "Hoạt đông không tồn tại"
+
+#
+msgid "Start date not in range of project date"
+msgstr "Ngày bắt đầu không khớp với ngày bắt đầu của dự án"
+
+#
+msgid "The finish date must be later than or equal to the end date of the group/work"
+msgstr "Ngày hoàn thành của dự án phải lớn hơn hoặc bằng ngày kết thúc của Nhóm/Công việc"
+
+#
+msgid "Group date not in range of project date"
+msgstr "Ngày của Nhóm không khớp với ngày của dự án"
+
+#
+msgid "Work date not in range of project date"
+msgstr "Ngày của Công việc không khớp với ngày của dự án"
+
+#
+msgid "You don't have permission to perform the action lock finish date"
+msgstr "Bạn không có quyền chỉnh sửa khoá ngày hoàn thành"
+
+#
+msgid "Project status is required"
+msgstr "Trạng thái dự án là bắt buộc"
+
+#
+msgid "You do not have permission to close/complete this project"
+msgstr "Bạn không có quyền đóng/hoàn thành dự án này"

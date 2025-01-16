@@ -151,7 +151,10 @@ def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: 
                             header={},
                             reply_to=cls.kwargs['reply_email'],
                         ).send(
+                            as_name=None,
                             mail_to=[user_obj.email],
+                            mail_cc=[],
+                            mail_bcc=[],
                             template=template_obj.contents,
                             data=MailDataResolver.welcome(user_obj),
                         )
@@ -170,6 +173,134 @@ def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: 
                     return 'SEND_FAILURE'
                 return 'USER_EMAIL_IS_NOT_CORRECT'
             return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+@shared_task
+def send_email_sale_activities_email(user_id: UUID or str, email_obj):
+    tenant_id = email_obj.tenant_id
+    company_id = email_obj.company_id
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, _, _] = obj_got
+        cls = SendMailController(mail_config=config_obj, timeout=10)
+        if cls.is_active is True:
+            subject = email_obj.subject
+
+            log_cls = MailLogController(
+                tenant_id=tenant_id, company_id=company_id,
+                system_code=0,  # other
+                doc_id=user_id, subject=subject,
+            )
+            log_cls.create()
+            log_cls.update(
+                address_sender=cls.from_email,
+            )
+            log_cls.update_employee_to(employee_to=[], address_to_init=email_obj.email_to_list)
+            log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+            log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+            log_cls.update_log_data(host=cls.host, port=cls.port)
+
+            try:
+                state_send = cls.setup(
+                    subject=subject,
+                    from_email=cls.kwargs['from_email'],
+                    mail_cc=email_obj.email_cc_list,
+                    bcc=[],
+                    header={},
+                    reply_to=email_obj.employee_created.email,  # trả lời người gửi (employee created)
+                ).send(
+                    as_name=email_obj.employee_created.get_full_name(2),
+                    mail_to=email_obj.email_to_list,
+                    mail_cc=email_obj.email_cc_list,
+                    mail_bcc=[],
+                    template=email_obj.content,
+                    data={},
+                )
+            except Exception as err:
+                state_send = False
+                log_cls.update(errors_data=str(err))
+
+            if state_send is True:
+                log_cls.update(status_code=1, status_remark=state_send)  # sent
+                log_cls.save()
+                return 'Success'
+            log_cls.update(status_code=2, status_remark=state_send)  # error
+            log_cls.save()
+            return 'SEND_FAILURE'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+@shared_task
+def send_email_sale_activities_meeting(user_id: UUID or str, meeting_obj, is_cancel=False):
+    tenant_id = meeting_obj.tenant_id
+    company_id = meeting_obj.company_id
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, _, _] = obj_got
+        cls = SendMailController(mail_config=config_obj, timeout=10)
+        if cls.is_active is True:
+            subject = meeting_obj.subject
+            attended_email = [
+                item.email for item in meeting_obj.employee_attended_list.all() if item.email
+            ] + [
+                item.email for item in meeting_obj.customer_member_list.all() if item.email
+            ]
+
+            log_cls = MailLogController(
+                tenant_id=tenant_id, company_id=company_id,
+                system_code=0,  # other
+                doc_id=user_id, subject=subject,
+            )
+            log_cls.create()
+            log_cls.update(
+                address_sender=cls.from_email,
+            )
+            log_cls.update_employee_to(employee_to=[], address_to_init=attended_email)
+            log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+            log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+            log_cls.update_log_data(host=cls.host, port=cls.port)
+
+            try:
+                state_send = cls.setup(
+                    subject=subject,
+                    from_email=cls.kwargs['from_email'],
+                    mail_cc=[],
+                    bcc=[],
+                    header={},
+                    reply_to=meeting_obj.employee_created.email,  # trả lời người gửi (employee created)
+                ).send(
+                    as_name=meeting_obj.employee_created.get_full_name(2),
+                    mail_to=attended_email,
+                    mail_cc=[],
+                    mail_bcc=[],
+                    template=f'<p><b>Cuộc họp mới từ {meeting_obj.employee_created.get_full_name(2)}</b></p>'
+                             f'<p><b>Thời gian họp:</b> từ {meeting_obj.meeting_from_time}'
+                             f' đến {meeting_obj.meeting_to_time}'
+                             f' ngày {meeting_obj.meeting_date.strftime("%d/%m/%Y")}</p>'
+                             f'<p><b>Địa điểm họp:</b> {meeting_obj.meeting_address}'
+                             f' tại phòng {meeting_obj.room_location}</p>' if is_cancel is False else
+                             f'<p><b>Thông báo huỷ cuộc họp từ {meeting_obj.employee_created.get_full_name(2)}</b></p>'
+                             f'<p><b>Thời gian họp:</b> từ {meeting_obj.meeting_from_time}'
+                             f' đến {meeting_obj.meeting_to_time}'
+                             f' ngày {meeting_obj.meeting_date.strftime("%d/%m/%Y")}</p>'
+                             f'<p><b>Địa điểm họp:</b> {meeting_obj.meeting_address}'
+                             f' tại phòng {meeting_obj.room_location}</p>',
+                    data={},
+                )
+            except Exception as err:
+                state_send = False
+                log_cls.update(errors_data=str(err))
+
+            if state_send is True:
+                log_cls.update(status_code=1, status_remark=state_send)  # sent
+                log_cls.save()
+                return 'Success'
+            log_cls.update(status_code=2, status_remark=state_send)  # error
+            log_cls.save()
+            return 'SEND_FAILURE'
         return 'MAIL_CONFIG_DEACTIVATE'
     return obj_got
 
@@ -219,7 +350,10 @@ def send_mail_otp(  # pylint: disable=R0911,R1702,R0914
                                 header={},
                                 reply_to=cls.kwargs['reply_email'],
                             ).send(
+                                as_name=None,
                                 mail_to=[user_obj.email],
+                                mail_cc=[],
+                                mail_bcc=[],
                                 template=template_obj.contents,
                                 data=MailDataResolver.otp_verify(user_obj, otp),
                             )
@@ -283,7 +417,10 @@ def send_mail_form(tenant_id, company_id, subject, to_main, contents):
                     header={},
                     reply_to=cls.kwargs['reply_email'],
                 ).send(
+                    as_name=None,
                     mail_to=to_main,
+                    mail_cc=[],
+                    mail_bcc=[],
                     template=contents,
                     data={},
                 )
@@ -331,7 +468,10 @@ def send_mail_form_otp(subject, to_mail, contents, timeout=10, tenant_id=None, c
                 reply_to=cls.kwargs['reply_email'],
             )
             state_send = cls.send(
+                as_name=None,
                 mail_to=to_mail,
+                mail_cc=[],
+                mail_bcc=[],
                 template=contents,
                 data={},
             )

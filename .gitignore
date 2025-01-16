@@ -17,3 +17,5 @@ logs/*
 z_test*.py
 build/*
 *.egg-info/*
+serviceAccountKey.json
+*/serviceAccountKey.json

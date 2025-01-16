@@ -1,10 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
+from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
     LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer
 )
+
 
 __all__ = [
     'LeadList',
@@ -13,8 +15,6 @@ __all__ = [
     'LeadChartList',
     'LeadListForOpportunity'
 ]
-
-from apps.shared.extends.exceptions import handle_exception_all_view
 
 
 class LeadList(BaseListMixin, BaseCreateMixin):
@@ -99,11 +99,13 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         if 'goto_stage' in request.data:
             self.ser_context = {'goto_stage': True}
+            request.data['title'] = self.get_object().title
         if all(['convert_opp' in request.data, 'map_opp' in request.data]):
             self.ser_context = {
                 'convert_opp': True,
                 'opp_mapped_id': request.data.get('opp_mapped_id')
             }
+            request.data['title'] = self.get_object().title
         return self.update(request, *args, **kwargs)
 
 
