@@ -542,8 +542,7 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
                 email_sent = send_email_sale_activities_email(self.context.get('user_current').id, instance)
                 if email_sent:
                     return instance
-                else:
-                    raise Exception("Failed to send email")
+                raise Exception("Failed to send email")
             return instance
 
 
@@ -683,8 +682,7 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                 email_sent = send_email_sale_activities_meeting( self.context.get('user_current').id, instance)
                 if email_sent:
                     return instance
-                else:
-                    raise Exception("Failed to send email")
+                raise Exception("Failed to send email")
             return instance
 
 

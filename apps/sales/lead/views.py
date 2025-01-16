@@ -1,4 +1,3 @@
-from django.db.models import OuterRef, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityActivityLogs, OpportunityEmail, \
