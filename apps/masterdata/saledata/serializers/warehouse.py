@@ -673,3 +673,23 @@ class WarehouseEmployeeConfigDetailSerializer(serializers.ModelSerializer):
             'warehouse_list',
             'employee'
         )
+
+
+class WareHouseForInventoryListSerializer(serializers.ModelSerializer):
+    warehouse_id = serializers.SerializerMethodField()
+    warehouse_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'warehouse_id',
+            'warehouse_data',
+        )
+
+    @classmethod
+    def get_warehouse_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_warehouse_data(cls, obj):
+        return {'id': obj.id, 'title': obj.title, 'code': obj.code}

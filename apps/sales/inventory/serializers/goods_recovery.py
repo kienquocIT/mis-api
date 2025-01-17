@@ -54,6 +54,7 @@ class GoodsRecoveryDetailSerializer(AbstractDetailSerializerModel):
             'status_recovery',
             'customer_data',
             'lease_order_data',
+            'remark',
             'recovery_delivery_data',
         )
 
@@ -75,6 +76,7 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
             'customer_data',
             'lease_order_id',
             'lease_order_data',
+            'remark',
             'recovery_delivery_data',
             # attachment
             # 'attachment',

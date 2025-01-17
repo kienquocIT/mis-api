@@ -22,10 +22,9 @@ class GoodsRecoveryList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        main_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
         )
-        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Goods Recovery List",
