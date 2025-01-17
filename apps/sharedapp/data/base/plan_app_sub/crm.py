@@ -340,9 +340,7 @@ QUOTATION_APP_CONFIG = {
         "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
         "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
         "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Term
@@ -360,10 +358,8 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -376,10 +372,8 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -411,7 +405,6 @@ SALEORDER_APP_CONFIG = {
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
         "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
@@ -431,9 +424,8 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -449,9 +441,8 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -462,18 +453,7 @@ SALEORDER_APP_CONFIG = {
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -784,10 +764,10 @@ PAYMENT_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -798,10 +778,10 @@ PAYMENT_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -855,7 +835,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "create": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -865,7 +845,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "edit": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -1129,9 +1109,7 @@ PURCHASE_ORDER_APP_CONFIG = {
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf",  # Purchase Request
         "f52a966a-2eb2-4851-852d-eff61efeb896",  # Purchase Quotation
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
     ],
     "permit_mapping": {
         "view": {
@@ -1144,9 +1122,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1157,9 +1133,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1198,9 +1172,9 @@ PURCHASE_REQUEST_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
@@ -1208,9 +1182,9 @@ PURCHASE_REQUEST_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
@@ -1704,8 +1678,8 @@ AR_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1715,8 +1689,8 @@ AR_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1756,8 +1730,8 @@ AP_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
-                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1767,8 +1741,8 @@ AP_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
-                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2492,7 +2466,6 @@ LEASEORDER_APP_CONFIG = {
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
         "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
@@ -2512,9 +2485,8 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -2530,9 +2502,8 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
                 "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
                 "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
@@ -2543,18 +2514,7 @@ LEASEORDER_APP_CONFIG = {
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },

@@ -453,12 +453,14 @@ class LeaseOrderLogisticSerializer(serializers.ModelSerializer):
 
 
 class LeaseOrderCostSerializer(serializers.ModelSerializer):
-    product_id = serializers.UUIDField(required=False, allow_null=True)
+    product_id = serializers.UUIDField()
     unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
     uom_time_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
+    product_depreciation_start_date = serializers.CharField()
+    product_depreciation_end_date = serializers.CharField()
 
     class Meta:
         model = LeaseOrderCost
@@ -493,6 +495,13 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'shipping_id',
             'shipping_data',
             'supplied_by',
+            # depreciation fields
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+            'product_depreciation_adjustment',
         )
 
     @classmethod

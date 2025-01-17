@@ -4,7 +4,8 @@ from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg, DisperseModel, call_task_background
 
-from ..extend_func import reorder_work, calc_rate_project, group_calc_weight, work_calc_weight_h_group
+from ..extend_func import calc_rate_project, group_calc_weight, work_calc_weight_h_group, \
+    sort_order_work_and_group, reorder_work
 from ..models import ProjectWorks, Project, ProjectMapWork, GroupMapWork, ProjectGroups, WorkMapBOM
 from ..tasks import create_project_news
 
@@ -93,6 +94,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
     project = serializers.UUIDField()
     group = serializers.UUIDField(required=False)
     bom_service = serializers.UUIDField(required=False)
+    sort_style = serializers.BooleanField(required=False, allow_null=True)
 
     @classmethod
     def validate_employee_inherit(cls, value):
@@ -163,7 +165,9 @@ class WorkCreateSerializers(serializers.ModelSerializer):
         project = validated_data.pop('project', None)
         group = validated_data.pop('group', None)
         bom_service = validated_data.pop('bom_service', None)
-        if group and project:
+        is_sort = validated_data.pop('sort_style', False)
+
+        if group and project and is_sort is False:
             validated_data['order'] = reorder_work(group, project)
         if bom_service:
             validated_data['bom_data'] = {
@@ -201,6 +205,10 @@ class WorkCreateSerializers(serializers.ModelSerializer):
 
         # update group and project
         update_date_group_or_prj(project, group, validated_data)
+
+        # check update order when create
+        if is_sort is True:
+            sort_order_work_and_group(work, project)
         return work
 
     class Meta:
@@ -217,7 +225,8 @@ class WorkCreateSerializers(serializers.ModelSerializer):
             'group',
             'work_dependencies_parent',
             'work_dependencies_type',
-            'bom_service'
+            'bom_service',
+            'sort_style',
         )
 
 

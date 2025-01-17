@@ -28,3 +28,6 @@ class ProjectMsg:
     PROJECT_INVALID_GROUP_DATE = _('Group date not in range of project date')
     PROJECT_INVALID_WORK_DATE = _('Work date not in range of project date')
     PROJECT_LOCK_PERMIT_DENIED = _('You don\'t have permission to perform the action lock finish date')
+    PROJECT_STATUS_ERROR = _('Project status is required')
+    PROJECT_CLOSE_PROJECT_ERROR = _('You do not have permission to close/complete this project')
+    PROJECT_SORT_ERROR = _('Order keyword when create is error')

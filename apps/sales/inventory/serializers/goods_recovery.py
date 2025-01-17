@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import GoodsRecovery
-from apps.sales.inventory.serializers.goods_recovery_sub import RecoveryCommonCreate, RecoveryCommonValidate
+from apps.sales.inventory.serializers.goods_recovery_sub import RecoveryCommonCreate, RecoveryCommonValidate, \
+    RecoveryDeliverySerializer
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
@@ -59,6 +60,7 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_id = serializers.UUIDField()
     lease_order_id = serializers.UUIDField()
+    recovery_delivery_data = RecoveryDeliverySerializer(many=True, required=False)
 
     class Meta:
         model = GoodsRecovery
@@ -96,6 +98,7 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_id = serializers.UUIDField()
     lease_order_id = serializers.UUIDField()
+    recovery_delivery_data = RecoveryDeliverySerializer(many=True, required=False)
 
     class Meta:
         model = GoodsRecovery
