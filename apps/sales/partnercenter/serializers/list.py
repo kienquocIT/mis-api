@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta, datetime
 
-from django.db.models.functions import Greatest, Coalesce
+from django.db.models.functions import Greatest, Coalesce, Concat
 from django.utils import timezone
 from django.apps import apps
 from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField, Subquery, Value
@@ -458,6 +458,30 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
+    def contact__owner__name(cls, obj, operator, right):
+        annotated_employees = Employee.objects.annotate(
+            full_name=Concat('last_name', Value(' '), 'first_name')
+        )
+        operator_handlers = {
+            'notexact': lambda field, value: ~Q(**{field: value}),
+            'exactnull': lambda field, _: Q(**{f"{field}__exact": None}),
+            'notexactnull': lambda field, _: ~Q(**{f"{field}__exact": None}),
+            'noticontains': lambda field, value: ~Q(**{f"{field}__icontains": value}),
+        }
+        filter_func = operator_handlers.get(operator, None)
+        if filter_func:
+            group_query = filter_func('full_name', right)
+        else:
+            group_query = Q(**{f"full_name__{operator}": right})
+        filtered_employees = annotated_employees.filter_current(fill__company=True).filter(group_query)
+
+        filtered_accounts = Contact.objects.filter(
+            owner__in=filtered_employees
+        )
+
+        return set(filtered_accounts.values_list('id', flat=True))
+
+    @classmethod
     def get_list_result(cls, obj):  # pylint: disable=R0912, R0915, R0914
         application = obj.data_object.application
         model_code = application.model_code
@@ -472,7 +496,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
             'revenue_ytd': cls.filter_revenue_ytd,
             'open_opp_num': cls.filter_open_opp_num,
             'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
-            'curr_opp_stage_id': cls.filter_curr_opp_stage
+            'curr_opp_stage_id': cls.filter_curr_opp_stage,
+            'contact__owner__name': cls.contact__owner__name
         }
 
         # Mapping for operator handling

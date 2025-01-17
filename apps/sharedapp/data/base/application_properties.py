@@ -100,6 +100,13 @@ AppProp_SaleData_Contact_data = {
         "type": 5,
         "content_type": "saledata.Account",
     },
+    "1fcbed18-b635-4d53-a91a-ef914dc7d310": {
+        "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
+        "title": "Owner name",
+        "code": "contact__owner__name",
+        "type": 1,
+        "is_filter_condition": True,
+    },
 }
 
 AppProp_SaleData_Account_data = {
@@ -276,6 +283,13 @@ AppProp_SaleData_Account_data = {
         "type": 5,
         "is_filter_condition": True,
         "content_type": "opportunity.OpportunityConfigStage",
+    },
+    "a409dcd8-7f79-406f-b68e-fa6846862e4c": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Owner name",
+        "code": "owner__fullname",
+        "type": 1,
+        "is_filter_condition": True,
     },
 }
 
