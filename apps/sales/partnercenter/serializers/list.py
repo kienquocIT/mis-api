@@ -458,7 +458,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
-    def contact__owner__name(cls, obj, operator, right):
+    def contact__owner__name(cls, obj, operator, right): # pylint: disable=W0613
         annotated_employees = Employee.objects.annotate(
             full_name=Concat('last_name', Value(' '), 'first_name')
         )
