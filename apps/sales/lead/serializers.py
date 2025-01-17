@@ -30,7 +30,7 @@ from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, 
 
 from apps.sales.opportunity.serializers import ActivitiesCommonFunc
 
-from apps.shared import BaseMsg
+from apps.shared import BaseMsg, SaleMsg
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -436,8 +436,9 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
     def validate(self, validated_data):
         lead = validated_data.get('lead')
         contact_id = validated_data.get('contact', None)
-        if lead.contact_name and contact_id is None:
-            raise serializers.ValidationError({'contact': BaseMsg.REQUIRED})
+        for lead_config in lead.lead_configs.all():
+            if lead_config.contact_mapped and contact_id is None:
+                raise serializers.ValidationError({'contact': BaseMsg.REQUIRED})
 
         if contact_id:
             try:
@@ -495,6 +496,7 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
             'lead',
             'email_to_list',
             'email_cc_list',
+            'email_bcc_list',
             'content',
             'just_log'
         )
@@ -515,34 +517,40 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         with transaction.atomic():
             validated_data['employee_inherit_id'] = validated_data.get('employee_created_id', None)
+            if not self.context.get('employee_current').email:
+                raise serializers.ValidationError({'from_email': SaleMsg.FROM_EMAIL_NOT_EXIST})
+
+            validated_data['from_email'] = self.context.get('employee_current').email
             instance = OpportunityEmail.objects.create(**validated_data)
+            if not validated_data.get('just_log', False) and self.context.get('user_current'):
+                email_sent = send_email_sale_activities_email(self.context.get('user_current').id, instance)
+                instance.send_success = email_sent == 'Success'
+                instance.save(update_fields=['send_success'])
             OpportunityActivityLogs.objects.create(
                 tenant=instance.tenant,
                 company=instance.company,
                 email=instance,
                 log_type=3,
-                doc_id=str(instance.lead_id).replace('-',''),
+                doc_id=str(instance.lead_id).replace('-', ''),
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
-                doc_data = {
-                    'id': str(instance.id).replace('-',''),
+                doc_data={
+                    'id': str(instance.id).replace('-', ''),
                     'subject': instance.subject,
                     'email_date': str(instance.date_created),
                     'employee_created': instance.employee_created.get_full_name(),
                     'email_to_list': instance.email_to_list,
                     'email_cc_list': instance.email_cc_list,
+                    'email_bcc_list': instance.email_bcc_list,
+                    'from_email': instance.from_email,
                     'content': instance.content,
                     'lead': {
-                        'id': str(instance.lead_id).replace('-',''),
+                        'id': str(instance.lead_id).replace('-', ''),
                         'title': instance.lead.title,
                     },
+                    'send_success': instance.send_success,
+                    'just_log': instance.just_log,
                 },
             )
-            if not validated_data.get('just_log', False) and self.context.get('user_current'):
-                # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
-                email_sent = send_email_sale_activities_email(self.context.get('user_current').id, instance)
-                if email_sent:
-                    return instance
-                raise Exception("Failed to send email")
             return instance
 
 
@@ -635,23 +643,29 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
 
             ActivitiesCommonFunc.create_employee_attended_map_meeting(instance, employee_attended_list)
             ActivitiesCommonFunc.create_customer_member_map_meeting(instance, customer_member_list)
+
+            if validated_data.get('email_notify', False) and self.context.get('user_current'):
+                # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
+                email_sent = send_email_sale_activities_meeting( self.context.get('user_current').id, instance)
+                instance.send_success = email_sent == 'Success'
+                instance.save(update_fields=['send_success'])
             OpportunityActivityLogs.objects.create(
                 tenant=instance.tenant,
                 company=instance.company,
                 meeting=instance,
                 log_type=4,
-                doc_id=str(instance.lead_id).replace('-',''),
+                doc_id=str(instance.lead_id).replace('-', ''),
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
-                doc_data = {
+                doc_data={
                     'id': str(instance.id).replace('-', ''),
                     'subject': instance.subject,
                     'meeting_date': str(instance.meeting_date),
                     'employee_created': instance.employee_created.get_full_name(),
                     'employee_attended_list': [
                         {
-                            'id': str(item.id).replace('-',''),
+                            'id': str(item.id).replace('-', ''),
                             'group': {
-                                'id': str(item.group_id).replace('-',''),
+                                'id': str(item.group_id).replace('-', ''),
                                 'title': item.group.title,
                                 'code': item.group.code
                             } if item.group else {},
@@ -660,7 +674,7 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                     ],
                     'customer_member_list': [
                         {
-                            'id': str(item.id).replace('-',''),
+                            'id': str(item.id).replace('-', ''),
                             'code': item.code,
                             'fullname': item.fullname,
                             'job_title': item.job_title,
@@ -675,13 +689,9 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                         'id': str(instance.lead_id).replace('-', ''),
                         'title': instance.lead.title,
                     },
+                    'send_success': instance.send_success
                 }
             )
-            if validated_data.get('email_notify', False) and self.context.get('user_current'):
-                # email_sent = ActivitiesCommonFunc.send_email(instance, self.context.get('employee_current'))
-                email_sent = send_email_sale_activities_meeting( self.context.get('user_current').id, instance)
-                instance.send_success = email_sent == 'Success'
-                instance.save(update_fields=['send_success'])
             return instance
 
 
