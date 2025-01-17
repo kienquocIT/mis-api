@@ -1,10 +1,12 @@
 from django.urls import path
 
 from apps.core.chat3rd.views import (
+    MessengerWebHooks,
     MessengerLimit, MessengerConnect, MessengerAccountSync, MessengerPersonView,
     MessengerPersonChats, MessengerPersonDetailLead, MessengerPersonDetailContact,
+
+    ZaloWebHooks,
 )
-from apps.core.chat3rd.views_hooks import MessengerWebHooks
 
 urlpatterns = [
     path('messenger/webhooks', MessengerWebHooks.as_view(), name='MessengerWebHooks'),
@@ -17,4 +19,7 @@ urlpatterns = [
         'messenger/person/<str:pk>/contact', MessengerPersonDetailContact.as_view(), name='MessengerPersonDetailContact'
     ),
     path('messenger/person/<str:pk>/lead', MessengerPersonDetailLead.as_view(), name='MessengerPersonDetailLead'),
+]
+urlpatterns += [
+    path('zalo/webhooks', ZaloWebHooks.as_view(), name='ZaloWebHooks'),
 ]
