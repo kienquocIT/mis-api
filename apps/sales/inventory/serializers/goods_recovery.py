@@ -50,6 +50,8 @@ class GoodsRecoveryDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
+            'date_recovery',
+            'status_recovery',
             'customer_data',
             'lease_order_data',
             'recovery_delivery_data',

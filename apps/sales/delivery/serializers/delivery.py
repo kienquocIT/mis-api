@@ -347,17 +347,29 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
+    delivery_id = serializers.SerializerMethodField()
+    delivery_data = serializers.SerializerMethodField()
     delivery_product_data = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
         fields = (
-            'id',
-            'code',
-            'date_created',
-            'actual_delivery_date',
+            'delivery_id',
+            'delivery_data',
             'delivery_product_data',
         )
+
+    @classmethod
+    def get_delivery_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_delivery_data(cls, obj):
+        return {
+            'id': obj.id,
+            'code': obj.code,
+            'actual_delivery_date': obj.actual_delivery_date.date(),
+        }
 
     @classmethod
     def get_delivery_product_data(cls, obj):

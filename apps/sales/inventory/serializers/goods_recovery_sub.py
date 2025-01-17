@@ -74,7 +74,7 @@ class RecoveryCommonCreate:
     def create_sub_models(cls, instance):
         cls.create_recovery_delivery(instance=instance)
 
-        RecoveryFinishHandler.clone_product_to_lease_product(instance=instance)
+        RecoveryFinishHandler.clone_lease_product(instance=instance)
         return True
 
 
@@ -161,6 +161,8 @@ class RecoveryWarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecoveryWarehouse
         fields = (
+            'title',
+            'code',
             'warehouse_id',
             'warehouse_data',
             'quantity_recovery',
@@ -177,7 +179,9 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField()
     offset_id = serializers.UUIDField()
     uom_id = serializers.UUIDField()
-    uom_time_id = serializers.UUIDField()
+    uom_time_id = serializers.UUIDField(required=False)
+    product_depreciation_start_date = serializers.CharField()
+    product_depreciation_end_date = serializers.CharField()
     product_warehouse_data = RecoveryWarehouseSerializer(many=True, required=False)
 
     class Meta:
@@ -196,7 +200,6 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'product_quantity_time',
             'product_quantity_depreciation',
             'product_unit_price',
-            'product_depreciation_price',
             'product_subtotal_price',
             'quantity_ordered',
             'quantity_delivered',
@@ -205,6 +208,14 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'delivery_data',
 
             'product_warehouse_data',
+            # Depreciation fields
+
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+            'product_depreciation_adjustment',
         )
 
     @classmethod

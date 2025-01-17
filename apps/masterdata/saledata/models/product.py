@@ -278,7 +278,6 @@ class Product(DataAbstractModel):
     )
     lease_code = models.CharField(max_length=100, blank=True)
     lease_depreciation_price = models.FloatField(default=0)
-    serial_data = models.JSONField(default=dict, help_text="data json of serial")
 
     # End lease fields
 

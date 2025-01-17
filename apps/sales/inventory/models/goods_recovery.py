@@ -76,7 +76,6 @@ class GoodsRecovery(DataAbstractModel):
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
 
-        # RecoveryFinishHandler.clone_product_to_lease_product(instance=self)
 
         # hit DB
         super().save(*args, **kwargs)
