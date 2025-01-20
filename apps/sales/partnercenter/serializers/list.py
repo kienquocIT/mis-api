@@ -458,7 +458,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
-    def contact__owner__name(cls, obj, operator, right): # pylint: disable=W0613
+    def filter_contact__owner__name(cls, obj, operator, right): # pylint: disable=W0613
         annotated_employees = Employee.objects.annotate(
             full_name=Concat('last_name', Value(' '), 'first_name')
         )
@@ -475,9 +475,29 @@ class ListResultListSerializer(serializers.ModelSerializer):
             group_query = Q(**{f"full_name__{operator}": right})
         filtered_employees = annotated_employees.filter_current(fill__company=True).filter(group_query)
 
-        filtered_accounts = Contact.objects.filter(
+        filtered_contacts = Contact.objects.filter(
             owner__in=filtered_employees
         )
+
+        return set(filtered_contacts.values_list('id', flat=True))
+
+    @classmethod
+    def filter_manager__full_name(cls, obj, operator, right): # pylint: disable=W0613
+        match operator:
+            case 'icontains':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__icontains=f'"full_name": "{right}"')
+            case 'noticontains':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__icontains=f'"full_name": "{right}"'))
+            case 'exact':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__0__full_name=right)
+            case 'notexact':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__0__full_name=right))
+            case 'exactnull':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__exact=None)
+            case 'notexactnull':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__exact=None))
+            case _:
+                raise ValueError(f"Unsupported operator for manager__full_name: {operator}")
 
         return set(filtered_accounts.values_list('id', flat=True))
 
@@ -497,7 +517,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
             'open_opp_num': cls.filter_open_opp_num,
             'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
             'curr_opp_stage_id': cls.filter_curr_opp_stage,
-            'contact__owner__name': cls.contact__owner__name
+            'contact__owner__name': cls.filter_contact__owner__name,
+            'manager__full_name': cls.filter_manager__full_name
         }
 
         # Mapping for operator handling
