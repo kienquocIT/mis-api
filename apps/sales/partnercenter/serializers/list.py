@@ -522,7 +522,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
             'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
             'curr_opp_stage_id': cls.filter_curr_opp_stage,
             'contact__owner__name': cls.filter_contact__owner__name,
-            'manager__full_name': cls.filter_manager__full_name
+            'manager': cls.filter_manager__full_name
         }
 
         # Mapping for operator handling

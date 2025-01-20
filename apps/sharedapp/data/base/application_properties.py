@@ -143,13 +143,6 @@ AppProp_SaleData_Account_data = {
         "title": "Manager",
         "code": "manager",
         "type": 1,
-        "is_filter_condition": False,
-    },
-    "67f15b55-523c-4d2e-a560-26dfca19b50f": {
-        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Manager Name",
-        "code": "manager__full_name",
-        "type": 1,
         "is_filter_condition": True,
     },
     "30490c0b-69f8-49c3-a79e-0a466b3f20da": {
