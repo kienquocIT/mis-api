@@ -485,13 +485,17 @@ class ListResultListSerializer(serializers.ModelSerializer):
     def filter_manager__full_name(cls, obj, operator, right): # pylint: disable=W0613
         match operator:
             case 'icontains':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__icontains=f'"full_name": "{right}"')
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    manager__icontains=f'"full_name": "{right}"')
             case 'noticontains':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__icontains=f'"full_name": "{right}"'))
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    ~Q(manager__icontains=f'"full_name": "{right}"'))
             case 'exact':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__0__full_name=right)
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    manager__0__full_name=right)
             case 'notexact':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__0__full_name=right))
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    ~Q(manager__0__full_name=right))
             case 'exactnull':
                 filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__exact=None)
             case 'notexactnull':
