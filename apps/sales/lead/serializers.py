@@ -626,6 +626,15 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
         except Lead.DoesNotExist:
             raise serializers.ValidationError({'lead': 'Lead does not exist.'})
 
+    def validate(self, validate_data):
+        meeting_from_time = validate_data.get('meeting_from_time')
+        meeting_to_time = validate_data.get('meeting_to_time')
+
+        if meeting_from_time > meeting_to_time:
+            raise serializers.ValidationError({'Meeting Time: ': 'Starting time must be before ending time.'})
+
+        return validate_data
+
     def create(self, validated_data):
         with transaction.atomic():
             validated_data['employee_inherit_id'] = validated_data.get('employee_created_id', None)
