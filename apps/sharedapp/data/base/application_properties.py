@@ -2458,6 +2458,24 @@ AppProp_SaleData_Consulting_data = {
     },
 }
 
+AppProp_SaleData_ReportRevenue_data = {
+    "67f15b55-523c-4d2e-a560-26dfca19b50f": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Customer",
+        "code": "customer",
+        "type": 5,
+        "content_type": "saledata.account",
+        'is_filter_condition': True,
+    },
+    "4a6eeecf-758b-4b37-bb71-e87e18cee451": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Customer Name",
+        "code": "customer__name",
+        "type": 1,
+        'is_filter_condition': True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2494,4 +2512,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
     **AppProp_SaleData_Consulting_data,
+    **AppProp_SaleData_ReportRevenue_data
 }
