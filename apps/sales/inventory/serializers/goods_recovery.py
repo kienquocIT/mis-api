@@ -56,6 +56,11 @@ class GoodsRecoveryDetailSerializer(AbstractDetailSerializerModel):
             'lease_order_data',
             'remark',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
         )
 
 
@@ -78,6 +83,11 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
             'lease_order_data',
             'remark',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             # 'attachment',
         )
@@ -114,6 +124,11 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
             'lease_order_id',
             'lease_order_data',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
         )
 
     @classmethod
@@ -130,4 +145,5 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
             setattr(instance, key, value)
         instance.save()
         RecoveryCommonCreate().create_sub_models(instance=instance)
+
         return instance

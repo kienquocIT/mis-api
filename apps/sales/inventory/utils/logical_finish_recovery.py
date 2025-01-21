@@ -107,7 +107,7 @@ class RecoveryFinishHandler:
         base_code = f'{original_code}{current_year}'
         existing_codes = model_product.objects.filter(
             company_id=company_id, code__icontains=base_code
-        ).values_list('code', flat=True)
+        ).values_list('lease_code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
             code = f'{original_code}{current_year}0001'
@@ -116,7 +116,7 @@ class RecoveryFinishHandler:
             code = f'{original_code}{current_year}{num_str}'
         else:
             raise ValueError('Out of range: number exceeds 10000')
-        if model_product.objects.filter(code=code, company_id=company_id).exists():
+        if model_product.objects.filter(lease_code=code, company_id=company_id).exists():
             return cls.generate_code(original_instance=original_instance, model_product=model_product)
         return code
 

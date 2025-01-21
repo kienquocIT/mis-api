@@ -25,6 +25,11 @@ class GoodsRecovery(DataAbstractModel):
     status_recovery = models.SmallIntegerField(default=0, help_text='choices= ' + str(STATUS_RECOVERY))
     remark = models.TextField(verbose_name='remark', blank=True, null=True)
     recovery_delivery_data = models.JSONField(default=list, help_text='data json of recovery deliveries')
+    # total
+    total_pretax = models.FloatField(default=0)
+    total_tax = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+    total_revenue_before_tax = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Goods Recovery'
