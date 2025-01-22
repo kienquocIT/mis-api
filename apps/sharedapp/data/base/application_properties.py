@@ -132,7 +132,7 @@ AppProp_SaleData_Account_data = {
     },
     "27db08f5-8469-4ef1-9ec6-df7811cf7540": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Owner",
+        "title": "Account Owner",
         "code": "owner",
         "type": 5,
         "content_type": "saledata.Contact",
@@ -140,7 +140,7 @@ AppProp_SaleData_Account_data = {
     },
     "f2b81fd6-3657-448b-b93b-0b9552fd0f3e": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Manager",
+        "title": "Account Manager",
         "code": "manager",
         "type": 1,
         "is_filter_condition": True,
@@ -287,7 +287,7 @@ AppProp_SaleData_Account_data = {
     },
     "a409dcd8-7f79-406f-b68e-fa6846862e4c": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Owner name",
+        "title": "Account Owner name",
         "code": "owner__fullname",
         "type": 1,
         "is_filter_condition": True,
