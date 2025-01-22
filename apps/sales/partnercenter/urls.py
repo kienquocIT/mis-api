@@ -1,7 +1,7 @@
 from django.urls import path
 
 from apps.sales.partnercenter.views import ListDataObjectList, ListList, ListDetail, ListResultList, ListEmployeeList, \
-    ListContactList, ListIndustryList, ListOpportunityConfigStageList
+    ListContactList, ListIndustryList, ListOpportunityConfigStageList, ListAccountList
 
 urlpatterns = [
     path('data-obj-list', ListDataObjectList.as_view(), name='ListDataObjectList'),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('list/contact-list', ListContactList.as_view(), name='ListContactList'),
     path('list/industry-list', ListIndustryList.as_view(), name='ListIndustryList'),
     path('list/opp-config-stage-list', ListOpportunityConfigStageList.as_view(), name='ListOpportunityConfigStageList'),
+    path('list/account-list', ListAccountList.as_view(), name='ListAccountList'),
 ]

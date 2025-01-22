@@ -560,14 +560,13 @@ class ListResultListSerializer(serializers.ModelSerializer):
                                    filter_current(fill__company=True).
                                    filter(group_query).
                                    values_list('id', flat=True))
-
                 if group_results is None:
                     group_results = queryset
                 else:
                     group_results.intersection_update(queryset)
-
             if group_results:
                 overall_results.update(group_results)
+
         filter_data = model_class.objects.filter(id__in=overall_results).values()
 
         filter_data_list = []
@@ -684,3 +683,19 @@ class ListOpportunityConfigStageListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_title(cls, obj):
         return obj.indicator
+
+
+class ListAccountListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Account
+        fields = (
+            'id',
+            'code',
+            'title'
+        )
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.name

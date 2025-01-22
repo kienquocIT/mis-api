@@ -3,7 +3,8 @@ from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
     ReportStockList, BalanceInitializationList, ReportInventoryCostList, ReportGeneralList,
     PurchaseOrderListReport, ReportInventoryCostWarehouseDetail, BudgetReportCompanyList, PaymentListForBudgetReport,
-    BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard
+    BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard, AdvanceFilterList,
+    AdvanceFilterDetail
 )
 
 urlpatterns = [
@@ -42,4 +43,9 @@ urlpatterns = [
     path('budget-report-company/list', BudgetReportCompanyList.as_view(), name='BudgetReportCompanyList'),
     path('budget-report-group/list', BudgetReportGroupList.as_view(), name='BudgetReportGroupList'),
     path('budget-report-payment/list', PaymentListForBudgetReport.as_view(), name='PaymentListForBudgetReport'),
+
+    # Advance Filter
+    path('advance-filter/list', AdvanceFilterList.as_view(), name='AdvanceFilterList'),
+    path('advance-filter/detail/<str:pk>', AdvanceFilterDetail.as_view(), name='AdvanceFilterDetail'),
+
 ]

@@ -2474,6 +2474,13 @@ AppProp_SaleData_ReportRevenue_data = {
         "type": 1,
         'is_filter_condition': True,
     },
+    "8725286d-86a2-490a-ab3b-071b7e5d9dca": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Revenue",
+        "code": "revenue",
+        "type": 6,
+        'is_filter_condition': True,
+    },
 }
 
 ApplicationProperty_data = {
