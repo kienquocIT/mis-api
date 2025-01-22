@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
-
 TOTAL_EMPLOYEES_SELECTION = [
     (1, _('< 20 people')),
     (2, _('20-50 people')),

@@ -20,6 +20,7 @@ class OpportunityCallLog(DataAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
@@ -30,6 +31,13 @@ class OpportunityCallLog(DataAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog_contact",
+        null=True
+    )
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='opportunity_calllog_lead',
     )
     call_date = models.DateTimeField()
     input_result = models.CharField(max_length=250, null=True)
@@ -54,10 +62,17 @@ class OpportunityEmail(DataAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "dec012bf-b931-48ba-a746-38b7fd7ca73b"
 
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        related_name='opportunity_email_lead',
+        null=True
+    )
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_send_email",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
@@ -101,11 +116,18 @@ class OpportunityMeeting(DataAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "2fe959e3-9628-4f47-96a1-a2ef03e867e3"
 
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        related_name='opportunity_meeting_lead',
+        null=True,
+    )
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_meeting",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
@@ -295,6 +317,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_activity_log_opportunity",
+        null=True
     )
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,

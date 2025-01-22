@@ -3,7 +3,7 @@ __all__ = ['GroupCreateSerializers', 'GroupDetailSerializers', 'GroupListSeriali
 from rest_framework import serializers
 
 from apps.shared import HRMsg, BaseMsg, ProjectMsg
-from ..extend_func import calc_rate_project, group_calc_weight, group_update_weight
+from ..extend_func import calc_rate_project, group_calc_weight, group_update_weight, sort_order_work_and_group
 from ..models import Project, ProjectGroups, ProjectMapGroup
 
 
@@ -16,6 +16,7 @@ def update_prj_finish_date(prj, validated_data):
 
 class GroupCreateSerializers(serializers.ModelSerializer):
     project = serializers.UUIDField()
+    sort_style = serializers.BooleanField(required=False, allow_null=True)
 
     @classmethod
     def validate_employee_inherit(cls, value):
@@ -59,10 +60,13 @@ class GroupCreateSerializers(serializers.ModelSerializer):
 
     def create(self, validated_data):
         project = validated_data.pop('project', None)
+        is_sort = validated_data.pop('sort_style', None)
         group = ProjectGroups.objects.create(**validated_data)
         ProjectMapGroup.objects.create(project=project, group=group, tenant=group.tenant, company=group.company)
         calc_rate_project(project)
         update_prj_finish_date(project, validated_data)
+        if is_sort is True:
+            sort_order_work_and_group(group, project)
         return group
 
     class Meta:
@@ -76,6 +80,7 @@ class GroupCreateSerializers(serializers.ModelSerializer):
             'gr_end_date',
             'project',
             'order',
+            'sort_style',
         )
 
 
