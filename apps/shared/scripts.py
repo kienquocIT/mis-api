@@ -3011,3 +3011,13 @@ def update_address_contact():
         contact.work_address_data = work_address_data
         contact.save(update_fields=['home_address_data', 'work_address_data'])
     print('Done :))')
+
+
+def update_employee_revenue_plan():
+    for item in RevenuePlanGroupEmployee.objects.all():
+        item.employee_created = item.revenue_plan_mapped.employee_created
+        item.employee_inherit = item.employee_mapped
+        item.tenant = item.revenue_plan_mapped.tenant
+        item.company = item.revenue_plan_mapped.company
+        item.save(update_fields=['employee_created', 'employee_inherit', 'tenant', 'company'])
+    print('Done :))')
