@@ -651,7 +651,10 @@ def mail_request_sign(cls, log_cls, **kwargs):
             header={},
             reply_to=cls.kwargs['reply_email'],
         ).send(
+            as_name=None,
             mail_to=[assignee.email],
+            mail_cc=[],
+            mail_bcc=[],
             template=template_obj.contents,
             data=MailDataResolver.new_contract(
                 tenant_obj=tenant_obj, assignee=assignee, employee_created=employee_created, contract=contract_obj

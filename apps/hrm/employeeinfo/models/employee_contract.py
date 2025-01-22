@@ -192,7 +192,7 @@ def push_notify_contract_runtime(sender, instance, created, **kwargs):  # pylint
                             'notify_type': 0,
                             'date_created': instance.date_created,
                             'doc_id': str(instance.id),
-                            'doc_app': 'hrm.contract_signing',
+                            'doc_app': 'employeeinfo.EmployeeContractRuntime',
                             'employee_id': str(employee.get('id', '')),
                             'employee_sender_id': sender_id,
                         }
