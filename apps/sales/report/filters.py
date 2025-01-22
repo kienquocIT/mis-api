@@ -26,7 +26,7 @@ class ReportPipelineListFilter(BastionFieldAbstractListFilter):
             'opportunity__close_date_month',
         )
 
-def filter_by_advance_filter(query_set, filter_item_id):
+def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
     if not filter_item_id:
         return query_set
 
