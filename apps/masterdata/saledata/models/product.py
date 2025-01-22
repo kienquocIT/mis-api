@@ -277,7 +277,9 @@ class Product(DataAbstractModel):
         help_text="source product which this lease product cloned from"
     )
     lease_code = models.CharField(max_length=100, blank=True)
-    lease_depreciation_price = models.FloatField(default=0)
+    lease_time_previous = models.FloatField(default=0)
+    depreciation_price = models.FloatField(default=0)
+    depreciation_time = models.FloatField(default=0)
 
     # End lease fields
 

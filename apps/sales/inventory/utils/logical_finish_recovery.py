@@ -13,7 +13,9 @@ class RecoveryFinishHandler:
         if model_product and hasattr(model_product, 'objects'):
             for recovery_product in instance.recovery_product_recovery.all():
                 original_instance = recovery_product.offset
-                price = recovery_product.product_depreciation_price
+                lease_time = recovery_product.product_quantity_time
+                depreciation_price = recovery_product.product_depreciation_price
+                depreciation_time = recovery_product.product_quantity_depreciation
                 if original_instance:
                     cloned_instance = deepcopy(original_instance)
                     # Override data
@@ -32,7 +34,9 @@ class RecoveryFinishHandler:
                         original_instance=original_instance,
                         model_product=model_product
                     )  # Generate lease code
-                    cloned_instance.lease_depreciation_price = price
+                    cloned_instance.lease_time_previous = lease_time
+                    cloned_instance.depreciation_price = depreciation_price
+                    cloned_instance.depreciation_time = depreciation_time
 
                     cloned_instance.save()  # Save as a new record
 
@@ -106,7 +110,7 @@ class RecoveryFinishHandler:
         current_year = str(timezone.now().year)[-2:]
         base_code = f'{original_code}{current_year}'
         existing_codes = model_product.objects.filter(
-            company_id=company_id, code__icontains=base_code
+            company_id=company_id, lease_code__icontains=base_code
         ).values_list('lease_code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
