@@ -8,6 +8,7 @@ from rest_framework import serializers
 from apps.core.chat3rd.models import MessengerToken, MessengerPageToken, MessengerMessage, MessengerPerson
 from apps.core.chat3rd.msg import Chat3rdMsg
 from misapi.mongo_client import mongo_log_call_fb_api
+from .tools import ChatTools
 
 
 # Trường            → Ý nghĩa/Topic
@@ -319,7 +320,7 @@ class GraphFbMigrate(GraphAbstract):
                         'employee_created_id': employee_id,
                     }
                 )
-                obj_token.token = data['access_token']
+                obj_token.token = ChatTools().encrypt(data['access_token'])
                 if 'expires_in' in data:
                     obj_token.expires = timezone.now() + timedelta(seconds=data['expires_in'] - 60 * 4)
                 obj_token.employee_modified_id = employee_id
@@ -338,7 +339,7 @@ class GraphFbAccount(GraphAbstract):
     @property
     def params(self):
         return {
-            'access_token': self.token_obj.token
+            'access_token': ChatTools().decrypt(self.token_obj.token)
         }
 
     def sync_accounts_token(self) -> int or None:  # pylint: disable=R0914
@@ -367,7 +368,7 @@ class GraphFbAccount(GraphAbstract):
                                 count += 1
 
                                 account_id = item.get('id', '')
-                                token_code = item.get('access_token', '')
+                                token_code = ChatTools().encrypt(item.get('access_token', ''))
                                 category = item.get('category', '')
                                 name = item.get('name', '')
                                 picture = item.get('picture', None)
@@ -404,6 +405,15 @@ class GraphFbAccount(GraphAbstract):
                     if accounts:
                         accounts.delete()
 
+                    for page_obj in MessengerPageToken.objects.filter(parent=self.token_obj):
+                        resp_reg_webhook = GraphFbApi(page_obj=page_obj).register_webhook(
+                            company_id=page_obj.company_id,
+                            page_id=page_obj.account_id,
+                        )
+                        print('req hook:', page_obj, resp_reg_webhook)
+                        page_obj.subscribed_apps_log = resp_reg_webhook
+                        page_obj.save(update_fields=['subscribed_apps_log'])
+
                     self.token_obj.is_sync_accounts = True
                 self.token_obj.is_syncing = False
                 self.token_obj.save(update_fields=['is_syncing', 'is_sync_accounts'])
@@ -421,8 +431,20 @@ class GraphFbApi(GraphAbstract):
     @property
     def params(self):
         return {
-            'access_token': self.page_obj.token
+            'access_token': ChatTools().decrypt(self.page_obj.token),
         }
+
+    def register_webhook(self, company_id, page_id):
+        response = call_graph_api(
+            company_id=company_id,
+            method='get',
+            url=f'https://graph.facebook.com/v21.0/{page_id}/subscribed_apps',
+            params=self.params,
+        )
+        if response:
+            if response.status_code == 200:
+                return response.json()
+        return None
 
     def get_profile(self, account_id):
         full_url = self.url + '/' + account_id
@@ -432,7 +454,6 @@ class GraphFbApi(GraphAbstract):
             url=full_url,
             params={
                 **self.params,
-
             },
         )
         if response:

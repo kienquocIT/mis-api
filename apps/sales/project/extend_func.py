@@ -270,3 +270,23 @@ def calc_rate_project(pro_obj, obj_delete=None):
     if rate_all == 100:
         pro_obj.project_status = 3
     pro_obj.save()
+
+
+def sort_order_work_and_group(parent_order, prj):
+    idx = parent_order.order
+    groups_update = [
+        mapped_group.group
+        for mapped_group in prj.project_projectmapgroup_project.filter(group__order__gte=idx).order_by('group__order')
+    ]
+    works_update = [
+        mapped_work.work
+        for mapped_work in prj.project_projectmapwork_project.filter(work__order__gte=idx).order_by('work__order')
+    ]
+    for group in groups_update:
+        group.order += 1
+
+    for work in works_update:
+        work.order += 1
+    ProjectGroups.objects.bulk_update(groups_update, fields=['order'])
+    ProjectWorks.objects.bulk_update(works_update, fields=['order'])
+    return True
