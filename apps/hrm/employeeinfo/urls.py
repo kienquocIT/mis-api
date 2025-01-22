@@ -16,7 +16,7 @@ urlpatterns = [
     path(
         'employee-info/signature/update/<str:pk>', AttachmentSignatureUpdate.as_view(), name='AttachmentSignatureUpdate'
     ),
-    # eContract
+    # eContract runtime
     path(
         'employee-info/contract-signing/create', ContractRuntimeCreate.as_view(), name='ContractRuntimeCreate'
     ),

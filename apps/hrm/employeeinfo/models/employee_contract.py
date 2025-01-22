@@ -1,10 +1,14 @@
 import json
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import MasterDataAbstractModel, CONTRACT_TYPE
+from apps.core.log.tasks import force_new_notify_many
+from apps.shared import MasterDataAbstractModel, CONTRACT_TYPE, call_task_background
 
 from .employee_info import EmployeeInfo
 
@@ -167,3 +171,36 @@ class EmployeeContractRuntime(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+@receiver(post_save, sender=EmployeeContractRuntime)
+def push_notify_contract_runtime(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    if created:
+        # check members is available
+        if instance.members:
+            employee_info = instance.employee_contract.employee_info
+            task_kwargs = []
+            sender_id = str(instance.employee_created_id)
+            for employee in instance.members:
+                if 'id' in employee:
+                    task_kwargs.append(
+                        {
+                            'tenant_id': str(employee_info.tenant_id),
+                            'company_id': str(employee_info.company_id),
+                            'title': '',
+                            'msg': _('You are required to sign a contract.'),
+                            'notify_type': 0,
+                            'date_created': instance.date_created,
+                            'doc_id': str(instance.id),
+                            'doc_app': 'hrm.contract_signing',
+                            'employee_id': str(employee.get('id', '')),
+                            'employee_sender_id': sender_id,
+                        }
+                    )
+            if len(task_kwargs) > 0:
+                call_task_background(
+                    my_task=force_new_notify_many,
+                    **{
+                        'data_list': task_kwargs
+                    }
+                )

@@ -1,10 +1,13 @@
 __all__ = ['EmployeeContractListSerializers', 'EmployeeContractCreateSerializers', 'EmployeeContractDetailSerializers',
            'EmployeeContractRuntimeCreateSerializers']
 
+from django.db import transaction
 from rest_framework import serializers
 
+from apps.core.hr.models import Employee
 from apps.shared import HRMsg
 from apps.shared.translations.base import AttachmentMsg
+from apps.shared.translations.hrm import HRMMsg
 from ..models import EmployeeContract, EmployeeContractMapAttachment, EmployeeContractRuntime
 
 
@@ -106,6 +109,54 @@ class EmployeeContractRuntimeCreateSerializers(serializers.ModelSerializer):
             'contract',
             'signatures',
         )
+
+    @classmethod
+    def validate_employee_contract(cls, value):
+        if value and value.sign_status > 0:
+            raise serializers.ValidationError({'employee_contract': HRMMsg.RUNTIME_CONTRACT_FIELD_ERROR})
+        return value
+
+    @classmethod
+    def validate_members(cls, value):
+        employee_list = Employee.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id__in=value
+        )
+        if employee_list.count() == len(value):
+            return [
+                {'id': str(employee.id), 'full_name': employee.get_full_name(2)}
+                for employee in employee_list
+            ]
+        raise serializers.ValidationError({'employee_list': HRMsg.MEMBER_NOT_FOUND})
+
+    @classmethod
+    def validate_signatures(cls, value):
+        employee_in_sign = []
+        for key in value:
+            item = value[key]
+            employee_in_sign += item.get('assignee', [])
+        employee_list = Employee.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id__in=employee_in_sign
+        )
+        if employee_list.count() < len(employee_in_sign):
+            raise serializers.ValidationError({'employee_list': HRMMsg.RUNTIME_CONTRACT_FIELD_ERROR})
+        return value
+
+    def create(self, validated_data):
+        validated_data['employee_created'] = self.context.get('user', None)
+        try:
+            with transaction.atomic():
+                # update contract status is signing
+                employee_contract = validated_data.get('employee_contract', None)
+                info = EmployeeContractRuntime.objects.create(**validated_data)
+                if info:
+                    employee_contract.update(sign_status=1)
+                return info
+        except Exception as err:
+            return err
 
 
 class EmployeeContractRuntimeDetailSerializers(serializers.ModelSerializer):

@@ -157,23 +157,19 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
         return True
 
     def create(self, validated_data):
-        try:
-            with transaction.atomic():
-                obj_employee = self.check_is_map(validated_data)
-                validated_data.pop('employee_create', None)
-                contract = validated_data.pop('contract', None)
-                validated_data['employee'] = obj_employee
-                info = EmployeeInfo.objects.create(**validated_data)
-                if info:
-                    emp_map = info.employee.employee_hr.all()
-                    for emp in emp_map:
-                        emp.is_mapped = True
-                        emp.save(update_fields=['is_mapped'])
-                    if contract:
-                        self.create_contract(contract, info)
-                return info
-        except Exception as err:
-            return err
+        obj_employee = self.check_is_map(validated_data)
+        validated_data.pop('employee_create', None)
+        contract = validated_data.pop('contract', None)
+        validated_data['employee'] = obj_employee
+        info = EmployeeInfo.objects.create(**validated_data)
+        if info:
+            emp_map = info.employee.employee_hr.all()
+            for emp in emp_map:
+                emp.is_mapped = True
+                emp.save(update_fields=['is_mapped'])
+            if contract:
+                self.create_contract(contract, info)
+        return info
 
     class Meta:
         model = EmployeeInfo
