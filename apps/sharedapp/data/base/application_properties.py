@@ -2481,6 +2481,27 @@ AppProp_SaleData_ReportRevenue_data = {
         "type": 6,
         'is_filter_condition': True,
     },
+    "eaeff00e-e58d-4849-86c8-293b71e7bedd": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Gross Margin (in percent, e.g, 15, 30)",
+        "code": "gross_margin",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+    "1715395b-0679-4442-8c6d-046bbe86e391": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Gross Profit",
+        "code": "gross_profit",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+    "1fd330e4-5cb6-43b6-97f8-553486f9e3eb": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Net Income",
+        "code": "net_income",
+        "type": 6,
+        'is_filter_condition': True,
+    },
 }
 
 ApplicationProperty_data = {
