@@ -50,7 +50,7 @@ class PurchaseRequestList(BaseListMixin, BaseCreateMixin):
         request_body=PurchaseRequestCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, employee_require=True,
+        login_require=True, auth_require=True,
         label_code='purchasing', model_code='purchaserequest', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
