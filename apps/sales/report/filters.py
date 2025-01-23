@@ -4,7 +4,7 @@ from django.db.models.functions import Round
 from django_filters.rest_framework import filters
 
 from apps.shared import BastionFieldAbstractListFilter
-from .models import ReportPipeline, ReportRevenue
+from .models import ReportPipeline
 
 __all__ = [
     'ReportPipelineListFilter',
