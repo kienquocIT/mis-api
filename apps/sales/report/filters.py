@@ -27,7 +27,7 @@ class ReportPipelineListFilter(BastionFieldAbstractListFilter):
             'opportunity__close_date_month',
         )
 
-def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
+def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914,R0912
     if not filter_item_id:
         return query_set
 
@@ -100,4 +100,3 @@ def filter_gross_margin(obj, operator, right):
     )
     filter_kwargs = {f"gross_margin__{operator}": right_ratio}
     return annotated_report.filter(**filter_kwargs).values_list('id', flat=True)
-

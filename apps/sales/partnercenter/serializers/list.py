@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta, datetime
 
-from django.core.exceptions import ValidationError
 from django.db.models.functions import Greatest, Coalesce, Concat
 from django.utils import timezone
 from django.apps import apps
