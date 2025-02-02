@@ -350,6 +350,11 @@ class RevenuePlanByReportPermListSerializer(serializers.ModelSerializer):
             'id': obj.employee_mapped_id,
             'code': obj.employee_mapped.code,
             'full_name': obj.employee_mapped.get_full_name(2),
+            'group': {
+                'id': obj.employee_mapped.group_id,
+                'code': obj.employee_mapped.group.code,
+                'title': obj.employee_mapped.group.title
+            } if obj.employee_mapped.group else {},
         } if obj.employee_mapped else {}
 
     @classmethod
