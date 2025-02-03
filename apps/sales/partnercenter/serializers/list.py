@@ -320,7 +320,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     if revenue_ytd != float(right):
                         results.add(account.id)
                 case _:
-                    raise ValueError(f"Unsupported operator for revenue_ytd: {operator}")
+                    raise serializers.ValidationError(f"Unsupported operator for revenue_ytd: {operator}")
         return results
 
     @classmethod
@@ -368,7 +368,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
                     ~Q(open_opp_num__exact=right)
                 )
             case _:
-                raise ValueError(f"Unsupported operator for open_opp_num: {operator}")
+                raise serializers.ValidationError(f"Unsupported operator for open_opp_num: {operator}")
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
@@ -431,7 +431,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
             case 'notexact':
                 filtered_opportunities = opportunities_with_logs.exclude(comparing_days__exact=right)
             case _:
-                raise ValueError(f"Unsupported operator for last_contacted_open_opp: {operator}")
+                raise serializers.ValidationError(f"Unsupported operator for last_contacted_open_opp: {operator}")
 
         account_ids = filtered_opportunities.filter_current(fill__company=True).values_list('customer_id', flat=True)
 
@@ -501,7 +501,7 @@ class ListResultListSerializer(serializers.ModelSerializer):
             case 'notexactnull':
                 filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__exact=None))
             case _:
-                raise ValueError(f"Unsupported operator for manager__full_name: {operator}")
+                raise serializers.ValidationError(f"Unsupported operator for manager__full_name: {operator}")
 
         return set(filtered_accounts.values_list('id', flat=True))
 
