@@ -4,6 +4,24 @@ from apps.shared import DisperseModel
 
 
 class DeliFinishHandler:
+    # UPDATE COST DELIVERY PRODUCT
+    @classmethod
+    def update_cost_delivery_product(cls, instance):
+        for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
+            cls.update_cost_by_wh(deli_product=deli_product)
+        return True
+
+    @classmethod
+    def update_cost_by_wh(cls, deli_product):
+        product_obj, delivery_data = deli_product.product, deli_product.delivery_data
+        if product_obj:
+            for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
+                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
+                data_deli.update({'cost': cost})
+            deli_product.save(update_fields=['delivery_data'])
+
+        return True
+
     # NEW DELIVERY SUB + PRODUCT
     @classmethod
     def create_new(cls, instance):

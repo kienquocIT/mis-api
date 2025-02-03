@@ -25,12 +25,9 @@ class DeliHandler:
         total = 0
         list_reference = []
         for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
-            if deli_product.product and deli_product.delivery_data:
-                quantity += deli_product.picked_quantity
-                total_all_wh = cls.diagram_get_total_cost_by_wh(
-                    product_obj=deli_product.product, delivery_data=deli_product.delivery_data
-                )
-                total += total_all_wh
+            quantity += deli_product.picked_quantity
+            total_all_wh = cls.diagram_get_total_cost_by_wh(deli_product=deli_product)
+            total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
                 if instance.order_delivery.sale_order:
@@ -59,19 +56,17 @@ class DeliHandler:
         return True
 
     @classmethod
-    def diagram_get_total_cost_by_wh(cls, product_obj, delivery_data):
+    def diagram_get_total_cost_by_wh(cls, deli_product):
         total_all_wh = 0
-        for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-            lot_data = data_deli.get('lot_data', [])
-            serial_data = data_deli.get('serial_data', [])
-            quantity_deli = 0
-            if lot_data:
-                for lot in lot_data:
-                    quantity_deli += lot.get('quantity_delivery')
-            if serial_data:
-                quantity_deli = len(serial_data)
-            cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
-            total_all_wh += cost * quantity_deli
+        product_obj, delivery_data = deli_product.product, deli_product.delivery_data
+        if product_obj:
+            if len(delivery_data) == 0:
+                return deli_product.picked_quantity * deli_product.product_unit_price
+            for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
+                quantity_deli = data_deli.get('stock', 0)
+                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
+                total_all_wh += cost * quantity_deli
+
         return total_all_wh
 
     @classmethod

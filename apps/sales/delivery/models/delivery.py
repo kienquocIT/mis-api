@@ -525,6 +525,8 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
+                    DeliFinishHandler.update_cost_delivery_product(instance=self)  # update cost by warehouse
+
                     self.prepare_data_for_logging(self)
 
         SubPeriods.check_period_open(self.tenant_id, self.company_id)

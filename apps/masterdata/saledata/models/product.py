@@ -280,6 +280,7 @@ class Product(DataAbstractModel):
     lease_time_previous = models.FloatField(default=0)
     depreciation_price = models.FloatField(default=0)
     depreciation_time = models.FloatField(default=0)
+    net_value = models.FloatField(default=0, help_text="cost after leased, depreciation")
 
     # End lease fields
 

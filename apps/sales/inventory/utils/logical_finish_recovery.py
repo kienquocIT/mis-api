@@ -37,6 +37,7 @@ class RecoveryFinishHandler:
                     cloned_instance.lease_time_previous = lease_time
                     cloned_instance.depreciation_price = depreciation_price
                     cloned_instance.depreciation_time = depreciation_time
+                    cloned_instance.net_value = recovery_product.product_unit_price - depreciation_price
 
                     cloned_instance.save()  # Save as a new record
 
