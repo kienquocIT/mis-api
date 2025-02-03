@@ -56,3 +56,7 @@ msgstr "Trạng thái dự án là bắt buộc"
 #
 msgid "You do not have permission to close/complete this project"
 msgstr "Bạn không có quyền đóng/hoàn thành dự án này"
+
+#
+msgid "Order keyword when create is error"
+msgstr "Lỗi không update dc thứ tự của nhóm và công việc"

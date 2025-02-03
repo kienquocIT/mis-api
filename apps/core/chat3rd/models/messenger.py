@@ -38,6 +38,8 @@ class MessengerPageToken(MasterDataAbstractModel):
     picture = models.JSONField(default=dict, null=True, help_text='Pictures of page')
     link = models.TextField(null=True, help_text='Link to page')
 
+    subscribed_apps_log = models.JSONField(default=dict, help_text='Response of request subscribed webhooks')
+
     class Meta:
         verbose_name = 'Messenger Account Token'
         verbose_name_plural = 'Messenger Account Token'

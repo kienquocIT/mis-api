@@ -23,6 +23,7 @@ __all__ = [
 
 class WorkflowOfAppList(BaseListMixin, BaseCreateMixin):
     queryset = WorkflowConfigOfApp.objects
+    search_fields = ['title', 'code', 'application__title', 'application__code']
     serializer_class = WorkflowOfAppListSerializer
     serializer_list = WorkflowOfAppListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

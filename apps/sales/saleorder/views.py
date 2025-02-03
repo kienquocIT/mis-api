@@ -272,7 +272,9 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     list_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('sale_order_product_sale_order')
+        return super().get_queryset().filter(
+            delivery_status__in=[0, 1, 2]
+        ).prefetch_related('sale_order_product_sale_order')
 
     @swagger_auto_schema(
         operation_summary="Sale Order List For Purchasing Staff",

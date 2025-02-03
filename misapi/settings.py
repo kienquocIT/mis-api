@@ -791,3 +791,5 @@ if DEBUG is True:
     # print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     # print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
+
+print(Fore.BLUE, f'#  DATABASES: {DATABASES["default"]["NAME"]}', '\033[0m')

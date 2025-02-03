@@ -13,7 +13,8 @@ DATA_PROPERTY_TYPE = (
 class List(MasterDataAbstractModel):
     data_object = models.ForeignKey(
         'partnercenter.DataObject',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True
     )
     filter_condition = models.JSONField(default=list)
     num_of_records = models.IntegerField(default=0)
@@ -21,6 +22,11 @@ class List(MasterDataAbstractModel):
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='',
         related_name='partnercenter_list_employee_inherit',
+    )
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        null=True
     )
 
     class Meta:

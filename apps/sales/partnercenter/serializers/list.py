@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta, datetime
 
-from django.db.models.functions import Greatest, Coalesce
+from django.db.models.functions import Greatest, Coalesce, Concat
 from django.utils import timezone
 from django.apps import apps
 from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField, Subquery, Value
@@ -458,6 +458,54 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_accounts.values_list('id', flat=True))
 
     @classmethod
+    def filter_contact__owner__name(cls, obj, operator, right): # pylint: disable=W0613
+        annotated_employees = Employee.objects.annotate(
+            full_name=Concat('last_name', Value(' '), 'first_name')
+        )
+        operator_handlers = {
+            'notexact': lambda field, value: ~Q(**{field: value}),
+            'exactnull': lambda field, _: Q(**{f"{field}__exact": None}),
+            'notexactnull': lambda field, _: ~Q(**{f"{field}__exact": None}),
+            'noticontains': lambda field, value: ~Q(**{f"{field}__icontains": value}),
+        }
+        filter_func = operator_handlers.get(operator, None)
+        if filter_func:
+            group_query = filter_func('full_name', right)
+        else:
+            group_query = Q(**{f"full_name__{operator}": right})
+        filtered_employees = annotated_employees.filter_current(fill__company=True).filter(group_query)
+
+        filtered_contacts = Contact.objects.filter(
+            owner__in=filtered_employees
+        )
+
+        return set(filtered_contacts.values_list('id', flat=True))
+
+    @classmethod
+    def filter_manager__full_name(cls, obj, operator, right): # pylint: disable=W0613
+        match operator:
+            case 'icontains':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    manager__icontains=f'"full_name": "{right}"')
+            case 'noticontains':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    ~Q(manager__icontains=f'"full_name": "{right}"'))
+            case 'exact':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    manager__0__full_name=right)
+            case 'notexact':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
+                    ~Q(manager__0__full_name=right))
+            case 'exactnull':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__exact=None)
+            case 'notexactnull':
+                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__exact=None))
+            case _:
+                raise ValueError(f"Unsupported operator for manager__full_name: {operator}")
+
+        return set(filtered_accounts.values_list('id', flat=True))
+
+    @classmethod
     def get_list_result(cls, obj):  # pylint: disable=R0912, R0915, R0914
         application = obj.data_object.application
         model_code = application.model_code
@@ -472,7 +520,9 @@ class ListResultListSerializer(serializers.ModelSerializer):
             'revenue_ytd': cls.filter_revenue_ytd,
             'open_opp_num': cls.filter_open_opp_num,
             'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
-            'curr_opp_stage_id': cls.filter_curr_opp_stage
+            'curr_opp_stage_id': cls.filter_curr_opp_stage,
+            'contact__owner__name': cls.filter_contact__owner__name,
+            'manager': cls.filter_manager__full_name
         }
 
         # Mapping for operator handling
@@ -510,14 +560,13 @@ class ListResultListSerializer(serializers.ModelSerializer):
                                    filter_current(fill__company=True).
                                    filter(group_query).
                                    values_list('id', flat=True))
-
                 if group_results is None:
                     group_results = queryset
                 else:
                     group_results.intersection_update(queryset)
-
             if group_results:
                 overall_results.update(group_results)
+
         filter_data = model_class.objects.filter(id__in=overall_results).values()
 
         filter_data_list = []
@@ -634,3 +683,19 @@ class ListOpportunityConfigStageListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_title(cls, obj):
         return obj.indicator
+
+
+class ListAccountListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Account
+        fields = (
+            'id',
+            'code',
+            'title'
+        )
+
+    @classmethod
+    def get_title(cls, obj):
+        return obj.name
