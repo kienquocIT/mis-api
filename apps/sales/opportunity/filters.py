@@ -21,6 +21,7 @@ class OpportunityListFilters(BastionFieldAbstractListFilter):
             'is_close_lost': ['exact'],
             'is_deal_close': ['exact'],
             'id': ['exact', 'in'],
+            'customer_id': ['exact'],
         }
 
 
