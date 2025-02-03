@@ -54,7 +54,7 @@ class RevenuePlanGroup(SimpleAbstractModel):
         permissions = ()
 
 
-class RevenuePlanGroupEmployee(SimpleAbstractModel):
+class RevenuePlanGroupEmployee(DataAbstractModel):
     revenue_plan_mapped = models.ForeignKey(
         RevenuePlan,
         on_delete=models.CASCADE,
@@ -80,6 +80,6 @@ class RevenuePlanGroupEmployee(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Revenue Plan Group Employee'
         verbose_name_plural = 'Revenue Plans Groups Employees'
-        ordering = ()
+        ordering = ('employee_mapped__code',)
         default_permissions = ()
         permissions = ()
