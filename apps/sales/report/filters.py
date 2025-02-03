@@ -93,10 +93,10 @@ def filter_gross_margin(obj, operator, right):
     app_label = application.app_label
     model_class = apps.get_model(app_label=app_label, model_name=model_code)
 
-    right_ratio = round(int(right) / 100, 2)
+    right_ratio = round(int(right) / 100, 4)
 
     annotated_report = model_class.objects.annotate(
-        gross_margin = Round(F('gross_profit') / F('revenue'), 2)
+        gross_margin = Round(F('gross_profit') / F('revenue'), 4)
     )
     filter_kwargs = {f"gross_margin__{operator}": right_ratio}
     return annotated_report.filter(**filter_kwargs).values_list('id', flat=True)
