@@ -293,6 +293,13 @@ AppProp_SaleData_Account_data = {
         "type": 1,
         "is_filter_condition": True,
     },
+    "f8ccf26e-f35c-4cd4-a94b-70b89e632510": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Number of Sale Orders (Total)",
+        "code": "num_sale_orders",
+        "type": 6,
+        "is_filter_condition": True,
+    },
 }
 
 AppProp_SaleData_Quotation_data = {
