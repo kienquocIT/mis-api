@@ -152,8 +152,9 @@ class EmployeeContractRuntimeCreateSerializers(serializers.ModelSerializer):
                 # update contract status is signing
                 employee_contract = validated_data.get('employee_contract', None)
                 info = EmployeeContractRuntime.objects.create(**validated_data)
-                if info:
-                    employee_contract.update(sign_status=1)
+                if info and employee_contract:
+                    employee_contract.sign_status = 1
+                    employee_contract.save(update_fields=['sign_status'])
                 return info
         except Exception as err:
             return err
