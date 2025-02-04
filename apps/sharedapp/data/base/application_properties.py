@@ -210,8 +210,9 @@ AppProp_SaleData_Account_data = {
     "b0b2ca8d-659b-46da-81b8-449f0fcf8acf": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Shipping Address",
-        "code": "shipping_address",
+        "code": "account_mapped_shipping_address__full_address",
         "type": 1,
+        "is_filter_condition": True,
     },
     "0d3511e9-7d86-4d4c-a249-f43a0144b406": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
