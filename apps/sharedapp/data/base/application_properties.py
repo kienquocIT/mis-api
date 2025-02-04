@@ -132,7 +132,7 @@ AppProp_SaleData_Account_data = {
     },
     "27db08f5-8469-4ef1-9ec6-df7811cf7540": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Owner",
+        "title": "Account Owner",
         "code": "owner",
         "type": 5,
         "content_type": "saledata.Contact",
@@ -140,7 +140,7 @@ AppProp_SaleData_Account_data = {
     },
     "f2b81fd6-3657-448b-b93b-0b9552fd0f3e": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Manager",
+        "title": "Account Manager",
         "code": "manager",
         "type": 1,
         "is_filter_condition": True,
@@ -210,8 +210,9 @@ AppProp_SaleData_Account_data = {
     "b0b2ca8d-659b-46da-81b8-449f0fcf8acf": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Shipping Address",
-        "code": "shipping_address",
+        "code": "account_mapped_shipping_address__full_address",
         "type": 1,
+        "is_filter_condition": True,
     },
     "0d3511e9-7d86-4d4c-a249-f43a0144b406": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
@@ -287,7 +288,7 @@ AppProp_SaleData_Account_data = {
     },
     "a409dcd8-7f79-406f-b68e-fa6846862e4c": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Owner name",
+        "title": "Account Owner name",
         "code": "owner__fullname",
         "type": 1,
         "is_filter_condition": True,
@@ -2458,6 +2459,52 @@ AppProp_SaleData_Consulting_data = {
     },
 }
 
+AppProp_SaleData_ReportRevenue_data = {
+    "67f15b55-523c-4d2e-a560-26dfca19b50f": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Customer",
+        "code": "customer",
+        "type": 5,
+        "content_type": "saledata.account",
+        'is_filter_condition': True,
+    },
+    "4a6eeecf-758b-4b37-bb71-e87e18cee451": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Customer Name",
+        "code": "customer__name",
+        "type": 1,
+        'is_filter_condition': True,
+    },
+    "8725286d-86a2-490a-ab3b-071b7e5d9dca": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Revenue",
+        "code": "revenue",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+    "eaeff00e-e58d-4849-86c8-293b71e7bedd": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Gross Margin (in percent, e.g, 15, 30)",
+        "code": "gross_margin",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+    "1715395b-0679-4442-8c6d-046bbe86e391": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Gross Profit",
+        "code": "gross_profit",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+    "1fd330e4-5cb6-43b6-97f8-553486f9e3eb": {
+        "application_id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+        "title": "Net Income",
+        "code": "net_income",
+        "type": 6,
+        'is_filter_condition': True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2494,4 +2541,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
     **AppProp_SaleData_Consulting_data,
+    **AppProp_SaleData_ReportRevenue_data
 }

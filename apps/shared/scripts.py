@@ -3021,3 +3021,13 @@ def update_employee_for_promotion():
             employee_inherit=admin, employee_created=admin, employee_modified=admin
         )
     print('Done update_employee_for_promotion !!')
+
+
+def update_employee_revenue_plan():
+    for item in RevenuePlanGroupEmployee.objects.all():
+        item.employee_created = item.revenue_plan_mapped.employee_created
+        item.employee_inherit = item.employee_mapped
+        item.tenant = item.revenue_plan_mapped.tenant
+        item.company = item.revenue_plan_mapped.company
+        item.save(update_fields=['employee_created', 'employee_inherit', 'tenant', 'company'])
+    print('Done :))')

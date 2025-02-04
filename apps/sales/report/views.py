@@ -2,11 +2,14 @@ import json
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
+
 from apps.masterdata.saledata.models import WareHouse, Periods, ProductWareHouse
 from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
+from apps.sales.partnercenter.models import List
 from apps.sales.purchasing.models import PurchaseOrder
+from apps.sales.report.filters import filter_by_advance_filter
 from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
@@ -17,6 +20,8 @@ from apps.sales.report.serializers import (
     BalanceInitializationListSerializer, BalanceInitializationDetailSerializer,
     BalanceInitializationCreateSerializer, BalanceInitializationCreateSerializerImportDB
 )
+from apps.sales.report.serializers.advance_filter import AdvanceFilterListSerializer, AdvanceFilterCreateSerializer, \
+    AdvanceFilterDetailSerializer, AdvanceFilterUpdateSerializer
 from apps.sales.report.serializers.report_budget import (
     BudgetReportCompanyListSerializer,
     BudgetReportGroupListSerializer,
@@ -29,7 +34,7 @@ from apps.sales.report.serializers.report_sales import (
     ReportProductListSerializerForDashBoard
 )
 from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, ResponseController, HttpMsg
 
 
 # REPORT REVENUE
@@ -51,13 +56,15 @@ class ReportRevenueList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        query_set = super().get_queryset().select_related(
             "sale_order",
             "quotation",
             "opportunity",
             "customer",
             "employee_inherit",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        filter_item_id = self.request.query_params.get('advance_filter_id')
+        return filter_by_advance_filter(query_set, filter_item_id)
 
     @swagger_auto_schema(
         operation_summary="Report revenue List",
@@ -669,3 +676,63 @@ class PaymentListForBudgetReport(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class AdvanceFilterList(BaseListMixin, BaseCreateMixin):
+    queryset = List.objects
+    serializer_list = AdvanceFilterListSerializer
+    serializer_create = AdvanceFilterCreateSerializer
+    serializer_detail = AdvanceFilterDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(data_object=None)
+
+    @swagger_auto_schema(
+        operation_summary="Advance Filter list",
+        operation_description="Advance Filter list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Advance Filter List",
+        operation_description="Create Advance Filter List",
+        request_body=AdvanceFilterCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class AdvanceFilterDetail(BaseUpdateMixin):
+    queryset = List.objects
+    serializer_update = AdvanceFilterUpdateSerializer
+    serializer_detail = AdvanceFilterDetailSerializer
+    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
+
+    @swagger_auto_schema(
+        operation_summary="Update Advance Filter List",
+        operation_description="Update Advance Filter List",
+        request_body=AdvanceFilterUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Delete advance filter'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

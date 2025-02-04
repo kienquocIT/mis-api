@@ -1159,6 +1159,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
     "is_workflow": True,
     "app_depend_on": [
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Distribution plan
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
@@ -1173,6 +1174,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
@@ -1183,6 +1185,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
