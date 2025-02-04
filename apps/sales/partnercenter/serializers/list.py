@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta, datetime
 
+import unicodedata
 from django.db.models.functions import Greatest, Coalesce, Concat
 from django.utils import timezone
 from django.apps import apps
@@ -482,28 +483,32 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return set(filtered_contacts.values_list('id', flat=True))
 
     @classmethod
-    def filter_manager__full_name(cls, obj, operator, right): # pylint: disable=W0613
-        match operator:
-            case 'icontains':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
-                    manager__icontains=f'"full_name": "{right}"')
-            case 'noticontains':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
-                    ~Q(manager__icontains=f'"full_name": "{right}"'))
-            case 'exact':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
-                    manager__0__full_name=right)
-            case 'notexact':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(
-                    ~Q(manager__0__full_name=right))
-            case 'exactnull':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(manager__exact=None)
-            case 'notexactnull':
-                filtered_accounts = Account.objects.filter_current(fill__company=True).filter(~Q(manager__exact=None))
-            case _:
-                raise serializers.ValidationError(f"Unsupported operator for manager__full_name: {operator}")
+    def filter_manager__full_name(cls, obj, operator, right):  # pylint: disable=W0613
+        normalized_right = normalize_text(right)
 
-        return set(filtered_accounts.values_list('id', flat=True))
+        accounts = Account.objects.filter_current(fill__company=True)
+
+        matching_account_ids = set()
+
+        for account in accounts:
+            normalized_manager_names = [normalize_text(manager.get("full_name", "")) for manager in account.manager]
+
+            if operator == "icontains" and any(normalized_right in name for name in normalized_manager_names):
+                matching_account_ids.add(account.id)
+            elif operator == "noticontains" and all(normalized_right not in name for name in normalized_manager_names):
+                matching_account_ids.add(account.id)
+            elif operator == "exact" and any(normalized_right == name for name in normalized_manager_names):
+                matching_account_ids.add(account.id)
+            elif operator == "notexact" and all(normalized_right != name for name in normalized_manager_names):
+                matching_account_ids.add(account.id)
+
+        # Handle null cases
+        if operator == 'exactnull':
+            matching_account_ids = set(accounts.filter(manager__exact=None).values_list('id', flat=True))
+        elif operator == 'notexactnull':
+            matching_account_ids = set(accounts.exclude(manager__exact=None).values_list('id', flat=True))
+
+        return matching_account_ids
 
     @classmethod
     def get_list_result(cls, obj):  # pylint: disable=R0912, R0915, R0914
@@ -699,3 +704,9 @@ class ListAccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_title(cls, obj):
         return obj.name
+
+# e.g: Nguyễn => nguyen
+def normalize_text(text):
+    """Normalize text by removing diacritical marks and converting to lowercase."""
+    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+    return normalized.lower()
