@@ -268,7 +268,7 @@ class Product(DataAbstractModel):
     available_notify_quantity = models.IntegerField(null=True)
 
     # Begin lease fields
-
+    # These fields will be created/ updated when GoodsRecovery
     lease_source = models.ForeignKey(
         "self",
         null=True,
@@ -280,7 +280,8 @@ class Product(DataAbstractModel):
     lease_time_previous = models.FloatField(default=0)
     depreciation_price = models.FloatField(default=0)
     depreciation_time = models.FloatField(default=0)
-    net_value = models.FloatField(default=0, help_text="cost after leased, depreciation")
+    origin_cost = models.FloatField(default=0, help_text="the first cost of this product before depreciation")
+    date_first_delivery = models.DateField(null=True)
 
     # End lease fields
 

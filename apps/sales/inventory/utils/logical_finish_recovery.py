@@ -16,6 +16,9 @@ class RecoveryFinishHandler:
                 lease_time = recovery_product.product_quantity_time
                 depreciation_price = recovery_product.product_depreciation_price
                 depreciation_time = recovery_product.product_quantity_depreciation
+                date_first_delivery = recovery_product.recovery_delivery.delivery_data.get(
+                    'actual_delivery_date', None
+                ) if recovery_product.recovery_delivery else None
                 if original_instance:
                     cloned_instance = deepcopy(original_instance)
                     # Override data
@@ -37,7 +40,8 @@ class RecoveryFinishHandler:
                     cloned_instance.lease_time_previous = lease_time
                     cloned_instance.depreciation_price = depreciation_price
                     cloned_instance.depreciation_time = depreciation_time
-                    cloned_instance.net_value = recovery_product.product_unit_price - depreciation_price
+                    cloned_instance.origin_cost = recovery_product.product_unit_price
+                    cloned_instance.date_first_delivery = date_first_delivery
 
                     cloned_instance.save()  # Save as a new record
 
