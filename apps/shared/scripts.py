@@ -1275,8 +1275,9 @@ def update_price_list():
     print('Done')
 
 
-def reset_and_run_product_info():
+def reset_and_run_product_info(company_id=None):
     # reset
+    filter_data = {'company_id': company_id} if company_id else {}
     update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
     for product in Product.objects.all():
         product.stock_amount = 0
@@ -1286,17 +1287,18 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status=3):
+    for po in PurchaseOrder.objects.filter(system_status=3, **filter_data):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status=3):
+    for gr in GoodsReceipt.objects.filter(system_status=3, **filter_data):
+        print(gr.code)
         GRFinishHandler.push_product_info(instance=gr)
     # output
-    for so in SaleOrder.objects.filter(system_status=3):
+    for so in SaleOrder.objects.filter(system_status=3, **filter_data):
         SOFinishHandler.push_product_info(instance=so)
-    for deli_sub in OrderDeliverySub.objects.all():
+    for deli_sub in OrderDeliverySub.objects.filter(**filter_data):
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.filter(system_status=3):
+    for return_obj in GoodsReturn.objects.filter(system_status=3, **filter_data):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True
