@@ -9,7 +9,9 @@ from apps.sales.partnercenter.serializers import ListDataObjectListSerializer, L
     ListDetailSerializer, ListResultListSerializer, ListListSerializer, ListEmployeeListSerializer, \
     ListContactListSerializer, ListUpdateSerializer, ListIndustryListSerializer, \
     ListOpportunityConfigStageListSerializer, ListAccountListSerializer
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    ResponseController, HttpMsg
+
 
 class ListDataObjectList(BaseListMixin):
     queryset = DataObject.objects
@@ -92,6 +94,17 @@ class ListDetail(BaseRetrieveMixin, BaseUpdateMixin):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary='Delete List'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='partnercenter', model_code='list', perm_code='delete',
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
 
 class ListResultList(BaseRetrieveMixin):
     queryset = List.objects
