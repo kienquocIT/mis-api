@@ -5,7 +5,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
-    QuotationProductSerializer, QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
+    QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -34,38 +34,41 @@ class QuotationListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_customer(cls, obj):
         return {
-            'id': obj.customer_id,
+            'id': str(obj.customer_id),
             'title': obj.customer.name,
             'code': obj.customer.code,
         } if obj.customer else {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'is_active': obj.employee_inherit.is_active,
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
     @classmethod
     def get_opportunity(cls, obj):
         return {
-            'id': obj.opportunity_id,
+            'id': str(obj.opportunity_id),
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
         } if obj.opportunity else {}
 
 
+class QuotationMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
 class QuotationDetailSerializer(AbstractDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
-    customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
+    process_stage_app = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -74,15 +77,13 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'opportunity',
-            'customer',
+            'customer_data',
             'contact_data',
             'sale_person',
-            'payment_term_id',
             'payment_term_data',
             'system_status',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping_id',
             'customer_billing_id',
@@ -117,63 +118,32 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             # process
             'process',
+            'process_stage_app',
         )
 
     @classmethod
     def get_opportunity(cls, obj):
         return {
-            'id': obj.opportunity_id,
+            'id': str(obj.opportunity_id),
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'is_close_lost': obj.opportunity.is_close_lost,
             'is_deal_close': obj.opportunity.is_deal_close,
-            'sale_order_id': obj.opportunity.sale_order_id,
+            'sale_order_id': str(obj.opportunity.sale_order_id),
             'customer': {
-                'id': obj.opportunity.customer_id,
+                'id': str(obj.opportunity.customer_id),
                 'title': obj.opportunity.customer.title
             } if obj.opportunity.customer else {},
-            'quotation_id': obj.opportunity.quotation_id,
+            'quotation_id': str(obj.opportunity.quotation_id),
         } if obj.opportunity else {}
 
     @classmethod
-    def get_customer(cls, obj):
-        return {
-            'id': obj.customer_id,
-            'title': obj.customer.name,
-            'code': obj.customer.code,
-            'payment_term_mapped': {
-                'id': obj.customer.payment_term_customer_mapped_id,
-                'title': obj.customer.payment_term_customer_mapped.title,
-                'code': obj.customer.payment_term_customer_mapped.code,
-            } if obj.customer.payment_term_customer_mapped else {},
-            'customer_price_list': obj.customer.price_list_mapped_id,
-        } if obj.customer else {}
-
-    @classmethod
     def get_sale_person(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'phone': obj.employee_inherit.phone,
-            'is_active': obj.employee_inherit.is_active,
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'phone': obj.employee_inherit.phone,
-            'is_active': obj.employee_inherit.is_active,
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
     @classmethod
     def get_process(cls, obj):
@@ -185,6 +155,16 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             }
         return {}
 
+    @classmethod
+    def get_process_stage_app(cls, obj):
+        if obj.process_stage_app:
+            return {
+                'id': obj.process_stage_app.id,
+                'title': obj.process_stage_app.title,
+                'remark': obj.process_stage_app.remark,
+            }
+        return {}
+
 
 class QuotationCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
@@ -192,16 +172,15 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         required=False,
         allow_null=True,
     )
-    customer = serializers.UUIDField()
-    contact = serializers.UUIDField()
+    customer_id = serializers.UUIDField()
+    contact_id = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
-    payment_term = serializers.UUIDField()
+    payment_term_id = serializers.UUIDField(allow_null=True, required=False)
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
@@ -219,25 +198,33 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         required=False
     )
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
         return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=Quotation.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = Quotation
         fields = (
             # process
             'process',
+            'process_stage_app',
             #
             'title',
             'opportunity_id',
-            'customer',
+            'customer_id',
             'customer_data',
-            'contact',
+            'contact_id',
             'contact_data',
             'employee_inherit_id',
-            'payment_term',
+            'payment_term_id',
             'payment_term_data',
             # total amount of products
             'total_product_pretax_amount',
@@ -256,7 +243,6 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'total_expense',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping',
             'customer_billing',
@@ -272,24 +258,24 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
-    def validate_customer(cls, value):
-        return QuotationCommonValidate().validate_customer(value=value)
+    def validate_customer_id(cls, value):
+        return QuotationCommonValidate().validate_customer_id(value=value)
 
     @classmethod
     def validate_opportunity_id(cls, value):
         return QuotationCommonValidate().validate_opportunity_id(value=value)
 
     @classmethod
-    def validate_contact(cls, value):
-        return QuotationCommonValidate().validate_contact(value=value)
+    def validate_contact_id(cls, value):
+        return QuotationCommonValidate().validate_contact_id(value=value)
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
         return QuotationCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
-    def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
+    def validate_payment_term_id(cls, value):
+        return QuotationCommonValidate().validate_payment_term_id(value=value)
 
     @classmethod
     def validate_customer_shipping(cls, value):
@@ -325,11 +311,11 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
-        app_id = Quotation.get_app_id()
         if process_obj:
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(opp_id=opportunity_id, app_id=app_id)
+            process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
         QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
@@ -341,6 +327,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
         if quotation.process:
             ProcessRuntimeControl(process_obj=quotation.process).register_doc(
+                process_stage_app_obj=quotation.process_stage_app,
                 app_id=Quotation.get_app_id(),
                 doc_id=quotation.id,
                 doc_title=quotation.title,
@@ -355,11 +342,11 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         required=False,
         allow_null=True,
     )
-    customer = serializers.UUIDField(
+    customer_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    contact = serializers.UUIDField(
+    contact_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -367,7 +354,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         required=False,
         allow_null=True,
     )
-    payment_term = serializers.UUIDField(
+    payment_term_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -376,7 +363,6 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
     customer_shipping = serializers.UUIDField(required=False, allow_null=True)
     customer_billing = serializers.UUIDField(required=False, allow_null=True)
@@ -399,12 +385,12 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'opportunity_id',
-            'customer',
+            'customer_id',
             'customer_data',
-            'contact',
+            'contact_id',
             'contact_data',
             'employee_inherit_id',
-            'payment_term',
+            'payment_term_id',
             'payment_term_data',
             # total amount of products
             'total_product_pretax_amount',
@@ -423,7 +409,6 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'total_expense',
             # quotation tabs
             'quotation_products_data',
-            'quotation_term_data',
             'quotation_logistic_data',
             'customer_shipping',
             'customer_billing',
@@ -440,7 +425,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_customer(cls, value):
-        return QuotationCommonValidate().validate_customer(value=value)
+        return QuotationCommonValidate().validate_customer_id(value=value)
 
     @classmethod
     def validate_opportunity_id(cls, value):
@@ -448,7 +433,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_contact(cls, value):
-        return QuotationCommonValidate().validate_contact(value=value)
+        return QuotationCommonValidate().validate_contact_id(value=value)
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
@@ -456,7 +441,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
+        return QuotationCommonValidate().validate_payment_term_id(value=value)
 
     @classmethod
     def validate_customer_shipping(cls, value):

@@ -2,21 +2,26 @@ import json
 import datetime
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
+
 from apps.masterdata.saledata.models import WareHouse, Periods, ProductWareHouse
 from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
+from apps.sales.partnercenter.models import List
 from apps.sales.purchasing.models import PurchaseOrder
+from apps.sales.report.filters import filter_by_advance_filter
 from apps.sales.report.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
-    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction
+    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction, BalanceInitialization
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, ReportInventoryCostListSerializer, ReportInventoryCostWarehouseDetailSerializer,
     BalanceInitializationListSerializer, BalanceInitializationDetailSerializer,
     BalanceInitializationCreateSerializer, BalanceInitializationCreateSerializerImportDB
 )
+from apps.sales.report.serializers.advance_filter import AdvanceFilterListSerializer, AdvanceFilterCreateSerializer, \
+    AdvanceFilterDetailSerializer, AdvanceFilterUpdateSerializer
 from apps.sales.report.serializers.report_budget import (
     BudgetReportCompanyListSerializer,
     BudgetReportGroupListSerializer,
@@ -25,10 +30,11 @@ from apps.sales.report.serializers.report_budget import (
 from apps.sales.report.serializers.report_purchasing import PurchaseOrderListReportSerializer
 from apps.sales.report.serializers.report_sales import (
     ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
-    ReportPipelineListSerializer, ReportCashflowListSerializer, ReportGeneralListSerializer
+    ReportPipelineListSerializer, ReportCashflowListSerializer, ReportGeneralListSerializer,
+    ReportProductListSerializerForDashBoard
 )
 from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, ResponseController, HttpMsg
 
 
 # REPORT REVENUE
@@ -50,13 +56,15 @@ class ReportRevenueList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        query_set = super().get_queryset().select_related(
             "sale_order",
             "quotation",
             "opportunity",
             "customer",
             "employee_inherit",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        filter_item_id = self.request.query_params.get('advance_filter_id')
+        return filter_by_advance_filter(query_set, filter_item_id)
 
     @swagger_auto_schema(
         operation_summary="Report revenue List",
@@ -95,6 +103,41 @@ class ReportProductList(BaseListMixin):
             "product",
             "product__general_product_category",
             "product__sale_default_uom",
+        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+
+    @swagger_auto_schema(
+        operation_summary="Report product List",
+        operation_description="Get report product List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportproduct', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+class ReportProductListForDashBoard(BaseListMixin):
+    queryset = ReportProduct.objects
+    search_fields = ['product__title']
+    filterset_fields = {
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
+        'date_approved': ['lte', 'gte'],
+        'product_id': ['exact', 'in'],
+        'product__general_product_category_id': ['exact', 'in'],
+        'sale_order__system_status': ['exact'],
+        'group_inherit__is_delete': ['exact'],
+    }
+    serializer_list = ReportProductListSerializerForDashBoard
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "product",
+            "product__general_product_category",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
 
     @swagger_auto_schema(
@@ -237,13 +280,15 @@ class ReportInventoryCostList(BaseListMixin):
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
             for order in range(1, int(sub_period_order) + 1):
-                ReportInvCommonFunc.sum_up_sub_period(
+                run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
                     self.request.user.tenant_current,
                     self.request.user.company_current,
                     self.request.user.employee_current,
                     period_mapped,
                     order
                 )
+                if run_state is False:
+                    break
 
             if self.request.query_params['product_id_list'] != '':
                 prd_id_list = self.request.query_params['product_id_list'].split(',')
@@ -294,7 +339,7 @@ class ReportInventoryCostList(BaseListMixin):
                 'date_range': [int(num) for num in request.query_params['date_range'].split('-')]
             }
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(company_config)
+        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(self.request.user.company_current)
         return self.list(request, *args, **kwargs)
 
 
@@ -369,23 +414,19 @@ class ReportStockList(BaseListMixin):
                 tenant_id=tenant_id, company_id=company_id,
             ).select_related('warehouse')
         self.ser_context['definition_inventory_valuation'] = company_config.definition_inventory_valuation
-        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(company_config)
+        self.ser_context['cost_cfg'] = ReportInvCommonFunc.get_cost_config(self.request.user.company_current)
         return self.list(request, *args, **kwargs)
 
 
 class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
-    queryset = ReportInventoryCost.objects
+    queryset = BalanceInitialization.objects
     serializer_list = BalanceInitializationListSerializer
     serializer_create = BalanceInitializationCreateSerializer
     serializer_detail = BalanceInitializationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'product__inventory_uom',
-            'warehouse',
-            'period_mapped'
-        ).prefetch_related().filter(for_balance=True).order_by('warehouse__code', 'product__code')
+        return super().get_queryset().select_related('product', 'uom', 'warehouse').prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Balance Initialization list",
@@ -609,19 +650,20 @@ class BudgetReportGroupList(BaseListMixin):
 
 class PaymentListForBudgetReport(BaseListMixin):
     queryset = Payment.objects
-    filterset_fields = {
-        'employee_inherit__group_id': ['exact'],
-    }
     serializer_list = PaymentListSerializerForBudgetPlan
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        data_filter = {}
-        if 'month_list' in self.request.query_params:
-            data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
-        if 'date_approved__year' in self.request.query_params:
-            data_filter['date_approved__year'] = self.request.query_params.get('date_approved__year')
-        if len(data_filter) == 1:
+        data_filter = {'system_status': 3}
+        if 'period_id' in self.request.query_params:
+            period_obj = Periods.objects.filter(id=self.request.query_params.get('period_id')).first()
+            if period_obj:
+                data_filter['date_approved__year__in'] = [period_obj.start_date.year, period_obj.end_date.year]
+                if 'month_list' in self.request.query_params:
+                    data_filter['date_approved__month__in'] = json.loads(self.request.query_params.get('month_list'))
+                if 'group_id' in self.request.query_params:
+                    data_filter['employee_inherit__group_id'] = self.request.query_params.get('group_id')
+        if len(data_filter) > 0:
             return super().get_queryset().filter(**data_filter).prefetch_related('payment').select_related()
         return super().get_queryset().none()
 
@@ -634,3 +676,63 @@ class PaymentListForBudgetReport(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class AdvanceFilterList(BaseListMixin, BaseCreateMixin):
+    queryset = List.objects
+    serializer_list = AdvanceFilterListSerializer
+    serializer_create = AdvanceFilterCreateSerializer
+    serializer_detail = AdvanceFilterDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(data_object=None)
+
+    @swagger_auto_schema(
+        operation_summary="Advance Filter list",
+        operation_description="Advance Filter list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Advance Filter List",
+        operation_description="Create Advance Filter List",
+        request_body=AdvanceFilterCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class AdvanceFilterDetail(BaseUpdateMixin):
+    queryset = List.objects
+    serializer_update = AdvanceFilterUpdateSerializer
+    serializer_detail = AdvanceFilterDetailSerializer
+    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
+
+    @swagger_auto_schema(
+        operation_summary="Update Advance Filter List",
+        operation_description="Update Advance Filter List",
+        request_body=AdvanceFilterUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Delete advance filter'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

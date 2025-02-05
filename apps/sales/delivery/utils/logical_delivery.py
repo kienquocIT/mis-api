@@ -33,28 +33,29 @@ class DeliHandler:
                 total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
-                list_reference.append(instance.order_delivery.sale_order.code)
-                list_reference.reverse()
-                reference = ", ".join(list_reference)
-                DiagramSuffix.push_diagram_suffix(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    app_code_main=instance.order_delivery.sale_order.__class__.get_model_code(),
-                    doc_id_main=instance.order_delivery.sale_order.id,
-                    app_code=instance.__class__.get_model_code(),
-                    doc_id=instance.id,
-                    doc_data={
-                        'id': str(instance.id),
-                        'title': instance.title,
-                        'code': instance.code,
-                        'system_status': instance.system_status,
-                        'date_created': str(instance.date_created),
-                        # custom
-                        'quantity': quantity,
-                        'total': total,
-                        'reference': reference,
-                    }
-                )
+                if instance.order_delivery.sale_order:
+                    list_reference.append(instance.order_delivery.sale_order.code)
+                    list_reference.reverse()
+                    reference = ", ".join(list_reference)
+                    DiagramSuffix.push_diagram_suffix(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        app_code_main=instance.order_delivery.sale_order.__class__.get_model_code(),
+                        doc_id_main=instance.order_delivery.sale_order.id,
+                        app_code=instance.__class__.get_model_code(),
+                        doc_id=instance.id,
+                        doc_data={
+                            'id': str(instance.id),
+                            'title': instance.title,
+                            'code': instance.code,
+                            'system_status': instance.system_status,
+                            'date_created': str(instance.date_created),
+                            # custom
+                            'quantity': quantity,
+                            'total': total,
+                            'reference': reference,
+                        }
+                    )
         return True
 
     @classmethod

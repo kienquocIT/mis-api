@@ -7,6 +7,7 @@ PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
 
 class ProductForSaleListSerializer(serializers.ModelSerializer):
+    code = serializers.SerializerMethodField()
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
@@ -23,7 +24,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'general_information', 'purchase_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
+            'lease_code',
         )
+
+    @classmethod
+    def get_code(cls, obj):
+        return obj.lease_source.code if obj.lease_source else obj.code
 
     @classmethod
     def check_status_price(cls, valid_time_start, valid_time_end):

@@ -19,6 +19,9 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+import firebase_admin
+from firebase_admin import credentials
+
 from .load_env import load_env
 
 # override recursion limit
@@ -84,6 +87,8 @@ INSTALLED_APPS = \
         'apps.core.forms',  # form
         'apps.core.chatbot',  # chatbot AI
         'apps.core.recurrence',  # recurrence for apps
+        'apps.core.chat3rd',
+        'apps.core.firebase',
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -121,6 +126,9 @@ INSTALLED_APPS = \
         'apps.sales.contract',
         'apps.sales.production',
         'apps.sales.bidding',
+        'apps.sales.leaseorder',
+        'apps.sales.consulting',
+        'apps.sales.partnercenter'
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -128,6 +136,9 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+    ] + [
+        'apps.sales.financialcashflow',
+        'apps.sales.reconciliation',
     ] + [
         'apps.accounting.accountingsettings'
     ]
@@ -140,7 +151,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.shared.extends.middleware.AllowedMethodMiddleware',
+    'apps.shared.extends.middleware.ActiveTranslateAndAllowedMethodMiddleware',
 ]
 #
 # Author: Paul McLanahan <pmac@mozilla.com>
@@ -160,6 +171,8 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
+
+CSRF_TRUSTED_ORIGINS = json.loads(os.environ.get('CSRF_TRUSTED_ORIGINS', '[]'))
 
 ROOT_URLCONF = 'misapi.urls'
 
@@ -668,6 +681,7 @@ if ENABLE_PROD is True:
                 'OPTIONS': {
                     'charset': 'utf8mb4',
                 },
+                'CONN_MAX_AGE': 600,  # 60 * 10
             }
         }
     )
@@ -756,6 +770,14 @@ def display_wraptext(text, length=80):
     return "\n |  ".join(textwrap.wrap(text, length))
 
 
+# Firebase
+FIREBASE_FILE_CONFIG = os.path.join(BASE_DIR, 'serviceAccountKey.json')
+FIREBASE_ENABLE = os.path.isfile(FIREBASE_FILE_CONFIG)
+if FIREBASE_ENABLE is True:
+    cred = credentials.Certificate(FIREBASE_FILE_CONFIG)
+    firebase_admin.initialize_app(cred)
+
+
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
 if DEBUG is True:
     # debug toolbar IP Internal
@@ -771,3 +793,5 @@ if DEBUG is True:
     # print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     # print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
+
+print(Fore.BLUE, f'#  DATABASES: {DATABASES["default"]["NAME"]}', '\033[0m')

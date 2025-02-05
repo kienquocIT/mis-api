@@ -7,8 +7,9 @@ from uuid import UUID
 from django.conf import settings
 from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Q, Model
+from django.db.models import Q, Model, ManyToOneRel, Count
 from django.utils import timezone
+from django.utils.datetime_safe import datetime
 
 from django_filters import rest_framework as filters
 
@@ -699,7 +700,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     @classmethod
     def check_obj_change_or_delete(cls, instance):
         if isinstance(instance, Model):
-            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            # if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            check = [2, 3, 4]
+            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) in check:
                 return False
             return True
         return False
@@ -886,9 +889,9 @@ class BaseListMixin(BaseMixin):
         return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
     def get_queryset_custom_direct_page(self, main_queryset=None):
-        queryset = super().get_queryset()
-        direct_params = ['direct_first', 'direct_last', 'direct_previous', 'direct_next']
-        if any(item in self.request.query_params for item in direct_params):
+        if (self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
+                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')):
+            queryset = super().get_queryset()
             current_pk = self.request.query_params.get('current_pk')
             current_obj = queryset.filter(id=current_pk).values('date_created').first() if current_pk else None
             if 'direct_first' in self.request.query_params or 'direct_last' in self.request.query_params:
@@ -897,7 +900,7 @@ class BaseListMixin(BaseMixin):
                 return queryset.filter(date_created__lt=current_obj['date_created']) if current_obj else queryset
             if 'direct_next' in self.request.query_params:
                 return queryset.filter(date_created__gt=current_obj['date_created']) if current_obj else queryset.none()
-        return main_queryset if main_queryset else queryset
+        return main_queryset if main_queryset else super().get_queryset()
 
     def list(self, request, *args, **kwargs):
         """
@@ -1131,33 +1134,87 @@ class BaseDestroyMixin(BaseMixin):
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
-        if self.check_obj_change_or_delete(instance):
+        if self.check_obj_change_or_delete(instance):  # check doc not have system_status == 3 (finished)
             state_check = self.manual_check_obj_destroy(instance=instance)
             if state_check is None:
                 state_check = self.check_perm_by_obj_or_body_data(
                     obj=instance,
                     hidden_field=self.retrieve_hidden_field,
-                )
+                )  # check permission
             if state_check is True:
-                self.perform_destroy(instance, is_purge, self.get_state_transaction())
-                return ResponseController.no_content_204()
+                return self.perform_destroy(instance, is_purge, self.get_state_transaction())
             return ResponseController.forbidden_403()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod
     def perform_destroy(instance, is_purge, state_transaction):
+        # is_purge: False -> instance.is_delete() = True | True -> instance.delete()
         try:
             if state_transaction:
                 with transaction.atomic():
-                    if is_purge is True:
-                        ...
-                    return instance.delete()
+                    if BaseDestroyMixin.has_related_records(instance):  # check relation
+                        return ResponseController.bad_request_400(msg=HttpMsg.RELATION_EXISTS_ERR)
+                    if is_purge:
+                        return BaseDestroyMixin.perform_purge(instance)
+                    return BaseDestroyMixin.perform_soft_delete(instance)
             else:
-                if is_purge is True:
-                    ...
-                return instance.delete()
+                pass
         except serializers.ValidationError as err:
             raise err
         except Exception as err:
             print('[perform_destroy] ERR', err)
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
+
+    @staticmethod
+    def perform_soft_delete(instance):
+        """
+        Marks the instance as soft deleted.
+        """
+        instance.is_delete = True
+        instance.save(update_fields=["is_delete"])
+        return ResponseController.no_content_204()
+
+    @staticmethod
+    def perform_purge(instance):
+        """
+        Permanently deletes the instance and handles cascading deletions.
+        """
+        instance.delete()
+        return ResponseController.no_content_204()
+
+    @staticmethod
+    def has_related_records(instance):
+        """
+        Checks if the instance has related records.
+
+        Args:
+            instance (Model): The Django model instance.
+
+        Returns:
+            bool: True if there are related records, False otherwise.
+        """
+        for field in instance._meta.get_fields():
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_manager = getattr(instance, field.get_accessor_name(), None)
+                if related_manager:
+                    model_class = related_manager.model  # Get the related model class
+                    if hasattr(model_class, 'is_delete'):  # Check if the related model has 'is_delete'
+                        if related_manager.all().exclude(is_delete=True).exists():
+                            return True
+        return False
+
+    @staticmethod
+    def list_related_records(instance, verbose=False):
+        related_objects = instance._meta.get_fields()
+        result = {}
+        for field in related_objects:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(instance, related_name)
+                related_records = list(related_manager.all())
+                if related_records:
+                    result[related_name] = related_records
+        if verbose:
+            for related_name, records in result.items():
+                print(f"{related_name}: {[str(record) for record in records]}")
+        return result

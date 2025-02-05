@@ -28,37 +28,16 @@ def handle_attach_file(instance, attachment_result):
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
-    product_data = serializers.SerializerMethodField()
-    uom_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
         if obj.product.product_choice:
             if 1 in obj.product.product_choice:
                 return bool(True)
+        if isinstance(obj.offset_data, dict):
+            if obj.offset_data:
+                return bool(True)
         return bool(False)
-
-    @classmethod
-    def get_product_data(cls, obj):
-        return {
-            'id': obj.product_id,
-            'title': obj.product.title,
-            'code': obj.product.code,
-            'general_traceability_method': obj.product.general_traceability_method,
-        } if obj.product else {}
-
-    @classmethod
-    def get_uom_data(cls, obj):
-        if obj.product:
-            so_product = obj.product.sale_order_product_product.first()
-            if so_product:
-                return {
-                    'id': so_product.unit_of_measure_id,
-                    'title': so_product.unit_of_measure.title,
-                    'code': so_product.unit_of_measure.code,
-                    'ratio': so_product.unit_of_measure.ratio,
-                } if so_product.unit_of_measure else {}
-        return {}
 
     class Meta:
         model = OrderDeliveryProduct
@@ -67,6 +46,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'order',
             'is_promotion',
             'product_data',
+            'offset_data',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -94,11 +74,22 @@ class OrderDeliverySubListSerializer(AbstractListSerializerModel):
             'id',
             'code',
             'sale_order_data',
+            'lease_order_data',
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
             'employee_inherit',
             'state',
+        )
+
+
+class OrderDeliverySubMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderDeliverySub
+        fields = (
+            'id',
+            'code',
+            'date_created',
         )
 
 
@@ -157,6 +148,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'state',
             'code',
             'sale_order_data',
+            'lease_order_data',
             'estimated_delivery_date',
             'actual_delivery_date',
             'customer_data',
@@ -242,6 +234,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.remarks = validated_data['remarks']
         if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
             instance.delivery_logistic = validated_data['delivery_logistic']
+        if 'system_status' in validated_data:
+            instance.system_status = validated_data['system_status']
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -250,7 +244,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                if 1 in obj.product.product_choice:
+                if 1 in obj.product.product_choice or sub.lease_order_data:
                     # kiểm tra product id và order trùng với product update ko
                     delivery_data = product_done[obj_key]['delivery_data']  # list format
                     obj.picked_quantity = product_done[obj_key]['picked_num']
@@ -280,7 +274,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             update_fields=[
                 'date_done', 'state', 'is_updated', 'estimated_delivery_date',
                 'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
-                'next_association_id', 'next_node_collab_id',
+                'system_status', 'next_association_id', 'next_node_collab_id',
             ]
         )
         return True
@@ -350,3 +344,49 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             handle_attach_file(instance, attachments)
 
         return instance
+
+
+class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
+    delivery_product_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderDeliverySub
+        fields = (
+            'id',
+            'code',
+            'date_created',
+            'actual_delivery_date',
+            'delivery_product_data',
+        )
+
+    @classmethod
+    def get_delivery_product_data(cls, obj):
+        return [
+            {
+                'product_id': deli_product.product_id,
+                'product_data': deli_product.product_data,
+                'asset_type': deli_product.asset_type,
+                'offset_id': deli_product.offset_id,
+                'offset_data': deli_product.offset_data,
+                'uom_id': deli_product.uom_id,
+                'uom_data': deli_product.uom_data,
+                'product_quantity': deli_product.product_quantity,
+                'product_quantity_time': deli_product.product_quantity_time,
+                'product_quantity_depreciation': deli_product.product_quantity_depreciation,
+                'product_unit_price': deli_product.product_unit_price,
+                'product_subtotal_price': 0,
+                'quantity_ordered': deli_product.delivery_quantity,
+                'quantity_delivered': deli_product.picked_quantity,
+                'quantity_recovered': 0,
+                'quantity_recovery': 0,
+                'delivery_data': deli_product.delivery_data,
+
+                'product_depreciation_subtotal': deli_product.product_depreciation_subtotal,
+                'product_depreciation_price': deli_product.product_depreciation_price,
+                'product_depreciation_method': deli_product.product_depreciation_method,
+                'product_depreciation_start_date': obj.actual_delivery_date.date(),
+                'product_depreciation_end_date': deli_product.product_depreciation_end_date,
+                'product_depreciation_adjustment': deli_product.product_depreciation_adjustment,
+            }
+            for deli_product in obj.delivery_product_delivery_sub.all()
+        ]

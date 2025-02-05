@@ -195,10 +195,6 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         default=list,
         help_text="read data products, use for get list or detail quotation"
     )
-    quotation_term_data = models.JSONField(
-        default=dict,
-        help_text="read data terms, use for get list or detail quotation"
-    )
     quotation_logistic_data = models.JSONField(
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
@@ -333,7 +329,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
 
 
 # SUPPORT PRODUCTS
-class QuotationProduct(SimpleAbstractModel):
+class QuotationProduct(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
@@ -414,75 +410,8 @@ class QuotationProduct(SimpleAbstractModel):
         permissions = ()
 
 
-# SUPPORT TERMS
-class QuotationTerm(SimpleAbstractModel):
-    quotation = models.ForeignKey(
-        Quotation,
-        on_delete=models.CASCADE,
-    )
-    price_list = models.ManyToManyField(
-        'saledata.Price',
-        through='QuotationTermPrice',
-        symmetrical=False,
-        related_name='quotation_term_map_prices',
-    )
-    discount_list = models.ManyToManyField(
-        'saledata.Discount',
-        through='QuotationTermDiscount',
-        symmetrical=False,
-        related_name='quotation_term_map_discounts',
-    )
-    payment_term = models.ForeignKey(
-        'saledata.PaymentTerm',
-        on_delete=models.CASCADE,
-        verbose_name="payment terms",
-        related_name="quotation_term_payment_term",
-        null=True
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Term'
-        verbose_name_plural = 'Quotation Terms'
-        default_permissions = ()
-        permissions = ()
-
-
-class QuotationTermPrice(SimpleAbstractModel):
-    quotation_term = models.ForeignKey(
-        QuotationTerm,
-        on_delete=models.CASCADE,
-    )
-    price = models.ForeignKey(
-        'saledata.Price',
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Term Price'
-        verbose_name_plural = 'Quotation Term Prices'
-        default_permissions = ()
-        permissions = ()
-
-
-class QuotationTermDiscount(SimpleAbstractModel):
-    quotation_term = models.ForeignKey(
-        QuotationTerm,
-        on_delete=models.CASCADE,
-    )
-    discount = models.ForeignKey(
-        'saledata.Discount',
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Term Discount'
-        verbose_name_plural = 'Quotation Term Discounts'
-        default_permissions = ()
-        permissions = ()
-
-
 # SUPPORT LOGISTICS
-class QuotationLogistic(SimpleAbstractModel):
+class QuotationLogistic(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
@@ -498,7 +427,7 @@ class QuotationLogistic(SimpleAbstractModel):
 
 
 # SUPPORT COST
-class QuotationCost(SimpleAbstractModel):
+class QuotationCost(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,

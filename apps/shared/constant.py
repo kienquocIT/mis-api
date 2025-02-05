@@ -53,9 +53,11 @@ WORKFLOW_IN_WF_OPTION = (
     (2, 'Employee'),
 )
 WORKFLOW_IN_WF_POSITION = (
-    (1, '1st manager'),
-    (2, '2nd manager'),
-    (3, 'Beneficiary'),
+    (1, 'Beneficiary'),
+    (2, '1st manager'),
+    (3, '2nd manager'),
+    (4, 'Upper manager'),
+    (5, 'Manager of x group level'),
 )
 
 
@@ -107,6 +109,7 @@ MAP_FIELD_TITLE = {
     'contract.contractapproval': 'title',
     'production.productionorder': 'title',
     'production.workorder': 'title',
+    'leaseorder.leaseorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -121,7 +124,10 @@ MAP_FIELD_TITLE = {
     'cashoutflow.returnadvance': 'title',
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
+    'financialcashflow.cashinflow': 'title',
+    #
     'bidding.bidding': 'title',
+    'consulting.consulting': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -227,7 +233,7 @@ PERMISSION_OPTION_RANGE = (
 REQUEST_FOR = [
     (0, _('For Sale Order')),
     (1, _('For Stock Free')),
-    (2, _('For Other')),
+    (2, _('For Fixed Asset')),
     (3, _('For Stock Plan')),
 ]
 
@@ -452,4 +458,21 @@ RECURRENCE_ACTION = (
     (0, 'Wait'),
     (1, 'Done'),
     (2, 'Skip'),
+)
+CONTRACT_TYPE = (
+    (0, 'Probationary contract'),
+    (1, 'Labor contract'),
+    (2, 'Addendum contract')
+)
+
+# Lease order
+ASSET_TYPE = (
+    (1, 'Product'),
+    (2, 'Tool'),
+    (3, 'Fixed asset'),
+)
+
+# goods recovery
+STATUS_RECOVERY = (
+    (0, 'Open'),
 )

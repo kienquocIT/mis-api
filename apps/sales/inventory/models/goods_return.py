@@ -74,7 +74,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         for item in product_detail_list.filter(type=1):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -108,7 +108,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         for item in product_detail_list.filter(type=2):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -138,7 +138,7 @@ class GoodsReturn(DataAbstractModel):
                 if not is_append:
                     doc_data.append(data)
             else:
-                raise serializers.ValidationError({'Delivery info': 'Delivery information is not found.'})
+                print('Delivery information is not found. Can not log.')
         return doc_data
 
     @classmethod
@@ -225,17 +225,11 @@ class GoodsReturn(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
+
         if self.system_status in [2, 3]:
             if not self.code:
-                count = GoodsReturn.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count()
-                self.code = f"GRT00{count + 1}"
+                self.add_auto_generate_code_to_instance(self, 'GRT[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

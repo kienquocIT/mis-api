@@ -189,6 +189,10 @@ class Opportunity(DataAbstractModel):
         default=0
     )
 
+    def get_members(self, return_obj_or_id='id'):
+        key_return = 'member' if return_obj_or_id == 'obj' else 'member_id'
+        return OpportunitySaleTeamMember.objects.filter(opportunity=self).values_list(key_return, flat=True)
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'
@@ -466,10 +470,7 @@ class Opportunity(DataAbstractModel):
             if code_generated:
                 self.code = code_generated
             else:
-                records = Opportunity.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False
-                )
-                self.code = 'OPP.00' + str(records.count() + 1)
+                self.add_auto_generate_code_to_instance(self, 'OPP[n4]', False)
         # hit DB
         super().save(*args, **kwargs)
 

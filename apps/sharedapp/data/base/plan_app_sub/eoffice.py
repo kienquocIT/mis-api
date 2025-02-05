@@ -12,6 +12,7 @@ LEAVE_APP_CONFIG = {
     "app_label": "leave",
     "is_workflow": True,
     "app_depend_on": [
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
     ],
     "permit_mapping": {
         "view": {
@@ -21,13 +22,21 @@ LEAVE_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
         },
         "delete": {
             "range": ["1", "2", "3", "4"],

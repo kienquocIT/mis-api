@@ -11,7 +11,7 @@ from apps.sales.quotation.serializers.quotation_indicator import (
 )
 from apps.sales.quotation.serializers.quotation_serializers import (
     QuotationListSerializer, QuotationCreateSerializer,
-    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
+    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer, QuotationMinimalListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -29,6 +29,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'id': ['exact'],
     }
     serializer_list = QuotationListSerializer
+    serializer_list_minimal = QuotationMinimalListSerializer
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -40,6 +41,10 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
+        is_minimal = self.get_param(key='is_minimal')
+        if is_minimal:
+            return super().get_queryset()
+
         main_queryset = super().get_queryset().select_related(
             "customer",
             "opportunity",
@@ -88,9 +93,6 @@ class QuotationDetail(
         return super().get_queryset().select_related(
             "opportunity",
             "opportunity__customer",
-            "customer",
-            "contact",
-            "customer__payment_term_customer_mapped",
             "employee_inherit",
             "process",
         )

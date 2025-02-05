@@ -45,6 +45,7 @@ class BiddingList(BaseListMixin, BaseCreateMixin):
     serializer_list = BiddingListSerializer
     serializer_detail = BiddingDetailSerializer
     serializer_create = BiddingCreateSerializer
+    search_fields = ['title', 'customer__name']
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = [
         'tenant_id',
@@ -90,6 +91,17 @@ class BiddingDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = BiddingUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "opportunity",
+            "customer",
+            "employee_inherit",
+        ).prefetch_related(
+            "other_bidder",
+            "venture_partner",
+            "attachment_m2m"
+        )
 
     @swagger_auto_schema(
         operation_summary="Bidding List",
@@ -154,8 +166,7 @@ class AccountForBiddingList(BaseListMixin):
         operation_description="Account List for Bidding",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='bidding', model_code='bidding', perm_code='view',
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -165,8 +176,11 @@ class DocumentMasterDataBiddingList(BaseListMixin):
     queryset = DocumentType.objects
     serializer_list = DocumentMasterDataBiddingListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    filterset_fields = {}
     search_fields = ['title']
+
+    def get_queryset(self):
+        doc_type_category = self.request.query_params.get('doc_type_category')
+        return super().get_queryset().filter(doc_type_category=doc_type_category)
 
     @swagger_auto_schema(
         operation_summary="Document Masterdata Bidding list",

@@ -1,20 +1,32 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
-from apps.masterdata.saledata.models import Contact
-from apps.masterdata.saledata.serializers import ContactCreateSerializer
+
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityActivityLogs, OpportunityEmail, \
+    OpportunityMeeting
+from apps.sales.opportunity.serializers import OpportunityActivityLogsListSerializer, \
+    OpportunityMeetingUpdateSerializer, OpportunityCallLogUpdateSerializer
+from apps.shared.extends.exceptions import handle_exception_all_view
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.lead.models import Lead, LeadStage, LeadChartInformation, LeadOpportunity
 from apps.sales.lead.serializers import (
     LeadListSerializer, LeadCreateSerializer, LeadDetailSerializer, LeadUpdateSerializer,
-    LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer
+    LeadStageListSerializer, LeadChartListSerializer, LeadListForOpportunitySerializer, LeadCallCreateSerializer,
+    LeadCallDetailSerializer, LeadEmailCreateSerializer, LeadEmailDetailSerializer,
+    LeadMeetingCreateSerializer, LeadMeetingDetailSerializer
 )
+
 
 __all__ = [
     'LeadList',
     'LeadDetail',
     'LeadStageList',
     'LeadChartList',
-    'LeadListForOpportunity'
+    'LeadListForOpportunity',
+    'LeadCallList',
+    'LeadCallDetail',
+    'LeadEmailList',
+    'LeadMeetingList',
+    'LeadMeetingDetail',
+    'LeadActivityList'
 ]
 
 
@@ -28,7 +40,8 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return self.get_queryset_custom_direct_page()
+        main_queryset = super().get_queryset().select_related('current_lead_stage').prefetch_related()
+        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Lead list",
@@ -39,9 +52,13 @@ class LeadList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        LeadChartInformation.create_update_chart_information(
-            self.request.user.tenant_current_id, self.request.user.company_current_id
-        )
+        try:
+            LeadChartInformation.create_update_chart_information(
+                self.request.user.tenant_current_id,
+                self.request.user.company_current_id
+            )
+        except Exception as err:
+            handle_exception_all_view(err, self)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -67,45 +84,17 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
-
-    def convert_contact(self):
-        # convert to a new contact
-        lead = Lead.objects.filter(pk=self.kwargs['pk'], system_status=3).first()
-        lead_configs = lead.lead_configs.first() if lead else None
-        if lead and lead_configs:
-            ContactCreateSerializer.validate_email(lead.email)
-            ContactCreateSerializer.validate_mobile(lead.mobile)
-            ContactCreateSerializer.validate_owner(self.request.user.employee_current)
-            number = Contact.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id
-            ).count() + 1
-            contact_mapped = Contact.objects.create(
-                code=f"C00{number}",
-                email=lead.email,
-                mobile=lead.mobile,
-                fullname=lead.contact_name,
-                job_title=lead.job_title,
-                owner=self.request.user.employee_current,
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                employee_created=self.request.user.employee_current,
-                employee_inherit=self.request.user.employee_current,
-            )
-            current_stage = LeadStage.objects.filter(
-                tenant_id=self.request.user.tenant_current_id,
-                company_id=self.request.user.company_current_id,
-                level=2
-            ).first()
-            lead.current_lead_stage = current_stage
-            lead.lead_status = 2
-            lead.save(update_fields=['current_lead_stage', 'lead_status'])
-            lead_configs.contact_mapped = contact_mapped
-            lead_configs.create_contact = True
-            lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
-            return True
-        raise serializers.ValidationError({'not found': 'Lead || Lead config not found.'})
+        return super().get_queryset().select_related(
+            'industry',
+            'assign_to_sale',
+            'current_lead_stage'
+        ).prefetch_related(
+            'lead_notes',
+            'lead_configs__account_mapped',
+            'lead_configs__assign_to_sale_config',
+            'lead_configs__contact_mapped',
+            'lead_configs__opp_mapped',
+        )
 
     @swagger_auto_schema(operation_summary='Detail Lead')
     @mask_view(
@@ -123,11 +112,13 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         if 'goto_stage' in request.data:
             self.ser_context = {'goto_stage': True}
+            request.data['title'] = self.get_object().title
         if all(['convert_opp' in request.data, 'map_opp' in request.data]):
             self.ser_context = {
                 'convert_opp': True,
                 'opp_mapped_id': request.data.get('opp_mapped_id')
             }
+            request.data['title'] = self.get_object().title
         return self.update(request, *args, **kwargs)
 
 
@@ -188,4 +179,129 @@ class LeadListForOpportunity(BaseListMixin):
         LeadChartInformation.create_update_chart_information(
             self.request.user.tenant_current_id, self.request.user.company_current_id
         )
+        return self.list(request, *args, **kwargs)
+
+
+class LeadCallList(BaseListMixin, BaseCreateMixin):
+    queryset = OpportunityCallLog.objects
+    serializer_create = LeadCallCreateSerializer
+    serializer_detail = LeadCallDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Call",
+        operation_description="Create new Lead Call",
+        request_body=LeadCallCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class LeadCallDetail(BaseUpdateMixin):
+    queryset = OpportunityCallLog.objects
+    serializer_update = OpportunityCallLogUpdateSerializer
+    serializer_detail = LeadCallDetailSerializer
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Update lead call",
+        operation_description="Update lead call",
+        request_body=OpportunityCallLogUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code="edit"
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+
+class LeadEmailList(BaseListMixin, BaseCreateMixin):
+    queryset = OpportunityEmail.objects
+    serializer_create = LeadEmailCreateSerializer
+    serializer_detail = LeadEmailDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Email",
+        operation_description="Create new Lead Email",
+        request_body=LeadEmailCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+            'employee_current': request.user.employee_current,
+        }
+        return self.create(request, *args, **kwargs)
+
+
+class LeadMeetingList(BaseListMixin, BaseCreateMixin):
+    queryset = OpportunityMeeting.objects
+    serializer_create = LeadMeetingCreateSerializer
+    serializer_detail = LeadMeetingDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create Lead Meeting",
+        operation_description="Create new Lead Meeting",
+        request_body=LeadMeetingCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
+        return self.create(request, *args, **kwargs)
+
+
+class LeadMeetingDetail(BaseUpdateMixin):
+    queryset = OpportunityMeeting.objects
+    serializer_update = OpportunityMeetingUpdateSerializer
+    serializer_detail = LeadMeetingDetailSerializer
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Update lead meeting",
+        operation_description="Update lead meeting",
+        request_body=OpportunityMeetingUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='lead', model_code='lead', perm_code="edit"
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+
+class LeadActivityList(BaseListMixin):
+    queryset = OpportunityActivityLogs.objects
+    serializer_list = OpportunityActivityLogsListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        lead_id = self.request.GET.get('lead_id')
+        if lead_id:
+            queryset = queryset.filter(doc_id=str(lead_id).replace('-',''))
+        return queryset
+
+    @swagger_auto_schema(operation_summary='Lead Activity List')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -651,6 +651,7 @@ class InventoryAdjustmentListSerializerForGIS(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'date_created'
         )
 
 
@@ -712,7 +713,8 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
             'title',
             'code',
             'app',
-            'type'
+            'type',
+            'date_created'
         )
 
     @classmethod
@@ -780,7 +782,8 @@ class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
             'title',
             'code',
             'app',
-            'type'
+            'type',
+            'date_created'
         )
 
     @classmethod

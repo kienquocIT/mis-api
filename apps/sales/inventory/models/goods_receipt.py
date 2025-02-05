@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
+from apps.sales.inventory.models.goods_detail import GoodsDetail
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, PRODUCTION_REPORT_TYPE
@@ -167,7 +168,7 @@ class GoodsReceipt(DataAbstractModel):
         return all_lots
 
     @classmethod
-    def for_goods_receipt_has_no_purchase_request(cls, instance, doc_data, all_lots):
+    def gr_has_no_pr(cls, instance, doc_data, all_lots):
         goods_receipt_warehouses = instance.goods_receipt_warehouse_goods_receipt.all()
         for gr_item in instance.goods_receipt_product_goods_receipt.all():
             if gr_item.product.general_traceability_method != 1:  # None + Sn
@@ -197,52 +198,74 @@ class GoodsReceipt(DataAbstractModel):
             else:  # lot
                 for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                     for lot in gr_prd_wh.goods_receipt_lot_gr_warehouse.all():
-                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(gr_item.uom, lot.quantity_import)
-                        casted_cost = (
-                            gr_item.product_unit_price * lot.quantity_import / casted_quantity
-                        ) if casted_quantity > 0 else 0
-                        doc_data.append({
-                            'product': gr_item.product,
-                            'warehouse': gr_prd_wh.warehouse,
-                            'system_date': instance.date_approved,
-                            'posting_date': instance.date_approved,
-                            'document_date': instance.date_approved,
-                            'stock_type': 1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Goods receipt (IA)'
-                            if instance.goods_receipt_type == 1 else 'Goods receipt',
-                            'quantity': casted_quantity,
-                            'cost': casted_cost,
-                            'value': casted_cost * casted_quantity,
-                            'lot_data': {
-                                'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
-                                'lot_number': lot.lot_number,
-                                'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
-                            }
-                        })
+                        lot_mapped = all_lots.filter(lot_number=lot.lot_number).first()
+                        if lot_mapped:
+                            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                                gr_item.uom,
+                                lot.quantity_import
+                            )
+                            casted_cost = (
+                                gr_item.product_unit_price * lot.quantity_import / casted_quantity
+                            ) if casted_quantity > 0 else 0
+                            doc_data.append({
+                                'product': gr_item.product,
+                                'warehouse': gr_prd_wh.warehouse,
+                                'system_date': instance.date_approved,
+                                'posting_date': instance.date_approved,
+                                'document_date': instance.date_approved,
+                                'stock_type': 1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Goods receipt (IA)'
+                                if instance.goods_receipt_type == 1 else 'Goods receipt',
+                                'quantity': casted_quantity,
+                                'cost': casted_cost,
+                                'value': casted_cost * casted_quantity,
+                                'lot_data': {
+                                    'lot_id': str(lot_mapped.id),
+                                    'lot_number': lot.lot_number,
+                                    'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
+                                }
+                            })
         return doc_data
 
     @classmethod
-    def for_goods_receipt_has_purchase_request(cls, instance, doc_data, all_lots):
-        for gr_item in instance.goods_receipt_product_goods_receipt.all():
-            for pr_item in gr_item.goods_receipt_request_product_gr_product.all():
-                sale_order = None
-                if instance.goods_receipt_type == 0:
-                    if pr_item.purchase_request_product:
-                        if pr_item.purchase_request_product.purchase_request:
-                            sale_order = pr_item.purchase_request_product.purchase_request.sale_order
-                if instance.goods_receipt_type == 2:
-                    if pr_item.production_report:
-                        if pr_item.production_report.work_order:
-                            sale_order = pr_item.production_report.work_order.sale_order
-                for prd_wh in pr_item.goods_receipt_warehouse_request_product.all():
-                    if gr_item.product.general_traceability_method != 1:
+    def gr_has_pr_combine_log_data(
+            cls, pr_item, gr_item, doc_data, sale_order, all_lots, instance
+    ):
+        for prd_wh in pr_item.goods_receipt_warehouse_request_product.all():
+            if gr_item.product.general_traceability_method != 1:
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                    gr_item.uom, prd_wh.quantity_import
+                )
+                casted_cost = (
+                        gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
+                ) if casted_quantity > 0 else 0
+                doc_data.append({
+                    'sale_order': sale_order,
+                    'product': gr_item.product,
+                    'warehouse': prd_wh.warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods receipt',
+                    'quantity': casted_quantity,
+                    'cost': casted_cost,
+                    'value': casted_cost * casted_quantity,
+                    'lot_data': {}
+                })
+            else:
+                for lot in prd_wh.goods_receipt_lot_gr_warehouse.all():
+                    lot_mapped = all_lots.filter(lot_number=lot.lot_number).first()
+                    if lot_mapped:
                         casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
-                            gr_item.uom, prd_wh.quantity_import
+                            gr_item.uom, lot.quantity_import
                         )
                         casted_cost = (
-                                gr_item.product_unit_price * prd_wh.quantity_import / casted_quantity
+                                gr_item.product_unit_price * lot.quantity_import / casted_quantity
                         ) if casted_quantity > 0 else 0
                         doc_data.append({
                             'sale_order': sale_order,
@@ -258,36 +281,30 @@ class GoodsReceipt(DataAbstractModel):
                             'quantity': casted_quantity,
                             'cost': casted_cost,
                             'value': casted_cost * casted_quantity,
-                            'lot_data': {}
+                            'lot_data': {
+                                'lot_id': str(lot_mapped.id),
+                                'lot_number': lot.lot_number,
+                                'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
+                            }
                         })
-                    else:
-                        for lot in prd_wh.goods_receipt_lot_gr_warehouse.all():
-                            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
-                                gr_item.uom, lot.quantity_import
-                            )
-                            casted_cost = (
-                                    gr_item.product_unit_price * lot.quantity_import / casted_quantity
-                            ) if casted_quantity > 0 else 0
-                            doc_data.append({
-                                'sale_order': sale_order,
-                                'product': gr_item.product,
-                                'warehouse': prd_wh.warehouse,
-                                'system_date': instance.date_approved,
-                                'posting_date': instance.date_approved,
-                                'document_date': instance.date_approved,
-                                'stock_type': 1,
-                                'trans_id': str(instance.id),
-                                'trans_code': instance.code,
-                                'trans_title': 'Goods receipt',
-                                'quantity': casted_quantity,
-                                'cost': casted_cost,
-                                'value': casted_cost * casted_quantity,
-                                'lot_data': {
-                                    'lot_id': str(all_lots.filter(lot_number=lot.lot_number).first().id),
-                                    'lot_number': lot.lot_number,
-                                    'lot_expire_date': str(lot.expire_date) if lot.expire_date else None
-                                }
-                            })
+        return doc_data
+
+    @classmethod
+    def gr_has_pr(cls, instance, doc_data, all_lots):
+        for gr_item in instance.goods_receipt_product_goods_receipt.all():
+            for pr_item in gr_item.goods_receipt_request_product_gr_product.all():
+                sale_order = None
+                if instance.goods_receipt_type == 0:
+                    if pr_item.purchase_request_product:
+                        if pr_item.purchase_request_product.purchase_request:
+                            sale_order = pr_item.purchase_request_product.purchase_request.sale_order
+                if instance.goods_receipt_type == 2:
+                    if pr_item.production_report:
+                        if pr_item.production_report.work_order:
+                            sale_order = pr_item.production_report.work_order.sale_order
+                doc_data = cls.gr_has_pr_combine_log_data(
+                    pr_item, gr_item, doc_data, sale_order, all_lots, instance
+                )
         return doc_data
 
     @classmethod
@@ -296,23 +313,151 @@ class GoodsReceipt(DataAbstractModel):
         doc_data = []
         if instance.goods_receipt_type in [0, 1]:  # GR by PO/IA
             if instance.goods_receipt_pr_goods_receipt.count() == 0:
-                doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
+                doc_data = cls.gr_has_no_pr(instance, doc_data, all_lots)
             else:
-                doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
+                doc_data = cls.gr_has_pr(instance, doc_data, all_lots)
         if instance.goods_receipt_type == 2:  # GR by Production
             if instance.production_order:
-                doc_data = cls.for_goods_receipt_has_no_purchase_request(instance, doc_data, all_lots)
+                doc_data = cls.gr_has_no_pr(instance, doc_data, all_lots)
             if instance.work_order:
-                doc_data = cls.for_goods_receipt_has_purchase_request(instance, doc_data, all_lots)
+                doc_data = cls.gr_has_pr(instance, doc_data, all_lots)
         ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True
 
+    @staticmethod
+    def count_created_serial_data(good_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data):
+        count = 0
+        for serial in good_receipt_obj.pw_serial_goods_receipt.filter(
+                product_warehouse__product=gr_prd_obj.product,
+                product_warehouse__warehouse=gr_wh_obj.warehouse,
+        ).order_by('date_created'):
+            if serial.purchase_request_id:
+                if str(serial.purchase_request_id) == pr_data.get('id'):
+                    count += 1
+            else:
+                count += 1
+        return count
+
+    @classmethod
+    def push_goods_receipt_data_to_goods_detail(cls, goods_receipt_obj):
+        print(f'* Push goods receipt data ({goods_receipt_obj.code}) to_goods detail.')
+        bulk_info = []
+        for gr_prd_obj in goods_receipt_obj.goods_receipt_product_goods_receipt.all():
+            for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
+                pr_data = gr_wh_obj.goods_receipt_request_product.purchase_request_data if (
+                    gr_wh_obj.goods_receipt_request_product) else {}
+                gr_wh_lot_list = gr_wh_obj.goods_receipt_lot_gr_warehouse.all()
+                count_serial_data = cls.count_created_serial_data(
+                    goods_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data
+                )
+                if gr_wh_lot_list.count() > 0:
+                    for gr_wh_lot_obj in gr_wh_lot_list:
+                        bulk_info.append(GoodsDetail(
+                            product=gr_prd_obj.product,
+                            product_data={
+                                'id': str(gr_prd_obj.product_id),
+                                'code': gr_prd_obj.product.code,
+                                'title': gr_prd_obj.product.title,
+                                'category': str(gr_prd_obj.product.general_product_category_id),
+                                'general_traceability_method': gr_prd_obj.product.general_traceability_method
+                            } if gr_prd_obj.product else {},
+                            warehouse=gr_wh_obj.warehouse,
+                            warehouse_data={
+                                'id': str(gr_wh_obj.warehouse_id),
+                                'code': gr_wh_obj.warehouse.code,
+                                'title': gr_wh_obj.warehouse.title
+                            } if gr_wh_obj.warehouse else {},
+                            uom=gr_prd_obj.uom,
+                            uom_data=gr_prd_obj.uom_data,
+                            goods_receipt=goods_receipt_obj,
+                            goods_receipt_data={
+                                'id': str(goods_receipt_obj.id),
+                                'code': goods_receipt_obj.code,
+                                'title': goods_receipt_obj.title,
+                                'date_approved': str(goods_receipt_obj.date_approved),
+                                'pic': {
+                                    'id': str(goods_receipt_obj.employee_inherit_id),
+                                    'code': goods_receipt_obj.employee_inherit.code,
+                                    'fullname': goods_receipt_obj.employee_inherit.get_full_name(2),
+                                    'group': {
+                                        'id': str(goods_receipt_obj.employee_inherit.group_id),
+                                        'code': goods_receipt_obj.employee_inherit.group.code,
+                                        'title': goods_receipt_obj.employee_inherit.group.title,
+                                    } if goods_receipt_obj.employee_inherit.group else {},
+                                } if goods_receipt_obj.employee_inherit else {},
+                            } if goods_receipt_obj else {},
+                            purchase_request_id=pr_data.get('id'),
+                            purchase_request_data=pr_data,
+                            lot=gr_wh_lot_obj.lot,
+                            lot_data={
+                                'id': str(gr_wh_lot_obj.lot_id),
+                                'lot_number': gr_wh_lot_obj.lot.lot_number,
+                                'expire_date': str(gr_wh_lot_obj.lot.expire_date),
+                                'manufacture_date': str(gr_wh_lot_obj.lot.manufacture_date)
+                            } if gr_wh_lot_obj.lot else {},
+                            imported_sn_quantity=count_serial_data,
+                            receipt_quantity=gr_wh_obj.quantity_import,
+                            status=int(count_serial_data == gr_wh_obj.quantity_import),
+                            tenant=goods_receipt_obj.tenant,
+                            company=goods_receipt_obj.company,
+                            employee_inherit=goods_receipt_obj.employee_inherit,
+                            employee_created=goods_receipt_obj.employee_created,
+                            date_created=goods_receipt_obj.date_approved
+                        ))
+                else:
+                    bulk_info.append(GoodsDetail(
+                        product=gr_prd_obj.product,
+                        product_data={
+                            'id': str(gr_prd_obj.product_id),
+                            'code': gr_prd_obj.product.code,
+                            'title': gr_prd_obj.product.title,
+                            'category': str(gr_prd_obj.product.general_product_category_id),
+                            'general_traceability_method': gr_prd_obj.product.general_traceability_method
+                        } if gr_prd_obj.product else {},
+                        warehouse=gr_wh_obj.warehouse,
+                        warehouse_data={
+                            'id': str(gr_wh_obj.warehouse_id),
+                            'code': gr_wh_obj.warehouse.code,
+                            'title': gr_wh_obj.warehouse.title
+                        } if gr_wh_obj.warehouse else {},
+                        uom=gr_prd_obj.uom,
+                        uom_data=gr_prd_obj.uom_data,
+                        goods_receipt=goods_receipt_obj,
+                        goods_receipt_data={
+                            'id': str(goods_receipt_obj.id),
+                            'code': goods_receipt_obj.code,
+                            'title': goods_receipt_obj.title,
+                            'date_approved': str(goods_receipt_obj.date_approved),
+                            'pic': {
+                                'id': str(goods_receipt_obj.employee_inherit_id),
+                                'code': goods_receipt_obj.employee_inherit.code,
+                                'fullname': goods_receipt_obj.employee_inherit.get_full_name(2),
+                                'group': {
+                                    'id': str(goods_receipt_obj.employee_inherit.group_id),
+                                    'code': goods_receipt_obj.employee_inherit.group.code,
+                                    'title': goods_receipt_obj.employee_inherit.group.title,
+                                } if goods_receipt_obj.employee_inherit.group else {},
+                            } if goods_receipt_obj.employee_inherit else {},
+                        } if goods_receipt_obj else {},
+                        purchase_request_id=pr_data.get('id'),
+                        purchase_request_data=pr_data,
+                        lot=None,
+                        lot_data={},
+                        imported_sn_quantity=count_serial_data,
+                        receipt_quantity=gr_wh_obj.quantity_import,
+                        status=int(count_serial_data == gr_wh_obj.quantity_import),
+                        tenant=goods_receipt_obj.tenant,
+                        company=goods_receipt_obj.company,
+                        employee_inherit=goods_receipt_obj.employee_inherit,
+                        employee_created=goods_receipt_obj.employee_created,
+                        date_created=goods_receipt_obj.date_approved
+                    ))
+        GoodsDetail.objects.bulk_create(bulk_info)
+        print('Done')
+        return True
+
     def save(self, *args, **kwargs):
-        SubPeriods.check_open(
-            self.company_id,
-            self.tenant_id,
-            self.date_approved if self.date_approved else self.date_created
-        )
+        SubPeriods.check_period_open(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
@@ -324,7 +469,16 @@ class GoodsReceipt(DataAbstractModel):
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
+            # update lot_id in GoodsReceiptLot (for new LOT)
+            for item in self.goods_receipt_lot_goods_receipt.all():
+                lot_obj = ProductWareHouseLot.objects.filter(
+                    lot_number=item.lot_number,
+                    product_warehouse__product=item.goods_receipt_warehouse.goods_receipt_product.product
+                ).first()
+                item.lot = lot_obj
+                item.save(update_fields=['lot'])
             self.prepare_data_for_logging(self)
+            self.push_goods_receipt_data_to_goods_detail(self)
 
         if self.system_status in [4]:  # cancel
             GRFinishHandler.push_product_info(instance=self)

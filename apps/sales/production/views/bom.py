@@ -125,7 +125,13 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
+    filterset_fields = {
+        'system_status': ['exact'],
+    }
 
     def get_queryset(self):
         if 'for_opp_space' in self.request.query_params:
@@ -166,7 +172,7 @@ class BOMDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product').prefetch_related(
+        return super().get_queryset().select_related('product', 'employee_inherit').prefetch_related(
             'bom_process_bom__labor__expense__uom',
             'bom_process_bom__labor__expense__price',
             'bom_process_bom__labor__expense_item',

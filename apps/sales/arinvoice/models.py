@@ -2,7 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.shared import SimpleAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
+
 # Create your models here.
 
 
@@ -31,7 +32,7 @@ INVOICE_STATUS = (
 )
 
 
-class ARInvoice(DataAbstractModel):
+class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
     sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
     posting_date = models.DateTimeField(null=True)
@@ -58,6 +59,7 @@ class ARInvoice(DataAbstractModel):
     @classmethod
     def push_final_acceptance_invoice(cls, instance):
         sale_order_id = None
+        lease_order_id = None
         opportunity_id = None
         if instance.sale_order_mapped:
             sale_order_id = instance.sale_order_mapped_id
@@ -78,6 +80,7 @@ class ARInvoice(DataAbstractModel):
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 sale_order_id=sale_order_id,
+                lease_order_id=lease_order_id,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
                 opportunity_id=opportunity_id,
@@ -86,6 +89,7 @@ class ARInvoice(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        self.add_auto_generate_code_to_instance(self, 'AR[n4]', False)
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
         # hit DB
@@ -104,6 +108,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     item_index = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    ar_product_des = models.TextField(null=True, blank=True, default='')
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)

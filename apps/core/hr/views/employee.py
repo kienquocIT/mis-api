@@ -13,6 +13,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.process.models import ProcessMembers
 # special import
 from apps.sales.opportunity.models import OpportunitySaleTeamMember
 # -- special import
@@ -24,6 +25,7 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
     EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer, EmployeeListAllSerializer,
+    EmployeeUpdateEmailAPIKeySerializer,
 )
 from apps.sales.project.models import ProjectMapMember
 from apps.shared import (
@@ -107,10 +109,11 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         if not exclude_data:
             exclude_data = {}
 
-        return OpportunitySaleTeamMember.objects.filter_current(
-            fill__tenant=True, fill__company=True, opportunity_id=opp_id
-        ).exclude(**exclude_data).values_list('member_id', flat=True)
-
+        return [
+            str(member_id) for member_id in OpportunitySaleTeamMember.objects.filter_current(
+                fill__tenant=True, fill__company=True, opportunity_id=opp_id
+            ).exclude(**exclude_data).values_list('member_id', flat=True)
+        ]
     @classmethod
     def get_config_from_prj_id_selected(cls, item_data, prj_id) -> Union[dict, None]:
         if item_data and isinstance(item_data, dict) and 'prj' in item_data and isinstance(item_data['prj'], dict):
@@ -123,9 +126,19 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         if not exclude_data:
             exclude_data = {}
 
-        return ProjectMapMember.objects.filter_current(
-            fill__tenant=True, fill__company=True, project_id=prj_id
-        ).exclude(**exclude_data).values_list('member_id', flat=True)
+        return [
+            str(member_id) for member_id in ProjectMapMember.objects.filter_current(
+                fill__tenant=True, fill__company=True, project_id=prj_id
+            ).exclude(**exclude_data).values_list('member_id', flat=True)
+        ]
+
+    @classmethod
+    def member_of_process(cls, process_id):
+        return [
+            str(employee_id) for employee_id in ProcessMembers.objects.filter(
+                process_id=process_id
+            ).values_list('employee_id', flat=True)
+        ]
 
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
@@ -295,6 +308,10 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
             if settings.DEBUG_PERMIT:
                 print('=> value_filter:                :', '[HAS FROM APP]', value_filter)
 
+        process_id = self.get_query_params().get('process_id', None)
+        if process_id and TypeCheck.check_uuid(process_id):
+            value_filter += self.member_of_process(process_id=process_id)
+
         if isinstance(value_filter, list):
             value_filter = list(set(value_filter))
         return Q(**{key_filter: value_filter})
@@ -373,6 +390,26 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     )
     def put(self, request, *args, **kwargs):
         logger.info('EmployeeDetail.put: %s', request.data)
+        return self.update(request, *args, **kwargs)
+
+
+class EmployeeUpdateEmailAPIKey(BaseUpdateMixin):
+    queryset = Employee.objects
+    serializer_detail = EmployeeDetailSerializer
+    serializer_update = EmployeeUpdateEmailAPIKeySerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="Update employee Email API key",
+        operation_description="Update employee Email API key by ID",
+        request_body=EmployeeUpdateEmailAPIKeySerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
 

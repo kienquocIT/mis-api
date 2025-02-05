@@ -12,6 +12,10 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstra
 
 
 class Project(DataAbstractModel):
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return "49fe2eb9-39cd-44af-b74a-f690d7b61b67"
+
     project_pm = models.ForeignKey(
         'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='Representative of project',
@@ -98,6 +102,10 @@ class Project(DataAbstractModel):
     date_close = models.DateField(
         verbose_name='Close date',
         blank=True, null=True
+    )
+    finish_date_lock = models.BooleanField(
+        default=False, null=True,
+        verbose_name='finish date lock is true can not change date'
     )
 
     def code_generator(self):
@@ -442,6 +450,10 @@ class ProjectMapMember(MasterDataAbstractModel, PermissionAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='member_pro_map_plan'
+    )
+    permit_lock_fd = models.BooleanField(
+        default=False,
+        verbose_name='member can lock finish date of project'
     )
 
     def get_app_allowed(self) -> str:

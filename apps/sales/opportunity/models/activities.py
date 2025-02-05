@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
-from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, OPPORTUNITY_LOG_TYPE
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, OPPORTUNITY_LOG_TYPE
 
 __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'OpportunityMeetingEmployeeAttended',
            'OpportunityMeetingCustomerMember', 'OpportunityActivityLogTask', 'OpportunityActivityLogs',
@@ -10,7 +10,7 @@ __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'Oppo
 
 
 # LOGS OF CALL
-class OpportunityCallLog(MasterDataAbstractModel):
+class OpportunityCallLog(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "14dbc606-1453-4023-a2cf-35b1cd9e3efd"
@@ -20,6 +20,7 @@ class OpportunityCallLog(MasterDataAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
@@ -30,6 +31,13 @@ class OpportunityCallLog(MasterDataAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog_contact",
+        null=True
+    )
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='opportunity_calllog_lead',
     )
     call_date = models.DateTimeField()
     input_result = models.CharField(max_length=250, null=True)
@@ -49,29 +57,50 @@ class OpportunityCallLog(MasterDataAbstractModel):
 
 
 # LOGS OF EMAIL
-class OpportunityEmail(MasterDataAbstractModel):
+class OpportunityEmail(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "dec012bf-b931-48ba-a746-38b7fd7ca73b"
 
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        related_name='opportunity_email_lead',
+        null=True
+    )
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_send_email",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
         help_text='The process claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
+    process_stage_app = models.ForeignKey(
+        'process.ProcessStageApplication', null=True, on_delete=models.SET_NULL,
+        help_text='The process stage app claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
+    )
     subject = models.CharField(max_length=250)
+    from_email = models.CharField(
+        verbose_name='from_email',
+        blank=True,
+        null=True,
+        max_length=150
+    )
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
+    email_bcc_list = models.JSONField(default=list)
     content = models.CharField(max_length=1000, null=True)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
+    send_success = models.BooleanField(default=False)
+    just_log = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityEmail'
@@ -82,16 +111,23 @@ class OpportunityEmail(MasterDataAbstractModel):
 
 
 # LOGS OF MEETING
-class OpportunityMeeting(MasterDataAbstractModel):
+class OpportunityMeeting(DataAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return "2fe959e3-9628-4f47-96a1-a2ef03e867e3"
 
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.SET_NULL,
+        related_name='opportunity_meeting_lead',
+        null=True,
+    )
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_meeting",
+        null=True,
     )
     process = models.ForeignKey(
         'process.Process', null=True, on_delete=models.SET_NULL,
@@ -118,6 +154,8 @@ class OpportunityMeeting(MasterDataAbstractModel):
     input_result = models.CharField(max_length=250, null=True)
     repeat = models.BooleanField(default=False)
     is_cancelled = models.BooleanField(default=False)
+    email_notify = models.BooleanField(default=False)
+    send_success = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityMeeting'
@@ -279,6 +317,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_activity_log_opportunity",
+        null=True
     )
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,

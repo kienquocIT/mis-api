@@ -5,19 +5,26 @@ import json
 import base64
 from datetime import datetime
 import requests
-
 from rest_framework import serializers
+from apps.core.recurrence.models import Recurrence
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, \
-    ARInvoiceSign
+from apps.sales.arinvoice.models import (
+    ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
+)
+from apps.sales.saleorder.models import SaleOrder
 from apps.shared import SaleMsg, SYSTEM_STATUS
 
 __all__ = [
+    'SaleOrderListSerializerForARInvoice',
     'DeliveryListSerializerForARInvoice',
     'ARInvoiceListSerializer',
     'ARInvoiceDetailSerializer',
     'ARInvoiceCreateSerializer',
-    'ARInvoiceUpdateSerializer'
+    'ARInvoiceUpdateSerializer',
+    'ARInvoiceSignListSerializer',
+    'ARInvoiceSignCreateSerializer',
+    'ARInvoiceSignDetailSerializer',
+    'ARInvoiceRecurrenceListSerializer'
 ]
 
 
@@ -169,6 +176,11 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'customer_billing_address',
             'customer_bank_code',
             'customer_bank_number',
+
+            # recurrence
+            'is_recurrence_template',
+            'is_recurring',
+            'recurrence_task_id',
         )
 
     def validate(self, validate_data):
@@ -178,8 +190,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        number = ARInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False).count() + 1
-        ar_invoice = ARInvoice.objects.create(**validated_data, code=f'AR-00{number}')
+        ar_invoice = ARInvoice.objects.create(**validated_data, system_status=1)
 
         create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))
         create_item_mapped(
@@ -248,6 +259,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
                 'title': item.product.title,
                 'des': item.product.description,
             } if item.product else {},
+            'ar_product_des': item.ar_product_des,
             'product_uom': {
                 'id': item.product_uom_id,
                 'code': item.product_uom.code,
@@ -506,17 +518,42 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         create_delivery_mapped(instance, self.initial_data.get('delivery_mapped_list', []))
-        item_mapped = create_item_mapped(
+        create_item_mapped(
             instance,
             self.initial_data.get('data_item_list', [])
         )
+        # item_mapped = create_item_mapped(
+        #     instance,
+        #     self.initial_data.get('data_item_list', [])
+        # )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             create_files_mapped(instance, attachment.strip().split(','))
 
-        self.create_update_invoice(instance, item_mapped)
+        # self.create_update_invoice(instance, item_mapped)
 
         return instance
+
+
+class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'opportunity',
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+        } if obj.opportunity else {}
 
 
 class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
@@ -640,3 +677,45 @@ class ARInvoiceSignDetailSerializer(serializers.ModelSerializer):
             'tenant',
             'company'
         )
+
+
+class ARInvoiceRecurrenceListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    recurrence_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ARInvoice
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_inherit',
+            'date_created',
+            'status',
+            'recurrence_list',
+        )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'phone': obj.employee_inherit.phone,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_status(cls, obj):
+        return Recurrence.objects.filter(doc_template_id=obj.id).exists()
+
+    @classmethod
+    def get_recurrence_list(cls, obj):
+        return [{
+            'id': recurrence.id,
+            'title': recurrence.title,
+        } for recurrence in Recurrence.objects.filter(doc_template_id=obj.id)]

@@ -7,6 +7,7 @@ from apps.masterdata.saledata.views.contacts import (
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
     AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
+    CustomerList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
@@ -53,6 +54,7 @@ urlpatterns = [
 
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
+    path('customer/list', CustomerList.as_view(), name='CustomerList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
     path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),

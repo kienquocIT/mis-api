@@ -6,10 +6,26 @@ from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+from apps.sharedapp.admin import my_admin_site
 
 from . import media_proxy
 
+
+def zalo_verify(request):
+    from django.http import HttpResponse
+    html = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta name="zalo-platform-site-verification" content="HzwJ8CFR82SAxvS2siit92R7fmJAiNPUCZ0u" />
+        </head>
+    </html>
+    """
+    return HttpResponse(html, content_type='text/html')
+
+
 urlpatterns = [
+    path('zalo_verifierHzwJ8CFR82SAxvS2siit92R7fmJAiNPUCZ0u.html', zalo_verify),
     path('api/', include('apps.core.urls')),
     path('api/', include('apps.masterdata.urls')),
     path('api/private-system/', include('apps.sharedapp.urls')),
@@ -17,7 +33,7 @@ urlpatterns = [
     path('api/', include('apps.accounting.urls')),
     path('api/', include('apps.eoffice.urls')),
     path('api/hrm/', include('apps.hrm.urls')),
-    path('django-admin/', admin.site.urls),
+    path('django-admin/', my_admin_site.urls),
 ]
 
 if getattr(settings, 'SHOW_API_DOCS', False):

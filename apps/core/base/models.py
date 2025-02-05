@@ -344,6 +344,10 @@ class ApplicationProperty(CoreAbstractModel):
         default=False,
         help_text="property which is only used for config WF condition"
     )
+    is_filter_condition = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config filter condition"
+    )
     # system
     title_slug = models.SlugField(blank=True)
     system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')
@@ -524,6 +528,9 @@ class Currency(SimpleAbstractModel):
     title = models.CharField(max_length=100)
     code = models.CharField(max_length=10, unique=True)
     symbol = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f'{self.title} - {self.code} - {self.symbol}'
 
     class Meta:
         verbose_name = 'Currency'

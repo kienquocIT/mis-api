@@ -26,7 +26,7 @@ class AliveCheckView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(operation_summary='Check session is alive')
-    @mask_view(login_require=True)
+    @mask_view(login_require=False)
     def get(self, request, *args, **kwargs):
         user = request.user
         if not user or user.is_authenticated is False or user.is_anonymous is True:
@@ -322,6 +322,8 @@ class CalendarByDay(APIView):
                         objs = RecurrenceTask.objects.select_related('recurrence').filter(
                             date_next=day_check,
                             employee_inherit_id=employee_id,
+                            recurrence_action=0,
+                            recurrence__recurrence_status=0,
                         )
                         result['recurrence'] = []
                         for obj in objs:
@@ -329,13 +331,14 @@ class CalendarByDay(APIView):
                                 {
                                     'category': 'Recurrence',
                                     'id': obj.id,
-                                    'title': obj.recurrence.doc_template_data.get('title', "")
-                                    if obj.recurrence else "",
+                                    'title': obj.recurrence.title if obj.recurrence else "",
                                     'remark': "",
                                     'start_date': None,
                                     'end_date': None,
                                     'location_address': '',
                                     'location_title': '',
+                                    'app_code': obj.recurrence.app_code if obj.recurrence else "",
+                                    'doc_template_data': obj.recurrence.doc_template_data if obj.recurrence else {},
                                 }
                             )
 

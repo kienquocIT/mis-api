@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from copy import deepcopy
 from uuid import uuid4
 
@@ -15,8 +16,9 @@ from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
+    'RecurrenceAbstractModel',
     'DisperseModel',
-    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass', 'RecurrenceAbstractModel',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
 
 
@@ -51,8 +53,9 @@ class CoreSignalRegisterMetaClass(models.base.ModelBase, type):
 
 class SignalRegisterMetaClass(models.base.ModelBase, type):
     def register_signals(cls):
-        models.signals.post_save.connect(cls.post_save_handler, sender=cls)
-        models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+        # models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+        # models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+        pass
 
     def post_save_handler(cls, sender, **kwargs):
         table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
@@ -87,6 +90,30 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def add_auto_generate_code_to_instance(cls, instance, code_rule, in_workflow=True, filter_fields=None):
+        """
+            Auto generate code following 'code_rule' parameter.
+            Example: LEAD-[n4]-2024 ([n4] will be parsed from 0001 to 9999)
+        """
+        model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
+        if model_cls and hasattr(model_cls, 'objects'):
+            number = model_cls.objects.filter(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                is_delete=False,
+                system_status=3 if in_workflow else 1,
+                **filter_fields if filter_fields else {}
+            ).count()
+            code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
+            if code_rule_number_format:
+                number_format = code_rule_number_format.group(1)
+                new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
+                instance.code = new_code
+                return True
+        return False
+
 
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
@@ -291,6 +318,11 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='The process claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
+    process_stage_app = models.ForeignKey(
+        'process.ProcessStageApplication', null=True, on_delete=models.SET_NULL,
+        help_text='The process stage app claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_process',
+    )
     # workflow information
     system_status = models.SmallIntegerField(
         # choices=SYSTEM_STATUS,
@@ -366,7 +398,15 @@ class ExtendsDataAbstractModel(SimpleAbstractModel):
 
 
 class RecurrenceAbstractModel(SimpleAbstractModel):  # use for applications need recurrence
-    is_recurring = models.BooleanField(default=False, help_text="flag to know this record is recurring template")
+    is_recurrence_template = models.BooleanField(
+        default=False, help_text="flag to know this record is set as recurrence template"
+    )
+    is_recurring = models.BooleanField(default=False, help_text="flag to know this record is recurring")
+    recurrence_task = models.ForeignKey(
+        'recurrence.RecurrenceTask', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_recurrence_task',
+    )
 
     class Meta:
         abstract = True

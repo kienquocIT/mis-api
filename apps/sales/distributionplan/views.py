@@ -1,3 +1,4 @@
+from django.utils.datetime_safe import datetime
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.distributionplan.models import DistributionPlan
@@ -25,13 +26,23 @@ class DistributionPlanList(BaseListMixin, BaseCreateMixin):
     serializer_create = DistributionPlanCreateSerializer
     serializer_detail = DistributionPlanDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id', 'employee_inherit_id',
     ]
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        if 'filter_expired' in self.request.query_params:
+            return super().get_queryset().filter(
+                end_date__gte=datetime.now().date()
+            ).prefetch_related().select_related(
+                'employee_inherit',
+                'employee_inherit__group'
+            )
+        return super().get_queryset().prefetch_related().select_related(
+            'employee_inherit',
+            'employee_inherit__group'
+        )
 
     @swagger_auto_schema(
         operation_summary="Distribution Plan list",

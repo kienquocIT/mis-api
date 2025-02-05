@@ -26,6 +26,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 drf-yasg==1.21.7
 Faker==22.2.0
+firebase-admin==6.6.0
 icalendar==5.0.11
 idna==3.4
 inflection==0.5.1

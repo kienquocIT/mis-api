@@ -1,5 +1,7 @@
 from urllib.parse import urlencode
 from uuid import uuid4
+
+from dateutil.relativedelta import relativedelta
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -277,11 +279,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         payment_term = self.test_1_create_config_payment_term().data['result']['id']
         data = {
             "title": "Đơn hàng test",
-            "opportunity": opportunity,
-            "customer": customer,
-            "contact": contact,
+            "opportunity_id": opportunity,
+            "customer_id": customer,
+            "contact_id": contact,
             "employee_inherit_id": employee,
-            "payment_term": payment_term,
+            "payment_term_id": payment_term,
         }
         url = reverse("SaleOrderList")
         response = self.client.post(url, data, format='json')
@@ -301,12 +303,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'title',
                 'code',
                 'opportunity',
-                'customer',
+                'customer_data',
                 'contact_data',
                 'sale_person',
-                'payment_term_id',
                 'payment_term_data',
-                'quotation',
+                'quotation_data',
                 'system_status',
                 # sale order tabs
                 'sale_order_products_data',
@@ -334,6 +335,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # indicators
+                'indicator_revenue',
+                'indicator_gross_profit',
+                'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
                 # system
@@ -345,6 +350,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'document_change_order',
                 #
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -411,7 +417,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
-            customer_id=sale_order['customer']['id'],
+            customer_id=sale_order['customer_data'].get('id', None),
             contact_id=sale_order['contact_data'].get('id', None),
             kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,
@@ -596,9 +602,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         new_period = Periods.objects.create(
             company_id=self.company_id,
             tenant_id=self.tenant_id,
-            fiscal_year=2024,
+            fiscal_year=timezone.now().year,
             space_month=0,
-            start_date='2024-01-01'
+            start_date=timezone.now().strftime('%Y-%m-%d'),
+            end_date=(timezone.now() + relativedelta(months=12) - relativedelta(days=1)).strftime('%Y-%m-%d')
         )
         bulk_info = []
         for i in range(1, 13):
@@ -610,10 +617,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 SubPeriods(
                     period_mapped=new_period,
                     order=i,
-                    code=f'P2024-M{letter}-2024',
-                    name=f'P2024-M{letter}-2024',
-                    start_date=f'2024-{letter}-01',
-                    end_date=f'2024-{letter}-{calendar.monthrange(2024, i)[1]}',
+                    code=f'P2024-M{letter}-{timezone.now().year}',
+                    name=f'P2024-M{letter}-{timezone.now().year}',
+                    start_date=f'{timezone.now().year}-{letter}-01',
+                    end_date=f'{timezone.now().year}-{letter}-{calendar.monthrange(timezone.now().year, i)[1]}',
                     locked=0
                 )
             )

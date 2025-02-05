@@ -1,3 +1,4 @@
+import json
 from django.db import models
 
 from apps.core.models import TenantAbstractModel
@@ -98,10 +99,25 @@ class EmployeeInfo(TenantAbstractModel):
         blank=True, max_length=50, null=True, help_text='tax identification numbers'
     )
     permanent_address = models.CharField(
-        blank=True, max_length=50, null=True, help_text='frequently lived address'
+        blank=True, max_length=250, null=True, help_text='frequently lived address'
     )
     current_resident = models.CharField(
-        blank=True, max_length=50, null=True, help_text='Means the person who resides here currently'
+        blank=True, max_length=250, null=True, help_text='Means the person who resides here currently'
+    )
+    attachment = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='Attachment file',
+        help_text=json.dumps(
+            ["uuid4", "uuid4"]
+        )
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='EmployeeMapSignatureAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='signature_of_employee_info',
     )
 
     class Meta:

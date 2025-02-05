@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
@@ -9,7 +10,8 @@ class DistributionPlan(DataAbstractModel):
         related_name='distribution_plan_product',
         on_delete=models.CASCADE
     )
-    start_date = models.DateField()
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(default=timezone.now)
     no_of_month = models.IntegerField()
 
     product_price = models.FloatField(default=0)
@@ -19,16 +21,12 @@ class DistributionPlan(DataAbstractModel):
     rate = models.FloatField(default=0)
     plan_description = models.TextField(default="", blank=True, null=True)
 
-    is_create_purchase_request = models.BooleanField(default=False)
     purchase_request_number = models.FloatField(default=0)
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                records = DistributionPlan.objects.filter(
-                    company=self.company, tenant=self.tenant, is_delete=False, system_status=3
-                )
-                self.code = 'DP00' + str(records.count() + 1)
+                self.add_auto_generate_code_to_instance(self, 'DP[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

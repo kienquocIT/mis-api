@@ -50,7 +50,7 @@ class PurchaseRequestList(BaseListMixin, BaseCreateMixin):
         request_body=PurchaseRequestCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, employee_require=True,
+        login_require=True, auth_require=True,
         label_code='purchasing', model_code='purchaserequest', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -174,7 +174,7 @@ class PurchaseRequestSaleList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().select_related(
             'sale_order',
             'sale_order__opportunity',
-        ).order_by('purchase_status')
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase Request For Sale List",

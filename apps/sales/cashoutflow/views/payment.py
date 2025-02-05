@@ -22,7 +22,10 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         'opportunity_id': ['exact'],
     }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
 
     def get_queryset(self):
         main_queryset = super().get_queryset().prefetch_related(
@@ -61,8 +64,6 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
 
 class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Payment.objects  # noqa
-    serializer_list = PaymentListSerializer
-    serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
     serializer_update = PaymentUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT

@@ -13,7 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, APIMsg, \
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
     DisperseModel, WarehouseMsg
 from apps.shared.translations.expense import ExpenseMsg
 
@@ -23,10 +23,12 @@ class SaleOrderCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         instance.sale_order_product_sale_order.all().delete()
-        SaleOrderProduct.objects.bulk_create([
-            SaleOrderProduct(sale_order=instance, **sale_order_product)
-            for sale_order_product in validated_data['sale_order_products_data']
-        ])
+        SaleOrderProduct.objects.bulk_create(
+            [SaleOrderProduct(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_product,
+            ) for sale_order_product in validated_data['sale_order_products_data']]
+        )
         return True
 
     @classmethod
@@ -36,26 +38,30 @@ class SaleOrderCommonCreate:
             old_logistic.delete()
         SaleOrderLogistic.objects.create(
             **validated_data['sale_order_logistic_data'],
-            sale_order=instance
+            sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
         )
         return True
 
     @classmethod
     def create_cost(cls, validated_data, instance):
         instance.sale_order_cost_sale_order.all().delete()
-        SaleOrderCost.objects.bulk_create([
-            SaleOrderCost(sale_order=instance, **sale_order_cost)
-            for sale_order_cost in validated_data['sale_order_costs_data']
-        ])
+        SaleOrderCost.objects.bulk_create(
+            [SaleOrderCost(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_cost,
+            ) for sale_order_cost in validated_data['sale_order_costs_data']]
+        )
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
         instance.sale_order_expense_sale_order.all().delete()
-        SaleOrderExpense.objects.bulk_create([
-            SaleOrderExpense(sale_order=instance, **sale_order_expense)
-            for sale_order_expense in validated_data['sale_order_expenses_data']
-        ])
+        SaleOrderExpense.objects.bulk_create(
+            [SaleOrderExpense(
+                sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **sale_order_expense,
+            ) for sale_order_expense in validated_data['sale_order_expenses_data']]
+        )
         return True
 
     @classmethod
@@ -124,9 +130,9 @@ class SaleOrderCommonCreate:
 class SaleOrderCommonValidate:
 
     @classmethod
-    def validate_customer(cls, value):
+    def validate_customer_id(cls, value):
         try:
-            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -140,25 +146,27 @@ class SaleOrderCommonValidate:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
-    def validate_contact(cls, value):
+    def validate_contact_id(cls, value):
         try:
-            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
     @classmethod
-    def validate_sale_person(cls, value):
-        try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
-
-    @classmethod
-    def validate_quotation(cls, value):
+    def validate_payment_term_id(cls, value):
         try:
             if value is None:
                 return None
-            return Quotation.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+        except PaymentTerm.DoesNotExist:
+            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+
+    @classmethod
+    def validate_quotation_id(cls, value):
+        try:
+            if value is None:
+                return None
+            return Quotation.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
         except Quotation.DoesNotExist:
             raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
 
@@ -213,13 +221,6 @@ class SaleOrderCommonValidate:
                 ]
             raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
-
-    @classmethod
-    def validate_payment_term(cls, value):
-        try:
-            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-        except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
     def validate_promotion(cls, value):
@@ -323,25 +324,30 @@ class SaleOrderRuleValidate:
 
     @classmethod
     def validate_payment_stage(cls, validate_data):
-        if 'sale_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['sale_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                date = payment_stage.get('date', '')
-                due_date = payment_stage.get('due_date', '')
-                if not date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DATE_REQUIRED})
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
+        if 'sale_order_payment_stage' in validate_data and 'total_product' in validate_data:
+            if len(validate_data['sale_order_payment_stage']) > 0:
+                total_ratio = 0
+                total_payment = 0
+                for payment_stage in validate_data['sale_order_payment_stage']:
+                    total_ratio += payment_stage.get('payment_ratio', 0)
+                    total_payment += payment_stage.get('value_total', 0)
+                    # check required field
+                    date = payment_stage.get('date', '')
+                    due_date = payment_stage.get('due_date', '')
+                    if not date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
+                    if not due_date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
+                if total_ratio != 100:
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
+                if total_payment != validate_data.get('total_product', 0):
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+            else:
+                # check required by config
+                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                if so_config:
+                    if so_config.is_require_payment is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     @classmethod
@@ -665,18 +671,22 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
             'term_id',
             'term_data',
             'date',
+            'date_type',
             'payment_ratio',
             'value_before_tax',
+            'issue_invoice',
+            'value_after_tax',
+            'value_total',
             'due_date',
             'is_ar_invoice',
             'order',
         )
 
-    @classmethod
-    def validate_remark(cls, value):
-        if not value:
-            raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
-        return value
+    # @classmethod
+    # def validate_remark(cls, value):
+    #     if not value:
+    #         raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
+    #     return value
 
     @classmethod
     def validate_term_id(cls, value):

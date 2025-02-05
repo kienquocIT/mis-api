@@ -105,7 +105,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    product = serializers.UUIDField()
+    product = serializers.UUIDField(required=False, allow_null=True)
     uom_order_request = serializers.UUIDField(required=False)
     uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
@@ -135,6 +135,9 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'order',
             # goods receipt information
             'gr_remain_quantity',
+            # shipping
+            'is_shipping',
+            'shipping_title',
         )
 
     @classmethod
@@ -191,6 +194,8 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
+            'is_shipping',
+            'shipping_title',
         )
 
     @classmethod
@@ -526,16 +531,7 @@ class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'phone': obj.employee_inherit.phone,
-            'is_active': obj.employee_inherit.is_active,
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
 
 class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
@@ -608,9 +604,9 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
                 # check required field
                 due_date = payment_stage.get('due_date', '')
                 if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
         else:
             # check required by config
             so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
@@ -718,9 +714,9 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
                 # check required field
                 due_date = payment_stage.get('due_date', '')
                 if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.DUE_DATE_REQUIRED})
+                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
             if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
         else:
             # check required by config
             so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()

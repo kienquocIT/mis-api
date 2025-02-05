@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
@@ -6,15 +7,15 @@ from apps.masterdata.saledata.models import (
 )
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.report.models import (
-    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, ReportStock
+    ReportInventoryCost, ReportStockLog, ReportInventoryCostByWarehouse, BalanceInitialization
 )
 
 
 # Product Type
 class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
-    state = serializers.SerializerMethodField()
     subs = serializers.SerializerMethodField()
+    current_sub = serializers.SerializerMethodField()
 
     class Meta:
         model = Periods
@@ -25,9 +26,10 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'fiscal_year',
             'space_month',
             'start_date',
+            'end_date',
             'software_start_using_time',
-            'state',
-            'subs'
+            'subs',
+            'current_sub'
         )
 
     @classmethod
@@ -40,12 +42,6 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
         return False
 
     @classmethod
-    def get_state(cls, obj):
-        if obj.fiscal_year == datetime.now().year:
-            return 0
-        return 1
-
-    @classmethod
     def get_subs(cls, obj):
         return [{
             'id': sub.id,
@@ -54,8 +50,28 @@ class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
             'name': sub.name,
             'start_date': sub.start_date,
             'end_date': sub.end_date,
+            'run_report_inventory': sub.run_report_inventory,
             'locked': sub.locked
         } for sub in obj.sub_periods_period_mapped.all()]
+
+    @classmethod
+    def get_current_sub(cls, obj):
+        if obj.start_date <= datetime.now().date():
+            current_sub = obj.get_current_sub_period(obj)
+            return {
+                'id': current_sub.id,
+                'order': current_sub.order,
+                'current_month': (
+                        current_sub.order + obj.space_month - 12
+                ) if (
+                        current_sub.order + obj.space_month > 12
+                ) else (
+                        current_sub.order + obj.space_month
+                ),
+                'start_date': str(current_sub.start_date) if current_sub else None,
+                'end_date': str(current_sub.end_date) if current_sub else None
+            } if current_sub else {}
+        return {}
 
 
 class PeriodsCreateSerializer(serializers.ModelSerializer):
@@ -79,18 +95,24 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         validate_data['space_month'] = validate_data['start_date'].month - 1
+        validate_data['end_date'] = validate_data['start_date'] + relativedelta(months=12) - relativedelta(days=1)
+        software_start_using_time = self.initial_data.get('software_start_using_time')
+        if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            if self.context.get('company_current'):
+                if not self.context.get('company_current').software_start_using_time:
+                    self.context.get('company_current').software_start_using_time = software_start_using_time_format
+                    self.context.get('company_current').save(update_fields=['software_start_using_time'])
+                else:
+                    raise serializers.ValidationError(
+                        {"software_start_using_time": 'You have set up software using time already'}
+                    )
+            else:
+                raise serializers.ValidationError({"company_current": 'Company does not exist'})
         return validate_data
 
     def create(self, validated_data):
         period = Periods.objects.create(**validated_data)
-        software_start_using_time = self.initial_data.get('software_start_using_time')
-        if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            if not period.company.software_start_using_time:
-                period.company.software_start_using_time = software_start_using_time_format
-                period.company.save(update_fields=['software_start_using_time'])
-            else:
-                raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
 
         sub_period_data = self.initial_data.get('sub_period_data')
         bulk_info = []
@@ -119,20 +141,26 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
         model = Periods
         fields = ('code', 'title')
 
+    def validate(self, validate_data):
+        software_start_using_time = self.initial_data.get('software_start_using_time')
+        if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            if self.context.get('company_current'):
+                if not self.context.get('company_current').software_start_using_time:
+                    self.context.get('company_current').software_start_using_time = software_start_using_time_format
+                    self.context.get('company_current').save(update_fields=['software_start_using_time'])
+                else:
+                    raise serializers.ValidationError(
+                        {"software_start_using_time": 'You have set up software using time already'}
+                    )
+            else:
+                raise serializers.ValidationError({"company_current": 'Company does not exist'})
+        return validate_data
+
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        software_start_using_time = self.initial_data.get('software_start_using_time')
-        if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            if (not instance.company.software_start_using_time or
-                    software_start_using_time_format == instance.company.software_start_using_time):
-                instance.company.software_start_using_time = software_start_using_time_format
-                instance.company.save(update_fields=['software_start_using_time'])
-            else:
-                raise serializers.ValidationError({"Exist": 'You have set up software using time already'})
 
         if all(key in self.initial_data for key in ['clear_balance_data', 'product_id', 'warehouse_id']):
             if ReportStockLog.objects.filter(
@@ -140,11 +168,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                     company=instance.company,
                     product_id=self.initial_data.get('product_id'),
                     warehouse_id=self.initial_data.get('warehouse_id')
-            ).exists():
+            ).exclude(trans_title='Balance init input').exists():
                 raise serializers.ValidationError(
                     {"Has trans": 'The transactions of this product are existed in this warehouse.'}
                 )
-
             try:
                 with transaction.atomic():
                     PeriodInventoryFunction.clear_balance_data(
@@ -169,15 +196,11 @@ class PeriodInventoryFunction:
             prd_obj.available_amount = 0
             prd_obj.save(update_fields=['stock_amount', 'available_amount'])
 
-            ReportStock.objects.filter(
-                tenant=instance.tenant,
-                company=instance.company,
-                product=prd_obj
-            ).delete()
             ReportStockLog.objects.filter(
                 tenant=instance.tenant,
                 company=instance.company,
-                product=prd_obj
+                product=prd_obj,
+                warehouse=wh_obj
             ).delete()
             ReportInventoryCost.objects.filter(
                 tenant=instance.tenant,
@@ -206,6 +229,12 @@ class PeriodInventoryFunction:
                 company=instance.company,
                 product_warehouse__product=prd_obj,
                 product_warehouse__warehouse=wh_obj
+            ).delete()
+            BalanceInitialization.objects.filter(
+                tenant=instance.tenant,
+                company=instance.company,
+                product=prd_obj,
+                warehouse=wh_obj
             ).delete()
             return True
         raise serializers.ValidationError({"Not exist": 'Product | Warehouse does not exist.'})

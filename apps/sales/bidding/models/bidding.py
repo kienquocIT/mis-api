@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
 BIDDING_STATUS = [
@@ -162,8 +163,14 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
+
+        AdvanceHandler.push_opportunity_log(self)
         # hit DB
         super().save(*args, **kwargs)
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'ad1e1c4e-2a7e-4b98-977f-88d069554657' # bidding's application id
 
 
 class BiddingDocument(MasterDataAbstractModel):
@@ -234,10 +241,12 @@ class BiddingPartnerAccount(SimpleAbstractModel):
         verbose_name="bidding partner account",
         related_name="bidding_partner_account_partner_account",
     )
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Bidding partner account'
         verbose_name_plural = 'Bidding partner accounts'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -256,9 +265,11 @@ class BiddingBidderAccount(SimpleAbstractModel):
         verbose_name="bidding bidder account",
         related_name="bidding_bidder_account_bidder_account",
     )
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Bidding bidder account'
         verbose_name_plural = 'Bidding bidder accounts'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

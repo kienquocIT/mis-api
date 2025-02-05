@@ -1,3 +1,4 @@
+from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ExpenseItem, Account
@@ -19,6 +20,9 @@ __all__ = [
 
 
 class DistributionPlanListSerializer(AbstractListSerializerModel):
+    is_expired = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
     class Meta:
         model = DistributionPlan
         fields = (
@@ -27,9 +31,28 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
             'title',
             'start_date',
             'no_of_month',
+            'end_date',
             'system_status',
-            'is_create_purchase_request'
+            'is_expired',
+            'employee_inherit'
         )
+
+    @classmethod
+    def get_is_expired(cls, obj):
+        return obj.end_date < datetime.now().date()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            "id": obj.employee_inherit_id,
+            "code": obj.employee_inherit.code,
+            "full_name": obj.employee_inherit.get_full_name(2),
+            "group": {
+                "id": str(obj.employee_inherit.group_id),
+                "title": obj.employee_inherit.group.title,
+                "code": obj.employee_inherit.group.code
+            } if obj.employee_inherit.group_id else {}
+        } if obj.employee_inherit else {}
 
 
 class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
@@ -42,6 +65,7 @@ class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',
@@ -142,6 +166,7 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',
@@ -163,6 +188,7 @@ class DistributionPlanDetailSerializer(AbstractDetailSerializerModel):
             'description': obj.product.description,
             'expected_number': obj.expected_number,
             'purchase_request_number': obj.purchase_request_number,
+            'no_of_month': obj.no_of_month,
             'uom': {
                 'id': str(obj.product.general_uom_group.uom_reference_id),
                 'code': obj.product.general_uom_group.uom_reference.code,
@@ -222,6 +248,7 @@ class DistributionPlanUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'product',
             'start_date',
+            'end_date',
             'no_of_month',
             'product_price',
             'break_event_point',

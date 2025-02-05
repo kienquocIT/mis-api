@@ -67,7 +67,7 @@ msgstr "Điều chuyển hàng"
 
 #
 msgid "APP_Inventory Adjustment"
-msgstr "Điều chỉnh tồn kho"
+msgstr "Kiểm kê kho"
 
 #
 msgid "APP_Leave"
@@ -115,4 +115,8 @@ msgstr "Dự án"
 
 #
 msgid "APP_Project Baseline"
-msgstr "Dự án Đường cơ sở"
+msgstr "Trình duyệt Dự án"
+
+#
+msgid "APP_Employee info"
+msgstr "Thông tin nhân viên"

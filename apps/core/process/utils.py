@@ -8,16 +8,19 @@ from uuid import UUID
 
 from django.conf import settings
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 
-from apps.core.process.models import Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration
+from apps.core.process.models import (
+    Process, ProcessStageApplication, ProcessDoc, ProcessStage, ProcessConfiguration,
+    ProcessMembers, ProcessActivity,
+)
 from apps.core.process.msg import ProcessMsg
 from apps.shared import TypeCheck, DisperseModel
 
 logger = logging.getLogger(__name__)
 
 
-class ProcessRuntimeControl:
+class ProcessRuntimeControl:  # pylint: disable=R0904
     @classmethod
     def approved_amount(cls, stage_app_obj: ProcessStageApplication):
         return ProcessDoc.objects.filter(
@@ -53,8 +56,15 @@ class ProcessRuntimeControl:
 
     @classmethod
     def check_application_state_add_new(cls, stage_app_obj: ProcessStageApplication) -> bool or None:
-        if stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
-            # deny create for stages is coming!
+        if not stage_app_obj.stage:
+            # stage app global
+            pass
+        elif stage_app_obj.process and stage_app_obj.process.stage_current:
+            if stage_app_obj.stage.order_number > stage_app_obj.process.stage_current.order_number:
+                # deny create for stages is coming!
+                return False
+        else:
+            # process not current => finish!
             return False
 
         if stage_app_obj.max == "n":
@@ -84,9 +94,27 @@ class ProcessRuntimeControl:
         )
 
     @classmethod
+    def get_process_stage_app(
+            cls, stage_app_id: UUID or str, app_id: UUID or str, key_raise_error: str = 'process_stage_app'
+    ):
+        if stage_app_id and TypeCheck.check_uuid(stage_app_id):
+            try:
+                return ProcessStageApplication.objects.get_current(
+                    fill__tenant=True, fill__company=True,
+                    pk=stage_app_id, application_id=app_id,
+                )
+            except ProcessStageApplication.DoesNotExist:
+                pass
+        raise serializers.ValidationError(
+            {
+                key_raise_error: ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND
+            }
+        )
+
+    @classmethod
     def create_process_from_config(cls, title: str, remark: str, config: ProcessConfiguration, **kwargs) -> Process:
         return Process.objects.create(
-            title=title, remark=remark, config=config, stages=config.stages,
+            title=title, remark=remark, config=config, stages=config.stages, global_app=config.global_app,
             **kwargs,
             tenant=config.tenant, company=config.company,
         )
@@ -149,11 +177,39 @@ class ProcessRuntimeControl:
             }
         )
 
+    @classmethod
+    def check_permit_process(
+            cls, process_obj: Process, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if process_obj and employee_id:
+            if ProcessMembers.objects.filter(process=process_obj, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
+    @classmethod
+    def check_permit_process_app(
+            cls, stage_app: ProcessStageApplication, employee_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if stage_app and isinstance(stage_app, ProcessStageApplication) and employee_id:
+            if ProcessMembers.objects.filter(process=stage_app.process, employee_id=employee_id).exists():
+                return True
+        raise exceptions.PermissionDenied
+
+    @classmethod
+    def check_app_available_in_process(
+            cls, process_obj: Process, app_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if process_obj and app_id:
+            for item in process_obj.global_app:
+                if 'application' in item and item['application'] == app_id:
+                    return True
+        raise exceptions.PermissionDenied
+
     def __init__(self, process_obj: Process, key_raise_error: str = 'process'):
         self.key_raise_error: str = key_raise_error
         self.process_obj: Process = process_obj
 
-    def get_application(self, app_id: UUID or str):
+    def get_application(self, app_id: UUID or str) -> ProcessStageApplication:
         try:
             app_obj = ProcessStageApplication.objects.get_current(
                 fill__tenant=True,
@@ -170,22 +226,46 @@ class ProcessRuntimeControl:
             )
         return app_obj
 
-    def check_opp(self, opp_id) -> True or serializers.ValidationError:
-        if str(opp_id) != str(self.process_obj.opp_id):
-            raise serializers.ValidationError({self.key_raise_error: ProcessMsg.OPP_NOT_MATCH})
-        return True
+    def validate_process(
+            self,
+            process_stage_app_obj: ProcessStageApplication,
+            employee_id: UUID or str = None,
+            opp_id: UUID or str = None,
+    ) -> bool or serializers.ValidationError:
+        # permit for employee in process if fill value into employee_created_id
+        if employee_id:
+            self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_id)
 
-    def validate_process(self, app_id: UUID or str, opp_id: UUID or str = None) -> bool or serializers.ValidationError:
         # for add new
-        self.check_opp(opp_id=opp_id)
-        app_obj = self.get_application(app_id=app_id)
-        if app_obj and isinstance(app_obj, ProcessStageApplication):
-            if self.check_application_state_add_new(stage_app_obj=app_obj):
+        if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
+            # check stage app match with process
+            if process_stage_app_obj.process != self.process_obj:
+                raise serializers.ValidationError({self.key_raise_error: ProcessMsg.APPLICATION_NOT_SUPPORT})
+
+            # check opp match with process
+            if str(opp_id) != str(self.process_obj.opp_id):
+                raise serializers.ValidationError({self.key_raise_error: ProcessMsg.OPP_NOT_MATCH})
+
+            if self.check_application_state_add_new(stage_app_obj=process_stage_app_obj):
                 return True
             raise serializers.ValidationError({self.key_raise_error: ProcessMsg.DOCUMENT_QUALITY_IS_FULL})
         raise serializers.ValidationError({self.key_raise_error: ProcessMsg.APPLICATION_NOT_SUPPORT})
 
+    def add_members(self, employee_created_id: UUID = None):
+        if self.process_obj.employee_created_id:
+            ProcessMembers.objects.create(
+                tenant=self.process_obj.tenant,
+                company=self.process_obj.company,
+                process=self.process_obj,
+                employee=self.process_obj.employee_created,
+                employee_created_id=employee_created_id,
+                is_system=True,
+            )
+        return True
+
     def play_process(self) -> Process:
+        self.add_members()
+
         for idx, stage_config in enumerate(self.process_obj.stages):
             is_system = stage_config.get('is_system', False)
             system_code = stage_config.get('system_code', None)
@@ -215,33 +295,82 @@ class ProcessRuntimeControl:
                 )
             if idx == 0:  # loop play with zero, 1 is first user stages
                 self.process_obj.stage_current = stage_obj
+        for index, app_config in enumerate(self.process_obj.global_app):
+            ProcessStageApplication.objects.create(
+                tenant=self.process_obj.tenant,
+                company=self.process_obj.company,
+                process=self.process_obj,
+                stage=None,
+                application_id=app_config['application'],
+                title=app_config['title'],
+                remark=app_config.get('remark', ''),
+                amount=0,
+                min=app_config.get('min', '0'),
+                max=app_config.get('max', '0'),
+                order_number=index + 1,
+            )
         self.process_obj.save(update_fields=['stage_current'])
+        self.log(
+            title='Init process',
+            code='INIT_PROCESS',
+            employee_created_id=self.process_obj.employee_created_id,
+        )
         self.check_stages_current()
         return self.process_obj
 
     def register_doc(
             self,
+            process_stage_app_obj: ProcessStageApplication,
             app_id: UUID or str,
             doc_id: UUID or str,
             doc_title: str,
             employee_created_id: UUID or str,
             date_created: datetime,
     ):
-        stage_app_obj = self.get_application(app_id=app_id)
-        if stage_app_obj and self.check_application_state_add_new(stage_app_obj):
-            ProcessDoc.objects.create(
-                tenant=self.process_obj.tenant,
-                company=self.process_obj.company,
-                process=self.process_obj,
-                stage_app=stage_app_obj,
-                doc_id=doc_id,
-                title=doc_title,
-                employee_created_id=employee_created_id,
-                date_created=date_created,
-            )
-            stage_app_obj.amount_count(commit=True)
-            self.check_stages_current(from_stages_app=stage_app_obj)
-            return stage_app_obj
+        if process_stage_app_obj and isinstance(process_stage_app_obj, ProcessStageApplication):
+            try:
+                self.check_permit_process_app(stage_app=process_stage_app_obj, employee_id=employee_created_id)
+            except exceptions.PermissionDenied:
+                return False
+            if str(process_stage_app_obj.application_id) == str(app_id):
+                if process_stage_app_obj and self.check_application_state_add_new(process_stage_app_obj):
+                    process_doc_obj = ProcessDoc.objects.create(
+                        tenant=self.process_obj.tenant,
+                        company=self.process_obj.company,
+                        process=self.process_obj,
+                        stage_app=process_stage_app_obj,
+                        doc_id=doc_id,
+                        title=doc_title,
+                        employee_created_id=employee_created_id,
+                        date_created=date_created,
+                    )
+                    process_stage_app_obj.amount_count(commit=True)
+                    self.log(
+                        title='Register documents',
+                        code='REGISTER_DOCUMENT',
+                        stage=process_stage_app_obj.stage,
+                        app=process_stage_app_obj,
+                        doc=process_doc_obj,
+                        employee_created_id=employee_created_id,
+                    )
+                    if process_stage_app_obj.application.is_workflow is False:
+                        # auto finish when not apply workflow
+                        self.update_status_of_doc(
+                            app_id=process_stage_app_obj.application_id,
+                            doc_id=doc_id,
+                            date_now=timezone.now(),
+                            status=3
+                        )
+                        self.log(
+                            title='Auto approved',
+                            code='AUTO_APPROVED',
+                            stage=process_stage_app_obj.stage,
+                            app=process_stage_app_obj,
+                            doc=process_doc_obj,
+                            employee_created_id=employee_created_id,
+                        )
+                    self.check_stages_current(from_stages_app=process_stage_app_obj)
+                    return process_stage_app_obj
         return None
 
     def finish_process(self):
@@ -253,6 +382,13 @@ class ProcessRuntimeControl:
         self.process_obj.date_done = timezone.now()
         self.process_obj.stage_current = None
         self.process_obj.save(update_fields=['was_done', 'date_done', 'stage_current'])
+
+        self.log(
+            title='Finish process',
+            code='FINISH_STAGES',
+            employee_created_id=self.process_obj.employee_created_id,
+        )
+
         return True
 
     def next_stage_current(self):
@@ -264,16 +400,23 @@ class ProcessRuntimeControl:
             return None
         self.process_obj.stage_current = next_stages
         self.process_obj.save(update_fields=['stage_current'])
+        self.log(
+            title='Entering new stages',
+            code='NEXT_STAGES',
+            stage=next_stages,
+            employee_created_id=self.process_obj.employee_created_id,
+        )
         return self.check_stages_current()
 
     def check_stages_current(self, from_stages_app: ProcessStageApplication = None):
         if self.process_obj:
             if self.process_obj.stage_current:
-                stage_current = self.process_obj.stage_current
-
-                # update app
+                # update stage app was registered doc in app
                 if isinstance(from_stages_app, ProcessStageApplication):
                     self.update_stages_app(stage_app_obj=from_stages_app)
+
+                # check current stage
+                stage_current = self.process_obj.stage_current
 
                 # counter app not done
                 amount_not_done = ProcessStageApplication.objects.filter(
@@ -296,7 +439,7 @@ class ProcessRuntimeControl:
                         return self.finish_process()
                     print(f'Stages current: System code "{stage_current.system_code}" not support')
                     return False
-                # call next when the stages is not system
+                # call next when the stages are not system
                 return self.next_stage_current()
         return False
 
@@ -333,10 +476,11 @@ class ProcessRuntimeControl:
         raise ValueError('Model Doc not found: ' + doc_id + ' - ' + app_id)
 
     @classmethod
-    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None):
+    def update_status_of_doc(cls, app_id, doc_id, date_now: datetime, status: int = None, skip_check_state=False):
         """
         Sync system_status of doc to ProcessDoc
         Args:
+            skip_check_state:
             date_now:
             app_id:
             doc_id:
@@ -373,8 +517,22 @@ class ProcessRuntimeControl:
             # update approved amount of Stages APp
             process_doc.stage_app.amount_approved_count(commit=True)
             # check current stages status
-            ProcessRuntimeControl(process_obj=process_doc.process).check_stages_current(
-                from_stages_app=process_doc.stage_app
-            )
+            if not skip_check_state:
+                ProcessRuntimeControl(process_obj=process_doc.process).check_stages_current(
+                    from_stages_app=process_doc.stage_app
+                )
             return True
         return False
+
+    def log(self, title, code=None,employee_created_id=None, **kwargs):
+        if isinstance(self.process_obj, Process):
+            return ProcessActivity.objects.create(
+                tenant=self.process_obj.tenant,
+                company=self.process_obj.company,
+                process=self.process_obj,
+                title=title,
+                code=code,
+                employee_created_id=employee_created_id,
+                **kwargs
+            )
+        return None

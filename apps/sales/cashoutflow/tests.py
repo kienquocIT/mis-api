@@ -66,6 +66,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'system_status',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -161,6 +162,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'workflow_runtime_id',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -253,7 +255,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped', 'activity',
+                'annual_revenue', 'price_list_mapped', 'activity', 'revenue_information'
             ],
             check_sum_second=True,
         )
@@ -345,11 +347,11 @@ class PaymentTestCase(AdvanceTestCase):
         payment_term = self.create_config_payment_term().data['result']['id']
         data = {
             "title": "Đơn hàng test",
-            "opportunity": opportunity,
-            "customer": customer,
-            "contact": contact,
+            "opportunity_id": opportunity,
+            "customer_id": customer,
+            "contact_id": contact,
             "employee_inherit_id": employee,
-            "payment_term": payment_term,
+            "payment_term_id": payment_term,
         }
         url = reverse("SaleOrderList")
         response = self.client.post(url, data, format='json')
@@ -369,12 +371,11 @@ class PaymentTestCase(AdvanceTestCase):
                 'title',
                 'code',
                 'opportunity',
-                'customer',
+                'customer_data',
                 'contact_data',
                 'sale_person',
-                'payment_term_id',
                 'payment_term_data',
-                'quotation',
+                'quotation_data',
                 'system_status',
                 # sale order tabs
                 'sale_order_products_data',
@@ -402,6 +403,10 @@ class PaymentTestCase(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # indicators
+                'indicator_revenue',
+                'indicator_gross_profit',
+                'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
                 # system
@@ -483,6 +488,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'payment_value_by_words',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -626,6 +632,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'payment_value',
                 'payment_value_by_words',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -719,6 +726,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -777,6 +785,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )
@@ -851,6 +860,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'document_root_id',
                 'document_change_order',
                 'process',
+                'process_stage_app',
             ],
             check_sum_second=True,
         )

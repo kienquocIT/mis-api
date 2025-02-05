@@ -9,7 +9,7 @@ BOM_TYPE = [
     (1, _('For service')),
     (2, _('For sale')),
     (3, _('For internal expense')),
-    (4, _('For project'))
+    (4, _('For opportunity'))
 ]
 
 
@@ -40,13 +40,22 @@ class BOM(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def check_change_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
+    @classmethod
+    def check_reject_document(cls, instance):
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                count = BOM.objects.filter_current(
-                    fill__tenant=True, fill__company=True, is_delete=False, system_status=3
-                ).count()
-                self.code = f"BOM00{count + 1}"
+                self.add_auto_generate_code_to_instance(self, 'BOM[n4]', False)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

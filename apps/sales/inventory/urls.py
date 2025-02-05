@@ -15,13 +15,18 @@ from apps.sales.inventory.views import (
     NoneGReItemBorrowDetail, NoneGoodsRegistrationItemAvailableQuantity, ProductionOrderListForGIS,
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
     ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
-    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB,
+    WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList, GoodsRecoveryList,
+    GoodsRecoveryDetail,
 )
 
 urlpatterns = [
     # goods receipt
     path('goods-receipt/list', GoodsReceiptList.as_view(), name='GoodsReceiptList'),
     path('goods-receipt/<str:pk>', GoodsReceiptDetail.as_view(), name='GoodsReceiptDetail'),
+    # goods recovery
+    path('goods-recovery/list', GoodsRecoveryList.as_view(), name='GoodsRecoveryList'),
+    path('goods-recovery/<str:pk>', GoodsRecoveryDetail.as_view(), name='GoodsRecoveryDetail'),
+
     # inventory adjustment
     path('inventory-adjustments', InventoryAdjustmentList.as_view(), name='InventoryAdjustmentList'),
     path(
@@ -116,6 +121,7 @@ urlpatterns += [
 # goods detail
 urlpatterns += [
     path('goods-detail/list', GoodsDetailList.as_view(), name='GoodsDetailList'),
+    path('goods-detail-sn-data/list', GoodsDetailSerialDataList.as_view(), name='GoodsDetailSerialDataList'),
     path('create-update-goods-detail-data/list', GoodsDetailDataList.as_view(), name='GoodsDetailDataList'),
     path(
         'goods-detail-import-db',
