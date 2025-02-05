@@ -35,6 +35,7 @@ class Periods(MasterDataAbstractModel):
     has_revenue_planned = models.BooleanField(default=False, help_text=_('is True if has revenue planned this period'))
     has_budget_planned = models.BooleanField(default=False, help_text=_('is True if has budget planned this period'))
     sub_periods_type = models.IntegerField(choices=[(0, 'Month'), (1, 'Quarter'), (2, 'Year')], default=0)
+
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
     default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=1)
     cost_per_warehouse = models.BooleanField(default=True)

@@ -3034,6 +3034,30 @@ def update_employee_revenue_plan():
     print('Done :))')
 
 
+def update_period_cfg():
+    for company in Company.objects.all():
+        company_cfg = company.company_config
+        if company_cfg:
+            for period in Periods.objects.filter(company=company):
+                period.definition_inventory_valuation = company_cfg.definition_inventory_valuation
+                period.default_inventory_value_method = company_cfg.default_inventory_value_method
+                period.cost_per_warehouse = company_cfg.cost_per_warehouse
+                period.cost_per_lot = company_cfg.cost_per_lot
+                period.cost_per_project = company_cfg.cost_per_project
+                period.accounting_policies = company_cfg.accounting_policies
+                period.applicable_circular = company_cfg.applicable_circular
+                period.save(update_fields=[
+                    'definition_inventory_valuation',
+                    'default_inventory_value_method',
+                    'cost_per_warehouse',
+                    'cost_per_lot',
+                    'cost_per_project',
+                    'accounting_policies',
+                    'applicable_circular',
+                ])
+    print('Done :))')
+
+
 class Accounting:
     @staticmethod
     def generate_account_200():

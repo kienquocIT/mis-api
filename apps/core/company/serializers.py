@@ -202,9 +202,7 @@ class AccountingPoliciesUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
-        this_period = Periods.objects.filter(
-            tenant=tenant_obj, company=company_obj, fiscal_year=datetime.datetime.now().year
-        ).first()
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
         if this_period:
             validate_data['this_period'] = this_period
         else:
