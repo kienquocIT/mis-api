@@ -46,7 +46,7 @@ class PageBuilderList(BaseListMixin, BaseCreateMixin):
     serializer_detail = PageBuilderDetailSerializer
     serializer_create = PageBuilderCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema()
     @mask_view(login_require=True, auth_require=False, allow_admin_company=True)
