@@ -34,7 +34,7 @@ from apps.sales.report.serializers.report_sales import (
     ReportProductListSerializerForDashBoard
 )
 from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, ResponseController, HttpMsg
 
 
 # REPORT REVENUE
@@ -727,3 +727,12 @@ class AdvanceFilterDetail(BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Delete advance filter'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

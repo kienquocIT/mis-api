@@ -1,5 +1,6 @@
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, F
+from django.db.models.functions import Round
 from django_filters.rest_framework import filters
 
 from apps.shared import BastionFieldAbstractListFilter
@@ -26,7 +27,7 @@ class ReportPipelineListFilter(BastionFieldAbstractListFilter):
             'opportunity__close_date_month',
         )
 
-def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
+def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914,R0912
     if not filter_item_id:
         return query_set
 
@@ -38,6 +39,11 @@ def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
     model_code = application.model_code
     app_label = application.app_label
     model_class = apps.get_model(app_label=app_label, model_name=model_code)
+
+    programmatic_handlers = {
+        'gross_margin': filter_gross_margin,
+    }
+
     operator_handlers = {
         'notexact': lambda field, value: ~Q(**{field: value}),
         'exactnull': lambda field, _: Q(**{f"{field}__exact": None}),
@@ -58,15 +64,19 @@ def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
             else:
                 right = condition.get('right')
 
-            filter_func = operator_handlers.get(operator, None)
-            if filter_func:
-                group_query = filter_func(left_field, right)
+            if left_field in programmatic_handlers:
+                handler = programmatic_handlers[left_field]
+                queryset = set(handler(filter_item_obj, operator, right))
             else:
-                group_query = Q(**{f"{left_field}__{operator}": right})
-            queryset = set(model_class.objects.
-                           filter_current(fill__company=True).
-                           filter(group_query).
-                           values_list('id', flat=True))
+                filter_func = operator_handlers.get(operator, None)
+                if filter_func:
+                    group_query = filter_func(left_field, right)
+                else:
+                    group_query = Q(**{f"{left_field}__{operator}": right})
+                queryset = set(model_class.objects.
+                               filter_current(fill__company=True).
+                               filter(group_query).
+                               values_list('id', flat=True))
 
             if group_results is None:
                 group_results = queryset
@@ -76,3 +86,17 @@ def filter_by_advance_filter(query_set, filter_item_id): # pylint: disable=R0914
             overall_results.update(group_results)
 
     return query_set.filter(id__in=overall_results)
+
+def filter_gross_margin(obj, operator, right):
+    application = obj.application
+    model_code = application.model_code
+    app_label = application.app_label
+    model_class = apps.get_model(app_label=app_label, model_name=model_code)
+
+    right_ratio = round(int(right) / 100, 4)
+
+    annotated_report = model_class.objects.annotate(
+        gross_margin = Round(F('gross_profit') / F('revenue'), 4)
+    )
+    filter_kwargs = {f"gross_margin__{operator}": right_ratio}
+    return annotated_report.filter(**filter_kwargs).values_list('id', flat=True)

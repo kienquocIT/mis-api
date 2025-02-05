@@ -122,8 +122,8 @@ class RevenuePlanByReportPermList(BaseListMixin):
                 if 'myself' in self.request.query_params:
                     filters['employee_mapped_id'] = self.request.user.employee_current_id
                 return super().get_queryset().filter(**filters).select_related(
-                    'employee_mapped','revenue_plan_mapped'
-                ).prefetch_related(
+                    'employee_mapped',
+                    'revenue_plan_mapped',
                     'revenue_plan_mapped__period_mapped'
                 )
         period = Periods.objects.filter(
@@ -135,10 +135,10 @@ class RevenuePlanByReportPermList(BaseListMixin):
             if 'myself' in self.request.query_params:
                 filters['employee_mapped_id'] = self.request.user.employee_current_id
             return super().get_queryset().filter(**filters).select_related(
-                'employee_mapped', 'revenue_plan_mapped'
-            ).prefetch_related(
+                'employee_mapped',
+                'revenue_plan_mapped',
                 'revenue_plan_mapped__period_mapped'
-            )
+            ).prefetch_related()
         return super().get_queryset().none()
 
     @swagger_auto_schema(

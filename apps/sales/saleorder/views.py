@@ -274,6 +274,9 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(
             delivery_status__in=[0, 1, 2]
+        ).select_related(
+            'employee_inherit',
+            'employee_inherit__group'
         ).prefetch_related('sale_order_product_sale_order')
 
     @swagger_auto_schema(
