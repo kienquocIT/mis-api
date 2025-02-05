@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from pylint.checkers.utils import is_default_argument
+from django.utils import timezone
 
 from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber, CompanyBankAccount
@@ -33,10 +33,11 @@ from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
+from ..accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
-    Employee, Role, EmployeePermission, RolePermission,
+    Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
+    PlanRole, PlanRoleApp,
 )
 from ..core.mailer.models import MailTemplateSystem
 from ..eoffice.leave.leave_util import leave_available_map_employee
@@ -45,6 +46,8 @@ from ..eoffice.meeting.models import MeetingSchedule
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
+from ..masterdata.saledata.serializers import PaymentTermListSerializer
+from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.arinvoice.models import ARInvoice
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler, DeliHandler
@@ -77,7 +80,8 @@ from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog,
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
 from ..sales.report.serializers import BalanceInitializationCreateSerializer
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
+    SaleOrderAppConfig, SaleOrderPaymentStage
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
@@ -2476,46 +2480,6 @@ def update_default_masterdata():
             item.rounding = 4
             item.is_default = 1
             item.save()
-
-    for company_obj in Company.objects.all():
-        group = UnitOfMeasure.objects.filter(
-            tenant=company_obj.tenant,
-            company=company_obj,
-            group__code='Labor'
-        )
-        UnitOfMeasure.objects.create(
-            tenant=company_obj.tenant,
-            company=company_obj,
-            code='Manhour',
-            title='Man hour',
-            is_referenced_unit=1,
-            ratio=1,
-            rounding=4,
-            is_default=1,
-            group=group
-        )
-        UnitOfMeasure.objects.create(
-            tenant=company_obj.tenant,
-            company=company_obj,
-            code='Manday',
-            title='Man day',
-            is_referenced_unit=1,
-            ratio=8,
-            rounding=4,
-            is_default=1,
-            group=group
-        )
-        UnitOfMeasure.objects.create(
-            tenant=company_obj.tenant,
-            company=company_obj,
-            code='Manmonth',
-            title='Man month',
-            is_referenced_unit=1,
-            ratio=176,
-            rounding=4,
-            is_default=1,
-            group=group
-        )
     print('Done :))')
 
 
