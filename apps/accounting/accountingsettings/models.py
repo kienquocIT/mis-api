@@ -1,10 +1,11 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel
 
-__all__ = ['ChartOfAccounts']
+__all__ = [
+    'ChartOfAccounts',
+    'DefaultAccountDefinition'
+]
 
 CHART_OF_ACCOUNT_TYPE = [
     (0, _("Off-table accounts")),
@@ -48,9 +49,6 @@ class ChartOfAccounts(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
 
 class DefaultAccountDefinition(MasterDataAbstractModel):
     account_mapped = models.ForeignKey(ChartOfAccounts, on_delete=models.CASCADE)
@@ -63,6 +61,3 @@ class DefaultAccountDefinition(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)

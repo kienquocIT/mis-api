@@ -3,8 +3,7 @@ from apps.core.company.views import (
     CompanyList,
     CompanyDetail, CompanyUploadLogo,
     CompanyListOverview,
-    CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
-    CompanyConfigDetail, RestoreDefaultOpportunityConfigStage, CompanyBankAccountList,
+    CompanyUserNotMapEmployeeList, CompanyOverviewDetail, CompanyBankAccountList,
     CompanyConfigDetail, RestoreDefaultOpportunityConfigStage, AccountingPoliciesDetail,
 )
 
