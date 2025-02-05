@@ -51,3 +51,21 @@ class GoodsDetail(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def push_product_info(cls, instance):
+        if instance.product:
+            instance.product.save(**{
+                'update_stock_info': {
+                    'quantity_receipt_po': 0,
+                    'quantity_receipt_actual': instance.imported_sn_quantity,
+                    'system_status': 3,
+                },
+                'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
+            })
+        return True
+
+    def save(self, *args, **kwargs):
+        self.push_product_info(instance=self)  # product inventory info
+        # hit DB
+        super().save(*args, **kwargs)
