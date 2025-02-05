@@ -1361,6 +1361,7 @@ def contract_runtime(sender, instance, created, **kwargs):
                 'assignee_id': str(employee),
                 'employee_created_id': str(created_email.id),
                 'contract_id': str(contract.id),
+                'signature_runtime_id': str(instance.id)
             }
         )
     print('contract signature runtime is activate')

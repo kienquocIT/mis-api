@@ -578,7 +578,9 @@ def send_mail_new_project_member(tenant_id, company_id, prj_owner, prj_member, p
 
 
 @shared_task
-def send_mail_new_contract_submit(tenant_id, company_id, assignee_id, employee_created_id, contract_id):
+def send_mail_new_contract_submit(
+        tenant_id, company_id, assignee_id, employee_created_id, contract_id, signature_runtime_id
+):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=8)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
@@ -598,7 +600,7 @@ def send_mail_new_contract_submit(tenant_id, company_id, assignee_id, employee_c
                     doc_id=contract_id, subject=subject,
                 )
                 if log_cls.create():
-                    state_send = mail_request_sign(
+                    state_send = mail_request_signing(
                         cls=cls, log_cls=log_cls,
                         **{
                             'tenant_id': tenant_id,
@@ -607,6 +609,7 @@ def send_mail_new_contract_submit(tenant_id, company_id, assignee_id, employee_c
                             'employee_created': employee_created,
                             'contract_id': contract_id,
                             'template_obj': template_obj,
+                            'signature_runtime_id': signature_runtime_id
                         }
                     )
                     if state_send is True:
@@ -621,20 +624,19 @@ def send_mail_new_contract_submit(tenant_id, company_id, assignee_id, employee_c
     return obj_got
 
 
-def mail_request_sign(cls, log_cls, **kwargs):
+def mail_request_signing(cls, log_cls, **kwargs):
     tenant_id = kwargs.get('tenant_id', None)
     subject = kwargs.get('subject', None)
     assignee = kwargs.get('assignee', None)
     employee_created = kwargs.get('employee_created', None)
     contract = kwargs.get('contract_id', None)
     template_obj = kwargs.get('template_obj', None)
+    signature_runtime_id = kwargs.get('signature_runtime_id', None)
 
     tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
     contract_obj = DisperseModel(app_model='employeeinfo.EmployeeContract').get_model().objects.filter(
         pk=contract
     ).first()
-
-    # todo here đang check đến đây test send mail khi trình ký HD
     log_cls.update(
         address_sender=cls.from_email if cls.from_email else '',
     )
@@ -651,13 +653,14 @@ def mail_request_sign(cls, log_cls, **kwargs):
             header={},
             reply_to=cls.kwargs['reply_email'],
         ).send(
-            as_name=None,
+            as_name='No Reply',
             mail_to=[assignee.email],
             mail_cc=[],
             mail_bcc=[],
             template=template_obj.contents,
             data=MailDataResolver.new_contract(
-                tenant_obj=tenant_obj, assignee=assignee, employee_created=employee_created, contract=contract_obj
+                tenant_obj=tenant_obj, assignee=assignee, employee_created=employee_created, contract=contract_obj,
+                signature_runtime=signature_runtime_id
             ),
         )
     except Exception as err:

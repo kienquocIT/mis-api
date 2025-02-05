@@ -88,5 +88,5 @@ TEMPLATE_REQUEST_CONTRACT_DEFAULT = _(
     "<div style=\"background: #f6f6f6;text-align: center;padding: 20px 25px\"><p>You have a document needed signature from:</p>"
     "<p><b><span class=\"params-data\" data-code=\"_contract__created_email\"></span></b></p>"
     "<p><b><span class=\"params-data\" data-code=\"_contract__title\"></span></b></p>"
-    "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#000;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">View document</a></p></div>"
+    "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">View document</a></p></div>"
 )
