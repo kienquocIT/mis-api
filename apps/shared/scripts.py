@@ -3033,3 +3033,19 @@ def update_employee_revenue_plan():
         item.company = item.revenue_plan_mapped.company
         item.save(update_fields=['employee_created', 'employee_inherit', 'tenant', 'company'])
     print('Done :))')
+
+
+def reset_run_indicator_fields(kwargs):
+    for sale_order in SaleOrder.objects.filter(**kwargs):
+        for so_indicator in SaleOrderIndicator.objects.filter(
+                sale_order=sale_order, quotation_indicator__code__in=["IN0001", "IN0003", "IN0006"]
+        ):
+            if so_indicator.quotation_indicator.code == "IN0001":
+                sale_order.indicator_revenue = so_indicator.indicator_value
+            if so_indicator.quotation_indicator.code == "IN0003":
+                sale_order.indicator_gross_profit = so_indicator.indicator_value
+            if so_indicator.quotation_indicator.code == "IN0006":
+                sale_order.indicator_net_income = so_indicator.indicator_value
+        sale_order.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    print('reset_run_indicator_fields done.')
+
