@@ -26,7 +26,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityCallLogCreateSerializer
     serializer_detail = OpportunityCallLogDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
     ]
@@ -104,7 +104,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityEmailCreateSerializer
     serializer_detail = OpportunityEmailDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
     ]
@@ -201,7 +201,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityMeetingDetailSerializer
     filterset_class = OpportunityMeetingFilters
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
     ]
