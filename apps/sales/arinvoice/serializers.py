@@ -167,7 +167,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status',
 
             'customer_code',
             'customer_name',
@@ -231,7 +230,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'delivery_mapped',
             'item_mapped',
             'attachment',
-
+            'invoice_status',
             'is_free_input',
             'customer_code',
             'customer_name',
@@ -287,6 +286,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'id': obj.sale_order_mapped_id,
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title,
+            'sale_order_payment_stage': obj.sale_order_mapped.sale_order_payment_stage
         } if obj.sale_order_mapped else {}
 
     @classmethod
@@ -329,7 +329,6 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'system_status',
 
             'customer_code',
             'customer_name',
@@ -545,6 +544,7 @@ class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
             'title',
             'code',
             'opportunity',
+            'sale_order_payment_stage'
         )
 
     @classmethod
