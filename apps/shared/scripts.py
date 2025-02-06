@@ -27,6 +27,7 @@ from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, Ru
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
+    FixedAssetClassificationGroup, FixedAssetClassification,
 )
 from misapi.asgi import application
 from . import MediaForceAPI, DisperseModel
@@ -3031,3 +3032,71 @@ def update_employee_revenue_plan():
         item.company = item.revenue_plan_mapped.company
         item.save(update_fields=['employee_created', 'employee_inherit', 'tenant', 'company'])
     print('Done :))')
+
+
+def create_default_masterdata_fixed_asset():
+    Fixed_Asset_Classification_Group_data = [
+        {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
+        {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
+        {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
+    ]
+    Fixed_Asset_Classification_data = [
+        {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
+        {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
+        {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
+        {'code': 'FAC004', 'title': 'Quyền sử dụng đất', 'is_default': 1},
+        {'code': 'FAC005', 'title': 'Quyền phát hành', 'is_default': 1},
+        {'code': 'FAC006', 'title': 'Bản quyền, bằng sáng chế', 'is_default': 1},
+        {'code': 'FAC007', 'title': 'TSCD hữu hình thuê tài chính', 'is_default': 1},
+        {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
+    ]
+    count = 0
+    for company in Company.objects.all():
+        try:
+            # tai san co dinh huu hinh
+            tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[0]
+            )
+
+            # tai san co dinh vo hinh
+            intangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[1]
+            )
+
+            # tai san co dinh thue tai chinh
+            finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[2]
+            )
+
+            # create asset classification
+            for index, data in enumerate(Fixed_Asset_Classification_data):
+                if index < 3:
+                    # First 3 items belong to tangible_fixed_asset_group_instance
+                    group_instance = tangible_fixed_asset_group_instance
+                elif index < 6:
+                    # Next 3 items belong to intangible_fixed_asset_group_instance
+                    group_instance = intangible_fixed_asset_group_instance
+                else:
+                    # Last 2 items belong to finance_leasing_fixed_asset_group_instance
+                    group_instance = finance_leasing_fixed_asset_group_instance
+
+                # Create FixedAssetClassification instance
+                FixedAssetClassification.objects.create(
+                    tenant=company.tenant,
+                    company=company,
+                    group=group_instance,  # Assign the group
+                    **data
+                )
+            count +=1
+        except Exception as err:
+            print(
+                '[ERROR]',
+                str(company.id), str(err)
+            )
+    return True
