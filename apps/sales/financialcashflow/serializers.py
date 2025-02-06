@@ -473,7 +473,6 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
         # payment_value = sum(item.sum_payment_value for item in obj.cash_inflow_item_ar_invoice.filter(
         #     cash_inflow__system_status=3
         # ))
-        print(obj.id)
         payment_value = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
         return payment_value
 
