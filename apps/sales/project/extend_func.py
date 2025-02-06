@@ -77,16 +77,14 @@ def get_prj_mem_of_crt_user(prj_obj, employee_current):
 
 
 def check_permit_add_member_pj(task, emp_crt):
-    # special case skip with True if current user is employee_inherit
-    # check is user create prj
-    # or user in team member and have permission
-    # or user in team member with do not have permit but create sub-task
+    # allow create if user is project owner (employee_inherit) -> cho phép nếu user là user tạo project
+    # allow create if user is have permission add group/work -> cho phép nếu user có quyển tạo group/work
+    # can't create task but can create sub-task -> ko cho tạo task nhưng có thể tạo sub-task
     emp_id = emp_crt.id
     prj_obj = task['project'] if hasattr(task, 'project') else task
     pj_member_current_user = get_prj_mem_of_crt_user(prj_obj=prj_obj, employee_current=emp_crt)
     if str(prj_obj.employee_inherit_id) == str(emp_id) or pj_member_current_user.permit_add_gaw or (
-            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(task, 'id')
-    ):
+            pj_member_current_user.permit_add_gaw is False and hasattr(task, 'parent_n') and not hasattr(task, 'id')):
         return True
     return False
 
