@@ -268,6 +268,7 @@ class Product(DataAbstractModel):
     available_notify_quantity = models.IntegerField(null=True)
 
     # Begin lease fields
+
     # These fields will be created/ updated when GoodsRecovery
     lease_source = models.ForeignKey(
         "self",

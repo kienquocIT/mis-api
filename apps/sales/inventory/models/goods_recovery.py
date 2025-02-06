@@ -169,12 +169,12 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
 
     # Begin depreciation fields
 
-    product_depreciation_subtotal = models.FloatField(default=0)
-    product_depreciation_price = models.FloatField(default=0)
     product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
     product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
 
     # End depreciation fields
 
