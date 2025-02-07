@@ -501,6 +501,8 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     product_depreciation_start_date = serializers.CharField()
     product_depreciation_end_date = serializers.CharField()
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
 
     class Meta:
         model = LeaseOrderCost
@@ -542,6 +544,9 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
         )
 
     @classmethod
@@ -576,8 +581,8 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
 class LeaseOrderCostLeasedSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField()
     uom_time_id = serializers.UUIDField(required=False, allow_null=True)
-    product_depreciation_start_date = serializers.CharField()
-    product_depreciation_end_date = serializers.CharField()
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
 
     class Meta:
         model = LeaseOrderCostLeased
@@ -594,11 +599,10 @@ class LeaseOrderCostLeasedSerializer(serializers.ModelSerializer):
             # depreciation fields
             'product_depreciation_subtotal',
             'product_depreciation_price',
-            'product_depreciation_method',
-            'product_depreciation_adjustment',
             'product_depreciation_time',
-            'product_depreciation_start_date',
-            'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
         )
 
     @classmethod

@@ -943,9 +943,11 @@ class ConfigDefaultData:
             x.application for x in
             PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
         ]
+        # Xóa WF config của app tắt is_workflow trong data config application
         for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
             print('delete Workflow Config App: ', obj.application, obj.company)
             obj.delete()
+        # Tạo mới WF config cho app bật is_workflow trong data config application
         for app in app_objs:
             if app.is_workflow is True:
                 WorkflowConfigOfApp.objects.get_or_create(

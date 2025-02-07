@@ -6,7 +6,6 @@ from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryWarehouse, RecoveryLeaseGenerate
-from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import AccountsMsg, ProductMsg, WarehouseMsg, SaleMsg
 
@@ -73,8 +72,6 @@ class RecoveryCommonCreate:
     @classmethod
     def create_sub_models(cls, instance):
         cls.create_recovery_delivery(instance=instance)
-
-        RecoveryFinishHandler.clone_lease_product(instance=instance)
         return True
 
 
@@ -182,6 +179,8 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
     uom_time_id = serializers.UUIDField(required=False)
     product_depreciation_start_date = serializers.CharField()
     product_depreciation_end_date = serializers.CharField()
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
     product_warehouse_data = RecoveryWarehouseSerializer(many=True, required=False)
 
     class Meta:
@@ -216,6 +215,9 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
         )
 
     @classmethod

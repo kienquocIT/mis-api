@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 # from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.shared import DataAbstractModel, STATUS_RECOVERY, MasterDataAbstractModel, ASSET_TYPE
 
@@ -80,7 +81,7 @@ class GoodsRecovery(DataAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
-
+                    RecoveryFinishHandler.clone_lease_product(instance=self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -168,13 +169,16 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
 
     # Begin depreciation fields
 
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
     product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
     product_depreciation_adjustment = models.FloatField(default=0)
     product_depreciation_time = models.FloatField(default=0)
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
-    product_depreciation_subtotal = models.FloatField(default=0)
-    product_depreciation_price = models.FloatField(default=0)
+
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
 
     # End depreciation fields
 

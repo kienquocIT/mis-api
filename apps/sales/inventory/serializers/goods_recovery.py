@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-# from apps.core.workflow.tasks import decorator_run_workflow
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import GoodsRecovery
 from apps.sales.inventory.serializers.goods_recovery_sub import RecoveryCommonCreate, RecoveryCommonValidate, \
     RecoveryDeliverySerializer
@@ -100,7 +100,7 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
     def validate_lease_order_id(cls, value):
         return RecoveryCommonValidate().validate_lease_order_id(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         goods_recovery = GoodsRecovery.objects.create(**validated_data)
         RecoveryCommonCreate().create_sub_models(instance=goods_recovery)
@@ -139,7 +139,7 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
     def validate_lease_order_id(cls, value):
         return RecoveryCommonValidate().validate_lease_order_id(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
