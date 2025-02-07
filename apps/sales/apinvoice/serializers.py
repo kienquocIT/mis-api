@@ -118,7 +118,7 @@ class APInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_default=False).count() + 1
+        number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True).count() + 1
         ap_invoice = APInvoice.objects.create(
             **validated_data,
             code=f'AP-00{number}'
