@@ -75,6 +75,7 @@ class CashInflow(DataAbstractModel):
                 company_id=cif.company_id,
                 tenant_id=cif.tenant_id,
             )
+            order = 0
             for cif_item in cif.cash_inflow_item_cash_inflow.all():
                 if cif_item.ar_invoice:
                     ReconciliationItem.objects.create(
@@ -84,7 +85,7 @@ class CashInflow(DataAbstractModel):
                             'code': recon_obj.code,
                             'title': recon_obj.title
                         },
-                        order=0,
+                        order=order,
                         ar_invoice=cif_item.ar_invoice,
                         ar_invoice_data=cif_item.ar_invoice_data,
                         recon_balance=cif_item.sum_balance_value,
@@ -99,7 +100,7 @@ class CashInflow(DataAbstractModel):
                             'code': recon_obj.code,
                             'title': recon_obj.title
                         },
-                        order=1,
+                        order=order+1,
                         cash_inflow=cif,
                         cash_inflow_data={
                             'id': str(cif.id),
@@ -115,6 +116,7 @@ class CashInflow(DataAbstractModel):
                         note='',
                         accounting_account='1311'
                     )
+                    order += 2
             return True
         return False
 
