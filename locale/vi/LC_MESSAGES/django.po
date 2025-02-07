@@ -1409,3 +1409,7 @@ msgstr "Lỗi tạo tư vấn"
 #
 msgid "Total payment must be equal to total after tax."
 msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thuế."
+
+#
+msgid "This product is being used. Can not update general uom group."
+msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."

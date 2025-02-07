@@ -827,7 +827,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         old_valuation_method = self.instance.valuation_method
         new_valuation_method = validate_data.get('valuation_method')
-        print(old_valuation_method, new_valuation_method)
         if all([
             ProductWareHouse.objects.filter(product=self.instance).exists(),
             new_valuation_method != old_valuation_method
@@ -837,9 +836,30 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             )
         return validate_data
 
+    @staticmethod
+    def get_model_related(instance):
+        related_objects = instance._meta.get_fields()
+        result = {}
+        for field in related_objects:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(instance, related_name)
+                related_records = list(related_manager.all())
+                if related_records:
+                    result[related_name] = related_records
+        model_related = []
+        for related_name, record_list in result.items():
+            for record in record_list:
+                model_related.append(record._meta.model_name)
+        return model_related
+
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:
-            raise serializers.ValidationError({'general_uom_group': 'Can not update general uom group.'})
+            model_related = self.get_model_related(instance)
+            if not (len(model_related) == 1 and model_related[0] == 'productproducttype'):
+                raise serializers.ValidationError(
+                    {'general_uom_group': _('This product is being used. Can not update general uom group.')}
+                )
         validated_data.update(
             {'volume': CommonCreateUpdateProduct.sub_validate_volume_obj(self.initial_data, validated_data)}
         )
