@@ -7,20 +7,24 @@ from datetime import datetime
 import requests
 from rest_framework import serializers
 from apps.core.recurrence.models import Recurrence
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
 )
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import SaleMsg, SYSTEM_STATUS
+from apps.shared import (
+    SaleMsg,
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+)
 
 __all__ = [
-    'SaleOrderListSerializerForARInvoice',
-    'DeliveryListSerializerForARInvoice',
     'ARInvoiceListSerializer',
     'ARInvoiceDetailSerializer',
     'ARInvoiceCreateSerializer',
     'ARInvoiceUpdateSerializer',
+    'SaleOrderListSerializerForARInvoice',
+    'DeliveryListSerializerForARInvoice',
     'ARInvoiceSignListSerializer',
     'ARInvoiceSignCreateSerializer',
     'ARInvoiceSignDetailSerializer',
@@ -28,10 +32,9 @@ __all__ = [
 ]
 
 
-class ARInvoiceListSerializer(serializers.ModelSerializer):
+class ARInvoiceListSerializer(AbstractListSerializerModel):
     customer_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -50,7 +53,6 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'invoice_number',
             'invoice_example',
             'invoice_status',
-            'system_status'
         )
 
     @classmethod
@@ -69,92 +71,8 @@ class ARInvoiceListSerializer(serializers.ModelSerializer):
             'title': obj.sale_order_mapped.title
         } if obj.sale_order_mapped else {}
 
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
-
-def create_delivery_mapped(ar_invoice, delivery_mapped_list):
-    bulk_data = []
-    for item in delivery_mapped_list:
-        bulk_data.append(ARInvoiceDelivery(ar_invoice=ar_invoice, delivery_mapped_id=item))
-    ARInvoiceDelivery.objects.filter(ar_invoice=ar_invoice).delete()
-    ARInvoiceDelivery.objects.bulk_create(bulk_data)
-    return True
-
-
-def create_item_mapped(ar_invoice, data_item_list):
-    bulk_data = []
-    for item in data_item_list:
-        bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
-    ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
-    item_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
-    return item_mapped
-
-
-def create_files_mapped(ar_invoice, file_id_list):
-    try:
-        bulk_data_file = []
-        for index, file_id in enumerate(file_id_list):
-            bulk_data_file.append(ARInvoiceAttachmentFile(
-                ar_invoice=ar_invoice,
-                attachment_id=file_id,
-                order=index
-            ))
-        ARInvoiceAttachmentFile.objects.filter(ar_invoice=ar_invoice).delete()
-        ARInvoiceAttachmentFile.objects.bulk_create(bulk_data_file)
-        return True
-    except Exception as err:
-        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
-
-
-def generate_token(http_method, username, password):
-    epoch_start = 0
-    timestamp = str(int(time.time() - epoch_start))
-    nonce = uuid.uuid4().hex
-    signature_raw_data = http_method.upper() + timestamp + nonce
-
-    md5 = hashlib.md5()
-    md5.update(signature_raw_data.encode('utf-8'))
-    signature = base64.b64encode(md5.digest()).decode('utf-8')
-
-    return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
-
-
-def read_money_vnd(num):
-    text1 = ' mươi'
-    text2 = ' trăm'
-
-    xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
-    xe1 = ['', 'mười'] + [f'{pre}{text1}' for pre in xe0[2:]]
-    xe2 = [''] + [f'{pre}{text2}' for pre in xe0[1:]]
-
-    result = ""
-    str_n = str(num)
-    len_n = len(str_n)
-
-    if len_n == 1:
-        result = xe0[num]
-    elif len_n == 2:
-        if num == 10:
-            result = "mười"
-        else:
-            result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
-    elif len_n == 3:
-        result = xe2[int(str_n[0])] + " " + read_money_vnd(int(str_n[1:]))
-    elif len_n <= 6:
-        result = read_money_vnd(int(str_n[:-3])) + " nghìn, " + read_money_vnd(int(str_n[-3:]))
-    elif len_n <= 9:
-        result = read_money_vnd(int(str_n[:-6])) + " triệu, " + read_money_vnd(int(str_n[-6:]))
-    elif len_n <= 12:
-        result = read_money_vnd(int(str_n[:-9])) + " tỷ, " + read_money_vnd(int(str_n[-9:]))
-
-    return result
-
-
-class ARInvoiceCreateSerializer(serializers.ModelSerializer):
+class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = ARInvoice
         fields = (
@@ -167,7 +85,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-
             'customer_code',
             'customer_name',
             'buyer_name',
@@ -175,7 +92,6 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'customer_billing_address',
             'customer_bank_code',
             'customer_bank_number',
-
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -187,23 +103,26 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             validate_data['is_free_input'] = True
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
-        ar_invoice = ARInvoice.objects.create(**validated_data, system_status=1)
+        ar_invoice = ARInvoice.objects.create(**validated_data)
 
-        create_delivery_mapped(ar_invoice, self.initial_data.get('delivery_mapped_list', []))
-        create_item_mapped(
+        ARInvoiceCommonFunc.create_delivery_mapped(
+            ar_invoice,
+            self.initial_data.get('delivery_mapped_list', [])
+        )
+        ARInvoiceCommonFunc.create_item_mapped(
             ar_invoice,
             self.initial_data.get('data_item_list', [])
         )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(ar_invoice, attachment.strip().split(','))
+            ARInvoiceCommonFunc.create_files_mapped(ar_invoice, attachment.strip().split(','))
 
         return ar_invoice
 
 
-class ARInvoiceDetailSerializer(serializers.ModelSerializer):
+class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
     delivery_mapped = serializers.SerializerMethodField()
     item_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
@@ -225,7 +144,6 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_info',
             'invoice_example',
-            'system_status',
             'is_created_einvoice',
             'delivery_mapped',
             'item_mapped',
@@ -301,7 +219,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             http_method = "POST"
             username = "API"
             password = "Api@0317493763"
-            token = generate_token(http_method, username, password)
+            token = ARInvoiceCommonFunc.generate_token(http_method, username, password)
             headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
             response = requests.post(
                 "http://0317493763.softdreams.vn/api/publish/getInvoicesByIkeys",
@@ -318,7 +236,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
         return {}
 
 
-class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
+class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = ARInvoice
         fields = (
@@ -329,7 +247,6 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-
             'customer_code',
             'customer_name',
             'buyer_name',
@@ -355,7 +272,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
         if not (bank_code and bank_number):
             raise serializers.ValidationError({'error': "Can not find bank information."})
 
-        money_text = read_money_vnd(int(amount))
+        money_text = ARInvoiceCommonFunc.read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
         buyer_name = ''
@@ -486,7 +403,7 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     def create_update_invoice(cls, instance, item_mapped):
         xml_data = cls.create_xml(instance, item_mapped, instance.invoice_sign)
 
-        token = generate_token("POST", "API", "Api@0317493763")
+        token = ARInvoiceCommonFunc.generate_token("POST", "API", "Api@0317493763")
         headers = {"Authentication": f"{token}", "Content-Type": "application/json"}
 
         response = requests.post(
@@ -511,29 +428,117 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        create_delivery_mapped(instance, self.initial_data.get('delivery_mapped_list', []))
-        create_item_mapped(
+        ARInvoiceCommonFunc.create_delivery_mapped(
+            instance,
+            self.initial_data.get('delivery_mapped_list', [])
+        )
+        ARInvoiceCommonFunc.create_item_mapped(
             instance,
             self.initial_data.get('data_item_list', [])
         )
-        # item_mapped = create_item_mapped(
+        # item_mapped = ARInvoiceCommonFunc.create_item_mapped(
         #     instance,
         #     self.initial_data.get('data_item_list', [])
         # )
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            create_files_mapped(instance, attachment.strip().split(','))
+            ARInvoiceCommonFunc.create_files_mapped(instance, attachment.strip().split(','))
 
         # self.create_update_invoice(instance, item_mapped)
 
         return instance
 
 
+class ARInvoiceCommonFunc:
+    @staticmethod
+    def create_delivery_mapped(ar_invoice, delivery_mapped_list):
+        bulk_data = []
+        for item in delivery_mapped_list:
+            bulk_data.append(ARInvoiceDelivery(ar_invoice=ar_invoice, delivery_mapped_id=item))
+        ARInvoiceDelivery.objects.filter(ar_invoice=ar_invoice).delete()
+        ARInvoiceDelivery.objects.bulk_create(bulk_data)
+        return True
+
+    @staticmethod
+    def create_item_mapped(ar_invoice, data_item_list):
+        bulk_data = []
+        for item in data_item_list:
+            bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
+        ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
+        item_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
+        return item_mapped
+
+    @staticmethod
+    def create_files_mapped(ar_invoice, file_id_list):
+        try:
+            bulk_data_file = []
+            for index, file_id in enumerate(file_id_list):
+                bulk_data_file.append(ARInvoiceAttachmentFile(
+                    ar_invoice=ar_invoice,
+                    attachment_id=file_id,
+                    order=index
+                ))
+            ARInvoiceAttachmentFile.objects.filter(ar_invoice=ar_invoice).delete()
+            ARInvoiceAttachmentFile.objects.bulk_create(bulk_data_file)
+            return True
+        except Exception as err:
+            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+    @staticmethod
+    def generate_token(http_method, username, password):
+        epoch_start = 0
+        timestamp = str(int(time.time() - epoch_start))
+        nonce = uuid.uuid4().hex
+        signature_raw_data = http_method.upper() + timestamp + nonce
+
+        md5 = hashlib.md5()
+        md5.update(signature_raw_data.encode('utf-8'))
+        signature = base64.b64encode(md5.digest()).decode('utf-8')
+
+        return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
+
+    @staticmethod
+    def read_money_vnd(num):
+        text1 = ' mươi'
+        text2 = ' trăm'
+
+        xe0 = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín']
+        xe1 = ['', 'mười'] + [f'{pre}{text1}' for pre in xe0[2:]]
+        xe2 = [''] + [f'{pre}{text2}' for pre in xe0[1:]]
+
+        result = ""
+        str_n = str(num)
+        len_n = len(str_n)
+
+        if len_n == 1:
+            result = xe0[num]
+        elif len_n == 2:
+            if num == 10:
+                result = "mười"
+            else:
+                result = xe1[int(str_n[0])] + " " + xe0[int(str_n[1])]
+        elif len_n == 3:
+            result = xe2[int(str_n[0])] + " " + ARInvoiceCommonFunc.read_money_vnd(int(str_n[1:]))
+        elif len_n <= 6:
+            result = (ARInvoiceCommonFunc.read_money_vnd(int(str_n[:-3])) +
+                      " nghìn, " + ARInvoiceCommonFunc.read_money_vnd(int(str_n[-3:])))
+        elif len_n <= 9:
+            result = (ARInvoiceCommonFunc.read_money_vnd(int(str_n[:-6])) +
+                      " triệu, " + ARInvoiceCommonFunc.read_money_vnd(int(str_n[-6:])))
+        elif len_n <= 12:
+            result = (ARInvoiceCommonFunc.read_money_vnd(int(str_n[:-9])) +
+                      " tỷ, " + ARInvoiceCommonFunc.read_money_vnd(int(str_n[-9:])))
+
+        return result
+
+
+# related serializers
 class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
 

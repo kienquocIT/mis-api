@@ -89,7 +89,16 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        self.add_auto_generate_code_to_instance(self, 'AR[n4]', False)
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.add_auto_generate_code_to_instance(self, 'AR[n4]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
         # hit DB
