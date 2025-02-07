@@ -59,4 +59,5 @@ msgstr "Bạn không có quyền đóng/hoàn thành dự án này"
 
 #
 msgid "Order keyword when create is error"
-msgstr "Lỗi không update dc thứ tự của nhóm và công việc"
+msgstr "Lỗi không cập nhập được thứ tự của Nhóm và Công việc"
+

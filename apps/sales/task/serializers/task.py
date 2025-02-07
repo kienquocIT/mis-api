@@ -587,6 +587,12 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if 'project' in attrs:
             employee_current = self.context.get('user', None).employee_current
             check_permit = check_permit_add_member_pj(attrs['project'], employee_current)
+            # nếu user chỉ update
+            if str(self.instance.project.id) != str(attrs['project'].id) and str(
+                    self.instance.employee_inherit.id) != str(employee_current.id):
+                check_permit = False
+            if self.instance.project.project_status == 4:
+                check_permit = False
             if check_permit:
                 return attrs
             raise serializers.ValidationError({'detail': ProjectMsg.PERMISSION_ERROR})
