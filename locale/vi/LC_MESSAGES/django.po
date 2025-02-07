@@ -1413,3 +1413,7 @@ msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thu�
 #
 msgid "This product is being used. Can not update general uom group."
 msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."
+
+#
+msgid "This product is in Price list. Can not update general uom group. Uncheck Sale tab first."
+msgstr "Sản phẩm này đang có trong Bảng giá. Không thể cập nhật nhóm đơn vị tính. Hãy bỏ chọn tab Bán hàng trước tiên."

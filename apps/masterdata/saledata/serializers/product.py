@@ -856,6 +856,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:
             model_related = self.get_model_related(instance)
+            if 'price' in model_related or 'productpricelist' in model_related:
+                raise serializers.ValidationError(
+                    {'general_uom_group': _(
+                        'This product is in Price list. Can not update general uom group. Uncheck Sale tab first.'
+                    )}
+                )
             if not (len(model_related) == 1 and model_related[0] == 'productproducttype'):
                 raise serializers.ValidationError(
                     {'general_uom_group': _('This product is being used. Can not update general uom group.')}
