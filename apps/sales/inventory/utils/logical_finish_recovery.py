@@ -14,8 +14,6 @@ class RecoveryFinishHandler:
             for recovery_product in instance.recovery_product_recovery.all():
                 original_instance = recovery_product.offset
                 lease_time = recovery_product.product_quantity_time
-                depreciation_price = recovery_product.product_depreciation_price
-                depreciation_time = recovery_product.product_quantity_depreciation
                 date_first_delivery = recovery_product.recovery_delivery.delivery_data.get(
                     'actual_delivery_date', None
                 ) if recovery_product.recovery_delivery else None
@@ -38,10 +36,14 @@ class RecoveryFinishHandler:
                         model_product=model_product
                     )  # Generate lease code
                     cloned_instance.lease_time_previous = lease_time
-                    cloned_instance.depreciation_price = depreciation_price
-                    cloned_instance.depreciation_time = depreciation_time
                     cloned_instance.origin_cost = recovery_product.product_unit_price
                     cloned_instance.date_first_delivery = date_first_delivery
+                    cloned_instance.depreciation_price = recovery_product.product_depreciation_price
+                    cloned_instance.depreciation_method = recovery_product.product_depreciation_method
+                    cloned_instance.depreciation_adjustment = recovery_product.product_depreciation_adjustment
+                    cloned_instance.depreciation_time = recovery_product.product_depreciation_time
+                    cloned_instance.depreciation_start_date = recovery_product.product_depreciation_start_date
+                    cloned_instance.depreciation_end_date = recovery_product.product_depreciation_end_date
 
                     cloned_instance.save()  # Save as a new record
 

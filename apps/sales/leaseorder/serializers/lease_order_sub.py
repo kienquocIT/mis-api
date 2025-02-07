@@ -522,7 +522,6 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'product_uom_code',
             'product_quantity',
             'product_quantity_time',
-            'product_quantity_depreciation',
             'product_cost_price',
             'product_depreciation_price',
             'product_tax_title',
@@ -539,9 +538,10 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'product_depreciation_subtotal',
             'product_depreciation_price',
             'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
-            'product_depreciation_adjustment',
         )
 
     @classmethod
@@ -587,7 +587,6 @@ class LeaseOrderCostLeasedSerializer(serializers.ModelSerializer):
             'uom_time_id',
             'uom_time_data',
             'product_quantity_time',
-            'product_quantity_depreciation',
             'net_value',
             'product_depreciation_price',
             'product_subtotal_price',
@@ -596,9 +595,10 @@ class LeaseOrderCostLeasedSerializer(serializers.ModelSerializer):
             'product_depreciation_subtotal',
             'product_depreciation_price',
             'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
-            'product_depreciation_adjustment',
         )
 
     @classmethod

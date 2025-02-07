@@ -424,7 +424,6 @@ class LeaseOrderCost(MasterDataAbstractModel):
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
-    product_quantity_depreciation = models.FloatField(default=0)
     product_cost_price = models.FloatField(default=0)
     product_tax_title = models.CharField(max_length=100, blank=True, null=True)
     product_tax_value = models.FloatField(default=0)
@@ -446,9 +445,10 @@ class LeaseOrderCost(MasterDataAbstractModel):
     # Begin depreciation fields
 
     product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
-    product_depreciation_adjustment = models.FloatField(default=0)
     product_depreciation_subtotal = models.FloatField(default=0)
     product_depreciation_price = models.FloatField(default=0)
 
@@ -487,17 +487,12 @@ class LeaseOrderCostLeased(MasterDataAbstractModel):
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     product_quantity_time = models.FloatField(default=0)
-    product_quantity_depreciation = models.FloatField(default=0)
     net_value = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
     order = models.IntegerField(default=1)
 
     # Begin depreciation fields
 
-    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
-    product_depreciation_start_date = models.DateField(null=True)
-    product_depreciation_end_date = models.DateField(null=True)
-    product_depreciation_adjustment = models.FloatField(default=0)
     product_depreciation_subtotal = models.FloatField(default=0)
     product_depreciation_price = models.FloatField(default=0)
 

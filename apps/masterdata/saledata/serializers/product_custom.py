@@ -28,7 +28,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
             'lease_code', 'lease_time_previous', 'depreciation_price', 'depreciation_time',
-            'origin_cost', 'date_first_delivery',
+            'origin_cost', 'date_first_delivery', 'depreciation_start_date', 'depreciation_end_date',
         )
 
     @classmethod

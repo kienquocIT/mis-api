@@ -384,7 +384,6 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'uom_data': deli_product.uom_data,
                 'product_quantity': deli_product.product_quantity,
                 'product_quantity_time': deli_product.product_quantity_time,
-                'product_quantity_depreciation': deli_product.product_quantity_depreciation,
                 'product_unit_price': deli_product.product_unit_price,
                 'product_subtotal_price': 0,
                 'quantity_ordered': deli_product.delivery_quantity,
@@ -396,9 +395,10 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_depreciation_subtotal': deli_product.product_depreciation_subtotal,
                 'product_depreciation_price': deli_product.product_depreciation_price,
                 'product_depreciation_method': deli_product.product_depreciation_method,
-                'product_depreciation_start_date': obj.actual_delivery_date.date(),
-                'product_depreciation_end_date': deli_product.product_depreciation_end_date,
                 'product_depreciation_adjustment': deli_product.product_depreciation_adjustment,
+                'product_depreciation_time': deli_product.product_depreciation_time,
+                'product_depreciation_start_date': deli_product.product_depreciation_start_date,
+                'product_depreciation_end_date': deli_product.product_depreciation_end_date,
             }
             for deli_product in obj.delivery_product_delivery_sub.all()
         ]

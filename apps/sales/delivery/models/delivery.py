@@ -616,7 +616,6 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     )
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
-    product_quantity_depreciation = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
@@ -624,9 +623,10 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     # Begin depreciation fields
 
     product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
-    product_depreciation_adjustment = models.FloatField(default=0)
     product_depreciation_subtotal = models.FloatField(default=0)
     product_depreciation_price = models.FloatField(default=0)
 
@@ -732,16 +732,16 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             uom_time_data=old_obj.uom_time_data,
             product_quantity=old_obj.product_quantity,
             product_quantity_time=old_obj.product_quantity_time,
-            product_quantity_depreciation=old_obj.product_quantity_depreciation,
             product_unit_price=old_obj.product_unit_price,
             product_subtotal_price=old_obj.product_subtotal_price,
 
             product_depreciation_subtotal=old_obj.product_depreciation_subtotal,
             product_depreciation_price=old_obj.product_depreciation_price,
             product_depreciation_method=old_obj.product_depreciation_method,
+            product_depreciation_adjustment=old_obj.product_depreciation_adjustment,
+            product_depreciation_time=old_obj.product_depreciation_time,
             product_depreciation_start_date=old_obj.product_depreciation_start_date,
             product_depreciation_end_date=old_obj.product_depreciation_end_date,
-            product_depreciation_adjustment=old_obj.product_depreciation_adjustment,
 
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=delivered_quantity_before,
