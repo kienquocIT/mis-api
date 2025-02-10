@@ -47,6 +47,10 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'is_promotion',
             'product_data',
             'offset_data',
+            'product_quantity',
+            'product_quantity_new',
+            'product_quantity_leased',
+            'product_quantity_leased_data',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -157,7 +161,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'attachments',
             'delivery_logistic',
             'workflow_runtime_id',
-            'employee_inherit'
+            'employee_inherit',
         )
 
 

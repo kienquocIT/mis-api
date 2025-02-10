@@ -11,6 +11,7 @@ from apps.sales.delivery.models import (
     OrderPicking, OrderPickingSub, OrderPickingProduct,
     OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
 )
+from apps.sales.delivery.models.delivery import OrderDeliveryProductLeased
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 
@@ -24,7 +25,7 @@ class OrderActiveDeliverySerializer:
     def __init__(
             self,
             order_obj,  # SaleOrder || LeaseOrder
-            order_products: list[SaleOrderProduct],
+            order_products: list,
             delivery_config_obj: DeliveryConfig,
             process_id = None,
     ):
@@ -90,7 +91,10 @@ class OrderActiveDeliverySerializer:
             'uom_time': None,
             'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
-            'product_quantity_time': 0,
+            'product_quantity_new': m2m_obj.product_quantity_new,
+            'product_quantity_leased': m2m_obj.product_quantity_leased,
+            'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
+            'product_quantity_time': m2m_obj.product_quantity_time,
             'product_unit_price': m2m_obj.product_unit_price,
             'product_subtotal_price': m2m_obj.product_subtotal_price,
 
@@ -115,8 +119,6 @@ class OrderActiveDeliverySerializer:
                 cost_product = m2m_obj.product.lease_order_cost_product.filter(lease_order=self.order_obj).first()
                 if cost_product:
                     result.update({
-                        'product_quantity': cost_product.product_quantity,
-                        'product_quantity_time': cost_product.product_quantity_time,
                         'product_unit_price': cost_product.product_cost_price,
                         'product_subtotal_price': cost_product.product_subtotal_price,
 
@@ -164,6 +166,9 @@ class OrderActiveDeliverySerializer:
                 order=m2m_obj.order,
                 is_promotion=m2m_obj.is_promotion,
                 product_tax_value=m2m_obj.product_tax_value,
+                tenant_id=m2m_obj.tenant_id,
+                company_id=m2m_obj.company_id,
+
                 **kwargs,
             )
             obj_tmp.put_backup_data()
@@ -385,7 +390,12 @@ class OrderActiveDeliverySerializer:
                     )
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
-                    OrderDeliveryProduct.objects.bulk_create(_y)
+                    delivery_product_list = OrderDeliveryProduct.objects.bulk_create(_y)
+                    for delivery_product in delivery_product_list:
+                        OrderDeliveryProductLeased.objects.bulk_create([OrderDeliveryProductLeased(
+                            delivery_product=delivery_product, tenant_id=delivery_product.tenant_id,
+                            company_id=delivery_product.company_id, **product_leased,
+                        ) for product_leased in delivery_product.product_quantity_leased_data])
 
                     # update sale order delivery_status
                     self.order_obj.delivery_status = 1

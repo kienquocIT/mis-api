@@ -551,7 +551,7 @@ class OrderDeliverySub(DataAbstractModel):
         permissions = ()
 
 
-class OrderDeliveryProduct(SimpleAbstractModel):
+class OrderDeliveryProduct(MasterDataAbstractModel):
     delivery_sub = models.ForeignKey(
         OrderDeliverySub,
         on_delete=models.CASCADE,
@@ -615,6 +615,9 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
     product_quantity = models.FloatField(default=0)
+    product_quantity_new = models.FloatField(default=0)
+    product_quantity_leased = models.FloatField(default=0)
+    product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
@@ -768,6 +771,30 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OrderDeliveryProductLeased(MasterDataAbstractModel):
+    delivery_product = models.ForeignKey(
+        'delivery.OrderDeliveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_product_leased_delivery_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product leased",
+        related_name="delivery_product_leased_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+
+    class Meta:
+        verbose_name = 'Delivery Product Leased'
+        verbose_name_plural = 'Delivery Products Leased'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
