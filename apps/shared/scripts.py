@@ -3743,7 +3743,7 @@ class Accounting:
                             tenant=company.tenant,
                             title=sale_type_data[i],
                             account_mapped=account_mapped_data_sale[i],
-                            type=0,
+                            default_account_definition_type=0,
                             is_default=True
                         )
                     )
@@ -3754,7 +3754,7 @@ class Accounting:
                             tenant=company.tenant,
                             title=purchasing_type_data[i],
                             account_mapped=account_mapped_data_purchasing[i],
-                            type=1,
+                            default_account_definition_type=1,
                             is_default=True
                         )
                     )
@@ -3765,7 +3765,7 @@ class Accounting:
                             tenant=company.tenant,
                             title=inventory_type_data[i],
                             account_mapped=account_mapped_data_inventory[i],
-                            type=2,
+                            default_account_definition_type=2,
                             is_default=True
                         )
                     )

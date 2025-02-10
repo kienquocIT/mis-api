@@ -52,7 +52,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
 
 class DefaultAccountDefinition(MasterDataAbstractModel):
     account_mapped = models.ForeignKey(ChartOfAccounts, on_delete=models.CASCADE)
-    type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DEFINITION_TYPE, default=0)
+    default_account_definition_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DEFINITION_TYPE, default=0)
     is_default = models.BooleanField(default=False)
 
     class Meta:

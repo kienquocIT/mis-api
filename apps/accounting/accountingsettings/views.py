@@ -49,7 +49,7 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
     serializer_list = DefaultAccountDefinitionListSerializer
     serializer_create = DefaultAccountDefinitionCreateSerializer
     serializer_detail = DefaultAccountDefinitionDetailSerializer
-    filterset_fields = {'type': ['exact']}
+    filterset_fields = {'default_account_definition_type': ['exact']}
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
 

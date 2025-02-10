@@ -55,7 +55,7 @@ class DefaultAccountDefinitionListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'account_mapped',
-            'type',
+            'default_account_definition_type',
             'is_default'
         )
 
