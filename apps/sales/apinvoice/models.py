@@ -28,6 +28,7 @@ class APInvoice(DataAbstractModel):
     invoice_sign = models.CharField(max_length=250)
     invoice_number = models.CharField(max_length=250)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
+    increased_FA_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'AP Invoice'

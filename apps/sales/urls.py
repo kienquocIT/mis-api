@@ -26,5 +26,5 @@ urlpatterns = [
     path('financial-cashflow/', include('apps.sales.financialcashflow.urls')),
     path('financial-reconciliation/', include('apps.sales.reconciliation.urls')),
     path('partner-center/', include('apps.sales.partnercenter.urls')),
-
+    path('fixed-asset/', include('apps.sales.fixedasset.urls')),
 ]
