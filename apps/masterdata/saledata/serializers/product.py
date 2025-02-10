@@ -837,7 +837,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     @staticmethod
-    def get_model_related(instance):
+    def check_related_model(instance):
         related_objects = instance._meta.get_fields()
         result = {}
         for field in related_objects:
@@ -851,12 +851,23 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         for related_name, record_list in result.items():
             for record in record_list:
                 model_related.append(record._meta.model_name)
-        return model_related
+        if len(model_related) == 1:
+            if 'productproducttype' not in model_related:
+                return True
+        elif len(model_related) == 3:
+            if any([
+                'productproducttype' not in model_related,
+                'price' not in model_related,
+                'productpricelist' not in model_related
+            ]):
+                return True
+        else:
+            return True
+        return False
 
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:
-            model_related = self.get_model_related(instance)
-            if not (len(model_related) == 1 and model_related[0] == 'productproducttype'):
+            if self.check_related_model(instance):
                 raise serializers.ValidationError(
                     {'general_uom_group': _('This product is being used. Can not update general uom group.')}
                 )
