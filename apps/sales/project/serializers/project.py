@@ -140,19 +140,20 @@ class ProjectCreateSerializers(serializers.ModelSerializer):
             permit_view_this_project=True,
             permission_by_configured=permission_by_configured
         )
-        if str(project.employee_inherit_id) != str(project.project_pm.id):
-            permission_by_configured_pm = pj_get_alias_permit_from_app(employee_obj=project.project_pm)
-            ProjectMapMember.objects.create(
-                tenant_id=project.tenant_id,
-                company_id=project.company_id,
-                project=project,
-                member=project.project_pm,
-                permit_add_member=True,
-                permit_add_gaw=True,
-                permit_lock_fd=True,
-                permit_view_this_project=True,
-                permission_by_configured=permission_by_configured_pm
-            )
+        if project.project_pm:
+            if str(project.employee_inherit_id) != str(project.project_pm.id):
+                permission_by_configured_pm = pj_get_alias_permit_from_app(employee_obj=project.project_pm)
+                ProjectMapMember.objects.create(
+                    tenant_id=project.tenant_id,
+                    company_id=project.company_id,
+                    project=project,
+                    member=project.project_pm,
+                    permit_add_member=True,
+                    permit_add_gaw=True,
+                    permit_lock_fd=True,
+                    permit_view_this_project=True,
+                    permission_by_configured=permission_by_configured_pm
+                )
 
     @classmethod
     def validate_process(cls, attrs):

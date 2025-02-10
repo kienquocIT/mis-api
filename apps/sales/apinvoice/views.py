@@ -23,7 +23,7 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
     serializer_create = APInvoiceCreateSerializer
     serializer_detail = APInvoiceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id', 'employee_inherit_id',
     ]
