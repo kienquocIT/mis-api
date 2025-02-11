@@ -341,7 +341,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
     lead = models.ForeignKey(
         'lead.Lead',
         on_delete=models.CASCADE,
-        related_name="activity_logs",
+        related_name="opportunity_activity_log_lead",
         null=True
     )
 
