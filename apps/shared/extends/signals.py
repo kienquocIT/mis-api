@@ -298,7 +298,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -335,7 +335,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -364,16 +364,16 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '35dbf6f2-78a8-4286-8cf3-b95de5c78873',
-                        'title': 'Decision maker'
-                    },  # application property Decision maker
+                        'title': 'Decision Maker'
+                    },  # application property Decision Maker
                     'comparison_operator': '≠',
                     'compare_data': 0,
                 },
                 {
                     'condition_property': {
                         'id': '39b50254-e32d-473b-8380-f3b7765af434',
-                        'title': 'Product.Line.Detail'
-                    },  # application property Product.Line.Detail
+                        'title': 'Product Line Detail'
+                    },  # application property Product Line Detail
                     'comparison_operator': '≠',
                     'compare_data': 0,
                 },
@@ -388,13 +388,13 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
                         'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                        'title': 'Quotation.confirm'
-                    },  # application property Quotation.confirm
+                        'title': 'Quotation Status'
+                    },  # application property Quotation Status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -415,8 +415,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                        'title': 'SaleOrder.status'
-                    },  # application property SaleOrder.status
+                        'title': 'SaleOrder Status'
+                    },  # application property SaleOrder Status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -445,8 +445,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': 'c8fa79ae-2490-4286-af25-3407e129fedb',
-                        'title': 'Competitor.Win'
-                    },  # application property Competitor.Win
+                        'title': 'Competitor Win'
+                    },  # application property Competitor Win
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -461,14 +461,14 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': True,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
                         'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                        'title': 'SaleOrder.Delivery.Status'
-                    },  # application property SaleOrder.Delivery.Status
-                    'comparison_operator': '≠',
+                        'title': 'SaleOrder Delivery Status'
+                    },  # application property SaleOrder Delivery Status
+                    'comparison_operator': '=',
                     'compare_data': 0,
                 },
             ]

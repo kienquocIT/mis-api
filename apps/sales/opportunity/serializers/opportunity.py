@@ -521,15 +521,15 @@ def get_opp_config_stage(instance):
 
 def get_instance_stage(instance):
     instance_stage = []
-    # Quotation Confirm
-    quotation_confirm = instance.quotation.is_customer_confirm if instance.quotation else None
-    instance_stage.append('Quotation.confirm=0' if quotation_confirm else 'Quotation.confirm!=0')
+    quotation_status = instance.quotation.system_status if instance.quotation else None
+    # Quotation Status
+    instance_stage.append('Quotation Status=0' if quotation_status == 3 else 'Quotation Status!=0')
     # Sale Order Status
     sale_order_status = instance.sale_order.system_status if instance.sale_order else None
-    instance_stage.append('SaleOrder.status=0' if sale_order_status == 3 else 'SaleOrder.status!=0')
+    instance_stage.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
     # Sale Order Delivery Status
     delivery_status = instance.sale_order.delivery_status if instance.sale_order else None
-    instance_stage.append('SaleOrder.Delivery.Status!=0' if delivery_status else 'SaleOrder.Delivery.Status=0')
+    instance_stage.append('SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0')
     # Customer Annual Revenue
     customer = instance.customer if instance.customer else None
     instance_stage.append('Customer=0' if not customer else 'Customer!=0')
@@ -545,13 +545,13 @@ def get_instance_stage(instance):
     # Close Date
     instance_stage.append('Close Date=0' if not instance.close_date else 'Close Date!=0')
     # Decision Maker
-    instance_stage.append('Decision maker=0' if not instance.decision_maker else 'Decision maker!=0')
+    instance_stage.append('Decision Maker=0' if not instance.decision_maker else 'Decision Maker!=0')
     # Product Line Detail
     product_line = instance.opportunity_product_opportunity.all()
-    instance_stage.append('Product.Line.Detail=0' if product_line.count() == 0 else 'Product.Line.Detail!=0')
+    instance_stage.append('Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0')
     # Competitor Win
     competitors = instance.opportunity_competitor_opportunity.filter(win_deal=True)
-    instance_stage.append('Competitor.Win!=0' if competitors.count() == 0 else 'Competitor.Win=0')
+    instance_stage.append('Competitor Win!=0' if competitors.count() == 0 else 'Competitor Win=0')
     # Lost By Other Reason
     instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
     return instance_stage
@@ -768,7 +768,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
             )
         if len(data_bulk) > 0:
-            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder.status=0' in instance_stage:
+            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in instance_stage:
                 raise serializers.ValidationError(
                     {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
                 )

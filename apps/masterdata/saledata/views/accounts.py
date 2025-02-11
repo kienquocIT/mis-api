@@ -52,8 +52,6 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
 
 class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AccountType.objects
-    serializer_list = AccountTypeListSerializer
-    serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
     serializer_update = AccountTypeUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -110,8 +108,6 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
 
 class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AccountGroup.objects
-    serializer_list = AccountGroupListSerializer
-    serializer_create = AccountGroupCreateSerializer
     serializer_detail = AccountGroupDetailsSerializer
     serializer_update = AccountGroupUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -168,8 +164,6 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
 
 class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Industry.objects
-    serializer_list = IndustryListSerializer
-    serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
     serializer_update = IndustryUpdateSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

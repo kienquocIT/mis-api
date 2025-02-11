@@ -3058,6 +3058,11 @@ def update_period_cfg():
     print('Done :))')
 
 
+def update_opp_stage_is_delete():
+    OpportunityConfigStage.objects.filter(is_default=True).update(is_delete=False)
+    return True
+
+
 class Accounting:
     @staticmethod
     def generate_account_200():

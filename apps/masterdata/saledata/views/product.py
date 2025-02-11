@@ -74,8 +74,6 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
 
 class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductType.objects
-    serializer_list = ProductTypeListSerializer
-    serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
     serializer_update = ProductTypeUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -151,8 +149,6 @@ class ProductCategoryList(BaseListMixin, BaseCreateMixin):
 
 class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductCategory.objects
-    serializer_list = ProductCategoryListSerializer
-    serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
     serializer_update = ProductCategoryUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -227,8 +223,6 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
 
 class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasureGroup.objects
-    serializer_list = UnitOfMeasureGroupListSerializer
-    serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
     serializer_update = UnitOfMeasureGroupUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -304,8 +298,6 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
 
 class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasure.objects
-    serializer_list = UnitOfMeasureListSerializer
-    serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
     serializer_update = UnitOfMeasureUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -436,8 +428,6 @@ class ProductQuickCreateList(BaseListMixin, BaseCreateMixin):
 
 class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Product.objects
-    serializer_list = ProductListSerializer
-    serializer_create = ProductCreateSerializer
     serializer_detail = ProductDetailSerializer
     serializer_update = ProductUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
