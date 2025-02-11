@@ -28,7 +28,6 @@ class APInvoice(DataAbstractModel):
     invoice_sign = models.CharField(max_length=250)
     invoice_number = models.CharField(max_length=250)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
-    increased_FA_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'AP Invoice'
@@ -48,6 +47,7 @@ class APInvoiceItems(SimpleAbstractModel):
     product_unit_price = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
     product_subtotal = models.FloatField(default=0)
+    increased_FA_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'AP Invoice Item'

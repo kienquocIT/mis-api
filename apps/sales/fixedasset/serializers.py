@@ -1,9 +1,11 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.core.hr.models import Group
 from apps.masterdata.saledata.models import FixedAssetClassification, Product
-from apps.sales.fixedasset.models import FixedAsset, FixedAssetSource
-from apps.shared import BaseMsg
+from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
+from apps.sales.fixedasset.models import FixedAsset, FixedAssetSource, FixedAssetUseDepartment
+from apps.shared import BaseMsg, FixedAssetMsg
 
 
 class AssetSourcesCreateSerializer(serializers.ModelSerializer):
@@ -19,13 +21,61 @@ class AssetSourcesCreateSerializer(serializers.ModelSerializer):
 
 
 class FixedAssetListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    manage_department = serializers.SerializerMethodField()
+    use_department = serializers.SerializerMethodField()
+    use_customer = serializers.SerializerMethodField()
+
     class Meta:
         model = FixedAsset
         fields = (
+            'id',
             'code',
-            'title'
+            'title',
+            'status',
+            'product',
+            'manage_department',
+            'use_department',
+            'use_customer',
+            'date_created',
+            'depreciation_time',
+            'depreciation_time_unit'
         )
 
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product.id,
+            'code': obj.product.code,
+            'title': obj.product.title,
+        } if obj.product else {}
+
+    @classmethod
+    def get_manage_department(cls, obj):
+        return {
+            'id': obj.manage_department.id,
+            'code': obj.manage_department.code,
+            'title': obj.manage_department.title,
+        } if obj.manage_department else {}
+
+    @classmethod
+    def get_use_department(cls, obj):
+        data = []
+        for use_department_item in obj.use_departments.all():
+            data.append({
+                'id': use_department_item.use_department_id,
+                'title': use_department_item.use_department.title,
+                'code': use_department_item.use_department.code,
+            })
+        return data
+
+    @classmethod
+    def get_use_customer(cls, obj):
+        return {
+            'id': obj.use_customer.id,
+            'code': obj.use_customer.code,
+            'fullname': obj.use_customer.name,
+        } if obj.use_customer else {}
 
 class FixedAssetCreateSerializer(serializers.ModelSerializer):
     classification = serializers.UUIDField()
@@ -35,6 +85,8 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False)
     )
     asset_sources = AssetSourcesCreateSerializer(many=True)
+    increase_fa_list = serializers.JSONField(required=False)
+    code = serializers.CharField(required=False)
 
     class Meta:
         model = FixedAsset
@@ -46,6 +98,8 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
             'manage_department',
             'use_department',
             'original_cost',
+            'accumulative_depreciation',
+            'net_book_value',
             'source_type',
             'asset_sources',
             'depreciation_method',
@@ -53,7 +107,8 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
             'depreciation_time_unit',
             'adjustment_factor',
             'depreciation_start_date',
-            'depreciation_end_date'
+            'depreciation_end_date',
+            'increase_fa_list'
         )
 
     @classmethod
@@ -86,20 +141,139 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"use_department": BaseMsg.NOT_EXIST})
         raise serializers.ValidationError({"use_department": BaseMsg.FORMAT_NOT_MATCH})
 
-    # @classmethod
-    # def validate_depreciation_time(cls, value):
-    #     if isinstance(value, int):
-    #     raise serializers.ValidationError({"depreciation_time": BaseMsg.FORMAT_NOT_MATCH})
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if FixedAsset.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": FixedAssetMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
 
     def create(self, validated_data):
-        fixed_asset = FixedAsset.objects.create(**validated_data)
+        use_departments = validated_data.pop('use_department')
+        asset_sources = validated_data.pop('asset_sources')
+        increase_fa_list = validated_data.pop('increase_fa_list')
+
+        try:
+            with transaction.atomic():
+                fixed_asset = FixedAsset.objects.create(**validated_data)
+
+                bulk_data = []
+                for use_department in use_departments:
+                    bulk_data.append(FixedAssetUseDepartment(
+                        fixed_asset= fixed_asset,
+                        use_department= use_department,
+                    ))
+                FixedAssetUseDepartment.objects.bulk_create(bulk_data)
+
+                bulk_data = []
+                for asset_source in asset_sources:
+                    bulk_data.append(FixedAssetSource(
+                        fixed_asset= fixed_asset,
+                        description= asset_source.get('description'),
+                        code= asset_source.get('code'),
+                        document_no= asset_source.get('document_no'),
+                        transaction_type= asset_source.get('transaction_type'),
+                        value= asset_source.get('value')
+                    ))
+                FixedAssetSource.objects.bulk_create(bulk_data)
+
+                for ap_invoice_id_key, items in increase_fa_list.items():
+                    ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
+
+                    ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
+
+                    for ap_invoice_item_id_key, value in items.items():
+                        if ap_invoice_item_id_key in ap_invoice_items_dict:
+                            item = ap_invoice_items_dict[ap_invoice_item_id_key]
+                            item.increased_FA_value = value
+                            item.save()
+
+        except Exception as err:
+            print(err)
 
         return fixed_asset
 
 class FixedAssetDetailSerializer(serializers.ModelSerializer):
+    classification = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    manage_department = serializers.SerializerMethodField()
+    use_department = serializers.SerializerMethodField()
+    asset_sources = serializers.SerializerMethodField()
+
     class Meta:
         model = FixedAsset
         fields = (
+            'id',
             'code',
-            'title'
+            'title',
+            'classification',
+            'product',
+            'manage_department',
+            'use_department',
+            'use_customer',
+            'status',
+            'source_type',
+            'original_cost',
+            'accumulative_depreciation',
+            'net_book_value',
+            'depreciation_method',
+            'depreciation_time',
+            'depreciation_time_unit',
+            'adjustment_factor',
+            'depreciation_start_date',
+            'depreciation_end_date',
+            'asset_sources',
         )
+
+    @classmethod
+    def get_classification(cls, obj):
+        return {
+            'id': obj.classification.id,
+            'code': obj.classification.code,
+            'title': obj.classification.title,
+        } if obj.classification else {}
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product.id,
+            'code': obj.product.code,
+            'title': obj.product.title,
+        } if obj.product else {}
+
+    @classmethod
+    def get_manage_department(cls, obj):
+        return {
+            'id': obj.manage_department.id,
+            'code': obj.manage_department.code,
+            'title': obj.manage_department.title,
+        } if obj.manage_department else {}
+
+    @classmethod
+    def get_use_department(cls, obj):
+        data=[]
+        for use_department_item in obj.use_departments.all():
+            data.append({
+                'id': use_department_item.use_department_id,
+                'title': use_department_item.use_department.title,
+                'code': use_department_item.use_department.code,
+            })
+        return data
+
+    @classmethod
+    def get_asset_sources(cls, obj):
+        data=[]
+        source_id = ''
+        for asset_source in obj.asset_sources.all():
+            if asset_source.transaction_type == 0:
+                source_id = APInvoice.objects.filter_current(fill__company=True).filter(code=asset_source.code).first().id
+            data.append({
+                'source_id': source_id,
+                'description': asset_source.description,
+                'document_no': asset_source.document_no,
+                'transaction_type': asset_source.transaction_type,
+                'value': asset_source.value,
+                'code': asset_source.code,
+            })
+        return data

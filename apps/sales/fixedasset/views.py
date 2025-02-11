@@ -36,3 +36,19 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
+
+class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = FixedAsset.objects
+    serializer_detail = FixedAssetDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Detail",
+        operation_description="Get Fixed Asset Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)

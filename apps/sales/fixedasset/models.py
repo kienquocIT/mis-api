@@ -71,10 +71,7 @@ class FixedAsset(DataAbstractModel):
         default=0,
         choices=DEPRECIATION_TYPE_CHOICES,
     )
-    depreciation_time = models.PositiveSmallIntegerField(
-        default=0,
-        choices=TRANSACTION_TYPE_CHOICES,
-    )
+    depreciation_time = models.PositiveIntegerField(default=0)
     depreciation_time_unit = models.PositiveSmallIntegerField(
         default=0,
         choices=[
@@ -85,6 +82,13 @@ class FixedAsset(DataAbstractModel):
     adjustment_factor = models.FloatField(null=True)
     depreciation_start_date = models.DateTimeField()
     depreciation_end_date = models.DateTimeField()
+
+    class Meta:
+        verbose_name = 'Fixed Asset'
+        verbose_name_plural = 'Fixed Assets'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
 
 class FixedAssetUseDepartment(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
@@ -104,7 +108,7 @@ class FixedAssetSource(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
         'fixedasset.FixedAsset',
         on_delete=models.SET_NULL,
-        related_name="source_types",
+        related_name="asset_sources",
         null=True
     )
     description = models.CharField(max_length=150)
@@ -115,3 +119,4 @@ class FixedAssetSource(SimpleAbstractModel):
     )
     code = models.CharField(max_length=150)
     value = models.FloatField()
+
