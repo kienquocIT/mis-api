@@ -296,7 +296,7 @@ class LeadActivityList(BaseListMixin):
         queryset = super().get_queryset()
         lead_id = self.request.GET.get('lead_id')
         if lead_id:
-            queryset = queryset.filter(doc_id=str(lead_id).replace('-',''))
+            queryset = queryset.filter(lead_id=str(lead_id).replace('-',''))
         return queryset
 
     @swagger_auto_schema(operation_summary='Lead Activity List')

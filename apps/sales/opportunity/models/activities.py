@@ -338,6 +338,12 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
     )
     is_cancelled = models.BooleanField(default=False)
     doc_data = models.JSONField(default=dict, help_text="data of related document: {'id', 'title', 'code',...}")
+    lead = models.ForeignKey(
+        'lead.Lead',
+        on_delete=models.CASCADE,
+        related_name="activity_logs",
+        null=True
+    )
 
     @classmethod
     def push_opportunity_log(
