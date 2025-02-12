@@ -101,9 +101,11 @@ class DeliFinishHandler:
     def push_product_warehouse(cls, instance):
         config = cls.get_delivery_config(instance=instance)
         for deli_product in instance.delivery_product_delivery_sub.all():
-            cls.update_pw(instance=instance, deli_product=deli_product, config=config)
-            cls.update_pw_lot(deli_product=deli_product)
-            cls.update_pw_serial(deli_product=deli_product)
+            # Nếu chưa giao hết thì bắt đầu trừ tồn kho
+            if deli_product.remaining_quantity > 0:
+                cls.update_pw(instance=instance, deli_product=deli_product, config=config)
+                cls.update_pw_lot(deli_product=deli_product)
+                cls.update_pw_serial(deli_product=deli_product)
         return True
 
     @classmethod

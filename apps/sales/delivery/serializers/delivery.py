@@ -253,6 +253,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     delivery_data = product_done[obj_key]['delivery_data']  # list format
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                     obj.delivery_data = delivery_data
+                    obj.product_quantity_leased_data = product_done[obj_key]['product_quantity_leased_data']
 
                     if (config['is_picking'] and config['is_partial_ship'] and
                             obj.picked_quantity > obj.remaining_quantity):
@@ -333,8 +334,9 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
             product_done[prod_key] = {}
-            product_done[prod_key]['picked_num'] = item['done']
-            product_done[prod_key]['delivery_data'] = item['delivery_data']
+            product_done[prod_key]['picked_num'] = item.get('done', 0)
+            product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['product_quantity_leased_data'] = item.get('product_quantity_leased_data', [])
         instance.save()
 
         # update instance and product

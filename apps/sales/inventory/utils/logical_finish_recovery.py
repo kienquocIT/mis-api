@@ -60,17 +60,27 @@ class RecoveryFinishHandler:
             RecoveryFinishHandler.clone_m2m(
                 original_instance=cloned_instance.lease_source, cloned_instance=cloned_instance
             )
+            # Push to product warehouse + product info
             for recovery_warehouse in recovery_product.recovery_warehouse_rp.all():
                 warehouse_id = recovery_warehouse.warehouse_id
                 quantity_receipt = recovery_warehouse.quantity_recovery
                 if warehouse_id and quantity_receipt > 0:
-                    # Push to product warehouse + product info
                     # To product warehouse
+                    serial_data = [{
+                        'vendor_serial_number': lease_generate.serial.vendor_serial_number,
+                        'serial_number': lease_generate.serial.serial_number,
+                        'expire_date': lease_generate.serial.expire_date,
+                        'manufacture_date': lease_generate.serial.manufacture_date,
+                        'warranty_start': lease_generate.serial.warranty_start,
+                        'warranty_end': lease_generate.serial.warranty_end,
+                    } for lease_generate in recovery_warehouse.recovery_lease_generate_rw.filter(serial__isnull=False)]
                     cls.run_push_to_warehouse_stock(
                         instance=instance,
                         product_id=cloned_instance.id,
                         warehouse_id=warehouse_id,
                         uom_id=recovery_product.uom_id,
+                        lot_data=[],
+                        serial_data=serial_data,
                         amount=quantity_receipt,
                     )
                     # To product info
@@ -133,7 +143,7 @@ class RecoveryFinishHandler:
 
     # PRODUCT WAREHOUSE
     @classmethod
-    def run_push_to_warehouse_stock(cls, instance, product_id, warehouse_id, uom_id, amount):
+    def run_push_to_warehouse_stock(cls, instance, product_id, warehouse_id, uom_id, lot_data, serial_data, amount):
         model_target = DisperseModel(app_model='saledata.productwarehouse').get_model()
         if model_target and hasattr(model_target, 'objects') and hasattr(model_target, 'push_from_receipt'):
             model_target.push_from_receipt(
@@ -145,7 +155,7 @@ class RecoveryFinishHandler:
                 tax_id=None,
                 unit_price=0,
                 amount=amount,
-                lot_data=[],
-                serial_data=[],
+                lot_data=lot_data,
+                serial_data=serial_data,
             )
         return True

@@ -94,7 +94,6 @@ class OrderActiveDeliverySerializer:
             'product_quantity_leased': 0,
             'product_quantity_leased_data': [],
             'product_quantity_time': 0,
-            'remaining_quantity': m2m_obj.product_quantity,
             'product_unit_price': m2m_obj.product_unit_price,
             'product_subtotal_price': m2m_obj.product_subtotal_price,
 
@@ -120,7 +119,6 @@ class OrderActiveDeliverySerializer:
                 'product_quantity_leased': m2m_obj.product_quantity_leased,
                 'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
                 'product_quantity_time': m2m_obj.product_quantity_time,
-                'remaining_quantity': m2m_obj.product_quantity_new,
             })
 
             if m2m_obj.product:
@@ -168,6 +166,7 @@ class OrderActiveDeliverySerializer:
 
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
+                remaining_quantity=m2m_obj.product_quantity,
                 ready_quantity=stock_ready,
                 picked_quantity=0,
                 order=m2m_obj.order,
