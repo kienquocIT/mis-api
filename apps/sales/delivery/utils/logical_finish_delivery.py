@@ -16,7 +16,7 @@ class DeliFinishHandler:
         product_obj, delivery_data = deli_product.product, deli_product.delivery_data
         if product_obj:
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
+                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse_id', None), get_type=1)
                 data_deli.update({'cost': cost})
             deli_product.save(update_fields=['delivery_data'])
 
@@ -113,12 +113,12 @@ class DeliFinishHandler:
             target = deli_product.offset
         if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
-                if all(key in data_deli for key in ('warehouse', 'uom', 'stock')):
+                if all(key in data_deli for key in ('warehouse_id', 'uom_id', 'picked_quantity')):
                     product_warehouse = target.product_warehouse_product.filter(
                         tenant_id=instance.tenant_id, company_id=instance.company_id,
-                        warehouse_id=data_deli['warehouse'],
+                        warehouse_id=data_deli['warehouse_id'],
                     )
-                    source = {"uom": data_deli['uom'], "quantity": data_deli['stock']}
+                    source = {"uom_id": data_deli['uom_id'], "quantity": data_deli['picked_quantity']}
                     DeliFinishHandler.minus_tock(source, product_warehouse, config)
         return True
 
@@ -138,7 +138,7 @@ class DeliFinishHandler:
                 # nếu trừ đủ update vào warehouse, return true
                 break
             final_ratio = 1
-            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom']).first()
+            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom_id']).first()
             if item.product and uom_delivery:
                 final_ratio = cls.get_final_uom_ratio(product_obj=item.product, uom_transaction=uom_delivery)
             delivery_quantity = source['quantity'] * final_ratio
@@ -283,15 +283,15 @@ class DeliFinishHandler:
         actual_value = 0
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
-                if all(key in data_deli for key in ('warehouse', 'stock')):
+                if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
                     cost = deli_product.product.get_current_unit_cost(
                         get_type=1,
                         **{
-                            'warehouse_id': data_deli.get('warehouse', None),
-                            'sale_order_id': data_deli.get('sale_order', None),
+                            'warehouse_id': data_deli.get('warehouse_id', None),
+                            'sale_order_id': data_deli.get('sale_order_id', None),
                         }
                     )
-                    actual_value += cost * data_deli['stock']
+                    actual_value += cost * data_deli['picked_quantity']
         else:  # case: product not allow inventory
             so_cost = deli_product.product.sale_order_cost_product.filter(sale_order=sale_order).first()
             if so_cost:

@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
-    SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
+    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel, ASSET_TYPE,
 )
 
@@ -17,6 +17,7 @@ __all__ = [
     'OrderDelivery',
     'OrderDeliverySub',
     'OrderDeliveryProduct',
+    'OrderDeliveryProductLeased',
     'OrderDeliveryAttachment',
 ]
 
@@ -595,7 +596,6 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     delivery_quantity = models.FloatField(verbose_name='Quantity need pickup of SaleOrder',)
     delivered_quantity_before = models.FloatField(default=0, verbose_name='Quantity was picked before',)
-    # picking information
     remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need pick')
     ready_quantity = models.FloatField(default=0, verbose_name='Quantity already for delivery',)
     picked_quantity = models.FloatField(default=0, verbose_name='Quantity was picked',)
@@ -670,13 +670,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     def push_delivery_product_warehouse(self):
         pw_data = [
             {
-                'sale_order_id': deli_data.get('sale_order', None),
+                'sale_order_id': deli_data.get('sale_order_id', None),
                 'sale_order_data': deli_data.get('sale_order_data', {}),
-                'lease_order_id': deli_data.get('lease_order', None),
+                'lease_order_id': deli_data.get('lease_order_id', None),
                 'lease_order_data': deli_data.get('lease_order_data', {}),
-                'warehouse_id': deli_data.get('warehouse', None),
+                'warehouse_id': deli_data.get('warehouse_id', None),
                 'warehouse_data': deli_data.get('warehouse_data', {}),
-                'uom_id': deli_data.get('uom', None),
+                'uom_id': deli_data.get('uom_id', None),
                 'uom_data': deli_data.get('uom_data', {}),
                 'lot_data': deli_data.get('lot_data', {}),
                 'serial_data': deli_data.get('serial_data', {}),
@@ -693,6 +693,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
     def create_lot_serial(self):
         self.delivery_lot_delivery_product.all().delete()
+        self.delivery_serial_delivery_product.all().delete()
         for delivery in self.delivery_data:
             OrderDeliveryLot.create(
                 delivery_product_id=self.id,
@@ -702,17 +703,14 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
                 company_id=self.delivery_sub.company_id,
                 lot_data=delivery.get('lot_data', [])
             )
-        self.delivery_serial_delivery_product.all().delete()
-        for delivery in self.delivery_data:
-            if 'serial_data' in delivery:
-                OrderDeliverySerial.create(
-                    delivery_product_id=self.id,
-                    delivery_sub_id=self.delivery_sub_id,
-                    delivery_id=self.delivery_sub.order_delivery_id,
-                    tenant_id=self.delivery_sub.tenant_id,
-                    company_id=self.delivery_sub.company_id,
-                    serial_data=delivery['serial_data']
-                )
+            OrderDeliverySerial.create(
+                delivery_product_id=self.id,
+                delivery_sub_id=self.delivery_sub_id,
+                delivery_id=self.delivery_sub.order_delivery_id,
+                tenant_id=self.delivery_sub.tenant_id,
+                company_id=self.delivery_sub.company_id,
+                serial_data=delivery.get('serial_data', [])
+            )
         return True
 
     def before_save(self):
@@ -734,6 +732,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             uom_time=old_obj.uom_time,
             uom_time_data=old_obj.uom_time_data,
             product_quantity=old_obj.product_quantity,
+            product_quantity_new=old_obj.product_quantity_new,
+            product_quantity_leased=old_obj.product_quantity_leased,
+            product_quantity_leased_data=old_obj.product_quantity_leased_data,
             product_quantity_time=old_obj.product_quantity_time,
             product_unit_price=old_obj.product_unit_price,
             product_subtotal_price=old_obj.product_subtotal_price,

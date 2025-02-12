@@ -262,6 +262,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
+                # sau khi update sẽ tạo OrderDeliveryProductWarehouse (push_delivery_product_warehouse)
         return True
 
     # none_picking_many_delivery

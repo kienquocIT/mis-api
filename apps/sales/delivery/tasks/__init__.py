@@ -9,9 +9,8 @@ from apps.core.process.utils import ProcessRuntimeControl
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
-    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
+    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub, OrderDeliveryProductLeased
 )
-from apps.sales.delivery.models.delivery import OrderDeliveryProductLeased
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 
@@ -91,10 +90,11 @@ class OrderActiveDeliverySerializer:
             'uom_time': None,
             'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
-            'product_quantity_new': m2m_obj.product_quantity_new,
-            'product_quantity_leased': m2m_obj.product_quantity_leased,
-            'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
-            'product_quantity_time': m2m_obj.product_quantity_time,
+            'product_quantity_new': m2m_obj.product_quantity,
+            'product_quantity_leased': 0,
+            'product_quantity_leased_data': [],
+            'product_quantity_time': 0,
+            'remaining_quantity': m2m_obj.product_quantity,
             'product_unit_price': m2m_obj.product_unit_price,
             'product_subtotal_price': m2m_obj.product_subtotal_price,
 
@@ -106,13 +106,21 @@ class OrderActiveDeliverySerializer:
             'product_depreciation_start_date': None,
             'product_depreciation_end_date': None,
         }
-        if hasattr(m2m_obj, "asset_type") and hasattr(m2m_obj, "offset") and hasattr(m2m_obj, "offset_data"):
+        if all(hasattr(m2m_obj, attr) for attr in [
+            "asset_type", "offset", "offset_data",
+            "product_quantity_new", "product_quantity_leased", "product_quantity_leased_data", "product_quantity_time"
+        ]):
             result.update({
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
                 'offset_data': m2m_obj.offset_data,
                 'uom_time': m2m_obj.uom_time,
                 'uom_time_data': m2m_obj.uom_time_data,
+                'product_quantity_new': m2m_obj.product_quantity_new,
+                'product_quantity_leased': m2m_obj.product_quantity_leased,
+                'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
+                'product_quantity_time': m2m_obj.product_quantity_time,
+                'remaining_quantity': m2m_obj.product_quantity_new,
             })
 
             if m2m_obj.product:
@@ -160,7 +168,6 @@ class OrderActiveDeliverySerializer:
 
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
-                remaining_quantity=m2m_obj.product_quantity,
                 ready_quantity=stock_ready,
                 picked_quantity=0,
                 order=m2m_obj.order,

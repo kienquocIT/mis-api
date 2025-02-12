@@ -63,8 +63,8 @@ class DeliHandler:
             if len(delivery_data) == 0:
                 return deli_product.picked_quantity * deli_product.product_unit_price
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-                quantity_deli = data_deli.get('stock', 0)
-                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
+                quantity_deli = data_deli.get('picked_quantity', 0)
+                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse_id', None), get_type=1)
                 total_all_wh += cost * quantity_deli
 
         return total_all_wh

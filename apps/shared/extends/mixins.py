@@ -1168,11 +1168,14 @@ class BaseDestroyMixin(BaseMixin):
     @staticmethod
     def perform_soft_delete(instance):
         """
-        Marks the instance as soft deleted.
+        Marks the instance as soft deleted by field is_delete.
         """
-        instance.is_delete = True
-        instance.save(update_fields=["is_delete"])
-        return ResponseController.no_content_204()
+        if hasattr(instance, "is_delete"):
+            instance.is_delete = True
+            instance.save(update_fields=["is_delete"])
+            return ResponseController.no_content_204()
+        else:
+            raise serializers.ValidationError({'detail': "Soft delete not supported for this model."})
 
     @staticmethod
     def perform_purge(instance):
