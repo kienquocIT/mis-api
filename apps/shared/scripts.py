@@ -33,6 +33,7 @@ from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
+from ..accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
