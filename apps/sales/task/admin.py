@@ -52,25 +52,16 @@ class LogTaskOfEmployeeAdmin(AbstractAdmin):
 
     fields = [
         'tenant', 'company', 'code', 'first_name', 'last_name',
-        'chart_7_days', 'chart_14_days', 'chart_30_days',
+        'summary_by_day',
         'task_log',
     ]
 
     @classmethod
-    def summary_log(cls, employee_current_id, start_time, end_time):
-        task_status_specials = [
-            "FINISH_TASK",
-            "ASSIGN_TASK",
-            "NOT_FINISH",
-        ]
+    def summary_by_day(cls, obj):
         pipeline = [
             {
                 "$match": {
-                    "timestamp": {"$gte": start_time, "$lt": end_time},
-                    "metadata.employee_inherit_id": str(employee_current_id),
-                    "task_status": {
-                        "$nin": task_status_specials,
-                    }
+                    "metadata.employee_inherit_id": str(obj.id),
                 },
             },
             {
@@ -85,32 +76,45 @@ class LogTaskOfEmployeeAdmin(AbstractAdmin):
                     "_id": {
                         "task_id": "$task_id",
                         "task_status": "$task_status",
+                        "date": "$date"
                     },
                     "task_status_translate": {"$first": "$task_status_translate"},
                     "task_color": {"$first": "$task_color"},
-                    "not_finish_total": {"$first": "$not_finish_total"},
                 }
             },
             {
                 "$group": {
-                    "_id": "$_id.task_status",
+                    "_id": {
+                        "date": "$_id.date",
+                        "task_status": "$_id.task_status"
+                    },
                     "count": {"$sum": 1},
                     "task_status_translate": {"$first": "$task_status_translate"},
                     "task_color": {"$first": "$task_color"},
-                    "not_finish_total": {"$first": "$not_finish_total"},
                 }
             },
             {
-                "$sort": {"_id": 1}
+                "$group": {
+                    "_id": "$_id.date",
+                    "details": {
+                        "$push": {
+                            "task_status": "$_id.task_status",
+                            "task_status_translate": "$task_status_translate",
+                            "task_color": "$task_color",
+                            "count": "$count",
+                        }
+                    }
+                }
+            },
+            {
+                "$sort": {"_id": -1}
             },
         ]
         queries = mongo_log_opp_task.aggregate(pipeline)
         results = [
             {
-                'task_status': result['_id'],
-                'task_status_translate': result['task_status_translate'],
-                'task_color': result['task_color'],
-                'count': result['count'],
+                'date': result['_id'],
+                'details': result['details'],
             }
             for result in queries
         ]
@@ -120,11 +124,26 @@ class LogTaskOfEmployeeAdmin(AbstractAdmin):
 
         html = []
         for item in results:
+            html_li = []
+            for child in item.get('details', []):
+                html_li.append(
+                    f"""
+                        <div style="display: grid;grid-template-columns: 200px 100px;">
+                            <span>{child.get('task_status', '-')}</span>
+                            <span>{child.get('count', '-')}</span>
+                        </div>
+                    """
+                )
+
             html.append(
                 f"""
                     <tr>
-                        <td>{item['task_status']}</td>
-                        <td>{item['count']}</td>
+                        <td>{item['date']}</td>
+                        <td>
+                            <div style="display: grid;grid-template-columns: auto;gap: 10px;">
+                                {"".join(html_li)}
+                            </div>
+                        </td>
                     </tr>
                 """
             )
@@ -134,37 +153,13 @@ class LogTaskOfEmployeeAdmin(AbstractAdmin):
                 <table style="width: 100%;">
                     <thead>
                         <tr>
-                            <th>Status</th>
-                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Details</th>
                         </tr>
                     </thead>
                     <tbody>{"".join(html)}</tbody>
                 </table>
             """
-        )
-
-    @classmethod
-    def chart_7_days(cls, obj):
-        return cls.summary_log(
-            employee_current_id=obj.id,
-            start_time=timezone.now() - timedelta(days=70),
-            end_time=timezone.now()
-        )
-
-    @classmethod
-    def chart_14_days(cls, obj):
-        return cls.summary_log(
-            employee_current_id=obj.id,
-            start_time=timezone.now() - timedelta(days=140),
-            end_time=timezone.now()
-        )
-
-    @classmethod
-    def chart_30_days(cls, obj):
-        return cls.summary_log(
-            employee_current_id=obj.id,
-            start_time=timezone.now() - timedelta(days=300),
-            end_time=timezone.now()
         )
 
     @classmethod

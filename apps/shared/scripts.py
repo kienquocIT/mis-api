@@ -33,7 +33,6 @@ from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from .permissions.util import PermissionController
-from ..accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
@@ -3032,6 +3031,21 @@ def update_employee_revenue_plan():
         item.company = item.revenue_plan_mapped.company
         item.save(update_fields=['employee_created', 'employee_inherit', 'tenant', 'company'])
     print('Done :))')
+
+
+def change_field_doc_id_to_lead_id_in_lead():
+    lead_instance_list = Lead.objects.all().values_list('id', flat=True)
+    activity_logs = OpportunityActivityLogs.objects.all()
+    count = 0
+    for activity_log in activity_logs:
+        if activity_log.doc_id in lead_instance_list:
+            activity_log.lead_id = activity_log.doc_id
+            activity_log.doc_id = None
+            activity_log.save(update_fields=['lead_id', 'doc_id'])
+            count += 1
+    print(
+        f'{count} rows updated'
+    )
 
 
 def update_period_cfg():
