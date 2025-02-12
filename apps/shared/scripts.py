@@ -3034,6 +3034,20 @@ def update_employee_revenue_plan():
     print('Done :))')
 
 
+def change_field_doc_id_to_lead_id_in_lead():
+    lead_instance_list = Lead.objects.all().values_list('id', flat=True)
+    activity_logs = OpportunityActivityLogs.objects.all()
+    count = 0
+    for activity_log in activity_logs:
+        if activity_log.doc_id in lead_instance_list:
+            activity_log.lead_id = activity_log.doc_id
+            activity_log.doc_id = None
+            activity_log.save(update_fields=['lead_id', 'doc_id'])
+            count += 1
+    print(
+        f'{count} rows updated'
+    )
+
 def create_default_masterdata_fixed_asset():
     Fixed_Asset_Classification_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
