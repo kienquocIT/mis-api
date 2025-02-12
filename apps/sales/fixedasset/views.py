@@ -20,7 +20,8 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Fixed Asset List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='fixedasset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -31,7 +32,8 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
         request_body=FixedAssetCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='fixedasset', model_code='fixedasset', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
@@ -48,7 +50,8 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Fixed Asset Detail",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='fixedasset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
