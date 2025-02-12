@@ -152,7 +152,7 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
 
-    def create(self, validated_data): #pylint disable=R0914
+    def create(self, validated_data): # pylint: disable=R0914
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
