@@ -1,3 +1,4 @@
+import logging
 from django.db import transaction
 from rest_framework import serializers
 
@@ -7,6 +8,7 @@ from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
 from apps.sales.fixedasset.models import FixedAsset, FixedAssetSource, FixedAssetUseDepartment
 from apps.shared import BaseMsg, FixedAssetMsg
 
+logger = logging.getLogger(__name__)
 
 class AssetSourcesCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -76,6 +78,7 @@ class FixedAssetListSerializer(serializers.ModelSerializer):
             'code': obj.use_customer.code,
             'fullname': obj.use_customer.name,
         } if obj.use_customer else {}
+
 
 class FixedAssetCreateSerializer(serializers.ModelSerializer):
     classification = serializers.UUIDField()
@@ -149,7 +152,7 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
 
-    def create(self, validated_data):
+    def create(self, validated_data): #pylint disable=R0914
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
@@ -180,9 +183,7 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
 
                 for ap_invoice_id_key, items in increase_fa_list.items():
                     ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-
                     ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-
                     for ap_invoice_item_id_key, value in items.items():
                         if ap_invoice_item_id_key in ap_invoice_items_dict:
                             item = ap_invoice_items_dict[ap_invoice_item_id_key]
@@ -190,9 +191,11 @@ class FixedAssetCreateSerializer(serializers.ModelSerializer):
                             item.save()
 
         except Exception as err:
-            print(err)
+            logger.error(msg=f'Create fixed asset errors: {str(err)}')
+            raise serializers.ValidationError({'fixedasset': FixedAssetMsg.ERROR_CREATE})
 
         return fixed_asset
+
 
 class FixedAssetDetailSerializer(serializers.ModelSerializer):
     classification = serializers.SerializerMethodField()
@@ -267,7 +270,8 @@ class FixedAssetDetailSerializer(serializers.ModelSerializer):
         source_id = ''
         for asset_source in obj.asset_sources.all():
             if asset_source.transaction_type == 0:
-                source_id = APInvoice.objects.filter_current(fill__company=True).filter(code=asset_source.code).first().id
+                source_id = APInvoice.objects.filter_current(fill__company=True).filter(
+                    code=asset_source.code).first().id
             data.append({
                 'source_id': source_id,
                 'description': asset_source.description,

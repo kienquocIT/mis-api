@@ -1,7 +1,8 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
 from django.utils.translation import gettext_lazy as _
+
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 FIXED_ASSET_STATUS = [
@@ -119,4 +120,3 @@ class FixedAssetSource(SimpleAbstractModel):
     )
     code = models.CharField(max_length=150)
     value = models.FloatField()
-
