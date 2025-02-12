@@ -31,7 +31,7 @@ APP_MAP_DATA = {
     'assettools.assettoolsdelivery': {'title': 'Asset, Tools Delivery', 'url': 'asset-tools/delivery/detail/'},
     'assettools.assettoolsreturn': {'title': 'Asset, Tools Return', 'url': 'asset-tools/return/detail/'},
     'employeeinfo.EmployeeContractRuntime': {
-        'title': 'Contract signature detail', 'url': 'contract/runtime-signature/detail/'
+        'title': 'Contract signature detail', 'url': 'hrm/employee-data/runtime-signature/detail/'
     },
 }
 

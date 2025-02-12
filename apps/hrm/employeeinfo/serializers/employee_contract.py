@@ -65,6 +65,7 @@ class EmployeeContractCreateSerializers(serializers.ModelSerializer):
             'attachment',
             'content',
             'sign_status',
+            'content_info',
         )
 
 
@@ -97,6 +98,7 @@ class EmployeeContractDetailSerializers(serializers.ModelSerializer):
             'attachment',
             'content',
             'sign_status',
+            'content_info',
         )
 
 

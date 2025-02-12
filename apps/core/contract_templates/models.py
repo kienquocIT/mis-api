@@ -12,6 +12,7 @@ class ContractTemplate(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='contract_template_map_app'
     )
+    extra_data = models.JSONField(blank=True, help_text="", default=dict)
 
     class Meta:
         verbose_name = 'Contract template list'

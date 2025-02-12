@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.contract_templates.models import ContractTemplate
+from .msg import ContractMsg
 from apps.core.process.msg import ProcessMsg
-from apps.shared import DisperseModel, ContractTemplateMsg
 
 
 class ContractTemplateListSerializers(serializers.ModelSerializer):
@@ -41,7 +41,8 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
         fields = (
             'title',
             'template',
-            'application'
+            'application',
+            'extra_data'
         )
 
     @classmethod
@@ -49,6 +50,12 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError({'detail': ProcessMsg.APPLICATION_NOT_FOUND})
         return value
+
+    @classmethod
+    def validate_extra_data(cls, value):
+        if type(value) is dict:
+            return value
+        raise serializers.ValidationError({'detail': ContractMsg.ERROR_FIELD_DATA})
 
     def create(self, validated_data):
         info = ContractTemplate.objects.create(**validated_data)
@@ -58,15 +65,6 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
 class ContractTemplateDetailSerializers(serializers.ModelSerializer):
     application = serializers.SerializerMethodField()
 
-    class Meta:
-        model = ContractTemplate
-        fields = (
-            'id',
-            'title',
-            'template',
-            'application'
-        )
-
     @classmethod
     def get_application(cls, obj):
         return {
@@ -75,6 +73,22 @@ class ContractTemplateDetailSerializers(serializers.ModelSerializer):
             'code': obj.application.code
         } if obj.application else {}
 
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = ContractTemplate
+        fields = (
+            'id',
+            'title',
+            'template',
+            'application',
+            'extra_data'
+        )
+
 
 class ContractTemplateDDListSerializers(serializers.ModelSerializer):
 
@@ -82,5 +96,6 @@ class ContractTemplateDDListSerializers(serializers.ModelSerializer):
         model = ContractTemplate
         fields = (
             'title',
-            'template'
+            'template',
+            'extra_data',
         )

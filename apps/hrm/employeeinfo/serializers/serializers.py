@@ -151,6 +151,7 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
                 limit_time=contract.get('limit_time'),
                 represent=contract.get('represent'),
                 signing_date=contract.get('signing_date'),
+                content_info=contract.get('content_info'),
             )
         if attachment is not None and obj:
             handle_attach_file_contract(obj, attachment)
@@ -364,7 +365,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             sign = contract.get('sign_status', None)
             if sign == 1:
                 raise serializers.ValidationError({'contract': HRMsg.UPDATE_CONTRACT_DENIED})
-            if contract_id and (sign == 0):
+            if contract_id and (sign == 0 or sign is None):
                 try:
                     obj = EmployeeContract.objects.get(id=contract_id)
                     obj.effected_date = contract.get('effected_date')
@@ -375,9 +376,10 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
                     obj.signing_date = contract.get('signing_date')
+                    obj.content_info = contract.get('content_info')
                     obj.save(
                         update_fields=['effected_date', 'content', 'contract_type', 'expired_date', 'file_type',
-                                       'limit_time', 'represent', 'signing_date', 'date_modified']
+                                       'limit_time', 'represent', 'signing_date', 'date_modified', 'content_info']
                     )
                 except EmployeeContract.DoesNotExist:
                     raise exceptions.NotFound
@@ -395,6 +397,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     limit_time=contract.get('limit_time'),
                     represent=contract.get('represent'),
                     signing_date=contract.get('signing_date'),
+                    content_info=contract.get('content_info')
                 )
         if attachment is not None and obj:
             handle_attach_file_contract(obj, attachment)
