@@ -130,7 +130,7 @@ class SendMailController:  # pylint: disable=R0902
         timestamp = timezone.now().timestamp()
         return f'<{timestamp}.{doc_id}@bflow.vn>'
 
-    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None):
+    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None, fpath_list=None):
         if mail_bcc is None:
             mail_bcc = []
         if mail_cc is None:
@@ -182,6 +182,8 @@ class SendMailController:  # pylint: disable=R0902
                     )
                     email.attach_alternative(html_content, "text/html")
                     email.send()
+                    for fpath in fpath_list if fpath_list else []:
+                        email.attach_file(fpath)
                     return True
             except Exception as err:
                 print('[SendMailController][send]', str(err))

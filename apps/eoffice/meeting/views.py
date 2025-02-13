@@ -179,6 +179,9 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
         perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 

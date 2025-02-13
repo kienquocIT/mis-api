@@ -47,8 +47,8 @@ class MeetingSchedule(DataAbstractModel):
     meeting_start_date = models.DateField()
     meeting_start_time = models.TimeField()
     meeting_duration = models.FloatField()  # minute
-    meeting_start_datetime = models.DateField(null=True, blank=None)
-    meeting_end_datetime = models.DateTimeField(null=True, blank=None)
+    meeting_start_datetime = models.DateField(null=True, blank=True)
+    meeting_end_datetime = models.DateTimeField(null=True, blank=True)
     account_external = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
 
     class Meta:
@@ -66,6 +66,8 @@ class MeetingScheduleParticipant(SimpleAbstractModel):
     internal = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, null=True)
     external = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE, null=True)
     is_external = models.BooleanField(default=False)
+    send_notify_email = models.BooleanField(default=False)
+    send_email_status = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Meeting Schedule Participant'

@@ -3,6 +3,8 @@ from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
 from rest_framework import serializers
+
+from apps.core.mailer.tasks import send_email_eoffice_meeting
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting,
     MeetingScheduleAttachmentFile
@@ -126,9 +128,9 @@ class MeetingZoomConfigDetailSerializer(serializers.ModelSerializer):  # noqa
 
 # Meeting schedule
 
-class MeetingScheduleSubFunction:
-    @classmethod
-    def create_participants_mapped(cls, meeting_schedule, participants_list):
+class MeetingScheduleCommonFunc:
+    @staticmethod
+    def create_participants_mapped(meeting_schedule, participants_list):
         bulk_info = []
         for item in participants_list:
             bulk_info.append(
@@ -141,8 +143,8 @@ class MeetingScheduleSubFunction:
         MeetingScheduleParticipant.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def create_online_meeting_object(cls, config_obj, zoom_meeting_obj):
+    @staticmethod
+    def create_online_meeting_object(config_obj, zoom_meeting_obj):
         try:
             password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
             cryptor = SimpleEncryptor(key=password)
@@ -184,8 +186,8 @@ class MeetingScheduleSubFunction:
         zoom_meeting_obj.save(update_fields=["meeting_ID", "meeting_link", "meeting_passcode"])
         return response_data
 
-    @classmethod
-    def create_calendar_ics_file(cls, meeting_id, meeting_topic, meeting_host_email, start_date, start_time, duration):
+    @staticmethod
+    def create_calendar_ics_file(meeting_id, meeting_topic, meeting_host_email, start_date, start_time, duration):
         start_date = start_date.strftime('%Y-%m-%d').split('-')
         start_time = start_time.strftime('%H:%M').split(':')
         dt_start_data = datetime(
@@ -207,10 +209,9 @@ class MeetingScheduleSubFunction:
         except Exception as error:
             raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({error})'})
 
-    @classmethod
-    def send_email(cls, meeting_schedule, response_data, meeting_time, date, time, duration):
+    @staticmethod
+    def combine_data_send_email(user_id, meeting_schedule, response_data, meeting_time, date, time, duration):
         try:
-            meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
             email_to_list = []
             for item in meeting_schedule.meeting_schedule_mapped.all():
                 if item.internal:
@@ -218,51 +219,43 @@ class MeetingScheduleSubFunction:
                 if item.external:
                     email_to_list.append(item.external.email)
 
-            email = EmailMessage(
-                subject=response_data.get('topic'),
-                body=f"{meeting_schedule.employee_inherit.get_full_name(2)} from {meeting_schedule.company.title} "
-                     f"has invited you to a scheduled Zoom meeting."
-                     f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
-                     f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
-                     f"\n\nMeeting ID: {meeting_id}"
-                     f"\nPasscode: {response_data.get('password')}",
-                from_email=meeting_schedule.employee_created.email,
-                to=email_to_list,
-                cc=[],
-                bcc=[],
-                reply_to=[],
-            )
-            for attachment in [
-                cls.create_calendar_ics_file(
-                    meeting_id,
-                    response_data.get('topic'),
-                    meeting_schedule.employee_inherit.email,
-                    date,
-                    time,
-                    duration
-                )
-            ]:
-                email.attach_file(attachment)
+            meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
+            email_content = (
+                f"{meeting_schedule.employee_inherit.get_full_name(2)} from {meeting_schedule.company.title} "
+                f"has invited you to a scheduled Zoom meeting."
+                f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
+                f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
+                f"\n\nMeeting ID: {meeting_id}"
+                f"\nPasscode: {response_data.get('password')}")
 
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            connection = get_connection(
-                username=meeting_schedule.employee_created.email,
-                password=SimpleEncryptor(key=password).decrypt(meeting_schedule.employee_created.email_app_password),
-                fail_silently=False,
+            ics_file_path = MeetingScheduleCommonFunc.create_calendar_ics_file(
+                meeting_id,
+                response_data.get('topic'),
+                meeting_schedule.employee_inherit.email,
+                date,
+                time,
+                duration
             )
-            email.connection = connection
-            email.send()
+
+            send_email_eoffice_meeting(
+                user_id,
+                meeting_schedule.tenant_id,
+                meeting_schedule.company_id,
+                meeting_schedule.employee_created_id,
+                email_to_list,
+                [],
+                [],
+                response_data.get('topic'),
+                email_content,
+                [ics_file_path]
+            )
             return True
         except Exception as err:
-            meeting_schedule.employee_created.email_app_password_status = False
-            meeting_schedule.employee_created.save(update_fields=['email_app_password_status'])
             print(err.args[1])
-            raise serializers.ValidationError({
-                'Online meeting': "Cannot send email. Try to verify your Email in Employee update page."
-            })
+            raise serializers.ValidationError({'Meeting scheduled error': "Cannot send email."})
 
-    @classmethod
-    def after_create_online_meeting(cls, meeting_schedule, online_meeting_data):
+    @staticmethod
+    def after_create_online_meeting(user_id, meeting_schedule, online_meeting_data):
         MeetingScheduleOnlineMeeting.objects.filter(meeting_online_schedule_mapped=meeting_schedule).delete()
         zoom_meeting_obj = MeetingScheduleOnlineMeeting.objects.create(
             meeting_online_schedule_mapped=meeting_schedule,
@@ -270,18 +263,29 @@ class MeetingScheduleSubFunction:
         )
         meeting_config = MeetingZoomConfig.objects.filter_current(fill__tenant=True, fill__company=True)
         if meeting_config.exists():
-            response_data = cls.create_online_meeting_object(meeting_config.first(), zoom_meeting_obj)
+            response_data = MeetingScheduleCommonFunc.create_online_meeting_object(
+                meeting_config.first(),
+                zoom_meeting_obj
+            )
             duration = meeting_schedule.meeting_duration
             date = meeting_schedule.meeting_start_date
             time = meeting_schedule.meeting_start_time
             meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
                 'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
             )
-            cls.send_email(meeting_schedule, response_data, meeting_time, date, time, duration)
+            MeetingScheduleCommonFunc.combine_data_send_email(
+                user_id,
+                meeting_schedule,
+                response_data,
+                meeting_time,
+                date,
+                time,
+                duration
+            )
         return True
 
-    @classmethod
-    def check_room_overlap(cls, item, data):
+    @staticmethod
+    def check_room_overlap(item, data):
         item_mt_time = f"{item.meeting_start_date} {item.meeting_start_time}"
         this_mt_time = f"{data.get('meeting_start_date')} {data.get('meeting_start_time')}"
         item_mt_datetime = datetime.strptime(item_mt_time, "%Y-%m-%d %H:%M:%S")
@@ -290,8 +294,8 @@ class MeetingScheduleSubFunction:
         this_end_datetime = this_mt_datetime + timedelta(minutes=data.get('meeting_duration'))
         return (item_mt_datetime < this_end_datetime) and (this_mt_datetime < item_end_datetime)
 
-    @classmethod
-    def create_files_mapped(cls, meeting_obj, file_id_list):
+    @staticmethod
+    def create_files_mapped(meeting_obj, file_id_list):
         try:
             bulk_data_file = []
             for index, file_id in enumerate(file_id_list):
@@ -362,6 +366,8 @@ class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
     class Meta:
         model = MeetingSchedule
         fields = '__all__'
@@ -381,17 +387,16 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
         meeting_schedule = MeetingSchedule.objects.create(
             **validated_data, employee_inherit_id=validated_data['employee_created_id']
         )
-        MeetingScheduleSubFunction.create_participants_mapped(
+        MeetingScheduleCommonFunc.create_participants_mapped(
             meeting_schedule, self.initial_data.get('participants', [])
         )
-        if meeting_schedule.meeting_type is False:
-            MeetingScheduleSubFunction.after_create_online_meeting(
-                meeting_schedule, self.initial_data.get('online_meeting_data', {})
-            )
+        MeetingScheduleCommonFunc.after_create_online_meeting(
+            self.context.get('user_current').id, meeting_schedule, self.initial_data.get('online_meeting_data', {})
+        )
 
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            MeetingScheduleSubFunction.create_files_mapped(meeting_schedule, attachment.strip().split(','))
+            MeetingScheduleCommonFunc.create_files_mapped(meeting_schedule, attachment.strip().split(','))
         return meeting_schedule
 
 
