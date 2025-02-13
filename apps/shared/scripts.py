@@ -3065,6 +3065,7 @@ def create_default_masterdata_fixed_asset():
         {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
     ]
     count = 0
+    print('Loading')
     for company in Company.objects.all():
         try:
             # tai san co dinh huu hinh
@@ -3113,4 +3114,4 @@ def create_default_masterdata_fixed_asset():
                 '[ERROR]',
                 str(company.id), str(err)
             )
-    return True
+    print('Done')

@@ -4,6 +4,12 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
+__all__ = [
+    'FixedAsset',
+    'FixedAssetUseDepartment',
+    'FixedAssetSource',
+    'FixedAssetAPInvoiceItems'
+]
 
 FIXED_ASSET_STATUS = [
     (0, _('Using')),
@@ -91,9 +97,13 @@ class FixedAsset(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'fc552ebb-eb98-4d7b-81cd-e4b5813b7815'  # fixed asset's application id
+
 class FixedAssetUseDepartment(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
-        'fixedasset.FixedAsset',
+        'asset.FixedAsset',
         on_delete=models.CASCADE,
         related_name="use_departments",
         null=True
@@ -107,7 +117,7 @@ class FixedAssetUseDepartment(SimpleAbstractModel):
 
 class FixedAssetSource(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
-        'fixedasset.FixedAsset',
+        'asset.FixedAsset',
         on_delete=models.SET_NULL,
         related_name="asset_sources",
         null=True
@@ -120,3 +130,18 @@ class FixedAssetSource(SimpleAbstractModel):
     )
     code = models.CharField(max_length=150)
     value = models.FloatField()
+
+class FixedAssetAPInvoiceItems(SimpleAbstractModel):
+    fixed_asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.SET_NULL,
+        related_name="ap_invoice_items",
+        null=True
+    )
+    ap_invoice_item = models.ForeignKey(
+        'apinvoice.APInvoiceItems',
+        on_delete=models.SET_NULL,
+        related_name="fixed_assets",
+        null=True
+    )
+    increased_FA_value = models.FloatField(default=0)

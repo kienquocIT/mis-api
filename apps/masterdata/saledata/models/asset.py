@@ -3,7 +3,8 @@ from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'FixedAssetClassification',
-    'FixedAssetClassificationGroup'
+    'FixedAssetClassificationGroup',
+    'ToolClassification'
 ]
 
 class FixedAssetClassification(MasterDataAbstractModel):
@@ -15,6 +16,7 @@ class FixedAssetClassification(MasterDataAbstractModel):
         null=True
     )
     is_default = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'AssetClassification'
         verbose_name_plural = 'AssetClassifications'
@@ -25,4 +27,12 @@ class FixedAssetClassificationGroup(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'AssetClassificationGroup'
         verbose_name_plural = 'AssetClassificationGroups'
+        ordering = ('code',)
+
+class ToolClassification(MasterDataAbstractModel):
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'ToolClassification'
+        verbose_name_plural = 'ToolClassifications'
         ordering = ('code',)

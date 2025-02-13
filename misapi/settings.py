@@ -139,7 +139,7 @@ INSTALLED_APPS = \
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',
-        'apps.sales.fixedasset',
+        'apps.sales.asset',
     ]
 
 MIDDLEWARE = [

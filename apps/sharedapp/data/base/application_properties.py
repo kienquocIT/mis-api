@@ -2512,6 +2512,82 @@ AppProp_SaleData_ReportRevenue_data = {
     },
 }
 
+AppProp_SaleData_FixedAsset_data={
+    "c055600a-4165-4ddc-b646-e49f58393107": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Asset Name",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "a745afc8-36ad-4091-833b-346ef2f70732": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Asset Code",
+        "code": "code",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "3bf86509-37f5-4628-bf64-512de2c5ca71": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Classification",
+        "code": "classification",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "saledata.fixedassetclassification",
+    },
+    "15f5cd84-e735-4b8b-aee3-677ff44dd66b": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Product",
+        "code": "product",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "saledata.product",
+    },
+    "e058a7ea-0349-4ccb-8b1b-1242a98b6061": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Manage Department",
+        "code": "manage_department",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "hr.Group",
+    },
+    "f0d02974-a513-41b0-8d10-13fefdbde9a5": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Use Department",
+        "code": "use_department",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "a1cda12e-a729-4027-b335-d1c42c43265a": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Original Cost",
+        "code": "original_cost",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "7558df07-a713-41a7-8353-bbf1ae6a1d4d": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Accumulative Depreciation",
+        "code": "accumulative_depreciation",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "455b4f9a-9979-4ff5-9a37-2d2ea5674360": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Net Book Value",
+        "code": "net_book_value",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "99ac191c-1e0c-4a15-9854-83e708e10847": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Asset Sources",
+        "code": "asset_sources",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2548,5 +2624,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
     **AppProp_SaleData_Consulting_data,
-    **AppProp_SaleData_ReportRevenue_data
+    **AppProp_SaleData_ReportRevenue_data,
+    **AppProp_SaleData_FixedAsset_data
 }

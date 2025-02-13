@@ -28,7 +28,7 @@ from apps.masterdata.saledata.views import (
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
     RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail,
-    FixedAssetClassificationList, FixedAssetClassificationGroupList
+    FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
@@ -206,4 +206,6 @@ urlpatterns += [
          name='FixedAssetClassificationGroupList'),
     path('fixed-asset/classification/list', FixedAssetClassificationList.as_view(),
          name='FixedAssetClassificationList'),
+    path('tool/classification/list', ToolClassificationList.as_view(),
+         name='ToolClassificationList'),
 ]

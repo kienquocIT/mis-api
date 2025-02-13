@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import FixedAssetClassification
+from apps.masterdata.saledata.models import FixedAssetClassification, ToolClassification
 
 __all__ = [
     'FixedAssetClassificationGroupListSerializer',
     'FixedAssetClassificationListSerializer',
 ]
+
 
 class FixedAssetClassificationGroupListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,3 +39,14 @@ class FixedAssetClassificationListSerializer(serializers.ModelSerializer):
             'title': obj.group.title,
             'code': obj.group.code,
         } if obj.group else {}
+
+
+class ToolClassificationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ToolClassification
+        fields = (
+            'id',
+            'title',
+            'code',
+            'is_default'
+        )

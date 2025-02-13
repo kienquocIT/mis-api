@@ -1,9 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.fixedasset.models import FixedAsset
-from apps.sales.fixedasset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer
+from apps.sales.asset.models import FixedAsset
+from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+__all__ =[
+    'FixedAssetList',
+    'FixedAssetDetail'
+]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
     queryset = FixedAsset.objects
@@ -21,7 +26,7 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='fixedasset', model_code='fixedasset', perm_code='view',
+        label_code='asset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -33,7 +38,8 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='fixedasset', model_code='fixedasset', perm_code='create',
+        employee_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
@@ -42,6 +48,7 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
 class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = FixedAsset.objects
     serializer_detail = FixedAssetDetailSerializer
+    serializer_update = FixedAssetUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -51,7 +58,20 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='fixedasset', model_code='fixedasset', perm_code='view',
+        label_code='asset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Update",
+        operation_description="Fixed Asset Update",
+        request_body=FixedAssetUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='edit',
+    )
+    def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.update(request, *args, pk, **kwargs)

@@ -11,4 +11,4 @@ from .product_warehouse import *
 from .expense_item import *
 from .revenue_plan_config import *
 from .document import *
-from .fixed_asset import *
+from .asset import *

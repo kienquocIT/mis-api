@@ -2679,8 +2679,8 @@ FIXED_ASSET_APP_CONFIG = {
     "title": "Fixed Asset",
     "code": "fixedasset",
     "model_code": "fixedasset",
-    "app_label": "fixedasset",
-    "is_workflow": False,
+    "app_label": "asset",
+    "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
