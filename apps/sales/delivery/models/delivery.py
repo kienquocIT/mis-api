@@ -669,51 +669,60 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
         return True
 
-    def push_delivery_product_warehouse(self):
-        pw_data = [
-            {
-                'sale_order_id': deli_data.get('sale_order_id', None),
-                'sale_order_data': deli_data.get('sale_order_data', {}),
-                'lease_order_id': deli_data.get('lease_order_id', None),
-                'lease_order_data': deli_data.get('lease_order_data', {}),
-                'warehouse_id': deli_data.get('warehouse_id', None),
-                'warehouse_data': deli_data.get('warehouse_data', {}),
-                'uom_id': deli_data.get('uom_id', None),
-                'uom_data': deli_data.get('uom_data', {}),
-                'lot_data': deli_data.get('lot_data', {}),
-                'serial_data': deli_data.get('serial_data', {}),
-                'quantity_delivery': deli_data.get('stock', 0),
-            } for deli_data in self.delivery_data
-        ]
-        OrderDeliveryProductWarehouse.create(
-            delivery_product_id=self.id,
-            tenant_id=self.delivery_sub.tenant_id,
-            company_id=self.delivery_sub.company_id,
-            pw_data=pw_data
-        )
-        return True
-
-    def create_lot_serial(self):
-        self.delivery_lot_delivery_product.all().delete()
-        self.delivery_serial_delivery_product.all().delete()
-        for delivery in self.delivery_data:
-            OrderDeliveryLot.create(
-                delivery_product_id=self.id,
-                delivery_sub_id=self.delivery_sub_id,
-                delivery_id=self.delivery_sub.order_delivery_id,
-                tenant_id=self.delivery_sub.tenant_id,
-                company_id=self.delivery_sub.company_id,
-                lot_data=delivery.get('lot_data', [])
-            )
-            OrderDeliverySerial.create(
-                delivery_product_id=self.id,
-                delivery_sub_id=self.delivery_sub_id,
-                delivery_id=self.delivery_sub.order_delivery_id,
-                tenant_id=self.delivery_sub.tenant_id,
-                company_id=self.delivery_sub.company_id,
-                serial_data=delivery.get('serial_data', [])
-            )
-        return True
+    # def create_delivery_product_leased(self):
+    #     self.delivery_product_leased_delivery_product.all().delete()
+    #     OrderDeliveryProductLeased.objects.bulk_create([OrderDeliveryProductLeased(
+    #         delivery_product_id=self.id, tenant_id=self.tenant_id,
+    #         company_id=self.company_id, **product_leased,
+    #     ) for product_leased in self.product_quantity_leased_data])
+    #     return True
+    #
+    # def create_delivery_product_warehouse(self):
+    #     self.delivery_pw_delivery_product.all().delete()
+    #     pw_data = [
+    #         {
+    #             'sale_order_id': deli_data.get('sale_order_id', None),
+    #             'sale_order_data': deli_data.get('sale_order_data', {}),
+    #             'lease_order_id': deli_data.get('lease_order_id', None),
+    #             'lease_order_data': deli_data.get('lease_order_data', {}),
+    #             'warehouse_id': deli_data.get('warehouse_id', None),
+    #             'warehouse_data': deli_data.get('warehouse_data', {}),
+    #             'uom_id': deli_data.get('uom_id', None),
+    #             'uom_data': deli_data.get('uom_data', {}),
+    #             'lot_data': deli_data.get('lot_data', {}),
+    #             'serial_data': deli_data.get('serial_data', {}),
+    #             'quantity_delivery': deli_data.get('stock', 0),
+    #         } for deli_data in self.delivery_data
+    #     ]
+    #     OrderDeliveryProductWarehouse.create(
+    #         delivery_product_id=self.id,
+    #         tenant_id=self.delivery_sub.tenant_id,
+    #         company_id=self.delivery_sub.company_id,
+    #         pw_data=pw_data
+    #     )
+    #     return True
+    #
+    # def create_delivery_lot_serial(self):
+    #     self.delivery_lot_delivery_product.all().delete()
+    #     self.delivery_serial_delivery_product.all().delete()
+    #     for delivery in self.delivery_data:
+    #         OrderDeliveryLot.create(
+    #             delivery_product_id=self.id,
+    #             delivery_sub_id=self.delivery_sub_id,
+    #             delivery_id=self.delivery_sub.order_delivery_id,
+    #             tenant_id=self.delivery_sub.tenant_id,
+    #             company_id=self.delivery_sub.company_id,
+    #             lot_data=delivery.get('lot_data', [])
+    #         )
+    #         OrderDeliverySerial.create(
+    #             delivery_product_id=self.id,
+    #             delivery_sub_id=self.delivery_sub_id,
+    #             delivery_id=self.delivery_sub.order_delivery_id,
+    #             tenant_id=self.delivery_sub.tenant_id,
+    #             company_id=self.delivery_sub.company_id,
+    #             serial_data=delivery.get('serial_data', [])
+    #         )
+    #     return True
 
     def before_save(self):
         self.set_and_check_quantity()
@@ -735,10 +744,17 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.remaining_quantity = remaining_quantity
         new_obj.remaining_quantity_new = remaining_quantity_new
         new_obj.ready_quantity = ready_quantity
+        new_obj.picked_quantity = 0
+        new_obj.delivery_data = []
         # Kiểm tra danh sách SP đã giao, cái nào giao rồi thì cập nhật remaining_quantity_leased
+        new_obj.product_quantity_leased_data = [
+            leased_data for leased_data in new_obj.product_quantity_leased_data
+            if leased_data.get('picked_quantity', 0) <= 0
+        ]
         for leased_data in new_obj.product_quantity_leased_data:
-            if len(leased_data.get('delivery_data', [])) > 0:
-                leased_data.update({'remaining_quantity_leased': 0})
+            leased_data.update({'delivery_data': []})
+            # if leased_data.get('picked_quantity', 0) > 0:
+            #     leased_data.update({'remaining_quantity_leased': 0, 'picked_quantity': 0})
 
 
         # new_obj = OrderDeliveryProduct(
@@ -785,8 +801,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             del kwargs['for_goods_return']
         if not for_goods_return:
             self.before_save()
-            self.push_delivery_product_warehouse()
-            self.create_lot_serial()
+            DeliHandler.create_delivery_product_leased(instance=self)
+            DeliHandler.create_delivery_product_warehouse(instance=self)
+            DeliHandler.create_delivery_lot_serial(instance=self)
         super().save(*args, **kwargs)
 
     class Meta:
@@ -830,6 +847,13 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_pw_delivery_product",
+    )
+    delivery_product_leased = models.ForeignKey(
+        'delivery.OrderDeliveryProductLeased',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product leased",
+        related_name="delivery_pw_delivery_product_leased",
+        null=True,
     )
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
@@ -882,14 +906,13 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
     @classmethod
     def create(
             cls,
-            delivery_product_id,
             tenant_id,
             company_id,
-            pw_data
+            pw_data,
+            **kwargs
     ):
         cls.objects.bulk_create([cls(
-            **data,
-            delivery_product_id=delivery_product_id,
+            **data, **kwargs,
             tenant_id=tenant_id,
             company_id=company_id,
         ) for data in pw_data])
@@ -915,6 +938,13 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="delivery product",
         related_name="delivery_lot_delivery_product",
     )
+    delivery_product_leased = models.ForeignKey(
+        'delivery.OrderDeliveryProductLeased',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product leased",
+        related_name="delivery_lot_delivery_product_leased",
+        null=True,
+    )
     product_warehouse_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.CASCADE,
@@ -939,18 +969,13 @@ class OrderDeliveryLot(MasterDataAbstractModel):
     @classmethod
     def create(
             cls,
-            delivery_product_id,
-            delivery_sub_id,
-            delivery_id,
             tenant_id,
             company_id,
-            lot_data
+            lot_data,
+            **kwargs
     ):
         cls.objects.bulk_create([cls(
-            **data,
-            delivery_product_id=delivery_product_id,
-            delivery_sub_id=delivery_sub_id,
-            delivery_id=delivery_id,
+            **data, **kwargs,
             tenant_id=tenant_id,
             company_id=company_id,
         ) for data in lot_data])
@@ -976,6 +1001,13 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         verbose_name="delivery product",
         related_name="delivery_serial_delivery_product",
     )
+    delivery_product_leased = models.ForeignKey(
+        'delivery.OrderDeliveryProductLeased',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product leased",
+        related_name="delivery_serial_delivery_product_leased",
+        null=True,
+    )
     product_warehouse_serial = models.ForeignKey(
         'saledata.ProductWareHouseSerial',
         on_delete=models.CASCADE,
@@ -995,18 +1027,13 @@ class OrderDeliverySerial(MasterDataAbstractModel):
     @classmethod
     def create(
             cls,
-            delivery_product_id,
-            delivery_sub_id,
-            delivery_id,
             tenant_id,
             company_id,
-            serial_data
+            serial_data,
+            **kwargs
     ):
         cls.objects.bulk_create([cls(
-            **data,
-            delivery_product_id=delivery_product_id,
-            delivery_sub_id=delivery_sub_id,
-            delivery_id=delivery_id,
+            **data, **kwargs,
             tenant_id=tenant_id,
             company_id=company_id,
         ) for data in serial_data])

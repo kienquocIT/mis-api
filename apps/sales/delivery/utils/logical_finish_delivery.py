@@ -112,12 +112,17 @@ class DeliFinishHandler:
                 cls.update_pw(instance=instance, deli_product=deli_product, config=config)
                 cls.update_pw_lot(deli_product=deli_product)
                 cls.update_pw_serial(deli_product=deli_product)
+                for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
+                    cls.update_pw(instance=instance, deli_product=deli_product_leased, config=config)
+                    cls.update_pw_lot(deli_product=deli_product_leased)
+                    cls.update_pw_serial(deli_product=deli_product_leased)
         return True
 
     @classmethod
     def update_pw(cls, instance, deli_product, config):
         target = deli_product.product
-        if deli_product.offset:
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct" and deli_product.offset:
             target = deli_product.offset
         if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
@@ -172,7 +177,13 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_lot(cls, deli_product):
-        for lot in deli_product.delivery_lot_delivery_product.all():
+        targets = []
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct":
+            targets = deli_product.delivery_lot_delivery_product.all()
+        if app_code == "delivery.orderdeliveryproductleased":
+            targets = deli_product.delivery_lot_delivery_product_leased.all()
+        for lot in targets:
             final_ratio = 1
             uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
             if lot.product_warehouse_lot:
@@ -190,8 +201,8 @@ class DeliFinishHandler:
                         'delivery_id': deli_product.delivery_sub_id,
                     }]
                     ProductWareHouseLot.push_pw_lot(
-                        tenant_id=deli_product.delivery_sub.tenant_id,
-                        company_id=deli_product.delivery_sub.company_id,
+                        tenant_id=deli_product.tenant_id,
+                        company_id=deli_product.company_id,
                         product_warehouse_id=product_warehouse.id,
                         lot_data=lot_data,
                         type_transaction=1,
@@ -200,7 +211,13 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_serial(cls, deli_product):
-        for serial in deli_product.delivery_serial_delivery_product.all():
+        targets = []
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct":
+            targets = deli_product.delivery_serial_delivery_product.all()
+        if app_code == "delivery.orderdeliveryproductleased":
+            targets = deli_product.delivery_serial_delivery_product_leased.all()
+        for serial in targets:
             serial.product_warehouse_serial.is_delete = True
             serial.product_warehouse_serial.save(update_fields=['is_delete'])
         return True

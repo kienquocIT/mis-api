@@ -6,7 +6,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
-from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
+from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment, \
+    OrderDeliveryProductLeased
 from ..utils import DeliHandler
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -264,8 +265,16 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         )
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
+                # sau khi update sẽ chạy các func trong save()
                 obj.save(update_fields=['picked_quantity', 'delivery_data', 'product_quantity_leased_data'])
-                # sau khi update sẽ tạo OrderDeliveryProductWarehouse (push_delivery_product_warehouse)
+
+                # update OrderDeliveryProductLeased
+                # sau khi update sẽ chạy các func trong save()
+                # obj.delivery_product_leased_delivery_product.all().delete()
+                # OrderDeliveryProductLeased.objects.bulk_create([OrderDeliveryProductLeased(
+                #     delivery_product_id=obj.id, tenant_id=obj.tenant_id,
+                #     company_id=obj.company_id, **product_leased,
+                # ) for product_leased in obj.product_quantity_leased_data])
         return True
 
     # none_picking_many_delivery

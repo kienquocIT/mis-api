@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramSuffix
+from apps.shared import DisperseModel
 from apps.shared.translations.sales import DeliverMsg
 
 
@@ -17,6 +18,109 @@ class DeliHandler:
                     'detail': DeliverMsg.ERROR_UPDATE_RULE
                 }
             )
+        return True
+
+    @classmethod
+    def create_delivery_product_leased(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductLeased').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_product_leased_delivery_product.all().delete()
+            created_list = model.objects.bulk_create([model(
+                delivery_product_id=instance.id, tenant_id=instance.tenant_id,
+                company_id=instance.company_id, **product_leased,
+            ) for product_leased in instance.product_quantity_leased_data])
+            for created in created_list:
+                DeliHandler.create_delivery_product_warehouse(instance=created)
+                DeliHandler.create_delivery_lot_serial(instance=created)
+        return True
+
+    @classmethod
+    def create_delivery_product_warehouse(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductWarehouse').get_model()
+        if model and hasattr(model, 'create'):
+            pw_data = [
+                {
+                    'sale_order_id': deli_data.get('sale_order_id', None),
+                    'sale_order_data': deli_data.get('sale_order_data', {}),
+                    'lease_order_id': deli_data.get('lease_order_id', None),
+                    'lease_order_data': deli_data.get('lease_order_data', {}),
+                    'warehouse_id': deli_data.get('warehouse_id', None),
+                    'warehouse_data': deli_data.get('warehouse_data', {}),
+                    'uom_id': deli_data.get('uom_id', None),
+                    'uom_data': deli_data.get('uom_data', {}),
+                    'lot_data': deli_data.get('lot_data', {}),
+                    'serial_data': deli_data.get('serial_data', {}),
+                    'quantity_delivery': deli_data.get('stock', 0),
+                } for deli_data in instance.delivery_data
+            ]
+            app_code = instance._meta.label_lower
+            common = {}
+            if app_code == "delivery.orderdeliveryproduct":
+                common = {
+                    'delivery_product_id': instance.id,
+                    'delivery_product_leased_id': None,
+                }
+                instance.delivery_pw_delivery_product.filter(
+                    delivery_product_leased__isnull=True
+                ).delete()
+            if app_code == "delivery.orderdeliveryproductleased":
+                if instance.delivery_product:
+                    common = {
+                        'delivery_product_id': instance.delivery_product_id,
+                        'delivery_product_leased_id': instance.id,
+                    }
+                    instance.delivery_pw_delivery_product_leased.all().delete()
+            model.create(
+                **common,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                pw_data=pw_data
+            )
+        return True
+
+    @classmethod
+    def create_delivery_lot_serial(cls, instance):
+        model1 = DisperseModel(app_model='delivery.OrderDeliveryLot').get_model()
+        model2 = DisperseModel(app_model='delivery.OrderDeliverySerial').get_model()
+        if model1 and hasattr(model1, 'create') and model2 and hasattr(model2, 'create'):
+            app_code = instance._meta.label_lower
+            common = {}
+            if app_code == "delivery.orderdeliveryproduct":
+                common = {
+                    'delivery_product_id': instance.id,
+                    'delivery_product_leased_id': None,
+                    'delivery_sub_id': instance.delivery_sub_id,
+                    'delivery_id': instance.delivery_sub.order_delivery_id,
+                }
+                instance.delivery_lot_delivery_product.filter(
+                    delivery_product_leased__isnull=True
+                ).delete()
+                instance.delivery_serial_delivery_product.filter(
+                    delivery_product_leased__isnull=True
+                ).delete()
+            if app_code == "delivery.orderdeliveryproductleased":
+                if instance.delivery_product:
+                    common = {
+                        'delivery_product_id': instance.delivery_product_id,
+                        'delivery_product_leased_id': instance.id,
+                        'delivery_sub_id': instance.delivery_product.delivery_sub_id,
+                        'delivery_id': instance.delivery_product.delivery_sub.order_delivery_id,
+                    }
+                    instance.delivery_lot_delivery_product_leased.all().delete()
+                    instance.delivery_serial_delivery_product_leased.all().delete()
+            for delivery in instance.delivery_data:
+                model1.create(
+                    **common,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    lot_data=delivery.get('lot_data', [])
+                )
+                model2.create(
+                    **common,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    serial_data=delivery.get('serial_data', [])
+                )
         return True
 
     @classmethod
