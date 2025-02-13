@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -615,8 +616,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
     product_quantity = models.FloatField(default=0)
-    product_quantity_new = models.FloatField(default=0)
-    product_quantity_leased = models.FloatField(default=0)
+    product_quantity_new = models.FloatField(default=0, help_text="quantity need delivery of new products")
+    remaining_quantity_new = models.FloatField(default=0, help_text="quantity remain of new products")
+    product_quantity_leased = models.FloatField(default=0, help_text="quantity need delivery of leased products")
     product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
@@ -718,43 +720,62 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         self.put_backup_data()
 
     def setup_new_obj(
-            self, old_obj, new_sub, delivery_quantity, delivered_quantity_before, remaining_quantity, ready_quantity
+            self,
+            old_obj, new_sub,
+            delivery_quantity, delivered_quantity_before,
+            remaining_quantity, remaining_quantity_new,
+            ready_quantity,
     ):
-        new_obj = OrderDeliveryProduct(
-            delivery_sub=new_sub,
-            product=old_obj.product,
-            product_data=old_obj.product_data,
-            asset_type=old_obj.asset_type,
-            offset=old_obj.offset,
-            offset_data=old_obj.offset_data,
-            uom=old_obj.uom,
-            uom_data=old_obj.uom_data,
-            uom_time=old_obj.uom_time,
-            uom_time_data=old_obj.uom_time_data,
-            product_quantity=old_obj.product_quantity,
-            product_quantity_new=old_obj.product_quantity_new,
-            product_quantity_leased=old_obj.product_quantity_leased,
-            product_quantity_leased_data=old_obj.product_quantity_leased_data,
-            product_quantity_time=old_obj.product_quantity_time,
-            product_unit_price=old_obj.product_unit_price,
-            product_subtotal_price=old_obj.product_subtotal_price,
+        new_obj = deepcopy(old_obj)
+        # Override data
+        new_obj.id = None  # Clear the primary key
+        new_obj.delivery_sub = new_sub
+        new_obj.delivery_quantity = delivery_quantity
+        new_obj.delivered_quantity_before = delivered_quantity_before
+        new_obj.remaining_quantity = remaining_quantity
+        new_obj.remaining_quantity_new = remaining_quantity_new
+        new_obj.ready_quantity = ready_quantity
+        # Kiểm tra danh sách SP đã giao, cái nào giao rồi thì cập nhật remaining_quantity_leased
+        for leased_data in new_obj.product_quantity_leased_data:
+            if len(leased_data.get('delivery_data', [])) > 0:
+                leased_data.update({'remaining_quantity_leased': 0})
 
-            product_depreciation_subtotal=old_obj.product_depreciation_subtotal,
-            product_depreciation_price=old_obj.product_depreciation_price,
-            product_depreciation_method=old_obj.product_depreciation_method,
-            product_depreciation_adjustment=old_obj.product_depreciation_adjustment,
-            product_depreciation_time=old_obj.product_depreciation_time,
-            product_depreciation_start_date=old_obj.product_depreciation_start_date,
-            product_depreciation_end_date=old_obj.product_depreciation_end_date,
 
-            delivery_quantity=delivery_quantity,
-            delivered_quantity_before=delivered_quantity_before,
-            remaining_quantity=remaining_quantity,
-            ready_quantity=ready_quantity,
-            picked_quantity=0,
-            order=old_obj.order,
-            delivery_data=old_obj.delivery_data
-        )
+        # new_obj = OrderDeliveryProduct(
+        #     delivery_sub=new_sub,
+        #     product=old_obj.product,
+        #     product_data=old_obj.product_data,
+        #     asset_type=old_obj.asset_type,
+        #     offset=old_obj.offset,
+        #     offset_data=old_obj.offset_data,
+        #     uom=old_obj.uom,
+        #     uom_data=old_obj.uom_data,
+        #     uom_time=old_obj.uom_time,
+        #     uom_time_data=old_obj.uom_time_data,
+        #     product_quantity=old_obj.product_quantity,
+        #     product_quantity_new=old_obj.product_quantity_new,
+        #     product_quantity_leased=old_obj.product_quantity_leased,
+        #     product_quantity_leased_data=old_obj.product_quantity_leased_data,
+        #     product_quantity_time=old_obj.product_quantity_time,
+        #     product_unit_price=old_obj.product_unit_price,
+        #     product_subtotal_price=old_obj.product_subtotal_price,
+        #
+        #     product_depreciation_subtotal=old_obj.product_depreciation_subtotal,
+        #     product_depreciation_price=old_obj.product_depreciation_price,
+        #     product_depreciation_method=old_obj.product_depreciation_method,
+        #     product_depreciation_adjustment=old_obj.product_depreciation_adjustment,
+        #     product_depreciation_time=old_obj.product_depreciation_time,
+        #     product_depreciation_start_date=old_obj.product_depreciation_start_date,
+        #     product_depreciation_end_date=old_obj.product_depreciation_end_date,
+        #
+        #     delivery_quantity=delivery_quantity,
+        #     delivered_quantity_before=delivered_quantity_before,
+        #     remaining_quantity=remaining_quantity,
+        #     ready_quantity=ready_quantity,
+        #     picked_quantity=0,
+        #     order=old_obj.order,
+        #     delivery_data=old_obj.delivery_data
+        # )
         new_obj.before_save()
         return new_obj
 
@@ -791,6 +812,9 @@ class OrderDeliveryProductLeased(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    remaining_quantity_leased = models.FloatField(default=0, help_text="quantity remain of leased products")
+    picked_quantity = models.FloatField(default=0, help_text="quantity delivery leased products")
+    delivery_data = models.JSONField(default=list, help_text="data delivery of leased products")
 
     class Meta:
         verbose_name = 'Delivery Product Leased'

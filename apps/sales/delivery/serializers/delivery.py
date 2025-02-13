@@ -49,6 +49,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'offset_data',
             'product_quantity',
             'product_quantity_new',
+            'remaining_quantity_new',
             'product_quantity_leased',
             'product_quantity_leased_data',
             'uom_data',
@@ -169,6 +170,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(allow_null=True)
+    product_quantity_leased_data = serializers.JSONField(allow_null=True, required=False)
     order = serializers.IntegerField(min_value=1)
 
 
@@ -262,7 +264,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         )
                 else:
                     obj.picked_quantity = product_done[obj_key]['picked_num']
-                obj.save(update_fields=['picked_quantity', 'delivery_data'])
+                obj.save(update_fields=['picked_quantity', 'delivery_data', 'product_quantity_leased_data'])
                 # sau khi update sẽ tạo OrderDeliveryProductWarehouse (push_delivery_product_warehouse)
         return True
 

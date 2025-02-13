@@ -75,13 +75,18 @@ class DeliFinishHandler:
 
     @classmethod
     def create_prod(cls, new_sub, instance):
-        # update to current product list of current sub
+        # setup data để tạo records product mới cho sub mới
         prod_arr = []
         model_deli_product = DisperseModel(app_model='delivery.orderdeliveryproduct').get_model()
         if model_deli_product and hasattr(model_deli_product, 'objects'):
             for deli_product in instance.delivery_product_delivery_sub.all():
                 quantity_before = deli_product.delivered_quantity_before + deli_product.picked_quantity
                 remaining_quantity = deli_product.delivery_quantity - quantity_before
+                # SL còn lại SP mới: tổng còn lại - SL SP đã cho thuê mà chưa giao
+                remaining_quantity_new = remaining_quantity
+                for leased_data in deli_product.product_quantity_leased_data:
+                    if leased_data.get('picked_quantity', 0) == 0:
+                        remaining_quantity_new -= 1
                 ready_quantity = deli_product.ready_quantity - deli_product.picked_quantity
                 new_prod = deli_product.setup_new_obj(
                     old_obj=deli_product,
@@ -89,7 +94,8 @@ class DeliFinishHandler:
                     delivery_quantity=deli_product.delivery_quantity,
                     delivered_quantity_before=quantity_before,
                     remaining_quantity=remaining_quantity,
-                    ready_quantity=ready_quantity if ready_quantity > 0 else 0
+                    remaining_quantity_new=remaining_quantity_new if remaining_quantity_new > 0 else 0,
+                    ready_quantity=ready_quantity if ready_quantity > 0 else 0,
                 )
                 new_prod.before_save()
                 prod_arr.append(new_prod)
