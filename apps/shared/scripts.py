@@ -1303,32 +1303,18 @@ def reset_and_run_product_info():
     return True
 
 
-def reset_and_run_warehouse_stock(run_type=0):
-    # reset
-    ProductWareHouseLot.objects.all().delete()
-    ProductWareHouseSerial.objects.all().delete()
-    ProductWareHouse.objects.all().delete()
+def reset_and_run_warehouse_stock(company_id, run_type=0):
     # input, output, provide
     if run_type == 0:  # input
-        for gr in GoodsReceipt.objects.filter(system_status=3):
+        for gr in GoodsReceipt.objects.filter(system_status=3, company_id=company_id):
             GRFinishHandler.push_to_warehouse_stock(instance=gr)
     if run_type == 1:  # output
-        for deli_sub in OrderDeliverySub.objects.all():
-            config = deli_sub.config_at_that_point
-            if not config:
-                get_config = DeliveryConfig.objects.filter(company_id=deli_sub.company_id).first()
-                if get_config:
-                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
-            for deli_product in deli_sub.delivery_product_delivery_sub.all():
-                if deli_product.product and deli_product.delivery_data:
-                    for data in deli_product.delivery_data:
-                        if all(key in data for key in ('warehouse', 'uom', 'stock')):
-                            product_warehouse = ProductWareHouse.objects.filter(
-                                tenant_id=deli_sub.tenant_id, company_id=deli_sub.company_id,
-                                product_id=deli_product.product_id, warehouse_id=data['warehouse'],
-                            )
-                            source = {"uom": data['uom'], "quantity": data['stock']}
-                            DeliFinishHandler.minus_tock(source, product_warehouse, config)
+        for product_warehouse in ProductWareHouse.objects.filter(company_id=company_id):
+            product_warehouse.stock_amount = product_warehouse.receipt_amount
+            product_warehouse.sold_amount = 0
+            product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+        for deli_sub in OrderDeliverySub.objects.filter(system_status=3, company_id=company_id):
+            DeliFinishHandler.push_product_warehouse(instance=deli_sub)
     print('reset_and_run_warehouse_stock done.')
     return True
 
