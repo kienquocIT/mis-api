@@ -3,6 +3,7 @@ from uuid import UUID
 from celery import shared_task
 from django.utils import timezone
 
+from apps.core.hr.models import Employee
 from apps.shared import DisperseModel
 from apps.core.mailer.mail_control import SendMailController
 from apps.core.mailer.mail_data import MailDataResolver
@@ -238,7 +239,7 @@ def send_email_eoffice_meeting(
         user_id: UUID or str,
         tenant_id: UUID or str,
         company_id: UUID or str,
-        employee_created_id: UUID or str,
+        employee_created: Employee,
         email_to_list: list,
         email_cc_list: list,
         email_bcc_list: list,

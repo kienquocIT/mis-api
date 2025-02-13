@@ -130,61 +130,18 @@ class MeetingZoomConfigDetailSerializer(serializers.ModelSerializer):  # noqa
 
 class MeetingScheduleCommonFunc:
     @staticmethod
-    def create_participants_mapped(meeting_schedule, participants_list):
+    def create_participants_mapped(meeting_obj, participants_list):
         bulk_info = []
         for item in participants_list:
             bulk_info.append(
                 MeetingScheduleParticipant(
-                    meeting_schedule_mapped=meeting_schedule,
+                    meeting_schedule_mapped=meeting_obj,
                     **item
                 )
             )
-        MeetingScheduleParticipant.objects.filter(meeting_schedule_mapped=meeting_schedule).delete()
+        MeetingScheduleParticipant.objects.filter(meeting_schedule_mapped=meeting_obj).delete()
         MeetingScheduleParticipant.objects.bulk_create(bulk_info)
         return True
-
-    @staticmethod
-    def create_online_meeting_object(config_obj, zoom_meeting_obj):
-        try:
-            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-            cryptor = SimpleEncryptor(key=password)
-            account_id = cryptor.decrypt(config_obj.account_id)
-            client_id = cryptor.decrypt(config_obj.client_id)
-            client_secret = cryptor.decrypt(config_obj.client_secret)
-        except Exception as err:
-            raise serializers.ValidationError({'Decrypting': f'Error while decrypting ({err})'})
-        api_base_url = "https://api.zoom.us/v2"
-        response = requests.post(
-            "https://zoom.us/oauth/token",
-            auth=(client_id, client_secret),
-            data={
-                "grant_type": "account_credentials",
-                "account_id": account_id,
-                "client_secret": client_secret
-            },
-            timeout=60
-        )
-
-        if response.status_code != 200:
-            raise serializers.ValidationError({'Online meeting': 'Unable to get access token'})
-        response_data = response.json()
-        access_token = response_data["access_token"]
-        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-        resp = requests.post(
-            f"{api_base_url}/users/me/meetings",
-            headers=headers,
-            json=zoom_meeting_obj.meeting_create_payload,
-            timeout=60
-        )
-        if resp.status_code != 201:
-            raise serializers.ValidationError({'Online meeting': 'Unable to generate meeting link'})
-        response_data = resp.json()
-
-        zoom_meeting_obj.meeting_ID = response_data.get("pmi") if response_data.get("pmi") else response_data.get("id")
-        zoom_meeting_obj.meeting_link = response_data.get("join_url")
-        zoom_meeting_obj.meeting_passcode = response_data.get("password")
-        zoom_meeting_obj.save(update_fields=["meeting_ID", "meeting_link", "meeting_passcode"])
-        return response_data
 
     @staticmethod
     def create_calendar_ics_file(meeting_id, meeting_topic, meeting_host_email, start_date, start_time, duration):
@@ -210,10 +167,58 @@ class MeetingScheduleCommonFunc:
             raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({error})'})
 
     @staticmethod
-    def combine_data_send_email(user_id, meeting_schedule, response_data, meeting_time, date, time, duration):
+    def combine_data_send_email_offline_meeting(user_id, meeting_obj):
         try:
+            date = meeting_obj.meeting_start_date
+            time = meeting_obj.meeting_start_time
+            meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
+                'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
+            )
+
             email_to_list = []
-            for item in meeting_schedule.meeting_schedule_mapped.all():
+            for item in meeting_obj.meeting_schedule_mapped.all():
+                if item.internal:
+                    email_to_list.append(item.internal.email)
+                if item.external:
+                    email_to_list.append(item.external.email)
+
+            email_content = (
+                f"{meeting_obj.employee_created.get_full_name(2)} from {meeting_obj.company.title} "
+                f"has invited you to a scheduled meeting."
+                f"\n\nTopic: {meeting_obj.meeting_content}\nTime: {meeting_time}"
+                f"\n\nAt: {meeting_obj.meeting_room_mapped.title}"
+            )
+
+            email_sent = send_email_eoffice_meeting(
+                user_id,
+                meeting_obj.tenant_id,
+                meeting_obj.company_id,
+                meeting_obj.employee_created,
+                email_to_list,
+                [],
+                [],
+                meeting_obj.meeting_content,
+                email_content,
+                []
+            )
+            meeting_obj.meeting_schedule_mapped.all().update(send_email_status= (email_sent == 'Success'))
+            return True
+        except Exception as err:
+            print(err.args[1])
+            raise serializers.ValidationError({'Meeting scheduled error': "Cannot send email."})
+
+    @staticmethod
+    def combine_data_send_email_online_meeting(user_id, meeting_obj, response_data):
+        try:
+            duration = meeting_obj.meeting_duration
+            date = meeting_obj.meeting_start_date
+            time = meeting_obj.meeting_start_time
+            meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
+                'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
+            )
+
+            email_to_list = []
+            for item in meeting_obj.meeting_schedule_mapped.all():
                 if item.internal:
                     email_to_list.append(item.internal.email)
                 if item.external:
@@ -221,27 +226,28 @@ class MeetingScheduleCommonFunc:
 
             meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
             email_content = (
-                f"{meeting_schedule.employee_inherit.get_full_name(2)} from {meeting_schedule.company.title} "
+                f"{meeting_obj.employee_created.get_full_name(2)} from {meeting_obj.company.title} "
                 f"has invited you to a scheduled Zoom meeting."
                 f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
                 f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
                 f"\n\nMeeting ID: {meeting_id}"
-                f"\nPasscode: {response_data.get('password')}")
+                f"\nPasscode: {response_data.get('password')}"
+            )
 
             ics_file_path = MeetingScheduleCommonFunc.create_calendar_ics_file(
                 meeting_id,
                 response_data.get('topic'),
-                meeting_schedule.employee_inherit.email,
+                meeting_obj.employee_created.email,
                 date,
                 time,
                 duration
             )
 
-            send_email_eoffice_meeting(
+            email_sent = send_email_eoffice_meeting(
                 user_id,
-                meeting_schedule.tenant_id,
-                meeting_schedule.company_id,
-                meeting_schedule.employee_created_id,
+                meeting_obj.tenant_id,
+                meeting_obj.company_id,
+                meeting_obj.employee_created,
                 email_to_list,
                 [],
                 [],
@@ -249,40 +255,63 @@ class MeetingScheduleCommonFunc:
                 email_content,
                 [ics_file_path]
             )
+            meeting_obj.meeting_schedule_mapped.all().update(send_email_status= (email_sent == 'Success'))
             return True
         except Exception as err:
             print(err.args[1])
             raise serializers.ValidationError({'Meeting scheduled error': "Cannot send email."})
 
     @staticmethod
-    def after_create_online_meeting(user_id, meeting_schedule, online_meeting_data):
-        MeetingScheduleOnlineMeeting.objects.filter(meeting_online_schedule_mapped=meeting_schedule).delete()
-        zoom_meeting_obj = MeetingScheduleOnlineMeeting.objects.create(
-            meeting_online_schedule_mapped=meeting_schedule,
+    def create_online_meeting(meeting_obj, online_meeting_data):
+        MeetingScheduleOnlineMeeting.objects.filter(meeting_online_schedule_mapped=meeting_obj).delete()
+        zoom_obj = MeetingScheduleOnlineMeeting.objects.create(
+            meeting_online_schedule_mapped=meeting_obj,
             **online_meeting_data
         )
-        meeting_config = MeetingZoomConfig.objects.filter_current(fill__tenant=True, fill__company=True)
-        if meeting_config.exists():
-            response_data = MeetingScheduleCommonFunc.create_online_meeting_object(
-                meeting_config.first(),
-                zoom_meeting_obj
+        meeting_config = MeetingZoomConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+        if meeting_config:
+            try:
+                password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+                cryptor = SimpleEncryptor(key=password)
+                account_id = cryptor.decrypt(meeting_config.account_id)
+                client_id = cryptor.decrypt(meeting_config.client_id)
+                client_secret = cryptor.decrypt(meeting_config.client_secret)
+            except Exception as err:
+                raise serializers.ValidationError({'Decrypting': f'Error while decrypting ({err})'})
+            api_base_url = "https://api.zoom.us/v2"
+            response = requests.post(
+                "https://zoom.us/oauth/token",
+                auth=(client_id, client_secret),
+                data={
+                    "grant_type": "account_credentials",
+                    "account_id": account_id,
+                    "client_secret": client_secret
+                },
+                timeout=60
             )
-            duration = meeting_schedule.meeting_duration
-            date = meeting_schedule.meeting_start_date
-            time = meeting_schedule.meeting_start_time
-            meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
-                'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
+
+            if response.status_code != 200:
+                raise serializers.ValidationError({'Online meeting': 'Unable to get access token'})
+            response_data = response.json()
+            access_token = response_data["access_token"]
+            headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+            resp = requests.post(
+                f"{api_base_url}/users/me/meetings",
+                headers=headers,
+                json=zoom_obj.meeting_create_payload,
+                timeout=60
             )
-            MeetingScheduleCommonFunc.combine_data_send_email(
-                user_id,
-                meeting_schedule,
-                response_data,
-                meeting_time,
-                date,
-                time,
-                duration
-            )
-        return True
+            if resp.status_code != 201:
+                raise serializers.ValidationError({'Online meeting': 'Unable to generate meeting link'})
+            response_data = resp.json()
+
+            zoom_obj.meeting_ID = response_data.get("pmi") if response_data.get("pmi") else response_data.get("id")
+            zoom_obj.meeting_link = response_data.get("join_url")
+            zoom_obj.meeting_passcode = response_data.get("password")
+            zoom_obj.save(update_fields=["meeting_ID", "meeting_link", "meeting_passcode"])
+
+            return response_data
+        return {}
 
     @staticmethod
     def check_room_overlap(item, data):
@@ -384,20 +413,28 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        meeting_schedule = MeetingSchedule.objects.create(
+        meeting_obj = MeetingSchedule.objects.create(
             **validated_data, employee_inherit_id=validated_data['employee_created_id']
         )
         MeetingScheduleCommonFunc.create_participants_mapped(
-            meeting_schedule, self.initial_data.get('participants', [])
+            meeting_obj, self.initial_data.get('participants', [])
         )
-        MeetingScheduleCommonFunc.after_create_online_meeting(
-            self.context.get('user_current').id, meeting_schedule, self.initial_data.get('online_meeting_data', {})
-        )
+
+        user_id = self.context.get('user_current').id
+        if meeting_obj.meeting_type:
+            MeetingScheduleCommonFunc.combine_data_send_email_offline_meeting(user_id, meeting_obj)
+        else:
+            response_data = MeetingScheduleCommonFunc.create_online_meeting(
+                meeting_obj, self.initial_data.get('online_meeting_data', {})
+            )
+            if len(response_data) > 0:
+                MeetingScheduleCommonFunc.combine_data_send_email_online_meeting(user_id, meeting_obj, response_data)
+
 
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            MeetingScheduleCommonFunc.create_files_mapped(meeting_schedule, attachment.strip().split(','))
-        return meeting_schedule
+            MeetingScheduleCommonFunc.create_files_mapped(meeting_obj, attachment.strip().split(','))
+        return meeting_obj
 
 
 class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
