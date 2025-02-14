@@ -18,7 +18,7 @@ from apps.core.company.serializers import (
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
-    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
+    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer,
     CompanyUploadLogoSerializer, CompanyBankAccountListSerializer, CompanyBankAccountCreateSerializer,
     CompanyBankAccountDetailSerializer,
     AccountingPoliciesUpdateSerializer,
@@ -258,18 +258,6 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
             if kwargs['option'] == 1:
                 self.serializer_detail = CompanyOverviewConnectedSerializer
         return self.retrieve(request, *args, **kwargs)
-
-
-class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
-    queryset = Company.objects
-    serializer_update = RestoreDefaultOpportunityConfigStageSerializer
-
-    @swagger_auto_schema(
-        operation_summary='Restore Default Opportunity Config Stage'
-    )
-    @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class CompanyBankAccountList(BaseListMixin, BaseCreateMixin):
