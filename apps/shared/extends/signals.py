@@ -67,7 +67,7 @@ class SaleDefaultData:
         {'code': 'goods', 'title': 'Hàng hóa', 'is_default': 1, 'is_goods': 1},
         {'code': 'material', 'title': 'Nguyên vật liệu', 'is_default': 1, 'is_material': 1},
         {'code': 'finished_goods', 'title': 'Thành phẩm', 'is_default': 1, 'is_finished_goods': 1},
-        {'code': 'asset_tool', 'title': 'Công cụ- Dụng cụ', 'is_default': 1, 'is_asset_tool': 1},
+        {'code': 'tool', 'title': 'Công cụ - Dụng cụ', 'is_default': 1, 'is_tool': 1},
         {'code': 'service', 'title': 'Dịch vụ', 'is_default': 1, 'is_service': 1},
     ]
     TaxCategory_data = [
@@ -93,7 +93,7 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     UoM_Group_data = [
-        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'Import', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
         {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
         {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
         {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},

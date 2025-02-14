@@ -477,7 +477,7 @@ class ProductForSaleList(BaseListMixin):
         'general_product_types_mapped__is_goods': ['exact'],
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],
-        'general_product_types_mapped__is_asset_tool': ['exact'],
+        'general_product_types_mapped__is_tool': ['exact'],
         'general_product_types_mapped__is_service': ['exact'],
         'bom_product__opportunity_id': ['exact', 'isnull'],
         'bom_product': ['isnull'],

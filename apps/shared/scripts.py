@@ -1708,22 +1708,6 @@ def parse_data_json_quo_so():
     print('parse_data_json_quo_so done.')
 
 
-def update_product_type_default_data():
-    ProductType.objects.filter(title='Sản phẩm', is_default=1).update(
-        code='goods', title='Hàng hóa', is_default=1, is_goods=1
-    )
-    ProductType.objects.filter(title='Bán thành phẩm', is_default=1).update(
-        code='finished_goods', title='Thành phẩm', is_default=1, is_finished_goods=1
-    )
-    ProductType.objects.filter(title='Nguyên vật liệu', is_default=1).update(
-        code='material', title='Nguyên vật liệu', is_default=1, is_material=1
-    )
-    ProductType.objects.filter(title='Dịch vụ', is_default=1).update(
-        code='asset_tool', title='Tài sản - Công cụ dụng cụ', is_default=1, is_asset_tool=1
-    )
-    return True
-
-
 def add_product_type_service():
     for company in Company.objects.all():
         if not ProductType.objects.filter(
@@ -2056,7 +2040,7 @@ def create_import_uom_group():
                 company=company,
                 tenant=company.tenant,
                 is_default=True,
-                code='ImportGroup',
+                code='Import',
                 title='Nhóm đơn vị cho import'
             )
             print(f"Added for {company.title} :))")
@@ -2709,9 +2693,9 @@ def update_opp_stage_is_delete():
     return True
 
 
-def update_asset_tool_type():
-    ProductType.objects.filter(
-        code='asset_tool', is_default=1, is_asset_tool=1
-    ).update(title='Công cụ- Dụng cụ')
+def update_product_type():
+    ProductType.objects.filter(code='asset_tool', is_default=1).update(code='tool', is_tool=1)
+    ProductType.objects.filter(code='tool', is_default=1, is_tool=1).update(title='Công cụ - Dụng cụ')
+    UnitOfMeasureGroup.objects.filter(code='ImportGroup', is_default=1).update(code='Import')
     print('Done :))')
     return True
