@@ -1726,14 +1726,22 @@ def update_product_type_default_data():
 
 def add_product_type_service():
     for company in Company.objects.all():
-        ProductType.objects.create(
+        if not ProductType.objects.filter(
             code='service',
             title='Dịch vụ',
             is_default=1,
             is_service=1,
             company=company,
             tenant=company.tenant
-        )
+        ).exists():
+            ProductType.objects.create(
+                code='service',
+                title='Dịch vụ',
+                is_default=1,
+                is_service=1,
+                company=company,
+                tenant=company.tenant
+            )
     return True
 
 
@@ -2698,4 +2706,12 @@ def update_period_cfg():
 
 def update_opp_stage_is_delete():
     OpportunityConfigStage.objects.filter(is_default=True).update(is_delete=False)
+    return True
+
+
+def update_asset_tool_type():
+    ProductType.objects.filter(
+        code='asset_tool', is_default=1, is_asset_tool=1
+    ).update(title='Công cụ- Dụng cụ')
+    print('Done :))')
     return True
