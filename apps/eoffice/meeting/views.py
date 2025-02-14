@@ -200,6 +200,7 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'meeting_online_schedule_mapped'
         ).select_related(
             'meeting_room_mapped',
+            'account_external'
         )
 
     @swagger_auto_schema(

@@ -441,6 +441,7 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
     participants = serializers.SerializerMethodField()
     meeting_room_mapped = serializers.SerializerMethodField()
     online_meeting_data = serializers.SerializerMethodField()
+    account_external = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -456,6 +457,7 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_duration',
             'participants',
             'online_meeting_data',
+            'account_external',
             'attachment'
         )
 
@@ -464,11 +466,15 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
         participants = [{
             'internal': {
                 'id': item.internal_id,
-                'full_name': item.internal.get_full_name(2)
+                'full_name': item.internal.get_full_name(2),
+                'send_notify_email': item.send_notify_email,
+                'send_email_status': item.send_email_status,
             } if item.internal else None,
             'external': {
                 'id': item.external_id,
-                'full_name': item.external.fullname
+                'full_name': item.external.fullname,
+                'send_notify_email': item.send_notify_email,
+                'send_email_status': item.send_email_status,
             } if item.external else None,
             'is_external': item.is_external,
         } for item in obj.meeting_schedule_mapped.all()]
@@ -492,7 +498,16 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_link': item.meeting_link,
             'meeting_passcode': item.meeting_passcode,
             'meeting_create_payload': item.meeting_create_payload
-        } for item in obj.meeting_online_schedule_mapped.all()]
+        } for item in obj.meeting_online_schedule_mapped.filter(meeting_link__isnull=False)]
+
+    @classmethod
+    def get_account_external(cls, obj):
+        return {
+            'id': obj.account_external_id,
+            'code': obj.account_external.code,
+            'name': obj.account_external.name,
+            'contact_mapped': [str(item.id) for item in obj.account_external.contact_account_name.all()]
+        } if obj.account_external else {}
 
     @classmethod
     def get_attachment(cls, obj):
