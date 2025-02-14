@@ -390,7 +390,8 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate_code(self, value):
         if value:
-            if FixedAsset.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exclude(id=self.instance.id).exists():
+            if FixedAsset.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exclude(
+                    id=self.instance.id).exists():
                 raise serializers.ValidationError({"code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"code": BaseMsg.REQUIRED})
@@ -415,8 +416,10 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
 
                 for fixed_asset_apinvoice_item in fixed_asset_apinvoice_items:
                     apinvoice_item = fixed_asset_apinvoice_item.ap_invoice_item
-                    increased_FA_value = apinvoice_item.increased_FA_value
-                    apinvoice_item.increased_FA_value = increased_FA_value - fixed_asset_apinvoice_item.increased_FA_value
+                    increased_fa_value = apinvoice_item.increased_FA_value
+                    apinvoice_item.increased_FA_value = (
+                            increased_fa_value - fixed_asset_apinvoice_item.increased_FA_value
+                    )
                     apinvoice_item.save()
 
                 fixed_asset_apinvoice_items.delete()
