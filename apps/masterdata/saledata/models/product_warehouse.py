@@ -100,7 +100,7 @@ class ProductWareHouse(MasterDataAbstractModel):
     ):
         obj, _created = cls.objects.get_or_create(
             tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
-            uom_id=uom_id, defaults={
+            defaults={
                 'tax_id': tax_id,
                 'stock_amount': amount,
                 'receipt_amount': amount,
