@@ -19,7 +19,16 @@ __all__= [
     'FixedAssetUpdateSerializer'
 ]
 
+
 class AssetSourcesCreateSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    @classmethod
+    def validate_description(cls, value):
+        if not value:
+            raise serializers.ValidationError({"description": FixedAssetMsg.DESCRIPTION_REQUIRED})
+        return value
+
     class Meta:
         model = FixedAssetSource
         fields = (
@@ -211,17 +220,6 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                             item.increased_FA_value += value
                             item.save()
                 FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
-
-                # for ap_invoice_id_key, items in increase_fa_list.items():
-                #     ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                #     ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                #     for ap_invoice_item_id_key, value in items.items():
-                #         if ap_invoice_item_id_key in ap_invoice_items_dict:
-                #             item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                #             item.increased_FA_value = value
-                #             item.save()
-
-
         except Exception as err:
             logger.error(msg=f'Create fixed asset errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
@@ -324,6 +322,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
                 'increased_FA_value': item.increased_FA_value
             } for item in obj.ap_invoice_items.all()
         ]
+
 
 class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
@@ -462,17 +461,6 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                             item.increased_FA_value += value
                             item.save()
                 FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
-
-                # for ap_invoice_id_key, items in increase_fa_list.items():
-                #     ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                #     ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                #     for ap_invoice_item_id_key, value in items.items():
-                #         if ap_invoice_item_id_key in ap_invoice_items_dict:
-                #             item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                #             item.increased_FA_value = value
-                #             item.save()
-
-
         except Exception as err:
             logger.error(msg=f'Create fixed asset errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})

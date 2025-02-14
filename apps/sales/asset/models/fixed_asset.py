@@ -101,6 +101,7 @@ class FixedAsset(DataAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return 'fc552ebb-eb98-4d7b-81cd-e4b5813b7815'  # fixed asset's application id
 
+
 class FixedAssetUseDepartment(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
         'asset.FixedAsset',
@@ -114,6 +115,7 @@ class FixedAssetUseDepartment(SimpleAbstractModel):
         related_name="fixed_assets",
         null=True
     )
+
 
 class FixedAssetSource(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
@@ -130,6 +132,7 @@ class FixedAssetSource(SimpleAbstractModel):
     )
     code = models.CharField(max_length=150)
     value = models.FloatField()
+
 
 class FixedAssetAPInvoiceItems(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(

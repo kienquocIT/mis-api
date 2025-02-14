@@ -45,6 +45,7 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
+
 class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = FixedAsset.objects
     serializer_detail = FixedAssetDetailSerializer
