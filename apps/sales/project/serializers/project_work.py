@@ -158,7 +158,7 @@ class WorkCreateSerializers(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
             attrs['w_weight'] = value
         else:
-            attrs['w_weight'] = group_calc_weight(project, attrs['w_weight'])
+            attrs['w_weight'] = group_calc_weight(project, 0, attrs['w_weight'])
         return validated_date_work(attrs)
 
     def create(self, validated_data):
@@ -339,7 +339,7 @@ class WorkUpdateSerializers(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
             attrs['w_weight'] = value
         else:
-            attrs['w_weight'] = group_calc_weight(project, attrs['w_weight'])
+            attrs['w_weight'] = group_calc_weight(project, self.instance.w_weight, attrs['w_weight'])
 
         if w_start_date < project.start_date:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_DATE_VALID_ERROR})
