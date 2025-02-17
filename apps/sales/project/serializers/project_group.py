@@ -54,7 +54,7 @@ class GroupCreateSerializers(serializers.ModelSerializer):
         value = group_calc_weight(project, 0, attrs['gr_weight'])
         if attrs['gr_weight'] == 0:
             attrs['gr_weight'] = value
-        if type(value) is bool and value is False:
+        if value is False:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
         return attrs
 
@@ -139,7 +139,7 @@ class GroupDetailSerializers(serializers.ModelSerializer):
         value = group_update_weight(project, self.instance.gr_weight, attrs['gr_weight'])
         if attrs['gr_weight'] == 0:
             attrs['gr_weight'] = value
-        if type(value) is bool and value is False:
+        if value is False:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
         return attrs
 
