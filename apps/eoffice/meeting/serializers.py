@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from django.core.mail import get_connection, EmailMessage
 import requests
 from icalendar import Calendar, Event
 from rest_framework import serializers
@@ -201,7 +200,7 @@ class MeetingScheduleCommonFunc:
                 email_content,
                 []
             )
-            meeting_obj.meeting_schedule_mapped.all().update(send_email_status= (email_sent == 'Success'))
+            meeting_obj.meeting_schedule_mapped.all().update(send_email_status=email_sent == 'Success')
             return True
         except Exception as err:
             print(err.args[1])
@@ -255,7 +254,7 @@ class MeetingScheduleCommonFunc:
                 email_content,
                 [ics_file_path]
             )
-            meeting_obj.meeting_schedule_mapped.all().update(send_email_status= (email_sent == 'Success'))
+            meeting_obj.meeting_schedule_mapped.all().update(send_email_status=email_sent == 'Success')
             return True
         except Exception as err:
             print(err.args[1])
@@ -274,18 +273,19 @@ class MeetingScheduleCommonFunc:
                 password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
                 cryptor = SimpleEncryptor(key=password)
                 account_id = cryptor.decrypt(meeting_config.account_id)
-                client_id = cryptor.decrypt(meeting_config.client_id)
-                client_secret = cryptor.decrypt(meeting_config.client_secret)
             except Exception as err:
                 raise serializers.ValidationError({'Decrypting': f'Error while decrypting ({err})'})
             api_base_url = "https://api.zoom.us/v2"
             response = requests.post(
                 "https://zoom.us/oauth/token",
-                auth=(client_id, client_secret),
+                auth=(
+                    cryptor.decrypt(meeting_config.client_id),
+                    cryptor.decrypt(meeting_config.client_secret)
+                ),
                 data={
                     "grant_type": "account_credentials",
                     "account_id": account_id,
-                    "client_secret": client_secret
+                    "client_secret": cryptor.decrypt(meeting_config.client_secret)
                 },
                 timeout=60
             )

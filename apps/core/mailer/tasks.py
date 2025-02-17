@@ -252,12 +252,10 @@ def send_email_eoffice_meeting(
         [config_obj, _, _] = obj_got
         cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
-            subject = email_subject
-
             log_cls = MailLogController(
                 tenant_id=tenant_id, company_id=company_id,
                 system_code=0,  # other
-                doc_id=user_id, subject=subject,
+                doc_id=user_id, subject=email_subject,
             )
             log_cls.create()
             log_cls.update(
@@ -270,7 +268,7 @@ def send_email_eoffice_meeting(
 
             try:
                 state_send = cls.setup(
-                    subject=subject,
+                    subject=email_subject,
                     from_email=cls.kwargs['from_email'],
                     mail_cc=email_cc_list,
                     bcc=email_bcc_list,
