@@ -16,3 +16,4 @@ from .periods import *
 from .revenue_plan_config import *
 from .product_custom import *
 from .document import *
+from .asset import *

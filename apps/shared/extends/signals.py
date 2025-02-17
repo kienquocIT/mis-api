@@ -27,7 +27,7 @@ from apps.core.base.models import Currency as BaseCurrency, PlanApplication, Bas
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
-    DocumentType,
+    DocumentType, FixedAssetClassificationGroup, FixedAssetClassification,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -108,6 +108,21 @@ class SaleDefaultData:
         {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
     ]
+    Fixed_Asset_Classification_Group_data = [
+        {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
+        {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
+        {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
+    ]
+    Fixed_Asset_Classification_data= [
+        {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
+        {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
+        {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
+        {'code': 'FAC004', 'title': 'Quyền sử dụng đất', 'is_default': 1},
+        {'code': 'FAC005', 'title': 'Quyền phát hành', 'is_default': 1},
+        {'code': 'FAC006', 'title': 'Bản quyền, bằng sáng chế', 'is_default': 1},
+        {'code': 'FAC007', 'title': 'TSCD hữu hình thuê tài chính', 'is_default': 1},
+        {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -122,6 +137,8 @@ class SaleDefaultData:
                 self.create_account_types()
                 self.create_uom_group()
                 self.create_company_function_number()
+                self.create_document_types()
+                self.create_fixed_asset_masterdata()
             return True
         except Exception as err:
             logger.error(
@@ -257,10 +274,53 @@ class SaleDefaultData:
 
     def create_document_types(self):
         objs = [
-            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
-            for at_item in self.Document_Type_data
+            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Document_Type_data
         ]
         DocumentType.objects.bulk_create(objs)
+        return True
+
+    def create_fixed_asset_masterdata(self):
+        # tai san co dinh huu hinh
+        tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Classification_Group_data[0]
+        )
+
+        # tai san co dinh vo hinh
+        intangible_fixed_asset_group_instance =  FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Classification_Group_data[1]
+        )
+
+        # tai san co dinh thue tai chinh
+        finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Classification_Group_data[2]
+        )
+
+        #create asset classification
+        for index, data in enumerate(self.Fixed_Asset_Classification_data):
+            if index < 3:
+                # First 3 items belong to tangible_fixed_asset_group_instance
+                group_instance = tangible_fixed_asset_group_instance
+            elif index < 6:
+                # Next 3 items belong to intangible_fixed_asset_group_instance
+                group_instance = intangible_fixed_asset_group_instance
+            else:
+                # Last 2 items belong to finance_leasing_fixed_asset_group_instance
+                group_instance = finance_leasing_fixed_asset_group_instance
+
+            # Create FixedAssetClassification instance
+            FixedAssetClassification.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                group=group_instance,  # Assign the group
+                **data
+            )
         return True
 
 class ConfigDefaultData:

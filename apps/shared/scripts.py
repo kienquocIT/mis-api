@@ -27,6 +27,7 @@ from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, Ru
 from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, SubPeriods, DocumentType,
+    FixedAssetClassificationGroup, FixedAssetClassification,
 )
 from misapi.asgi import application
 from . import MediaForceAPI, DisperseModel
@@ -1302,32 +1303,18 @@ def reset_and_run_product_info():
     return True
 
 
-def reset_and_run_warehouse_stock(run_type=0):
-    # reset
-    ProductWareHouseLot.objects.all().delete()
-    ProductWareHouseSerial.objects.all().delete()
-    ProductWareHouse.objects.all().delete()
+def reset_and_run_warehouse_stock(company_id, run_type=0):
     # input, output, provide
     if run_type == 0:  # input
-        for gr in GoodsReceipt.objects.filter(system_status=3):
+        for gr in GoodsReceipt.objects.filter(system_status=3, company_id=company_id):
             GRFinishHandler.push_to_warehouse_stock(instance=gr)
     if run_type == 1:  # output
-        for deli_sub in OrderDeliverySub.objects.all():
-            config = deli_sub.config_at_that_point
-            if not config:
-                get_config = DeliveryConfig.objects.filter(company_id=deli_sub.company_id).first()
-                if get_config:
-                    config = {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
-            for deli_product in deli_sub.delivery_product_delivery_sub.all():
-                if deli_product.product and deli_product.delivery_data:
-                    for data in deli_product.delivery_data:
-                        if all(key in data for key in ('warehouse', 'uom', 'stock')):
-                            product_warehouse = ProductWareHouse.objects.filter(
-                                tenant_id=deli_sub.tenant_id, company_id=deli_sub.company_id,
-                                product_id=deli_product.product_id, warehouse_id=data['warehouse'],
-                            )
-                            source = {"uom": data['uom'], "quantity": data['stock']}
-                            DeliFinishHandler.minus_tock(source, product_warehouse, config)
+        for product_warehouse in ProductWareHouse.objects.filter(company_id=company_id):
+            product_warehouse.stock_amount = product_warehouse.receipt_amount
+            product_warehouse.sold_amount = 0
+            product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+        for deli_sub in OrderDeliverySub.objects.filter(system_status=3, company_id=company_id):
+            DeliFinishHandler.push_product_warehouse(instance=deli_sub)
     print('reset_and_run_warehouse_stock done.')
     return True
 
@@ -3046,3 +3033,71 @@ def change_field_doc_id_to_lead_id_in_lead():
     print(
         f'{count} rows updated'
     )
+
+def create_default_masterdata_fixed_asset():
+    Fixed_Asset_Classification_Group_data = [
+        {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
+        {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
+        {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
+    ]
+    Fixed_Asset_Classification_data = [
+        {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
+        {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
+        {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
+        {'code': 'FAC004', 'title': 'Quyền sử dụng đất', 'is_default': 1},
+        {'code': 'FAC005', 'title': 'Quyền phát hành', 'is_default': 1},
+        {'code': 'FAC006', 'title': 'Bản quyền, bằng sáng chế', 'is_default': 1},
+        {'code': 'FAC007', 'title': 'TSCD hữu hình thuê tài chính', 'is_default': 1},
+        {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
+    ]
+    count = 0
+    print('Loading')
+    for company in Company.objects.all():
+        try:
+            # tai san co dinh huu hinh
+            tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[0]
+            )
+
+            # tai san co dinh vo hinh
+            intangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[1]
+            )
+
+            # tai san co dinh thue tai chinh
+            finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+                tenant=company.tenant,
+                company=company,
+                **Fixed_Asset_Classification_Group_data[2]
+            )
+
+            # create asset classification
+            for index, data in enumerate(Fixed_Asset_Classification_data):
+                if index < 3:
+                    # First 3 items belong to tangible_fixed_asset_group_instance
+                    group_instance = tangible_fixed_asset_group_instance
+                elif index < 6:
+                    # Next 3 items belong to intangible_fixed_asset_group_instance
+                    group_instance = intangible_fixed_asset_group_instance
+                else:
+                    # Last 2 items belong to finance_leasing_fixed_asset_group_instance
+                    group_instance = finance_leasing_fixed_asset_group_instance
+
+                # Create FixedAssetClassification instance
+                FixedAssetClassification.objects.create(
+                    tenant=company.tenant,
+                    company=company,
+                    group=group_instance,  # Assign the group
+                    **data
+                )
+            count +=1
+        except Exception as err:
+            print(
+                '[ERROR]',
+                str(company.id), str(err)
+            )
+    print('Done')
