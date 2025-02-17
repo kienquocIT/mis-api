@@ -51,10 +51,10 @@ class GroupCreateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_GROUP_DATE})
 
         # valid weight
-        value = group_calc_weight(project, attrs['gr_weight'])
+        value = group_calc_weight(project, 0, attrs['gr_weight'])
         if attrs['gr_weight'] == 0:
             attrs['gr_weight'] = value
-        if bool(value) is False:
+        if type(value) is bool and value is False:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
         return attrs
 
@@ -136,8 +136,10 @@ class GroupDetailSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_INVALID_GROUP_DATE})
 
         # valid weight
-        value = group_update_weight(project, attrs['gr_weight'], self.instance)
-        if bool(value) is False:
+        value = group_update_weight(project, self.instance.gr_weight, attrs['gr_weight'])
+        if attrs['gr_weight'] == 0:
+            attrs['gr_weight'] = value
+        if type(value) is bool and value is False:
             raise serializers.ValidationError({'detail': ProjectMsg.PROJECT_WEIGHT_ERROR})
         return attrs
 

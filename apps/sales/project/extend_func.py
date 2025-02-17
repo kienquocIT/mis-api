@@ -170,8 +170,11 @@ def group_calc_weight(prj, w_value=0, new_w_value=0):
         if not item.work.project_groupmapwork_work.all()
     )
     weight_grp = sum(item.group.gr_weight for item in prj.project_projectmapgroup_project.all())
-    after_value = weight_not_grp + weight_grp - w_value
-    return max(0, min(new_w_value, 100 - after_value))
+    current_value = weight_not_grp + weight_grp - w_value
+    new_value = current_value + new_w_value
+    if new_value > 100:
+        new_w_value = new_w_value - (new_value - 100)
+    return new_w_value
 
 
 def group_update_weight(prj, w_value, group):
