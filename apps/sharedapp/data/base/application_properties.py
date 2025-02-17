@@ -313,7 +313,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total product of quotation',
         'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     'b398bec4-a122-44b9-92fe-642d869e9238': {
@@ -350,7 +350,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total cost of quotation',
         'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     # Totals of expenses
@@ -379,7 +379,7 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Total expense of quotation',
         'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     # WORKFLOW
@@ -1108,7 +1108,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total product of sale order',
         'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     '3a3ce0bc-8c67-4558-9812-8a6dbf45cf88': {
@@ -1145,7 +1145,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total cost of sale order',
         'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     # Totals of expenses
@@ -1174,7 +1174,7 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Total expense of sale order',
         'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
         'type': 6,
-        'is_wf_zone': True,
+        'is_wf_zone': False,
         'is_wf_condition': False,
     },
     # WORKFLOW
