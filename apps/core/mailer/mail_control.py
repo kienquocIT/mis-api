@@ -130,67 +130,68 @@ class SendMailController:  # pylint: disable=R0902
         timestamp = timezone.now().timestamp()
         return f'<{timestamp}.{doc_id}@bflow.vn>'
 
-    def try_to_send_mail(self, data, template, doc_id, previous_id, as_name, mail_to, mail_cc, mail_bcc, fpath_list):
-        try:
-            with self.connection as connection:
-                data = self.data_resolve(data=data)
-                html_content = HTMLController(
-                    html_str=template, is_unescape=True
-                ).handle_params(data=data).to_string()
-
-                # send_mail(
-                #     subject=self.subject,
-                #     message=json.dumps(data),
-                #     from_email=self.from_email,
-                #     recipient_list=mail_to if isinstance(mail_to, list) else [mail_to],
-                #     connection=connection,
-                #     html_message=HTMLController.unescape(html_content),
-                # )
-
-                headers = {
-                    'Content-Language': 'en',
-                    'Content-Type': 'text/html; charset=UTF-8',
-                    # 'MIME-Version': '1.0'
-                    'Return-Path': self.from_email,
-                    # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
-                    'Importance': 'High',
-                    'X-Priority': '1 (Highest)',
-                    'Message-ID': self.random_msg_id(doc_id=doc_id),
-                    **(
-                        {'In-Reply-To': previous_id} if previous_id else {}
-                    )
-                }
-                if self.reply_to:
-                    headers['Reply-To'] = self.reply_to
-                elif settings.EMAIL_SERVER_DEFAULT_REPLY:
-                    headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
-
-                email = EmailMultiAlternatives(
-                    subject=self.subject,
-                    body=json.dumps(data),
-                    from_email=f"{as_name} <{self.from_email}>",
-                    to=mail_to if isinstance(mail_to, list) else [mail_to],
-                    cc=mail_cc if isinstance(mail_cc, list) else [],
-                    bcc=mail_bcc if isinstance(mail_bcc, list) else [],
-                    connection=connection,
-                    headers=headers
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                for fpath in fpath_list if fpath_list else []:
-                    email.attach_file(fpath)
-                return True
-        except Exception as err:
-            print('[SendMailController][send]', str(err))
-            raise ValueError(f'[SendMailController] Errors: {str(err)}')
+    def combine_email_header(self, doc_id, previous_id):
+        headers = {
+            'Content-Language': 'en',
+            'Content-Type': 'text/html; charset=UTF-8',
+            # 'MIME-Version': '1.0'
+            'Return-Path': self.from_email,
+            # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
+            'Importance': 'High',
+            'X-Priority': '1 (Highest)',
+            'Message-ID': self.random_msg_id(doc_id=doc_id),
+            **(
+                {'In-Reply-To': previous_id} if previous_id else {}
+            )
+        }
+        if self.reply_to:
+            headers['Reply-To'] = self.reply_to
+        elif settings.EMAIL_SERVER_DEFAULT_REPLY:
+            headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
+        return headers
 
     def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None, fpath_list=None):
         if mail_bcc is None:
             mail_bcc = []
         if mail_cc is None:
             mail_cc = []
+        if fpath_list is None:
+            fpath_list = []
         if self.confirm_config():
-            self.try_to_send_mail(data, template, doc_id, previous_id, as_name, mail_to, mail_cc, mail_bcc, fpath_list)
+            try:
+                with self.connection as connection:
+                    data = self.data_resolve(data=data)
+                    html_content = HTMLController(
+                        html_str=template, is_unescape=True
+                    ).handle_params(data=data).to_string()
+
+                    # send_mail(
+                    #     subject=self.subject,
+                    #     message=json.dumps(data),
+                    #     from_email=self.from_email,
+                    #     recipient_list=mail_to if isinstance(mail_to, list) else [mail_to],
+                    #     connection=connection,
+                    #     html_message=HTMLController.unescape(html_content),
+                    # )
+
+                    email = EmailMultiAlternatives(
+                        subject=self.subject,
+                        body=json.dumps(data),
+                        from_email=f"{as_name} <{self.from_email}>",
+                        to=mail_to if isinstance(mail_to, list) else [mail_to],
+                        cc=mail_cc if isinstance(mail_cc, list) else [],
+                        bcc=mail_bcc if isinstance(mail_bcc, list) else [],
+                        connection=connection,
+                        headers=self.combine_email_header(doc_id, previous_id)
+                    )
+                    email.attach_alternative(html_content, "text/html")
+                    for fpath in fpath_list:
+                        email.attach_file(fpath)
+                    email.send()
+                    return True
+            except Exception as err:
+                print('[SendMailController][send]', str(err))
+                raise ValueError(f'[SendMailController] Errors: {str(err)}')
         info_config = ",".join([
             f"Host: {self.kwargs['host']}",
             f"Mail To: {mail_to}",
