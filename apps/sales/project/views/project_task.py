@@ -9,6 +9,7 @@ from apps.shared import BaseListMixin, mask_view, TypeCheck, ResponseController,
 from ..extend_func import get_prj_mem_of_crt_user
 from ..models import ProjectMapTasks, ProjectMapMember, Project
 from ..serializers import ProjectTaskListSerializers, ProjectTaskDetailSerializers, ProjectTaskListAllSerializers
+from ...task.models import OpportunityTask
 
 
 class ProjectTaskList(BaseListMixin):
@@ -103,20 +104,27 @@ class ProjectTaskList(BaseListMixin):
 
 
 class ProjectAllTaskList(BaseListMixin):
-    queryset = ProjectMapTasks.objects
+    queryset = OpportunityTask.objects
     serializer_list = ProjectTaskListAllSerializers
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        "project_id": ["exact"],
-        "member_id": ["exact"],
-        "task__task_status_id": ["exact"],
+        'project_id': ['exact', 'isnull'],
+        'task_status_id': ['exact'],
+        'employee_inherit_id': ['exact']
     }
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "task", "task__employee_inherit", "task__employee_created", "task__parent_n", "task__task_status",
-            "project"
-        ).prefetch_related("task__employee_inherit__role").filter(project_id__in=self.get_prj_has_view_this())
+            'task_status', 'project', 'employee_inherit', 'employee_created'
+        ).prefetch_related('employee_inherit__role')
+
+    @classmethod
+    def get_prj_allowed(cls, item_data):
+        if item_data and isinstance(item_data, dict) and 'prj' in item_data and isinstance(item_data['prj'], dict):
+            ids = list(item_data['prj'].keys())
+            if TypeCheck.check_uuid_list(data=ids):
+                return item_data['prj'].keys()
+        return []
 
     def get_prj_has_view_this(self):
         return [
@@ -127,12 +135,43 @@ class ProjectAllTaskList(BaseListMixin):
             ).values_list('project_id', flat=True)
         ]
 
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        # check permit config exists if from_app not calling...
+        prj_has_view_ids = self.get_prj_has_view_this()
+        if self.cls_check.permit_cls.config_data__exist or prj_has_view_ids:
+            return self.filter_kwargs_q__from_config() | Q(id__in=prj_has_view_ids)
+        return self.list_empty()
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        # permit_data = {"employee": [], "roles": []}
+        prj_ids = []
+        if arr_from_app and isinstance(arr_from_app, list) and len(arr_from_app) == 3:
+            permit_data = self.cls_check.permit_cls.config_data__by_code(
+                label_code=arr_from_app[0],
+                model_code=arr_from_app[1],
+                perm_code=arr_from_app[2],
+                has_roles=False,
+            )
+            if 'employee' in permit_data:
+                prj_ids += self.get_prj_allowed(item_data=permit_data['employee'])
+            if 'roles' in permit_data and isinstance(permit_data['roles'], list):
+                for item_data in permit_data['roles']:
+                    prj_ids += self.get_prj_allowed(item_data=item_data)
+        return Q(id__in=list(set(prj_ids)))
+
     @swagger_auto_schema(
         operation_summary="Project task list",
         operation_description="get project task list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='project', model_code='project', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

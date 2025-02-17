@@ -5,7 +5,7 @@ from rest_framework import serializers
 from apps.shared import ProjectMsg
 from ..extend_func import re_calc_work_group, calc_rate_project
 from ..models import ProjectMapTasks
-from ...task.models import OpportunityLogWork
+from ...task.models import OpportunityTask
 
 
 class ProjectTaskListSerializers(serializers.ModelSerializer):
@@ -85,84 +85,52 @@ class ProjectTaskDetailSerializers(serializers.ModelSerializer):
 
 
 class ProjectTaskListAllSerializers(serializers.ModelSerializer):
-    task = serializers.SerializerMethodField()
+    task_status = serializers.SerializerMethodField()
+    project = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     @classmethod
-    def get_task(cls, obj):
-        task = obj.task
-        emp_role = []
-        if task.employee_inherit.role:
-            emp_role = [
-                {
-                    'id': str(emp.id),
-                    'title': emp.title
-                } for emp in task.employee_inherit.role.all()
-            ]
-        list_log_time = OpportunityLogWork.objects.filter(
-            task=task
-        )
-        task_log_work = []
-        if list_log_time.count():
-            task_log_work = [
-                {
-                    'id': item[0],
-                    'start_date': item[1],
-                    'end_date': item[2],
-                    'time_spent': item[3],
-                    'employee_created': {
-                        'id': item[4],
-                        'first_name': item[5],
-                        'last_name': item[6],
-                        'avatar': item[7]
-                    },
-                } for item in list_log_time.values_list(
-                    'id', 'start_date', 'end_date', 'time_spent',
-                    'employee_created_id',
-                    'employee_created__first_name',
-                    'employee_created__last_name',
-                    'employee_created__avatar'
-                )
-            ]
+    def get_task_status(cls, obj):
         return {
-            'id': str(task.id),
-            'title': task.title,
-            'code': task.code,
-            'task_status': {
-                'id': task.task_status.id,
-                'title': task.task_status.title,
-            } if task.task_status else {},
-            'start_date': task.start_date,
-            'end_date': task.end_date,
-            'priority': task.priority,
-            'employee_inherit': {
-                'id': str(task.employee_inherit.id),
-                'avatar': task.employee_inherit.avatar,
-                'first_name': task.employee_inherit.first_name,
-                'last_name': task.employee_inherit.last_name,
-                'full_name': task.employee_inherit.get_full_name(),
-                'role': emp_role,
-            } if task.employee_inherit else {},
-            'checklist': task.checklist if task.checklist else 0,
-            'parent_n': {
-                'id': task.parent_n.id,
-                'title': task.parent_n.title,
-                'code': task.parent_n.code
-            } if task.parent_n else {},
-            'employee_created': {
-                'avatar': task.employee_created.avatar,
-                'first_name': task.employee_created.first_name,
-                'last_name': task.employee_created.last_name,
-                'full_name': task.employee_created.get_full_name()
-            } if task.employee_created else {},
-            'date_created': task.date_created,
-            'percent_completed': task.percent_completed,
-            'estimate': task.estimate,
-            'log_time': task_log_work,
-            'project': task.project_data,
-        } if task else {}
+            'id': obj.task_status.id,
+            'title': obj.task_status.title
+        } if obj.task_status else {}
+
+    @classmethod
+    def get_project(cls, obj):
+        return {
+            'id': obj.project.id,
+            'title': obj.project.title,
+            'code': obj.project.code
+        } if obj.project else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            employee_data = obj.employee_inherit.get_detail_minimal()
+            roles = obj.employee_inherit.role.all()
+            employee_data["role"] = [{"id": role.id, "title": role.title} for role in roles] if roles else []
+            return employee_data
+        return {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_minimal() if obj.employee_created else {}
 
     class Meta:
-        model = ProjectMapTasks
+        model = OpportunityTask
         fields = (
-            'task',
+            'id',
+            'title',
+            'code',
+            'task_status',
+            'percent_completed',
+            'priority',
+            'employee_inherit',
+            'employee_created',
+            'start_date',
+            'project',
+            'log_time',
+            'estimate'
         )
