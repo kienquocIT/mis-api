@@ -1,9 +1,6 @@
 from uuid import UUID
-
 from celery import shared_task
 from django.utils import timezone
-
-from apps.core.hr.models import Employee
 from apps.shared import DisperseModel
 from apps.core.mailer.mail_control import SendMailController
 from apps.core.mailer.mail_data import MailDataResolver
@@ -237,25 +234,30 @@ def send_email_sale_activities_email(user_id: UUID or str, email_obj):
 @shared_task
 def send_email_eoffice_meeting(
         user_id: UUID or str,
-        tenant_id: UUID or str,
-        company_id: UUID or str,
-        employee_created: Employee,
+        meeting_obj,
         email_to_list: list,
         email_cc_list: list,
         email_bcc_list: list,
-        email_subject: str,
-        email_content: str,
+        email_subject,
+        email_content,
         fpath_list: list,
 ):
-    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=0)
+    obj_got = get_config_template_user(
+        tenant_id=meeting_obj.tenant_id,
+        company_id=meeting_obj.company_id,
+        user_id=user_id,
+        system_code=0
+    )
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, _, _] = obj_got
         cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             log_cls = MailLogController(
-                tenant_id=tenant_id, company_id=company_id,
+                tenant_id=meeting_obj.tenant_id,
+                company_id=meeting_obj.company_id,
                 system_code=0,  # other
-                doc_id=user_id, subject=email_subject,
+                doc_id=user_id,
+                subject=email_subject,
             )
             log_cls.create()
             log_cls.update(
@@ -273,9 +275,9 @@ def send_email_eoffice_meeting(
                     mail_cc=email_cc_list,
                     bcc=email_bcc_list,
                     header={},
-                    reply_to=employee_created.email,  # trả lời người gửi (employee created)
+                    reply_to=meeting_obj.employee_created.email,  # trả lời người gửi (employee created)
                 ).send(
-                    as_name=employee_created.get_full_name(2),
+                    as_name=meeting_obj.employee_created.get_full_name(2),
                     mail_to=email_to_list,
                     mail_cc=email_cc_list,
                     mail_bcc=email_bcc_list,

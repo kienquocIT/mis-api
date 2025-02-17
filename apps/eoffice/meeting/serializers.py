@@ -190,9 +190,7 @@ class MeetingScheduleCommonFunc:
 
             email_sent = send_email_eoffice_meeting(
                 user_id,
-                meeting_obj.tenant_id,
-                meeting_obj.company_id,
-                meeting_obj.employee_created,
+                meeting_obj,
                 email_to_list,
                 [],
                 [],
@@ -208,57 +206,51 @@ class MeetingScheduleCommonFunc:
 
     @staticmethod
     def combine_data_send_email_online_meeting(user_id, meeting_obj, response_data):
-        try:
-            duration = meeting_obj.meeting_duration
-            date = meeting_obj.meeting_start_date
-            time = meeting_obj.meeting_start_time
-            meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
-                'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
-            )
+        duration = meeting_obj.meeting_duration
+        date = meeting_obj.meeting_start_date
+        time = meeting_obj.meeting_start_time
+        meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
+            'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
+        )
 
-            email_to_list = []
-            for item in meeting_obj.meeting_schedule_mapped.all():
-                if item.internal:
-                    email_to_list.append(item.internal.email)
-                if item.external:
-                    email_to_list.append(item.external.email)
+        email_to_list = []
+        for item in meeting_obj.meeting_schedule_mapped.all():
+            if item.internal:
+                email_to_list.append(item.internal.email)
+            if item.external:
+                email_to_list.append(item.external.email)
 
-            meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
-            email_content = (
-                f"{meeting_obj.employee_created.get_full_name(2)} from {meeting_obj.company.title} "
-                f"has invited you to a scheduled Zoom meeting."
-                f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
-                f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
-                f"\n\nMeeting ID: {meeting_id}"
-                f"\nPasscode: {response_data.get('password')}"
-            )
+        meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
+        email_content = (
+            f"{meeting_obj.employee_created.get_full_name(2)} from {meeting_obj.company.title} "
+            f"has invited you to a scheduled Zoom meeting."
+            f"\n\nTopic: {response_data.get('topic')}\nTime: {meeting_time}"
+            f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
+            f"\n\nMeeting ID: {meeting_id}"
+            f"\nPasscode: {response_data.get('password')}"
+        )
 
-            ics_file_path = MeetingScheduleCommonFunc.create_calendar_ics_file(
-                meeting_id,
-                response_data.get('topic'),
-                meeting_obj.employee_created.email,
-                date,
-                time,
-                duration
-            )
+        ics_file_path = MeetingScheduleCommonFunc.create_calendar_ics_file(
+            meeting_id,
+            response_data.get('topic'),
+            meeting_obj.employee_created.email,
+            date,
+            time,
+            duration
+        )
 
-            email_sent = send_email_eoffice_meeting(
-                user_id,
-                meeting_obj.tenant_id,
-                meeting_obj.company_id,
-                meeting_obj.employee_created,
-                email_to_list,
-                [],
-                [],
-                response_data.get('topic'),
-                email_content,
-                [ics_file_path]
-            )
-            meeting_obj.meeting_schedule_mapped.all().update(send_email_status=email_sent == 'Success')
-            return True
-        except Exception as err:
-            print(err.args[1])
-            raise serializers.ValidationError({'Meeting scheduled error': "Cannot send email."})
+        email_sent = send_email_eoffice_meeting(
+            user_id,
+            meeting_obj,
+            email_to_list,
+            [],
+            [],
+            response_data.get('topic'),
+            email_content,
+            [ics_file_path]
+        )
+        meeting_obj.meeting_schedule_mapped.all().update(send_email_status=email_sent == 'Success')
+        return True
 
     @staticmethod
     def create_online_meeting(meeting_obj, online_meeting_data):
