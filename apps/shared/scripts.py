@@ -2664,6 +2664,7 @@ def change_field_doc_id_to_lead_id_in_lead():
         f'{count} rows updated'
     )
 
+
 def create_default_masterdata_fixed_asset():
     Fixed_Asset_Classification_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
@@ -2731,7 +2732,6 @@ def create_default_masterdata_fixed_asset():
                 str(company.id), str(err)
             )
     print('Done')
-    )
 
 
 def update_period_cfg():
