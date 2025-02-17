@@ -377,6 +377,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "488a6284-6341-4c51-b837-fb6964e51d82",  # Partner Center/ Lists
     },
+    "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",  # Fixed asset
+    },
 }
 
 _PlanApplication_eOffice_data = {

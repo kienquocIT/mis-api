@@ -7,6 +7,7 @@ from datetime import datetime
 from rest_framework import serializers
 from django.utils import timezone
 
+from apps.core.hr.models import Employee
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.shared import HRMsg, FORMATTING, ProjectMsg
 from ..extend_func import pj_get_alias_permit_from_app
@@ -359,12 +360,16 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
     work_expense_data = serializers.JSONField(required=False)
     delete_expense_lst = serializers.JSONField(required=False)
     finish_date_lock = serializers.BooleanField(required=False)
+    project_pm = serializers.UUIDField(required=False, allow_null=True)
 
     @classmethod
     def validate_project_pm(cls, value):
-        if not value:
+        try:
+            if value is None:
+                return None
+            return Employee.objects.get(id=value)
+        except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return value
 
     @classmethod
     def validate_employee_inherit(cls, value):
@@ -400,7 +405,6 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
             'finish_date',
             'project_pm',
             'employee_inherit',
-            'system_status',
             'expense_data',
             'work_expense_data',
             'delete_expense_lst',
@@ -468,25 +472,28 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
                 work_expense = lst[item]
                 ProjectWorks.objects.filter(id=item).update(expense_data=work_expense)
 
+    @classmethod
+    def update_project_pm(cls, project):
+        if project.project_pm:
+            if str(project.employee_inherit_id) != str(project.project_pm.id):
+                permission_by_configured_pm = pj_get_alias_permit_from_app(employee_obj=project.project_pm)
+                ProjectMapMember.objects.create(
+                    tenant_id=project.tenant_id,
+                    company_id=project.company_id,
+                    project=project,
+                    member=project.project_pm,
+                    permit_add_member=True,
+                    permit_add_gaw=True,
+                    permit_lock_fd=True,
+                    permit_view_this_project=True,
+                    permission_by_configured=permission_by_configured_pm
+                )
+
     def update(self, instance, validated_data):
         expense_lst = validated_data.pop('expense_data', None)
         work_expense_lst = validated_data.pop('work_expense_data', None)
         delete_expense_lst = validated_data.pop('delete_expense_lst', None)
-        system_status = validated_data.pop('system_status', None)
-        if system_status == 2 and instance.project_status != 3:
-            # re-open project
-            validated_data['project_status'] = instance.prev_status
-            instance.date_close = None
-        elif system_status == 3:
-            # complete project
-            validated_data['prev_status'] = instance.project_status
-            # ngày finish nhỏ hơn ngày hiện tại
-            if instance.finish_date < timezone.now():
-                instance.date_close = timezone.now()
-        elif system_status == 4:
-            # closed project
-            validated_data['project_status'] = system_status
-            instance.date_close = timezone.now()
+        project_pm = instance.project_pm
         # - delete all expense(user delete)
         # - create and update
         # - update work info
@@ -497,6 +504,8 @@ class ProjectUpdateSerializers(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if not project_pm and validated_data.get('project_pm', None):
+            self.update_project_pm(instance)
         return instance
 
 
@@ -572,7 +581,7 @@ class ProjectUpdateStatusSerializers(serializers.ModelSerializer):
         instance.date_close = None
         if system_status == 2:
             # re-open project
-            validated_data['project_status'] = instance.prev_status
+            validated_data['project_status'] = system_status
             instance.date_close = None
         elif system_status == 3:
             # complete project

@@ -359,7 +359,8 @@ class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
             'employee_attended_list',
             'customer_member_list',
             'room_info',
-            'meeting_content'
+            'meeting_content',
+            'system_status'
         )
 
     @classmethod
