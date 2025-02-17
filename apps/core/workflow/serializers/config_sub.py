@@ -246,8 +246,8 @@ class NodeListSerializer(serializers.ModelSerializer):
 
 class NodeDetailSerializer(serializers.ModelSerializer):
     actions = serializers.JSONField()
-    zone_initial_node = serializers.JSONField()
-    zone_hidden_initial_node = serializers.JSONField()
+    zone_initial_node = serializers.SerializerMethodField()
+    zone_hidden_initial_node = serializers.SerializerMethodField()
     collab_in_form = serializers.SerializerMethodField()
     collab_out_form = serializers.SerializerMethodField()
     collab_in_workflow = serializers.SerializerMethodField()
@@ -274,6 +274,14 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'condition',
             'is_edit_all_zone',
         )
+
+    @classmethod
+    def get_zone_initial_node(cls, obj):
+        return [zone.order for zone in obj.zones_initial_node.all()]
+
+    @classmethod
+    def get_zone_hidden_initial_node(cls, obj):
+        return [zone.order for zone in obj.zones_hidden_initial_node.all()]
 
     @classmethod
     def get_collab_in_form(cls, obj):

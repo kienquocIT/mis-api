@@ -1417,3 +1417,7 @@ msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thu�
 #
 msgid "This record cannot be deleted because it is associated with other records."
 msgstr "Dữ liệu này không thể xóa vì đã liên kết với dữ liệu khác."
+
+#
+msgid "This product is being used. Can not update general uom group."
+msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."

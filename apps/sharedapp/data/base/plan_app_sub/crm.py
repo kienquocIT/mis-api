@@ -2644,6 +2644,45 @@ PARTNERCENTER_LISTS_APP_CONFIG = {
     "allow_print": True,
 }
 
+FIXED_ASSET_APP_CONFIG = {
+    "id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+    "title": "Fixed Asset",
+    "code": "fixedasset",
+    "model_code": "fixedasset",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 GOODS_RECOVERY_APP_CONFIG = {
     "id": "a196c182-01d4-4450-a4ef-86c16b536daa",
     "title": "Goods Recovery",
@@ -2985,6 +3024,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "488a6284-6341-4c51-b837-fb6964e51d82": ApplicationConfigFrame(**PARTNERCENTER_LISTS_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": ApplicationConfigFrame(**FIXED_ASSET_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

@@ -457,7 +457,7 @@ class LeadCallCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 call=instance,
                 log_type=2,
-                doc_id = str(instance.lead_id).replace('-',''),
+                lead_id=instance.lead_id,
                 doc_data = {
                     'id': str(instance.id).replace('-',''),
                     'subject': instance.subject,
@@ -531,7 +531,7 @@ class LeadEmailCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 email=instance,
                 log_type=3,
-                doc_id=str(instance.lead_id).replace('-', ''),
+                lead_id=instance.lead_id,
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
                 doc_data={
                     'id': str(instance.id).replace('-', ''),
@@ -663,7 +663,7 @@ class LeadMeetingCreateSerializer(serializers.ModelSerializer):
                 company=instance.company,
                 meeting=instance,
                 log_type=4,
-                doc_id=str(instance.lead_id).replace('-', ''),
+                lead_id=instance.lead_id,
                 employee_created_id=str(validated_data.get('employee_created_id', '')).replace('-', ''),
                 doc_data={
                     'id': str(instance.id).replace('-', ''),
