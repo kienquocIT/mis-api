@@ -95,8 +95,7 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
         operation_description="Meeting Zoom Config list"
     )
     @mask_view(
-        login_require=True,
-        auth_require=False,
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -107,10 +106,7 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
         request_body=MeetingZoomConfigCreateSerializer
     )
     @mask_view(
-        login_require=True,
-        auth_require=True,
-        allow_admin_tenant=True,
-        allow_admin_company=True
+        login_require=True, auth_require=False,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -129,8 +125,7 @@ class MeetingZoomConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Detail Meeting Zoom Config"
     )
     @mask_view(
-        login_require=True,
-        auth_require=False
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
