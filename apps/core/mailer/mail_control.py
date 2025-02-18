@@ -161,9 +161,6 @@ class SendMailController:  # pylint: disable=R0902
             try:
                 with self.connection as connection:
                     data = self.data_resolve(data=data)
-                    html_content = HTMLController(
-                        html_str=template, is_unescape=True
-                    ).handle_params(data=data).to_string()
 
                     # send_mail(
                     #     subject=self.subject,
@@ -184,7 +181,12 @@ class SendMailController:  # pylint: disable=R0902
                         connection=connection,
                         headers=self.combine_email_header(doc_id, previous_id)
                     )
-                    email.attach_alternative(html_content, "text/html")
+                    email.attach_alternative(
+                        HTMLController(
+                            html_str=template, is_unescape=True
+                        ).handle_params(data=data).to_string(),
+                        "text/html"
+                    )
                     for fpath in fpath_list:
                         email.attach_file(fpath)
                     email.send()
