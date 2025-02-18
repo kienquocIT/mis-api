@@ -2713,6 +2713,45 @@ FIXED_ASSET_APP_CONFIG = {
     "allow_permit": True,
 }
 
+INSTRUMENT_TOOL_APP_CONFIG = {
+    "id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+    "title": "Instrument & Tool",
+    "code": "instrumenttool",
+    "model_code": "instrumenttool",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3019,6 +3058,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": ApplicationConfigFrame(**FIXED_ASSET_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": ApplicationConfigFrame(**INSTRUMENT_TOOL_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

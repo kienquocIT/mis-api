@@ -4,19 +4,20 @@ from rest_framework import serializers
 
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import FixedAssetClassification, Product
+from apps.masterdata.saledata.models import Product, ToolClassification
 from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
-from apps.sales.asset.models import FixedAsset, FixedAssetSource, FixedAssetUseDepartment, FixedAssetAPInvoiceItems
+from apps.sales.asset.models import InstrumentTool, InstrumentToolUseDepartment, InstrumentToolSource, \
+    InstrumentToolAPInvoiceItems
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
 logger = logging.getLogger(__name__)
 
 __all__= [
-    'FixedAssetListSerializer',
-    'FixedAssetCreateSerializer',
-    'FixedAssetDetailSerializer',
-    'FixedAssetUpdateSerializer'
+    'InstrumentToolListSerializer',
+    'InstrumentToolCreateSerializer',
+    'InstrumentToolDetailSerializer',
+    'InstrumentToolUpdateSerializer'
 ]
 
 
@@ -30,7 +31,7 @@ class AssetSourcesCreateSerializer(serializers.ModelSerializer):
         return value
 
     class Meta:
-        model = FixedAssetSource
+        model = InstrumentToolSource
         fields = (
             'description',
             'document_no',
@@ -40,14 +41,14 @@ class AssetSourcesCreateSerializer(serializers.ModelSerializer):
         )
 
 
-class FixedAssetListSerializer(AbstractListSerializerModel):
+class InstrumentToolListSerializer(AbstractListSerializerModel):
     product = serializers.SerializerMethodField()
     manage_department = serializers.SerializerMethodField()
     use_department = serializers.SerializerMethodField()
     use_customer = serializers.SerializerMethodField()
 
     class Meta:
-        model = FixedAsset
+        model = InstrumentTool
         fields = (
             'id',
             'code',
@@ -99,7 +100,7 @@ class FixedAssetListSerializer(AbstractListSerializerModel):
         } if obj.use_customer else {}
 
 
-class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
+class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
     manage_department = serializers.UUIDField()
@@ -111,7 +112,7 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     asset_code = serializers.CharField(required=False)
 
     class Meta:
-        model = FixedAsset
+        model = InstrumentTool
         fields = (
             'classification',
             'title',
@@ -119,15 +120,14 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
             'product',
             'manage_department',
             'use_department',
-            'original_cost',
-            'accumulative_depreciation',
-            'net_book_value',
+            'unit_price',
+            'quantity',
+            'measure_unit',
+            'total_value',
             'source_type',
             'asset_sources',
-            'depreciation_method',
             'depreciation_time',
             'depreciation_time_unit',
-            'adjustment_factor',
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list'
@@ -136,8 +136,8 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_classification(cls, value):
         try:
-            return FixedAssetClassification.objects.get(id=value)
-        except FixedAssetClassification.DoesNotExist:
+            return ToolClassification.objects.get(id=value)
+        except ToolClassification.DoesNotExist:
             raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
 
     @classmethod
@@ -166,10 +166,23 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_asset_code(cls, value):
         if value:
-            if FixedAsset.objects.filter_current(fill__tenant=True, fill__company=True, asset_code=value).exists():
+            if InstrumentTool.objects.filter_current(fill__tenant=True, fill__company=True, asset_code=value).exists():
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    def validate(self, validate_data):
+        asset_sources = validate_data.get('asset_sources')
+        total_value = validate_data.get('total_value')
+
+        total_value_of_asset_source = 0
+        for asset_source in asset_sources:
+            total_value_of_asset_source += asset_source.get('value', 0)
+
+        if total_value_of_asset_source != total_value:
+            raise serializers.ValidationError({"total_value": FixedAssetMsg.TOTAL_VALUE_MUST_MATCH})
+        return validate_data
+
 
     @decorator_run_workflow
     def create(self, validated_data): # pylint: disable=R0914
@@ -179,27 +192,27 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
 
         try:
             with transaction.atomic():
-                fixed_asset = FixedAsset.objects.create(**validated_data)
+                instrument_tool = InstrumentTool.objects.create(**validated_data)
 
                 bulk_data = []
                 for use_department in use_departments:
-                    bulk_data.append(FixedAssetUseDepartment(
-                        fixed_asset= fixed_asset,
+                    bulk_data.append(InstrumentToolUseDepartment(
+                        instrument_tool= instrument_tool,
                         use_department= use_department,
                     ))
-                FixedAssetUseDepartment.objects.bulk_create(bulk_data)
+                InstrumentToolUseDepartment.objects.bulk_create(bulk_data)
 
                 bulk_data = []
                 for asset_source in asset_sources:
-                    bulk_data.append(FixedAssetSource(
-                        fixed_asset= fixed_asset,
+                    bulk_data.append(InstrumentToolSource(
+                        instrument_tool= instrument_tool,
                         description= asset_source.get('description'),
                         code= asset_source.get('code'),
                         document_no= asset_source.get('document_no'),
                         transaction_type= asset_source.get('transaction_type'),
                         value= asset_source.get('value')
                     ))
-                FixedAssetSource.objects.bulk_create(bulk_data)
+                InstrumentToolSource.objects.bulk_create(bulk_data)
 
                 bulk_data = []
                 # format of increase_fa_list: increase_fa_list = {
@@ -211,8 +224,8 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                     ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
                     ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
                     for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(FixedAssetAPInvoiceItems(
-                            fixed_asset= fixed_asset,
+                        bulk_data.append(InstrumentToolAPInvoiceItems(
+                            instrument_tool= instrument_tool,
                             ap_invoice_item_id= ap_invoice_item_id_key,
                             increased_FA_value= value
                         ))
@@ -220,15 +233,15 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                             item = ap_invoice_items_dict[ap_invoice_item_id_key]
                             item.increased_FA_value += value
                             item.save()
-                FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
+                InstrumentToolAPInvoiceItems.objects.bulk_create(bulk_data)
         except Exception as err:
-            logger.error(msg=f'Create fixed asset errors: {str(err)}')
+            logger.error(msg=f'Create instrument tool errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
 
-        return fixed_asset
+        return instrument_tool
 
 
-class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
+class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
     classification = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     manage_department = serializers.SerializerMethodField()
@@ -237,7 +250,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
     ap_invoice_items = serializers.SerializerMethodField()
 
     class Meta:
-        model = FixedAsset
+        model = InstrumentTool
         fields = (
             'id',
             'asset_code',
@@ -249,13 +262,12 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
             'use_customer',
             'status',
             'source_type',
-            'original_cost',
-            'accumulative_depreciation',
-            'net_book_value',
-            'depreciation_method',
+            'unit_price',
+            'quantity',
+            'total_value',
+            'measure_unit',
             'depreciation_time',
             'depreciation_time_unit',
-            'adjustment_factor',
             'depreciation_start_date',
             'depreciation_end_date',
             'asset_sources',
@@ -325,7 +337,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
         ]
 
 
-class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
+class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
     manage_department = serializers.UUIDField()
@@ -337,7 +349,7 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     asset_code = serializers.CharField(required=False)
 
     class Meta:
-        model = FixedAsset
+        model = InstrumentTool
         fields = (
             'classification',
             'title',
@@ -345,15 +357,14 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
             'product',
             'manage_department',
             'use_department',
-            'original_cost',
-            'accumulative_depreciation',
-            'net_book_value',
+            'unit_price',
+            'quantity',
+            'measure_unit',
+            'total_value',
             'source_type',
             'asset_sources',
-            'depreciation_method',
             'depreciation_time',
             'depreciation_time_unit',
-            'adjustment_factor',
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list'
@@ -362,8 +373,8 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_classification(cls, value):
         try:
-            return FixedAssetClassification.objects.get(id=value)
-        except FixedAssetClassification.DoesNotExist:
+            return ToolClassification.objects.get(id=value)
+        except ToolClassification.DoesNotExist:
             raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
 
     @classmethod
@@ -391,14 +402,26 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate_asset_code(self, value):
         if value:
-            if FixedAsset.objects.filter_current(fill__tenant=True, fill__company=True, asset_code=value).exclude(
+            if InstrumentTool.objects.filter_current(fill__tenant=True, fill__company=True, asset_code=value).exclude(
                     id=self.instance.id).exists():
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
 
+    def validate(self, validate_data):
+        asset_sources = validate_data.get('asset_sources')
+        total_value = validate_data.get('total_value')
+
+        total_value_of_asset_source = 0
+        for asset_source in asset_sources:
+            total_value_of_asset_source += asset_source.get('value', 0)
+
+        if total_value_of_asset_source != total_value:
+            raise serializers.ValidationError({"total_value": FixedAssetMsg.TOTAL_VALUE_MUST_MATCH})
+        return validate_data
+
     @decorator_run_workflow
-    def update(self, fixed_asset, validated_data): # pylint: disable=R0914
+    def update(self, instrument_tool, validated_data): # pylint: disable=R0914
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
@@ -406,44 +429,44 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
         try:
             with transaction.atomic():
                 for key, value in validated_data.items():
-                    setattr(fixed_asset, key, value)
-                fixed_asset.save()
+                    setattr(instrument_tool, key, value)
+                instrument_tool.save()
 
-                FixedAssetUseDepartment.objects.filter(fixed_asset=fixed_asset).delete()
+                InstrumentToolUseDepartment.objects.filter(instrument_tool=instrument_tool).delete()
 
-                FixedAssetSource.objects.filter(fixed_asset=fixed_asset).delete()
+                InstrumentToolSource.objects.filter(instrument_tool=instrument_tool).delete()
 
-                fixed_asset_apinvoice_items = FixedAssetAPInvoiceItems.objects.filter(fixed_asset=fixed_asset)
+                instrument_tool_apinvoice_items = InstrumentToolAPInvoiceItems.objects.filter(instrument_tool=instrument_tool)
 
-                for fixed_asset_apinvoice_item in fixed_asset_apinvoice_items:
-                    apinvoice_item = fixed_asset_apinvoice_item.ap_invoice_item
+                for instrument_tool_apinvoice_item in instrument_tool_apinvoice_items:
+                    apinvoice_item = instrument_tool_apinvoice_item.ap_invoice_item
                     increased_fa_value = apinvoice_item.increased_FA_value
                     apinvoice_item.increased_FA_value = (
-                            increased_fa_value - fixed_asset_apinvoice_item.increased_FA_value
+                            increased_fa_value - instrument_tool_apinvoice_item.increased_FA_value
                     )
                     apinvoice_item.save()
 
-                fixed_asset_apinvoice_items.delete()
+                instrument_tool_apinvoice_items.delete()
 
                 bulk_data = []
                 for use_department in use_departments:
-                    bulk_data.append(FixedAssetUseDepartment(
-                        fixed_asset= fixed_asset,
+                    bulk_data.append(InstrumentToolUseDepartment(
+                        instrument_tool= instrument_tool,
                         use_department= use_department,
                     ))
-                FixedAssetUseDepartment.objects.bulk_create(bulk_data)
+                InstrumentToolUseDepartment.objects.bulk_create(bulk_data)
 
                 bulk_data = []
                 for asset_source in asset_sources:
-                    bulk_data.append(FixedAssetSource(
-                        fixed_asset= fixed_asset,
+                    bulk_data.append(InstrumentToolSource(
+                        instrument_tool= instrument_tool,
                         description= asset_source.get('description'),
                         code= asset_source.get('code'),
                         document_no= asset_source.get('document_no'),
                         transaction_type= asset_source.get('transaction_type'),
                         value= asset_source.get('value')
                     ))
-                FixedAssetSource.objects.bulk_create(bulk_data)
+                InstrumentToolSource.objects.bulk_create(bulk_data)
 
                 bulk_data = []
                 # format of increase_fa_list: increase_fa_list = {
@@ -455,8 +478,8 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                     ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
                     ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
                     for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(FixedAssetAPInvoiceItems(
-                            fixed_asset= fixed_asset,
+                        bulk_data.append(InstrumentToolAPInvoiceItems(
+                            instrument_tool= instrument_tool,
                             ap_invoice_item_id= ap_invoice_item_id_key,
                             increased_FA_value= value
                         ))
@@ -464,9 +487,9 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                             item = ap_invoice_items_dict[ap_invoice_item_id_key]
                             item.increased_FA_value += value
                             item.save()
-                FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
+                InstrumentToolAPInvoiceItems.objects.bulk_create(bulk_data)
         except Exception as err:
-            logger.error(msg=f'Create fixed asset errors: {str(err)}')
+            logger.error(msg=f'Create instrument tool errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
 
-        return fixed_asset
+        return instrument_tool

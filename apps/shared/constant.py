@@ -129,6 +129,7 @@ MAP_FIELD_TITLE = {
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
     'asset.fixedasset': 'title',
+    'asset.instrumenttool': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

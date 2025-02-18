@@ -1417,3 +1417,27 @@ msgstr "Dữ liệu này không thể xóa vì đã liên kết với dữ liệ
 #
 msgid "This product is being used. Can not update general uom group."
 msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."
+
+#
+msgid "Code already exists"
+msgstr "Mã đã tồn tại"
+
+#
+msgid "Error create asset"
+msgstr "Lỗi tạo tài sản"
+
+#
+msgid "Description of each source is required"
+msgstr "Mô tả của mỗi nguồn là bắt buộc"
+
+#
+msgid "Total value must be equal to the sum of source value"
+msgstr "Tổng giá trị phải bằng tổng giá trị mỗi nguồn"
+
+#
+msgid "Fixed Asset"
+msgstr "Tài sản cố định"
+
+#
+msgid "Instrument & Tool"
+msgstr "Công cụ dụng cụ"

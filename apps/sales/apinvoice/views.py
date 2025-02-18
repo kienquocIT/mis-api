@@ -19,6 +19,9 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'po_mapped__purchase_requests__request_for': ['exact']
+    }
     serializer_list = APInvoiceListSerializer
     serializer_create = APInvoiceCreateSerializer
     serializer_detail = APInvoiceDetailSerializer
