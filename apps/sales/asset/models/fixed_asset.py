@@ -90,6 +90,7 @@ class FixedAsset(DataAbstractModel):
     adjustment_factor = models.FloatField(null=True)
     depreciation_start_date = models.DateTimeField()
     depreciation_end_date = models.DateTimeField()
+    depreciation_value = models.FloatField(null=True)
 
     class Meta:
         verbose_name = 'Fixed Asset'

@@ -183,7 +183,6 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({"total_value": FixedAssetMsg.TOTAL_VALUE_MUST_MATCH})
         return validate_data
 
-
     @decorator_run_workflow
     def create(self, validated_data): # pylint: disable=R0914
         use_departments = validated_data.pop('use_department')

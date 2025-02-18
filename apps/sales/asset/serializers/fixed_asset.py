@@ -130,7 +130,8 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
             'adjustment_factor',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_value'
         )
 
     @classmethod
@@ -170,6 +171,15 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    def validate(self, validate_data):
+        depreciation_value = validate_data.get('depreciation_value')
+        original_cost = validate_data.get('original_cost')
+
+        if int(depreciation_value) > int(original_cost):
+            raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.DEPRECIATION_MUST_BE_LESS_THAN_COST})
+
+        return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data): # pylint: disable=R0914
@@ -259,7 +269,8 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'asset_sources',
-            'ap_invoice_items'
+            'ap_invoice_items',
+            'depreciation_value'
         )
 
     @classmethod
@@ -356,7 +367,8 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
             'adjustment_factor',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_value'
         )
 
     @classmethod
@@ -396,6 +408,15 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    def validate(self, validate_data):
+        depreciation_value = validate_data.get('depreciation_value')
+        original_cost = validate_data.get('original_cost')
+
+        if int(depreciation_value) > int(original_cost):
+            raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.DEPRECIATION_MUST_BE_LESS_THAN_COST})
+
+        return validate_data
 
     @decorator_run_workflow
     def update(self, fixed_asset, validated_data): # pylint: disable=R0914
