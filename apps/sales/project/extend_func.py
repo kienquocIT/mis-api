@@ -164,23 +164,17 @@ def re_calc_work_group(work):
         group.save()
 
 
-def group_calc_weight(prj, w_value=0):
-    group_lst = prj.project_projectmapgroup_project.all()
-    work_lst = prj.project_projectmapwork_project.all()
-    weight_not_grp = 0
-    for item in work_lst:
-        work = item.work.project_groupmapwork_work.all()
-        if not work:
-            weight_not_grp += item.work.w_weight
-
-    weight_grp = 0
-    for item in group_lst:
-        weight_grp += item.group.gr_weight
-    if weight_not_grp + weight_grp + w_value > 100:
-        return False
-    if w_value == 0:
-        w_value = 100 - (weight_not_grp + weight_grp)
-    return w_value
+def group_calc_weight(prj, w_value=0, new_w_value=0):
+    weight_not_grp = sum(
+        item.work.w_weight for item in prj.project_projectmapwork_project.all()
+        if not item.work.project_groupmapwork_work.all()
+    )
+    weight_grp = sum(item.group.gr_weight for item in prj.project_projectmapgroup_project.all())
+    current_value = weight_not_grp + weight_grp - w_value
+    new_value = current_value + new_w_value
+    if new_value > 100:
+        new_w_value = new_w_value - (new_value - 100)
+    return new_w_value
 
 
 def group_update_weight(prj, w_value, group):
