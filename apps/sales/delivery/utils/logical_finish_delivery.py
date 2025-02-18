@@ -16,7 +16,9 @@ class DeliFinishHandler:
         product_obj, delivery_data = deli_product.product, deli_product.delivery_data
         if product_obj:
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-                cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse_id', None), get_type=1)
+                cost = product_obj.get_unit_cost_by_warehouse(
+                    warehouse_id=data_deli.get('warehouse_id', None), get_type=1
+                )
                 data_deli.update({'cost': cost})
             deli_product.save(update_fields=['delivery_data'])
 
