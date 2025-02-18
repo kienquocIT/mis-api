@@ -107,6 +107,13 @@ class SaleDefaultData:
         {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE09', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE10', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE11', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE12', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE13', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE14', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE15', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0, 'doc_type_category': 'consulting'},
     ]
     Fixed_Asset_Classification_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},

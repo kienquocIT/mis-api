@@ -3034,6 +3034,7 @@ def change_field_doc_id_to_lead_id_in_lead():
         f'{count} rows updated'
     )
 
+
 def create_default_masterdata_fixed_asset():
     Fixed_Asset_Classification_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
@@ -3101,3 +3102,35 @@ def create_default_masterdata_fixed_asset():
                 str(company.id), str(err)
             )
     print('Done')
+
+
+def update_consulting_document_type():
+    Consulting_Document_Type_data = [
+        {'code': 'DOCTYPE09', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE10', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE11', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE12', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE13', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE14', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE15', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+    ]
+    company_count = 0
+    company_obj_list = Company.objects.all()
+    bulk_data = []
+    for company_obj in company_obj_list:
+        company_count+=1
+        for item in Consulting_Document_Type_data:
+            bulk_data.append(
+                DocumentType(
+                    tenant=company_obj.tenant,
+                    company=company_obj,
+                    **item,
+                )
+            )
+    if len(bulk_data) > 0:
+        DocumentType.objects.bulk_create(bulk_data)
+    print(f'{company_count} companies updated')
