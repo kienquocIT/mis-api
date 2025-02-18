@@ -90,7 +90,8 @@ class ToolClassificationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update Tool Classification", request_body=ToolClassificationUpdateSerializer)
+    @swagger_auto_schema(operation_summary="Update Tool Classification",
+                         request_body=ToolClassificationUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,

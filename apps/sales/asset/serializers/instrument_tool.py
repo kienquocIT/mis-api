@@ -436,7 +436,8 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
 
                 InstrumentToolSource.objects.filter(instrument_tool=instrument_tool).delete()
 
-                instrument_tool_apinvoice_items = InstrumentToolAPInvoiceItems.objects.filter(instrument_tool=instrument_tool)
+                instrument_tool_apinvoice_items = InstrumentToolAPInvoiceItems.objects.filter(
+                    instrument_tool=instrument_tool)
 
                 for instrument_tool_apinvoice_item in instrument_tool_apinvoice_items:
                     apinvoice_item = instrument_tool_apinvoice_item.ap_invoice_item
