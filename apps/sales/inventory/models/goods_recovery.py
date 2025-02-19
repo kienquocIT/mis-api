@@ -156,15 +156,16 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     product_quantity = models.FloatField(default=0)
+    product_quantity_new = models.FloatField(default=0)
+    product_quantity_leased = models.FloatField(default=0)
+    product_quantity_leased_data = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
-    quantity_ordered = models.FloatField(default=0)
     quantity_delivered = models.FloatField(default=0)
     quantity_recovered = models.FloatField(default=0)
     quantity_recovery = models.FloatField(default=0)
     delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
-
     product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
 
     # Begin depreciation fields
