@@ -110,6 +110,8 @@ class OrderActiveDeliverySerializer:
             "asset_type", "offset", "offset_data",
             "product_quantity_new", "product_quantity_leased", "product_quantity_leased_data", "product_quantity_time"
         ]):
+            for data in m2m_obj.product_quantity_leased_data:
+                data.update({'remaining_quantity_leased': 1, 'picked_quantity': 0, 'delivery_data': []})
             result.update({
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
@@ -119,10 +121,7 @@ class OrderActiveDeliverySerializer:
                 'product_quantity_new': m2m_obj.product_quantity_new,
                 'remaining_quantity_new': m2m_obj.product_quantity_new,
                 'product_quantity_leased': m2m_obj.product_quantity_leased,
-                'product_quantity_leased_data': [
-                    data.update({'remaining_quantity_leased': 1, 'picked_quantity': 0, 'delivery_data': []})
-                    for data in m2m_obj.product_quantity_leased_data
-                ],
+                'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
                 'product_quantity_time': m2m_obj.product_quantity_time,
             })
 

@@ -234,11 +234,20 @@ class DeliFinishHandler:
                 )
                 deli_product.product.save(**{
                     'update_stock_info': {
-                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
+                        'quantity_delivery_new': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
                     },
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
+            for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
+                if deli_product_leased.product:
+                    deli_product_leased.product.save(**{
+                        'update_stock_info': {
+                            'quantity_delivery_leased': deli_product_leased.picked_quantity,
+                            'system_status': 3,
+                        },
+                        'update_fields': ['available_amount', 'stock_amount']
+                    })
         return True
 
     # SALE/ LEASE ORDER STATUS
