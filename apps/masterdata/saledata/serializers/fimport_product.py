@@ -1,3 +1,5 @@
+import logging
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
@@ -11,11 +13,14 @@ from apps.shared import ProductMsg, BaseMsg
 
 from apps.core.base.models import BaseItemUnit
 
+
+logger = logging.getLogger(__name__)
+
 class ProductImportSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    part_number = serializers.CharField(max_length=150)
+    part_number = serializers.CharField(max_length=150, allow_null=True, allow_blank=True)
     # general
     general_product_category = serializers.CharField()
     general_product_types_mapped = serializers.CharField()
@@ -143,7 +148,8 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_sale_default_uom(self, value):
         product_choice = self.initial_data.get('product_choice', [])
         general_uom_group_code = self.initial_data.get('general_uom_group')
-        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        general_uom_group = UnitOfMeasureGroup.objects.filter_current(fill__company=True,
+                                                                      code=general_uom_group_code).first()
         if 0 in product_choice:
             if value:
                 try:
@@ -171,7 +177,8 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_inventory_uom(self, value):
         product_choice = self.initial_data.get('product_choice', [])
         general_uom_group_code = self.initial_data.get('general_uom_group')
-        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        general_uom_group = UnitOfMeasureGroup.objects.filter_current(fill__company=True,
+                                                                      code=general_uom_group_code).first()
         if 1 in product_choice:
             if value:
                 try:
@@ -187,7 +194,8 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_purchase_default_uom(self, value):
         product_choice = self.initial_data.get('product_choice', [])
         general_uom_group_code = self.initial_data.get('general_uom_group')
-        general_uom_group = UnitOfMeasureGroup.objects.get_current(fill__company=True, code=general_uom_group_code)
+        general_uom_group = UnitOfMeasureGroup.objects.filter_current(fill__company=True,
+                                                                      code=general_uom_group_code).first()
         if 2 in product_choice:
             if value:
                 try:
@@ -221,74 +229,79 @@ class ProductImportSerializer(serializers.Serializer):
                 return value
             raise serializers.ValidationError({'supplied_by': ProductMsg.NOT_NULL})
         return 0
+
     def create(self, validated_data):
-        #create volume object
-        volume_obj = BaseItemUnit.objects.filter(title='volume')
-        if volume_obj:
-            volume_obj = volume_obj.first()
-            validated_data.update({
-               'volume': {
-                   'id': str(volume_obj.id),
-                    'title': volume_obj.title,
-                    'measure': volume_obj.measure,
-                    'value': validated_data['volume']
-               }
-            })
+        try:
+            with transaction.atomic():
+                #create volume object
+                volume_obj = BaseItemUnit.objects.filter(title='volume')
+                if volume_obj:
+                    volume_obj = volume_obj.first()
+                    validated_data.update({
+                       'volume': {
+                           'id': str(volume_obj.id),
+                            'title': volume_obj.title,
+                            'measure': volume_obj.measure,
+                            'value': validated_data['volume']
+                       }
+                    })
 
-        #create weight object:
-        weight_obj = BaseItemUnit.objects.filter(title='weight')
-        if weight_obj:
-            weight_obj = weight_obj.first()
-            validated_data.update({
-                'weight': {
-                    'id': str(weight_obj.id),
-                    'title': weight_obj.title,
-                    'measure': weight_obj.measure,
-                    'value': validated_data['weight']
-                }
-            })
+                #create weight object:
+                weight_obj = BaseItemUnit.objects.filter(title='weight')
+                if weight_obj:
+                    weight_obj = weight_obj.first()
+                    validated_data.update({
+                        'weight': {
+                            'id': str(weight_obj.id),
+                            'title': weight_obj.title,
+                            'measure': weight_obj.measure,
+                            'value': validated_data['weight']
+                        }
+                    })
 
-        sale_currency_using = Currency.objects.get_current(fill__company=True, is_primary=True)
-        validated_data.update({
-            'sale_currency_using': sale_currency_using,
-        })
+                sale_currency_using = Currency.objects.filter_current(fill__company=True, is_primary=True).first()
+                validated_data.update({
+                    'sale_currency_using': sale_currency_using,
+                })
 
-        general_product_types_mapped_list = validated_data.pop('general_product_types_mapped',[])
-        product = Product.objects.create(**validated_data)
+                general_product_types_mapped_list = validated_data.pop('general_product_types_mapped',[])
+                product = Product.objects.create(**validated_data)
 
-        #create product_measurements
-        if 'volume' in validated_data and 'weight' in validated_data:
-            measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
-            if measure_data:
-                if 'id' in measure_data['volume']:
-                    volume_id = validated_data['volume']['id']
-                    ProductMeasurements.objects.create(
-                        product=product,
-                        measure_id=volume_id,
-                        value=measure_data['volume']['value']
+                #create product_measurements
+                if 'volume' in validated_data and 'weight' in validated_data:
+                    measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
+                    if measure_data:
+                        if 'id' in measure_data['volume'] and measure_data['volume']['value'] is not None:
+                            volume_id = validated_data['volume']['id']
+                            ProductMeasurements.objects.create(
+                                product=product,
+                                measure_id=volume_id,
+                                value=measure_data['volume']['value']
+                            )
+                        if 'id' in measure_data['weight'] and measure_data['weight']['value'] is not None:
+                            weight_id = validated_data['weight']['id']
+                            ProductMeasurements.objects.create(
+                                product=product,
+                                measure_id=weight_id,
+                                value=measure_data['weight']['value']
+                            )
+
+                #add data to table ProductProductType
+                bulk_info = []
+                for item in general_product_types_mapped_list:
+                    bulk_info.append(ProductProductType(product=product, product_type_id=item.id))
+                ProductProductType.objects.filter(product=product).delete()
+                ProductProductType.objects.bulk_create(bulk_info)
+
+                if 0 in validated_data['product_choice']:
+                    CommonCreateUpdateProduct.create_price_list(
+                        product,
+                        self.initial_data.get('sale_price_list', []),
+                        validated_data
                     )
-                if 'id' in measure_data['weight']:
-                    weight_id = validated_data['weight']['id']
-                    ProductMeasurements.objects.create(
-                        product=product,
-                        measure_id=weight_id,
-                        value=measure_data['weight']['value']
-                    )
-
-        #add data to table ProductProductType
-        bulk_info = []
-        for item in general_product_types_mapped_list:
-            bulk_info.append(ProductProductType(product=product, product_type_id=item.id))
-        ProductProductType.objects.filter(product=product).delete()
-        ProductProductType.objects.bulk_create(bulk_info)
-
-        if 0 in validated_data['product_choice']:
-            CommonCreateUpdateProduct.create_price_list(
-                product,
-                self.initial_data.get('sale_price_list', []),
-                validated_data
-            )
-
+        except Exception as err:
+            logger.error(msg=f'Import product errors: {str(err)}')
+            raise serializers.ValidationError({'product': 'Error'})
         return product
 
 
