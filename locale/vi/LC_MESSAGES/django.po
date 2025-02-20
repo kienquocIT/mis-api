@@ -1413,3 +1413,47 @@ msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thu�
 #
 msgid "This product is being used. Can not update general uom group."
 msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."
+
+#
+msgid "Account Group"
+msgstr "Nhóm tài khoản"
+
+#
+msgid "Account Type"
+msgstr "Loại tài khoản"
+
+#
+msgid "Currency"
+msgstr "Tiền tệ"
+
+#
+msgid "Group Level"
+msgstr "Cấp nhóm"
+
+#
+msgid "Product Category"
+msgstr "Danh mục sản phẩm"
+
+#
+msgid "Product Type"
+msgstr "Loại sản phẩm"
+
+#
+msgid "Salutation"
+msgstr "Danh xưng"
+
+#
+msgid "Tax"
+msgstr "Thuế"
+
+#
+msgid "Tax Category"
+msgstr "Danh mục thuế"
+
+#
+msgid "Unit Of Measure"
+msgstr "Đơn vị tính"
+
+#
+msgid "Unit Of Measure Group"
+msgstr "Nhóm đơn vị tính"
