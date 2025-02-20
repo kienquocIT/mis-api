@@ -342,7 +342,7 @@ class POProductGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_pr_products_data(cls, obj):
-        return PORequestProductGRListSerializer(obj.purchase_order_request_order_product.all(), many=True).data
+        return PORequestProductGRListSerializer(obj.filtered_po_pr_product, many=True).data
 
     @classmethod
     def get_product_data(cls, obj):

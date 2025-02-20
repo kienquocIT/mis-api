@@ -6,7 +6,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
-from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
+from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment, \
+    OrderDeliveryProductLeased
 from ..utils import DeliHandler
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -60,6 +61,20 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'delivery_data',
             'picked_quantity',
             'is_not_inventory'
+        )
+
+
+class OrderDeliveryProductLeasedListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrderDeliveryProductLeased
+        fields = (
+            'id',
+            'product_id',
+            'product_data',
+            'picked_quantity',
+            'delivery_data',
+            'quantity_leased_remain_recovery',
         )
 
 
@@ -266,14 +281,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                 # sau khi update sẽ chạy các func trong save()
                 obj.save(update_fields=['picked_quantity', 'delivery_data', 'product_quantity_leased_data'])
-
-                # update OrderDeliveryProductLeased
-                # sau khi update sẽ chạy các func trong save()
-                # obj.delivery_product_leased_delivery_product.all().delete()
-                # OrderDeliveryProductLeased.objects.bulk_create([OrderDeliveryProductLeased(
-                #     delivery_product_id=obj.id, tenant_id=obj.tenant_id,
-                #     company_id=obj.company_id, **product_leased,
-                # ) for product_leased in obj.product_quantity_leased_data])
         return True
 
     # none_picking_many_delivery
@@ -402,12 +409,15 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_quantity': deli_product.product_quantity,
                 'product_quantity_new': deli_product.product_quantity_new,
                 'product_quantity_leased': deli_product.product_quantity_leased,
-                'product_quantity_leased_data': deli_product.product_quantity_leased_data,
+                'product_quantity_leased_data': OrderDeliveryProductLeasedListSerializer(
+                    deli_product.delivery_product_leased_delivery_product, many=True
+                ).data,
                 'product_quantity_time': deli_product.product_quantity_time,
                 'product_unit_price': deli_product.product_unit_price,
                 'product_subtotal_price': 0,
                 'quantity_delivered': deli_product.picked_quantity,
-                'quantity_recovered': 0,
+                'quantity_remain_recovery': deli_product.quantity_remain_recovery,
+                'quantity_new_remain_recovery': deli_product.quantity_new_remain_recovery,
                 'quantity_recovery': 0,
                 'delivery_data': deli_product.delivery_data,
 

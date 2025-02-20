@@ -639,6 +639,10 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
     returned_quantity_default = models.FloatField(default=0)
 
+    # fields for recovery
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+    quantity_new_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+
     def put_backup_data(self):
         if self.product and not self.product_data:
             self.product_data = {
@@ -738,6 +742,9 @@ class OrderDeliveryProductLeased(MasterDataAbstractModel):
     remaining_quantity_leased = models.FloatField(default=0, help_text="quantity remain of leased products")
     picked_quantity = models.FloatField(default=0, help_text="quantity delivery leased products")
     delivery_data = models.JSONField(default=list, help_text="data delivery of leased products")
+
+    # fields for recovery
+    quantity_leased_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     class Meta:
         verbose_name = 'Delivery Product Leased'
