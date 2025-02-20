@@ -157,8 +157,12 @@ class CommonCreateUpdateProduct:
     def get_cumulative_factor(cls, price_list):
         factor = 1.0
         current = price_list
+        visited_price_list = set()
         # Traverse up the hierarchy until price_list_mapped is None (the root)
-        while current.price_list_mapped:
+        # make sure price_list_mapped doesn't point back, example: A -> B -> A
+        while current.price_list_mapped and current.id not in visited_price_list:
+            visited_price_list.add(current.id)
             factor *= current.factor
             current = current.price_list_mapped
+
         return factor
