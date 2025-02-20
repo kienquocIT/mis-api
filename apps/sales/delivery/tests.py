@@ -42,12 +42,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         self.company = company_req
 
-        company_id = company_req.data.get('id')
-        self.company = Company.objects.get(id=company_id)
-        self.company.software_start_using_time = timezone.now().replace(
+        company_obj = Company.objects.get(id=company_req.data['result']['id'])
+        company_obj.software_start_using_time = timezone.now().replace(
             month=1, day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        self.company.save(update_fields=['software_start_using_time'])
+        company_obj.save(update_fields=['software_start_using_time'])
         config = DeliveryConfig.objects.get_or_create(
             company_id=company_req.data['result']['id'],
             defaults={
