@@ -110,11 +110,14 @@ class SubPeriods(SimpleAbstractModel):
         company_obj = Company.objects.filter(id=company_id).first()
         if company_obj:
             software_start_using_time = company_obj.software_start_using_time
-            if software_start_using_time.date() > datetime.now().date():
-                raise serializers.ValidationError(
-                    {"Error": f'[check_period] Can not create an inventory activity before Software start using time'
-                              f' ({software_start_using_time.date()})'}
-                )
+            if software_start_using_time:
+                if software_start_using_time.date() > datetime.now().date():
+                    raise serializers.ValidationError(
+                        {"Error": f'[check_period] Can not create an inventory activity before Software start using time'
+                                  f' ({software_start_using_time.date()})'}
+                    )
+            else:
+                raise serializers.ValidationError({"Error": '[check_period] Software start using time is not found.'})
         else:
             raise serializers.ValidationError({"Error": '[check_period] Company is not found.'})
         this_period = Periods.get_current_period(tenant_id, company_id)
