@@ -2,7 +2,7 @@ from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAc
 from apps.core.company.models import Company
 
 
-class Accounting:
+class AccountingMasterData:
     @staticmethod
     def generate_account_200():
         list_table = [
@@ -638,7 +638,7 @@ class Accounting:
         return True
 
     @staticmethod
-    def generate_default_account_definition():
+    def generate_default_account_definition_200():
         sale_type_data = [
             'Phải thu của khách hàng',
             'Thu tiền bán hàng - tiền mặt',

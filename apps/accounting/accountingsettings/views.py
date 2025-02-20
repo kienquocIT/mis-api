@@ -19,6 +19,9 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related('currency_mapped')
+
     @swagger_auto_schema(
         operation_summary="Chart Of Accounts list",
         operation_description="Chart Of Accounts list",
@@ -52,6 +55,9 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {'default_account_definition_type': ['exact']}
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related('account_mapped')
 
     @swagger_auto_schema(
         operation_summary="Default Account Definition List",

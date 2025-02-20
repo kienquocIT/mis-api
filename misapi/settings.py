@@ -141,7 +141,8 @@ INSTALLED_APPS = \
         'apps.sales.reconciliation',
         'apps.sales.asset',
     ] + [
-        'apps.accounting.accountingsettings'
+        'apps.accounting.accountingsettings',
+        'apps.accounting.journalentry'
     ]
 
 MIDDLEWARE = [

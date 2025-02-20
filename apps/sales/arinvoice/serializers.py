@@ -43,7 +43,6 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'customer_mapped',
-            'customer_name',
             'buyer_name',
             'sale_order_mapped',
             'posting_date',
@@ -85,13 +84,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'customer_code',
-            'customer_name',
             'buyer_name',
-            'customer_tax_number',
-            'customer_billing_address',
-            'customer_bank_code',
-            'customer_bank_number',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -99,8 +92,6 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
-        if not validate_data.get('sale_order_mapped'):
-            validate_data['is_free_input'] = True
         return validate_data
 
     @decorator_run_workflow
@@ -111,7 +102,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             ar_invoice,
             self.initial_data.get('delivery_mapped_list', [])
         )
-        ARInvoiceCommonFunc.create_item_mapped(
+        ARInvoiceCommonFunc.create_items_mapped(
             ar_invoice,
             self.initial_data.get('data_item_list', [])
         )
@@ -136,7 +127,6 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'customer_mapped',
-            'customer_name',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -149,14 +139,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'item_mapped',
             'attachment',
             'invoice_status',
-            'is_free_input',
-            'customer_code',
-            'customer_name',
             'buyer_name',
-            'customer_tax_number',
-            'customer_billing_address',
-            'customer_bank_code',
-            'customer_bank_number',
         )
 
     @classmethod
@@ -247,13 +230,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'customer_code',
-            'customer_name',
             'buyer_name',
-            'customer_tax_number',
-            'customer_billing_address',
-            'customer_bank_code',
-            'customer_bank_number',
         )
 
     @classmethod
@@ -263,12 +240,12 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
         ).first() if instance.customer_mapped else None
         cus_address = (
             f"{billing_address.account_name}, {billing_address.account_address}"
-        ) if billing_address else instance.customer_billing_address
+        ) if billing_address else ''
         bank_df = instance.customer_mapped.account_banks_mapped.filter(
             is_default=True
         ).first() if instance.customer_mapped else None
-        bank_code = bank_df.bank_code if bank_df else instance.customer_bank_code
-        bank_number = bank_df.bank_account_number if bank_df else instance.customer_bank_number
+        bank_code = bank_df.bank_code if bank_df else ''
+        bank_number = bank_df.bank_account_number if bank_df else ''
         if not (bank_code and bank_number):
             raise serializers.ValidationError({'error': "Can not find bank information."})
 
@@ -278,8 +255,6 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
         buyer_name = ''
         if instance.buyer_name:
             buyer_name = instance.buyer_name
-        elif instance.customer_name:
-            buyer_name = instance.customer_name
         elif instance.customer_mapped:
             buyer_name = instance.customer_mapped.name
 
@@ -361,11 +336,11 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             f"<Ikey>{instance.id}-{pattern}</Ikey>"
             f"<InvNo>{instance.invoice_number}</InvNo>"
             "<CusCode>"
-            f"{instance.customer_mapped.code if instance.customer_mapped else instance.customer_code}"
+            f"{instance.customer_mapped.code if instance.customer_mapped else ''}"
             "</CusCode>"
             f"<Buyer>{value_xml[4]}</Buyer>"
             "<CusName>"
-            f"{instance.customer_mapped.name if instance.customer_mapped else instance.customer_name}"
+            f"{instance.customer_mapped.name if instance.customer_mapped else ''}"
             "</CusName>"
             f"<Email>{instance.customer_mapped.email if instance.customer_mapped else ''}</Email>"
             "<EmailCC></EmailCC>"
@@ -374,7 +349,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             f"<CusBankNo>{value_xml[2]}</CusBankNo>"
             f"<CusPhone>{instance.customer_mapped.phone if instance.customer_mapped else ''}</CusPhone>"
             "<CusTaxCode>"
-            f"{instance.customer_mapped.tax_code if instance.customer_mapped else instance.customer_tax_number}"
+            f"{instance.customer_mapped.tax_code if instance.customer_mapped else ''}"
             "</CusTaxCode>"
             "<PaymentMethod>Tiền mặt/Chuyển khoản</PaymentMethod>"
             "<ArisingDate>"
@@ -438,11 +413,11 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             instance,
             self.initial_data.get('delivery_mapped_list', [])
         )
-        ARInvoiceCommonFunc.create_item_mapped(
+        ARInvoiceCommonFunc.create_items_mapped(
             instance,
             self.initial_data.get('data_item_list', [])
         )
-        # item_mapped = ARInvoiceCommonFunc.create_item_mapped(
+        # item_mapped = ARInvoiceCommonFunc.create_items_mapped(
         #     instance,
         #     self.initial_data.get('data_item_list', [])
         # )
@@ -466,13 +441,28 @@ class ARInvoiceCommonFunc:
         return True
 
     @staticmethod
-    def create_item_mapped(ar_invoice, data_item_list):
+    def create_items_mapped(ar_invoice, data_item_list):
         bulk_data = []
+        sum_pretax_value = 0
+        sum_discount_value = 0
+        sum_tax_value = 0
+        sum_after_tax_value = 0
         for item in data_item_list:
             bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
+            sum_pretax_value += float(item.get('product_subtotal', 0))
+            sum_discount_value += float(item.get('product_discount_value', 0))
+            sum_tax_value += float(item.get('product_tax_value', 0))
+            sum_after_tax_value += float(item.get('product_subtotal_final', 0))
         ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
-        item_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
-        return item_mapped
+        items_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
+        ar_invoice.sum_pretax_value = sum_pretax_value
+        ar_invoice.sum_discount_value = sum_discount_value
+        ar_invoice.sum_tax_value = sum_tax_value
+        ar_invoice.sum_after_tax_value = sum_after_tax_value
+        ar_invoice.save(
+            update_fields=['sum_pretax_value', 'sum_discount_value', 'sum_tax_value', 'sum_after_tax_value']
+        )
+        return items_mapped
 
     @staticmethod
     def create_files_mapped(ar_invoice, file_id_list):

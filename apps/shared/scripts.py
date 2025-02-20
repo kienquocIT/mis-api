@@ -76,7 +76,7 @@ from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, Quotat
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.quotation.utils.logical_finish import QuotationFinishHandler
 from ..sales.reconciliation.models import Reconciliation, ReconciliationItem
-from ..sales.report.inventory_log import ReportInvCommonFunc
+from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from ..sales.report.models import ReportRevenue, ReportPipeline, ReportStockLog, ReportCashflow, \
     ReportInventoryCost, ReportInventoryCostLatestLog, ReportStock, BalanceInitialization
 from ..sales.report.serializers import BalanceInitializationCreateSerializer

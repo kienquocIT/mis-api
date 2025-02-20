@@ -4,6 +4,8 @@ from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.inventory.models import GoodsIssue, GoodsReceipt, GoodsReturn, GoodsTransfer
 from apps.sales.report.models import ReportStockLog, ReportStock, BalanceInitialization, ReportInventoryCost
 from apps.sales.report.serializers import BalanceInitializationCreateSerializer
+from apps.sales.report.utils import IRForDeliveryHandler, IRForGoodsIssueHandler, IRForGoodsReceiptHandler, \
+    IRForGoodsReturnHandler, IRForGoodsTransferHandler
 
 
 class InventoryReportRun:
@@ -30,7 +32,7 @@ class InventoryReportRun:
                     ).first()
                     if prd_wh_obj:
                         print(f'{balance_init.product.code} {balance_init.warehouse.code} {balance_init.quantity}')
-                        BalanceInitializationCreateSerializer.prepare_data_for_logging(balance_init, prd_wh_obj)
+                        BalanceInitializationCreateSerializer.push_to_inventory_report(balance_init, prd_wh_obj)
                 print('...done')
                 return True
         print('...nothing is created')
@@ -144,36 +146,38 @@ class InventoryReportRun:
             print(f"> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
-                instance.prepare_data_for_logging(instance)
+                IRForDeliveryHandler.push_to_inventory_report(instance)
             if doc['type'] == 'goods_issue':
                 instance = GoodsIssue.objects.get(id=doc['id'])
-                instance.prepare_data_for_logging(instance)
+                IRForGoodsIssueHandler.push_to_inventory_report(instance)
             if doc['type'] == 'goods_receipt':
                 instance = GoodsReceipt.objects.get(id=doc['id'])
-                instance.prepare_data_for_logging(instance)
+                IRForGoodsReceiptHandler.push_to_inventory_report(instance)
             if doc['type'] == 'goods_return':
                 instance = GoodsReturn.objects.get(id=doc['id'])
-                instance.prepare_data_for_logging(instance)
+                IRForGoodsReturnHandler.push_to_inventory_report(instance)
             if doc['type'] == 'goods_transfer':
                 instance = GoodsTransfer.objects.get(id=doc['id'])
-                instance.prepare_data_for_logging(instance)
+                IRForGoodsTransferHandler.push_to_inventory_report(instance)
         return True
 
     @staticmethod
     def run(company_id, fiscal_year):
         """
         0. Cập nhập các sub_periods thành trạng thái 'chưa chạy báo cáo'
-        1. Xóa data inventory report data cũ
+        1. Lấy dữ liệu các phiếu nhập - xuất kho
         2. Tạo lại Số dư đầu kì (nếu năm đó có setup 'Ngày bắt đầu sử dụng phần mềm')
-        3. Lấy dữ liệu các phiếu nhập - xuất kho
+        3. Xóa data inventory report data cũ
         4. Chạy log
         """
         this_period = Periods.objects.filter(company_id=company_id, fiscal_year=fiscal_year).first()
         if this_period:
             SubPeriods.objects.filter(period_mapped=this_period).update(run_report_inventory=False)
+
+            all_doc_sorted = InventoryReportRun.combine_data_all_docs(company_id, this_period)
+
             InventoryReportRun.delete_inventory_report_data(company_id, this_period)
             InventoryReportRun.recreate_balance_init_data(company_id, this_period)
-            all_doc_sorted = InventoryReportRun.combine_data_all_docs(company_id, this_period)
             InventoryReportRun.log_docs(all_doc_sorted)
             print('#run successfully!')
             return True

@@ -74,6 +74,7 @@ class CashInflow(DataAbstractModel):
                 system_status=1,
                 company_id=cif.company_id,
                 tenant_id=cif.tenant_id,
+                system_auto_create=True
             )
             order = 0
             for cif_item in cif.cash_inflow_item_cash_inflow.all():
