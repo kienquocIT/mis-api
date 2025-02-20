@@ -7,7 +7,6 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
 import calendar
-
 from apps.masterdata.saledata.models import Periods, SubPeriods
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
