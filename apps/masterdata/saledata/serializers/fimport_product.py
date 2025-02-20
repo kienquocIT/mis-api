@@ -16,7 +16,7 @@ from apps.core.base.models import BaseItemUnit
 
 logger = logging.getLogger(__name__)
 
-class ProductImportSerializer(serializers.Serializer): # pylint: disable=R0914
+class ProductImportSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -257,7 +257,7 @@ class ProductImportSerializer(serializers.Serializer): # pylint: disable=R0914
             raise serializers.ValidationError({'supplied_by': ProductMsg.NOT_NULL})
         return 0
 
-    def create(self, validated_data):
+    def create(self, validated_data): # pylint: disable=R0914
         try:
             with transaction.atomic():
                 #create volume object
