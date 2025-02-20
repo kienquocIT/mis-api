@@ -16,7 +16,7 @@ from apps.core.base.models import BaseItemUnit
 
 logger = logging.getLogger(__name__)
 
-class ProductImportSerializer(serializers.Serializer):
+class ProductImportSerializer(serializers.Serializer): # pylint: disable=R0914
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -350,7 +350,7 @@ class ProductImportSerializer(serializers.Serializer):
                                 currency_using=validated_data.get('sale_currency_using'),
                                 uom_using=validated_data.get('sale_default_uom'),
                                 uom_group_using=validated_data.get('general_uom_group'),
-                                get_price_from_source=price_list.auto_update == True
+                                get_price_from_source=True
                             ))
                         product.sale_price = sale_general_price
                         product.save()
