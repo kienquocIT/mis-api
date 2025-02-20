@@ -69,7 +69,6 @@ class OrderDeliveryProductLeasedListSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderDeliveryProductLeased
         fields = (
-            'id',
             'product_id',
             'product_data',
             'picked_quantity',

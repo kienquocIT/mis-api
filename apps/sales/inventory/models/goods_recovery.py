@@ -158,12 +158,10 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     product_quantity = models.FloatField(default=0)
     product_quantity_new = models.FloatField(default=0)
     product_quantity_leased = models.FloatField(default=0)
-    product_quantity_leased_data = models.FloatField(default=0)
+    product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
-    quantity_delivered = models.FloatField(default=0)
-    quantity_recovered = models.FloatField(default=0)
     quantity_recovery = models.FloatField(default=0)
     delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
     product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
@@ -191,6 +189,33 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         permissions = ()
 
 
+class RecoveryProductLeased(MasterDataAbstractModel):
+    recovery_product = models.ForeignKey(
+        'inventory.RecoveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="recovery product",
+        related_name="recovery_product_leased_recovery_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product leased",
+        related_name="recovery_product_leased_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    quantity_recovery = models.FloatField(default=0)
+    delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
+    product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
+
+    class Meta:
+        verbose_name = 'Recovery Product Leased'
+        verbose_name_plural = 'Recovery Products Leased'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class RecoveryWarehouse(MasterDataAbstractModel):  # relation: 1RecoveryProduct-*RecoveryWarehouse
     goods_recovery = models.ForeignKey(
         GoodsRecovery,
@@ -203,6 +228,13 @@ class RecoveryWarehouse(MasterDataAbstractModel):  # relation: 1RecoveryProduct-
         on_delete=models.CASCADE,
         verbose_name="recovery product",
         related_name="recovery_warehouse_rp",
+    )
+    recovery_product_leased = models.ForeignKey(
+        'inventory.RecoveryProductLeased',
+        on_delete=models.CASCADE,
+        verbose_name="recovery product leased",
+        related_name="recovery_warehouse_rp_leased",
+        null=True,
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
