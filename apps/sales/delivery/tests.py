@@ -7,6 +7,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
 import calendar
+
+from apps.core.company.models import Company
 from apps.masterdata.saledata.models import Periods, SubPeriods
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
@@ -38,6 +40,12 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             'primary_currency': self.get_base_currency().data['result'][0]['id']
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
+
+        company_obj = Company.objects.get(id=company_req.data['result']['id'])
+        company_obj.software_start_using_time = timezone.now().replace(
+            month=1, day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        company_obj.save(update_fields=['software_start_using_time'])
         self.company = company_req
         config = DeliveryConfig.objects.get_or_create(
             company_id=company_req.data['result']['id'],
