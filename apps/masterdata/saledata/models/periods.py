@@ -90,8 +90,8 @@ class SubPeriods(SimpleAbstractModel):
             if software_start_using_time.date() > datetime.now().date():
                 raise serializers.ValidationError(
                     {
-                        "Error": f'[check_period] Can not create an inventory activity before Software start using time '
-                                 f'({software_start_using_time.date()})'}
+                        "Error": f'[check_period] Can not create an inventory activity before Software start using time'
+                                 f' ({software_start_using_time.date()})'}
                 )
         else:
             raise serializers.ValidationError({"Error": '[check_period] Company is not found.'})
