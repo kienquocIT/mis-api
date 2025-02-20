@@ -35,7 +35,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             'address': '7826 avenue, Victoria Street, California, American',
             'email': 'mike.nguyen.7826@gmail.com',
             'phone': '0983875345',
-            'primary_currency': self.get_base_currency().data['result'][0]['id']
+            'primary_currency': self.get_base_currency().data['result'][0]['id'],
+            'software_start_using_time': timezone.now().replace(
+                month=1, day=1, hour=0, minute=0, second=0, microsecond=0
+            )
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         self.company = company_req
