@@ -887,8 +887,10 @@ class BaseListMixin(BaseMixin):
         return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
     def get_queryset_custom_direct_page(self, main_queryset=None):
-        if (self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
-                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')):
+        if (
+                self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
+                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')
+        ):
             queryset = super().get_queryset()
             current_pk = self.request.query_params.get('current_pk')
             current_obj = queryset.filter(id=current_pk).values('date_created').first() if current_pk else None
@@ -898,7 +900,9 @@ class BaseListMixin(BaseMixin):
                 return queryset.filter(date_created__lt=current_obj['date_created']) if current_obj else queryset
             if 'direct_next' in self.request.query_params:
                 return queryset.filter(date_created__gt=current_obj['date_created']) if current_obj else queryset.none()
-        return main_queryset if main_queryset else super().get_queryset()
+        if main_queryset is not None:
+            return main_queryset
+        return super().get_queryset()
 
     def list(self, request, *args, **kwargs):
         """
