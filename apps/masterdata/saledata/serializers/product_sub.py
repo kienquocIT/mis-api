@@ -152,4 +152,13 @@ class CommonCreateUpdateProduct:
                 bulk_info.append(ProductVariant(product=product_obj, **item))
         ProductVariant.objects.bulk_create(bulk_info)
         return True
-    
+
+    @classmethod
+    def get_cumulative_factor(cls, price_list):
+        factor = 1.0
+        current = price_list
+        # Traverse up the hierarchy until price_list_mapped is None (the root)
+        while current.price_list_mapped:
+            factor *= current.factor
+            current = current.price_list_mapped
+        return factor

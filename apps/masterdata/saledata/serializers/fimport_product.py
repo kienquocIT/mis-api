@@ -180,8 +180,8 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_sale_general_price(self,value):
         product_choice = self.initial_data.get('product_choice', [])
         if 0 in product_choice:
-            if isinstance(value, (int,float)) and float(value) > 0:
-                return value
+            if isinstance(float(value), (int,float)) and float(value) > 0:
+                return float(value)
             raise serializers.ValidationError({'sale_general_price': ProductMsg.VALUE_INVALID})
         return None
 
@@ -205,7 +205,7 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_valuation_method(self, value):
         product_choice = self.initial_data.get('product_choice', [])
         if 1 in product_choice:
-            if value not in [0, 1, 2]:
+            if int(value) not in [0, 1, 2]:
                 raise serializers.ValidationError({'valuation_method': ProductMsg.VALUE_INVALID})
             return value
         return None
@@ -213,8 +213,8 @@ class ProductImportSerializer(serializers.Serializer):
     def validate_standard_price(self, value):
         product_choice = self.initial_data.get('product_choice', [])
         if 1 in product_choice:
-            if isinstance(value, (int,float)) and float(value) > 0:
-                return value
+            if isinstance(float(value), (int,float)) and float(value) > 0:
+                return float(value)
             raise serializers.ValidationError({'standard_price': ProductMsg.VALUE_INVALID})
         return None
 
@@ -292,7 +292,7 @@ class ProductImportSerializer(serializers.Serializer):
                 })
 
                 # get all price list by company that are auto updated
-                sale_product_price_list = Price.objects.filter_current(fil__company=True, auto_update=True)
+                sale_general_price = validated_data.pop('sale_general_price',[])
 
                 general_product_types_mapped_list = validated_data.pop('general_product_types_mapped',[])
                 product = Product.objects.create(**validated_data)
@@ -324,28 +324,37 @@ class ProductImportSerializer(serializers.Serializer):
                 ProductProductType.objects.bulk_create(bulk_info)
 
                 if 0 in validated_data['product_choice']:
+                    prod_price_bulk_info = []
                     # create price list
                     default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True,
                                                               is_default=True).first()
                     if default_pr:
-                        if len(sale_product_price_list) == 0:
-                            CommonCreateUpdateProduct.create_price_list_product(product, default_pr)
-                        else:
-                            objs = []
-                            for item in sale_product_price_list:
-                                objs.append(ProductPriceList(
-                                    product=product,
-                                    price_list_id=getattr(item, 'price_list_id', None),
-                                    price=float(getattr(item, 'price_list_value', 0)),
-                                    currency_using=validated_data.get('sale_currency_using'),
-                                    uom_using=validated_data.get('sale_default_uom'),
-                                    uom_group_using=validated_data.get('general_uom_group'),
-                                    get_price_from_source=getattr(item, 'auto_update', None) == True
-                                ))
-                                if str(default_pr.id) == getattr(item, 'price_list_id', None):
-                                    product.sale_price = float(getattr(item, 'price_list_value', 0))
-                                    product.save()
-                            ProductPriceList.objects.bulk_create(objs)
+                        # general price list
+                        prod_price_bulk_info.append(ProductPriceList(
+                            product=product,
+                            price_list_id=default_pr.id,
+                            price=sale_general_price,
+                            currency_using=validated_data.get('sale_currency_using'),
+                            uom_using=validated_data.get('sale_default_uom'),
+                            uom_group_using=validated_data.get('general_uom_group'),
+                            get_price_from_source=False
+                        ))
+                        sale_product_price_list = Price.objects.filter_current(fill__company=True, auto_update=True)
+                        for price_list in sale_product_price_list:
+                            cumulative_factor = CommonCreateUpdateProduct.get_cumulative_factor(price_list)
+                            price = sale_general_price * cumulative_factor
+                            prod_price_bulk_info.append(ProductPriceList(
+                                product=product,
+                                price_list_id=price_list.id,
+                                price=float(price),
+                                currency_using=validated_data.get('sale_currency_using'),
+                                uom_using=validated_data.get('sale_default_uom'),
+                                uom_group_using=validated_data.get('general_uom_group'),
+                                get_price_from_source=price_list.auto_update == True
+                            ))
+                        product.sale_price = sale_general_price
+                        product.save()
+                        ProductPriceList.objects.bulk_create(prod_price_bulk_info)
         except Exception as err:
             logger.error(msg=f'Import product errors: {str(err)}')
             raise serializers.ValidationError({'product': 'Error'})
