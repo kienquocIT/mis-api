@@ -81,7 +81,7 @@ class GoodsRecovery(DataAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     # code
                     self.push_code(instance=self, kwargs=kwargs)
-                    RecoveryFinishHandler.clone_lease_product(instance=self)
+                    RecoveryFinishHandler.run_logics(instance=self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -190,6 +190,12 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
 
 
 class RecoveryProductLeased(MasterDataAbstractModel):
+    # goods_recovery = models.ForeignKey(
+    #     GoodsRecovery,
+    #     on_delete=models.CASCADE,
+    #     verbose_name="goods recovery",
+    #     related_name="recovery_product_leased_recovery",
+    # )
     recovery_product = models.ForeignKey(
         'inventory.RecoveryProduct',
         on_delete=models.CASCADE,

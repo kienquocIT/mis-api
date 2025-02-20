@@ -213,6 +213,10 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
     product_lease_end_date = serializers.CharField()
     product_warehouse_data = RecoveryWarehouseSerializer(many=True, required=False)
 
+    quantity_delivered = serializers.FloatField(default=0)
+    quantity_remain_recovery = serializers.FloatField(default=0)
+    quantity_new_remain_recovery = serializers.FloatField(default=0)
+
     class Meta:
         model = RecoveryProduct
         fields = (
@@ -232,6 +236,9 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'product_quantity_time',
             'product_unit_price',
             'product_subtotal_price',
+            'quantity_delivered',
+            'quantity_remain_recovery',
+            'quantity_new_remain_recovery',
             'quantity_recovery',
             'delivery_data',
             'product_warehouse_data',
