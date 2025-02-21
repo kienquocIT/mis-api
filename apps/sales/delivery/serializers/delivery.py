@@ -409,7 +409,9 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_quantity_new': deli_product.product_quantity_new,
                 'product_quantity_leased': deli_product.product_quantity_leased,
                 'product_quantity_leased_data': OrderDeliveryProductLeasedListSerializer(
-                    deli_product.delivery_product_leased_delivery_product, many=True
+                    deli_product.delivery_product_leased_delivery_product.filter(
+                        quantity_leased_remain_recovery__gt=0
+                    ), many=True
                 ).data,
                 'product_quantity_time': deli_product.product_quantity_time,
                 'product_unit_price': deli_product.product_unit_price,

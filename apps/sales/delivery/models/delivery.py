@@ -706,10 +706,14 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         return new_obj
 
     def save(self, *args, **kwargs):
-        for_goods_return = kwargs.get('for_goods_return')
-        if for_goods_return:
-            del kwargs['for_goods_return']
-        if not for_goods_return:
+        others_check_list = ['for_goods_return', 'for_goods_recovery']
+        # Bật cờ save_for_other nếu có value nào thuộc others_check_list trong kwargs
+        save_for_other = any(key in kwargs for key in others_check_list)
+        # Xóa key thuộc others_check_list khỏi kwargs
+        for key in others_check_list:
+            kwargs.pop(key, None)
+        # Save bình thường theo chức năng Delivery nếu không có cờ save_for_other
+        if not save_for_other:
             self.before_save()
             DeliHandler.create_delivery_product_leased(instance=self)
             DeliHandler.create_delivery_product_warehouse(instance=self)

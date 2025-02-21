@@ -10,27 +10,35 @@ class RecoveryFinishHandler:
     @ classmethod
     def run_logics(cls, instance):
         for recovery_product in instance.recovery_product_recovery.all():
+            # Trừ remain_recovery cho phiếu tiếp theo
             RecoveryFinishHandler.minus_remain(recovery_product=recovery_product)
+            # Kiểm tra có thu hồi SP mới thì clone ra thành SP cho thuê
             RecoveryFinishHandler.clone_lease_product(instance=instance, recovery_product=recovery_product)
+            # Kiểm tra có thu hồi SP đã cho thuê thì chỉ cập nhật dữ liệu
             RecoveryFinishHandler.update_leased_product(instance=instance, recovery_product=recovery_product)
         return True
 
     @classmethod
     def minus_remain(cls, recovery_product):
         if recovery_product.recovery_delivery and recovery_product.product and recovery_product.offset:
-            check = recovery_product.quantity_recovery - recovery_product.product_quantity_leased
+            check = recovery_product.quantity_recovery - len(recovery_product.product_quantity_leased_data)
             deli_product = recovery_product.offset.delivery_product_offset.filter(
                 delivery_sub=recovery_product.recovery_delivery.delivery
             ).first()
             if deli_product:
                 deli_product.quantity_remain_recovery -= recovery_product.quantity_recovery
                 deli_product.quantity_new_remain_recovery -= check
+                deli_product.save(**{
+                    'for_goods_recovery': True,
+                    'update_fields': ['quantity_remain_recovery', 'quantity_new_remain_recovery']
+                })
             for product_leased in recovery_product.recovery_product_leased_recovery_product.all():
                 deli_product_leased = product_leased.product.delivery_product_leased_product.filter(
-                    delivery_sub=product_leased.recovery_product.recovery_delivery.delivery
+                    delivery_product__delivery_sub=product_leased.recovery_product.recovery_delivery.delivery
                 ).first()
                 if deli_product_leased:
                     deli_product_leased.quantity_leased_remain_recovery -= product_leased.quantity_recovery
+                    deli_product_leased.save(update_fields=['quantity_leased_remain_recovery'])
 
         return True
 
@@ -43,7 +51,7 @@ class RecoveryFinishHandler:
             date_first_delivery = recovery_product.recovery_delivery.delivery_data.get(
                 'actual_delivery_date', None
             ) if recovery_product.recovery_delivery else None
-            check = recovery_product.quantity_recovery - recovery_product.product_quantity_leased
+            check = recovery_product.quantity_recovery - len(recovery_product.product_quantity_leased_data)
             if original_instance and check > 0:
                 cloned_instance = deepcopy(original_instance)
                 # Override data
