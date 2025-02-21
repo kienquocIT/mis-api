@@ -4,6 +4,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.db import connection
+from django.utils import timezone
 from django.test.utils import CaptureQueriesContext
 from django.test import TestCase
 from django.urls import reverse
@@ -26,6 +27,7 @@ from .utils import CustomizeEncoder
 __all__ = ['AdvanceTestCase', 'count_queries']
 
 from ...core.base.models import PlanApplication
+from ...core.company.models import Company
 
 
 def count_queries(func):
@@ -285,6 +287,11 @@ class AdvanceTestCase(TestCase):
             self.__regis_full_permit_for_employee(employee_obj=employee_obj)
 
         self.company_id = response.data['result']['company_current']['id']
+        company_obj = Company.objects.get(id=self.company_id)
+        company_obj.software_start_using_time = timezone.now().replace(
+            month=1, day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        company_obj.save(update_fields=['software_start_using_time'])
         return response.data['result']
 
     @classmethod

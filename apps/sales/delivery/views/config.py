@@ -84,7 +84,7 @@ class SaleOrderActiveDelivery(APIView):
         label_code='delivery', model_code='orderDeliverySub', perm_code='create',
     )
     def post(self, request, *args, pk, **kwargs):  # pylint: disable=R0914
-        SubPeriods.check_period_open(request.user.tenant_current_id, request.user.company_current_id)
+        SubPeriods.check_period(request.user.tenant_current_id, request.user.company_current_id)
 
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()
         cls_m2m_product_model = DisperseModel(app_model='saleorder.SaleOrderProduct').get_model()
@@ -169,7 +169,7 @@ class LeaseOrderActiveDelivery(APIView):
         label_code='delivery', model_code='orderDeliverySub', perm_code='create',
     )
     def post(self, request, *args, pk, **kwargs):  # pylint: disable=R0914
-        SubPeriods.check_period_open(request.user.tenant_current_id, request.user.company_current_id)
+        SubPeriods.check_period(request.user.tenant_current_id, request.user.company_current_id)
 
         cls_model = DisperseModel(app_model='leaseorder.LeaseOrder').get_model()
         cls_m2m_product_model = DisperseModel(app_model='leaseorder.LeaseOrderProduct').get_model()
