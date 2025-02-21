@@ -86,35 +86,35 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_OUT_OF_RANGE})
 
     @classmethod
-    def update_other_instance_if_change_level(cls, instance, validated_data):
+    def reorder(cls, instance, validated_data):
+        list_update = []
         # change level to lower level => update level of records after instance += 1
         if validated_data['level'] < instance.level:
-            other_instances = GroupLevel.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            other_instances = GroupLevel.objects.filter(
+                company_id=instance.company_id,
                 level__gte=validated_data['level'],
                 level__lte=instance.level,
             ).exclude(id=instance.id)
             for other_instance in other_instances:
                 other_instance.level = other_instance.level + 1
-                other_instance.save(update_fields=['level'])
+                list_update.append(other_instance)
         # change level to higher level => update level of records after instance -= 1
         elif validated_data['level'] > instance.level:
-            other_instances = GroupLevel.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            other_instances = GroupLevel.objects.filter(
+                company_id=instance.company_id,
                 level__lte=validated_data['level'],
                 level__gte=instance.level,
             ).exclude(id=instance.id)
             for other_instance in other_instances:
                 other_instance.level = other_instance.level - 1
-                other_instance.save(update_fields=['level'])
+                list_update.append(other_instance)
+        GroupLevel.objects.bulk_update(list_update, fields=['level'])
         return True
 
     def update(self, instance, validated_data):
         # update other group level if change level
         if 'level' in validated_data:
-            self.update_other_instance_if_change_level(instance=instance, validated_data=validated_data)
+            self.reorder(instance=instance, validated_data=validated_data)
         # update
         for key, value in validated_data.items():
             setattr(instance, key, value)
