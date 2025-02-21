@@ -109,7 +109,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
             gap = validate_data['start_date'] - latest_period.end_date
             if gap > timedelta(days=1):
                 raise serializers.ValidationError(
-                    {"start_date": f'Cannot create a new period with a gap of {str(gap).split(",")[0]} '
+                    {"start_date": f'Cannot create a new period with a gap of {str(gap).split(",", maxsplit=1)[0]} '
                                    f'from the previous period'}
                 )
 

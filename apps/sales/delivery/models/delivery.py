@@ -6,10 +6,9 @@ from django.utils.translation import gettext_lazy as _
 from apps.accounting.journalentry.utils import JEForDeliveryHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
+from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.utils import IRForDeliveryHandler
-from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel, ASSET_TYPE,

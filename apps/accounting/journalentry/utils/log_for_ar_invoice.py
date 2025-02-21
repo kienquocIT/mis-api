@@ -1,6 +1,5 @@
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.accounting.journalentry.models import JournalEntry, JournalEntryItem
-from apps.masterdata.saledata.models import Tax
 
 
 class JEForARInvoiceHandler:

@@ -2,7 +2,7 @@ import logging
 from django.db import models, transaction
 from django.utils import timezone
 from apps.accounting.accountingsettings.models import ChartOfAccounts
-from apps.masterdata.saledata.models import Account, Tax
+from apps.masterdata.saledata.models import Account
 from apps.shared import DataAbstractModel, SimpleAbstractModel, AccountingAbstractModel
 
 
@@ -71,8 +71,8 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
                     return None
                 print('Journal Entry created successfully!')
                 return je_obj
-        except Exception as e:
-            logger.error(msg=f'Error while creating Journal Entry: {e}')
+        except Exception as err:
+            logger.error(msg=f'Error while creating Journal Entry: {err}')
             return None
 
 
