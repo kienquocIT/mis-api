@@ -5,13 +5,13 @@ from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = [
-    'FixedAsset',
-    'FixedAssetUseDepartment',
-    'FixedAssetSource',
-    'FixedAssetAPInvoiceItems'
+    'InstrumentTool',
+    'InstrumentToolUseDepartment',
+    'InstrumentToolSource',
+    'InstrumentToolAPInvoiceItems'
 ]
 
-FIXED_ASSET_STATUS = [
+INSTRUMENT_TOOL_STATUS = [
     (0, _('Using')),
     (1, _('Leased')),
 ]
@@ -30,41 +30,36 @@ TRANSACTION_TYPE_CHOICES = [
     (1, _('Journal Entry')),
 ]
 
-DEPRECIATION_TYPE_CHOICES = [
-    (0, _('Straight line depreciation')),
-    (1, _('Adjusted reducing balance')),
-]
 
-
-class FixedAsset(DataAbstractModel):
+class InstrumentTool(DataAbstractModel):
     asset_code = models.CharField(max_length=100, blank=True)
     classification = models.ForeignKey(
-        'saledata.FixedAssetClassification',
+        'saledata.ToolClassification',
         on_delete=models.CASCADE,
-        related_name="classification_fixed_assets",
+        related_name="classification_instrument_tools",
         null=True
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        related_name="product_fixed_assets",
+        related_name="product_instrument_tools",
         null=True
     )
     manage_department = models.ForeignKey(
         'hr.Group',
         on_delete=models.SET_NULL,
-        related_name="department_fixed_assets",
+        related_name="department_instrument_tools",
         null=True
     )
     use_customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.SET_NULL,
-        related_name="account_fixed_assets",
+        related_name="account_instrument_tools",
         null=True
     )
     status = models.PositiveSmallIntegerField(
         default=0,
-        choices=FIXED_ASSET_STATUS,
+        choices=INSTRUMENT_TOOL_STATUS,
     )
     source_type = models.PositiveSmallIntegerField(
         default=0,
@@ -72,13 +67,10 @@ class FixedAsset(DataAbstractModel):
     )
 
     #depreciation + value:
-    original_cost = models.FloatField(default=0)
-    accumulative_depreciation = models.FloatField(default=0)
-    net_book_value = models.FloatField(default=0)
-    depreciation_method = models.PositiveSmallIntegerField(
-        default=0,
-        choices=DEPRECIATION_TYPE_CHOICES,
-    )
+    unit_price = models.FloatField(default=0)
+    total_value = models.FloatField(default=0)
+    quantity = models.IntegerField(default=0)
+    measure_unit = models.CharField(max_length=150)
     depreciation_time = models.PositiveIntegerField(default=0)
     depreciation_time_unit = models.PositiveSmallIntegerField(
         default=0,
@@ -87,10 +79,8 @@ class FixedAsset(DataAbstractModel):
             (1, _('Year')),
         ],
     )
-    adjustment_factor = models.FloatField(null=True)
     depreciation_start_date = models.DateTimeField()
     depreciation_end_date = models.DateTimeField()
-    depreciation_value = models.FloatField(null=True)
 
     class Meta:
         verbose_name = 'Fixed Asset'
@@ -99,14 +89,10 @@ class FixedAsset(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        return 'fc552ebb-eb98-4d7b-81cd-e4b5813b7815'  # fixed asset's application id
-
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'FA[n4]', True)
+                self.add_auto_generate_code_to_instance(self, 'IT[n4]', True)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
@@ -117,9 +103,9 @@ class FixedAsset(DataAbstractModel):
         # hit DB
         super().save(*args, **kwargs)
 
-class FixedAssetUseDepartment(SimpleAbstractModel):
-    fixed_asset = models.ForeignKey(
-        'asset.FixedAsset',
+class InstrumentToolUseDepartment(SimpleAbstractModel):
+    instrument_tool = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         related_name="use_departments",
         null=True
@@ -127,14 +113,14 @@ class FixedAssetUseDepartment(SimpleAbstractModel):
     use_department = models.ForeignKey(
         'hr.Group',
         on_delete=models.CASCADE,
-        related_name="fixed_assets",
+        related_name="instrument_tools",
         null=True
     )
 
 
-class FixedAssetSource(SimpleAbstractModel):
-    fixed_asset = models.ForeignKey(
-        'asset.FixedAsset',
+class InstrumentToolSource(SimpleAbstractModel):
+    instrument_tool = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.SET_NULL,
         related_name="asset_sources",
         null=True
@@ -149,9 +135,9 @@ class FixedAssetSource(SimpleAbstractModel):
     value = models.FloatField()
 
 
-class FixedAssetAPInvoiceItems(SimpleAbstractModel):
-    fixed_asset = models.ForeignKey(
-        'asset.FixedAsset',
+class InstrumentToolAPInvoiceItems(SimpleAbstractModel):
+    instrument_tool = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.SET_NULL,
         related_name="ap_invoice_items",
         null=True
@@ -159,7 +145,7 @@ class FixedAssetAPInvoiceItems(SimpleAbstractModel):
     ap_invoice_item = models.ForeignKey(
         'apinvoice.APInvoiceItems',
         on_delete=models.SET_NULL,
-        related_name="fixed_assets",
+        related_name="instrument_tools",
         null=True
     )
     increased_FA_value = models.FloatField(default=0)

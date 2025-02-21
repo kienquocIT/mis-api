@@ -2734,6 +2734,38 @@ def create_default_masterdata_fixed_asset():
     print('Done')
 
 
+def update_consulting_document_type():
+    Consulting_Document_Type_data = [
+        {'code': 'DOCTYPE09', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE10', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE11', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE12', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE13', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE14', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE15', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+    ]
+    company_count = 0
+    company_obj_list = Company.objects.all()
+    bulk_data = []
+    for company_obj in company_obj_list:
+        company_count+=1
+        for item in Consulting_Document_Type_data:
+            bulk_data.append(
+                DocumentType(
+                    tenant=company_obj.tenant,
+                    company=company_obj,
+                    **item,
+                )
+            )
+    if len(bulk_data) > 0:
+        DocumentType.objects.bulk_create(bulk_data)
+    print(f'{company_count} companies updated')
+
+
 def update_period_cfg():
     for company in Company.objects.all():
         company_cfg = company.company_config

@@ -2590,7 +2590,7 @@ AppProp_SaleData_FixedAsset_data={
     "a745afc8-36ad-4091-833b-346ef2f70732": {
         "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
         "title": "Asset Code",
-        "code": "code",
+        "code": "asset_code",
         "type": 1,
         'is_wf_zone': True,
     },
@@ -2629,21 +2629,104 @@ AppProp_SaleData_FixedAsset_data={
         "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
         "title": "Original Cost",
         "code": "original_cost",
-        "type": 1,
+        "type": 6,
         'is_wf_zone': True,
     },
     "7558df07-a713-41a7-8353-bbf1ae6a1d4d": {
         "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
         "title": "Accumulative Depreciation",
         "code": "accumulative_depreciation",
-        "type": 1,
+        "type": 6,
         'is_wf_zone': True,
     },
     "455b4f9a-9979-4ff5-9a37-2d2ea5674360": {
         "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
         "title": "Net Book Value",
         "code": "net_book_value",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "99ac191c-1e0c-4a15-9854-83e708e10847": {
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+        "title": "Asset Sources",
+        "code": "asset_sources",
         "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
+AppProp_SaleData_InstrumentTool_data={
+    "67443ffa-214b-4ef6-b1a0-40e5a1518f28": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Asset Name",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "840a2399-db9b-497f-9183-f36be771621c": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Asset Code",
+        "code": "asset_code",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "b8f51b2c-03d4-424c-ab97-72905aaba7be": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Classification",
+        "code": "classification",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "saledata.toolclassification",
+    },
+    "9eff2ec4-71e2-46ad-8db1-a4feb7001efd": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Product",
+        "code": "product",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "saledata.product",
+    },
+    "9b48177f-5451-4b6d-aeab-543bc5065ed8": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Manage Department",
+        "code": "manage_department",
+        "type": 5,
+        'is_wf_zone': True,
+        "content_type": "hr.group",
+    },
+    "60a873b0-9970-4c58-bd71-fbf69cff6b9b": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Use Department",
+        "code": "use_department",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+    "e34a39ac-3e66-47aa-b0e5-6c7ad9949b62": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Unit Price",
+        "code": "unit_price",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "4e054a03-704c-4ee3-abaf-f2d42e36002f": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Quantity",
+        "code": "quantity",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "26587d2d-7240-47b5-a89e-c15d72c17e65": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Measure Unit",
+        "code": "measure_unit",
+        "type": 6,
+        'is_wf_zone': True,
+    },
+    "0b52c5f9-adbd-402e-a988-5d203a50d875": {
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+        "title": "Total Value",
+        "code": "total_value",
+        "type": 6,
         'is_wf_zone': True,
     },
     "99ac191c-1e0c-4a15-9854-83e708e10847": {
@@ -2692,5 +2775,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_IA_data,
     **AppProp_SaleData_Consulting_data,
     **AppProp_SaleData_ReportRevenue_data,
-    **AppProp_SaleData_FixedAsset_data
+    **AppProp_SaleData_FixedAsset_data,
+    **AppProp_SaleData_InstrumentTool_data
 }
