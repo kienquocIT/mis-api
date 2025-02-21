@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouseLot
-from apps.sales.report.utils import ReportInvCommonFunc, ReportInvLog
+from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInvLog
 
 
 class IRForDeliveryHandler:

@@ -1,5 +1,5 @@
 from apps.sales.report.models import ReportStockLog
-from apps.sales.report.utils import ReportInvLog, ReportInvCommonFunc
+from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
 
 class IRForGoodsReturnHandler:

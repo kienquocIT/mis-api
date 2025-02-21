@@ -8,7 +8,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
-from apps.sales.report.utils import IRForDeliveryHandler
+from apps.sales.report.utils.log_for_delivery import IRForDeliveryHandler
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel, ASSET_TYPE,

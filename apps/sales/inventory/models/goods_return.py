@@ -6,7 +6,7 @@ from apps.sales.inventory.models.goods_return_sub import (
     GoodsReturnSubSerializerForPicking, GoodsReturnSubSerializerForNonPicking
 )
 from apps.sales.inventory.utils import ReturnFinishHandler, ReturnHandler
-from apps.sales.report.utils import IRForGoodsReturnHandler
+from apps.sales.report.utils.log_for_goods_return import IRForGoodsReturnHandler
 from apps.shared import DataAbstractModel
 
 

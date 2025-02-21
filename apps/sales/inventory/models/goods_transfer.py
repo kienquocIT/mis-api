@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models import (
     SubPeriods
 )
 from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
-from apps.sales.report.utils import IRForGoodsTransferHandler
+from apps.sales.report.utils.log_for_goods_transfer import IRForGoodsTransferHandler
 from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']

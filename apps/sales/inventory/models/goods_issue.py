@@ -3,7 +3,7 @@ from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
-from apps.sales.report.utils import IRForGoodsIssueHandler
+from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
