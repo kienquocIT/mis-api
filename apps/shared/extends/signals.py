@@ -228,10 +228,11 @@ class SaleDefaultData:
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
 
-        group = UnitOfMeasureGroup.objects.filter(
+        # add default uom for group time
+        labor_group = UnitOfMeasureGroup.objects.filter(
             tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
         ).first()
-        if group:
+        if labor_group:
             UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
                 company=self.company_obj,
@@ -241,7 +242,7 @@ class SaleDefaultData:
                 ratio=1,
                 rounding=4,
                 is_default=1,
-                group=group
+                group=labor_group
             )
             UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
@@ -252,7 +253,7 @@ class SaleDefaultData:
                 ratio=8,
                 rounding=4,
                 is_default=1,
-                group=group
+                group=labor_group
             )
             UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
@@ -263,8 +264,47 @@ class SaleDefaultData:
                 ratio=176,
                 rounding=4,
                 is_default=1,
-                group=group
+                group=labor_group
             )
+
+        # # add default uom for group labor
+        # time_group = UnitOfMeasureGroup.objects.filter(
+        #     tenant=self.company_obj.tenant, company=self.company_obj, code='Time', is_default=1
+        # ).first()
+        # if time_group:
+        #     UnitOfMeasure.objects.create(
+        #         tenant=self.company_obj.tenant,
+        #         company=self.company_obj,
+        #         code='day',
+        #         title='Day',
+        #         is_referenced_unit=1,
+        #         ratio=1,
+        #         rounding=4,
+        #         is_default=1,
+        #         group=time_group
+        #     )
+        #     UnitOfMeasure.objects.create(
+        #         tenant=self.company_obj.tenant,
+        #         company=self.company_obj,
+        #         code='month',
+        #         title='Month',
+        #         is_referenced_unit=1,
+        #         ratio=30,
+        #         rounding=4,
+        #         is_default=1,
+        #         group=time_group
+        #     )
+        #     UnitOfMeasure.objects.create(
+        #         tenant=self.company_obj.tenant,
+        #         company=self.company_obj,
+        #         code='year',
+        #         title='Year',
+        #         is_referenced_unit=1,
+        #         ratio=365,
+        #         rounding=4,
+        #         is_default=1,
+        #         group=time_group
+        #     )
         return True
 
     def create_company_function_number(self):
