@@ -1206,3 +1206,10 @@ class SubScripts:
         UnitOfMeasureGroup.objects.filter(code='ImportGroup', is_default=1).update(code='Import')
         print('Done :))')
         return True
+
+    @classmethod
+    def run_all(cls):
+        cls.update_period_cfg_for_all_company()
+        cls.update_opp_stage_is_delete_is_default()
+        cls.update_product_type_tool_import()
+        return True
