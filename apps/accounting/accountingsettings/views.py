@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
+from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
 from apps.accounting.accountingsettings.serializers import (
     ChartOfAccountsListSerializer, ChartOfAccountsCreateSerializer, ChartOfAccountsDetailSerializer,
-    DefaultAccountDefinitionListSerializer, DefaultAccountDefinitionCreateSerializer,
-    DefaultAccountDefinitionDetailSerializer
+    DefaultAccountDeterminationListSerializer, DefaultAccountDeterminationCreateSerializer,
+    DefaultAccountDeterminationDetailSerializer
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view
 
@@ -46,13 +46,13 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
-    queryset = DefaultAccountDefinition.objects
+class DefaultAccountDeterminationList(BaseListMixin, BaseCreateMixin):
+    queryset = DefaultAccountDetermination.objects
     search_fields = ['title',]
-    serializer_list = DefaultAccountDefinitionListSerializer
-    serializer_create = DefaultAccountDefinitionCreateSerializer
-    serializer_detail = DefaultAccountDefinitionDetailSerializer
-    filterset_fields = {'default_account_definition_type': ['exact']}
+    serializer_list = DefaultAccountDeterminationListSerializer
+    serializer_create = DefaultAccountDeterminationCreateSerializer
+    serializer_detail = DefaultAccountDeterminationDetailSerializer
+    filterset_fields = {'default_account_determination_type': ['exact']}
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -60,8 +60,8 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().prefetch_related().select_related('account_mapped')
 
     @swagger_auto_schema(
-        operation_summary="Default Account Definition List",
-        operation_description="Default Account Definition List",
+        operation_summary="Default Account Determination List",
+        operation_description="Default Account Determination List",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -70,9 +70,9 @@ class DefaultAccountDefinitionList(BaseListMixin, BaseCreateMixin):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Create Default Account Definition",
-        operation_description="Create new Default Account Definition",
-        request_body=DefaultAccountDefinitionCreateSerializer,
+        operation_summary="Create Default Account Determination",
+        operation_description="Create new Default Account Determination",
+        request_body=DefaultAccountDeterminationCreateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,

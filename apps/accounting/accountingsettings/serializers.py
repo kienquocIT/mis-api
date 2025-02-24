@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
+from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
 
 
 class ChartOfAccountsListSerializer(serializers.ModelSerializer):
@@ -46,16 +46,16 @@ class ChartOfAccountsDetailSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class DefaultAccountDefinitionListSerializer(serializers.ModelSerializer):
+class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
     account_mapped = serializers.SerializerMethodField()
 
     class Meta:
-        model = DefaultAccountDefinition
+        model = DefaultAccountDetermination
         fields = (
             'id',
             'title',
             'account_mapped',
-            'default_account_definition_type',
+            'default_account_determination_type',
             'is_default'
         )
 
@@ -68,13 +68,13 @@ class DefaultAccountDefinitionListSerializer(serializers.ModelSerializer):
         } if obj.account_mapped else {}
 
 
-class DefaultAccountDefinitionCreateSerializer(serializers.ModelSerializer):
+class DefaultAccountDeterminationCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DefaultAccountDefinition
+        model = DefaultAccountDetermination
         fields = "__all__"
 
 
-class DefaultAccountDefinitionDetailSerializer(serializers.ModelSerializer):
+class DefaultAccountDeterminationDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DefaultAccountDefinition
+        model = DefaultAccountDetermination
         fields = "__all__"

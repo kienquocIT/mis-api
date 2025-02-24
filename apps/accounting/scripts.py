@@ -1,4 +1,4 @@
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDefinition
+from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
 from apps.core.company.models import Company
 
 
@@ -639,7 +639,7 @@ class AccountingMasterData:
         return True
 
     @staticmethod
-    def generate_default_account_definition_200():
+    def generate_default_account_determination_200():
         sale_type_data = [
             'Phải thu của khách hàng',
             'Thu tiền bán hàng - tiền mặt',
@@ -683,39 +683,39 @@ class AccountingMasterData:
                 bulk_info = []
                 for i in range(len(sale_type_data)):
                     bulk_info.append(
-                        DefaultAccountDefinition(
+                        DefaultAccountDetermination(
                             company=company,
                             tenant=company.tenant,
                             title=sale_type_data[i],
                             account_mapped=account_mapped_data_sale[i],
-                            default_account_definition_type=0,
+                            default_account_determination_type=0,
                             is_default=True
                         )
                     )
                 for i in range(len(purchasing_type_data)):
                     bulk_info.append(
-                        DefaultAccountDefinition(
+                        DefaultAccountDetermination(
                             company=company,
                             tenant=company.tenant,
                             title=purchasing_type_data[i],
                             account_mapped=account_mapped_data_purchasing[i],
-                            default_account_definition_type=1,
+                            default_account_determination_type=1,
                             is_default=True
                         )
                     )
                 for i in range(len(inventory_type_data)):
                     bulk_info.append(
-                        DefaultAccountDefinition(
+                        DefaultAccountDetermination(
                             company=company,
                             tenant=company.tenant,
                             title=inventory_type_data[i],
                             account_mapped=account_mapped_data_inventory[i],
-                            default_account_definition_type=2,
+                            default_account_determination_type=2,
                             is_default=True
                         )
                     )
-                DefaultAccountDefinition.objects.filter(company=company, tenant=company.tenant).delete()
-                DefaultAccountDefinition.objects.bulk_create(bulk_info)
+                DefaultAccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
+                DefaultAccountDetermination.objects.bulk_create(bulk_info)
                 print(f'Create data done in {company.title}')
         print('Done :))')
         return True

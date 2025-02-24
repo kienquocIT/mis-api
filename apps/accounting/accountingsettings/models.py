@@ -7,7 +7,7 @@ from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'ChartOfAccounts',
-    'DefaultAccountDefinition'
+    'DefaultAccountDetermination'
 ]
 
 CHART_OF_ACCOUNT_TYPE = [
@@ -22,7 +22,7 @@ CHART_OF_ACCOUNT_TYPE = [
     (8, _("Income summary")),
 ]
 
-DEFAULT_ACCOUNT_DEFINITION_TYPE = [
+DEFAULT_ACCOUNT_DETERMINATION_TYPE = [
     (0, _('Sale')),
     (1, _('Purchasing')),
     (2, _('Inventory')),
@@ -93,14 +93,14 @@ class ChartOfAccounts(MasterDataAbstractModel):
         )
 
 
-class DefaultAccountDefinition(MasterDataAbstractModel):
+class DefaultAccountDetermination(MasterDataAbstractModel):
     account_mapped = models.ForeignKey(ChartOfAccounts, on_delete=models.CASCADE)
-    default_account_definition_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DEFINITION_TYPE, default=0)
+    default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'Default Account Definition'
-        verbose_name_plural = 'Default Account Definition'
+        verbose_name = 'Default Account Determination'
+        verbose_name_plural = 'Default Account Determination'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
