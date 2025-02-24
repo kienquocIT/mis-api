@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import (
+    ChartOfAccounts, DefaultAccountDetermination,
+    DEFAULT_ACCOUNT_DETERMINATION_TYPE
+)
 
 
 class ChartOfAccountsListSerializer(serializers.ModelSerializer):
@@ -48,6 +51,7 @@ class ChartOfAccountsDetailSerializer(serializers.ModelSerializer):
 
 class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
     account_mapped = serializers.SerializerMethodField()
+    default_account_determination_type_convert = serializers.SerializerMethodField()
 
     class Meta:
         model = DefaultAccountDetermination
@@ -56,6 +60,7 @@ class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
             'title',
             'account_mapped',
             'default_account_determination_type',
+            'default_account_determination_type_convert',
             'is_default'
         )
 
@@ -66,6 +71,11 @@ class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
             'acc_code': obj.account_mapped.acc_code,
             'acc_name': obj.account_mapped.acc_name
         } if obj.account_mapped else {}
+
+
+    @classmethod
+    def get_default_account_determination_type_convert(cls, obj):
+        return DEFAULT_ACCOUNT_DETERMINATION_TYPE[obj.default_account_determination_type][1]
 
 
 class DefaultAccountDeterminationCreateSerializer(serializers.ModelSerializer):
