@@ -69,7 +69,8 @@ class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.account_mapped_id,
             'acc_code': obj.account_mapped.acc_code,
-            'acc_name': obj.account_mapped.acc_name
+            'acc_name': obj.account_mapped.acc_name,
+            'foreign_acc_name': obj.account_mapped.foreign_acc_name,
         } if obj.account_mapped else {}
 
 
